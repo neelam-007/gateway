@@ -16,8 +16,6 @@ import java.io.OutputStream;
  * <p/>
  * The {path:.*} allows the stylesheet to be found from any directory in the rest application. We do this because it is
  * not easy to find the root path for load the stylesheets from otherwise
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(XslStyleSheetResource.StyleSheetBasePath)

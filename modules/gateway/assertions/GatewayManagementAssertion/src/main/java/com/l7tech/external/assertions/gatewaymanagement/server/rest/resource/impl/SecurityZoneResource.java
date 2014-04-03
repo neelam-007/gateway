@@ -53,8 +53,8 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(SecurityZoneMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(SecurityZoneMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -66,8 +66,8 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      */
     @GET
     @Path("{id}")
-    public Item<SecurityZoneMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<SecurityZoneMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -94,7 +94,7 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<SecurityZoneMO> listResources(
+    public ItemsList<SecurityZoneMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) {
@@ -105,7 +105,7 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -121,8 +121,8 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(SecurityZoneMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(SecurityZoneMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -134,8 +134,8 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -145,7 +145,7 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      */
     @GET
     @Path("template")
-    public Item<SecurityZoneMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<SecurityZoneMO> template() {
+        return super.template();
     }
 }

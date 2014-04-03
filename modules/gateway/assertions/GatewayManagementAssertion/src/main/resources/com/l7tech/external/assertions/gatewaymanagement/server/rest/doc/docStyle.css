@@ -1,0 +1,39 @@
+.api-call .call-title {
+    border-bottom: solid #808080 1px;
+}
+
+.api-call .request .resource-path {
+    border: solid #808080 1px;
+    background-color: #d9deff;
+    padding: 3px 5px;
+}
+.api-call .request table.params-table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.api-call .request .params-table tr th, .api-call .request .params-table tr td {
+    border: solid lightgrey 1px;
+}
+
+.api-call .request .params-table caption {
+    text-align: left;
+    font-weight: bold;
+    font-size: large;
+}
+
+.api-call .request .params-table tr th {
+    background-color: lightgreen;
+}
+
+.api-call .request .params-table td.params-type-title {
+    font-weight: bold;
+    background-color: lightgrey;
+}
+
+.api-call .request .params-table ul.param-choice-list
+{
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}

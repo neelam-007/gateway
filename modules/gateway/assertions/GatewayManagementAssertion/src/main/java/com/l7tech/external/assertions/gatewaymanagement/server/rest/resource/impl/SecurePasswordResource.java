@@ -23,8 +23,6 @@ import java.util.List;
 
 /**
  * The secure password resource
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + SecurePasswordResource.securePassword_URI)
@@ -55,8 +53,8 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(StoredPasswordMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(StoredPasswordMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -68,8 +66,8 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      */
     @GET
     @Path("{id}")
-    public Item<StoredPasswordMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<StoredPasswordMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -97,7 +95,7 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<StoredPasswordMO> listResources(
+    public ItemsList<StoredPasswordMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -112,7 +110,7 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
         if (types != null && !types.isEmpty()) {
             filters.put("type", (List) types);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -128,8 +126,8 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(StoredPasswordMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(StoredPasswordMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -141,8 +139,8 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -152,7 +150,7 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      */
     @GET
     @Path("template")
-    public Item<StoredPasswordMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<StoredPasswordMO> template() {
+        return super.template();
     }
 }

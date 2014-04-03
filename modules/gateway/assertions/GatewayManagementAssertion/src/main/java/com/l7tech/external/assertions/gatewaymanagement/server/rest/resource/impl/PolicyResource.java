@@ -31,8 +31,6 @@ import java.util.List;
 
 /**
  * The policy resource
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PolicyResource.POLICIES_URI)
@@ -78,7 +76,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(PolicyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response create(PolicyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String comment = uriInfo.getQueryParameters().getFirst("versionComment");
 
         String id = factory.createResource(resource, comment);
@@ -102,8 +100,8 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      */
     @GET
     @Path("{id}")
-    public Item<PolicyMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<PolicyMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -136,7 +134,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<PolicyMO> listResources(
+    public ItemsList<PolicyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -167,7 +165,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(convertSort(sort), ascendingSort,
+        return super.list(convertSort(sort), ascendingSort,
                 filters.map());
     }
 
@@ -212,7 +210,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Override
-    public Response updateResource(PolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(PolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
 
         String comment = uriInfo.getQueryParameters().getFirst("versionComment");
         String activeStr = uriInfo.getQueryParameters().getFirst("active");
@@ -244,8 +242,8 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -255,7 +253,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      */
     @GET
     @Path("template")
-    public Item<PolicyMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<PolicyMO> template() {
+        return super.template();
     }
 }

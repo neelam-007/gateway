@@ -54,8 +54,8 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(SiteMinderConfigurationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(SiteMinderConfigurationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
      */
     @GET
     @Path("{id}")
-    public Item<SiteMinderConfigurationMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<SiteMinderConfigurationMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -98,7 +98,7 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<SiteMinderConfigurationMO> listResources(
+    public ItemsList<SiteMinderConfigurationMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -117,7 +117,7 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -133,8 +133,8 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(SiteMinderConfigurationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(SiteMinderConfigurationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -146,8 +146,8 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -157,7 +157,7 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
      */
     @GET
     @Path("template")
-    public Item<SiteMinderConfigurationMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<SiteMinderConfigurationMO> template() {
+        return super.template();
     }
 }

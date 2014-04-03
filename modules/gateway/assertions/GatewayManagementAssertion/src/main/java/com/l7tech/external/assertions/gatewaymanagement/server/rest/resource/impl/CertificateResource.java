@@ -54,8 +54,8 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(TrustedCertificateMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(TrustedCertificateMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
      */
     @GET
     @Path("{id}")
-    public Item<TrustedCertificateMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<TrustedCertificateMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -97,7 +97,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<TrustedCertificateMO> listResources(
+    public ItemsList<TrustedCertificateMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -112,7 +112,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -128,8 +128,8 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(TrustedCertificateMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(TrustedCertificateMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -141,8 +141,8 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -152,7 +152,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
      */
     @GET
     @Path("template")
-    public Item<TrustedCertificateMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<TrustedCertificateMO> template() {
+        return super.template();
     }
 }

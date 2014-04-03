@@ -11,8 +11,6 @@ import javax.ws.rs.PUT;
 
 /**
  * The rbac role assignment resource
- *
- * @author Victor Kazakov
  */
 public class RoleAssignmentsResource {
     @SpringBean

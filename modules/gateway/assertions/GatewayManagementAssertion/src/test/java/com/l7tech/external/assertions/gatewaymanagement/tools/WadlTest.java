@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.tools;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.sun.research.ws.wadl.*;
 import junit.framework.Assert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import javax.xml.bind.JAXBContext;
@@ -12,6 +13,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class WadlTest {
 
@@ -34,6 +36,7 @@ public class WadlTest {
 
     private void validateResource(Resource resource) {
         validateDoc("Invalid doc for resource at path: " + resource.getPath(), resource.getDoc());
+        validateDoc("Invalid title doc for resource at path: " + resource.getPath(), Pattern.compile("title.*"), resource.getDoc());
         for (Object methodOrResource : resource.getMethodOrResource()) {
             if (methodOrResource instanceof Method) {
                 Method method = (Method) methodOrResource;
@@ -46,6 +49,7 @@ public class WadlTest {
 
     private void validateMethod(Resource resource, Method method) {
         validateDoc("Invalid doc for method with id: '" + method.getId() + "' at resource path: " + resource.getPath(), method.getDoc());
+        validateDoc("Invalid title doc for method with id: '" + method.getId() + "' at resource path: " + resource.getPath(), Pattern.compile("title.*"), resource.getDoc());
         validateRequest(resource, method, method.getRequest());
         for (Response response : method.getResponse()) {
             validateResponse(resource, method, response);
@@ -79,5 +83,22 @@ public class WadlTest {
         Assert.assertNotNull(errorMessage, docs.get(0).getContent().get(0));
         Assert.assertNotNull(errorMessage, docs.get(0).getContent().get(0).toString());
         Assert.assertTrue(errorMessage, !docs.get(0).getContent().get(0).toString().isEmpty());
+    }
+
+    private void validateDoc(String errorMessage, @NotNull Pattern docTitle, List<Doc> docs) {
+        Assert.assertNotNull(errorMessage, docs);
+        Assert.assertTrue(errorMessage, !docs.isEmpty());
+        for(Doc doc : docs) {
+            if(doc.getTitle() != null && docTitle.matcher(doc.getTitle()).matches()) {
+                Assert.assertNotNull(errorMessage, docs.get(0).getContent());
+                Assert.assertTrue(errorMessage, !docs.get(0).getContent().isEmpty());
+                Assert.assertNotNull(errorMessage, docs.get(0).getContent().get(0));
+                Assert.assertNotNull(errorMessage, docs.get(0).getContent().get(0).toString());
+                Assert.assertTrue(errorMessage, !docs.get(0).getContent().get(0).toString().isEmpty());
+                return;
+            }
+        }
+        Assert.fail(errorMessage);
+
     }
 }

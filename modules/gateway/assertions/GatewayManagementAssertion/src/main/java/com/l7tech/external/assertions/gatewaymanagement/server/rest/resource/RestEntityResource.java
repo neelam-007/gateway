@@ -77,7 +77,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
         return factory.getResourceType();
     }
 
-    public ItemsList<R> listResources(final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
+    public ItemsList<R> list(final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
         List<Item<R>> items = Functions.map(factory.listResources(sort, asc, filters), new Functions.Unary<Item<R>, R>() {
             @Override
             public Item<R> call(R resource) {
@@ -138,7 +138,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
         );
     }
 
-    public Item<R> getResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public Item<R> get(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
         return new ItemBuilder<>(transformer.convertToItem(resource))
                 .addLink(getLink(resource))
@@ -146,7 +146,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    public Item<R> getResourceTemplate() {
+    public Item<R> template() {
         R resource = factory.getResourceTemplate();
         return new ItemBuilder<R>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", getUrlString("template")))
@@ -155,7 +155,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    public Response createResource(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response create(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
         final URI uri = ub.build();
@@ -168,7 +168,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    public Response updateResource(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         boolean resourceExists = factory.resourceExists(id);
         final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {
@@ -186,7 +186,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build()).build();
     }
 
-    public void deleteResource(String id) throws ResourceFactory.ResourceNotFoundException {
+    public void delete(String id) throws ResourceFactory.ResourceNotFoundException {
         factory.deleteResource(id);
     }
 }

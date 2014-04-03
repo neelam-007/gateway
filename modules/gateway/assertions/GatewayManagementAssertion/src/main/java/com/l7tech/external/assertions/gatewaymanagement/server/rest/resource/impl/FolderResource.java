@@ -22,8 +22,6 @@ import java.util.List;
 
 /**
  * The folder resource
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + FolderResource.FOLDERS_URI)
@@ -54,8 +52,8 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(FolderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(FolderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +65,8 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @GET
     @Path("{id}")
-    public Item<FolderMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<FolderMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -98,7 +96,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<FolderMO> listResources(
+    public ItemsList<FolderMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -118,7 +116,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -134,8 +132,8 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(FolderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(FolderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -147,8 +145,8 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -158,7 +156,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @GET
     @Path("template")
-    public Item<FolderMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<FolderMO> template() {
+        return super.template();
     }
 }

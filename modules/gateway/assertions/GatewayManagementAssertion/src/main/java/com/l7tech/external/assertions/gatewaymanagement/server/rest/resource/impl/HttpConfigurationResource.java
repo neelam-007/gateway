@@ -55,8 +55,8 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(HttpConfigurationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(HttpConfigurationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -68,8 +68,8 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
      */
     @GET
     @Path("{id}")
-    public Item<HttpConfigurationMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<HttpConfigurationMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -101,7 +101,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<HttpConfigurationMO> listResources(
+    public ItemsList<HttpConfigurationMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "host"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("host") List<String> names,
@@ -128,7 +128,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -144,8 +144,8 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(HttpConfigurationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(HttpConfigurationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -157,8 +157,8 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -168,7 +168,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
      */
     @GET
     @Path("template")
-    public Item<HttpConfigurationMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<HttpConfigurationMO> template() {
+        return super.template();
     }
 }

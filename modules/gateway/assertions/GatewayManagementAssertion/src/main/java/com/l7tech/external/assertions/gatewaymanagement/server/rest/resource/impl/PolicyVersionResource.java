@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * This resource handles policy version operations.
- *
- * @author Victor Kazakov
  */
 public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
 
@@ -82,7 +80,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @SuppressWarnings("unchecked")
     @GET
     @Produces(MediaType.APPLICATION_XML)
-    public ItemsList<PolicyVersionMO> listResources(
+    public ItemsList<PolicyVersionMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "version"}) final String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) final String order,
             @QueryParam("id") final List<Goid> ids,
@@ -130,7 +128,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @GET
     @Path("{versionNumber}")
-    public Item<PolicyVersionMO> getResource(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
+    public Item<PolicyVersionMO> get(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
         return new ItemBuilder<>(transformer.convertToItem(policyVersion))
                 .addLink(getLink(policyVersion))
@@ -179,7 +177,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @PUT
     @Path("active/comment")
-    public Response setComment(@Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
+    public Response setActiveVersionComment(@Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.updateActiveComment(serviceOrPolicyId, comment);
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getActiveVersion(serviceOrPolicyId);
         return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))

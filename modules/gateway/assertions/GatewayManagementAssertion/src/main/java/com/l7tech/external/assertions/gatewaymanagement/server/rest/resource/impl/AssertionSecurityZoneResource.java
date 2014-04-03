@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The active connector resource
+ * The assertion security zone resource
  */
 @Provider
 @Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
@@ -80,7 +80,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<AssertionSecurityZoneMO> listResources(
+    public ItemsList<AssertionSecurityZoneMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "securityZone.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -118,7 +118,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      */
     @GET
     @Path("{name}")
-    public Item<AssertionSecurityZoneMO> getResource(@PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException {
+    public Item<AssertionSecurityZoneMO> get(@PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
         return new ItemBuilder<>(transformer.convertToItem(resource))
                 .addLink(getLink(resource))
@@ -134,7 +134,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      */
     @GET
     @Path("template")
-    public Item<AssertionSecurityZoneMO> getResourceTemplate() {
+    public Item<AssertionSecurityZoneMO> template() {
         AssertionSecurityZoneMO resource = factory.getResourceTemplate();
         return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
@@ -155,7 +155,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      */
     @PUT
     @Path("{name}")
-    public Response updateResource(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
         return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(updatedResource))
                 .addLink(getLink(resource))

@@ -24,6 +24,8 @@ import java.util.List;
 
 /**
  * The jms destination resource
+ *
+ * @title JMS Destination
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + JMSDestinationResource.jmsDestination_URI)
@@ -54,8 +56,8 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(JMSDestinationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(JMSDestinationMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +69,8 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
      */
     @GET
     @Path("{id}")
-    public Item<JMSDestinationMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<JMSDestinationMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -101,7 +103,7 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<JMSDestinationMO> listResources(
+    public ItemsList<JMSDestinationMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -132,7 +134,7 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -148,8 +150,8 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(JMSDestinationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(JMSDestinationMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -161,8 +163,8 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -172,7 +174,7 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
      */
     @GET
     @Path("template")
-    public Item<JMSDestinationMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<JMSDestinationMO> template() {
+        return super.template();
     }
 }

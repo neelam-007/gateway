@@ -14,8 +14,6 @@ import java.io.OutputStream;
 
 /**
  * This resource serves the wadl used by the rest api
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + WadlResource.WadlPath)

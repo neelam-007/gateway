@@ -55,7 +55,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * method get ignored by jersey
      */
     @Override
-    public Response createResource(@DefaultValue("null") PrivateKeyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response create(@DefaultValue("null") PrivateKeyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         throw new UnsupportedOperationException("Cannot create a new private key given a PrivateKeyMO");
     }
 
@@ -94,8 +94,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @GET
     @Path("{id}")
-    public Item<PrivateKeyMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<PrivateKeyMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -125,7 +125,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<PrivateKeyMO> listResources(
+    public ItemsList<PrivateKeyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "alias", "keystore"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("alias") List<String> aliases,
@@ -144,7 +144,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -160,8 +160,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(PrivateKeyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(PrivateKeyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -177,7 +177,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/export")
-    public Response exportResource(@PathParam("id") String id, Password password, @QueryParam("alias") String alias) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Response exportPrivateKey(@PathParam("id") String id, Password password, @QueryParam("alias") String alias) throws ResourceFactory.ResourceNotFoundException, FindException {
         PrivateKeyExportResult exportResult = factory.exportResource(id, password != null ? password.getValue() : "", alias);
         PrivateKeyRestExport restExport = ManagedObjectFactory.createPrivateKeyRestExportMO();
         restExport.setKeystoreID(id.substring(0, id.indexOf(":")));
@@ -198,7 +198,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @PUT
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("import")
-    public Response importResource(PrivateKeyRestExport restExport) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
+    public Response importPrivateKey(PrivateKeyRestExport restExport) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         PrivateKeyMO importResult = factory.importResource(restExport.getKeystoreID(), restExport.getAlias(), restExport.getPkcs12Data(), restExport.getPassword());
         return Response.ok().entity(importResult).build();
     }
@@ -230,8 +230,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -241,7 +241,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @GET
     @Path("template")
-    public Item<PrivateKeyMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<PrivateKeyMO> template() {
+        return super.template();
     }
 }

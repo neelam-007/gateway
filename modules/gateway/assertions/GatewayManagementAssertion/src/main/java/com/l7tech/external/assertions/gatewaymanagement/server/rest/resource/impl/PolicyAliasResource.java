@@ -54,8 +54,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(PolicyAliasMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(PolicyAliasMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
      */
     @GET
     @Path("{id}")
-    public Item<PolicyAliasMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<PolicyAliasMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -98,7 +98,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<PolicyAliasMO> listResources(
+    public ItemsList<PolicyAliasMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "policy.id", "folder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("policy.id") List<Goid> policyIds,
@@ -117,7 +117,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(convertSort(sort), ascendingSort,
+        return super.list(convertSort(sort), ascendingSort,
                 filters.map());
     }
 
@@ -143,8 +143,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(PolicyAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(PolicyAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -156,8 +156,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -167,7 +167,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
      */
     @GET
     @Path("template")
-    public Item<PolicyAliasMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<PolicyAliasMO> template() {
+        return super.template();
     }
 }

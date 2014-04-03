@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * The jdbc connection resource
  *
- * @author Victor Kazakov
+ * @title JDBC Connection
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + JDBCConnectionResource.jdbcConnections_URI)
@@ -56,8 +56,8 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(JDBCConnectionMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(JDBCConnectionMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -69,8 +69,8 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
      */
     @GET
     @Path("{id}")
-    public Item<JDBCConnectionMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<JDBCConnectionMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -103,7 +103,7 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<JDBCConnectionMO> listResources(
+    public ItemsList<JDBCConnectionMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -134,7 +134,7 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -150,8 +150,8 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(JDBCConnectionMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(JDBCConnectionMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -163,8 +163,8 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -174,7 +174,7 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
      */
     @GET
     @Path("template")
-    public Item<JDBCConnectionMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<JDBCConnectionMO> template() {
+        return super.template();
     }
 }

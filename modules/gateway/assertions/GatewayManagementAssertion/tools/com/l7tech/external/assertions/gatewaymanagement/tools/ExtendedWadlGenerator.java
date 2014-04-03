@@ -3,27 +3,30 @@ package com.l7tech.external.assertions.gatewaymanagement.tools;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.util.Functions;
 import com.sun.research.ws.wadl.*;
-import com.sun.research.ws.wadl.Application;
-import com.sun.research.ws.wadl.Request;
-import com.sun.research.ws.wadl.Response;
+import org.apache.commons.lang.WordUtils;
+import org.glassfish.jersey.server.internal.LocalizationMessages;
 import org.glassfish.jersey.server.model.Parameter;
 import org.glassfish.jersey.server.model.ResourceMethod;
 import org.glassfish.jersey.server.wadl.WadlGenerator;
 import org.glassfish.jersey.server.wadl.internal.ApplicationDescription;
-import org.glassfish.jersey.server.wadl.internal.WadlUtils;
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.ResourceDocAccessor;
-import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.MethodDocType;
-import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.ParamDocType;
-import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.ResourceDocType;
-import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.ResponseDocType;
+import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.*;
 import org.jetbrains.annotations.NotNull;
+import org.xml.sax.InputSource;
 
 import javax.inject.Provider;
 import javax.validation.constraints.Pattern;
-import javax.ws.rs.core.*;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.StreamingOutput;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +65,17 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
         }
         delegate.init();
 
-        final ResourceDocType resourceDocType = WadlUtils.unmarshall(resourceDocStream, saxFactoryProvider.get(), ResourceDocType.class);
+        final JAXBContext jaxbContext;
+        try {
+            //Add the ResourceDocProperty class to the jaxbContext It is added when parsing the javadocs.
+            jaxbContext = JAXBContext.newInstance(ResourceDocType.class, ResourceDocProperty.class);
+        } catch (JAXBException ex) {
+            throw new ProcessingException(LocalizationMessages.ERROR_WADL_JAXB_CONTEXT(), ex);
+        }
+        final SAXSource source = new SAXSource(saxFactoryProvider.get().newSAXParser().getXMLReader(), new InputSource(resourceDocStream));
+        final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        final ResourceDocType resourceDocType = (ResourceDocType) unmarshaller.unmarshal(source);
+
         resourceDocAccessor = new ResourceDocAccessor(resourceDocType);
     }
 
@@ -94,12 +107,72 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
 
     @Override
     public Resource createResource(org.glassfish.jersey.server.model.Resource r, String path) {
-        return delegate.createResource(r, path);
+        Resource resource = delegate.createResource(r, path);
+        for (Class<?> resourceClass : r.getHandlerClasses()) {
+            //Create title from resource class name. Only use class name from our resources
+            if ("com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl".equals(resourceClass.getPackage().getName())) {
+                final Doc doc = new Doc();
+                doc.setTitle("title-src");
+                //Remove the last 'Resource' from the name. Most class names are '<Entity>Resource' so the resource part is unneeded
+                //Then split the name
+                doc.getContent().add(splitCamelCase((resourceClass.getSimpleName().replaceAll("Resource$", ""))));
+                resource.getDoc().add(doc);
+            }
+            //Find title from javaDocs
+            final ClassDocType classDoc = resourceDocAccessor.getClassDoc(resourceClass);
+            if (classDoc != null && !classDoc.getAny().isEmpty()) {
+                for (Object any : classDoc.getAny()) {
+                    if (any instanceof ResourceDocProperty && "title".equals(((ResourceDocProperty) any).getName())) {
+                        final Doc doc = new Doc();
+                        doc.setTitle("title-javadoc");
+                        doc.getContent().add(((ResourceDocProperty) any).getValue());
+                        resource.getDoc().add(doc);
+                    }
+                }
+            }
+        }
+        return resource;
     }
 
     @Override
     public Method createMethod(org.glassfish.jersey.server.model.Resource r, ResourceMethod m) {
-        return delegate.createMethod(r, m);
+        Method method = delegate.createMethod(r, m);
+        //null the method ID otherwise we will have many duplicate ids
+        method.setId(null);
+
+        final java.lang.reflect.Method realMethod = m.getInvocable().getDefinitionMethod();
+        {
+            final Doc doc = new Doc();
+            doc.setTitle("title-src");
+            doc.getContent().add(splitCamelCase(realMethod.getName()));
+            method.getDoc().add(doc);
+        }
+
+        final MethodDocType methodDoc = resourceDocAccessor.getMethodDoc(realMethod.getDeclaringClass(), realMethod);
+        if (methodDoc != null && !methodDoc.getAny().isEmpty()) {
+            for (Object any : methodDoc.getAny()) {
+                if (any instanceof ResourceDocProperty && "title".equals(((ResourceDocProperty) any).getName())) {
+                    final Doc doc = new Doc();
+                    doc.setTitle("title-javadoc");
+                    doc.getContent().add(((ResourceDocProperty) any).getValue());
+                    method.getDoc().add(doc);
+                }
+            }
+        }
+        return method;
+    }
+
+    private static String splitCamelCase(@NotNull String s) {
+        //This nicely splits Camel case names into human readable names
+        // Found format string here: http://stackoverflow.com/questions/2559759/how-do-i-convert-camelcase-into-human-readable-names-in-java
+        return WordUtils.capitalizeFully(s.replaceAll(
+                String.format("%s|%s|%s",
+                        "(?<=[A-Z])(?=[A-Z][a-z])",
+                        "(?<=[^A-Z])(?=[A-Z])",
+                        "(?<=[A-Za-z])(?=[^A-Za-z])"
+                ),
+                " "
+        ));
     }
 
     @Override
@@ -141,7 +214,7 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
             return new QName("http://www.w3.org/2001/XMLSchema", "string");
         }
 
-        if(StreamingOutput.class.equals(rawType)) {
+        if (StreamingOutput.class.equals(rawType)) {
             return null;
         }
 

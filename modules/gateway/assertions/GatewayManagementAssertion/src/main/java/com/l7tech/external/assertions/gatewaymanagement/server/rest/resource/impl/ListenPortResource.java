@@ -54,8 +54,8 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(ListenPortMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(ListenPortMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
      */
     @GET
     @Path("{id}")
-    public Item<ListenPortMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<ListenPortMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -100,7 +100,7 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<ListenPortMO> listResources(
+    public ItemsList<ListenPortMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "enabled", "protocol", "port"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -127,7 +127,7 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(convertSort(sort), ascendingSort,
+        return super.list(convertSort(sort), ascendingSort,
                 filters.map());
     }
 
@@ -153,8 +153,8 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(ListenPortMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(ListenPortMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -166,8 +166,8 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -177,7 +177,7 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
      */
     @GET
     @Path("template")
-    public Item<ListenPortMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<ListenPortMO> template() {
+        return super.template();
     }
 }

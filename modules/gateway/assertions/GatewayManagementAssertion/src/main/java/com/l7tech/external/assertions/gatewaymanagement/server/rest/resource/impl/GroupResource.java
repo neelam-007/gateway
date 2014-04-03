@@ -29,7 +29,7 @@ import java.util.List;
  * This resource handles policy version operations.
  */
 @Provider
-@Path(RestEntityResource.RestEntityResource_version_URI + "groups")
+@Path(RestEntityResource.RestEntityResource_version_URI + GroupResource.GROUPS_URI)
 public class GroupResource implements URLAccessible<GroupMO> {
 
     protected static final String GROUPS_URI = "groups";
@@ -83,7 +83,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<GroupMO> listResources(
+    public ItemsList<GroupMO> list(
             @QueryParam("name") List<String> names) {
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
 
@@ -115,7 +115,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
      */
     @GET
     @Path("{id}")
-    public Item<GroupMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<GroupMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         GroupMO group = groupRestResourceFactory.getResource(providerId, id);
         return new ItemBuilder<>(transformer.convertToItem(group))
                 .addLink(getLink(group))

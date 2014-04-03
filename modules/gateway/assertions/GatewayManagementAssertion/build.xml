@@ -9,7 +9,7 @@
     <!--
       Override compile-main-resources and add dependency on WSDL generation
     -->
-    <target name="compile-main-resources" depends="common.compile-main-resources, compile-tools, generate-wsdl, generate-javadoc, generate-wadl"/>
+    <target name="compile-main-resources" depends="common.compile-main-resources, compile-tools, generate-wsdl, generate-javadoc, generate-wadl, generate-rest-docs"/>
 
     <target name="compile-tools" depends="compile-main-java">
         <echo>Compiling tools for Gateway Management service</echo>
@@ -80,6 +80,7 @@
         </path>
         <path id="javadoc.class.path">
             <path refid="gatewaymanagementassertion.tools.path.libs"/>
+            <path refid="gatewaymanagementassertion.tools.path"/>
         </path>
         <!-- Create the java doc -->
         <javadoc sourcepathref="javadoc.src.path"
@@ -92,6 +93,7 @@
                  failonerror="yes">
             <doclet name="org.glassfish.jersey.wadl.doclet.ResourceDoclet" pathref="javadoc.class.path">
                 <param name="-output" value="${basedir}/build/etc/javadoc/resourcedoc.xml" />
+                <param name="-processors" value="com.l7tech.external.assertions.gatewaymanagement.tools.L7DocProcessor" />
             </doclet>
         </javadoc>
 
@@ -115,6 +117,25 @@
         <copy todir="${gatewayrestmanagementassertion.wadlFolder}">
             <fileset dir="${basedir}/build/etc/wadl">
                 <include name="*.wadl"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- This target generates the html docs from the wadl -->
+    <target name="generate-rest-docs" depends="generate-wadl">
+        <echo>Generating Rest Doc for Gateway Management service</echo>
+
+        <property name="gatewayrestmanagementassertion.restDocFolder" value="${classes.main.dir}/com/l7tech/external/assertions/gatewaymanagement/server/rest/doc"/>
+        <mkdir dir="${gatewayrestmanagementassertion.restDocFolder}"/>
+
+        <java classname="com.l7tech.external.assertions.gatewaymanagement.tools.DocBuilder" classpathref="gatewaymanagementassertion.tools.path" failonerror="true">
+            <arg value="${basedir}/tools/com/l7tech/external/assertions/gatewaymanagement/tools/doccer.xsl"/>
+            <arg value="${basedir}/build/etc/wadl/restAPI.wadl"/>
+            <arg value="${basedir}/build/etc/wadl/restDoc.html"/>
+        </java>
+        <copy todir="${gatewayrestmanagementassertion.restDocFolder}">
+            <fileset dir="${basedir}/build/etc/wadl">
+                <include name="*.html"/>
             </fileset>
         </copy>
     </target>

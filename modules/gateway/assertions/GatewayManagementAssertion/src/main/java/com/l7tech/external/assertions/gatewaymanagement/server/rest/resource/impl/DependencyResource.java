@@ -56,6 +56,8 @@ public class DependencyResource {
      *
      * @return The dependencies of this entity.
      * @throws FindException
+     *
+     * @title Get Dependencies
      */
     @GET
     public Item get() throws FindException {

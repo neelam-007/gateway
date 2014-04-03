@@ -54,8 +54,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(ServiceAliasMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(ServiceAliasMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      */
     @GET
     @Path("{id}")
-    public Item<ServiceAliasMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<ServiceAliasMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -98,7 +98,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<ServiceAliasMO> listResources(
+    public ItemsList<ServiceAliasMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "service.id", "folder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("service.id") List<Goid> serviceIds,
@@ -117,7 +117,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(convertSort(sort), ascendingSort,
+        return super.list(convertSort(sort), ascendingSort,
                 filters.map());
     }
 
@@ -143,8 +143,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(ServiceAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(ServiceAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -156,8 +156,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -167,7 +167,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      */
     @GET
     @Path("template")
-    public Item<ServiceAliasMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<ServiceAliasMO> template() {
+        return super.template();
     }
 }

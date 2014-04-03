@@ -70,7 +70,7 @@ public class RevocationCheckingPolicyResource implements URLAccessible<Revocatio
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<RevocationCheckingPolicyMO> listResources(
+    public ItemsList<RevocationCheckingPolicyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -108,7 +108,7 @@ public class RevocationCheckingPolicyResource implements URLAccessible<Revocatio
      */
     @GET
     @Path("{id}")
-    public Item<RevocationCheckingPolicyMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    public Item<RevocationCheckingPolicyMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         RevocationCheckingPolicyMO resource = factory.getResource(id);
         return new ItemBuilder<>(transformer.convertToItem(resource))
                 .addLink(getLink(resource))

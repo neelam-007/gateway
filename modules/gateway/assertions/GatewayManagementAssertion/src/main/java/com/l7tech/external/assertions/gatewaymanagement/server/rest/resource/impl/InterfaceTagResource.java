@@ -54,8 +54,8 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(InterfaceTagMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(InterfaceTagMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -67,8 +67,8 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      */
     @GET
     @Path("{id}")
-    public Item<InterfaceTagMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<InterfaceTagMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -95,7 +95,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<InterfaceTagMO> listResources(
+    public ItemsList<InterfaceTagMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) {
@@ -106,7 +106,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -122,7 +122,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(InterfaceTagMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(InterfaceTagMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.updateResource(id, resource);
         return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(resource))
                 .addLink(getLink(resource))
@@ -139,8 +139,8 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -150,7 +150,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      */
     @GET
     @Path("template")
-    public Item<InterfaceTagMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<InterfaceTagMO> template() {
+        return super.template();
     }
 }

@@ -53,8 +53,8 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(GenericEntityMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(GenericEntityMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -66,8 +66,8 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
      */
     @GET
     @Path("{id}")
-    public Item<GenericEntityMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<GenericEntityMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -97,7 +97,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<GenericEntityMO> listResources(
+    public ItemsList<GenericEntityMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "entityClassName"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -116,7 +116,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
         if (entityClassNames != null && !entityClassNames.isEmpty()) {
             filters.put("type", (List) entityClassNames);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -132,8 +132,8 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(GenericEntityMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(GenericEntityMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -145,8 +145,8 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -156,7 +156,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
      */
     @GET
     @Path("template")
-    public Item<GenericEntityMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<GenericEntityMO> template() {
+        return super.template();
     }
 }

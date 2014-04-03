@@ -55,8 +55,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(ActiveConnectorMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(ActiveConnectorMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -68,8 +68,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      */
     @GET
     @Path("{id}")
-    public Item<ActiveConnectorMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<ActiveConnectorMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -101,7 +101,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<ActiveConnectorMO> listResources(
+    public ItemsList<ActiveConnectorMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -128,12 +128,12 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
     /**
-     * Updates an existing entity
+     * Updates an existing active connector
      *
      * @param resource The updated entity
      * @param id       The id of the entity to update
@@ -148,8 +148,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(ActiveConnectorMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(ActiveConnectorMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -161,8 +161,8 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -172,7 +172,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      */
     @GET
     @Path("template")
-    public Item<ActiveConnectorMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<ActiveConnectorMO> template() {
+        return super.template();
     }
 }

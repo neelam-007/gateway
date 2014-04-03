@@ -53,8 +53,8 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(CustomKeyValueStoreMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(CustomKeyValueStoreMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -66,8 +66,8 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
      */
     @GET
     @Path("{id}")
-    public Item<CustomKeyValueStoreMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<CustomKeyValueStoreMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -94,7 +94,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<CustomKeyValueStoreMO> listResources(
+    public ItemsList<CustomKeyValueStoreMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("key") List<String> keys) {
@@ -105,7 +105,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
         if (keys != null && !keys.isEmpty()) {
             filters.put("name", (List) keys);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -121,8 +121,8 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(CustomKeyValueStoreMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(CustomKeyValueStoreMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -134,8 +134,8 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -145,7 +145,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
      */
     @GET
     @Path("template")
-    public Item<CustomKeyValueStoreMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<CustomKeyValueStoreMO> template() {
+        return super.template();
     }
 }

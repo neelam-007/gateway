@@ -22,9 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The folder resource
- *
- * @author Victor Kazakov
+ * The cluster property resource
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ClusterPropertyResource.CLUSTER_PROPERTIES_URI)
@@ -55,8 +53,8 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(ClusterPropertyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(ClusterPropertyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -68,8 +66,8 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
      */
     @GET
     @Path("{id}")
-    public Item<ClusterPropertyMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<ClusterPropertyMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -96,7 +94,7 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<ClusterPropertyMO> listResources(
+    public ItemsList<ClusterPropertyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) {
@@ -107,7 +105,7 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
         }
-        return super.listResources(sort, ascendingSort,
+        return super.list(sort, ascendingSort,
                 filters.map());
     }
 
@@ -123,8 +121,8 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(ClusterPropertyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(ClusterPropertyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -136,8 +134,8 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -147,7 +145,7 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
      */
     @GET
     @Path("template")
-    public Item<ClusterPropertyMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<ClusterPropertyMO> template() {
+        return super.template();
     }
 }

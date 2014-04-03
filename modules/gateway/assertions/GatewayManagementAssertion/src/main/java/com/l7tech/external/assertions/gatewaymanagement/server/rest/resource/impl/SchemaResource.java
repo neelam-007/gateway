@@ -14,8 +14,6 @@ import java.io.OutputStream;
 
 /**
  * This resource serves the gateway-management schema
- *
- * @author Victor Kazakov
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + SchemaResource.SchemaPath)

@@ -85,8 +85,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(IdentityProviderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.createResource(resource);
+    public Response create(IdentityProviderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
     /**
@@ -98,8 +98,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      */
     @GET
     @Path("{id}")
-    public Item<IdentityProviderMO> getResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.getResource(id);
+    public Item<IdentityProviderMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        return super.get(id);
     }
 
     /**
@@ -129,7 +129,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     @Produces(MediaType.APPLICATION_XML)
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public ItemsList<IdentityProviderMO> listResources(
+    public ItemsList<IdentityProviderMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "type"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
@@ -163,7 +163,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        return super.listResources(convertSort(sort), ascendingSort,
+        return super.list(convertSort(sort), ascendingSort,
                 filters.map());
     }
 
@@ -189,8 +189,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response updateResource(IdentityProviderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.updateResource(resource, id);
+    public Response update(IdentityProviderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.update(resource, id);
     }
 
     /**
@@ -202,8 +202,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     @DELETE
     @Path("{id}")
     @Override
-    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.deleteResource(id);
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
     /**
@@ -213,7 +213,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      */
     @GET
     @Path("template")
-    public Item<IdentityProviderMO> getResourceTemplate() {
-        return super.getResourceTemplate();
+    public Item<IdentityProviderMO> template() {
+        return super.template();
     }
 }
