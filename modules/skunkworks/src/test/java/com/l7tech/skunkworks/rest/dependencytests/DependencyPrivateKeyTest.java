@@ -1,8 +1,8 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
 import com.l7tech.common.io.KeyGenParams;
-import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.DependencyListMO;
+import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
@@ -123,7 +123,7 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
 
 
     @Test
-    public void contextVariableTest() throws Exception {
+    public void mqNativeRoutingAssertionTest() throws Exception {
 
         final String assXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -174,5 +174,51 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
         });
     }
 
+    @Test
+    public void FtpsRoutingAssertionTest() throws Exception{
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:FtpRoutingAssertion>\n" +
+                "            <L7p:Arguments stringValue=\"hr\"/>\n" +
+                "            <L7p:ClientCertKeyAlias stringValue=\""+keyAlias+"\"/>\n" +
+                "            <L7p:ClientCertKeystoreId goidValue=\""+defaultKeystoreId+"\"/>\n" +
+                "            <L7p:CredentialsSource credentialsSource=\"passThru\"/>\n" +
+                "            <L7p:Directory stringValue=\"hr\"/>\n" +
+                "            <L7p:Enabled booleanValue=\"false\"/>\n" +
+                "            <L7p:HostName stringValue=\"rdhzf\"/>\n" +
+                "            <L7p:ResponseTarget MessageTarget=\"included\">\n" +
+                "                <L7p:Target target=\"RESPONSE\"/>\n" +
+                "            </L7p:ResponseTarget>\n" +
+                "            <L7p:Security security=\"ftpsExplicit\"/>\n" +
+                "            <L7p:UseClientCert booleanValue=\"true\"/>\n" +
+                "            <L7p:UserName stringValue=\"\"/>\n" +
+                "        </L7p:FtpRoutingAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
 
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
+                assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());
+                assertEquals(defaultKeystoreId.toString()+":"+keyAlias, keyDep.getId());
+                assertEquals(keyAlias, keyDep.getName());
+                assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(keyDep.getDependencies(), securityZone.getId()));
+
+                DependencyMO zoneDep = getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
+                assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
+                assertEquals(securityZone.getId(), zoneDep.getId());
+                assertEquals(securityZone.getName(), zoneDep.getName());
+            }
+        });
+
+    }
 }

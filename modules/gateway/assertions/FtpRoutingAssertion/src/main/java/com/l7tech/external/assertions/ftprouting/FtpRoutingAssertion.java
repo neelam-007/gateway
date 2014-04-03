@@ -5,19 +5,22 @@
 package com.l7tech.external.assertions.ftprouting;
 
 import com.l7tech.common.ftp.FtpCommand;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
+import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
+import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.search.Dependency;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +40,7 @@ import static com.l7tech.policy.assertion.MessageTargetableSupport.VariablesSet;
  * @author nilic
  * @author jwilliams
  */
-public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesPrivateKeys, UsesEntities {
+public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, UsesEntities {
 
     private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
 
@@ -487,15 +490,6 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     }
 
     @Override
-    public SsgKeyHeader[] getPrivateKeysUsed() {
-        if (isUseClientCert()) {
-            return new SsgKeyHeader[] {new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(),
-                    getClientCertKeystoreId(), getClientCertKeyAlias(), getClientCertKeyAlias())};
-        }
-        return null;
-    }
-
-    @Override
     public VariableMetadata[] getVariablesSet() {
         VariablesSet variablesSet;
 
@@ -529,10 +523,15 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
+        EntityHeader[] headers = new EntityHeader[0];
         if (FtpCredentialsSource.SPECIFIED.equals(_credentialsSource) && passwordGoid != null) {
-            return new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+            headers = ArrayUtils.concat(headers, new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())});
         }
-        return new EntityHeader[0];
+        if (isUseClientCert()) {
+            headers = ArrayUtils.concat(headers,  new SsgKeyHeader[] {new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(),
+                    getClientCertKeystoreId(), getClientCertKeyAlias(), getClientCertKeyAlias())});
+        }
+        return headers;
     }
 
     @Override
@@ -540,6 +539,18 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         if (FtpCredentialsSource.SPECIFIED.equals(_credentialsSource) && passwordGoid != null) {
             if (Goid.equals(oldEntityHeader.getGoid(), passwordGoid)) {
                 passwordGoid = newEntityHeader.getGoid();
+            }
+        }
+        if (isUseClientCert() && oldEntityHeader instanceof SsgKeyHeader ) {
+            if(Goid.equals(((SsgKeyHeader) oldEntityHeader).getKeystoreId(), _clientCertKeystoreId) && _clientCertKeyAlias.equals(((SsgKeyHeader) oldEntityHeader).getAlias())){
+                if(newEntityHeader instanceof SsgKeyHeader){
+                    _clientCertKeyAlias = ((SsgKeyHeader) newEntityHeader).getAlias();
+                    _clientCertKeystoreId = ((SsgKeyHeader) newEntityHeader).getKeystoreId();
+                }else{
+                    SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
+                    _clientCertKeyAlias = keyId.getAlias();
+                    _clientCertKeystoreId = keyId.getKeystoreId();
+                }
             }
         }
     }
