@@ -59,4 +59,18 @@ public class PolicyManagerImplTest {
         manager.createRoles(policy);
         verify(roleManager, never()).save(any(Role.class));
     }
+
+    @Test
+    public void addManagePolicyRoleCanDebugGlobalPolicyFragment() throws Exception {
+        Policy globalPolicy = new Policy(PolicyType.GLOBAL_FRAGMENT, "test", "xml", false);
+        manager.addManagePolicyRole(globalPolicy);
+        verify(roleManager).save(argThat(RoleMatchingTestUtil.canDebugPolicy(globalPolicy.getGoid())));
+    }
+
+    @Test
+    public void addManagePolicyRoleCannotDebugIncludedPolicyFragment() throws Exception {
+        Policy includedPolicy = new Policy(PolicyType.INCLUDE_FRAGMENT, "test", "xml", false);
+        manager.addManagePolicyRole(includedPolicy);
+        verify(roleManager, never()).save(argThat(RoleMatchingTestUtil.canDebugPolicy(includedPolicy.getGoid())));
+    }
 }

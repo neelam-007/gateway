@@ -19,7 +19,7 @@ public class DebugManagerStub implements DebugManager {
 
     @NotNull
     @Override
-    public DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService) {
+    public DebugContext createDebugContext(@NotNull Goid policyGoid) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

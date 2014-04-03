@@ -2,6 +2,7 @@ package com.l7tech.server.upgrade;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
@@ -30,13 +31,13 @@ public class Upgrade531To54UpdateRoles extends AbstractDynamicRolePermissionsUpg
     }
 
     @Override
-    protected List<Triple<OperationType, String, EntityType>> permissionsToAdd(EntityType entityType) {
+    protected List<Triple<OperationType, String, EntityType>> permissionsToAdd() {
         return Arrays.asList(new Triple<OperationType, String, EntityType>(READ, null, HTTP_CONFIGURATION));
     }
 
     @Override
-    protected boolean shouldSetPermissionScope() {
-        return false;
+    protected String getScopeId (EntityType entityType, Goid entityGoid) {
+        return null;
     }
 
     @Override

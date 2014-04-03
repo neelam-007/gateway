@@ -53,4 +53,10 @@ public class ServiceManagerImpTest {
         manager.createRoles(service);
         verify(roleManager, never()).save(any(Role.class));
     }
+
+    @Test
+    public void addManageServiceRoleCanDebugServicePolicy() throws Exception {
+        manager.addManageServiceRole(service);
+        verify(roleManager).save(argThat(RoleMatchingTestUtil.canDebugPolicy(service.getPolicy().getGoid())));
+    }
 }

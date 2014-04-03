@@ -14,14 +14,13 @@ import java.util.Collection;
 public interface DebugManager {
 
     /**
-     *  Creates a {@link DebugContext} for the given service/policy GOID.
+     *  Creates a {@link DebugContext} for the given policy GOID.
      *
-     * @param entityGoid the service or policy GOID
-     * @param isService true if the entity is a service, false if the entity is a policy
+     * @param policyGoid the policy GOID
      * @return the debug context
      */
     @NotNull
-    DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService);
+    DebugContext createDebugContext(@NotNull Goid policyGoid);
 
     /**
      * Starts debugging for the given task ID. After debugging is started, it waits for

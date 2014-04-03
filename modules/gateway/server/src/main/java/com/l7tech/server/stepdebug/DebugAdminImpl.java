@@ -23,15 +23,8 @@ public class DebugAdminImpl implements DebugAdmin {
 
     @Override
     @NotNull
-    public DebugResult initializeDebugService(@NotNull Goid serviceGoid) {
-        DebugContext debugContext = debugManager.createDebugContext(serviceGoid, true);
-        return this.createDebugResult(debugContext);
-    }
-
-    @Override
-    @NotNull
-    public DebugResult initializeDebugPolicy(@NotNull Goid policyGoid) {
-        DebugContext debugContext = debugManager.createDebugContext(policyGoid, false);
+    public DebugResult initializeDebug(@NotNull Goid policyGoid) {
+        DebugContext debugContext = debugManager.createDebugContext(policyGoid);
         return this.createDebugResult(debugContext);
     }
 

@@ -34,8 +34,7 @@ alter table http_configuration
     on delete cascade;
 
 -- RABC for "debugger" other permission: Update "Publish Webservices" canned role --
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'OTHER','debugger','SERVICE');
-INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -444),0, toGoid(0, -400),'OTHER','debugger','POLICY');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'OTHER','debugger','POLICY');
 
 --
 -- Register upgrade task for adding "debugger" other permission to auto-created "Manage <Blah>" roles

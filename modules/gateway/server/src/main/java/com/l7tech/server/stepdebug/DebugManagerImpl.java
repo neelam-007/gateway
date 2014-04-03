@@ -38,9 +38,9 @@ public class DebugManagerImpl implements DebugManager {
 
     @Override
     @NotNull
-    public DebugContext createDebugContext(@NotNull Goid entityGoid, boolean isService) {
+    public DebugContext createDebugContext(@NotNull Goid policyGoid) {
         String taskId = UUID.randomUUID().toString();
-        DebugContext debugContext = new DebugContext(entityGoid, isService, taskId, audit);
+        DebugContext debugContext = new DebugContext(policyGoid, taskId, audit);
         debugTasks.put(taskId, debugContext);
 
         return debugContext;
@@ -55,10 +55,10 @@ public class DebugManagerImpl implements DebugManager {
             // Do not start debugger, if another debugger already running for the
             // given service/policy.
             //
-            Goid entityGoid = debugContext.getEntityGoid();
+            Goid policyGoid = debugContext.getPolicyGoid();
             boolean isFound = false;
             for (DebugContext context : debugTasks.values()) {
-                if (entityGoid.equals(context.getEntityGoid()) &&
+                if (policyGoid.equals(context.getPolicyGoid()) &&
                     !context.getDebugState().equals(DebugState.STOPPED)) {
                     isFound = true;
                 }
@@ -70,11 +70,10 @@ public class DebugManagerImpl implements DebugManager {
 
             audit.logAndAudit(
                 SystemMessages.SERVICE_DEBUGGER_START,
-                debugContext.isService() ? "service" : "policy",
-                debugContext.getEntityGoid().toString());
+                policyGoid.toString());
 
             debugContext.startDebugging();
-            waitingForMsg.put(entityGoid, debugContext);
+            waitingForMsg.put(policyGoid, debugContext);
         } finally {
             lock.unlock();
         }
@@ -88,12 +87,12 @@ public class DebugManagerImpl implements DebugManager {
         try {
             DebugContext debugContext = this.getDebugContext(taskId);
             if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
+                Goid policyGoid = debugContext.getPolicyGoid();
                 audit.logAndAudit(
                     SystemMessages.SERVICE_DEBUGGER_STOP,
-                    debugContext.isService() ? "service" : "policy",
-                    debugContext.getEntityGoid().toString());
+                    policyGoid.toString());
                 debugContext.stopDebugging();
-                waitingForMsg.remove(debugContext.getEntityGoid());
+                waitingForMsg.remove(policyGoid);
             }
         } finally {
             lock.unlock();

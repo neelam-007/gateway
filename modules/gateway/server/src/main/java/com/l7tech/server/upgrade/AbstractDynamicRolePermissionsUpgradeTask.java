@@ -31,19 +31,21 @@ import java.util.logging.Logger;
  * An example would be adding permission to READ a new entity type to every existing Manage Service X and Manage Policy X
  * dynamically-created role.
  * <p/>
- * Subclasses must implement {@link #permissionsToAdd(EntityType)} to return a List of all-entity operations which shall be
+ * Subclasses must implement {@link #permissionsToAdd()} to return a List of all-entity operations which shall be
  * added to existing roles for the given entity -- for example (READ,ENCAPSULATED_ASSERTION).
  */
 public abstract class AbstractDynamicRolePermissionsUpgradeTask implements UpgradeTask {
-    private static final Logger logger = Logger.getLogger(Upgrade531To54UpdateRoles.class.getName());
+    private static final Logger logger = Logger.getLogger(AbstractDynamicRolePermissionsUpgradeTask.class.getName());
     private ApplicationContext applicationContext;
+
+    protected ServiceManager serviceManager;
 
     @Override
     public void upgrade( final ApplicationContext applicationContext ) throws FatalUpgradeException, NonfatalUpgradeException {
         this.applicationContext = applicationContext;
 
         final PolicyManager policyManager = getBean("policyManager", PolicyManager.class);
-        final ServiceManager serviceManager = getBean("serviceManager", ServiceManager.class);
+        this.serviceManager = getBean("serviceManager", ServiceManager.class);
         final RoleManager roleManager = getBean("roleManager", RoleManager.class);
         final FolderManager folderManager = getBean("folderManager", FolderManager.class);
 
@@ -86,7 +88,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
      */
     private void updateRolesForPolicies( final PolicyManager policyManager,
                                          final RoleManager roleManager ) throws ObjectModelException {
-        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd(EntityType.POLICY);
+        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd();
 
         final Collection<PolicyHeader> policies = policyManager.findAllHeaders();
 
@@ -127,7 +129,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
      */
     private void updateRolesForServices( final ServiceManager serviceManager,
                                          final RoleManager roleManager ) throws ObjectModelException {
-        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd(EntityType.SERVICE);
+        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd();
 
         final Collection<ServiceHeader> services = serviceManager.findAllHeaders(false);
 
@@ -161,7 +163,7 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
 
     private void updateRolesForFolders( final FolderManager folderManager,
                                          final RoleManager roleManager ) throws ObjectModelException {
-        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd(EntityType.FOLDER);
+        List<Triple<OperationType, String, EntityType>> perms = permissionsToAdd();
         final Collection<FolderHeader> folders = folderManager.findAllHeaders();
 
         for ( final FolderHeader folder : folders ) {
@@ -193,23 +195,25 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
     }
 
     /**
-     * Returns a list of permissions to add for the specified entity type.
+     * Returns a list of permissions to add.
      * The list contains {@link Triple} which consists of,
      *  - the operation type.
      *  - the OTHER operation name. Set if operation type is OTHER, otherwise set to null.
      *  - the entity type.
      *
-     * @param entityType the entity type
      * @return a list of permissions to add
      */
-    protected abstract List<Triple<OperationType, String, EntityType>> permissionsToAdd(EntityType entityType);
+    protected abstract List<Triple<OperationType, String, EntityType>> permissionsToAdd();
 
     /**
-     * Returns true if the permissions to add should have its scope set to the role's target entity. Returns false otherwise.
+     * Returns the GOID of the entity the permission should be scoped to. Returns null if no scope.
      *
-     * @return true if the permissions to add should have its scope set to the role's target entity. Returns false otherwise.
+     * @param entityType if this Role is scoped to a particular entity, the type of that entity. Otherwise null.
+     * @param entityGoid if this Role is scoped to a particular entity, the GOID of that entity. Otherwise null.*
+     * @return the GOID of the entity the permission should be scoped to. Null if no scope.
+     * @throws ObjectModelException ObjectModelException
      */
-    protected abstract boolean shouldSetPermissionScope();
+    protected abstract String getScopeId (EntityType entityType, Goid entityGoid) throws ObjectModelException;
 
     protected abstract boolean shouldCreateMissingRoles();
 
@@ -262,13 +266,10 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
     private boolean addEntityPermission( final Role role,
                                          final OperationType operationType,
                                          final String otherOperationName,
-                                         final EntityType entityType) {
+                                         final EntityType entityType) throws ObjectModelException {
         boolean hasPermission = false;
 
-        String id = null;
-        if (shouldSetPermissionScope() && role.getEntityGoid() != null) {
-            id = role.getEntityGoid().toString();
-        }
+        String id = getScopeId(role.getEntityType(), role.getEntityGoid());
 
         for ( final Permission permission : role.getPermissions() ) {
             if ( permission.getEntityType() == entityType &&

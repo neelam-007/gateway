@@ -19,26 +19,15 @@ import static com.l7tech.objectmodel.EntityType.*;
 @Secured
 @Administrative
 public interface DebugAdmin {
-
     /**
-     * Initializes policy step debugging for the given service.
-     *
-     * @param serviceGoid the service GOID
-     * @return the debug result
-     */
-    @Secured(types=SERVICE, stereotype=ENTITY_OPERATION, otherOperation="debugger", relevantArg=0)
-    @NotNull
-    DebugResult initializeDebugService(@NotNull Goid serviceGoid);
-
-    /**
-     * Initializes policy step debugging for the given policy.
+     * Initializes debugging for the given policy.
      *
      * @param policyGoid the policy GOID
      * @return the debug result
      */
     @Secured(types=POLICY, stereotype=ENTITY_OPERATION, otherOperation="debugger", relevantArg=0)
     @NotNull
-    DebugResult initializeDebugPolicy(@NotNull Goid policyGoid);
+    DebugResult initializeDebug(@NotNull Goid policyGoid);
 
     /**
      * Starts debugging for the given task ID. After debugging is started, it waits for

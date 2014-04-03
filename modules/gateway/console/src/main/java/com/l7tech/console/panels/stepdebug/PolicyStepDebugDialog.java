@@ -7,7 +7,6 @@ import com.l7tech.gateway.common.stepdebug.DebugAdmin;
 import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -45,7 +44,6 @@ public class PolicyStepDebugDialog extends JDialog {
     private JButton closeButton;
 
     private final DebugAdmin debugAdmin;
-    private final Goid entityGoid; // The service or Policy GOID.
     private final Policy policy;
     private DebugResult debugResult;
     private Timer refreshTimer;
@@ -65,10 +63,9 @@ public class PolicyStepDebugDialog extends JDialog {
      * Creates <code>PolicyStepDebugDialog</code>.
      *
      * @param owner the owner
-     * @param entityGoid the service or policy GOID
      * @param policy the policy to debug
      */
-    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Goid entityGoid, @NotNull Policy policy) {
+    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Policy policy) {
         super(owner, "Service Debugger", false);
 
         Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
@@ -78,7 +75,6 @@ public class PolicyStepDebugDialog extends JDialog {
             throw new RuntimeException("DebugAdmin interface not found.");
         }
 
-        this.entityGoid = entityGoid;
         this.policy = policy;
         this.initialize();
     }
@@ -267,11 +263,7 @@ public class PolicyStepDebugDialog extends JDialog {
 
     private void onInit() {
         try {
-            if (policy.getType().isServicePolicy()) {
-                debugResult = debugAdmin.initializeDebugService(entityGoid);
-            } else {
-                debugResult = debugAdmin.initializeDebugPolicy(entityGoid);
-            }
+            debugResult = debugAdmin.initializeDebug(policy.getGoid());
         } catch (PermissionDeniedException e) {
             this.dispose();
             throw e;

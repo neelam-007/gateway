@@ -22,8 +22,7 @@ public class DebugContext {
     private final Condition debugContextUpdated = lock.newCondition();
     private boolean isDirty = false; // Indicates debug context has changed.
 
-    private final Goid entityGoid;
-    private final boolean isService;
+    private final Goid policyGoid;
     private final String taskId;
     private final DebugPecData debugPecData;
     private DebugState debugState;
@@ -35,43 +34,27 @@ public class DebugContext {
     /**
      * Creates <code>DebugContext</code>.
      *
-     * @param entityGoid the service or policy GOID
-     * @param isService true if the entity is a service, false if the entity is a policy
+     * @param policyGoid the policy GOID
      * @param taskId the task ID
      * @param audit the audit
      */
-    public DebugContext(@NotNull Goid entityGoid, boolean isService, @NotNull String taskId, @NotNull Audit audit) {
-        this.entityGoid = entityGoid;
-        this.isService = isService;
+    public DebugContext(@NotNull Goid policyGoid, @NotNull String taskId, @NotNull Audit audit) {
+        this.policyGoid = policyGoid;
         this.taskId = taskId;
         this.debugPecData = new DebugPecData(audit);
         this.setDebugState(DebugState.STOPPED);
     }
 
     /**
-     * Returns the service/policy GOID.
+     * Returns the policy GOID.
      *
-     * @return the service or policy GOID
+     * @return the policy GOID
      */
     @NotNull
-    public Goid getEntityGoid() {
+    public Goid getPolicyGoid() {
         lock.lock();
         try {
-            return entityGoid;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Returns true if the entity is a service, otherwise false.
-     *
-     * @return true if the entity is a service, otherwise false
-     */
-    public boolean isService() {
-        lock.lock();
-        try {
-            return isService;
+            return policyGoid;
         } finally {
             lock.unlock();
         }

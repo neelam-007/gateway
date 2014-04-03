@@ -174,8 +174,8 @@ public class SystemMessages extends Messages {
     public static final M LICENSE_INVALID_ISSUER    = m(2505, Level.WARNING, "License {0} is not signed by a trusted issuer.");
 
     // Service Debugger
-    public static final M SERVICE_DEBUGGER_START    = m(2510, Level.FINE, "Starting Service Debugger for {0} ''{1}''.");
-    public static final M SERVICE_DEBUGGER_STOP     = m(2511, Level.FINE, "Stopping Service Debugger for {0} ''{1}''.");
+    public static final M SERVICE_DEBUGGER_START    = m(2510, Level.FINE, "Starting Service Debugger for policy ''{0}''.");
+    public static final M SERVICE_DEBUGGER_STOP     = m(2511, Level.FINE, "Stopping Service Debugger for policy ''{0}''.");
 
     // MAX -                                      m(2999
 }
