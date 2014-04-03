@@ -4,6 +4,8 @@
  */
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.test.BugId;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.junit.Assert;
@@ -62,6 +64,27 @@ public class MessagesUtilTest {
         Assert.assertTrue("Property exists", pair.left);
 
         Assert.assertEquals("Audit level should be changed", Level.FINEST, pair.right.getLevel());
+    }
+
+    @BugId("SSG-8151")
+    @Test
+    public void testMessageWithHintsLevelChanged(){
+        filterFunction = new Functions.Binary<Level, Integer, Level>() {
+            @Override
+            public Level call(Integer integer, Level level) {
+                return Level.FINEST;
+            }
+        };
+
+        final AuditDetailMessage originalMessage = Messages.getAuditDetailMessageById(4701);
+        final Pair<Boolean, AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(4701);
+        Assert.assertTrue("Property exists", pair.left);
+
+        Assert.assertEquals("Audit level should be changed", Level.FINEST, pair.right.getLevel());
+        Assert.assertEquals("Audit id should be preserved", originalMessage.getId() , pair.right.getId());
+        Assert.assertEquals("Audit message should be preserved", originalMessage.getMessage() , pair.right.getMessage());
+        Assert.assertEquals("Audit hints should be preserved", 1 , pair.right.getHints().size());
+        Assert.assertEquals("Audit hints should be preserved", CollectionUtils.toList(originalMessage.getHints()).get(0) , CollectionUtils.toList(pair.right.getHints()).get(0));
     }
 
     @Test

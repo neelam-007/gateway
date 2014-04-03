@@ -71,11 +71,7 @@ public class MessagesUtil {
             final Level level = levelFilter.filterLevelForAuditDetailMessage(id, message.getLevel());
             if(level != null){
                 if(!message.getLevel().equals(level)){
-                    final Set<AuditDetailMessage.Hint> hints = message.getHints();
-                    message = new AuditDetailMessage(id, level, message.getMessage());
-                    for (AuditDetailMessage.Hint hint : hints) {
-                        message.getHints().add(AuditDetailMessage.Hint.getHint(hint));
-                    }
+                    message = new AuditDetailMessage(message, level);
                 }
             } else {
                 //message has been filtered to NEVER

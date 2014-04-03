@@ -25,6 +25,10 @@ public class AuditDetailMessage {
         this(id, level, message, buildHints(saveRequest, saveResponse));
     }
 
+    public AuditDetailMessage(AuditDetailMessage message, Level newLevel) {
+        this(message.id, newLevel, message.message, message.hints);
+    }
+
     public int getId() {
         return id;
     }
