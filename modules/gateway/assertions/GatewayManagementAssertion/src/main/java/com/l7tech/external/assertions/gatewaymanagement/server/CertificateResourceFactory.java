@@ -4,10 +4,13 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -26,14 +29,18 @@ import java.security.cert.X509Certificate;
 @ResourceFactory.ResourceType(type=TrustedCertificateMO.class)
 public class CertificateResourceFactory extends SecurityZoneableEntityManagerResourceFactory<TrustedCertificateMO, TrustedCert, EntityHeader> {
 
+    private final RevocationCheckPolicyManager revocationCheckPolicyManager;
+
     //- PUBLIC
 
     public CertificateResourceFactory( final RbacServices services,
                                        final SecurityFilter securityFilter,
                                        final PlatformTransactionManager transactionManager,
                                        final TrustedCertManager trustedCertManager,
-                                       final SecurityZoneManager securityZoneManager ) {
+                                       final SecurityZoneManager securityZoneManager,
+                                       final RevocationCheckPolicyManager revocationCheckPolicyManager) {
         super( false, false, services, securityFilter, transactionManager, trustedCertManager, securityZoneManager );
+        this.revocationCheckPolicyManager = revocationCheckPolicyManager;
     }
 
     //- PROTECTED
@@ -83,6 +90,17 @@ public class CertificateResourceFactory extends SecurityZoneableEntityManagerRes
             if ( certificateResource.getRevocationCheckingPolicyId() != null ) {
                 certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.SPECIFIED );
                 certificateEntity.setRevocationCheckPolicyOid(toInternalId( EntityType.REVOCATION_CHECK_POLICY, certificateResource.getRevocationCheckingPolicyId(), "Revocation Checking Policy Identifier" ) );
+                if(strict){
+                    //need to check if the revocationCheck policy with the id exists.
+                    try {
+                        RevocationCheckPolicy revocationCheckPolicy = revocationCheckPolicyManager.findByPrimaryKey(certificateEntity.getRevocationCheckPolicyOid());
+                        if(revocationCheckPolicy == null){
+                            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Could not find Revocation checking policy with id: " + certificateEntity.getRevocationCheckPolicyOid());
+                        }
+                    } catch (FindException e) {
+                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Could not find Revocation checking policy with id: " + certificateEntity.getRevocationCheckPolicyOid());
+                    }
+                }
             } else {
                 certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
             }

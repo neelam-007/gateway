@@ -125,6 +125,7 @@
     <bean id="certificateResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.CertificateResourceFactory" parent="resourceFactoryParent">
         <constructor-arg index="3" ref="trustedCertManager"/>
         <constructor-arg index="4" ref="securityZoneManager"/>
+        <constructor-arg index="5" ref="revocationCheckPolicyManager"/>
     </bean>
     <bean id="clusterPropertyResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory" parent="resourceFactoryParent">
         <constructor-arg index="3" ref="clusterPropertyManager"/>

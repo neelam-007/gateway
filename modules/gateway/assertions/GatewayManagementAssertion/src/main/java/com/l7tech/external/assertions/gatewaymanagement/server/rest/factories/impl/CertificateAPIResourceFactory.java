@@ -6,11 +6,13 @@ import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.math.BigInteger;
 
 /**
  *
@@ -35,12 +37,25 @@ public class CertificateAPIResourceFactory extends WsmanBaseResourceFactory<Trus
 
     @Override
     public TrustedCertificateMO getResourceTemplate() {
-        TrustedCertificateMO trustedCertMO = ManagedObjectFactory.createTrustedCertificate();
-        trustedCertMO.setName("TemplateTrustedCert");
-        CertificateData certData = ManagedObjectFactory.createCertificateData();
-        certData.setSubjectName("dn=me");
-        trustedCertMO.setCertificateData(certData);
-        trustedCertMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("CertificateProperty", "PropertyValue").map());
-        return trustedCertMO;
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Trusted Certificate Template");
+        trustedCertificateMO.setRevocationCheckingPolicyId(new Goid(0,1).toString());
+        trustedCertificateMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("trustedForSigningClientCerts", true)
+                .put("trustedForSigningServerCerts", true)
+                .put("trustedAsSamlAttestingEntity", true)
+                .put("trustedAsSamlIssuer", true)
+                .put("trustedForSsl", true)
+                .put("trustAnchor", true)
+                .put("verifyHostname", true)
+                .put("revocationCheckingEnabled", true)
+                .map());
+        CertificateData certificateData = ManagedObjectFactory.createCertificateData();
+        certificateData.setEncoded("Encoded Data".getBytes());
+        certificateData.setIssuerName("cn=issuerdn");
+        certificateData.setSubjectName("cn=subjectdn");
+        certificateData.setSerialNumber(new BigInteger("123"));
+        trustedCertificateMO.setCertificateData(certificateData);
+        return trustedCertificateMO;
     }
 }
