@@ -15,6 +15,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -254,7 +255,64 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
             }
         });
 
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName() + "Updated");
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(null);
+        policyMO.setPolicyDetail(policyDetail);
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
+    }
+
+    @BugId("SSG-8254")
+    @Test
+    public void createPolicyWithBadTypeTest() throws Exception {
+
+        Policy policy = this.policies.get(0);
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName() + "Updated");
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        String policyMOString = writeMOToString(policyMO);
+        policyMOString = policyMOString.replace("<l7:PolicyType>Include</l7:PolicyType>", "<l7:PolicyType></l7:PolicyType>");
+
+        RestResponse response = processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
+        logger.info(response.toString());
+
+        Assert.assertEquals(400, response.getStatus());
+
+        policyMOString = writeMOToString(policyMO);
+        policyMOString = policyMOString.replace("<l7:PolicyType>Include</l7:PolicyType>", "<l7:PolicyType>BLAHBLAHBLAH</l7:PolicyType>");
+
+        response = processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), policyMOString);
+        logger.info(response.toString());
+
+        Assert.assertEquals(400, response.getStatus());
     }
 
     @Override
@@ -476,6 +534,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         assertEquals("Comment:", comment, version.getName());
 
     }
+
     @Test
     public void createPolicyWithIDAndCommentTest() throws Exception {
         Goid id = new Goid(124124124, 1);
