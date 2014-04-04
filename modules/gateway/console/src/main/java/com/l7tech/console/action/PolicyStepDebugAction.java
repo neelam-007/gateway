@@ -18,7 +18,7 @@ import com.l7tech.policy.Policy;
  */
 public class PolicyStepDebugAction extends NodeAction {
 
-    private static final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+    private final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
 
     /**
      * Creates <code>PolicyStepDebugAction</code>.
