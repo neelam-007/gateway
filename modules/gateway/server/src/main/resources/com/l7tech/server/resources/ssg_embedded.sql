@@ -1312,6 +1312,7 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -103), 0, toGoid(0, -100), 'UPDATE', null, 'ANY');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -104), 0, toGoid(0, -100), 'DELETE', null, 'ANY');
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -105), 0, toGoid(0, -100), 'OTHER', 'log-viewer', 'LOG_SINK');
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -106), 0, toGoid(0, -100), 'OTHER', 'debugger', 'POLICY');
 -- Create Operator role
 INSERT INTO rbac_role (goid, version, name, tag, entity_type, entity_goid, description, user_created) VALUES (toGoid(0, -150),0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.',0);
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -151), 0, toGoid(0, -150), 'READ', null, 'ANY');

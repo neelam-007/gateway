@@ -33,6 +33,9 @@ alter table http_configuration
     references secure_password
     on delete cascade;
 
+-- RABC for "debugger" other permission: Update "Administrator" canned role --
+INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -106), 0, toGoid(0, -100), 'OTHER', 'debugger', 'POLICY');
+
 -- RABC for "debugger" other permission: Update "Publish Webservices" canned role --
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'OTHER','debugger','POLICY');
 
