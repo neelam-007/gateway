@@ -185,10 +185,10 @@ public class DebugManagerImpl implements DebugManager {
     }
 
     @Override
-    public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid entityGoid) {
+    public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid policyGoid) {
         lock.lock();
         try {
-            DebugContext debugContext = waitingForMsg.remove(entityGoid);
+            DebugContext debugContext = waitingForMsg.remove(policyGoid);
             if (debugContext != null) {
                 debugContext.onMessageArrived(pec);
             }

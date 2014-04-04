@@ -598,7 +598,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (context.getService().isTracingEnabled())
                 maybeEnableTracing();
 
-            debugManager.onMessageArrived(context, context.getService().getGoid());
+            debugManager.onMessageArrived(context, context.getService().getPolicy().getGoid());
             status = serverPolicy.checkRequest(context);
 
             // Execute deferred actions for request, then response

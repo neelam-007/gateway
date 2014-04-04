@@ -86,7 +86,7 @@ public class DebugManagerStub implements DebugManager {
     }
 
     @Override
-    public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid entityGoid) {
+    public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid policyGoid) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

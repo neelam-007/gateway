@@ -123,9 +123,9 @@ public interface DebugManager {
      * debugging can start if debugging is enabled.
      *
      * @param pec the PEC
-     * @param entityGoid the service or policy GOID
+     * @param policyGoid the policy GOID
      */
-    void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid entityGoid);
+    void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid policyGoid);
 
     /**
      * This method must be called when a message finishes processing in the {@link com.l7tech.server.MessageProcessor} so that
