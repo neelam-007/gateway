@@ -64,9 +64,10 @@ public class PolicyStepDebugDialog extends JDialog {
      *
      * @param owner the owner
      * @param policy the policy to debug
+     * @param policyDisplayName the policy display name
      */
-    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Policy policy) {
-        super(owner, "Service Debugger", false);
+    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Policy policy, @NotNull String policyDisplayName) {
+        super(owner, "Service Debugger - " + policyDisplayName, false);
 
         Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
         if (option.isSome()) {

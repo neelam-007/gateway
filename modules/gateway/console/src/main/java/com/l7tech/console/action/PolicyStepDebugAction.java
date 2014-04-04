@@ -1,22 +1,24 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.stepdebug.PolicyStepDebugDialog;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 
 /**
  * The action used to display the {@link PolicyStepDebugDialog}.
  */
 public class PolicyStepDebugAction extends NodeAction {
+
+    private static final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
 
     /**
      * Creates <code>PolicyStepDebugAction</code>.
@@ -47,7 +49,12 @@ public class PolicyStepDebugAction extends NodeAction {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode) node;
         try {
             Policy policy = policyNode.getPolicy();
-            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), policy);
+            String displayName = PolicyEditorPanel.getDisplayName(
+                node.getName(),
+                policy.getVersionOrdinal(),
+                policyAdmin.findLatestRevisionForPolicy(policy.getGoid()).getOrdinal(),
+                policy.isVersionActive());
+            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), policy, displayName);
             dlg.pack();
             Utilities.centerOnParentWindow(dlg);
             DialogDisplayer.display(dlg);

@@ -686,13 +686,24 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public String getDisplayName() {
-        final long versionNum = getVersionNumber();
-        String activeStr = isVersionActive() ? "active" : "inactive";
+        return getDisplayName(subjectName, getVersionNumber(), getLatestVersionNumber(), isVersionActive());
+    }
+
+    /**
+     * Generate a policy name for displaying purpose
+     *
+     * @param policyName: the policy name without any decoration
+     * @param versionNum: the policy version ordinal
+     * @param latestVersionNum: the latest policy version number
+     * @param isVersionActive: is the policy version active?
+     * @return a displaying name with above information
+     */
+    public static String getDisplayName(final String policyName, final long versionNum, final long latestVersionNum, final boolean isVersionActive) {
+        String activeStr = isVersionActive ? "active" : "inactive";
         if (versionNum < 1)
-            return subjectName + " (" + activeStr + ')';
+            return policyName + " (" + activeStr + ')';
         else {
-            final long latestVersionNum = getLatestVersionNumber();
-            return subjectName + " (v" + versionNum + "/" + latestVersionNum + ", " + activeStr + ')';
+            return policyName + " (v" + versionNum + "/" + latestVersionNum + ", " + activeStr + ')';
         }
     }
 
