@@ -6,6 +6,8 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * This was created: 6/24/13 as 6:02 PM
  *
@@ -22,15 +24,15 @@ public class GoidTest {
             long low = random.nextLong();
             Goid goid = new Goid(hi, low);
 
-            Assert.assertEquals(hi, goid.getHi());
-            Assert.assertEquals(low, goid.getLow());
+            assertEquals( hi, goid.getHi() );
+            assertEquals( low, goid.getLow() );
 
             String goidString = goid.toString();
 
             Goid goidFromString = new Goid(goidString);
 
-            Assert.assertEquals(hi, goidFromString.getHi());
-            Assert.assertEquals(low, goidFromString.getLow());
+            assertEquals( hi, goidFromString.getHi() );
+            assertEquals( low, goidFromString.getLow() );
         }
     }
 
@@ -91,7 +93,7 @@ public class GoidTest {
         Goid clone = original.clone();
 
         Assert.assertFalse(original == clone);
-        Assert.assertEquals(original, clone);
+        assertEquals( original, clone );
         Assert.assertArrayEquals(original.getBytes(), clone.getBytes());
     }
 
@@ -104,24 +106,24 @@ public class GoidTest {
         while (goid.getHi() == Long.MAX_VALUE || goid.getHi() == Long.MIN_VALUE || goid.getLow() == Long.MAX_VALUE || goid.getLow() == Long.MIN_VALUE);
         Goid clone = goid.clone();
 
-        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, goid.compareTo(goid));
-        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, goid.compareTo(clone));
-        Assert.assertEquals("The compare to method should return 0 if both goings are equal", 0, clone.compareTo(goid));
+        assertEquals( "The compare to method should return 0 if both goings are equal", 0, goid.compareTo( goid ) );
+        assertEquals( "The compare to method should return 0 if both goings are equal", 0, goid.compareTo( clone ) );
+        assertEquals( "The compare to method should return 0 if both goings are equal", 0, clone.compareTo( goid ) );
 
         Goid biggerHiGoid = new Goid(goid.getHi() + 1, goid.getLow());
         Goid biggerLowGoid = new Goid(goid.getHi(), goid.getLow() + 1);
         Goid smallerHiGoid = new Goid(goid.getHi() - 1, goid.getLow());
         Goid smallerLowGoid = new Goid(goid.getHi(), goid.getLow() - 1);
 
-        Assert.assertEquals(-1, goid.compareTo(biggerHiGoid));
-        Assert.assertEquals(-1, goid.compareTo(biggerLowGoid));
-        Assert.assertEquals(1, goid.compareTo(smallerHiGoid));
-        Assert.assertEquals(1, goid.compareTo(smallerLowGoid));
+        assertEquals( -1, goid.compareTo( biggerHiGoid ) );
+        assertEquals( -1, goid.compareTo( biggerLowGoid ) );
+        assertEquals( 1, goid.compareTo( smallerHiGoid ) );
+        assertEquals( 1, goid.compareTo( smallerLowGoid ) );
 
-        Assert.assertEquals(-1, smallerHiGoid.compareTo(goid));
-        Assert.assertEquals(-1, smallerLowGoid.compareTo(goid));
-        Assert.assertEquals(1, biggerHiGoid.compareTo(goid));
-        Assert.assertEquals(1, biggerLowGoid.compareTo(goid));
+        assertEquals( -1, smallerHiGoid.compareTo( goid ) );
+        assertEquals( -1, smallerLowGoid.compareTo( goid ) );
+        assertEquals( 1, biggerHiGoid.compareTo( goid ) );
+        assertEquals( 1, biggerLowGoid.compareTo( goid ) );
     }
 
     @Test
@@ -225,23 +227,69 @@ public class GoidTest {
     public void lowercaseGoidTest() {
         for (int i = 0; i < NUM_TESTS; i++) {
             Goid goid = createRandomGoid();
-            Assert.assertEquals("The goid string format should contain only lowercase characters.", goid.toHexString().toLowerCase(), goid.toHexString());
-            Assert.assertEquals("The goid string format should contain only lowercase characters.", goid.toString().toLowerCase(), goid.toString());
-            Assert.assertEquals("The goid string format should contain only lowercase characters.", Goid.toString(goid).toLowerCase(), Goid.toString(goid));
+            assertEquals( "The goid string format should contain only lowercase characters.", goid.toHexString().toLowerCase(), goid.toHexString() );
+            assertEquals( "The goid string format should contain only lowercase characters.", goid.toString().toLowerCase(), goid.toString() );
+            assertEquals( "The goid string format should contain only lowercase characters.", Goid.toString( goid ).toLowerCase(), Goid.toString( goid ) );
         }
     }
 
     @Test
     public void testGoidLongIntegerByteOrder() {
         Goid goid = new Goid("8db55bbdc8b6f5951f10faf1386979fe");
-        Assert.assertEquals("724aa44237490a6b", BigInteger.valueOf(goid.getHi()).abs().toString(16));
-        Assert.assertEquals("1f10faf1386979fe", BigInteger.valueOf(goid.getLow()).abs().toString(16));
+        assertEquals( "724aa44237490a6b", BigInteger.valueOf( goid.getHi() ).abs().toString( 16 ) );
+        assertEquals( "1f10faf1386979fe", BigInteger.valueOf( goid.getLow() ).abs().toString( 16 ) );
     }
 
     @Test
     public void sanityTestForDefaultGoid(){
-        Assert.assertEquals("You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid(0,-1), Goid.DEFAULT_GOID);
-        Assert.assertEquals("You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid(0,-1), PersistentEntity.DEFAULT_GOID);
+        assertEquals( "You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid( 0, -1 ), Goid.DEFAULT_GOID );
+        assertEquals( "You've changed the default Goid to something else!!!! Are you sure you want to do that?", new Goid( 0, -1 ), PersistentEntity.DEFAULT_GOID );
+    }
+
+    @Test
+    public void testToCompressedString() {
+        assertEquals( "Uncompressable Goid shan't be compressed", "8db55bbdc8b6f5951f10faf1386979fe", new Goid( "8db55bbdc8b6f5951f10faf1386979fe" ).toCompressedString() );
+        assertEquals( "Not enough leading ones to be worth it are left alone", "fdb55bbdc8b6f5951f10faf1386979fe", new Goid( "fdb55bbdc8b6f5951f10faf1386979fe" ).toCompressedString() );
+        assertEquals( "Not enough leading zeroes to be worth it are left alone", "0db55bbdc8b6f5951f10faf1386979fe", new Goid( "0db55bbdc8b6f5951f10faf1386979fe" ).toCompressedString() );
+        assertEquals( "nb55bbdc8b6f5951f10faf1386979fe", new Goid( "ffb55bbdc8b6f5951f10faf1386979fe" ).toCompressedString() );
+        assertEquals( "nn", new Goid( "ffffffffffffffffffffffffffffffff" ).toCompressedString() );
+        assertEquals( "zz", new Goid( "00000000000000000000000000000000" ).toCompressedString() );
+        assertEquals( "zn", new Goid( "0000000000000000ffffffffffffffff" ).toCompressedString() );
+        assertEquals( "nz", new Goid( "ffffffffffffffff0000000000000000" ).toCompressedString() );
+        assertEquals( "zz1", new Goid( "00000000000000000000000000000001" ).toCompressedString() );
+        assertEquals( "zz746", new Goid( "00000000000000000000000000000746" ).toCompressedString() );
+        assertEquals( "nz746", new Goid( "ffffffffffffffff0000000000000746" ).toCompressedString() );
+        assertEquals( "nedz746", new Goid( "ffffffffffffffed0000000000000746" ).toCompressedString() );
+        assertEquals( "z746ned", new Goid( "0000000000000746ffffffffffffffed" ).toCompressedString() );
+        assertEquals( "z746zfff1", new Goid( "0000000000000746000000000000fff1" ).toCompressedString() );
+        assertEquals( "zne", new Goid( "0000000000000000fffffffffffffffe" ).toCompressedString() );
+    }
+
+    @Test
+    public void testFromCompressedString() {
+        assertEquals( "Uncompressable Goid is Ok", new Goid( "8db55bbdc8b6f5951f10faf1386979fe" ), new Goid( "8db55bbdc8b6f5951f10faf1386979fe" ) );
+        assertEquals( new Goid( "00000000000000000000000000000000" ), new Goid( "zz" ) );
+        assertEquals( new Goid( "ffffffffffffffffffffffffffffffff" ), new Goid( "nn" ) );
+        assertEquals( new Goid( "0000000000000000ffffffffffffffff" ), new Goid( "zn" ) );
+        assertEquals( Goid.DEFAULT_GOID, new Goid( "zn" ) );
+        assertEquals( new Goid( "ffffffffffffffff0000000000000000" ), new Goid( "nz" ) );
+        assertEquals( new Goid( "00000000000000000000000000000001" ), new Goid( "zz1" ) );
+        assertEquals( new Goid( "00000000000000000000000000000746" ), new Goid( "zz746" ) );
+        assertEquals( new Goid( "ffffffffffffffff0000000000000746" ), new Goid( "nz746" ) );
+        assertEquals( new Goid( "ffffffffffffffed0000000000000746" ), new Goid( "nedz746" ) );
+        assertEquals( new Goid( "0000000000000746ffffffffffffffed" ), new Goid( "z746ned" ) );
+        assertEquals( new Goid( "0000000000000746000000000000fff1" ), new Goid( "z746zfff1" ) );
+        assertEquals( new Goid( "0000000000000000fffffffffffffffe" ), new Goid( "zne" ) );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void testFromCompressedStringNotTrimmed() {
+        new Goid( " zz " );
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void testFromCompressedStringBadCharacter() {
+        new Goid( "z746zfgf1" );
     }
 
     private static Goid createRandomGoid() {

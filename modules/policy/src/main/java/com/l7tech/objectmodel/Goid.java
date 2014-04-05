@@ -11,6 +11,8 @@ import java.beans.PersistenceDelegate;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Goid Object represents a global object id for the gateways entities.
@@ -68,15 +70,22 @@ public final class Goid implements Comparable<Goid>, Serializable {
      * Creates a new goid from a string representation of a goid. An IllegalArgumentException is thrown if a goid cannot
      * be retrieved from the given string
      *
-     * @param goid A string representation of a goid.
+     * @param goid A string representation of a goid, possibly in compressed form as returned by {@link #toCompressedString()}.
      * @throws IllegalArgumentException This is thrown if the given string does not represent a goid
      */
     @XmlSafe
-    public Goid(@NotNull String goid) {
-        byte[] goidFromString;
+    public Goid( @NotNull String goid ) {
+        final String goidHex;
+        if ( goid.length() == 32 ) {
+            // Bypass decompression for performance in common case
+            goidHex = goid;
+        } else {
+            goidHex = decompressString( goid );
+        }
 
+        byte[] goidFromString;
         try {
-            goidFromString = HexUtils.unHexDump(goid);
+            goidFromString = HexUtils.unHexDump( goidHex );
         } catch (IOException e) {
             throw new IllegalArgumentException("Cannot create goid from this String. Invalid hex data: " + goid);
         }
@@ -246,5 +255,98 @@ public final class Goid implements Comparable<Goid>, Serializable {
     @Override
     public int compareTo(@NotNull Goid o) {
         return (getHi() < o.getHi()) ? -1 : ((getHi() == o.getHi()) ? ((getLow() < o.getLow()) ? -1 : ((getLow() == o.getLow()) ? 0 : 1)) : 1);
+    }
+
+    static final Pattern PAT_LEADING_ZEROES = Pattern.compile( "^00+" );
+    static final Pattern PAT_LEADING_ONES = Pattern.compile( "^ff+", Pattern.CASE_INSENSITIVE );
+
+    /**
+     * Convert the Goid into a string in compressed format.
+     * <p/>
+     * The compressed format is designed for representing default or built-in goids rather than
+     * random ones.  Runs of arbitrarily many "0" or "f" characters leading a 16-character block may be replaced
+     * with "z" or "n" characters respectively.
+     * <p/>
+     * Examples:
+     * <pre>
+     *     Uncompressed                     Compressed                       Notes
+     *     ================================ ================================ ======================================================
+     *     abcdef0123456789abcdef0123456789 abcdef0123456789abcdef0123456789 Uncompressible because no runs are present
+     *     abcd000000000000abcd000000000000 abcd000000000000abcd000000000000 Uncompressible because runs are at end of each segment
+     *     aaaaaaaaaaaaaa12777777777777777b aaaaaaaaaaaaaa12777777777777777b Uncompressible because only runs of 0 and f are supported
+     *     00000000000000000000000000000000 zz                               Run of 16 zeroes, followed by run of 16 zeros
+     *     00000000000000000000000000000123 zz123                            Run of 16 zeroes, followed by run of (16 - "123".length()) = 13 zeros, followed by "123"
+     *     ffffffffffffffffffffffffffffffff nn                               Run of 16 "f"s ("(n)egatives"), followed by run of 16 "f"s
+     *     fffffffffffabc12000000000000000b nabc12zb                         Run of (16 - "abc12".length()) = 11 "f"s followed by "abc12",
+     *                                                                           followed by run of (16 - "b".length()) = 15 zeros followed by "b"
+     *     0000000000000000ffffffffffffffff zn                               Run of zeros, run of "f"s -- this is Goid.DEFAULT_GOID
+     *     0000000000000000fffffffffffffffe zne                              Run of zeros, run of "fs", then "e" -- this is new Goid(0, -2), the Internal Identity Provider ID
+     * </pre>
+     * See GoidTest for more examples.
+     *
+     * @return the compressed string form of this Goid, which will be the same as {@link #toHexString()} unless runs of leading "0"s or "f"s are present.
+     */
+    public String toCompressedString() {
+        return compressString( new StringBuilder( toHexString() ) );
+    }
+
+    static String compressString( StringBuilder s ) {
+        StringBuilder out = new StringBuilder();
+
+        while ( s.length() >= 16 ) {
+            CharSequence a = s.subSequence( 0, 16 );
+            s = s.delete( 0, 16 );
+            a = PAT_LEADING_ONES.matcher( a ).replaceFirst( "n" );
+            a = PAT_LEADING_ZEROES.matcher( a ).replaceFirst( "z" );
+            out.append( a );
+        }
+        out.append( s );
+
+        return out.toString();
+    }
+
+    static final Pattern PAT_TRAILING_HEX = Pattern.compile( "[0-9a-f]+$", Pattern.CASE_INSENSITIVE );
+    static final String[] ZEROS;
+    static final String[] ONES;
+    static {
+        StringBuilder sbz = new StringBuilder();
+        StringBuilder sbf = new StringBuilder();
+        String[] z = new String[17];
+        String[] f = new String[17];
+        for ( int i = 0; i <= 16; ++ i ) {
+            z[i] = sbz.toString();
+            sbz.append( "0" );
+
+            f[i] = sbf.toString();
+            sbf.append( "f" );
+        }
+
+        ZEROS = z;
+        ONES = f;
+    }
+
+    static String decompressString( @NotNull final String goidString ) {
+        StringBuilder sb = new StringBuilder();
+        String string = goidString;
+
+        while ( string.length() > 0 ) {
+            Matcher m = PAT_TRAILING_HEX.matcher( string );
+            if ( m.find() ) {
+                string = m.replaceFirst( "" );
+                sb.insert( 0, m.group( 0 ) );
+            } else if ( string.endsWith( "n" ) || string.endsWith( "N" ) ) {
+                string = string.substring( 0, string.length() - 1 );
+                int neededNybbles = 16 - sb.length() % 16;
+                sb.insert( 0, ONES[neededNybbles] );
+            } else if ( string.endsWith( "z" ) || string.endsWith( "Z" ) ) {
+                string = string.substring( 0, string.length() - 1 );
+                int neededNybbles = 16 - sb.length() % 16;
+                sb.insert( 0, ZEROS[neededNybbles] );
+            } else {
+                throw new IllegalArgumentException( "Invalid Goid (unrecognized suffix): " + goidString );
+            }
+        }
+
+        return sb.toString();
     }
 }
