@@ -189,8 +189,6 @@ class EntityPropertiesHelper {
             .put( "useMessageIdForCorrelation", "useRequestCorrelationId" )
             .put( "acknowledgementType", "inbound.acknowledgementType" )
             .put( "failureDestinationName", "inbound.failureQueueName" )
-            .put( "passthroughMessageRules", null)
-            .put( "jmsEndpointMessagePropertyRules", null)
             .put( "outboundMessageType", "outbound.MessageType" )
             .put( "requestMaxSize", "inbound.maximumSize")
             .unmodifiableMap() )
@@ -401,9 +399,7 @@ class EntityPropertiesHelper {
             "template",
             "queue",
             "securityZone",
-            "oldOid",
-            "passthroughMessageRules",
-            "jmsEndpointMessagePropertyRules"
+            "oldOid"
         ) )
         .put( Policy.class, list(
             "xml",

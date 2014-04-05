@@ -7,7 +7,6 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.transport.jms.JmsEndpointMessagePropertyRule;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -79,16 +78,9 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         jmsDetails.setEnabled( !jmsEndpoint.isDisabled() );
         jmsDetails.setTemplate( jmsEndpoint.isTemplate() );
         jmsDetails.setInbound( jmsEndpoint.isMessageSource() );
-        jmsDetails.setPassthroughMessageRules(jmsEndpoint.isPassthroughMessageRules());
-
-        final List<JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport> ruleList = createJmsEndpointMessagePropertyRuleList(jmsEndpoint);
-        jmsDetails.setJmsEndpointMessagePropertyRules(ruleList);
-
         final Map<String,Object> properties = getProperties( jmsEndpoint, JmsEndpoint.class );
         properties.put( "type", jmsEndpoint.isQueue() ? JMSDestinationDetail.TYPE_QUEUE : JMSDestinationDetail.TYPE_TOPIC );
         jmsDetails.setProperties( properties );
-
-
 
         final JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
         jmsConnection.setId( jmsConnectionEntity.getId() );
@@ -107,18 +99,6 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         doSecurityZoneAsResource( jmsDestination, jmsEndpoint );
 
         return jmsDestination;
-    }
-
-    private List<JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport> createJmsEndpointMessagePropertyRuleList(JmsEndpoint jmsEndpoint) {
-        final List<JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport> ruleList =  new ArrayList<>();
-        for(JmsEndpointMessagePropertyRule jmsRule : jmsEndpoint.getJmsEndpointMessagePropertyRules()){
-            JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport jmsRuleSupport = ManagedObjectFactory.createJmsEndpointMessagePropertyRule();
-            jmsRuleSupport.setRulename(jmsRule.getRuleName());
-            jmsRuleSupport.setPassThru(jmsRule.isPassThru());
-            jmsRuleSupport.setCustomPattern(jmsRule.getCustomPattern());
-            ruleList.add(jmsRuleSupport);
-        }
-        return ruleList;
     }
 
     @Override
@@ -144,22 +124,8 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         if ( jmsDestinationDetails.isTemplate() != null ) {
             jmsEndpoint.setTemplate( jmsDestinationDetails.isTemplate() );   
         }
-        jmsEndpoint.setPassthroughMessageRules(jmsDestinationDetails.isPassthroughMessageRules());
         jmsEndpoint.setMessageSource( jmsDestinationDetails.isInbound() );
         setProperties( jmsEndpoint, jmsDestinationDetails.getProperties(), JmsEndpoint.class );
-        //add JmsEndpointMessagePropertyRule
-        Set<JmsEndpointMessagePropertyRule> jmsEndpointMessagePropertyRuleSet = new HashSet<>();
-        List<JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport> jmsEndpointMessagePropertyRuleList = jmsDestinationDetails.getJmsEndpointMessagePropertyRules();
-        if(jmsEndpointMessagePropertyRuleList != null){
-            for(JMSDestinationDetail.JmsEndpointMessagePropertyRuleSupport ruleSupport : jmsEndpointMessagePropertyRuleList) {
-                JmsEndpointMessagePropertyRule rule = new JmsEndpointMessagePropertyRule();
-                rule.setRuleName(ruleSupport.getRulename());
-                rule.setPassThru(ruleSupport.getPassThru());
-                rule.setCustomPattern(ruleSupport.getCustomPattern());
-                jmsEndpointMessagePropertyRuleSet.add(rule);
-            }
-        }
-        jmsEndpoint.setJmsEndpointMessagePropertyRules(jmsEndpointMessagePropertyRuleSet);
 
         final JmsConnection jmsConnection = new JmsConnection();
         jmsConnection.setName( jmsDestinationDetails.getName() );
@@ -208,7 +174,6 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         oldJmsEndpoint.setQueue( newJmsEndpoint.isQueue() );
         oldJmsEndpoint.setDisabled( newJmsEndpoint.isDisabled() );
         oldJmsEndpoint.setTemplate( newJmsEndpoint.isTemplate() );
-        oldJmsEndpoint.setPassthroughMessageRules( newJmsEndpoint.isPassthroughMessageRules());
         oldJmsEndpoint.setMessageSource( newJmsEndpoint.isMessageSource() );
         oldJmsEndpoint.setAcknowledgementType( newJmsEndpoint.getAcknowledgementType() );
         oldJmsEndpoint.setFailureDestinationName( newJmsEndpoint.getFailureDestinationName() );
@@ -222,7 +187,6 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         oldJmsEndpoint.setUseMessageIdForCorrelation( newJmsEndpoint.isUseMessageIdForCorrelation() );
         oldJmsEndpoint.setRequestMaxSize(newJmsEndpoint.getRequestMaxSize());
         oldJmsEndpoint.setSecurityZone(newJmsEndpoint.getSecurityZone());
-        oldJmsEndpoint.setJmsEndpointMessagePropertyRules(copyJmsEnpointMessagePropertyRules(oldJmsEndpoint, newJmsEndpoint));
 
         // Copy connection properties that allow update
         oldJmsConnection.setProviderType( newJmsConnection.getProviderType() );
@@ -244,15 +208,6 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         oldJmsConnection.properties( newProperties );
 
         oldJmsConnection.setSecurityZone( newJmsConnection.getSecurityZone() );
-    }
-
-    private Set<JmsEndpointMessagePropertyRule> copyJmsEnpointMessagePropertyRules(JmsEndpoint oldJmsEndpoint, JmsEndpoint newJmsEndpoint) {
-        Set<JmsEndpointMessagePropertyRule> updatedSet = oldJmsEndpoint.getJmsEndpointMessagePropertyRules();
-        updatedSet.clear();
-        for(JmsEndpointMessagePropertyRule newRule : newJmsEndpoint.getJmsEndpointMessagePropertyRules()) {
-            updatedSet.add(newRule.copy(oldJmsEndpoint));
-        }
-        return updatedSet;
     }
 
     @Override

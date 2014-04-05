@@ -338,7 +338,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     inboundRequestProps = new HashMap<String, Object>();
                 }
                 final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
-                JmsUtil.enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps, getAudit());
+                enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
                 for ( String name : outboundRequestProps.keySet() ) {
                     try {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
@@ -532,7 +532,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     });
 
                     final Map<String, Object> outResJmsMsgProps = new HashMap<String, Object>();
-                    JmsUtil.enforceJmsMessagePropertyRuleSet(context, assertion.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps, getAudit());
+                    enforceJmsMessagePropertyRuleSet(context, assertion.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
                     // After enforcing propagation rules, replace the JMS message properties
                     // in the response JmsKnob with enforced/expanded values.
                     responseMessage.getJmsKnob().getJmsMsgPropMap().clear();
@@ -910,6 +910,51 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
 
         return expandedValue;
+    }
+
+    private void enforceJmsMessagePropertyRuleSet( final PolicyEnforcementContext context,
+                                                   final JmsMessagePropertyRuleSet ruleSet,
+                                                   final Map<String, Object> src,
+                                                   final Map<String, Object> dst) {
+        if (ruleSet.isPassThruAll()) {
+            for (String name : src.keySet()) {
+                if (!name.startsWith("JMS_") && !name.startsWith("JMSX")) {
+                    dst.put(name, src.get(name));
+                }
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Propagating all JMS message properties with pass through.");
+            }
+        } else {
+            // For efficiency, obtain all context variables used in the rule set once.
+            final StringBuilder sb = new StringBuilder();
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                if (! rule.isPassThru()) {
+                    sb.append(rule.getCustomPattern());
+                }
+            }
+            final String[] variablesUsed = Syntax.getReferencedNames(sb.toString());
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
+
+            for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
+                final String name = rule.getName();
+                if (rule.isPassThru()) {
+                    if (src.containsKey(name) && !name.startsWith("JMS_") && !name.startsWith("JMSX")) {
+                        dst.put(name, src.get(name));
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Propagating a JMS message property with pass through. (name=" + name + ", value=" + src.get(name) + ")");
+                        }
+                    }
+                } else {
+                    final String pattern = rule.getCustomPattern();
+                    final String value = ExpandVariables.process(pattern, vars, getAudit());
+                    dst.put(name, value);
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Propagating a JMS message property with custom pattern (name=" + name + ", pattern=" + pattern + ", value=" + value + ")");
+                    }
+                }
+            }
+        }
     }
 
     /**
