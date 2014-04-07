@@ -205,16 +205,6 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
      */
     protected abstract List<Triple<OperationType, String, EntityType>> permissionsToAdd();
 
-    /**
-     * Returns the GOID of the entity the permission should be scoped to. Returns null if no scope.
-     *
-     * @param entityType if this Role is scoped to a particular entity, the type of that entity. Otherwise null.
-     * @param entityGoid if this Role is scoped to a particular entity, the GOID of that entity. Otherwise null.*
-     * @return the GOID of the entity the permission should be scoped to. Null if no scope.
-     * @throws ObjectModelException ObjectModelException
-     */
-    protected abstract String getScopeId (EntityType entityType, Goid entityGoid) throws ObjectModelException;
-
     protected abstract boolean shouldCreateMissingRoles();
 
     protected abstract boolean shouldIgnorePolicyType( PolicyType policyType );
@@ -232,6 +222,18 @@ public abstract class AbstractDynamicRolePermissionsUpgradeTask implements Upgra
                                          final String otherOperationName,
                                          final EntityType permissionEntity ) throws ObjectModelException {
         return addPermissionToRoles(roleManager, entityType, entityGoid, permissionOp, otherOperationName, permissionEntity, 1);
+    }
+
+    /**
+     * Returns the GOID of the entity the permission is scoped to. Returns null if no scope.
+     *
+     * @param entityType if this Role is scoped to a particular entity, the type of that entity. Otherwise null.
+     * @param entityGoid if this Role is scoped to a particular entity, the GOID of that entity. Otherwise null.*
+     * @return the GOID of the entity the permission should be scoped to. Null if no scope.
+     * @throws ObjectModelException ObjectModelException
+     */
+    protected String getScopeId (EntityType entityType, Goid entityGoid) throws ObjectModelException {
+        return null;
     }
 
     private boolean addPermissionToRoles(final RoleManager roleManager,
