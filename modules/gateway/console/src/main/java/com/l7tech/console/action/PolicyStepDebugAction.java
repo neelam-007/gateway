@@ -54,10 +54,10 @@ public class PolicyStepDebugAction extends NodeAction {
                 policy.getVersionOrdinal(),
                 policyAdmin.findLatestRevisionForPolicy(policy.getGoid()).getOrdinal(),
                 policy.isVersionActive());
-            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(TopComponents.getInstance().getTopParent(), policy, displayName);
+            PolicyStepDebugDialog dlg = new PolicyStepDebugDialog(policy, displayName);
             dlg.pack();
             Utilities.centerOnParentWindow(dlg);
-            DialogDisplayer.display(dlg);
+            dlg.setVisible(true);
         } catch (FindException e) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, "The policy is not found.", e, null);
         }

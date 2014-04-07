@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.stepdebug.DebugAdmin;
 import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.gateway.common.stepdebug.DebugState;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
@@ -14,7 +15,6 @@ import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.Timer;
@@ -23,9 +23,10 @@ import java.util.logging.Logger;
 /**
  * The Policy Step Debug dialog.
  */
-public class PolicyStepDebugDialog extends JDialog {
+public class PolicyStepDebugDialog extends JFrame {
     protected static final Logger logger = Logger.getLogger(PolicyStepDebugDialog.class.getName());
 
+    private static final ImageIcon DIALOG_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/layer7_logo_small_32x32.png"));
     private static final long MAX_WAIT_TIME_MILLIS = 30000L;
     private static final long REFRESH_TIMER_MILLIS = 1L;
 
@@ -48,6 +49,7 @@ public class PolicyStepDebugDialog extends JDialog {
     private DebugResult debugResult;
     private Timer refreshTimer;
     private boolean scrollToCurrentLineOnRefresh = true;
+    private boolean isDebugTerminated = false;
 
     /**
      * Checks whether or not a breakpoint can be set for the given assertion.
@@ -62,12 +64,11 @@ public class PolicyStepDebugDialog extends JDialog {
     /**
      * Creates <code>PolicyStepDebugDialog</code>.
      *
-     * @param owner the owner
      * @param policy the policy to debug
      * @param policyDisplayName the policy display name
      */
-    public PolicyStepDebugDialog(@NotNull Frame owner, @NotNull Policy policy, @NotNull String policyDisplayName) {
-        super(owner, "Service Debugger - " + policyDisplayName, false);
+    public PolicyStepDebugDialog(@NotNull Policy policy, @NotNull String policyDisplayName) {
+        super("Service Debugger - " + policyDisplayName);
 
         Option<DebugAdmin> option = Registry.getDefault().getAdminInterface(DebugAdmin.class);
         if (option.isSome()) {
@@ -163,6 +164,7 @@ public class PolicyStepDebugDialog extends JDialog {
 
         if (this.debugResult != null) {
             this.debugAdmin.terminateDebug(debugResult.getTaskId());
+            this.isDebugTerminated = true;
             this.debugResult = null;
         }
 
@@ -173,6 +175,8 @@ public class PolicyStepDebugDialog extends JDialog {
      * Initialize the dialog.
      */
     private void initialize() {
+        this.setIconImage(DIALOG_ICON.getImage());
+
         splitPane.setResizeWeight(0.5);
 
         startButton.addActionListener(new ActionListener() {
@@ -320,7 +324,7 @@ public class PolicyStepDebugDialog extends JDialog {
     private void onRefresh() {
         if (debugResult != null) {
             DebugResult updatedDebugResult = debugAdmin.waitForUpdates(debugResult.getTaskId(), MAX_WAIT_TIME_MILLIS);
-            if (updatedDebugResult != null) {
+            if (updatedDebugResult != null && !isDebugTerminated) {
                 debugResult = updatedDebugResult;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
