@@ -7,13 +7,16 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.DbUpgradeUtil;
 import com.l7tech.util.db.DbCompareTestUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -109,6 +112,34 @@ public class MysqlDatabaseUpgradeTest {
     @Test
     public void upgradeDBTest() throws SQLException, IOException {
         boolean result = dbActions.upgradeDb(oldDBConfig, "etc/db/mysql/ssg.sql", dbActions.checkDbVersion(newDBConfig), null);
+        Assert.assertTrue("Could not upgrade mysql database.", result);
+        DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, true, false), dbActions.getConnection(oldDBConfig, true, false), false);
+    }
+
+    @BugId("SSG-8385")
+    @Test
+    public void upgradeDBLastVersionToCurrentVersionTest() throws SQLException, IOException {
+        String currentVersion = dbActions.checkDbVersion(newDBConfig);
+
+        //find the previous version number
+        Map<String, String[]> upgradeMap = DbUpgradeUtil.buildUpgradeMap(new File("etc/db/mysql/ssg.sql").getParentFile());
+        String previousVersion = null;
+        for (Map.Entry<String, String[]> upgradeEntry : upgradeMap.entrySet()) {
+            if (currentVersion.equals(upgradeEntry.getValue()[0])) {
+                previousVersion = upgradeEntry.getKey();
+                break;
+            }
+        }
+        if (previousVersion == null) {
+            Assert.fail("Could not find previous version for current version: " + currentVersion);
+        }
+
+        //upgrade to the previous version.
+        boolean result = dbActions.upgradeDb(oldDBConfig, "etc/db/mysql/ssg.sql", previousVersion, null);
+        Assert.assertTrue("Could not upgrade mysql database.", result);
+
+        //upgrade from the previous version to the current version.
+        result = dbActions.upgradeDb(oldDBConfig, "etc/db/mysql/ssg.sql", currentVersion, null);
         Assert.assertTrue("Could not upgrade mysql database.", result);
         DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, true, false), dbActions.getConnection(oldDBConfig, true, false), false);
     }

@@ -808,6 +808,25 @@ public class DBActions {
         return getDbVersion(tableData, conn);
     }
 
+    private Set<String> getFunctionNames(Connection conn) throws SQLException {
+        Statement stmt = null;
+        try {
+            stmt = conn.createStatement();
+            Set<String> functions = new LinkedHashSet<>();
+
+            DatabaseMetaData metadata = conn.getMetaData();
+
+            ResultSet functionNames = metadata.getFunctions(null, "%", "%");
+            while (functionNames.next()) {
+                String tableName = functionNames.getString("FUNCTION_NAME");
+                functions.add(tableName);
+            }
+            return functions;
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+        }
+    }
+
     private Set<String> getTableNames(Connection conn) throws SQLException {
         Statement stmt = null;
         try {
@@ -935,6 +954,34 @@ public class DBActions {
 
     private String[] getPermissionChangeStatements(DatabaseConfig databaseConfig, Set<String> hosts,  boolean doGrants) {
         return new DBPermission(databaseConfig, hosts, doGrants).getStatements();
+    }
+
+    private String[] getDbCreateFunctionStatementsFromDb(Connection dbConn) throws SQLException {
+
+        Statement getCreateFunctionsStmt = null;
+        List<String> list = new ArrayList<>();
+        try {
+            getCreateFunctionsStmt = dbConn.createStatement();
+
+            Set<String> functionNames = getFunctionNames(dbConn);
+
+            for (String functionName : functionNames) {
+                ResultSet createFunctions = getCreateFunctionsStmt.executeQuery("show create function " + functionName);
+                while (createFunctions.next()) {
+                    String functionString = createFunctions.getString(3);
+                    if(!functionString.isEmpty()) {
+                        String s = functionString.replace("\n", " ");
+                        //need to replace the definer section otherwise the bd user that is creating these functions wont be able to call them.
+                        s = s.replaceAll("CREATE DEFINER=`[^`]*`@`[^`]*` FUNCTION", "CREATE FUNCTION");
+                        list.add(s);
+                    }
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(getCreateFunctionsStmt);
+        }
+
+        return list.toArray(new String[list.size()]);
     }
 
     private String[] getDbCreateStatementsFromDb(Connection dbConn) throws SQLException {
@@ -1092,6 +1139,7 @@ public class DBActions {
             targetConnection.setAutoCommit(false);
 
             copyDbSchema(sourceConnection, targetConnection);
+            copyFunctions(sourceConnection, targetConnection);
             copyDatabaseContents(sourceConnection, targetConnection, skipAudits);
 
             targetConnection.commit();
@@ -1112,6 +1160,16 @@ public class DBActions {
         Statement copyDbStmt = null;
         try {
             String[] createStatements = getDbCreateStatementsFromDb(sourceConnection);
+            executeUpdates( targetConnection, createStatements );
+        } finally {
+            ResourceUtils.closeQuietly(copyDbStmt);
+        }
+    }
+
+    private void copyFunctions(Connection sourceConnection, Connection targetConnection) throws SQLException {
+        Statement copyDbStmt = null;
+        try {
+            String[] createStatements = getDbCreateFunctionStatementsFromDb(sourceConnection);
             executeUpdates( targetConnection, createStatements );
         } finally {
             ResourceUtils.closeQuietly(copyDbStmt);
