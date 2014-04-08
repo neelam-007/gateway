@@ -27,7 +27,9 @@
         <dependency name="layer7-kerberos" rev="latest.integration" conf="core"/>
         <dependency name="layer7-siteminder" rev="latest.integration" conf="core"/>
         <dependency name="layer7-ntlm" rev="latest.integration" conf="core"/>
-        <dependency name="layer7-policy" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-policy" rev="latest.integration" conf="core">
+            <exclude org="net.sf.saxon" module="saxon9ee" name="*" type="*" ext="*" conf="" matcher="exact"/>
+        </dependency>
         <dependency name="layer7-identity" rev="latest.integration" conf="core"/>
         <dependency name="layer7-common" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gui" rev="latest.integration" conf="core"/>
