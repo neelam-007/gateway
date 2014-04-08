@@ -615,6 +615,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         expressions.add(responseSize);
         expressions.add(timeout);
         expressions.add(connectionTimeout);
+        expressions.add(httpMethodAsString);
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
         expressions.add(Syntax.getVariableExpression(requestMsgSrc));

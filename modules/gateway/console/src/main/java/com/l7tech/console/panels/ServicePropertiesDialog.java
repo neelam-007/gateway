@@ -56,7 +56,6 @@ import java.util.logging.Logger;
  */
 public class ServicePropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
-    private static final boolean ENABLE_CUSTOM_HTTP_VERB = SyspropUtil.getBoolean("com.l7tech.enableCustomHttpVerb", false);
     private static final String NAME_UNAVAILABLE = "<name unavailable>";
 
     private final PublishedService subject;
@@ -253,9 +252,6 @@ public class ServicePropertiesDialog extends JDialog {
         optionsCheck.setSelected(methods.contains(HttpMethod.OPTIONS));
         patchCheck.setSelected(methods.contains(HttpMethod.PATCH));
         otherCheck.setSelected(methods.contains(HttpMethod.OTHER));
-
-        patchCheck.setVisible(ENABLE_CUSTOM_HTTP_VERB);
-        otherCheck.setVisible(ENABLE_CUSTOM_HTTP_VERB);
 
         if (!subject.isSoap()) {
             tabbedPane1.setEnabledAt(2, false);

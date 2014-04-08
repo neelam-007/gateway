@@ -58,8 +58,6 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
-    private static final boolean ENABLE_CUSTOM_HTTP_VERB = SyspropUtil.getBoolean("com.l7tech.enableCustomHttpVerb", false);
-
     private static class ComboBoxItem {
         private final Object _value;
         private final String _displayName;
@@ -454,7 +452,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
         methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
-        requestMethodComboBox.setEditable(ENABLE_CUSTOM_HTTP_VERB);
         requestMethodComboBox.setModel(new DefaultComboBoxModel(methods.toArray()));
         Utilities.enableGrayOnDisabled(requestMethodComboBox);
         final ActionListener requestMethodListener = new ActionListener() {

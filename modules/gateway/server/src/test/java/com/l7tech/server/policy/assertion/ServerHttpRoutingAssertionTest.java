@@ -36,6 +36,7 @@ import com.l7tech.server.security.cert.TestCertValidationProcessor;
 import com.l7tech.server.transport.http.SslClientHostnameVerifier;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.*;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import org.apache.http.pool.PoolStats;
@@ -597,6 +598,7 @@ public class ServerHttpRoutingAssertionTest {
     }
 
     @Test
+    @BugId("SSG-5631")
     public void testCustomRequestMethod() throws Exception {
         HttpRoutingAssertion hra = new HttpRoutingAssertion();
         hra.setProtectedServiceUrl("http://localhost:17380/testCustomHttpMethod");
@@ -620,6 +622,35 @@ public class ServerHttpRoutingAssertionTest {
 
         assertEquals(HttpMethod.OTHER, sawMethod[0]);
         assertEquals("MyCustomMethodName", sawMethodStr[0]);
+    }
+
+    @Test
+    @BugId("SSG-8361")
+    public void testCustomRequestMethodContextVariable() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testCustomHttpMethod");
+        hra.setHttpMethod(HttpMethod.OTHER);
+        hra.setHttpMethodAsString("${contextVar}");
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final HttpMethod[] sawMethod = {null};
+        final String[] sawMethodStr = {null};
+        PolicyEnforcementContext pec = createTestPolicyEnforcementContext(200, hra, appContext, new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                sawMethod[0] = method;
+                sawMethodStr[0] = params.getMethodAsString();
+                return null;
+            }
+        });
+
+        pec.setVariable( "contextVar", "MethodNameFromVar" );
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals(HttpMethod.OTHER, sawMethod[0]);
+        assertEquals("MethodNameFromVar", sawMethodStr[0]);
     }
 
     private PolicyEnforcementContext createTestPolicyEnforcementContext(int status, HttpRoutingAssertion hra, ApplicationContext appContext) {

@@ -470,10 +470,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return AssertionStatus.FAILED;
     }
 
-    private Pair<HttpMethod,String> methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
+    private Pair<HttpMethod,String> methodFromRequest(PolicyEnforcementContext context, Map<String, ?> variableMap, GenericHttpRequestParams routedRequestParams) {
         HttpMethod method = assertion.getHttpMethod();
         if (method != null) {
-            return new Pair<HttpMethod, String>(method, assertion.getHttpMethodAsString());
+            String methodString = assertion.getHttpMethodAsString();
+            if ( methodString != null ) {
+                methodString = ExpandVariables.process( methodString, variableMap, getAudit() );
+            }
+            return new Pair<>(method, methodString );
         }
 
         if (assertion.getRequestMsgSrc() != null) {
@@ -568,7 +572,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setContentLength(contentLength);
             }
 
-            final Pair<HttpMethod,String> methodPair = methodFromRequest(context, routedRequestParams);
+            final Pair<HttpMethod,String> methodPair = methodFromRequest(context, vars, routedRequestParams);
             final HttpMethod method = methodPair.left;
             routedRequestParams.setMethodAsString(methodPair.right);
 
