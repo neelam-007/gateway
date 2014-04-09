@@ -645,12 +645,14 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 );
 
             for ( final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
-                if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 && cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) {
-                evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
-                } else if ( (timeNow-cachedConnectionEntry.getValue().lastAccessTime.get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
+                if(cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) { //do not evict inbound jms connections
+                    if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 ) {
                     evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
-                } else if ( overSize > 0 ) {
-                    evictionCandidates.add( cachedConnectionEntry );
+                    } else if ( (timeNow-cachedConnectionEntry.getValue().lastAccessTime.get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
+                        evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
+                    } else if ( overSize > 0 ) {
+                        evictionCandidates.add( cachedConnectionEntry );
+                    }
                 }
             }
 
