@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.api.CustomKeyValueStoreImpl;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
@@ -26,6 +27,8 @@ import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
@@ -366,7 +369,7 @@ public class PolicyHelper {
         private final GenericEntityManager genericEntityManager;
         private final HttpConfigurationManager httpConfigurationManager;
         private final RoleManager roleManager;
-        private SecurePasswordManager securePasswordManager;
+        private final SecurePasswordManager securePasswordManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -630,6 +633,16 @@ public class PolicyHelper {
         @Override
         public SecurePassword findSecurePasswordByName(String name) throws FindException {
             return filter( securePasswordManager.findByUniqueName( name ) );
+        }
+
+        @Override
+        public KeyValueStore getCustomKeyValueStore() {
+            return new CustomKeyValueStoreImpl();
+        }
+
+        @Override
+        public CustomEntitySerializer getCustomKeyValueEntitySerializer(final String entitySerializerClassName) {
+            return customAssertionsRegistrar.getExternalEntitySerializer(entitySerializerClassName);
         }
 
         private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {

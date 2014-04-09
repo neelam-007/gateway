@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -12,6 +13,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -19,6 +21,7 @@ import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.jetbrains.annotations.NotNull;
@@ -48,14 +51,18 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     @Inject
     private SecurePasswordManager securePasswordManager;
 
+    @Inject
+    private CustomKeyValueStoreManager customKeyValueStoreManager;
+
     private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
     private static final Pattern SECPASS_DESCRIPTION_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.description");
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
-     * this assertion. If the assertion implements {@link UsesEntities} then the entities returned by getEntitiesUsed
+     * this assertion. If the assertion implements {@link UsesEntities} or {@link CustomAssertionHolder} then the
+     * entities returned by {@link EntitiesResolver#getEntitiesUsed(com.l7tech.policy.assertion.Assertion) getEntitiesUsed}
      * method are assumed to be dependencies. If the assertion implements {@link UsesVariables} then all the variables
-     * used that are cluster properties are returned as dependencies
+     * used that are cluster properties are returned as dependencies.
      *
      * @param assertion The assertion to find dependencies for.
      * @param finder    The finder that if performing the current dependency search
@@ -68,15 +75,17 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
         //uses the generic dependency processor to find dependencies using the methods defined by the assertion.
         final List<Dependency> dependencies = super.findDependencies(assertion, finder);
 
-        //if the assertion implements UsesEntities then use the getEntitiesUsed method to find the entities used by the assertion.
-        if (assertion instanceof UsesEntities) {
-            for (EntityHeader header : ((UsesEntities) assertion).getEntitiesUsed()) {
-                final Entity entity = loadEntity(header);
-                if (entity != null) {
-                    Dependency dependency = finder.getDependency(entity);
-                    if (dependency != null && !dependencies.contains(dependency))
-                        dependencies.add(dependency);
-                }
+        final EntitiesResolver entitiesResolver =
+                EntitiesResolver
+                        .builder()
+                        .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
+                        .build();
+        for (EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
+            final Entity entity = loadEntity(header);
+            if (entity != null) {
+                Dependency dependency = finder.getDependency(entity);
+                if (dependency != null && !dependencies.contains(dependency))
+                    dependencies.add(dependency);
             }
         }
         //If the assertion implements UsesVariables then all cluster properties or secure passwords used be the assertion as considered to be dependencies.
@@ -175,14 +184,16 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     public void replaceDependencies(@NotNull Assertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(assertion, replacementMap, finder);
 
-        if (assertion instanceof UsesEntities) {
-            UsesEntities usesEntities = (UsesEntities) assertion;
-            EntityHeader[] entitiesUsed = usesEntities.getEntitiesUsed();
-            for (EntityHeader entityUsed : entitiesUsed) {
-                EntityHeader newEntity = findMappedHeader(replacementMap,entityUsed);
-                if (newEntity != null) {
-                    usesEntities.replaceEntity(entityUsed, newEntity);
-                }
+        final EntitiesResolver entitiesResolver =
+                EntitiesResolver
+                        .builder()
+                        .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
+                        .build();
+        final EntityHeader[] entitiesUsed = entitiesResolver.getEntitiesUsed(assertion);
+        for (EntityHeader entityUsed : entitiesUsed) {
+            EntityHeader newEntity = findMappedHeader(replacementMap,entityUsed);
+            if (newEntity != null) {
+                entitiesResolver.replaceEntity(assertion, entityUsed, newEntity);
             }
         }
 

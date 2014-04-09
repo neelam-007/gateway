@@ -1,18 +1,17 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.GuidEntityHeader;
-import com.l7tech.objectmodel.SecurePasswordEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -162,33 +161,51 @@ public class PolicyExporter {
             addReference( new JdbcConnectionReference( finder, connectionable), refs );
         }
 
-        if( assertion instanceof UsesEntities ) {
-            final UsesEntities entitiesUser = (UsesEntities)assertion;
-            for( final EntityHeader entityHeader : entitiesUser.getEntitiesUsed() ) {
-                if( entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) ) {
-                    final IdProviderReference idProviderRef = new IdProviderReference( finder, entityHeader.getGoid());
-
-                    if( idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal() ) {
-                        addReference( new FederatedIdProviderReference( finder, entityHeader.getGoid()), refs);
-                    } else {
-                        addReference( idProviderRef, refs);
-                    }
-                } else if( entityHeader.getType().equals(EntityType.JMS_ENDPOINT) ) {
-                    addReference( new JMSEndpointReference( finder, entityHeader.getGoid()), refs);
-                } else if( entityHeader.getType().equals(EntityType.TRUSTED_CERT) ) {
-                    addReference( new TrustedCertReference( finder, entityHeader.getGoid()), refs);
-                } else if( entityHeader.getType().equals(EntityType.ENCAPSULATED_ASSERTION) ) {
-                    addReference( new EncapsulatedAssertionReference( finder, (GuidEntityHeader)entityHeader), refs);
-                } else if( entityHeader.getType().equals(EntityType.SECURE_PASSWORD) ) {
-                    addReference( new StoredPasswordReference( finder, (SecurePasswordEntityHeader)entityHeader), refs);
-                }
-            }
-        }
+        processAssertionEntityHeaders(refs, assertion);
 
         if ( assertion instanceof PrivateKeyable ) {
             final PrivateKeyable keyable = (PrivateKeyable)assertion;
             if ( !keyable.isUsesDefaultKeyStore() ) {
                 addReference( new PrivateKeyReference( finder, keyable), refs);
+            }
+        }
+    }
+
+    /**
+     * Process used entities from both modular and custom assertions.
+     */
+    private void processAssertionEntityHeaders(
+            final Collection<ExternalReference> refs,
+            @NotNull final Assertion assertion
+    ) {
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(finder.getCustomKeyValueStore())
+                .build();
+        for( final EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion) ) {
+            if( entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) ) {
+                final IdProviderReference idProviderRef = new IdProviderReference( finder, entityHeader.getGoid());
+
+                if( idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal() ) {
+                    addReference( new FederatedIdProviderReference( finder, entityHeader.getGoid()), refs);
+                } else {
+                    addReference( idProviderRef, refs);
+                }
+            } else if( entityHeader.getType().equals(EntityType.JMS_ENDPOINT) ) {
+                addReference( new JMSEndpointReference( finder, entityHeader.getGoid()), refs);
+            } else if( entityHeader.getType().equals(EntityType.TRUSTED_CERT) ) {
+                addReference( new TrustedCertReference( finder, entityHeader.getGoid()), refs);
+            } else if( entityHeader.getType().equals(EntityType.ENCAPSULATED_ASSERTION) ) {
+                addReference( new EncapsulatedAssertionReference( finder, (GuidEntityHeader)entityHeader), refs);
+            } else if( entityHeader.getType().equals(EntityType.SECURE_PASSWORD) ) {
+                addReference( new StoredPasswordReference( finder, (SecurePasswordEntityHeader)entityHeader), refs);
+            } else if( entityHeader.getType().equals(EntityType.CUSTOM_KEY_VALUE_STORE) ) {
+                final CustomKeyStoreEntityHeader customKeyStoreEntityHeader = (CustomKeyStoreEntityHeader)entityHeader;
+                if (customKeyStoreEntityHeader.hasBytes()) {
+                    addReference( new CustomKeyValueReference(finder, customKeyStoreEntityHeader), refs);
+                } else {
+                    logger.warning("Ignoring empty custom-key-value-store header: " + entityHeader);
+                }
             }
         }
     }

@@ -2,6 +2,8 @@ package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.util.Background;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -347,13 +349,47 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                 eh.setTaskActionUiClass(Class.forName(taskActionClass, true, classLoader));
             }
 
+            // extract custom extension interface
+            final String extensionInterfaceClassName = (String) properties.get(baseKey + ".extension.interface");
+            if (taskActionClass != null && !"".equals(taskActionClass)) {
+                final Class extensionInterfaceClass = Class.forName(extensionInterfaceClassName, true, classLoader);
+                if (CustomExtensionInterfaceBinding.class.isAssignableFrom(extensionInterfaceClass)) {
+                    //noinspection unchecked
+                    eh.setExtensionInterfaceClass(extensionInterfaceClass);
+                } else {
+                    throw new ModuleException("Custom assertion extension interface class name \"" + extensionInterfaceClassName + "\" is not subclass of CustomExtensionInterfaceBinding.");
+                }
+            }
+
+            // extract custom assertion external entity serializers
+            final String extEntitySerializersClassNames = (String) properties.get(baseKey + ".entity.serializers");
+            if (extEntitySerializersClassNames != null && !"".equals(extEntitySerializersClassNames)) {
+                final String[] entitySerializersClassNames = extEntitySerializersClassNames.split(",");
+                if (entitySerializersClassNames != null && entitySerializersClassNames.length > 0) {
+                    final Collection<Class<? extends CustomEntitySerializer>> extEntitySerializers = new ArrayList<>(entitySerializersClassNames.length);
+                    for (final String extEntitySerializer : entitySerializersClassNames) {
+                        if (extEntitySerializer != null && !"".equals(extEntitySerializer)) {
+                            final Class extEntitySerializerClass = Class.forName(extEntitySerializer, true, classLoader);
+                            if (CustomEntitySerializer.class.isAssignableFrom(extEntitySerializerClass)) {
+                                //noinspection unchecked
+                                extEntitySerializers.add(extEntitySerializerClass);
+                            } else {
+                                throw new ModuleException("Custom assertion external entity serializer class name \""
+                                        + extEntitySerializer + "\" is not subclass of "
+                                        + CustomEntitySerializer.class.getName());
+                            }
+                        }
+                    }
+                    eh.setExternalEntitySerializers(extEntitySerializers);
+                }
+            }
+
             eh.setDescription((String) properties.get(baseKey + ".description"));
             eh.setUiAutoOpen(Boolean.parseBoolean((String) properties.get(baseKey + ".ui.auto.open")));
             eh.setUiAllowedPackages((String) properties.get(baseKey + ".ui.allowed.packages"));
             eh.setUiAllowedResources((String) properties.get(baseKey + ".ui.allowed.resources"));
             eh.setPaletteNodeName((String) properties.get(baseKey + ".palette.node.name"));
             eh.setPolicyNodeName((String) properties.get(baseKey + ".policy.node.name"));
-            eh.setExtensionInterface((String) properties.get(baseKey + ".extension.interface"));
             eh.setModuleFileName(moduleFileName);
 
             return eh;
@@ -510,7 +546,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             // now register all custom assertion descriptors for this module
             for (CustomAssertionDescriptor descriptor : descriptors) {
                 try {
-                    callbacks.registerAssertion(descriptor, classLoader);
+                    callbacks.registerAssertion(descriptor);
                     logger.info("Registered custom assertion " + descriptor.getAssertion().getName() + " from module " + file.getName());
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest("Custom assertion " + descriptor);

@@ -1,9 +1,9 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -116,6 +116,27 @@ public class StoredPasswordReference extends ExternalReference  {
         }
     }
 
+    /**
+     * Ensure only one password entity is exported
+     */
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof StoredPasswordReference)) return false;
+
+        final StoredPasswordReference ref = (StoredPasswordReference)obj;
+        final Goid goid = getId();
+        final String name = getName();
+
+        if (goid != null) {
+            return (goid.equals(ref.getId()));
+        } else if (name != null) {
+            return ref.getId() == null && name.equals(ref.getName());
+        } else {
+            return ref.getId() == null && ref.getName() == null;
+        }
+    }
+
     @Override
     public boolean setLocalizeDelete() {
         localizeType = LocalizeAction.DELETE;
@@ -125,22 +146,23 @@ public class StoredPasswordReference extends ExternalReference  {
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
-            if (assertionToLocalize instanceof UsesEntities) {
-                final UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
-                for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                    if ( entityHeader.getType().equals(EntityType.SECURE_PASSWORD) && entityHeader.equalsId(id) ) {
-                        if(localizeType == LocalizeAction.REPLACE) {
-                            if ( !localSecurePasswordId.equals(id)) {
-                                EntityHeader newEntityHeader = new EntityHeader(localSecurePasswordId, EntityType.SECURE_PASSWORD, null, null);
-                                entitiesUser.replaceEntity(entityHeader, newEntityHeader);
-                                logger.info("The server stored password goid of the imported assertion has been changed " +
-                                        "from " + id + " to " + localSecurePasswordId);
-                                break;
-                            }
-                        } else if(localizeType == LocalizeAction.DELETE) {
-                            logger.info("Deleted this assertion from the tree.");
-                            return false;
+            final EntitiesResolver entitiesResolver =
+                    EntitiesResolver.builder()
+                            .keyValueStore(getFinder().getCustomKeyValueStore())
+                            .build();
+            for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
+                if ( entityHeader.getType().equals(EntityType.SECURE_PASSWORD) && entityHeader.equalsId(id) ) {
+                    if(localizeType == LocalizeAction.REPLACE) {
+                        if ( !localSecurePasswordId.equals(id)) {
+                            EntityHeader newEntityHeader = new EntityHeader(localSecurePasswordId, EntityType.SECURE_PASSWORD, null, null);
+                            entitiesResolver.replaceEntity(assertionToLocalize, entityHeader, newEntityHeader);
+                            logger.info("The server stored password goid of the imported assertion has been changed " +
+                                    "from " + id + " to " + localSecurePasswordId);
+                            break;
                         }
+                    } else if(localizeType == LocalizeAction.DELETE) {
+                        logger.info("Deleted this assertion from the tree.");
+                        return false;
                     }
                 }
             }

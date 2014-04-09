@@ -1289,6 +1289,7 @@
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
         <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
         <property name="config" ref="serverConfig"/>
+        <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->

@@ -135,7 +135,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // make sure all modules have been registered
         Mockito.verify(customAssertionCallbacks, Mockito.times(numberOfLoadedModules)).publishEvent(Mockito.isA(AssertionModuleRegistrationEvent.class));
         // make sure all assertions have been registered
-        Mockito.verify(customAssertionCallbacks, Mockito.times(numberOfLoadedModules*numberOfAssertionsPerModule)).registerAssertion(Mockito.<CustomAssertionDescriptor>any(), Mockito.isA(CustomAssertionClassLoader.class));
+        Mockito.verify(customAssertionCallbacks, Mockito.times(numberOfLoadedModules*numberOfAssertionsPerModule)).registerAssertion(Mockito.<CustomAssertionDescriptor>any());
 
         // make sure no modules have been unloaded.
         Mockito.verify(assertionsScanner, Mockito.times(onModuleUnloadCalls)).onModuleUnload(Mockito.<CustomAssertionModule>any());

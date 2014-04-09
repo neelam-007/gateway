@@ -17,6 +17,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -174,6 +176,16 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public SecurePassword findSecurePasswordByName(String name) throws FindException {
+        return null;
+    }
+
+    @Override
+    public KeyValueStore getCustomKeyValueStore() {
+        return null;
+    }
+
+    @Override
+    public CustomEntitySerializer getCustomKeyValueEntitySerializer(String entitySerializerClassName) {
         return null;
     }
 

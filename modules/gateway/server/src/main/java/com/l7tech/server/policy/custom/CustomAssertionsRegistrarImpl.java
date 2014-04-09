@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
@@ -18,8 +19,8 @@ import com.l7tech.server.policy.module.*;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.util.*;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -302,6 +303,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         return CustomAssertions.getTaskActionUI(assertionClassName);
     }
 
+    @Override
+    public CustomEntitySerializer getExternalEntitySerializer(final String extEntitySerializerClassName) {
+        return CustomAssertions.getExternalEntitySerializer(extEntitySerializerClassName);
+    }
+
     /**
      *
      */
@@ -348,11 +354,11 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         // create custom assertion callbacks
         final ScannerCallbacks.CustomAssertion customAssertionCallbacks = new ScannerCallbacks.CustomAssertion() {
             @Override
-            public void registerAssertion(@NotNull final CustomAssertionDescriptor descriptor, @NotNull final ClassLoader classLoader) throws ModuleException {
+            public void registerAssertion(@NotNull final CustomAssertionDescriptor descriptor) throws ModuleException {
                 try {
                     CustomAssertions.register(descriptor);
-                    registerCustomExtensionInterface(descriptor.getExtensionInterface(), classLoader);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    registerCustomExtensionInterface(descriptor.getExtensionInterfaceClass());
+                } catch ( IllegalAccessException | InstantiationException e) {
                     throw new ModuleException("Error while registering custom assertion [" + descriptor.getName() + "] extension interface, for module [" + descriptor.getModuleFileName() + "]", e);
                 } catch (Throwable e) {
                     throw new ModuleException("Error while registering custom assertion [" + descriptor.getName() + "] for module [" + descriptor.getModuleFileName() + "]", e);
@@ -493,19 +499,19 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     /**
      * Register Custom assertion extension interface.
      *
-     * @param extensionInterfaceClassName    extension interface class name.
-     * @param classLoader                    the custom assertion class loader.
-     * @throws ClassNotFoundException        if the specified class name cannot be located by the specified class loader.
-     * @throws IllegalAccessException        if the class, located from the specified class name, or its nullary constructor is not accessible.
-     * @throws InstantiationException        if the class, located from the specified class name, has no nullary constructor or if the instantiation fails for some other reason.
+     * @param extensionInterfaceClass    extension interface class.
+     * @throws IllegalAccessException    if the class, located from the specified class name, or its nullary constructor is not accessible.
+     * @throws InstantiationException    if the class, located from the specified class name, has no nullary constructor or if the instantiation fails for some other reason.
      */
-    protected final void registerCustomExtensionInterface(String extensionInterfaceClassName, ClassLoader classLoader) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    protected final void registerCustomExtensionInterface(
+            @Nullable final Class<? extends CustomExtensionInterfaceBinding> extensionInterfaceClass
+    ) throws IllegalAccessException, InstantiationException {
         if (CustomExtensionInterfaceBinding.getServiceFinder() == null) {
             CustomExtensionInterfaceBinding.setServiceFinder(getServiceFinderInstance());
         }
 
-        if (!StringUtils.isEmpty(extensionInterfaceClassName)) {
-            CustomExtensionInterfaceBinding ceiBinding = (CustomExtensionInterfaceBinding) Class.forName(extensionInterfaceClassName, true, classLoader).newInstance();
+        if (extensionInterfaceClass != null) {
+            final CustomExtensionInterfaceBinding ceiBinding = extensionInterfaceClass.newInstance();
             extensionInterfaceManager.registerInterface(ceiBinding.getInterfaceClass(), null, ceiBinding.getImplementationObject(), true);
         }
     }

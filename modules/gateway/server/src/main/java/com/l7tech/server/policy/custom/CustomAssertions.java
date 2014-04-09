@@ -1,12 +1,16 @@
 package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -179,6 +183,26 @@ class CustomAssertions {
             }
         }
         return allAssertions;
+    }
+
+    /**
+     * @return the Serializer object, implementing {@link CustomEntitySerializer} for the specified class name,
+     * or {@code null} if the specified class name is not registered.
+     */
+    static CustomEntitySerializer getExternalEntitySerializer(final String extEntitySerializerClassName) {
+        try {
+            for (CustomAssertionDescriptor eh : assertions.values()) {
+                for (final Class<? extends CustomEntitySerializer> extEntitySerializerClass : eh.getExternalEntitySerializers()) {
+                    if (extEntitySerializerClass.getName().equals(extEntitySerializerClassName)) {
+                        return extEntitySerializerClass.newInstance();
+                    }
+                }
+            }
+        } catch (InstantiationException | IllegalAccessException e) {
+            logger.log(Level.WARNING, "Failed to instantiate external entity serializer with class: \"" + extEntitySerializerClassName + "\"");
+        }
+
+        return null;
     }
 
     private static Map<String, CustomAssertionDescriptor> assertions = new ConcurrentHashMap<>();

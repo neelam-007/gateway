@@ -152,6 +152,8 @@ public class CustomSecurePasswordPanelImpl implements CustomSecurePasswordPanel 
         }
 
         // Repack the parent when the password dialog disposes, just in case the size of the parent dialog is changed.
-        DialogDisplayer.pack(parent);
+        if (parent != null) {
+            DialogDisplayer.pack(parent);
+        }
     }
 }

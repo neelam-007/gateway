@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -104,6 +105,18 @@ public interface CustomAssertionsRegistrar {
      */
     @Administrative(licensed=false)
     CustomTaskActionUI getTaskActionUI(String assertionClassName);
+
+    /**
+     * Return the entity {@code CustomEntitySerializer} from the specified class
+     * or <b>{@code null}<b> if the specified <tt>extEntitySerializerClassName</tt> is not registered.
+     *
+     * @param extEntitySerializerClassName the external entity serializer class name
+     * @return external entity serializer object or <b>{@code null}<b> if class name is not registered.
+     *
+     * @see CustomAssertionDescriptor
+     */
+    @Administrative(licensed=false)
+    CustomEntitySerializer getExternalEntitySerializer(String extEntitySerializerClassName);
 
     /**
      * Assertion data is used to wrap one or more resources.

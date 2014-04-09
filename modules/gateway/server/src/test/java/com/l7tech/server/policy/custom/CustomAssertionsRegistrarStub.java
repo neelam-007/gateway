@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 
 import java.util.*;
@@ -127,6 +128,11 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     @Override
     public CustomTaskActionUI getTaskActionUI(String a) {
         return CustomAssertions.getTaskActionUI(a);
+    }
+
+    @Override
+    public CustomEntitySerializer getExternalEntitySerializer(String extEntitySerializerClassName) {
+        return null;
     }
 
     /**

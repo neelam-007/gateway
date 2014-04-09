@@ -592,6 +592,7 @@
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
         <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
         <property name="config" ref="serverConfig"/>
+        <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">

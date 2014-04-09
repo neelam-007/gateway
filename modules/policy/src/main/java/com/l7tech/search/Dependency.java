@@ -61,7 +61,8 @@ public @interface Dependency {
         USER(EntityType.USER),
         GROUP(EntityType.GROUP),
         RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
-        SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION);
+        SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
+        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE);
 
         private EntityType entityType;
 

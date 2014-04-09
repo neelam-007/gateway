@@ -3,9 +3,11 @@ package com.l7tech.gateway.common.custom;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
+import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 
 import java.util.*;
 
@@ -29,7 +31,8 @@ import java.util.*;
  * <li> display name for the node in the left palette
  * <li> display name for the node in the right policy editor
  * <li> display module file name in the Assertion View Info dialog
- * <li> String containing the extension Interface class name, must be implementation of <code>CustomExtensionInterfaceBinding</code></li>
+ * <li> {@code Class} object containing the extension Interface, must be implementation of {@link CustomExtensionInterfaceBinding}</li>
+ * <li> {@code Collection} of {@code Class} objects of registered external entity serializers, must be implementation of {@link CustomEntitySerializer}</li>
  * </ul>
  */
 public class CustomAssertionDescriptor {
@@ -49,7 +52,8 @@ public class CustomAssertionDescriptor {
     private boolean isUiAutoOpen;
     private String[] uiAllowedPackages = new String[0];
     private Set<String> uiAllowedResources = new HashSet<>();
-    private String extensionInterface;
+    private Class<? extends CustomExtensionInterfaceBinding> extensionInterfaceClass;
+    private Collection<Class<? extends CustomEntitySerializer>> extEntitySerializers = new ArrayList<>();
 
     /**
      * Create the new extensibility holder instance with the assertion and server assertion class.
@@ -179,10 +183,17 @@ public class CustomAssertionDescriptor {
     }
 
     /**
-     * @return the extension interface class name or <b>null</b> if it has not been set
+     * @return the extension interface {@code Class} object or <b>null</b> if it has not been set
      */
-    public String getExtensionInterface() {
-        return extensionInterface;
+    public Class<? extends CustomExtensionInterfaceBinding> getExtensionInterfaceClass() {
+        return extensionInterfaceClass;
+    }
+
+    /**
+     * @return a read-only {@code Collection} of registered custom external entity serializers.
+     */
+    public Collection<Class<? extends CustomEntitySerializer>> getExternalEntitySerializers() {
+        return Collections.unmodifiableCollection(extEntitySerializers);
     }
 
     public String toString() {
@@ -275,9 +286,19 @@ public class CustomAssertionDescriptor {
     }
 
     /**
-     * @param extensionInterface extension interface class name, must be implementation of <code>CustomExtensionInterfaceBinding</code>
+     * @param extensionInterfaceClass extension interface {@code Class} object, must be implementation of <code>CustomExtensionInterfaceBinding</code>
      */
-    public void setExtensionInterface(String extensionInterface) {
-        this.extensionInterface = extensionInterface;
+    public void setExtensionInterfaceClass(final Class<? extends CustomExtensionInterfaceBinding> extensionInterfaceClass) {
+        this.extensionInterfaceClass = extensionInterfaceClass;
+    }
+
+    /**
+     * @param extEntitySerializers    {@code Collection} holding external entity serializer {@code Class} objects,
+     *                                which must be implementation of {@link CustomEntitySerializer}
+     */
+    public void setExternalEntitySerializers(final Collection<Class<? extends CustomEntitySerializer>> extEntitySerializers) {
+        if (extEntitySerializers != null) {
+            this.extEntitySerializers = extEntitySerializers;
+        }
     }
 }

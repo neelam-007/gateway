@@ -67,11 +67,10 @@ public interface ScannerCallbacks {
          * {@link com.l7tech.server.policy.custom.CustomAssertions CustomAssertions} collection as well as registering
          * custom assertion extension interface.
          *
-         * @param descriptor     The custom assertion descriptor. 
-         * @param classLoader    The custom assertion class-loader.
+         * @param descriptor     The custom assertion descriptor.
          * @throws ModuleException thrown if an error happens during registration process i.e. to indicate registration failure.
          */
-        void registerAssertion(@NotNull CustomAssertionDescriptor descriptor, @NotNull ClassLoader classLoader) throws ModuleException;
+        void registerAssertion(@NotNull CustomAssertionDescriptor descriptor) throws ModuleException;
 
         /**
          * Unregister custom assertion, specified with the <tt>descriptor</tt>.<br/>

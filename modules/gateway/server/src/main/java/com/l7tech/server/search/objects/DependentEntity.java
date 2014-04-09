@@ -57,6 +57,7 @@ public class DependentEntity extends DependentObject {
             case RESOURCE_ENTRY: return Dependency.DependencyType.RESOURCE_ENTRY;
             case REVOCATION_CHECK_POLICY: return Dependency.DependencyType.REVOCATION_CHECK_POLICY;
             case SITEMINDER_CONFIGURATION: return Dependency.DependencyType.SITEMINDER_CONFIGURATION;
+            case CUSTOM_KEY_VALUE_STORE: return Dependency.DependencyType.CUSTOM_KEY_VALUE_STORE;
         }
         throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
     }

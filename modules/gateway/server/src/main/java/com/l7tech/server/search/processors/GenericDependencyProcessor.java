@@ -4,14 +4,13 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -59,6 +58,9 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
 
     @Inject
     private SsgKeyStoreManager keyStoreManager;
+
+    @Inject
+    private CustomKeyValueStoreManager customKeyValueStoreManager;
 
     @Inject
     DefaultKey defaultKey;
@@ -547,6 +549,18 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                 throw new FindException("Exception finding SsgKeyEntry", e);
             }
             return keyEntry;
+        } else if (EntityType.CUSTOM_KEY_VALUE_STORE.equals(entityHeader.getType())) {
+            String entityId;
+            CustomKeyValueStore customKeyValueStore;
+            if (entityHeader.getGoid() == null || Goid.DEFAULT_GOID.equals(entityHeader.getGoid())){
+                customKeyValueStore = customKeyValueStoreManager.findByUniqueName(entityId = entityHeader.getName());
+            } else {
+                entityId = entityHeader.getStrId();
+                customKeyValueStore = customKeyValueStoreManager.findByPrimaryKey(entityHeader.getGoid());
+            }
+            if (customKeyValueStore == null)
+                throw new FindException("Couldn't find entity with id: \"" + entityId + "\"");
+            return customKeyValueStore;
         } else
             return entityCrud.find(entityHeader);
     }

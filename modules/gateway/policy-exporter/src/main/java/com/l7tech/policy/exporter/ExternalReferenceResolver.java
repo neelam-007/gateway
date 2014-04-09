@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -8,6 +9,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.wsp.WspReader;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
@@ -300,6 +302,7 @@ class ExternalReferenceResolver {
                     }
                 }
             }
+            processFindAndRemoveEntityReferenceForAssertion(references, assertion);
         } else if (assertion instanceof PolicyReference) {
             if (((PolicyReference)assertion).retrievePolicyGuid() == null) return;
 
@@ -345,35 +348,7 @@ class ExternalReferenceResolver {
                 }
             }
         } else if (assertion instanceof UsesEntities) {
-            UsesEntities entitiesUser = (UsesEntities) assertion;
-            for (Iterator<ExternalReference> itr = references.iterator(); itr.hasNext(); ) {
-                ExternalReference reference = itr.next();
-                if (reference instanceof IdProviderReference) {
-                    IdProviderReference ipRef = (IdProviderReference) reference;
-                    for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if (ipRef.getProviderId()!=null && ipRef.getProviderId().equals(entityHeader.getGoid())) {
-                            itr.remove();
-                            break;
-                        }
-                    }
-                } else if (reference instanceof JMSEndpointReference) {
-                    JMSEndpointReference endpointRef = (JMSEndpointReference) reference;
-                    for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if (endpointRef.getGoid().equals(entityHeader.getGoid())) {
-                            itr.remove();
-                            break;
-                        }
-                    }
-                } else if (reference instanceof TrustedCertReference) {
-                    TrustedCertReference trustedCertRef = (TrustedCertReference) reference;
-                    for (EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
-                        if ( entityHeader.equalsId(trustedCertRef.getGoid()) ) {
-                            itr.remove();
-                            break;
-                        }
-                    }
-                }
-            }
+            processFindAndRemoveEntityReferenceForAssertion(references, assertion);
         }
 
         if ( assertion instanceof UsesResourceInfo ) {
@@ -403,6 +378,48 @@ class ExternalReferenceResolver {
                     PrivateKeyable keyable = (PrivateKeyable) assertion;
                     PrivateKeyReference pkr = (PrivateKeyReference) reference;
                     if (pkr.getKeyAlias() != null && pkr.getKeyAlias().equals(keyable.getKeyAlias())) {
+                        itr.remove();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Custom assertions also use entities, currently only secure-passwords and key-value-store, however if we ever
+     * decide to support IdProviderReference, JMSEndpointReference or TrustedCertReference entities, this will work seamlessly.
+     */
+    private void processFindAndRemoveEntityReferenceForAssertion(
+            @NotNull final Collection<ExternalReference> references,
+            @NotNull final Assertion assertion
+    ) {
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(finder.getCustomKeyValueStore())
+                .build();
+        for (Iterator<ExternalReference> itr = references.iterator(); itr.hasNext(); ) {
+            ExternalReference reference = itr.next();
+            if (reference instanceof IdProviderReference) {
+                IdProviderReference ipRef = (IdProviderReference) reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    if (ipRef.getProviderId()!=null && ipRef.getProviderId().equals(entityHeader.getGoid())) {
+                        itr.remove();
+                        break;
+                    }
+                }
+            } else if (reference instanceof JMSEndpointReference) {
+                JMSEndpointReference endpointRef = (JMSEndpointReference) reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    if (endpointRef.getGoid().equals(entityHeader.getGoid())) {
+                        itr.remove();
+                        break;
+                    }
+                }
+            } else if (reference instanceof TrustedCertReference) {
+                TrustedCertReference trustedCertRef = (TrustedCertReference) reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    if ( entityHeader.equalsId(trustedCertRef.getGoid()) ) {
                         itr.remove();
                         break;
                     }

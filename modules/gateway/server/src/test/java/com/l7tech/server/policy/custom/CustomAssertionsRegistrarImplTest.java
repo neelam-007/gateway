@@ -53,7 +53,7 @@ public class CustomAssertionsRegistrarImplTest {
         customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
 
         // register MyCustomExtensionInterfaceBinding which holds an implementation of MyInterface
-        customAssertionsRegistrarImpl.registerCustomExtensionInterface("com.l7tech.server.policy.custom.CustomAssertionsRegistrarImplTest$MyCustomExtensionInterfaceBinding", ClassLoader.getSystemClassLoader());
+        customAssertionsRegistrarImpl.registerCustomExtensionInterface(MyCustomExtensionInterfaceBinding.class);
 
         // verify registration
         assertTrue(extensionInterfaceManager.isInterfaceRegistered("com.l7tech.server.policy.custom.CustomAssertionsRegistrarImplTest$MyInterface", null));

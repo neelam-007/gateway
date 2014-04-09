@@ -1,5 +1,6 @@
 package com.l7tech.console.policy.exporter;
 
+import com.l7tech.console.api.CustomKeyValueStoreImpl;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
@@ -33,6 +34,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.*;
@@ -246,6 +249,28 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     public SecurePassword findSecurePasswordByName(String name) throws FindException {
         final TrustedCertAdmin admin = getAdminInterface(TrustedCertAdmin.class);
         return admin.findSecurePasswordByName(name);
+    }
+
+    @Override
+    public KeyValueStore getCustomKeyValueStore() {
+        return new CustomKeyValueStoreImpl();
+    }
+
+    @Override
+    public CustomEntitySerializer getCustomKeyValueEntitySerializer(final String entitySerializerClassName) {
+        try {
+            return getAdminInterface(CustomAssertionsRegistrar.class).getExternalEntitySerializer(entitySerializerClassName);
+        } catch (RuntimeException e) {
+            if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                logger.log( Level.INFO, "Custom assertions unavailable or unlicensed");
+            } else {
+                logger.log(Level.WARNING, "Cannot get remote entity Serializer for class: \"" + entitySerializerClassName + "\"", e);
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Cannot get remote entity Serializer for class: \"" + entitySerializerClassName + "\"", e);
+        }
+
+        return null;
     }
 
     @Override

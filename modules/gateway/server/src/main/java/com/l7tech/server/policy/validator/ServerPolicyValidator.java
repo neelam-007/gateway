@@ -3,6 +3,7 @@ package com.l7tech.server.policy.validator;
 import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -20,6 +21,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -37,11 +39,16 @@ import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.server.util.EntityUseUtils;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -56,8 +63,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.l7tech.server.util.EntityUseUtils.getTypeName;
 
 /**
  * Performs server side policy validation.
@@ -110,6 +115,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private SsgKeyStoreManager ssgKeyStoreManager;
     private JdbcConnectionManager jdbcConnectionManager;
     private Config config;
+    private KeyValueStore keyValueStore;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -402,9 +408,9 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             }
         }
 
-        if ( assertion instanceof UsesEntities && !(assertion instanceof IdentityAssertion || assertion instanceof JmsRoutingAssertion)) {
-            UsesEntities uea = (UsesEntities) assertion;
-            for (EntityHeader header : uea.getEntitiesUsed()) {
+        if (!(assertion instanceof IdentityAssertion || assertion instanceof JmsRoutingAssertion)) {
+            // getEntitiesUsed works only for UsesEntities and CustomAssertionHolder
+            for (EntityHeader header : EntitiesResolver.builder().keyValueStore(keyValueStore).build().getEntitiesUsed(assertion)) {
                 Entity entity = null;
                 FindException thrown = null;
                 try {
@@ -425,10 +431,22 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 }
                 if (entity == null)
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                            "Assertion refers to a " + getTypeName( uea, header.getType() ) +
+                            "Assertion refers to a " +
+                                    EntitiesResolver.getEntityTypeName (
+                                            assertion,
+                                            header.getType(),
+                                            new Functions.Binary<String, UsesEntities, EntityType>() {
+                                                @Override
+                                                public String call(
+                                                        @NotNull final UsesEntities usesEntities,
+                                                        @NotNull EntityType entityType
+                                                ) {
+                                                    return EntityUseUtils.getTypeName(usesEntities, entityType);
+                                                }
+                                            }
+                                    ) +
                                     " that cannot be located on this system", thrown));
             }
-
         }
 
         if ( assertion instanceof PrivateKeyable) {
@@ -774,6 +792,14 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if (jdbcConnectionManager == null) {
             throw new IllegalArgumentException("JDBC Connection Manager is required");
         }
+
+        if (keyValueStore == null) {
+            throw new IllegalArgumentException("Custom key value store is required");
+        }
+    }
+
+    public void setKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager keyValueStoreManager) {
+        this.keyValueStore = new CustomKeyValueStoreImpl(keyValueStoreManager);
     }
 
     private static class PathContext {
