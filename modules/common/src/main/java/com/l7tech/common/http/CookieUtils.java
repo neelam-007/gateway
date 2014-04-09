@@ -247,7 +247,8 @@ public class CookieUtils {
                                    ,httpClientCookie.getDomain()
                                    ,httpClientCookie.getExpiryDate() == null ? -1 : (int)((httpClientCookie.getExpiryDate().getTime()-System.currentTimeMillis())/1000L)
                                    ,httpClientCookie.isSecure()
-                                   ,httpClientCookie.getComment());
+                                   ,httpClientCookie.getComment()
+                                   ,false); //httpclient 4.2.5 doesn't support httpOnly.
         }
         else {
             cookie = new HttpCookie(httpClientCookie.getName()
@@ -276,6 +277,7 @@ public class CookieUtils {
         cookie.setPath(httpCookie.getPath());
         cookie.setComment(httpCookie.getComment());
         cookie.setSecure(httpCookie.isSecure());
+        cookie.setHttpOnly(httpCookie.isHttpOnly());
         if(httpCookie.hasExpiry()) cookie.setMaxAge(httpCookie.getMaxAge());
 
         return cookie;
@@ -299,7 +301,8 @@ public class CookieUtils {
                                    ,servletCookie.getDomain()
                                    ,servletCookie.getMaxAge()
                                    ,servletCookie.getSecure()
-                                   ,servletCookie.getComment());
+                                   ,servletCookie.getComment()
+                                   ,servletCookie.isHttpOnly());
         }
         else {
             cookie = new HttpCookie(servletCookie.getName()

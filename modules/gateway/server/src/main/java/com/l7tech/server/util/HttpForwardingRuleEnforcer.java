@@ -434,7 +434,8 @@ public class HttpForwardingRuleEnforcer {
                         targetDomain,
                         httpCookie.getMaxAge(),
                         httpCookie.isSecure(),
-                        httpCookie.getComment()
+                        httpCookie.getComment(),
+                        httpCookie.isHttpOnly()
                 );
                 // attach and record
                 output.add(newCookie);

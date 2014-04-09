@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 /**
  * <p>Represents a cookie. Can be used on the client side (bridge) or server side (gateway).</p>
  *
- * <p>A cookie can be constructed using a "SetCookie" header (in which case it is counted as "new").</p>
+ * <p>A cookie can be constructed using a "SetCookie" or "Cookie" header.</p>
  */
 public class HttpCookie {
 
@@ -78,6 +78,7 @@ public class HttpCookie {
 
         // now parse each field from the rest of the cookie, if present
         boolean parsedSecure = false;
+        boolean parsedHttpOnly = false;
         String parsedExpires = null;
         int parsedMaxAge = -1;
         String parsedDomain = null;
@@ -88,6 +89,8 @@ public class HttpCookie {
 
             if ("secure".equalsIgnoreCase(fields[j])) {
                 parsedSecure = true;
+            } else if ("httpOnly".equalsIgnoreCase(fields[j])) {
+                parsedHttpOnly = true;
             } else if (fields[j].indexOf('=') > 0) {
                 String[] f = EQUALS.split(fields[j], 2);
                 if ("expires".equalsIgnoreCase(f[0])) {
@@ -156,6 +159,7 @@ public class HttpCookie {
 
 
         secure = parsedSecure;
+        httpOnly = parsedHttpOnly;
         maxAge = parsedMaxAge;
         path = trimQuotes(parsedPath, parsedVersion);
         comment = trimQuotes(parsedComment, parsedVersion);
@@ -177,8 +181,9 @@ public class HttpCookie {
      * @param maxAge the maximum age in seconds (-1 for not specified)
      * @param secure is this a secure cookie
      * @param comment the comment, may be null
+     * @param httpOnly if this cookie should only be used for http
      */
-    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment) {
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly) {
         this.cookieName = name;
         this.cookieValue = value;
         this.version = version;
@@ -194,6 +199,7 @@ public class HttpCookie {
             this.comment = comment;
         }
         this.secure = secure;
+        this.httpOnly = httpOnly;
         this.createdTime = System.currentTimeMillis();
 
         this.id = buildId();
@@ -226,6 +232,7 @@ public class HttpCookie {
         this.fullValue = null;
         this.maxAge = -1;
         this.secure = false;
+        this.httpOnly = false;
         this.comment = null;
         this.createdTime = System.currentTimeMillis();
 
@@ -246,6 +253,7 @@ public class HttpCookie {
         this.version = cookie.version;
         this.maxAge = cookie.maxAge;
         this.secure = cookie.secure;
+        this.httpOnly = cookie.httpOnly;
         this.comment = cookie.comment;
         this.createdTime = cookie.createdTime;
 
@@ -309,6 +317,13 @@ public class HttpCookie {
      */
     public boolean isSecure() {
         return secure;
+    }
+
+    /**
+     * @return true if this cookie should only be used for http
+     */
+    public boolean isHttpOnly() {
+        return httpOnly;
     }
 
     /**
@@ -469,6 +484,7 @@ public class HttpCookie {
     private final int maxAge;
     private final int version;
     private final boolean secure;
+    private final boolean httpOnly;
 
     /**
      * Called when all properties have been set to generate the cookies ID

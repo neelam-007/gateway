@@ -198,21 +198,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
-    public void requestCookieHeaders() throws Exception {
-        // as long as the request has at last one Cookie header, cookies will be retrieved from the context and passed along
-        request.getHeadersKnob().addHeader("Cookie", "a=apple");
-        request.getHeadersKnob().addHeader("Cookie", "b=bear");
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/", TARGET_DOMAIN));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("b", "bear", 0, "/", TARGET_DOMAIN));
-        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
-        assertEquals(1, requestParams.getExtraHeaders().size());
-        assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());
-        assertEquals("a=apple; b=bear", requestParams.getExtraHeaders().get(0).getFullValue());
-    }
-
-    @Test
     public void requestCookies() throws Exception {
-        // if there are cookies in context, but no request Cookie header, we should still pass through the cookies in the context
         request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/", TARGET_DOMAIN));
         request.getHttpCookiesKnob().addCookie(new HttpCookie("b", "bear", 0, "/", TARGET_DOMAIN));
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
@@ -223,8 +209,6 @@ public class HttpForwardingRuleEnforcerJavaTest {
 
     @Test
     public void requestGatewayManagedCookieHeadersNotPassed() throws Exception {
-        request.getHeadersKnob().addHeader("Cookie", "a=apple");
-        request.getHeadersKnob().addHeader("Cookie", CookieUtils.PREFIX_GATEWAY_MANAGED + "foo=bar");
         request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/", TARGET_DOMAIN));
         request.getHttpCookiesKnob().addCookie(new HttpCookie(CookieUtils.PREFIX_GATEWAY_MANAGED + "foo", "bar", 0, "/", TARGET_DOMAIN));
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
@@ -235,8 +219,16 @@ public class HttpForwardingRuleEnforcerJavaTest {
 
     @Test
     public void requestCookieHeadersDoesNotIncludePathOrDomain() throws Exception {
-        request.getHeadersKnob().addHeader("Cookie", "a=apple");
         request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/somePath", "someDomain"));
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("a=apple", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    @Test
+    public void requestCookieHeadersDoesNotIncludeSetCookieAttributes() throws Exception {
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 1, "/somePath", "someDomain", 60, true, "someComment", true));
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
         assertEquals(1, requestParams.getExtraHeaders().size());
         assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());

@@ -212,8 +212,8 @@ public class SoapMessageProcessingServletTest {
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test"));
-                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
@@ -244,8 +244,8 @@ public class SoapMessageProcessingServletTest {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 context.setOverwriteResponseCookieDomain(false);
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
-                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
@@ -275,8 +275,8 @@ public class SoapMessageProcessingServletTest {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 context.setOverwriteResponseCookiePath(false);
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
-                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
@@ -307,8 +307,8 @@ public class SoapMessageProcessingServletTest {
                 context.setOverwriteResponseCookiePath(false);
                 context.setOverwriteResponseCookieDomain(false);
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test"));
-                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test"));
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
@@ -336,7 +336,7 @@ public class SoapMessageProcessingServletTest {
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                cookiesKnob.addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null));
+                cookiesKnob.addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
                 context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "invalidSetCookieHeaderValue");
                 return AssertionStatus.NONE;
             }

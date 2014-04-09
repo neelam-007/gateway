@@ -55,6 +55,8 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JCheckBox originalComment;
     private JPanel setAttributesPanel;
     private JCheckBox originalSecure;
+    private JCheckBox httpOnlyCheckBox;
+    private JCheckBox originalHttpOnly;
     private InputValidator validators;
 
     public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
@@ -74,6 +76,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         maxAgeTextField.setText(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).getValue() : StringUtils.EMPTY);
         versionTextField.setText(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).getValue() : StringUtils.EMPTY);
         secureCheckBox.setSelected(cookieAttributes.containsKey(SECURE) ? Boolean.parseBoolean(cookieAttributes.get(SECURE).getValue()) : false);
+        httpOnlyCheckBox.setSelected(cookieAttributes.containsKey(HTTP_ONLY) ? Boolean.parseBoolean(cookieAttributes.get(HTTP_ONLY).getValue()) : false);
         originalName.setSelected(cookieAttributes.containsKey(NAME) ? cookieAttributes.get(NAME).isUseOriginalValue() : false);
         originalValue.setSelected(cookieAttributes.containsKey(VALUE) ? cookieAttributes.get(VALUE).isUseOriginalValue() : false);
         originalDomain.setSelected(cookieAttributes.containsKey(DOMAIN) ? cookieAttributes.get(DOMAIN).isUseOriginalValue() : false);
@@ -82,6 +85,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalMaxAge.setSelected(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).isUseOriginalValue() : false);
         originalVersion.setSelected(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).isUseOriginalValue() : false);
         originalSecure.setSelected(cookieAttributes.containsKey(SECURE) ? cookieAttributes.get(SECURE).isUseOriginalValue() : false);
+        originalHttpOnly.setSelected(cookieAttributes.containsKey(HTTP_ONLY) ? cookieAttributes.get(HTTP_ONLY).isUseOriginalValue() : false);
         final Map<String, CookieCriteria> criteria = assertion.getCookieCriteria();
         if (criteria.containsKey(NAME)) {
             final CookieCriteria nameCriteria = criteria.get(NAME);
@@ -117,6 +121,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         setAttributeIfUseOriginalOrNotBlank(assertion, VERSION, versionTextField, originalVersion);
         setAttributeIfUseOriginalOrNotBlank(assertion, COMMENT, commentTextField, originalComment);
         setAttributeIfUseOriginalOrNotBlank(assertion, SECURE, String.valueOf(secureCheckBox.isSelected()), originalSecure);
+        setAttributeIfUseOriginalOrNotBlank(assertion, HTTP_ONLY, String.valueOf(httpOnlyCheckBox.isSelected()), originalHttpOnly);
         assertion.getCookieCriteria().clear();
         setCriteriaIfNotBlank(assertion, NAME, nameMatchTextField, nameRegexCheckBox);
         setCriteriaIfNotBlank(assertion, DOMAIN, domainMatchTextField, domainRegexCheckBox);
@@ -177,6 +182,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalMaxAge.addActionListener(listener);
         originalComment.addActionListener(listener);
         originalSecure.addActionListener(listener);
+        originalHttpOnly.addActionListener(listener);
         validators = new InputValidator(this, getTitle());
         buildValidationRules();
     }
@@ -222,6 +228,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalComment.setEnabled(op == UPDATE);
         originalVersion.setEnabled(op == UPDATE);
         originalSecure.setEnabled(op == UPDATE);
+        originalHttpOnly.setEnabled(op == UPDATE);
 
         nameLabel.setEnabled(op != REMOVE);
         final boolean addOrAddOrReplace = op == ADD || op == ADD_OR_REPLACE;
@@ -239,6 +246,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         versionLabel.setEnabled(op != REMOVE);
         versionTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalVersion.isSelected()));
         secureCheckBox.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalSecure.isSelected()));
+        httpOnlyCheckBox.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalHttpOnly.isSelected()));
 
         final boolean updateOrRemove = op == UPDATE || op == REMOVE;
         matchPanel.setEnabled(updateOrRemove);

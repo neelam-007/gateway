@@ -24,6 +24,7 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     private static final String VERSION = "Version";
     private static final String MAX_AGE = "Max-Age";
     private static final String SECURE = "Secure";
+    private static final String HTTP_ONLY = "HttpOnly";
     private static final String ATTRIBUTE_DELIMITER = "; ";
     private static final String EQUALS = "=";
     private static final int UNSPECIFIED_MAX_AGE = -1;
@@ -115,6 +116,9 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
         }
         if (cookie.isSecure()) {
             sb.append(ATTRIBUTE_DELIMITER).append(SECURE);
+        }
+        if (cookie.isHttpOnly()) {
+            sb.append(ATTRIBUTE_DELIMITER).append(HTTP_ONLY);
         }
         return sb.toString();
     }

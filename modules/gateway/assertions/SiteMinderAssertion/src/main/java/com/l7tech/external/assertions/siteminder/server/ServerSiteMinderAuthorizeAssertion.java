@@ -150,7 +150,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
         String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
 
-        HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment);
+        HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment, false);
         Message response = pec.getResponse();
         if(response.isHttpResponse()) {
             response.getHttpCookiesKnob().addCookie(cookie);

@@ -61,7 +61,7 @@ class NettyHttpRequestKnob extends HttpRequestKnobAdapter {
             int i = 0;
             for (Cookie c : allCookies) {
                 // TODO double check that path and domain get populated correctly; may require getting the info from elsewhere
-                HttpCookie cookie = new HttpCookie(c.getName(), c.getValue(), c.getVersion(), c.getPath(), c.getDomain(), c.getMaxAge(), c.isSecure(), c.getComment());
+                HttpCookie cookie = new HttpCookie(c.getName(), c.getValue(), c.getVersion(), c.getPath(), c.getDomain(), c.getMaxAge(), c.isSecure(), c.getComment(), c.isHttpOnly());
                 cookies[i++] = cookie;
             }
         }

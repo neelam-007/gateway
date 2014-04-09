@@ -22,6 +22,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
     public static final String MAX_AGE = "max-age";
     public static final String COMMENT = "comment";
     public static final String SECURE = "secure";
+    public static final String HTTP_ONLY = "httpOnly";
 
     public static enum Operation {
         ADD("Add"), REMOVE("Remove"), UPDATE("Update"), ADD_OR_REPLACE("Add or Replace");

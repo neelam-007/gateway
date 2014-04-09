@@ -72,6 +72,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(MAX_AGE, new ManageCookieAssertion.CookieAttribute(MAX_AGE, "60", false));
         assertion.getCookieAttributes().put(COMMENT, new ManageCookieAssertion.CookieAttribute(COMMENT, "test comment", false));
         assertion.getCookieAttributes().put(SECURE, new ManageCookieAssertion.CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         assertEquals(1, request.getHttpCookiesKnob().getCookies().size());
@@ -84,6 +85,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(60, cookie.getMaxAge());
         assertEquals("test comment", cookie.getComment());
         assertTrue(cookie.isSecure());
+        assertTrue(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
@@ -115,6 +117,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(60, cookie.getMaxAge());
         assertEquals("test comment", cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
     }
 
     @Test
@@ -190,7 +193,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void addCookieAlreadyExists() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "existingValue", 0, "/", "localhost", 60, true, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "existingValue", 0, "/", "localhost", 60, true, "test", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "foo", false));
         assertion.getCookieAttributes().put(DOMAIN, new CookieAttribute(DOMAIN, "localhost", false));
         assertion.getCookieAttributes().put(PATH, new CookieAttribute(PATH, "/", false));
@@ -380,7 +383,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void removeCookieFromResponse() throws Exception {
-        final HttpCookie responseCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test");
+        final HttpCookie responseCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false);
         response.getHttpCookiesKnob().addCookie(responseCookie);
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
@@ -393,7 +396,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void removeCookieFromResponseDoesNotRemoveRequestCookies() throws Exception {
-        final HttpCookie requestCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test");
+        final HttpCookie requestCookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false);
         request.getHttpCookiesKnob().addCookie(requestCookie);
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.REMOVE);
@@ -476,6 +479,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(-1, cookie.getMaxAge());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
@@ -500,12 +504,13 @@ public class ServerManageCookieAssertionTest {
         assertEquals(-1, cookie.getMaxAge());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
     @Test
     public void updateCookieByName() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, false));
@@ -516,6 +521,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -529,14 +535,15 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, cookie.getVersion());
         assertEquals(99, cookie.getMaxAge());
         assertTrue(cookie.isSecure());
+        assertTrue(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
     @Test
     public void updateCookieByDomain() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("noDomain", "noDomain", 0, "/", null, -1, false, null));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("noDomain", "noDomain", 0, "/", null, -1, false, null, false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(DOMAIN, new CookieCriteria(DOMAIN, "localhost", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, false));
@@ -547,6 +554,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -561,6 +569,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, modifiedCookie.getVersion());
         assertEquals(99, modifiedCookie.getMaxAge());
         assertTrue(modifiedCookie.isSecure());
+        assertTrue(modifiedCookie.isHttpOnly());
         assertNull(cookieMap.get("noDomain").getDomain());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -568,8 +577,8 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieByPath() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("noPath", "noPath", 0, null, "localhost", -1, false, null));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("noPath", "noPath", 0, null, "localhost", -1, false, null, false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(PATH, new CookieCriteria(PATH, "/", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, false));
@@ -580,6 +589,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -594,6 +604,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, modifiedCookie.getVersion());
         assertEquals(99, modifiedCookie.getMaxAge());
         assertTrue(modifiedCookie.isSecure());
+        assertTrue(modifiedCookie.isHttpOnly());
         assertNull(cookieMap.get("noPath").getPath());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -601,7 +612,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieByNameDomainAndPath() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.getCookieCriteria().put(DOMAIN, new CookieCriteria(DOMAIN, "localhost", false));
@@ -614,6 +625,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -627,6 +639,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, cookie.getVersion());
         assertEquals(99, cookie.getMaxAge());
         assertTrue(cookie.isSecure());
+        assertTrue(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
@@ -640,7 +653,7 @@ public class ServerManageCookieAssertionTest {
         context.setVariable("path", modified);
         context.setVariable("comment", modified);
         context.setVariable("maxAge", 99);
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "${name}", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "${name}", false));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "${value}", false));
@@ -650,6 +663,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "${maxAge}", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -663,14 +677,15 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, cookie.getVersion());
         assertEquals(99, cookie.getMaxAge());
         assertTrue(cookie.isSecure());
+        assertTrue(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
     @Test
     public void updateCookieByNameRegex() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, STARTS_WITH_F, true));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "", true));
@@ -681,6 +696,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -694,6 +710,7 @@ public class ServerManageCookieAssertionTest {
             assertEquals(1, cookie.getVersion());
             assertEquals(99, cookie.getMaxAge());
             assertTrue(cookie.isSecure());
+            assertTrue(cookie.isHttpOnly());
         }
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -701,8 +718,8 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieByDomainRegex() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(DOMAIN, new CookieCriteria(DOMAIN, STARTS_WITH_L, true));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "", true));
@@ -713,6 +730,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -726,6 +744,7 @@ public class ServerManageCookieAssertionTest {
             assertEquals(1, cookie.getVersion());
             assertEquals(99, cookie.getMaxAge());
             assertTrue(cookie.isSecure());
+            assertTrue(cookie.isHttpOnly());
         }
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -733,8 +752,8 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieByPathRegex() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo2", "bar2", 0, "/2", "localhost2", 60, false, "test2", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(PATH, new CookieCriteria(PATH, STARTS_WITH_FORWARD_SLASH, true));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "", true));
@@ -745,6 +764,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, "1", false));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, "99", false));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", false));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", false));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -758,6 +778,7 @@ public class ServerManageCookieAssertionTest {
             assertEquals(1, cookie.getVersion());
             assertEquals(99, cookie.getMaxAge());
             assertTrue(cookie.isSecure());
+            assertTrue(cookie.isHttpOnly());
         }
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
@@ -765,7 +786,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieNameResolvesToEmpty() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "${name}", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "${name}", false));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "bar2", false));
@@ -783,7 +804,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookiePathResolvesToEmpty() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         assertion.getCookieCriteria().put(PATH, new CookieCriteria(PATH, "${path}", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "${name}", false));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "bar2", false));
@@ -801,7 +822,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieDomainResolvesToEmpty() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         assertion.getCookieCriteria().put(PATH, new CookieCriteria(PATH, "${domain}", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "${name}", false));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "bar2", false));
@@ -819,7 +840,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieInvalidVersion() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, false));
@@ -838,7 +859,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieInvalidMaxAge() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, "/", "localhost", 60, false, "test", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", false));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, false));
@@ -858,7 +879,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void updateCookieUseExistingValues() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false));
         final String modified = "modified";
         assertion.getCookieCriteria().put(NAME, new CookieCriteria(NAME, "foo", true));
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, modified, true));
@@ -869,6 +890,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(VERSION, new CookieAttribute(VERSION, modified, true));
         assertion.getCookieAttributes().put(MAX_AGE, new CookieAttribute(MAX_AGE, modified, true));
         assertion.getCookieAttributes().put(SECURE, new CookieAttribute(SECURE, "true", true));
+        assertion.getCookieAttributes().put(HTTP_ONLY, new CookieAttribute(HTTP_ONLY, "true", true));
         assertion.setOperation(com.l7tech.external.assertions.managecookie.ManageCookieAssertion.Operation.UPDATE);
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
@@ -882,6 +904,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals(1, cookie.getVersion());
         assertEquals(60, cookie.getMaxAge());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
@@ -946,7 +969,7 @@ public class ServerManageCookieAssertionTest {
 
     @Test
     public void addOrReplaceCookieAlreadyExists() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "originalValue", 1, null, null, -1, false, null));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "originalValue", 1, null, null, -1, false, null, false));
         assertion.setOperation(Operation.ADD_OR_REPLACE);
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "foo", false));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "newValue", false));
@@ -992,11 +1015,12 @@ public class ServerManageCookieAssertionTest {
         assertEquals(60, cookie.getMaxAge());
         assertEquals("test comment", cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
     }
 
     @Test
     public void addOrReplaceCookieAlreadyExistsIgnoresOriginalAttributeValues() throws Exception {
-        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "originalValue", 1, null, null, -1, false, "originalComment"));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "originalValue", 1, null, null, -1, false, "originalComment", false));
         assertion.setOperation(Operation.ADD_OR_REPLACE);
         assertion.getCookieAttributes().put(NAME, new CookieAttribute(NAME, "foo", true));
         assertion.getCookieAttributes().put(VALUE, new CookieAttribute(VALUE, "newValue", true));
@@ -1013,6 +1037,7 @@ public class ServerManageCookieAssertionTest {
         assertNull(cookie.getPath());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
         assertEquals(-1, cookie.getMaxAge());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));

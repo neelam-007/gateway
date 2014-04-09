@@ -153,6 +153,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             final String maxAge = getAttributeValue(MAX_AGE, existingCookie, variableMap);
             final String comment = getAttributeValue(COMMENT, existingCookie, variableMap);
             final String secure = getAttributeValue(SECURE, existingCookie, variableMap);
+            final String httpOnly = getAttributeValue(HTTP_ONLY, existingCookie, variableMap);
             final String versionStr = getAttributeValue(VERSION, existingCookie, variableMap);
             Integer version = null;
             try {
@@ -165,7 +166,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
                     final Integer maxAgeInt = StringUtils.isBlank(maxAge) ? -1 : Integer.valueOf(maxAge);
                     cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
                             StringUtils.isBlank(domain) ? null : domain, maxAgeInt, Boolean.parseBoolean(secure),
-                            StringUtils.isBlank(comment) ? null : comment);
+                            StringUtils.isBlank(comment) ? null : comment, Boolean.parseBoolean(httpOnly));
                 } catch (final NumberFormatException e) {
                     logAndAudit(AssertionMessages.INVALID_COOKIE_MAX_AGE, maxAge);
                 }
@@ -199,6 +200,8 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
                 attributeValue = existingCookie.getComment();
             } else if (attributeName.equals(SECURE)) {
                 attributeValue = String.valueOf(existingCookie.isSecure());
+            } else if (attributeName.equals(HTTP_ONLY)) {
+                attributeValue = String.valueOf(existingCookie.isHttpOnly());
             } else {
                 logger.log(Level.WARNING, "Unknown cookie attribute: " + attributeName);
             }

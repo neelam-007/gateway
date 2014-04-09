@@ -672,8 +672,8 @@ public class MessageSelectorTest {
 
     @Test
     public void selectAllCookies() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null, false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies", handler, false);
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(2, cookies.size());
@@ -691,9 +691,9 @@ public class MessageSelectorTest {
 
     @Test
     public void selectAllCookieNames() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/diffpath", "diffdomain", 60, true, "test", false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookienames", handler, false);
         final List<String> cookieNames = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(3, cookieNames.size());
@@ -703,8 +703,8 @@ public class MessageSelectorTest {
 
     @Test
     public void selectCookieByName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null, false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.1", handler, false);
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(1, cookies.size());
@@ -713,9 +713,9 @@ public class MessageSelectorTest {
 
     @Test
     public void selectMultipleCookiesByName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test", false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.2", handler, false);
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(2, cookies.size());
@@ -725,19 +725,19 @@ public class MessageSelectorTest {
 
     @Test
     public void selectCookieByNameNone() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         assertNull(selector.select(null, message, "http.cookies.x", handler, false));
     }
 
     @Test
     public void selectCookieByEmptyName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         assertNull(selector.select(null, message, "http.cookies.", handler, false));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void selectCookieByNameNoneStrict() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         try {
             selector.select(null, message, "http.cookies.x", handler, true);
             fail("Expected IllegalArgumentException");
@@ -749,8 +749,8 @@ public class MessageSelectorTest {
 
     @Test
     public void selectCookieValueByName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 0, null, null, -1, false, null, false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.1", handler, false);
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(1, cookies.size());
@@ -759,9 +759,9 @@ public class MessageSelectorTest {
 
     @Test
     public void selectMultipleCookieValuesByName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test"));
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test", false));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("2", "c", 1, "/diffpath", "diffdomain", 60, true, "test", false));
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.2", handler, false);
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(2, cookies.size());
@@ -771,19 +771,19 @@ public class MessageSelectorTest {
 
     @Test
     public void selectCookieValueByNameNone() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         assertNull(selector.select(null, message, "http.cookievalues.x", handler, false));
     }
 
     @Test
     public void selectCookieValueByEmptyName() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         assertNull(selector.select(null, message, "http.cookievalues.", handler, false));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void selectCookieValueByNameNoneStrict() {
-        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test"));
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
         try {
             selector.select(null, message, "http.cookievalues.x", handler, true);
             fail("Expected IllegalArgumentException");
