@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.http;
@@ -41,7 +40,8 @@ public interface GenericHttpRequest extends Closeable {
     GenericHttpResponse getResponse() throws GenericHttpException;
 
     /**
-     * Adds a new parameter to be used in the POST request body.
+     * Adds a new parameter to be used in an entity-enclosing request body.
+     *
      * @param parameters The parameter name and value to add. The String[] should contains the name (String[0])
      *                   and value (String[1]) pair
      * @throws IllegalArgumentException if either argument is null

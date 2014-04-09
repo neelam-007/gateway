@@ -55,9 +55,7 @@ import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.net.*;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -310,7 +308,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         final Long contentLen = params.getContentLength();
-        if ( (httpMethod instanceof HttpPost || httpMethod instanceof HttpPut) && contentLen != null) {
+        if ( ( httpMethod instanceof HttpEntityEnclosingRequestBase ) && contentLen != null ) {
             if (contentLen > (long) Integer.MAX_VALUE )
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
         }
@@ -326,7 +324,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         final ContentTypeHeader rct = params.getContentType();
-        if (rct != null && (httpMethod instanceof HttpPost || httpMethod instanceof HttpPut)) {
+        if ( rct != null && ( httpMethod instanceof HttpEntityEnclosingRequestBase ) ) {
             httpMethod.addHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
         }
         //this is where we configure ssl handling
@@ -340,8 +338,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             public void setInputStream(final InputStream bodyInputStream) {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
-                if (!(method instanceof HttpPost || method instanceof HttpPut))
-                    throw new UnsupportedOperationException("Only POST or PUT requests require a body InputStream");
+                if (!( method instanceof HttpEntityEnclosingRequestBase ) )
+                    throw new UnsupportedOperationException("Only entity-enclosing request methods (such as POST or PUT) require a body InputStream");
                 if (requestEntitySet)
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
@@ -357,22 +355,22 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                     logger.warning("addParam is called before method is assigned");
                     throw new IllegalStateException("the http method object is not yet assigned");
                 }
-                if (method instanceof HttpPost) {
-                    HttpPost post = (HttpPost) method;
+                if ( method instanceof HttpEntityEnclosingRequestBase ) {
+                    HttpEntityEnclosingRequestBase post = (HttpEntityEnclosingRequestBase) method;
                     List<NameValuePair> formParams = new ArrayList<NameValuePair>();
                     for (String[] parameter : parameters) {
                         formParams.add(new BasicNameValuePair(parameter[0], parameter[1]));
                     }
                     try {
                         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formParams);
-                        post.setEntity(entity);
+                        post.setEntity( entity );
                     } catch (UnsupportedEncodingException e) {
                         throw new IllegalArgumentException(e);
                     }
                 } else {
-                    logger.warning("addParam is called but the internal method is not post : " +
+                    logger.warning("addParam is called but the internal method is not entity-enclosing : " +
                             method.getClass().getName());
-                    throw new IllegalStateException("not a post");
+                    throw new IllegalStateException("not an entity enclosing method");
                 }
             }
 
@@ -382,8 +380,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                     throw new IllegalArgumentException("inputStreamFactory must not be null");
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
-                if (!(method instanceof HttpPost || method instanceof HttpPut))
-                    throw new UnsupportedOperationException("Only POST or PUT requests require a body InputStream");
+                if ( !( method instanceof HttpEntityEnclosingRequestBase ) )
+                    throw new UnsupportedOperationException("Only entity-enclosing request methods (such as POST or PUT) require a body InputStream");
                 if (requestEntitySet)
                     throw new IllegalStateException("Request entity already set!");
                 requestEntitySet = true;
@@ -619,11 +617,30 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-    private HttpRequestBase getClientMethod(final HttpMethod method, final String methodAsString, final GenericHttpRequestParams params, URL targetUrl) throws GenericHttpException{
-        HttpUriRequest httpRequest = null;
-        HttpMethod methodType = HttpMethod.POST;
-        if(method != null) methodType = method;
-        URI uri = null;
+    /** An entity enclosing request with a custom HTTP verb, behaving pretty much just like PUT or POST. */
+    private static class HttpOtherEntityEnclosing extends HttpEntityEnclosingRequestBase {
+        final String protocolName;
+
+        HttpOtherEntityEnclosing( URI uri, String protocolName ) {
+            setURI( uri );
+            this.protocolName = protocolName;
+        }
+
+        @Override
+        public String getMethod() {
+            return protocolName;
+        }
+    }
+
+    private HttpRequestBase getClientMethod( HttpMethod method, final String methodAsString, final GenericHttpRequestParams params, URL targetUrl ) throws GenericHttpException{
+        if (method == null)
+            method = HttpMethod.POST;
+
+        final String methodProtocolName = HttpMethod.OTHER.equals( method ) && methodAsString != null
+                ? methodAsString
+                : method.getProtocolName();
+
+        final URI uri;
         try {
             uri = targetUrl.toURI();
         } catch (URISyntaxException e) {
@@ -636,14 +653,10 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         {
             // This is a method like GET, DELETE, or HEAD that would not normally be transmitted with a request body, but
             // that is being forced to include one anyway. We will force use of PostMethod (with overridden verb) for this request (Bug #12168)
-            return new HttpPost(uri) {
-                @Override
-                public String getMethod() {
-                    return method.getProtocolName();
-                }
-            };
+            return new HttpOtherEntityEnclosing( uri, methodProtocolName );
         }
-        switch (methodType) {
+
+        switch ( method ) {
             case GET:
                 return new HttpGet(uri);
             case POST:
@@ -660,14 +673,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 //RFC 5789 HTTP Patch method
                 return new HttpPatch(uri);
             case OTHER:
-                if (methodAsString == null)
-                    throw new IllegalStateException("Method " + method + " not supported with null methodAsString");
-                return new HttpPost(uri) {
-                    @Override
-                    public String getMethod() {
-                        return methodAsString;
-                    }
-                };
+                // TODO support custom non-entity-enclosing request methods, and some way to request their use
+                return new HttpOtherEntityEnclosing( uri, methodProtocolName );
             default:
                 throw new IllegalStateException("Method " + method + " not supported");
         }
