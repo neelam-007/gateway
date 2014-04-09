@@ -77,11 +77,29 @@ public class DebugAdminImpl implements DebugAdmin {
     @Override
     @Nullable
     public DebugResult waitForUpdates(@NotNull String taskId, long maxMillisToWait) {
+        DebugResult result;
+
         DebugContext debugContext = debugManager.getDebugContext(taskId);
-        if (debugContext != null && debugContext.waitForUpdates(maxMillisToWait)) {
-            return this.createDebugResult(debugContext);
+        if (debugContext != null) {
+            // debug context found. It is still active.
+            //
+            if (debugContext.waitForUpdates(maxMillisToWait)) {
+                // debug context has been is updated.
+                //
+                result = this.createDebugResult(debugContext);
+            } else {
+                // debug context was not updated.
+                //
+                result = null;
+            }
+        } else {
+            // debug context not found. It has been terminated.
+            //
+            result = new DebugResult(taskId);
+            result.setIsTerminated(true);
         }
-        return null;
+
+        return result;
     }
 
     @Override
@@ -101,6 +119,7 @@ public class DebugAdminImpl implements DebugAdmin {
         // Basic info.
         //
         debugResult.setDebugState(debugContext.getDebugState());
+        debugResult.setIsTerminated(debugContext.isTerminated());
         debugResult.setBreakpoints(debugContext.getBreakpoints());
 
         // Current line, if set.

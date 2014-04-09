@@ -162,6 +162,7 @@ public class DebugContextVariableTreePanel extends JPanel {
      * Disable UI components.
      */
     void disableComponents() {
+        contextVariableSearchComboBox.setEnabled(false);
         contextVariablesTree.setEnabled(false);
         contextVariableComboBox.setEnabled(false);
         addContextVariableButton.setEnabled(false);

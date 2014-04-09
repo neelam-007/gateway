@@ -6,6 +6,8 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.Background;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +24,12 @@ import java.util.logging.Logger;
  */
 public class DebugManagerImpl implements DebugManager {
     private static final Logger logger = Logger.getLogger(DebugManagerImpl.class.getName());
+
+    private static final String PROP_INACTIVE_SESSION_CLEAN_INTERVAL_MILLIS = "com.l7tech.server.stepdebug.inactiveSessionCleanIntervalMillis";
+    private static final long DEFAULT_INACTIVE_SESSION_CLEAN_INTERVAL_MILLIS = 86460000L; // 1 Day + 1 Min
+
+    private static final String PROP_INACTIVE_SESSION_TIMEOUT_MILLIS = "com.l7tech.server.stepdebug.inactiveSessionTimeoutMillis";
+    private static final long DEFAULT_INACTIVE_SESSION_TIMEOUT_MILLIS = 86400000L; // 1 Day
 
     private final Audit audit;
     private final Map<String, DebugContext> debugTasks = new ConcurrentHashMap<>();
@@ -34,6 +43,29 @@ public class DebugManagerImpl implements DebugManager {
      */
     public DebugManagerImpl(@NotNull AuditFactory auditFactory) {
         this.audit = auditFactory.newInstance(this, logger);
+
+        final long inactiveSessionCleanIntervalMillis = ConfigFactory.getLongProperty(
+            PROP_INACTIVE_SESSION_CLEAN_INTERVAL_MILLIS,
+            DEFAULT_INACTIVE_SESSION_CLEAN_INTERVAL_MILLIS);
+        final long inactiveSessionTimeoutMillis = ConfigFactory.getLongProperty(
+            PROP_INACTIVE_SESSION_TIMEOUT_MILLIS,
+            DEFAULT_INACTIVE_SESSION_TIMEOUT_MILLIS);
+
+        Background.scheduleRepeated(
+            new TimerTask() {
+                @Override
+                public void run() {
+                    long currentTimeMillis = System.currentTimeMillis();
+                    for (DebugContext context : debugTasks.values()) {
+                        long lastAccessTimeMillis = context.getLastUpdatedTimeMillis();
+                        if ((currentTimeMillis - lastAccessTimeMillis) >= inactiveSessionTimeoutMillis) {
+                            logger.log(Level.INFO, "Cleanup inactive service debugger session for policy '" + context.getPolicyGoid().toString() +"'.");
+                            terminateDebug(context.getTaskId());
+                        }
+                    }
+                } },
+            inactiveSessionCleanIntervalMillis,
+            inactiveSessionCleanIntervalMillis);
     }
 
     @Override
@@ -86,13 +118,15 @@ public class DebugManagerImpl implements DebugManager {
         lock.lock();
         try {
             DebugContext debugContext = this.getDebugContext(taskId);
-            if (debugContext != null && !debugContext.getDebugState().equals(DebugState.STOPPED)) {
+            if (debugContext != null) {
                 Goid policyGoid = debugContext.getPolicyGoid();
-                audit.logAndAudit(
-                    SystemMessages.SERVICE_DEBUGGER_STOP,
-                    policyGoid.toString());
-                debugContext.stopDebugging();
                 waitingForMsg.remove(policyGoid);
+                if (!debugContext.getDebugState().equals(DebugState.STOPPED)) {
+                    audit.logAndAudit(
+                        SystemMessages.SERVICE_DEBUGGER_STOP,
+                        policyGoid.toString());
+                    debugContext.stopDebugging();
+                }
             }
         } finally {
             lock.unlock();
@@ -148,6 +182,10 @@ public class DebugManagerImpl implements DebugManager {
         lock.lock();
         try {
             this.stopDebug(taskId);
+            DebugContext debugContext = this.getDebugContext(taskId);
+            if (debugContext != null) {
+                debugContext.setIsTerminated(true);
+            }
             debugTasks.remove(taskId);
         } finally {
             lock.unlock();

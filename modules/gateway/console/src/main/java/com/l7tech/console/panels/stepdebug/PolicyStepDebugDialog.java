@@ -49,7 +49,6 @@ public class PolicyStepDebugDialog extends JFrame {
     private DebugResult debugResult;
     private Timer refreshTimer;
     private boolean scrollToCurrentLineOnRefresh = true;
-    private boolean isDebugTerminated = false;
 
     /**
      * Checks whether or not a breakpoint can be set for the given assertion.
@@ -88,7 +87,7 @@ public class PolicyStepDebugDialog extends JFrame {
      */
     void onToggleBreakpoint(@NotNull AssertionTreeNode node) {
         Assertion assertion = node.asAssertion();
-        if (isBreakpointAllowed(assertion) && debugResult != null) {
+        if (debugResult != null && isBreakpointAllowed(assertion)) {
             debugAdmin.toggleBreakpoint(
                 debugResult.getTaskId(),
                 AssertionTreeNode.getVirtualOrdinal(node));
@@ -100,8 +99,10 @@ public class PolicyStepDebugDialog extends JFrame {
      * Remove all breakpoints.
      */
     void onRemoveAllBreakpoints() {
-        debugAdmin.removeAllBreakpoints(debugResult.getTaskId());
-        scrollToCurrentLineOnRefresh = false;
+        if (debugResult != null) {
+            debugAdmin.removeAllBreakpoints(debugResult.getTaskId());
+            scrollToCurrentLineOnRefresh = false;
+        }
     }
 
     /**
@@ -164,7 +165,6 @@ public class PolicyStepDebugDialog extends JFrame {
 
         if (this.debugResult != null) {
             this.debugAdmin.terminateDebug(debugResult.getTaskId());
-            this.isDebugTerminated = true;
             this.debugResult = null;
         }
 
@@ -324,8 +324,17 @@ public class PolicyStepDebugDialog extends JFrame {
     private void onRefresh() {
         if (debugResult != null) {
             DebugResult updatedDebugResult = debugAdmin.waitForUpdates(debugResult.getTaskId(), MAX_WAIT_TIME_MILLIS);
-            if (updatedDebugResult != null && !isDebugTerminated) {
+            if (updatedDebugResult != null && debugResult != null) {
+                // Update debugResult only if debugResult has changed (DebugAdmin#waitForUpdates() returned non-null value)
+                // and the debugger has not been terminated by the user (debugResult != null).
+                //
                 debugResult = updatedDebugResult;
+
+                if (debugResult.isTerminated()) {
+                    refreshTimer.cancel();
+                    refreshTimer = null;
+                }
+
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -338,6 +347,16 @@ public class PolicyStepDebugDialog extends JFrame {
 
     private void updateComponents() {
         if (debugResult == null) {
+            return;
+        }
+
+        if (debugResult.isTerminated()) {
+            JOptionPane.showMessageDialog(
+                this,
+                "The debugger session was terminated due to inactivity. The Service Debugger dialog will be closed.",
+                this.getTitle(),
+                JOptionPane.ERROR_MESSAGE);
+            dispose();
             return;
         }
 

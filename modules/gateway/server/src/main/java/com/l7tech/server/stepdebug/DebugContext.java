@@ -21,6 +21,8 @@ public class DebugContext {
     private final Condition executionPermitted = lock.newCondition();
     private final Condition debugContextUpdated = lock.newCondition();
     private boolean isDirty = false; // Indicates debug context has changed.
+    private long lastUpdatedTimeMillis;
+    private boolean isTerminated = false;
 
     private final Goid policyGoid;
     private final String taskId;
@@ -43,6 +45,7 @@ public class DebugContext {
         this.taskId = taskId;
         this.debugPecData = new DebugPecData(audit);
         this.setDebugState(DebugState.STOPPED);
+        this.lastUpdatedTimeMillis = System.currentTimeMillis();
     }
 
     /**
@@ -372,6 +375,50 @@ public class DebugContext {
         return false;
     }
 
+    /**
+     * Returns the last time the debug context was updated.
+     *
+     * @return the last time the debug context was updated.
+     */
+    public long getLastUpdatedTimeMillis() {
+        lock.lock();
+        try {
+            return this.lastUpdatedTimeMillis;
+        }  finally {
+            this.markAsDirty();
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Sets whether or not the debugger is terminated.
+     *
+     * @param isTerminated true if terminated. false otherwise.
+     */
+    public void setIsTerminated(boolean isTerminated) {
+        lock.lock();
+        try {
+            this.isTerminated = isTerminated;
+        }  finally {
+            this.markAsDirty();
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Returns whether or not the debugger is terminated.
+     *
+     * @return true if terminated. false otherwise.
+     */
+    public boolean isTerminated() {
+        lock.lock();
+        try {
+            return isTerminated;
+        }  finally {
+            lock.unlock();
+        }
+    }
+
     private void setDebugState(@NotNull DebugState debugState) {
         lock.lock();
         try {
@@ -412,6 +459,7 @@ public class DebugContext {
         lock.lock();
         try {
             this.isDirty = true;
+            this.lastUpdatedTimeMillis = System.currentTimeMillis();
             this.debugContextUpdated.signal();
         }  finally {
             lock.unlock();

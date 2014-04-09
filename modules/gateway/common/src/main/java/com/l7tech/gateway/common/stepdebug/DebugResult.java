@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -13,10 +14,11 @@ import java.util.Set;
 public class DebugResult implements Serializable {
 
     private final String taskId;
-    private DebugState debugState;
-    private Set<Collection<Integer>> breakpoints; // Set containing assertion numbers that have breakpoints enabled.
-    private Collection<Integer> currentLine; // The assertion number of current line.
-    private Set<DebugContextVariableData> contextVariables; // Context variables.
+    private DebugState debugState = DebugState.STOPPED;
+    private Set<Collection<Integer>> breakpoints = Collections.emptySet(); // Set containing assertion numbers that have breakpoints enabled.
+    private Collection<Integer> currentLine = null; // The assertion number of current line. Default to null.
+    private Set<DebugContextVariableData> contextVariables = Collections.emptySet(); // Context variables.
+    private boolean isTerminated = false;
 
     /**
      * Creates <code>DebugResult</code>.
@@ -111,5 +113,23 @@ public class DebugResult implements Serializable {
     @NotNull
     public Set<DebugContextVariableData> getContextVariables() {
         return contextVariables;
+    }
+
+    /**
+     * Sets whether or not the debugger is terminated.
+     *
+     * @param isTerminated true if terminated. false otherwise.
+     */
+    public void setIsTerminated(boolean isTerminated) {
+        this.isTerminated = isTerminated;
+    }
+
+    /**
+     * Returns whether or not the debugger is terminated.
+     *
+     * @return true if terminated. false otherwise.
+     */
+    public boolean isTerminated() {
+        return isTerminated;
     }
 }
