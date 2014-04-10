@@ -48,7 +48,9 @@ public class PolicyStepDebugAction extends NodeAction {
     protected void performAction() {
         final EntityWithPolicyNode policyNode = (EntityWithPolicyNode) node;
         try {
-            Policy policy = policyNode.getPolicy();
+            // Get the active version of policy.
+            //
+            Policy policy = policyAdmin.findPolicyByPrimaryKey(policyNode.getPolicy().getGoid());
             String displayName = PolicyEditorPanel.getDisplayName(
                 node.getName(),
                 policy.getVersionOrdinal(),
