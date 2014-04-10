@@ -79,13 +79,10 @@ public interface CustomEntityDescriptor {
      * Property name: <i>{@code CREATE_UI_OBJECT}</i>, return type: requested UI class object also implementing
      * typically <i>{@code JPanel}</i>, but may change in the future.
      * <p/>
-     * Represents the user interface object responsible to create the missing entity. Currently we only support {@code JPanel}.<br/>
-     * The User interface object must also implement {@link CustomEntityCreateUiObject} interface, providing code
-     * for modifying the missing entity.<br/>
+     * Represents the user interface object responsible to create the missing entity. Currently we only support
+     * {@link com.l7tech.policy.assertion.ext.entity.panels.CustomEntityCreateUiPanel CustomEntityCreateUiPanel}.<br/>
      * If the UI object is not provided (i.e. {@code null} is returned), then the default behavior is to create the
      * entity without user modification.<br/>
-     * If the UI object returned is set to an unsupported interface object (e.g. not a {@link CustomEntityCreateUiObject}),
-     * then {@code RuntimeException} will be thrown.
      */
     static public final String CREATE_UI_OBJECT = "CreateUiObject";
 
@@ -106,10 +103,7 @@ public interface CustomEntityDescriptor {
      * Another example, the following code fragment gathers external entity create object:
      * <blockquote><pre>
      *  {@code 
-     *  JPanel createPanel = entityDescriptor.getProperty(CustomEntityDescriptor.CREATE_UI_OBJECT, JPanel.class);
-     *  if (!(createPanel instanceof CustomEntityCreateUiObject)) {
-     *      // throw exception here
-     *  }
+     *  CustomEntityCreateUiPanel createPanel = entityDescriptor.getProperty(CustomEntityDescriptor.CREATE_UI_OBJECT, CustomEntityCreateUiPanel.class);
      *  }
      * </pre></blockquote>
      * </p>

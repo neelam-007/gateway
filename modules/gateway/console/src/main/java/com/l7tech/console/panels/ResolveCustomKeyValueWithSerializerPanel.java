@@ -5,9 +5,9 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.assertion.ext.entity.CustomEntityCreateUiObject;
 import com.l7tech.policy.assertion.ext.entity.CustomEntityDescriptor;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.entity.panels.CustomEntityCreateUiPanel;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.exporter.CustomKeyValueReference;
 import com.l7tech.util.ExceptionUtils;
@@ -235,7 +235,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
 
         // if the custom assertion supports CREATE_UI_OBJECT, then
         // attach the panel to our CreateMissingCustomKeyValueEntityDialog
-        final JPanel editorCreatePanel = externalEntity.getUiObject(CustomEntityDescriptor.CREATE_UI_OBJECT, JPanel.class);
+        final CustomEntityCreateUiPanel editorCreatePanel = externalEntity.getUiObject(CustomEntityDescriptor.CREATE_UI_OBJECT, CustomEntityCreateUiPanel.class);
         //noinspection StatementWithEmptyBody
         if (editorCreatePanel == null) {
             // default to the generic functionality
@@ -247,7 +247,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                         }
                     }
             );
-        } else if (editorCreatePanel instanceof CustomEntityCreateUiObject) {
+        } else {
             // create editor is provided so use specific approach
             // add action for creating external references button
             createCustomKeyValueEntityButton.addActionListener(
@@ -258,12 +258,6 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                         }
                     }
             );
-        } else  {
-            // also log as warning since the exception below is going to be swallowed by the import/export wizard
-            // therefore the user will not see the reason why import failed
-            logger.log(Level.WARNING, "CREATE_UI_OBJECT having illegal class!");
-            //createCustomKeyValueEntityButton.setEnabled(false);
-            throw new RuntimeException("CREATE_UI_OBJECT implementing illegal class!");
         }
     }
 
@@ -342,7 +336,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
      * Specific logic for creating the missing CustomKeyValue entity.
      * @param editorCreatePanel    the custom assertion specific editor panel.
      */
-    private void doCreateSpecificCustomKeyValue(@NotNull final JPanel editorCreatePanel) {
+    private void doCreateSpecificCustomKeyValue(@NotNull final CustomEntityCreateUiPanel editorCreatePanel) {
         final CreateMissingCustomKeyValueEntityDialog dlg = new CreateMissingCustomKeyValueEntityDialog(
                 TopComponents.getInstance().getTopParent(),
                 editorCreatePanel,

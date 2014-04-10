@@ -1,3 +1,4 @@
+com.l7tech.policy.assertion.ext.entity.panels.CustomEntityCreateUiPanel, -5069372108298175819
 com.l7tech.policy.assertion.ext.message.format.NoSuchMessageFormatException, -4827522716470467075
 com.l7tech.policy.assertion.ext.Category, 6534895019625872949
 com.l7tech.policy.variable.VariableMetadata, -498485653717665607
@@ -10,8 +11,8 @@ com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport, -28405114
 com.l7tech.policy.variable.VariableNameSyntaxException, 7720848234611367278
 com.l7tech.policy.assertion.ext.CustomLoaderException, 2189917420366697191
 com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport, -7171998403662060182
-com.l7tech.policy.assertion.ext.message.CustomMessageAccessException, -621323549724703833
 com.l7tech.policy.variable.NoSuchVariableException, 6178749374710799495
+com.l7tech.policy.assertion.ext.message.CustomMessageAccessException, -621323549724703833
 com.l7tech.policy.assertion.ext.message.InvalidDataException, -1785875013351638986
 com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport$ReferenceElement, -1519739648961747529
 com.l7tech.policy.variable.VariableNotSettableException, 5030901721152784969

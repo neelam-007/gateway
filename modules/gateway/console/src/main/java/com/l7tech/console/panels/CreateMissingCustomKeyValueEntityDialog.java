@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.ext.entity.CustomEntityCreateUiObject;
 import com.l7tech.policy.assertion.ext.entity.CustomEntityDescriptor;
+import com.l7tech.policy.assertion.ext.entity.panels.CustomEntityCreateUiPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,9 +19,9 @@ import static com.l7tech.console.api.CustomConsoleContext.*;
  * Represents a dialog object responsible for creating the missing custom-key-value-store entity.
  * <p/>
  * This is a simple dialog with Ok and Cancel buttons, passing the action to the entity properties panel.
- * The properties panel must extend {@code JPanel} and implement {@link CustomEntityCreateUiObject}.
+ * The properties panel must extend {@link CustomEntityCreateUiPanel}.
  *
- * @see CustomEntityCreateUiObject
+ * @see CustomEntityCreateUiPanel
  */
 public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.CreateMissingCustomKeyValueEntityDialog");
@@ -35,13 +35,7 @@ public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
      * custom-key-value-store entity properties panel.
      */
     @NotNull
-    private final JPanel propertiesPanel;
-
-    /**
-     * Same as {@link #propertiesPanel} but extracting {@code CustomEntityCreateUiObject} portion.
-     */
-    @NotNull
-    private final CustomEntityCreateUiObject propertiesPanelEditor;
+    private final CustomEntityCreateUiPanel propertiesPanel;
 
     /**
      * Final entity object when the user clicked Ok button.
@@ -58,13 +52,12 @@ public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
      * Construct the dialog using the custom-key-value-store entity properties panel.
      *
      * @param owner              owner window.
-     * @param propertiesPanel    custom-key-value-store entity properties panel, implementing {@code CustomEntityCreateUiObject}
-     *                           interface.
+     * @param propertiesPanel    custom-key-value-store entity properties panel.
      * @param entity             custom-key-value-store entity.
      */
     public CreateMissingCustomKeyValueEntityDialog(
             @NotNull final Window owner,
-            @NotNull final JPanel propertiesPanel,
+            @NotNull final CustomEntityCreateUiPanel propertiesPanel,
             @NotNull final CustomEntityDescriptor entity
     ) {
         super(
@@ -79,17 +72,13 @@ public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
         setModal(true);
 
         this.propertiesPanel = propertiesPanel;
-        if (!(propertiesPanel instanceof CustomEntityCreateUiObject)) {
-            throw new IllegalArgumentException("propertiesPanel must implement CustomEntityCreateUiObject");
-        }
-        this.propertiesPanelEditor = (CustomEntityCreateUiObject)propertiesPanel;
 
         final Map<String, Object> consoleContext = new HashMap<>(3);
         addCustomExtensionInterfaceFinder(consoleContext);
         addCommonUIServices(consoleContext, null, null);
         addKeyValueStoreServices(consoleContext);
-        propertiesPanelEditor.setConsoleContextUsed(consoleContext);
-        propertiesPanelEditor.initialize(entity);
+        this.propertiesPanel.setConsoleContextUsed(consoleContext);
+        this.propertiesPanel.initialize(entity);
 
         this.initialize();
     }
@@ -155,7 +144,7 @@ public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
      * Ok button action listener
      */
     private void onOk() {
-        newEntity = propertiesPanelEditor.validateEntity();
+        newEntity = propertiesPanel.validateEntity();
         if (null != newEntity) {
             confirmed = true;
             dispose();

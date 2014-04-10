@@ -17,6 +17,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -58,6 +59,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private GenericEntityManager genericEntityManager;
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private AuditRecordManager auditRecordManager;
+    private CustomKeyValueStoreManager customKeyValueStoreManager;
 
     private static final int MAX_RESULTS = 100;
 
@@ -83,6 +85,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     public void setAuditRecordManager(@NotNull final AuditRecordManager auditRecordManager) {
         this.auditRecordManager = auditRecordManager;
+    }
+
+    public void setCustomKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager customKeyValueStoreManager) {
+        this.customKeyValueStoreManager = customKeyValueStoreManager;
     }
 
     /**
@@ -227,6 +233,12 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             throw new FindException("Error looking audit record type: " + auditHeader.getRecordType());
         } else if(header instanceof AuditRecordHeader) {
             return auditRecordManager.findByHeader(header);
+        } else if(header instanceof CustomKeyStoreEntityHeader) {
+            if (header.getGoid() == null || Goid.DEFAULT_GOID.equals(header.getGoid())){
+                return customKeyValueStoreManager.findByUniqueName(header.getName());
+            } else {
+                return customKeyValueStoreManager.findByPrimaryKey(header.getGoid());
+            }
         } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }

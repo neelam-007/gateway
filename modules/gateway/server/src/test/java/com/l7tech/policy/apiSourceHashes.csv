@@ -7,7 +7,7 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceInvocat
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/store/KeyValueStore.java,bT2fF1HTL4FeqBfUzMiMPRva6z4=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExtensionInterfaceBinding.java,UsKmLaolDPxVF2/CMjHqpro6PnA=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/message/CustomMessage.java,jrdJHD4la+vulR2y/Ka3nlTN800=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomReferenceEntitiesSupport.java,lCTs1ZiECeocwVVQxcukQ67xSf4=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomReferenceEntitiesSupport.java,mGhFI9CxW1bk/mdvmqLhPoiLUbg=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/CustomAssertionStatus.java,oZr5tCu4TD1d4nH0pxtStNAHcdM=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/commonui/CustomSecurePasswordPanel.java,EcHpFUj3LDVyac1YQnhXxF2sdBU=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/SecurityContext.java,WXllwc1huchtbt/8fdjV/Fch0m0=
@@ -21,7 +21,7 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/message/knob/C
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/ServiceResponse.java,lDBzuy4fpigz+d6l4uj4iU2kuZo=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/EditListener.java,9Od8ruNYuz/MDjXBvyA8P6unXGA=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/store/KeyValueStoreServices.java,y5u8NQGRuxbC8QS/tXhbAIsZBtM=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomEntityCreateUiObject.java,F4JXvmmpCDgp9zSdNzonnJJaepI=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/panels/CustomEntityCreateUiPanel.java,3HMSrxqqz1lgAWY5ujEA0hMw/eE=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/licensing/CustomFeatureSetName.java,UZxiNRi0wv+kL3KIsVNWoeGNvOQ=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/ContextVariablesUtils.java,89YG6MEBgmokjKONoS0/qMYw4SA=
 modules/gateway/api/src/main/java/com/l7tech/policy/variable/VariableMetadata.java,B90EjTuF37X/deud8v2M99TdIp0=
@@ -34,7 +34,7 @@ modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/message/Custom
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/SetsVariables.java,MOtDhKfdwZ6Q9Sl+X1KK8diFVB0=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomEntityType.java,BMiOljEtFpA1CwRZCLVybdYGAF4=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/message/knob/CustomHttpHeadersKnob.java,GoFlmFVMc3C/wIEWPOhSPEHGtxM=
-modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomEntityDescriptor.java,eVfubdETY9ll5Cf1gp8aYELV9bc=
+modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomEntityDescriptor.java,r+7tmU4N2DWEmgPvW+rUsglfLho=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/VariableServices.java,jYGwknB1eB1rOtgXLEzrUgSPv3Q=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/cei/CustomExtensionInterfaceFinder.java,fUHrh9vJ8wPOfVYvp+KMVtNP4js=
 modules/gateway/api/src/main/java/com/l7tech/policy/assertion/ext/entity/CustomReferenceEntities.java,o+etxksJeMsdA84yqTQ6mv5z73Y=

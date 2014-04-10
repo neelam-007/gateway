@@ -19,6 +19,13 @@ import java.util.TreeMap;
 public final class CustomReferenceEntitiesSupport implements Serializable {
     private static final long serialVersionUID = -2840511468657076023L;
 
+    /**
+     * Get entity id/key, identified with {@code attributeName}.
+     *
+     * @param attributeName    referenced entity attribute name.
+     * @return referenced entity unique identifier or {@code null} if there are no entities identified with the
+     * {@code attributeName}
+     */
     public String getReference(final String attributeName) {
         if (attributeName == null) throw new IllegalArgumentException("attributeName cannot be null");
         final ReferenceElement element = references.get(attributeName);
@@ -36,7 +43,11 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
      * @param type             Mandatory.  Entity type.
      */
     public void setReference(final String attributeName, final String id, final CustomEntityType type) {
-        setReference(attributeName, id, type, null, null);
+        if (attributeName == null) throw new IllegalArgumentException("attributeName cannot be null");
+        if (id == null) throw new IllegalArgumentException("id cannot be null");
+        if (type == null) throw new IllegalArgumentException("type cannot be null");
+
+        references.put(attributeName, new ReferenceElement(id, null, type, null));
     }
 
     /**
@@ -44,27 +55,23 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
      *
      * @param attributeName       Mandatory. Use this unique {@code attributeName} for accessing the referenced entity.
      *                            Must be unique for each entity. Consider the {@code attributeName} as a local variable name.
-     * @param key                 Mandatory. Represents entity id/key system wise.
-     * @param type                Mandatory. Specify entity {@link CustomEntityType type}
-     * @param keyPrefix           Mandatory for entities of type {@link CustomEntityType#KeyValueStore}, otherwise optional.
-     *                            Specify the prefix used when serializing the entity via KeyValueStore.
-     * @param entitySerializer    Optional. Specify entity serializer in case when the entity depends on other entities
-     *                            or when providing specific import implementation i.e. when the entity is of type
+     * @param key                 Mandatory. Represents a unique identifier for the entity in the custom-key-value-store.
+     * @param keyPrefix           Mandatory. Represents the prefix portion of the key in the key-value-store.
+     * @param entitySerializer    Optional. Represents entity serializer object in case when the entity depends on other
+     *                            entities or when providing specific import implementation i.e. when the entity is of type
      *                            {@link CustomEntityDescriptor}.
      */
-    public void setReference(
+    public void setKeyValueStoreReference(
             final String attributeName,
             final String key,
-            final CustomEntityType type,
             final String keyPrefix,
             final CustomEntitySerializer entitySerializer
     ) {
         if (attributeName == null) throw new IllegalArgumentException("attributeName cannot be null");
         if (key == null) throw new IllegalArgumentException("key cannot be null");
-        if (type == null) throw new IllegalArgumentException("type cannot be null");
-        if (CustomEntityType.KeyValueStore.equals(type) && keyPrefix == null) throw new IllegalArgumentException("keyPrefix cannot be null for custom-key-values");
+        if (keyPrefix == null) throw new IllegalArgumentException("keyPrefix cannot be null for custom-key-values");
 
-        references.put(attributeName, new ReferenceElement(key, keyPrefix, type, entitySerializer));
+        references.put(attributeName, new ReferenceElement(key, keyPrefix, CustomEntityType.KeyValueStore, entitySerializer));
     }
 
     //////////////////////////////////////////////////////////////////////////////////////

@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
  * <CustomKeyValueReference RefType="com.l7tech.policy.exporter.CustomKeyValueReference">
  *     <Serializer>...</Serializer>   // optional
  *     <Config>
+ *         <KeyValueStoreName>...</KeyValueStoreName>
  *         <Key>...</Key>
  *         <KeyPrefix>...</KeyPrefix>
  *         <Base64Value>...</Base64Value>
@@ -50,17 +52,24 @@ public class CustomKeyValueReference extends ExternalReference {
      * <p/>
      * Serializer is optional, and will be added automatically exported when the entity class implements
      * CustomEntityDescriptor interface, and a non-null Serializer object is provided when entity is set
-     * (i.e. call to {@link com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport#setReference(
-     * String, String, com.l7tech.policy.assertion.ext.entity.CustomEntityType,
-     * String, com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer)
+     * (i.e. call to {@link com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport#setKeyValueStoreReference(
+     * String, String, String, com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer)
      * CustomReferenceEntitiesSupport#setReference(...)})
      */
     private static final String REFERENCE_SERIALIZER_NODE = "Serializer";
 
     /**
-     * This is the parent node holding entity specific config
+     * Represents the parent node holding entity specific config
      */
     private static final String REFERENCE_CONFIG_NODE = "Config";
+
+    /**
+     * Represents the custom-key-value-store store name.
+     * <p/>
+     * Currently only {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreServices#INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME internalTransactional}
+     * is exposed to the developer.
+     */
+    private static final String REFERENCE_CONFIG_KEY_VALUE_STORE_NAME_NODE = "KeyValueStoreName";
 
     /**
      * Represents a unique identifier for the entity in the custom-key-value-store.<br/>
@@ -204,6 +213,7 @@ public class CustomKeyValueReference extends ExternalReference {
         final Element nodeConfig = document.createElementNS(null, REFERENCE_CONFIG_NODE);
 
         // add ref key, prefix and value
+        addParamEl(nodeConfig, REFERENCE_CONFIG_KEY_VALUE_STORE_NAME_NODE, KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME, true);
         addParamEl(nodeConfig, REFERENCE_CONFIG_KEY_NODE, getEntityKey(), true);
         addParamEl(nodeConfig, REFERENCE_CONFIG_PREFIX_NODE, getEntityKeyPrefix(), true);
         addParamEl(nodeConfig, REFERENCE_CONFIG_VALUE_NODE, getEntityBase64Value(), true);
@@ -219,6 +229,9 @@ public class CustomKeyValueReference extends ExternalReference {
         if (!element.getNodeName().equals(REFERENCE_ROOT_NODE)) {
             throw new InvalidDocumentFormatException("Expecting element of name \"" + REFERENCE_ROOT_NODE + "\"");
         }
+
+        // todo: once we support different values for "KeyValueStoreName", add logic to handle it accordingly
+        // getExactlyOneParamFromEl(element, REFERENCE_CONFIG_KEY_VALUE_STORE_NAME_NODE);
 
         // get the config node
         final Element configNode = DomUtils.findExactlyOneChildElementByName(element, REFERENCE_CONFIG_NODE);
