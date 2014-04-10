@@ -38,6 +38,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
     private JTextField cookieCommentTextField;
     private JCheckBox setSiteMinderCookieCheckBox;
     private JTextField cookieNameTextField;
+    private JPanel optionalResponseCookieParameters;
     private final InputValidator inputValidator;
 
     public SiteMinderAuthorizationPropertiesDialog(final Frame owner, final SiteMinderAuthorizeAssertion assertion) {
@@ -115,7 +116,6 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
                 return null;
             }
         });
-
         enableDisableComponents();
     }
 
@@ -159,15 +159,31 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         };
     }
 
+    private void setCookieOptionsVisibility(boolean visible) {
+        // set visibility of the components
+            optionalResponseCookieParameters.setVisible(visible);
+            setSiteMinderCookieCheckBox.setVisible(visible);
+            cookieNameTextField.setVisible(visible);
+/*          cookieDomainTextField.setVisible(visible);
+            cookiePathTextField.setVisible(visible);
+            cookieMaxAgeTextField.setVisible(visible);
+            cookieSecureTextField.setVisible(visible);
+            cookieVersionTextField.setVisible(visible);
+            cookieCommentTextField.setVisible(visible);*/
+    }
+
     private void enableDisableComponents() {
         ssoTokenVariablePanel.setEnabled(useSSOTokenFromContextVariableRadioButton.isSelected());
-        cookieNameTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookieDomainTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookiePathTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookieMaxAgeTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookieSecureTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookieVersionTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
-        cookieCommentTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+        setCookieOptionsVisibility(setSiteMinderCookieCheckBox.isSelected());
+        if(setSiteMinderCookieCheckBox.isSelected()) {
+            cookieNameTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookieDomainTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookiePathTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookieMaxAgeTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookieSecureTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookieVersionTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+            cookieCommentTextField.setEnabled(setSiteMinderCookieCheckBox.isSelected());
+        }
     }
 
     /**
