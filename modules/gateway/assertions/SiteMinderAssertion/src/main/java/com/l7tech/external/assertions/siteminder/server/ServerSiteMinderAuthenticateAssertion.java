@@ -5,7 +5,12 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.identity.AnonymousUserReference;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -13,6 +18,8 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -73,6 +80,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             int result = hla.processAuthenticationRequest(credentials, getClientIp(message), ssoToken, smContext);
             if(result == SM_YES) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
+                addAuthenticatedUserToContext(authContext, smContext);
                 status = AssertionStatus.NONE;
             }
             else {
@@ -87,6 +95,35 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         }
 
         return status;
+    }
+
+    private void addAuthenticatedUserToContext(AuthenticationContext authContext, SiteMinderContext smContext) {
+
+        User user = null;
+        //first look for the username attribute if present
+        Pair<String, Object> attr = findAttributeByName(smContext, SiteMinderAgentConstants.ATTR_USERNAME);
+        if(attr != null && StringUtils.isNotBlank(attr.right.toString())) {
+            user = new UserBean(attr.right.toString());
+        }
+        else {
+            //check if userdn is found in LDAP form
+            attr = findAttributeByName(smContext, SiteMinderAgentConstants.ATTR_USERDN);
+            if(attr != null && StringUtils.isNotBlank(attr.right.toString())) {
+                user = new LdapUser(PersistentEntity.DEFAULT_GOID, attr.right.toString(), SiteMinderAssertionUtil.getCn(attr.right.toString()));
+            }
+        }
+        //we don't have a user so create anonymous one
+        if(user == null) user = new AnonymousUserReference("", PersistentEntity.DEFAULT_GOID, "<unknown>");
+        authContext.addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken(user.getLogin(), smContext.getSsoToken().toCharArray())));
+    }
+
+    private Pair<String, Object> findAttributeByName(SiteMinderContext siteMinderContext, String attrName) {
+        for (Pair<String, Object> attr : siteMinderContext.getAttrList()){
+            if(attr.left.equalsIgnoreCase(attrName)) {
+                return attr;
+            }
+        }
+        return null;//attribute not found
     }
 
     private String extractSsoToken(Map<String, Object> variableMap) {

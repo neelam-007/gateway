@@ -1,26 +1,24 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.SiteMinderContext;
-import com.ca.siteminder.SiteMinderCredentials;
-import com.ca.siteminder.SiteMinderHighLevelAgent;
-import com.ca.siteminder.SiteMinderLowLevelAgent;
+import com.ca.siteminder.*;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.l7tech.util.Pair;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -30,7 +28,9 @@ import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.*;
@@ -61,6 +61,9 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     private Message responseMsg;
     private Message requestMsg;
     private PolicyEnforcementContext pec;
+    private TestAudit auditor;
+    private List<Pair<String,Object>> attrList;
+
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -71,6 +74,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     @Before
     public void setUp() throws Exception {
 
+        auditor = new TestAudit();
         smAuthenticateAssertion = new SiteMinderAuthenticateAssertion();
         System.setProperty(AbstractServerSiteMinderAssertion.SYSTEM_PROPERTY_SITEMINDER_ENABLED, "true");
 
@@ -80,6 +84,9 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         requestMsg = new Message();
         responseMsg = new Message();
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
+
+        attrList = new ArrayList<>();
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERDN, "CN=user,OU=QA Test Users,DC=domain,DC=local"));
     }
 
     @After
@@ -104,13 +111,14 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-
-        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), isNull(String.class), isNull(String.class), eq(mockContext));
+        assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), isNull(String.class), eq(mockContext));
 
     }
 
@@ -131,6 +139,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        when(mockContext.getAttrList()).thenReturn(attrList);
 
         AuthenticationContext ac = pec.getDefaultAuthenticationContext();
         ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_LOGIN, USER_PASSWORD.toCharArray()), smAuthenticateAssertion.getClass()));
@@ -138,6 +147,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+        assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
     }
 
@@ -159,11 +169,13 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        when(mockContext.getAttrList()).thenReturn(attrList);
 
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+        assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
     }
 
@@ -188,12 +200,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
         when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
         when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
-
+        when(mockContext.getAttrList()).thenReturn(attrList);
         when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials()), anyString(), eq(SSO_TOKEN), any(SiteMinderContext.class))).thenReturn(1);
 
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
-
+        assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), eq(SSO_TOKEN), eq(mockContext));
     }
 
@@ -378,6 +390,12 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.FALSIFIED == fixture.checkRequest(pec));
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials()), isNull(String.class), isNull(String.class), eq(mockContext));
+    }
+
+    private String expandVariable(PolicyEnforcementContext context, String expression) {
+        String[] usedVars = Syntax.getReferencedNames(expression);
+        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
+        return ExpandVariables.process(expression, vars, auditor);
     }
 
 }
