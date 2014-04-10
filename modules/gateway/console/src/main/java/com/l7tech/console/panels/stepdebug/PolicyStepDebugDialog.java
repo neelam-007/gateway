@@ -330,9 +330,11 @@ public class PolicyStepDebugDialog extends JFrame {
                 //
                 debugResult = updatedDebugResult;
 
-                if (debugResult.isTerminated()) {
-                    refreshTimer.cancel();
-                    refreshTimer = null;
+                if (updatedDebugResult.isTerminated()) {
+                    if (refreshTimer != null) {
+                        refreshTimer.cancel();
+                        refreshTimer = null;
+                    }
                 }
 
                 SwingUtilities.invokeLater(new Runnable() {
