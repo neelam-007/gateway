@@ -30,6 +30,7 @@
                 <value>java.lang.String</value>
                 <value>org.springframework.remoting.support.RemoteInvocation</value>
                 <value>com.l7tech.gateway.common.log.LogSinkQuery</value>
+                <value>com.l7tech.objectmodel.Goid</value>
             </set>
         </property>
     </bean>
