@@ -14,9 +14,7 @@ import java.awt.*;
  */
 public class AssertionBreakpointsTreeCellRenderer extends DefaultTreeCellRenderer {
     private static final Icon BREAKPOINT_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Stop16.gif"));
-    private static final int BREAKPOINT_ICON_WIDTH = BREAKPOINT_ICON.getIconWidth();
-    private static final Icon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16x1.png"));
-    private static final int BLANK_ICON_WIDTH = 1;
+    private static final Icon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
 
     /**
      * Creates <code>AssertionBreakpointsTreeCellRenderer</code>.
@@ -45,14 +43,10 @@ public class AssertionBreakpointsTreeCellRenderer extends DefaultTreeCellRendere
         AssertionBreakpointsTree castTree = (AssertionBreakpointsTree) tree;
         if (castTree.isBreakpointSet(node)) {
             setIcon(BREAKPOINT_ICON);
-            setText(" ");
-            setIconTextGap(BLANK_ICON_WIDTH);
         } else {
             setIcon(BLANK_ICON);
-            setText(" ");
-            setIconTextGap(BREAKPOINT_ICON_WIDTH);
-
         }
+        setText(null);
 
         return this;
     }
