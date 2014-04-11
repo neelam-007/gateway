@@ -190,13 +190,57 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     /**
+     * Process a message, with caller taking responsibility for auditing.
+     * <p/>
+     * This method will perform service resolution to find a policy and will then invoke the policy on the specified
+     * policy enforcement context (PEC).
+     * <p/>
+     * The caller is responsible for creating an audit context for the request and for flushing it once
+     * any needed processing is complete.
+     *
+     * @param context the PEC to process.  Required. Typically contains an initialized Request, for service resolution, but this may not be strictly required in all cases.
+     * @return the AssertionStatus from policy evaluation.  Never null.
+     * @throws IOException if an IOException occurs during service resolution or policy processing.
+     * @throws PolicyAssertionException if a policy assertion is misconfigured.
+     * @throws PolicyVersionException if the request arrived over HTTP with a policy version header that indicates use of an obsolete version of the resolved policy.
+     *                                TODO pass in strategy for locating transport-level policy version metadata rather than hardcoding support only for policy version HTTP header
+     * @throws LicenseException if a required operation is not permitted by the current license
+     * @throws MethodNotAllowedException if the request's HTTP method is not permitted by the current port or policy
+     * @throws MessageProcessingSuspendedException thrown if message processing is suspended due to a full audit audit log
+     */
+
+    public AssertionStatus processMessageNoAudit(final PolicyEnforcementContext context)
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
+    {
+        final AuditContext auditContext = AuditContextFactory.getCurrent();
+        context.setAuditContext(auditContext);
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+
+        try {
+            status = reallyProcessMessage(context);
+            return status;
+        } finally {
+            doRequestPostProcessing(context, status);
+
+            /*
+             * 5.0 Audit Request Id
+             * need to extract the required context variables from PEC used in the audit logging
+             */
+            String[] ctxVariables = AuditLogFormatter.getContextVariablesUsed();
+            if (ctxVariables != null && ctxVariables.length > 0) {
+                auditContext.setContextVariables(context.getVariableMap(ctxVariables, auditor));
+            }
+        }
+    }
+
+    /**
      * Process a message.
      * <p/>
      * This method will perform service resolution to find a policy and will then invoke the policy on the specified
      * policy enforcement context (PEC).
      * <p/>
-     * The PEC will be configured to flush the thread-local audit context when then PEC is closed.  Callers
-     * should not flush the audit context themselves -- just close the PEC.
+     * A new audit context will be created for message processing and will be flushed as this method finishes
+     * (regardless of whether it returns a status or throws an exception).
      *
      * @param context the PEC to process.  Required. Typically contains an initialized Request, for service resolution, but this may not be strictly required in all cases.
      * @return the AssertionStatus from policy evaluation.  Never null.
@@ -240,19 +284,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                      return messageSummaryAuditFactory.makeEvent(context, status[0]);
                  }
             });
-        } catch (IOException e) {
-            throw e;
-        } catch (PolicyAssertionException e) {
-            throw e;
-        } catch (PolicyVersionException e) {
-            throw e;
-        } catch (LicenseException e) {
-            throw e;
-        } catch (MethodNotAllowedException e) {
-            throw e;
-        } catch (MessageProcessingSuspendedException e) {
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (IOException |
+                 PolicyAssertionException |
+                 PolicyVersionException |
+                 LicenseException |
+                 MethodNotAllowedException |
+                 MessageProcessingSuspendedException |
+                 RuntimeException e)
+        {
             throw e;
         } catch (Exception e) {
             // Shouldn't be possible

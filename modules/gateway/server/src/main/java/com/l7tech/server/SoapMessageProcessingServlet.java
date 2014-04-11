@@ -11,6 +11,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -21,7 +22,9 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -40,6 +43,8 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.xml.soap.SOAPConstants;
@@ -50,6 +55,7 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -86,6 +92,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private StashManagerFactory stashManagerFactory;
     private ApplicationEventPublisher messageProcessingEventChannel;
     private Auditor auditor;
+    AuditContextFactory auditContextFactory;
+    MessageSummaryAuditFactory messageSummaryAuditFactory;
+
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -100,6 +109,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         licenseManager = applicationContext.getBean("licenseManager", LicenseManager.class);
         stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+        auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
+        messageSummaryAuditFactory = applicationContext.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class);
         auditor = new Auditor(this, applicationContext, logger);
     }
 
@@ -112,7 +123,38 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     @Override
-    protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
+    protected void service( final HttpServletRequest hrequest, final HttpServletResponse hresponse)
+            throws ServletException, IOException
+    {
+        try {
+            // Initialize processing context
+            final Message response = new Message();
+            final Message request = new Message();
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
+
+            final AssertionStatus[] status = { null };
+
+            auditContextFactory.doWithNewAuditContext( new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    status[0] = serviceNoAudit( hrequest, hresponse, context );
+                    return null;
+                }
+            }, new Functions.Nullary<AuditRecord>() {
+                @Override
+                public AuditRecord call() {
+                    AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
+                    return messageSummaryAuditFactory.makeEvent( context, s );
+                }
+            } );
+        } catch ( ServletException | IOException e ) {
+            throw e;
+        } catch ( Exception e ) {
+            throw new ServletException( e );
+        }
+    }
+
+    private AssertionStatus serviceNoAudit(HttpServletRequest hrequest, HttpServletResponse hresponse, final PolicyEnforcementContext context)
             throws ServletException, IOException
     {
         final SsgConnector connector;
@@ -126,11 +168,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Published service message input is not licensed '"+ExceptionUtils.getMessage(e)+"'.");
             hresponse.sendError(503);
-            return;
+            return null;
         } catch (ListenerException e) {
             logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
             hresponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return;
+            return null;
         }
 
         if ( logger.isLoggable( Level.FINE ) ) {
@@ -150,7 +192,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
                     logger.log( Level.INFO, "Rejecting GZIP compressed request.");
                     rejectGzipRequest( hrequest, hresponse, STATUS_UNSUPPORTED_MEDIA_TYPE, "Rejecting GZIP compressed request" );
-                    return;
+                    return null;
                 }
 
                 gzipEncodedTransaction = true;
@@ -163,7 +205,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     final String exceptionMessage = ExceptionUtils.getMessage(e);
                     logger.log(Level.INFO, "Cannot decompress the incoming request: " + exceptionMessage, ExceptionUtils.getDebugException( e ));
                     rejectGzipRequest( hrequest, hresponse, STATUS_BAD_REQUEST, "Invalid GZIP compressed request" );
-                    return;
+                    return null;
                 }
             } else {
                 logger.fine("content-encoding not gzip " + maybegzipencoding);
@@ -176,8 +218,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 (allowGzipResponse && HttpHeaderUtil.acceptsGzipResponse(hrequest.getHeader( HEADER_ACCEPT_ENCODING)));
 
         // Initialize processing context
-        final Message response = new Message();
-        final Message request = new Message();
+        final Message response = context.getResponse();
+        final Message request = context.getRequest();
 
         ContentTypeHeader ctype = getRequestContentType( hrequest );
 
@@ -186,12 +228,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             ctype = ContentTypeHeader.create(overrideContentType);
         }
 
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response,  true);
         context.setRequestWasCompressed(gzipEncodedTransaction);
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
-        AssertionStatus status;
+        AssertionStatus status = null;
         try {
             long maxBytes = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT,Message.getMaxBytes());
 
@@ -214,7 +255,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             response.attachHttpResponseKnob(respKnob);
 
             // Process message
-            status = messageProcessor.processMessage(context);
+            status = messageProcessor.processMessageNoAudit( context );
 
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
@@ -224,7 +265,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
                                 "Instructing valve to drop connection completly." + faultLevelInfo.toString());
                     hrequest.setAttribute( ATTRIBUTE_FLAG_NAME, ATTRIBUTE_FLAG_NAME );
-                    return;
+                    return status;
                 }
             }
 
@@ -234,7 +275,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if (logger.isLoggable(Level.FINE))
                     logger.log( Level.FINE, "Response already committed, not sending response." );
 
-                return;
+                return status;
             }
 
             // Send response headers
@@ -267,7 +308,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setContentType(null);
                     hresponse.setContentLength(0);
                     hresponse.getOutputStream().close();
-                    return;
+                    return status;
                 }
                 final MimeKnob responseMimeKnob = response.getMimeKnob();
 
@@ -340,9 +381,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } else if (e instanceof IOException &&
                        e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
                 logger.warning("Client closed connection.");
-                return; // cannot send a response
+                return status; // cannot send a response
             } else if (e instanceof MessageResponseIOException) {
-                // already audited, custom fault sent below (unless stealth mode)
+                // already logged, custom fault sent below (unless stealth mode)
             } else if (e instanceof IOException) {
                 logger.log(Level.WARNING, "I/O error while processing message: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
@@ -357,7 +398,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
                                        "Instructing valve to drop connection completely.");
                 hrequest.setAttribute( ATTRIBUTE_FLAG_NAME, ATTRIBUTE_FLAG_NAME );
-                return;
+                return status;
             }
 
             try {
@@ -379,6 +420,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             context.close();
         }
+        return status;
     }
 
     /**

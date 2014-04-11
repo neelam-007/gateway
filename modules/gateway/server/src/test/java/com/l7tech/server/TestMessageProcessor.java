@@ -56,6 +56,16 @@ public class TestMessageProcessor extends MessageProcessor {
     }
 
     @Override
+    public AssertionStatus processMessageNoAudit( PolicyEnforcementContext context ) throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
+        try {
+            notifyListenersBefore(context);
+            return super.processMessageNoAudit(context);
+        } finally {
+            notifyListenersAfter(context);
+        }
+    }
+
+    @Override
     public AssertionStatus processMessage(PolicyEnforcementContext context)
         throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
 
