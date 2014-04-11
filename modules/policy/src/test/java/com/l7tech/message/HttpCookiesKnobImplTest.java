@@ -169,6 +169,41 @@ public class HttpCookiesKnobImplTest {
     }
 
     @Test
+    public void getCookiesMultipleInCookieHeaderV0() {
+        headersKnob.addHeader("Cookie", "1=one; 2=two");
+        final Set<HttpCookie> cookies = cookiesKnob.getCookies();
+        assertEquals(2, cookies.size());
+        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, null, null, -1, false, null, false)));
+        assertTrue(containsCookie(cookies, new HttpCookie("2", "two", 0, null, null, -1, false, null, false)));
+    }
+
+    @Test
+    public void getCookiesMultipleInCookieHeaderV1() {
+        headersKnob.addHeader("Cookie", "1=one; $Version=1; 2=two; $Version=1");
+        final Set<HttpCookie> cookies = cookiesKnob.getCookies();
+        assertEquals(2, cookies.size());
+        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 1, null, null, -1, false, null, false)));
+        assertTrue(containsCookie(cookies, new HttpCookie("2", "two", 1, null, null, -1, false, null, false)));
+    }
+
+    @Test
+    public void getCookiesMultipleInCookieHeaderV1VersionFirst() {
+        headersKnob.addHeader("Cookie", "$Version=1; 1=one; $Version=1; 2=two");
+        final Set<HttpCookie> cookies = cookiesKnob.getCookies();
+        assertEquals(2, cookies.size());
+        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 1, null, null, -1, false, null, false)));
+        assertTrue(containsCookie(cookies, new HttpCookie("2", "two", 1, null, null, -1, false, null, false)));
+    }
+
+    @Test
+    public void getCookiesMultipleInSetCookieHeader() {
+        headersKnob.addHeader("Set-Cookie", "1=one; 2=two");
+        final Set<HttpCookie> cookies = cookiesKnob.getCookies();
+        assertEquals(1, cookies.size());
+        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, null, null, -1, false, null, false)));
+    }
+
+    @Test
     public void deleteCookie() {
         final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
         cookiesKnob.addCookie(cookie);

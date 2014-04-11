@@ -436,6 +436,60 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
     }
 
     @Test
+    public void multipleCookiesV0() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/basicRoutingService"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "1=one; 2=two"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        final String responseBody = printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertEquals(1, routedHeaders.get("user-agent").size());
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+        assertHeaderValues(routedHeaders, "cookie", "1=one; 2=two");
+    }
+
+    @Test
+    public void multipleCookiesV1() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/basicRoutingService"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "1=one; $Version=1; 2=two; $Version=1"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        final String responseBody = printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertEquals(1, routedHeaders.get("user-agent").size());
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+        assertHeaderValues(routedHeaders, "cookie", "1=one; 2=two");
+    }
+
+    @Test
+    public void multipleCookiesV1VersionFirst() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/basicRoutingService"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "$Version=1; 1=one; $Version=1; 2=two"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        final String responseBody = printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertEquals(1, routedHeaders.get("user-agent").size());
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+        assertHeaderValues(routedHeaders, "cookie", "1=one; 2=two");
+    }
+
+    @Test
     public void requestAllHeaderValuesContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
         routeParams.put(SERVICENAME, "GetHeadersService");
