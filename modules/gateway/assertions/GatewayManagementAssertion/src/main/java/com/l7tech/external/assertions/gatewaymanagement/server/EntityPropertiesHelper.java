@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -165,6 +166,9 @@ class EntityPropertiesHelper {
             .unmodifiableMap() )
         .put(BindOnlyLdapIdentityProviderConfig.class, MapBuilder.<String, String>builder()
             .unmodifiableMap())
+        .put(PolicyBackedIdentityProviderConfig.class, MapBuilder.<String, String>builder()
+            .put( "adminEnabled", null )
+            .unmodifiableMap())
         .put(IdentityProviderConfig.class, MapBuilder.<String, String>builder()
              .put("adminEnabled", null)
              .unmodifiableMap())
@@ -236,6 +240,8 @@ class EntityPropertiesHelper {
             .put( "groupMembershipCaseInsensitive", false )
             .unmodifiableMap() )
         .put( BindOnlyLdapIdentityProviderConfig.class, MapBuilder.<String,Object>builder()
+            .unmodifiableMap() )
+        .put( PolicyBackedIdentityProviderConfig.class, MapBuilder.<String,Object>builder()
             .unmodifiableMap() )
         .put( IdentityProviderConfig.class, MapBuilder.<String,Object>builder()
             .put( "adminEnabled", false )
@@ -350,7 +356,23 @@ class EntityPropertiesHelper {
             "version",
             "securityZone"
         ) )
-        // TODO PolicyBackedIdentityProviderConfig
+        .put( PolicyBackedIdentityProviderConfig.class, list(
+            "defaultRoleId",
+            "policyId",
+            "certificateValidationType",
+            "clientAuthEnabled",
+            "description",
+            "id",
+            "keyAlias",
+            "keystoreId",
+            "ldapUrl",
+            "name",
+            "goid",
+            "serializedProps",
+            "typeVal",
+            "version",
+            "securityZone"
+            ) )
         .put( IdentityProviderConfig.class, list(
             "certificateValidationType",
             "description",

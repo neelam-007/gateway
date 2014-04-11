@@ -108,7 +108,11 @@ public class EntityPropertiesHelperTest {
                 "Internal",
                 "LDAP",
                 "Federated",
-                "Simple LDAP");
+                "Simple LDAP",
+                // Serialization should not break if a new enum type is added.
+                // Old clients that do not expect to see Policy-Backed will likely throw an error saying unknown type.
+                // for example The GMC will output: 'cvc-enumeration-valid: Value 'New Type Unknown' is not facet-valid with respect to enumeration '[Internal, LDAP, Federated, Simple LDAP, Policy-Backed]'. It must be a value from the enumeration.'
+                "Policy-Backed");
 
         //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( JMSProviderType.class,

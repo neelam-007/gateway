@@ -3,20 +3,14 @@ package com.l7tech.gateway.api;
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.util.Functions;
 
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-
-import javax.xml.bind.annotation.XmlAnyElement;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElements;
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlValue;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 /**
  * The IdentityProviderMO managed object represents an identity provider.
@@ -168,6 +162,16 @@ public class IdentityProviderMO extends SecurityZoneableObject {
     }
 
     /**
+     * Get the details for a Policy Backed identity provider.
+     *
+     * @return The details or null
+     * @see #getIdentityProviderType
+     */
+    public PolicyBackedIdentityProviderDetail getPolicyBackedIdentityProviderDetail() {
+        return getIdentityProviderOptions( PolicyBackedIdentityProviderDetail.class );
+    }
+
+    /**
      * Type for identity providers
      */
     @XmlEnum(String.class)
@@ -191,9 +195,12 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         /**
          * Simple bind-only LDAP based provider.
          */
-        @XmlEnumValue("Simple LDAP") BIND_ONLY_LDAP
+        @XmlEnumValue("Simple LDAP") BIND_ONLY_LDAP,
 
-        // TODO POLICY_BACKED
+        /**
+         * Policy Backed based provider.
+         */
+        @XmlEnumValue("Policy-Backed") POLICY_BACKED
     }
 
     /**
@@ -749,6 +756,73 @@ public class IdentityProviderMO extends SecurityZoneableObject {
     }
 
     /**
+     * Details for a policy backed identity provider.
+     */
+    @XmlType(name="PolicyBackedIdentityProviderDetailType", propOrder={"authenticationPolicyIdValue", "defaultRoleAssignmentIdValue"})
+    public static class PolicyBackedIdentityProviderDetail extends IdentityProviderDetail {
+        private AttributeExtensibleString authenticationPolicyId;
+        private AttributeExtensibleString defaultRoleAssignmentId;
+
+
+        /**
+         * Get the authentication policy ID.
+         *
+         * @return The authentication policy ID
+         */
+        public String getAuthenticationPolicyId() {
+            return get(authenticationPolicyId);
+        }
+
+        /**
+         * Set the authentication policy ID.
+         *
+         * @param authenticationPolicyId The authentication policy ID
+         */
+        public void setAuthenticationPolicyId( final String authenticationPolicyId ) {
+            this.authenticationPolicyId = set(this.authenticationPolicyId,authenticationPolicyId);
+        }
+
+        /**
+         * Get the default role assignment ID.
+         *
+         * @return The default role assignment ID
+         */
+        public String getDefaultRoleAssignmentId() {
+            return get( defaultRoleAssignmentId );
+        }
+
+        /**
+         * Set the default role assignment ID.
+         *
+         * @param defaultRoleAssignmentId The authentication policy ID
+         */
+        public void setDefaultRoleAssignmentId( final String defaultRoleAssignmentId ) {
+            this.defaultRoleAssignmentId = set(this.defaultRoleAssignmentId,defaultRoleAssignmentId);
+        }
+
+        protected PolicyBackedIdentityProviderDetail() {
+        }
+
+        @XmlElement(name="AuthenticationPolicyId", required=true)
+        protected AttributeExtensibleString getAuthenticationPolicyIdValue() {
+            return authenticationPolicyId;
+        }
+
+        protected void setAuthenticationPolicyIdValue( final AttributeExtensibleString authenticationPolicyId ) {
+            this.authenticationPolicyId = authenticationPolicyId;
+        }
+
+        @XmlElement(name="DefaultRoleAssignmentId")
+        protected AttributeExtensibleString getDefaultRoleAssignmentIdValue() {
+            return defaultRoleAssignmentId;
+        }
+
+        protected void setDefaultRoleAssignmentIdValue( final AttributeExtensibleString defaultRoleAssignmentId ) {
+            this.defaultRoleAssignmentId = defaultRoleAssignmentId;
+        }
+    }
+
+    /**
      * Represents a user or group mapping
      *
      * @see ManagedObjectFactory#createLdapIdentityProviderMapping()
@@ -888,7 +962,8 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         @XmlElements({
              @XmlElement(name="FederatedIdentityProviderDetail",type=FederatedIdentityProviderDetail.class),
              @XmlElement(name="LdapIdentityProviderDetail",type=LdapIdentityProviderDetail.class),
-             @XmlElement(name="BindOnlyLdapIdentityProviderDetail",type=BindOnlyLdapIdentityProviderDetail.class)
+             @XmlElement(name="BindOnlyLdapIdentityProviderDetail",type=BindOnlyLdapIdentityProviderDetail.class),
+             @XmlElement(name="PolicyBackedIdentityProviderDetail",type=PolicyBackedIdentityProviderDetail.class)
          })
         protected IdentityProviderDetail getIdentityProviderDetail() {
             return identityProviderDetail;

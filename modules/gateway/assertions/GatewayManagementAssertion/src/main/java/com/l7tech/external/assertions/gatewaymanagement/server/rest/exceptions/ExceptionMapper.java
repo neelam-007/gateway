@@ -84,9 +84,13 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
                 final SAXException cause = ExceptionUtils.getCauseIfCausedBy( e, SAXException.class );
                 logger.log( Level.WARNING, ExceptionUtils.getMessage(cause), ExceptionUtils.getDebugException(e) );
                 status = Response.Status.BAD_REQUEST;
+            } else if( ExceptionUtils.causedBy(e, IllegalArgumentException.class))  {
+                final IllegalArgumentException cause = ExceptionUtils.getCauseIfCausedBy( e, IllegalArgumentException.class );
+                logger.log( Level.WARNING, ExceptionUtils.getMessage(cause), ExceptionUtils.getDebugException(e) );
+                status = Response.Status.BAD_REQUEST;
             } else{
-            logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
-            status = Response.Status.FORBIDDEN;
+                logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
+                status = Response.Status.FORBIDDEN;
             }
         } else if (e instanceof InvalidArgumentException) {
             logger.log(Level.WARNING, "InvalidArgumentException error processing management request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));

@@ -2,13 +2,12 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.*;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -65,7 +64,10 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP );
                 asResource( identityProvider, (BindOnlyLdapIdentityProviderConfig) identityProviderConfig );
                 break;
-            // TODO case 5: PolicyBackedIdentityProvider
+            case 5:
+                identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.POLICY_BACKED );
+                asResource( identityProvider, (PolicyBackedIdentityProviderConfig) identityProviderConfig );
+                break;
             default:
                 throw new ResourceAccessException("Unknown identity provider type '"+identityProviderConfig.getTypeVal()+"'.");
         }
@@ -108,6 +110,9 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 break;
             case BIND_ONLY_LDAP:
                 identityProvider = fromResource( identityProviderResource, new BindOnlyLdapIdentityProviderConfig() );
+                break;
+            case POLICY_BACKED:
+                identityProvider = fromResource( identityProviderResource, new PolicyBackedIdentityProviderConfig() );
                 break;
             default:
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identity provider type unknown");
@@ -231,7 +236,9 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 }
                 detail.setNtlmProperties(ntlmProps);
             }
-
+        }
+        if(ldapIdentityProviderConfig.getGroupCacheMaxAge() != null){
+            identityProvider.getProperties().put("groupCacheMaximumAgeUnit", ldapIdentityProviderConfig.getGroupCacheMaxAgeUnit().getName());
         }
     }
 
@@ -247,6 +254,17 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
             detail.setBindPatternPrefix( bindOnlyProviderConfig.getBindPatternPrefix() );
             detail.setBindPatternSuffix( bindOnlyProviderConfig.getBindPatternSuffix() );
+        }
+    }
+
+    private void asResource( final IdentityProviderMO identityProvider,
+                             final PolicyBackedIdentityProviderConfig policyBackedIdentityProviderConfig ) {
+        identityProvider.setProperties( getProperties( policyBackedIdentityProviderConfig, PolicyBackedIdentityProviderConfig.class ) );
+        final PolicyBackedIdentityProviderDetail detail = identityProvider.getPolicyBackedIdentityProviderDetail();
+        if ( detail != null ) {
+            //policyBackedIdentityProviderConfig.getPolicyId() should never be null as it is a required property
+            detail.setAuthenticationPolicyId(policyBackedIdentityProviderConfig.getPolicyId().toString());
+            detail.setDefaultRoleAssignmentId(policyBackedIdentityProviderConfig.getDefaultRoleId() == null ? null : policyBackedIdentityProviderConfig.getDefaultRoleId().toString());
         }
     }
 
@@ -441,6 +459,22 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
         }
 
+        //set the group Cache Maximum Age Unit for ldap
+        if(identityProviderResource.getProperties().get("groupCacheMaximumAgeUnit") != null){
+            String groupCacheMaximumAgeUnit = (String) identityProviderResource.getProperties().get("groupCacheMaximumAgeUnit");
+            boolean found = false;
+            for(TimeUnit unit :TimeUnit.ALL){
+                if(unit.getName().equals(groupCacheMaximumAgeUnit)){
+                    ldapIdentityProviderConfig.setGroupCacheMaxAgeUnit(unit);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid Group Cache Maximum Age Time Unit" );
+            }
+        }
+
         return ldapIdentityProviderConfig;
     }
 
@@ -465,6 +499,20 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
         }
 
         return bindOnlyProviderConfig;
+    }
+
+    private PolicyBackedIdentityProviderConfig fromResource( final IdentityProviderMO identityProviderResource,
+                                                             final PolicyBackedIdentityProviderConfig policyBackedIdentityProviderConfig) throws InvalidResourceException {
+        final PolicyBackedIdentityProviderDetail detail = identityProviderResource.getPolicyBackedIdentityProviderDetail();
+        if ( detail != null ) {
+            // set properties from resource
+            policyBackedIdentityProviderConfig.setPolicyId(toInternalId(EntityType.POLICY, detail.getAuthenticationPolicyId(), "Policy Backed Authentication Policy Id"));
+            if(detail.getDefaultRoleAssignmentId() != null) {
+                policyBackedIdentityProviderConfig.setDefaultRoleId(toInternalId(EntityType.RBAC_ROLE, detail.getDefaultRoleAssignmentId(), "Policy Backed Default Role Assignment"));
+            }
+        }
+
+        return policyBackedIdentityProviderConfig;
     }
 
     private void updateEntity( final LdapIdentityProviderConfig oldConfig,
@@ -532,5 +580,15 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
     private void updateBaseConfig( final IdentityProviderConfig oldConfig,
                                    final IdentityProviderConfig newConfig ) {
         oldConfig.setName( newConfig.getName() );
+    }
+
+    /**
+     * Makes sure you are not trying to save an internal identity provider.
+     */
+    @Override
+    protected void beforeCreateEntity( final EntityBag<IdentityProviderConfig> entityBag ) throws ObjectModelException {
+        if(IdentityProviderType.INTERNAL.toVal() == entityBag.getEntity().getTypeVal()) {
+            throw new SaveException("Cannot save an Internal Identity Provider");
+        }
     }
 }

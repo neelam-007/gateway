@@ -154,6 +154,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
                         return IdentityProviderType.FEDERATED.toVal();
                     } else if (s.equalsIgnoreCase("Simple LDAP")) {
                         return IdentityProviderType.BIND_ONLY_LDAP.toVal();
+                    } else if (s.equalsIgnoreCase("Policy-Backed")) {
+                        return IdentityProviderType.POLICY_BACKED.toVal();
                     }
                     // TODO POLICY_BACKED
                     throw new IllegalArgumentException("Invalid parameter for identity provider type:" + s);

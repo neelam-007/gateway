@@ -234,7 +234,11 @@ abstract class ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
                     throw new InvalidResourceException( InvalidResourceException.ExceptionType.MISSING_VALUES, "Missing required property '" + mappedName + "'" );
                 }
 
-                setter.invoke( bean, value );
+                try {
+                    setter.invoke(bean, value);
+                } catch ( InvocationTargetException e ) {
+                    throw new ResourceAccessException("Error setting property '" + mappedName + "' to value: " + value, e.getCause());
+                }
             }
         } catch ( RuntimeException re ) {
             if ( ExceptionUtils.causedBy( re, IntrospectionException.class )) {
@@ -242,8 +246,6 @@ abstract class ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
             } else {
                 throw re;
             }
-        } catch ( InvocationTargetException e ) {
-            throw new ResourceAccessException(e.getCause());
         } catch ( IllegalAccessException e ) {
             throw new ResourceAccessException(e);
         }

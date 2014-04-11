@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 
 /**
  *
@@ -36,13 +37,16 @@ public class IdentityProviderAPIResourceFactory extends WsmanBaseResourceFactory
     @Override
     public IdentityProviderMO getResourceTemplate() {
         IdentityProviderMO identityProviderMO = ManagedObjectFactory.createIdentityProvider();
-        identityProviderMO.setName("TemplateIdentityProvider");
-        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.LDAP);
-        IdentityProviderMO.LdapIdentityProviderDetail providerDetail = identityProviderMO.getLdapIdentityProviderDetail();
-        providerDetail.setBindDn("dn=template");
-        providerDetail.setBindPassword("templatePassword");
-        providerDetail.setServerUrls(CollectionUtils.list("ldap://template:389"));
-        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("IdentityProviderProperty", "PropertyValue").map());
+        identityProviderMO.setName("My New ID Provider");
+        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP);
+        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("certificateValidation", "Validate Certificate Path")
+                .map());
+        IdentityProviderMO.BindOnlyLdapIdentityProviderDetail detailsBindOnly = identityProviderMO.getBindOnlyLdapIdentityProviderDetail();
+        detailsBindOnly.setServerUrls(Arrays.asList("server1", "server2"));
+        detailsBindOnly.setUseSslClientAuthentication(true);
+        detailsBindOnly.setBindPatternPrefix("prefix Pattern");
+        detailsBindOnly.setBindPatternSuffix("suffix Pattern");
         return identityProviderMO;
     }
 
