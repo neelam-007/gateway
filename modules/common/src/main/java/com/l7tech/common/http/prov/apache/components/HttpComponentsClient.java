@@ -3,6 +3,8 @@ package com.l7tech.common.http.prov.apache.components;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
+import com.l7tech.common.http.prov.apache.Ntlm2AuthScheme;
+import com.l7tech.common.http.prov.apache.Ntlm2SchemeFactory;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
@@ -77,6 +79,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private static final Logger traceLogger = Logger.getLogger( "com.l7tech.server.routing.http.trace");
     private static final Logger traceSecureLogger = Logger.getLogger("com.l7tech.server.routing.https.trace");
 
+    public static final String PROP_ENABLE_CUSTOM_NTLM_SCHEME = COMMONS_HTTP_CLIENT + ".customNtlmScheme";
     public static final String PROP_MAX_CONN_PER_HOST = COMMONS_HTTP_CLIENT + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = COMMONS_HTTP_CLIENT + ".maxTotalConnections";
     public static final String PROP_HTTP_EXPECT_CONTINUE = COMMONS_HTTP_CLIENT + ".useExpectContinue";
@@ -85,6 +88,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public static final String PROP_DEFAULT_READ_TIMEOUT = COMMONS_HTTP_CLIENT + ".defaultReadTimeout";
     public static final String PROP_CREDENTIAL_CHARSET = COMMONS_HTTP_CLIENT + ".credentialCharset";
     public static final String PROP_GZIP_STREAMING_THRESHOLD = COMMONS_HTTP_CLIENT + ".gzipStreamThreshold";
+    public static final String PROP_NTLM_DEFAULT_FLAGS = "commons.httpclient.ntlm.flags";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -107,9 +111,21 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
     private static final SchemeSocketFactory traceSocketFactory = new TraceSocketFactory();
 
+    private static boolean enableCustomNtlmScheme;
+
     static{
         defaultHttpParams = new BasicHttpParams();
         DefaultHttpClient.setDefaultHttpParams(defaultHttpParams);//set initial defaults  such as Protocol version, user-agent, etc.
+
+        ////////////////////////////////////////////////////////////////////////////////////////
+        //Register NTLMv2 custom scheme
+        if(ConfigFactory.getProperty(PROP_ENABLE_CUSTOM_NTLM_SCHEME) != null){
+            enableCustomNtlmScheme = ConfigFactory.getBooleanProperty(PROP_ENABLE_CUSTOM_NTLM_SCHEME,false);
+            if(ConfigFactory.getProperty( PROP_NTLM_DEFAULT_FLAGS) != null) {
+                Ntlm2AuthScheme.setNegotiateFlags(ConfigFactory.getProperty(PROP_NTLM_DEFAULT_FLAGS));
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////
 
         if ( ConfigFactory.getProperty( PROP_HTTP_EXPECT_CONTINUE ) != null) {
             HttpProtocolParams.setUseExpectContinue(defaultHttpParams, ConfigFactory.getBooleanProperty(PROP_HTTP_EXPECT_CONTINUE, false));
@@ -128,6 +144,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private final int proxyPort;
     private final String proxyUsername;
     private final String proxyPassword;
+
 
     public static ClientConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
         PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
@@ -261,7 +278,11 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         final URL targetUrl = params.getTargetUrl();
         final String virtualHost = params.getVirtualHost();
         final DefaultHttpClient client = new DefaultHttpClient(cman);
-
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        if(enableCustomNtlmScheme) {
+            client.getAuthSchemes().register(Ntlm2AuthScheme.NTLM, new Ntlm2SchemeFactory());//use customized ntlm client
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         final HttpParams clientParams = new DefaultedHttpParams(client.getParams(), defaultHttpParams);
         client.setParams(clientParams);
 
