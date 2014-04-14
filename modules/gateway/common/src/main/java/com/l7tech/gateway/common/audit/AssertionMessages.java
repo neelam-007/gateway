@@ -1266,5 +1266,11 @@ public class AssertionMessages extends Messages {
     public static final M INVALID_COOKIE_VERSION = m(10406, Level.WARNING, "Cookie version is invalid: {0}");
     public static final M EMPTY_COOKIE_ATTRIBUTE = m(10407, Level.WARNING, "Cookie {0} is null or empty");
 
+    // Replace Tag Content Assertion
+    public static final M EMPTY_SEARCH_TEXT = m(10450, Level.WARNING, "Text to search is empty");
+    public static final M EMPTY_REPLACE_TEXT = m(10451, Level.WARNING, "Replacement text is empty");
+    public static final M EMPTY_TAGS_TEXT = m(10452, Level.WARNING, "Tags to search is empty");
+    public static final M EMPTY_TAG_TEXT = m(10453, Level.WARNING, "Ignoring empty tag");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
