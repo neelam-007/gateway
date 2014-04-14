@@ -88,10 +88,9 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             int result = hla.processAuthorizationRequest(getClientIp(message), ssoToken, smContext);
             if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
-                if(assertion.isSetSMCookie()) {
-                    //set session cookie
-                    if(!setSessionCookie(context, smContext, variableMap)) return AssertionStatus.FALSIFIED;
-                }
+                /////////////////////////////////////////////////////////////////////////////////////////////
+                if (!setSessionCookie(context, smContext, variableMap)) return AssertionStatus.FALSIFIED;
+                ////////////////////////////////////////////////////////////////////////////////////////////
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is authorized");
                 status = AssertionStatus.NONE;
             }
@@ -108,60 +107,64 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         return status;
     }
 
+
     /*
     * Creates a cookie from the SiteMinder SSO Token and its details and adds it to the HttpServletResponse.
-    *
-    * @param res
-    * @param ssoCookie
-    * @param cookieParams
+    * As of 8.2 release this method is depricated!
+    * @param pec - PEC
+    * @param smContext - SiteMinder context
+    * @param varMap - context variable map
+    * @return - false if failed to set the cookie
     */
+    @Deprecated
     boolean setSessionCookie(PolicyEnforcementContext pec, SiteMinderContext smContext, Map<String, Object> varMap) {
-        boolean result = false;
-        String ssoCookie = smContext.getSsoToken();
-        if(StringUtils.isBlank(ssoCookie)) {
-            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
-            return false;
-        }
+        boolean result = true;
+        if(assertion.isSetSMCookie()) {
+            result = false;
+            String ssoCookie = smContext.getSsoToken();
 
-        logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
-        //TODO: this should go into Manage Cookies modular assertion
-        //get cookie params  directly from assertion
-        String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
-        String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSecure(), varMap, getAudit());
-        boolean isSecure = Boolean.parseBoolean(secure);
-        String version = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieVersion(), varMap, getAudit());
-        int iVer = 0;
-        if (version != null && version.length() > 0) {
-            try {
-                iVer = Integer.parseInt(version);
-            } catch (NumberFormatException nfe) {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Version was set in the context but was not a number: " + version);
+            if (StringUtils.isBlank(ssoCookie)) {
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
+                return false;
             }
-        }
-        String maxAge = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieMaxAge(), varMap, getAudit());
-        int iMaxAge = -1;
-        if (maxAge != null && maxAge.length() > 0) {
-            try {
-                iMaxAge = Integer.parseInt(maxAge);
-            } catch (NumberFormatException nfe) {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Max Age was set in the context but was not a number: " + maxAge);
-           }
-        }
-        String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
-        String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
 
-        HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment, false);
-        Message response = pec.getResponse();
-        if(response.isHttpResponse()) {
-            response.getHttpCookiesKnob().addCookie(cookie);
-            result = true;
-        }
-        else {
-           logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to set Http Cookie: response is not HTTP type");
+            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
+            //get cookie params  directly from assertion
+            String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
+            String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSecure(), varMap, getAudit());
+            boolean isSecure = Boolean.parseBoolean(secure);
+            String version = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieVersion(), varMap, getAudit());
+            int iVer = 0;
+            if (version != null && version.length() > 0) {
+                try {
+                    iVer = Integer.parseInt(version);
+                } catch (NumberFormatException nfe) {
+                    logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Version was set in the context but was not a number: " + version);
+                }
+            }
+            String maxAge = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieMaxAge(), varMap, getAudit());
+            int iMaxAge = -1;
+            if (maxAge != null && maxAge.length() > 0) {
+                try {
+                    iMaxAge = Integer.parseInt(maxAge);
+                } catch (NumberFormatException nfe) {
+                    logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Max Age was set in the context but was not a number: " + maxAge);
+                }
+            }
+            String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
+            String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
+
+            HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment, false);
+            Message response = pec.getResponse();
+            if (response.isHttpResponse()) {
+                response.getHttpCookiesKnob().addCookie(cookie);
+                result = true;
+            } else {
+                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to set Http Cookie: response is not HTTP type");
+            }
         }
 
         return result;
-
     }
 
     /*
