@@ -145,15 +145,17 @@ public class DebugContext {
         lock.lock();
         try {
             this.setDebugState(DebugState.STARTED);
+            this.debugPecData.reset(userContextVariables);
         } finally {
             this.markAsDirty();
             lock.unlock();
         }
-
     }
 
     /**
      * Stops debugging.
+     *
+     * Do not reset debugPecData when the debugger stops. Instead, reset debugPecData when the debugger starts.
      */
     public void stopDebugging() {
         lock.lock();
@@ -161,7 +163,6 @@ public class DebugContext {
             this.setDebugState(DebugState.STOPPED);
             this.currentLine = null;
             this.breakNextLine = null;
-            this.debugPecData.reset(userContextVariables);
         } finally {
             this.markAsDirty();
             lock.unlock();
