@@ -55,7 +55,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(idProviderItem.getId());
         userMO.setLogin("SrcUser");
-        userMO.setPassword("123#@!qwER");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
         response = getSourceEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
         assertOkCreatedResponse(response);
@@ -178,7 +181,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(idProviderItem.getId());
         userMO.setLogin("targetUser");
-        userMO.setPassword("123#@!qwER");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
         response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
         assertOkCreatedResponse(response);
@@ -258,7 +264,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(idProviderItem.getId());
         userMO.setLogin("targetUser");
-        userMO.setPassword("123#@!qwER");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
         response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
         assertOkCreatedResponse(response);

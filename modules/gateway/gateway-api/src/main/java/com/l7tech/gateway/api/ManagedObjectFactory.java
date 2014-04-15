@@ -551,6 +551,16 @@ public class ManagedObjectFactory {
         return new GroupMO();
     }
 
+
+    /**
+     * Create a new PasswordFormatted instance.
+     *
+     * @return The new instance
+     */
+    public static PasswordFormatted createPasswordFormatted() {
+        return new PasswordFormatted();
+    }
+
     /**
      * Read a managed object from the given data.
      *

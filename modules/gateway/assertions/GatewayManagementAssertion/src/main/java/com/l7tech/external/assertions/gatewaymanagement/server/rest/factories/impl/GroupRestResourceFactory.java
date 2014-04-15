@@ -35,7 +35,7 @@ public class GroupRestResourceFactory {
     @Inject
     private RbacAccessService rbacAccessService;
 
-    public List<GroupMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) {
+    public List<GroupMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
         try {
             GroupManager groupManager = retrieveGroupManager(providerId);
             List<IdentityHeader> groups = new ArrayList<>();
@@ -72,11 +72,11 @@ public class GroupRestResourceFactory {
         return transformer.convertToMO(group);
     }
 
-    private GroupManager retrieveGroupManager(String providerId) throws FindException {
+    private GroupManager retrieveGroupManager(String providerId) throws ResourceFactory.ResourceNotFoundException, FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(Goid.parseGoid(providerId));
 
         if (provider == null)
-            throw new FindException("IdentityProvider could not be found");
+            throw new ResourceFactory.ResourceNotFoundException("IdentityProvider could not be found");
 
         return provider.getGroupManager();
     }

@@ -37,7 +37,7 @@ public class UserMO extends AccessibleObject {
      * @return The password
      */
     @XmlElement(name = "Password")
-    public String getPassword() {
+    public PasswordFormatted getPassword() {
         return password;
     }
 
@@ -46,7 +46,7 @@ public class UserMO extends AccessibleObject {
      *
      * @param password The password to use.
      */
-    public void setPassword( final String password ) {
+    public void setPassword( final PasswordFormatted password ) {
         this.password = password;
     }
 
@@ -178,7 +178,7 @@ public class UserMO extends AccessibleObject {
     //- PRIVATE
 
     private String login;
-    private String password;
+    private PasswordFormatted password;
     private String firstName;
     private String lastName;
     private String email;

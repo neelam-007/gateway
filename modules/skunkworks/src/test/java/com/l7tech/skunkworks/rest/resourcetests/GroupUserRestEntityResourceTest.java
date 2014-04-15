@@ -7,28 +7,41 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.server.identity.AuthenticatingIdentityProvider;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
@@ -36,18 +49,27 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
     private GroupManager internalGroupManager;
     private UserManager internalUserManager;
+    private IdentityProvider internalIdentityProvider;
     private IdentityProviderFactory identityProviderFactory;
+    private IdentityProviderConfigManager idConfigManager;
+    private String otherIdentityProviderId;
     private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
 
     private List<String> usersToCleanup = new ArrayList<>();
     private List<String> groupsToCleanup = new ArrayList<>();
 
+    private String shortHashedPassword = "$6$blahsalt$iAUOw3SVBmtcHXXnfvb8/NohNmNC3gzf1uuHG5Iz33/2g6kyLnmoip0nLEhpwbktZb/XG8jWHdS9zsLhhvoeM/";
+    private String shortPassword = "12";
+    private String strongPassword = "12!@qwQW";
+    private String strongPassword2 = "34#$erER";
+
     @Before
     public void before() throws Exception {
         identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
-
-        internalGroupManager = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID).getGroupManager();
-        internalUserManager = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID).getUserManager();
+        idConfigManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
+        internalIdentityProvider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
+        internalGroupManager = internalIdentityProvider.getGroupManager();
+        internalUserManager = internalIdentityProvider.getUserManager();
         PasswordHasher passwordHasher = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("passwordHasher", PasswordHasher.class);
 
         // add users
@@ -70,6 +92,14 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         groupsToCleanup.add(group1.getId());
         groupsToCleanup.add(group2.getId());
 
+        LdapIdentityProviderConfig otherIdProviderConfig = new LdapIdentityProviderConfig();
+        otherIdProviderConfig.setName("Other ID provider");
+        otherIdProviderConfig.setLdapUrl(new String[]{"ldap://test:789"});
+        otherIdProviderConfig.setTemplateName("MicrosoftActiveDirectory");
+        otherIdProviderConfig.setSearchBase("searchBase");
+        otherIdProviderConfig.setBindDN("bindDN");
+        otherIdProviderConfig.setBindPasswd("password");
+        otherIdentityProviderId = idConfigManager.save(otherIdProviderConfig).toString();
     }
 
     @After
@@ -81,11 +111,14 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         for (String user : usersToCleanup) {
             internalUserManager.delete(internalUserManager.findByPrimaryKey(user));
         }
+
+        idConfigManager.delete(Goid.parseGoid(otherIdentityProviderId));
     }
 
-    protected String writeMOToString(ManagedObject mo) throws IOException {
+    protected String writeMOToString(Object  mo) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ManagedObjectFactory.write(mo, bout);
+        final StreamResult result = new StreamResult( bout );
+        MarshallingUtils.marshal( mo, result, false );
         return bout.toString();
     }
 
@@ -95,7 +128,10 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
         userMO.setLogin("login");
-        userMO.setPassword("12!@qwQW");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword(strongPassword);
+        userMO.setPassword(password);
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
 
@@ -118,6 +154,57 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertEquals("User Login:", userMO.getLogin(), user.getLogin());
         assertEquals("User First name:", userMO.getFirstName(), user.getFirstName());
         assertEquals("User last name:", userMO.getLastName(), user.getLastName());
+
+        // check password, try login with new user
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, userMO.getLogin(), password.getPassword().toCharArray()), null);
+        final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(userMO.getLogin(), providerAuthResult.getUser().getLogin());
+    }
+
+    @Test
+    public void UserCreateHashedPasswordTest() throws Exception {
+
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(internalProviderId);
+        userMO.setLogin("login");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("sha512crypt");
+        password.setPassword(shortHashedPassword);
+        userMO.setPassword(password);
+        userMO.setFirstName("first name");
+        userMO.setLastName("last name");
+
+        String userMOString = writeMOToString(userMO);
+        logger.info(userMOString);
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), userMOString);
+        assertEquals(201, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<UserMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        assertEquals("User Name:", userMO.getLogin(), item.getName());
+        assertEquals(EntityType.USER.toString(), item.getType());
+
+        String userId = item.getId();
+        usersToCleanup.add(userId);
+
+        User user = internalUserManager.findByPrimaryKey(userId);
+
+        assertNotNull(user);
+        assertEquals("User Name:", userMO.getLogin(), user.getName());
+        assertEquals("User Login:", userMO.getLogin(), user.getLogin());
+        assertEquals("User First name:", userMO.getFirstName(), user.getFirstName());
+        assertEquals("User last name:", userMO.getLastName(), user.getLastName());
+
+        // check password, try login with new user
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, userMO.getLogin(), shortPassword.toCharArray()), null);
+        final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(userMO.getLogin(),providerAuthResult.getUser().getLogin());
     }
 
     @Test
@@ -126,18 +213,21 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
         userMO.setLogin("login");
-        userMO.setPassword("12");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword(shortPassword);
+        userMO.setPassword(password);
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
 
         String userMOString = writeMOToString(userMO);
         RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), userMOString);
-        assertEquals(403, response.getStatus());
+        assertEquals(400, response.getStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
-        assertEquals("ResourceAccess",error.getType());
-        assertEquals("Unable to create user. Caused by: Password must be at least 8 characters in length", error.getDetail());
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Resource validation failed due to 'INVALID_VALUES' Unable to create user, invalid password:"));
     }
 
     @Test
@@ -173,25 +263,24 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
     public void UserChangePasswordFailTest() throws Exception {
 
         String userId = usersToCleanup.get(0);
-        String simplePassword = "12";
+        String simplePassword = shortPassword;
 
-        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/changePassword", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), simplePassword);
-        assertEquals(403, response.getStatus());
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/password", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), simplePassword);
+        assertEquals(400, response.getStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
-        assertEquals("ResourceAccess",error.getType());
-        assertEquals("Unable to change user password. Caused by: Password must be at least 8 characters in length", error.getDetail());
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Unable to change user password, invalid password:"));
     }
-
 
     @Test
     public void UserChangePasswordTest() throws Exception {
 
         String userId = usersToCleanup.get(0);
-        String password = "34#$erER";
+        String password = strongPassword2;
 
-        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/changePassword", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), password);
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/password", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), password);
         assertEquals(200, response.getStatus());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
@@ -199,6 +288,106 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertEquals("User Name:", "user1", item.getName());
         assertEquals("User id:", userId, item.getId());
         assertEquals(EntityType.USER.toString(), item.getType());
+
+        // check password, try login with new password
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, item.getContent().getLogin(), strongPassword2.toCharArray()), null);
+        final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(item.getContent().getLogin(),providerAuthResult.getUser().getLogin());
+    }
+
+    @Test
+    public void UserChangeHashedPasswordTest() throws Exception {
+
+        String userId = usersToCleanup.get(0);
+        String password = shortHashedPassword;
+
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/password?format=sha512crypt", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), password);
+        assertEquals(200, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<UserMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        assertEquals("User Name:", "user1", item.getName());
+        assertEquals("User id:", userId, item.getId());
+        assertEquals(EntityType.USER.toString(), item.getType());
+
+        // check password, try login with new password
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, item.getContent().getLogin(), shortPassword.toCharArray()), null);
+        final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(item.getContent().getLogin(),providerAuthResult.getUser().getLogin());
+    }
+
+    @Test
+    public void UserSetCertificateTest() throws Exception {
+        String userId = usersToCleanup.get(0);
+
+        // create certificate
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=user1").generate();
+        CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+        assertEquals(200, response.getStatus());
+
+        // try login with new certificate
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new HttpClientCertToken(certificate), null);
+        final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(userId,providerAuthResult.getUser().getId());
+    }
+
+    @Test
+    public void UserSetCertificateWrongLoginTest() throws Exception {
+        String userId = usersToCleanup.get(0);
+
+        // create certificate
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=test").generate();
+        CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+        assertEquals(400, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource",error.getType());
+        assertEquals("Resource validation failed due to 'INVALID_VALUES' Certificate subject name (test)does not match user login", error.getDetail());
+    }
+
+
+    @Test
+    public void UserRevokeCertificateTest() throws Exception {
+        String userId = usersToCleanup.get(0);
+
+        // create certificate
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=user1").generate();
+        CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+        assertEquals(200, response.getStatus());
+
+        // try login with new certificate
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new HttpClientCertToken(certificate), null);
+        AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        assertNotNull(providerAuthResult);
+        assertNotNull(providerAuthResult.getUser());
+        assertEquals(userId,providerAuthResult.getUser().getId());
+
+        // revoke certificate
+        response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+        assertEquals(204, response.getStatus());
+
+        // try login with certificate, should fail
+        try {
+            providerAuthResult = ((AuthenticatingIdentityProvider) internalIdentityProvider).authenticate(creds, true);
+        }catch(InvalidClientCertificateException e){
+            assertEquals("No certificate found for user user1",e.getMessage());
+            return;
+        }
+        assertNull(providerAuthResult);
     }
 
     @Test
@@ -239,6 +428,139 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
     }
 
+    @Test
+    public void UserErrorList() throws Exception {
+        RestResponse response = processRequest("identityProviders/" + new Goid(234, 234).toString() + "/users/", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        assertEquals(404, response.getStatus());
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound", error.getType());
+        assertEquals("IdentityProvider not found", error.getDetail());
+    }
+
+    @Test
+    public void UserErrorGet() throws Exception {
+        // invalid id provider
+        RestResponse response = processRequest("identityProviders/"+ groupsToCleanup.get(1) +"/users/"+usersToCleanup.get(1), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(404, response.getStatus());
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertEquals("IdentityProvider not found",error.getDetail());
+
+        // user not found
+        response = processRequest("identityProviders/"+internalProviderId+"/users/"+ groupsToCleanup.get(1), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(404, response.getStatus());
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+    }
+
+    @Test
+    public void UserErrorCreate() throws Exception {
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(internalProviderId);
+        userMO.setLogin("login");
+        userMO.setFirstName("first name");
+        userMO.setLastName("last name");
+        String userMOString = writeMOToString(userMO);
+
+        // non internal id provider
+        userMO.setProviderId(otherIdentityProviderId);
+        userMOString = writeMOToString(userMO);
+        RestResponse response = processRequest("identityProviders/"+otherIdentityProviderId+"/users/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(400, response.getStatus());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Unable to create user for non-internal identity provider"));
+
+        // id provider not found
+        userMO.setProviderId(usersToCleanup.get(1));
+        userMOString = writeMOToString(userMO);
+        response = processRequest("identityProviders/"+usersToCleanup.get(1)+"/users/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(404, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertEquals("IdentityProvider not found",error.getDetail());
+    }
+
+    @Test
+    public void UserErrorUpdate() throws Exception {
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setId(usersToCleanup.get(0));
+        userMO.setProviderId(internalProviderId);
+        userMO.setLogin("login");
+        userMO.setFirstName("first name");
+        userMO.setLastName("last name");
+        String userMOString = writeMOToString(userMO);
+
+        // non internal id provider
+        userMO.setProviderId(otherIdentityProviderId);
+        userMO.setId(usersToCleanup.get(1));
+        userMOString = writeMOToString(userMO);
+        RestResponse response = processRequest("identityProviders/"+otherIdentityProviderId+"/users/"+usersToCleanup.get(1), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(400, response.getStatus());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Not supported"));
+
+        // id provider not found
+        userMO.setProviderId(groupsToCleanup.get(1));
+        userMO.setId(usersToCleanup.get(1));
+        userMOString = writeMOToString(userMO);
+        response = processRequest("identityProviders/"+groupsToCleanup.get(1)+"/users/"+ usersToCleanup.get(1), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(404, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+
+        // user not found
+        userMO.setProviderId(internalProviderId);
+        userMO.setId(groupsToCleanup.get(1));
+        userMOString = writeMOToString(userMO);
+        response = processRequest("identityProviders/"+internalProviderId+"/users/"+ groupsToCleanup.get(1), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(404, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+    }
+
+    @Test
+    public void UserErrorDelete() throws Exception {
+        // user not found
+        RestResponse response = processRequest("identityProviders/"+internalProviderId+"/users/"+ groupsToCleanup.get(1), HttpMethod.DELETE, null,"");
+        assertEquals(404, response.getStatus());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+
+        // id provider not found
+        response = processRequest("identityProviders/"+ groupsToCleanup.get(1) +"/users/"+ groupsToCleanup.get(1), HttpMethod.DELETE, null,"");
+        assertEquals(404, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+
+        // not internal id provider
+        response = processRequest("identityProviders/"+ otherIdentityProviderId +"/users/"+ groupsToCleanup.get(1), HttpMethod.DELETE, null,"");
+        assertEquals(400, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Cannot delete non-internal users"));
+    }
+
 
     @Test
     public void GroupSearchTest() throws Exception {
@@ -265,6 +587,27 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
     }
 
     @Test
+    public void GroupTestInvalidIdentityProvider() throws Exception {
+        // LIST
+        RestResponse response = processRequest("identityProviders/"+new Goid(234,234).toString()+"/groups/", HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(404, response.getStatus());
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertEquals("IdentityProvider could not be found",error.getDetail());
+
+        // GET
+        response = processRequest("identityProviders/"+new Goid(234,234).toString()+"/groups/"+groupsToCleanup.get(1), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(404, response.getStatus());
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertEquals("IdentityProvider could not be found",error.getDetail());
+    }
+
+    @Test
     public void GroupListTest() throws Exception {
 
         RestResponse response = processRequest("identityProviders/"+internalProviderId+"/groups", HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
@@ -274,5 +617,15 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertNotNull(groupList.getContent());
         assertEquals(2, groupList.getContent().size());
 
+    }
+
+    @Test
+    public void IdentityProviderGetDefaultTest() throws Exception {
+        RestResponse response = processRequest("identityProviders/default", HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        assertEquals(200, response.getStatus());
+        Item<IdentityProviderMO> internalIdProvider = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        assertNotNull(internalIdProvider.getContent());
+        assertEquals(internalProviderId, internalIdProvider.getId());
     }
 }

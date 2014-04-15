@@ -1,10 +1,14 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512Crypt;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
+import com.l7tech.gateway.api.CertificateData;
+import com.l7tech.gateway.api.PasswordFormatted;
 import com.l7tech.gateway.api.UserMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
@@ -22,6 +26,7 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -29,9 +34,14 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -71,7 +81,7 @@ public class UserRestResourceFactory {
     @Inject
     private ClientCertManager clientCertManager;
 
-    public List<UserMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) {
+    public List<UserMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
         try {
             UserManager userManager  = retrieveUserManager(providerId);
             List<IdentityHeader> users = new ArrayList<>();
@@ -102,70 +112,105 @@ public class UserRestResourceFactory {
         }
     }
 
-    public UserMO getResource(@NotNull String providerId, @NotNull String login) throws FindException, ResourceFactory.ResourceNotFoundException {
-        User user = getUser(providerId, login);
+    public UserMO getResource(@NotNull String providerId, @NotNull String id) throws FindException, ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        User user = getUser(providerId, id, false);
         return userTransformer.convertToMO(user);
     }
 
-    private User getUser(String providerId, String login) throws FindException, ResourceFactory.ResourceNotFoundException {
-        User user = retrieveUserManager(providerId).findByPrimaryKey(login);
-        if(user== null){
-            throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + login);
+    private User getUser(String providerId, String id, boolean allowOnlyInternal) throws FindException, ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        UserManager userManager = retrieveUserManager(providerId);
+        if(allowOnlyInternal && !(userManager instanceof InternalUserManager)){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal identity provider.");
         }
+
+        User user = userManager.findByPrimaryKey(id);
+        if(user== null){
+            throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + id);
+        }
+        if(allowOnlyInternal && !(user instanceof InternalUser)){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal user.");
+        }
+
         rbacAccessService.validatePermitted(user, OperationType.READ);
         return user;
     }
 
-    private UserManager retrieveUserManager(String providerId) throws FindException {
+    private UserManager retrieveUserManager(String providerId) throws FindException, ResourceFactory.ResourceNotFoundException {
         IdentityProvider provider = identityProviderFactory.getProvider(Goid.parseGoid(providerId));
 
         if (provider == null)
-            throw new FindException("IdentityProvider could not be found");
+            throw new ResourceFactory.ResourceNotFoundException("IdentityProvider not found");
 
         return provider.getUserManager();
     }
 
-    public String createResource(String providerId, UserMO resource)  throws ResourceFactory.InvalidResourceException{
-        // only allow for internal user
-        if(!isInternalProvider(providerId)) throw new NotImplementedException();
-        validateCreateResource(providerId, null, resource);
+    public String createResource(String providerId, UserMO resource)  throws ResourceFactory.InvalidResourceException,ResourceFactory.ResourceNotFoundException{
+
+        validateCreateResource(providerId, resource);
 
         try {
             UserManager userManager = retrieveUserManager(providerId);
-            User newUser = userTransformer.convertFromMO(resource).getEntity();
-            if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
-            rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
+            if(userManager instanceof InternalUserManager){
+                User newUser = userTransformer.convertFromMO(resource).getEntity();
+                if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
+                rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
 
-            if(userManager instanceof InternalUserManager && newUser instanceof  InternalUser){
                 checkPasswordCompliance((InternalUserManager)userManager,(InternalUser)newUser,resource.getPassword());
                 String id =  userManager.save(newUser,null);
                 resource.setId(id);
                 return id;
             }else{
-                throw new ResourceFactory.ResourceAccessException("Unable to create user for non-internal identity provider.");
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create user for non-internal identity provider.");
             }
-        } catch (ObjectModelException ome) {
+        }catch(InvalidPasswordException invalidPassword){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create user, invalid password: " +  invalidPassword.getMessage());
+        }catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceAccessException("Unable to create user.", ome);
         }
     }
 
-    private void checkPasswordCompliance(InternalUserManager userManager,InternalUser newUser, String clearTextPassword) throws ObjectModelException {
-        passwordEnforcerManager.isPasswordPolicyCompliant(clearTextPassword);
-        // Reset password expiration and force password change
-        passwordEnforcerManager.setUserPasswordPolicyAttributes(newUser, true);
-        InternalUserManager internalManager = userManager;
-        final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
-        if( !passwordManager.configureUserPasswordHashes(newUser, clearTextPassword)){
-            throw new SaveException("Unable to save user password");
+    private void checkPasswordCompliance(InternalUserManager userManager,InternalUser newUser, final PasswordFormatted password) throws ObjectModelException, ResourceFactory.InvalidResourceException {
+        if(password == null){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "Password required");
+        }
+        if(isPlainTextPassword(password.getFormat())) {
+            passwordEnforcerManager.isPasswordPolicyCompliant(password.getPassword());
+            // Reset password expiration and force password change
+            passwordEnforcerManager.setUserPasswordPolicyAttributes(newUser, true);
+            InternalUserManager internalManager = userManager;
+            final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
+            // update user password
+            if (!passwordManager.configureUserPasswordHashes(newUser, password.getPassword())) {
+                throw new SaveException("Unable to save user password");
+            }
+        }else if(isSHA512cryptHashedPassword(password.getFormat())){
+            // check password smells like
+            if(!Sha512Crypt.verifyHashTextFormat(password.getPassword())){
+                throw new SaveException("Unable to save user password, password is not SHA512crypt formatted");
+            }
+            // Reset password expiration and force password change
+            passwordEnforcerManager.setUserPasswordPolicyAttributes(newUser, true);
+            // update user password
+            newUser.setHashedPassword(password.getPassword());
+        }else{
+            throw new SaveException("Invalid password format:"+ password.getFormat());
         }
     }
 
-    private void validateCreateResource(String providerId, String id, UserMO resource) {
+    private boolean isPlainTextPassword(final String format){
+        return "plain".equals(format);
+    }
+    private boolean isSHA512cryptHashedPassword(final String format){
+        return "sha512crypt".equals(format);
+    }
+
+
+    private void validateCreateResource(String providerId, UserMO resource) {
         if ( resource.getProviderId() != null && !StringUtils.equals(providerId, resource.getProviderId())) {
             throw new IllegalArgumentException("Must specify the same provider ID");
         }
-        if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when creating a new entity, or id must equal new entity id");
+        if (resource.getId() != null ) {
+            throw new IllegalArgumentException("Must not specify an ID when creating a new entity");
         }
     }
 
@@ -183,18 +228,19 @@ public class UserRestResourceFactory {
         try {
             User user = retrieveUserManager(providerId).findByPrimaryKey(id);
             return user != null;
-        } catch (FindException e) {
+        }catch (ResourceFactory.ResourceNotFoundException | FindException e) {
             return false;
         }
     }
 
     public void updateResource(String providerId, String id, UserMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException{
-        // only allow for internal user
-        if(!isInternalProvider(providerId)) throw new NotImplementedException("Cannot update non internal users");
 
         validateUpdateResource(providerId, id, resource);
 
         try {
+            final User originalUser = getUser(providerId,id,true);
+            rbacAccessService.validatePermitted(originalUser, OperationType.UPDATE);
+
             UserManager userManager = retrieveUserManager(providerId);
             User newUser = userTransformer.convertFromMO(resource).getEntity();
             if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
@@ -204,48 +250,47 @@ public class UserRestResourceFactory {
                     throw new UpdateException("Cannot modify existing users password using this api.");
                 }
 
-                final InternalUser originalUser = (InternalUser) userManager.findByPrimaryKey(id);
+                final InternalUser originalInternalUser = (InternalUser) originalUser;
                 rbacAccessService.validatePermitted(originalUser, OperationType.UPDATE);
 
                 // update user
                 final InternalUser newInternalUser = (InternalUser) newUser;
-                originalUser.setName(newInternalUser.getName());
-                originalUser.setLogin(newInternalUser.getLogin());
-                originalUser.setFirstName(newInternalUser.getFirstName());
-                originalUser.setLastName(newInternalUser.getLastName());
-                originalUser.setEmail(newInternalUser.getEmail());
-                originalUser.setDepartment(newInternalUser.getDepartment());
+                originalInternalUser.setName(newInternalUser.getName());
+                originalInternalUser.setLogin(newInternalUser.getLogin());
+                originalInternalUser.setFirstName(newInternalUser.getFirstName());
+                originalInternalUser.setLastName(newInternalUser.getLastName());
+                originalInternalUser.setEmail(newInternalUser.getEmail());
+                originalInternalUser.setDepartment(newInternalUser.getDepartment());
 
-                userManager.update(originalUser, null);
+                userManager.update(originalInternalUser, null);
             }else{
-                throw new UpdateException("Cannot update non internal users");
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal user.");
             }
         } catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceAccessException("Unable to update user.", ome);
         }
     }
 
-
-    public void createResource(String providerId, String id, UserMO resource) throws ResourceFactory.InvalidResourceException{
-        // only allow for internal user
-        if(!isInternalProvider(providerId)) throw new NotImplementedException("Cannot create non internal users");
-
-        throw new NotImplementedException("Cannot create user with specified ID"); // todo requires core change
-    }
-
-    public void deleteResource(String providerId, String id) throws ResourceFactory.ResourceNotFoundException{
-        // only allow for internal user
-        if(!isInternalProvider(providerId)) throw new NotImplementedException("Cannot delete non internal users");
+    public void deleteResource(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
 
         try {
             UserManager userManager = retrieveUserManager(providerId);
-            User user = userManager.findByPrimaryKey(id);
-            rbacAccessService.validatePermitted(user, OperationType.DELETE);
 
-            if (user.equals(JaasUtils.getCurrentUser()))
-                throw new DeleteException("The currently used user cannot be deleted");
-            userManager.delete(user);
-            trustedEsmUserManager.deleteMappingsForUser(user);
+            if(userManager instanceof InternalUserManager) {
+                User user = userManager.findByPrimaryKey(id);
+                if (user == null) {
+                    throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+                }
+                rbacAccessService.validatePermitted(user, OperationType.DELETE);
+
+                if (user.equals(JaasUtils.getCurrentUser()))
+                    throw new DeleteException("The currently used user cannot be deleted");
+
+                userManager.delete(user);
+                trustedEsmUserManager.deleteMappingsForUser(user);
+            }else{
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot delete non-internal users");
+            }
         } catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceNotFoundException("Unable to delete user.", ome);
         }
@@ -255,9 +300,9 @@ public class UserRestResourceFactory {
         return providerId.equalsIgnoreCase(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString());
     }
 
-    public void changePassword(String providerId, String id, String newClearTextPassword) throws ResourceFactory.ResourceNotFoundException {
+    public void changePassword(String providerId, String id, String password, String format) throws ResourceFactory.ResourceNotFoundException,ResourceFactory.InvalidResourceException {
         // only allow for internal user
-        if(!isInternalProvider(providerId)) throw new NotImplementedException("Cannot change non internal users password.");
+        if(!isInternalProvider(providerId)) throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot change non internal users password.");
 
         try{
             InternalUserManager userManager = (InternalUserManager) retrieveUserManager(providerId);
@@ -270,24 +315,37 @@ public class UserRestResourceFactory {
                 disconnectedUser.setVersion(internalUser.getVersion());
             }
 
-            //check if users password is the same
             final String hashedPassword = disconnectedUser.getHashedPassword();
+            if(isPlainTextPassword(format)) {
 
-            if (passwordHasher.isVerifierRecognized(hashedPassword)) {
-                try {
-                    passwordHasher.verifyPassword(newClearTextPassword.getBytes(Charsets.UTF8), hashedPassword);
-                    //same error string that used to be shown in PasswordDialog
-                    throw new InvalidPasswordException("The new password is the same as the old one.\nPlease enter a different password.");
-                } catch (IncorrectPasswordException e) {
-                    //fall through ok - this is the expected case - the password being set is different.
+                //check if users password is the same
+                if (passwordHasher.isVerifierRecognized(hashedPassword)) {
+                    try {
+                        passwordHasher.verifyPassword(password.getBytes(Charsets.UTF8), hashedPassword);
+                        //same error string that used to be shown in PasswordDialog
+                        throw new InvalidPasswordException("The new password is the same as the old one.\nPlease enter a different password.");
+                    } catch (IncorrectPasswordException e) {
+                        //fall through ok - this is the expected case - the password being set is different.
+                    }
                 }
-            }
 
-            passwordEnforcerManager.isPasswordPolicyCompliant(newClearTextPassword);
-            final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
-            final boolean updateUser = passwordManager.configureUserPasswordHashes(disconnectedUser, newClearTextPassword);
-            if (!updateUser) {
-                throw new IllegalStateException("Users should require update.");
+                passwordEnforcerManager.isPasswordPolicyCompliant(password);
+                final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
+                final boolean updateUser = passwordManager.configureUserPasswordHashes(disconnectedUser, password);
+                if (!updateUser) {
+                    throw new IllegalStateException("Users should require update.");
+                }
+            }else if(isSHA512cryptHashedPassword(format)){
+                if(!Sha512Crypt.verifyHashTextFormat(password)){
+                    throw new InvalidPasswordException("Password is not SHA512crypt formatted");
+                }
+                //check if users password is the same
+                if (hashedPassword.equals(password)) {
+                    throw new InvalidPasswordException("The new password is the same as the old one.\nPlease enter a different password.");
+                }
+                disconnectedUser.setHashedPassword(password);
+            }else{
+                throw new InvalidPasswordException("Invalid password format:"+format);
             }
             passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
             logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getGoid() + "]");
@@ -295,6 +353,8 @@ public class UserRestResourceFactory {
             activateUser(disconnectedUser);
 
             userManager.update(disconnectedUser);
+        } catch(InvalidPasswordException invalidPassword){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to change user password, invalid password: " +  invalidPassword.getMessage());
         } catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceAccessException("Unable to change user password.", ome);
         }
@@ -326,24 +386,42 @@ public class UserRestResourceFactory {
         }
     }
 
-    public X509Certificate setCertificate(String providerId, String id, String certificateId) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
-        User user = getUser(providerId,id);
-        TrustedCert cert =  trustedCertManager.findByPrimaryKey(Goid.parseGoid(certificateId));
-        if(cert == null){
-            throw new ResourceFactory.ResourceNotFoundException("Certificate not found: " + id);
+    public X509Certificate setCertificate(String providerId, String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
+        User user = getUser(providerId, id, true);
+        try {
+            final Certificate certificate = CertUtils.getFactory().generateCertificate(
+                    new ByteArrayInputStream( getEncoded(certificateData) ) );
+
+            if ( !(certificate instanceof X509Certificate) )
+                throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "unexpected encoded certificate type");
+
+            final X509Certificate x509Certificate = (X509Certificate) certificate;
+            // check common name is same as login
+            String certCn = CertUtils.extractFirstCommonNameFromCertificate(x509Certificate);
+            if(!certCn.equals(user.getLogin())){
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,"Certificate subject name ("+certCn+")does not match user login");
+            }
+            clientCertManager.recordNewUserCert(user,x509Certificate , false);
+            return (X509Certificate) clientCertManager.getUserCert(user);
+        } catch (CertificateException e) {
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Error importing certificate:"+e.getMessage());
         }
-        rbacAccessService.validatePermitted(cert, OperationType.READ);
-        clientCertManager.recordNewUserCert(user, cert.getCertificate(), false);
-        return (X509Certificate) clientCertManager.getUserCert(user);
     }
 
-    public void revokeCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException{
-        User user = getUser(providerId, id);
+    private byte[] getEncoded( final CertificateData certificateData ) throws ResourceFactory.InvalidResourceException {
+        if ( certificateData == null || certificateData.getEncoded().length == 0 ) {
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.MISSING_VALUES, "encoded certificate data");
+        }
+        return certificateData.getEncoded();
+    }
+
+    public void revokeCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
+        User user = getUser(providerId, id, true);
         clientCertManager.revokeUserCert(user);
     }
 
-    public X509Certificate getCertificate(String providerId, String id)throws ResourceFactory.ResourceNotFoundException, ObjectModelException {
-        User user = getUser(providerId, id);
+    public X509Certificate getCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
+        User user = getUser(providerId, id, true);
         Certificate userCert = clientCertManager.getUserCert(user);
         if(userCert == null){
             throw new ResourceFactory.ResourceNotFoundException("User certificate not found: " + id);

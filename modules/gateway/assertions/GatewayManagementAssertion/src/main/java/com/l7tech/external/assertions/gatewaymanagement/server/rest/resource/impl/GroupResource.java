@@ -84,7 +84,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<GroupMO> list(
-            @QueryParam("name") List<String> names) {
+            @QueryParam("name") List<String> names) throws ResourceFactory.ResourceNotFoundException{
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();

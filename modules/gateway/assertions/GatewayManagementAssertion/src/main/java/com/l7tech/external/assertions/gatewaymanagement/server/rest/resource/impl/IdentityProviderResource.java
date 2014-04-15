@@ -10,6 +10,7 @@ import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -30,11 +31,11 @@ import java.util.List;
  * The identity provider resource
  */
 @Provider
-@Path(RestEntityResource.RestEntityResource_version_URI + IdentityProviderResource.jdbcConnections_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + IdentityProviderResource.identityProviders_URI)
 @Singleton
 public class IdentityProviderResource extends RestEntityResource<IdentityProviderMO, IdentityProviderAPIResourceFactory, IdentityProviderTransformer> {
 
-    protected static final String jdbcConnections_URI = "identityProviders";
+    protected static final String identityProviders_URI = "identityProviders";
 
     @Context
     private ResourceContext resourceContext;
@@ -54,25 +55,25 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     /**
      * Shows the users
      *
-     * @param id The provider id
+     * @param id The provider id. "default" for the default identity provider
      * @return The user resource for handling user requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @Path("{id}/"+ UserResource.USERS_URI)
     public UserResource users(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return resourceContext.initResource(new UserResource(id));
+        return resourceContext.initResource(new UserResource(resolveId(id)));
     }
 
     /**
      * Shows the groups
      *
-     * @param id The provider id
+     * @param id The provider id. "default" for the default identity provider
      * @return The group resource for handling group requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @Path("{id}/groups")
     public GroupResource groups(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return resourceContext.initResource(new GroupResource(id));
+        return resourceContext.initResource(new GroupResource(resolveId(id)));
     }
 
     /**
@@ -92,14 +93,14 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     /**
      * This implements the GET method to retrieve an entity by a given id.
      *
-     * @param id The identity of the entity to select
+     * @param id The identity of the entity to select. "default" for the default identity provider
      * @return The selected entity.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
     @Path("{id}")
     public Item<IdentityProviderMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        return super.get(id);
+        return super.get(resolveId(id));
     }
 
     /**
@@ -179,11 +180,19 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
         }
     }
 
+    private String resolveId(String id){
+        if(id.equals("default")){
+            return IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
+        }
+        return id;
+    }
+
+
     /**
      * Updates an existing entity
      *
      * @param resource The updated entity
-     * @param id       The id of the entity to update
+     * @param id       The id of the entity to update. "default" for the default identity provider
      * @return a reference to the newly updated entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -192,7 +201,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(IdentityProviderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        return super.update(resource, id);
+        return super.update(resource, resolveId(id));
     }
 
     /**
@@ -205,7 +214,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     @Path("{id}")
     @Override
     public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.delete(id);
+        super.delete(resolveId(id));
     }
 
     /**

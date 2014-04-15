@@ -88,7 +88,7 @@ public class UserResource implements URLAccessible<UserMO> {
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<UserMO> list(
-            @QueryParam("login") List<String> logins) {
+            @QueryParam("login") List<String> logins) throws ResourceFactory.ResourceNotFoundException {
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("login"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
@@ -140,7 +140,7 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @GET
     @Path("{id}")
-    public Item<UserMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<UserMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         UserMO user = userRestResourceFactory.getResource(providerId, id);
         return new ItemBuilder<>(transformer.convertToItem(user))
                 .addLink(getLink(user))
@@ -161,15 +161,10 @@ public class UserResource implements URLAccessible<UserMO> {
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(UserMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        boolean resourceExists = userRestResourceFactory.resourceExists(providerId, id);
         final Response.ResponseBuilder responseBuilder;
-        if (resourceExists) {
-            userRestResourceFactory.updateResource(providerId, id, resource);
-            responseBuilder = Response.ok();
-        } else {
-            userRestResourceFactory.createResource(providerId, id, resource);
-            responseBuilder = Response.created(uriInfo.getAbsolutePath());
-        }
+        userRestResourceFactory.updateResource(providerId, id, resource);
+        responseBuilder = Response.ok();
+
         return responseBuilder.entity(new ItemBuilder<>(
                 transformer.convertToItem(resource))
                 .setContent(null)
@@ -183,16 +178,17 @@ public class UserResource implements URLAccessible<UserMO> {
      *
      * @param id       The id of the user
      * @param password The new password
+     * @param format   The format of the password. "plain" or "sha512crypt"
      * @return The user that the password was changed for.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      * @throws FindException
      */
     @PUT
-    @Path("{id}/changePassword")
+    @Path("{id}/password")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response changePassword(@PathParam("id") String id, String password) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
-        userRestResourceFactory.changePassword(providerId, id, password);
+    public Response changePassword(@PathParam("id") String id, String password, @QueryParam("format") @DefaultValue("plain") String format) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
+        userRestResourceFactory.changePassword(providerId, id, password, format);
         UserMO user = userRestResourceFactory.getResource(providerId, id);
         return Response.ok(new ItemBuilder<>(transformer.convertToItem(user))
                 .addLink(getLink(user))
@@ -208,7 +204,7 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @DELETE
     @Path("{id}")
-    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         userRestResourceFactory.deleteResource(providerId, id);
     }
 
@@ -216,8 +212,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * Set this user's certificate
      *
      * @param id       The id of the user
-     * @param certificateId The trusted certificate id
-     * @return The certificate set to
+     * @param certificateData  The certificate data resource
+     * @return The certificate set
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      * @throws FindException
@@ -225,8 +221,8 @@ public class UserResource implements URLAccessible<UserMO> {
     @PUT
     @Path("{id}/certificate")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response setCertificate(@PathParam("id") String id, String certificateId) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
-        X509Certificate cert  = userRestResourceFactory.setCertificate(providerId, id, certificateId);
+    public Response setCertificate(@PathParam("id") String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        X509Certificate cert  = userRestResourceFactory.setCertificate(providerId, id, certificateData);
         return Response.ok(certTransformer.getCertData(cert)).build();
     }
 
