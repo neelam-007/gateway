@@ -65,7 +65,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
             Assert.assertEquals("Id's don't match", entityId, item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(entityId), item.getName());
+            Assert.assertEquals("Title is incorrect", getExpectedTitle(entityId), item.getName());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());

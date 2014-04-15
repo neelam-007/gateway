@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ public class PolicyAliasAPIResourceFactory extends WsmanBaseResourceFactory<Poli
     public PolicyAliasMO getResourceTemplate() {
         PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
         policyAliasMO.setFolderId("Folder ID");
-        policyAliasMO.setPolicyReference(new ManagedObjectReference());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyAliasMO.class, new Goid(3, 1).toString()));
         return policyAliasMO;
 
     }

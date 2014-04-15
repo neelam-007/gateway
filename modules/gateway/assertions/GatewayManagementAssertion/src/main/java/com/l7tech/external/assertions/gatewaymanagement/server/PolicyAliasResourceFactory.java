@@ -86,7 +86,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         try {
             policy = policyResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, policyId));
             if (isRootFolder(policy.getFolder()) ? isRootFolder(parentFolder.some()) : policy.getFolder().equals(parentFolder.some()))
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original");
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original policy");
         } catch (NullPointerException | ResourceNotFoundException e) {
             if(strict)
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
@@ -98,7 +98,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         try{
             PolicyAlias checkAlias = policyAliasManager.findAliasByEntityAndFolder(toInternalId(policyId), parentFolder.some().getGoid());
             if( checkAlias != null )
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of policy " + policyId + " already exists in folder " + parentFolder.some().getGoid());
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolder.some().getName());
         } catch (FindException |InvalidResourceSelectors e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");
         }
@@ -121,7 +121,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         try {
             policy = policyResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, newEntity.getEntityGoid().toString()));
             if (isRootFolder(policy.getFolder()) ? isRootFolder(newEntity.getFolder()) : policy.getFolder().equals(newEntity.getFolder()))
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original");
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original policy");
         } catch (ResourceNotFoundException e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
         }
@@ -130,7 +130,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         try{
             PolicyAlias checkAlias = policyAliasManager.findAliasByEntityAndFolder(newEntity.getEntityGoid(), newEntity.getFolder().getGoid());
             if( checkAlias != null )
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of policy " + newEntity.getEntityGoid() + " already exists in folder " + newEntity.getFolder().getGoid());
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of policy " + policy.getName() + " already exists in folder " + newEntity.getFolder().getName());
         } catch (FindException e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");
         }

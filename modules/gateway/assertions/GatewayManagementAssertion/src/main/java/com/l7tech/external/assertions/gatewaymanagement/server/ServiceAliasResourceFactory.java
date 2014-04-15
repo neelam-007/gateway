@@ -86,10 +86,10 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         try {
             service = serviceResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR,serviceID) );
             if (isRootFolder(service.getFolder()) ? isRootFolder(parentFolder.some()) : service.getFolder().equals(parentFolder.some()))
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original");
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original service");
         } catch (NullPointerException | ResourceNotFoundException e) {
             if(strict)
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid service reference");
             service = new PublishedService();
             service.setId(serviceID);
         }
@@ -98,7 +98,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         try{
             PublishedServiceAlias checkAlias = serviceAliasManager.findAliasByEntityAndFolder(toInternalId(serviceID), parentFolder.some().getGoid());
             if( checkAlias != null )
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of service " + serviceID + " already exists in folder " + parentFolder.some().getGoid());
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of service " + service.getName() + " already exists in folder " + parentFolder.some().getName());
         } catch (FindException | InvalidResourceSelectors e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");
         }
@@ -115,7 +115,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
 
         // Disallow changing the referenced policy
         if (!oldEntity.getEntityGoid().equals(newEntity.getEntityGoid())) {
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "unable to change policy reference of an existing policy alias");
+            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "unable to change policy reference of an existing service alias");
         }
 
         // policy alias cannot be in same folder as the original
@@ -124,7 +124,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         try {
             service = serviceResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, newEntity.getEntityGoid().toString()));
             if (isRootFolder(service.getFolder()) ? isRootFolder(newEntity.getFolder()) : service.getFolder().equals(newEntity.getFolder()))
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot have alias in the same folder as original");
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot have alias in the same folder as original service");
         } catch (ResourceNotFoundException e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "invalid policy reference");
         }
@@ -133,7 +133,7 @@ public class ServiceAliasResourceFactory extends SecurityZoneableEntityManagerRe
         try{
             PublishedServiceAlias checkAlias = serviceAliasManager.findAliasByEntityAndFolder(serviceID, newEntity.getFolder().getGoid());
             if( checkAlias != null )
-                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of service " + serviceID + " already exists in folder " + newEntity.getFolder().getGoid());
+                throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of service " + service.getName() + " already exists in folder " + newEntity.getFolder().getName());
         } catch (FindException e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");
         }

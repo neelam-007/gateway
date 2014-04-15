@@ -9,12 +9,17 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.AliasHeader;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.service.ServiceManager;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 
 @Component
 public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<ServiceAliasMO, PublishedServiceAlias, AliasHeader<PublishedService>, ServiceAliasResourceFactory> {
+
+    @Inject
+    private ServiceManager serviceManager;
 
     @Override
     @Inject
@@ -24,9 +29,18 @@ public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<Ser
 
     @Override
     public Item<ServiceAliasMO> convertToItem(ServiceAliasMO m) {
-        return new ItemBuilder<ServiceAliasMO>(m.getServiceReference().getId(), m.getId(), factory.getType().name())
+        Item<ServiceAliasMO> item = new ItemBuilder<ServiceAliasMO>(m.getServiceReference().getId(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
+        try {
+            PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(m.getServiceReference().getId()));
+            if(service != null) {
+                item.setName(service.getName() + " alias");
+            }
+        } catch (Throwable t) {
+            //do nothing.
+        }
+        return item;
     }
 
     @Override
