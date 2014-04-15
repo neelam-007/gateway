@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.IdentityProviderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
@@ -218,13 +219,25 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<IdentityProviderMO> template() {
-        return super.template();
+        IdentityProviderMO identityProviderMO = ManagedObjectFactory.createIdentityProvider();
+        identityProviderMO.setName("My New ID Provider");
+        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP);
+        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("certificateValidation", "Validate Certificate Path")
+                .map());
+        IdentityProviderMO.BindOnlyLdapIdentityProviderDetail detailsBindOnly = identityProviderMO.getBindOnlyLdapIdentityProviderDetail();
+        detailsBindOnly.setServerUrls(Arrays.asList("server1", "server2"));
+        detailsBindOnly.setUseSslClientAuthentication(true);
+        detailsBindOnly.setBindPatternPrefix("prefix Pattern");
+        detailsBindOnly.setBindPatternSuffix("suffix Pattern");
+        return super.createTemplateItem(identityProviderMO);
     }
 }

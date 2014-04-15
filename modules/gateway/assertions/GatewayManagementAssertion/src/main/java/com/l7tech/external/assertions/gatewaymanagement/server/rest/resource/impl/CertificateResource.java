@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CertificateTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.TrustedCertificateMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -19,6 +17,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -146,13 +145,33 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<TrustedCertificateMO> template() {
-        return super.template();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Trusted Certificate Template");
+        trustedCertificateMO.setRevocationCheckingPolicyId(new Goid(0, 1).toString());
+        trustedCertificateMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("trustedForSigningClientCerts", true)
+                .put("trustedForSigningServerCerts", true)
+                .put("trustedAsSamlAttestingEntity", true)
+                .put("trustedAsSamlIssuer", true)
+                .put("trustedForSsl", true)
+                .put("trustAnchor", true)
+                .put("verifyHostname", true)
+                .put("revocationCheckingEnabled", true)
+                .map());
+        CertificateData certificateData = ManagedObjectFactory.createCertificateData();
+        certificateData.setEncoded("Encoded Data".getBytes());
+        certificateData.setIssuerName("cn=issuerdn");
+        certificateData.setSubjectName("cn=subjectdn");
+        certificateData.setSerialNumber(new BigInteger("123"));
+        trustedCertificateMO.setCertificateData(certificateData);
+        return super.createTemplateItem(trustedCertificateMO);
     }
 }

@@ -8,7 +8,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyAliasTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyAliasMO;
+import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -161,13 +163,17 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<PolicyAliasMO> template() {
-        return super.template();
+        PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setFolderId("Folder ID");
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyAliasMO.class, new Goid(3, 1).toString()));
+        return super.createTemplateItem(policyAliasMO);
     }
 }

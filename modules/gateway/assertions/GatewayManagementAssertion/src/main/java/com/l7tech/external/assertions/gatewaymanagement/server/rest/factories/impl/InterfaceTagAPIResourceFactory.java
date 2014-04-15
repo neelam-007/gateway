@@ -4,8 +4,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResou
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.InterfaceTagMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,14 +51,5 @@ public class InterfaceTagAPIResourceFactory extends WsmanBaseResourceFactory<Int
                 return interfaceTagMO;
             }
         });
-    }
-
-
-    @Override
-    public InterfaceTagMO getResourceTemplate() {
-        InterfaceTagMO interfaceTagMO = ManagedObjectFactory.createInterfaceTag();
-        interfaceTagMO.setName("TemplateInterfaceTag");
-        interfaceTagMO.setAddressPatterns(CollectionUtils.list("0.0.0.0/00"));
-        return interfaceTagMO;
     }
 }

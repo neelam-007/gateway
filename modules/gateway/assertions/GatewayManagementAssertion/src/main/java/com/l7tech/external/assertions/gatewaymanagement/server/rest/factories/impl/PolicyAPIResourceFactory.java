@@ -6,7 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -17,7 +17,6 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -30,7 +29,6 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -60,37 +58,6 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
     @Inject
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public PolicyMO getResourceTemplate() {
-        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
-        policyMO.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
-
-        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
-        policyDetail.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
-        policyDetail.setFolderId("FolderID");
-        policyDetail.setName("Policy Name");
-        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
-        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("PropertyKey", "PropertyValue").map());
-        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
-        resourceSet.setTag("policy");
-        Resource resource = ManagedObjectFactory.createResource();
-        resource.setType("policy");
-        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<exp:Export Version=\"3.0\"\n" +
-                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <exp:References/>\n" +
-                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
-                "        </wsp:All>\n" +
-                "    </wsp:Policy>\n" +
-                "</exp:Export>\n");
-        resourceSet.setResources(Arrays.asList(resource));
-        policyMO.setResourceSets(Arrays.asList(resourceSet));
-        policyMO.setPolicyDetail(policyDetail);
-        return policyMO;
     }
 
     @Inject

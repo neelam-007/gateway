@@ -7,8 +7,10 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
 
@@ -150,13 +152,17 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<FolderMO> template() {
-        return super.template();
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setName("Folder Template");
+        folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        return super.createTemplateItem(folderMO);
     }
 }

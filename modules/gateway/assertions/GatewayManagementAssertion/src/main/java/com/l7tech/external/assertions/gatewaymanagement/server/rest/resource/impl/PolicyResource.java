@@ -5,10 +5,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.I
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyType;
@@ -247,13 +244,40 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<PolicyMO> template() {
-        return super.template();
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
+
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setGuid("guid-8757cdae-d1ad-4ad5-bc08-b16b2d370759");
+        policyDetail.setFolderId("FolderID");
+        policyDetail.setName("Policy Name");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("PropertyKey", "PropertyValue").map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <exp:References/>\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>\n");
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        policyMO.setPolicyDetail(policyDetail);
+        return super.createTemplateItem(policyMO);
     }
 }

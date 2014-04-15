@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.SecurityZoneResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
@@ -28,14 +27,5 @@ public class SecurityZoneAPIResourceFactory extends WsmanBaseResourceFactory<Sec
     @Inject
     public void setFactory(SecurityZoneResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public SecurityZoneMO getResourceTemplate() {
-        SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
-        securityZoneMO.setName("Template Name");
-
-        return securityZoneMO;
-
     }
 }

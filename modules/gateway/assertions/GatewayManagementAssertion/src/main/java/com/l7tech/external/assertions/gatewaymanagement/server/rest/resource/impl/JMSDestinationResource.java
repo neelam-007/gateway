@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.JMSDestinationTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.JMSDestinationMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -168,13 +166,24 @@ public class JMSDestinationResource extends RestEntityResource<JMSDestinationMO,
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<JMSDestinationMO> template() {
-        return super.template();
+        JMSDestinationMO jmsDestinationMO = ManagedObjectFactory.createJMSDestination();
+        JMSDestinationDetail jmsDetails = ManagedObjectFactory.createJMSDestinationDetails();
+        JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
+
+        jmsDetails.setName("TemplateJMSDestination");
+        jmsDetails.setDestinationName("TemplateDestinationName");
+        jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
+
+        jmsDestinationMO.setJmsDestinationDetail(jmsDetails);
+        jmsDestinationMO.setJmsConnection(jmsConnection);
+        return super.createTemplateItem(jmsDestinationMO);
     }
 }

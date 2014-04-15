@@ -3,9 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.CustomKeyValueStoreResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.CustomKeyValueStoreMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -30,14 +28,5 @@ public class CustomKeyValueStoreAPIResourceFactory extends WsmanBaseResourceFact
     @Inject
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.CustomKeyValueStoreResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public CustomKeyValueStoreMO getResourceTemplate() {
-        CustomKeyValueStoreMO keyValueMO = ManagedObjectFactory.createCustomKeyValueStore();
-        keyValueMO.setKey("TemplateKey");
-        keyValueMO.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);
-        keyValueMO.setValue("TemplateValue".getBytes());
-        return keyValueMO;
     }
 }

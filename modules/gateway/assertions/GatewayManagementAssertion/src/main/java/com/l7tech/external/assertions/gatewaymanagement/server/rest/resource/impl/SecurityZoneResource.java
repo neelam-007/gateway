@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.SecurityZoneTransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
@@ -139,13 +140,16 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<SecurityZoneMO> template() {
-        return super.template();
+        SecurityZoneMO securityZoneMO = ManagedObjectFactory.createSecurityZone();
+        securityZoneMO.setName("Template Name");
+        return super.createTemplateItem(securityZoneMO);
     }
 }

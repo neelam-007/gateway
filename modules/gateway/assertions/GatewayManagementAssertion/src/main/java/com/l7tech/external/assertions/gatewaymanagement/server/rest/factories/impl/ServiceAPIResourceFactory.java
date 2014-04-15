@@ -7,8 +7,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.ServiceDetail;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -56,19 +54,6 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
     @Inject
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public ServiceMO getResourceTemplate() {
-        ServiceMO serviceMO = ManagedObjectFactory.createService();
-
-        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
-        serviceDetail.setEnabled(true);
-        serviceDetail.setFolderId("Folder ID");
-        serviceDetail.setName("Service Name");
-
-        serviceMO.setServiceDetail(serviceDetail);
-        return serviceMO;
     }
 
     @Inject

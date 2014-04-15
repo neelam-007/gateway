@@ -9,6 +9,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.EmailListenerMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
@@ -158,13 +160,28 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<EmailListenerMO> template() {
-        return super.template();
+        EmailListenerMO emailListenerMO = ManagedObjectFactory.createEmailListener();
+        emailListenerMO.setName("TemplateEmailListener");
+        emailListenerMO.setHostname("hostName");
+        emailListenerMO.setPort(1234);
+        emailListenerMO.setActive(true);
+        emailListenerMO.setUsername("username");
+        emailListenerMO.setServerType(EmailListenerMO.EmailServerType.POP3);
+        emailListenerMO.setFolder("INBOX");
+        emailListenerMO.setPollInterval(1000);
+        emailListenerMO.setUseSsl(false);
+        emailListenerMO.setDeleteOnReceive(true);
+        emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put(EmailListener.PROP_HARDWIRED_SERVICE_ID, new Goid(123, 456).toString())
+                .put(EmailListener.PROP_IS_HARDWIRED_SERVICE, Boolean.TRUE.toString()).map());
+        return super.createTemplateItem(emailListenerMO);
     }
 }

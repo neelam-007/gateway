@@ -9,7 +9,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.CustomKeyValueStoreMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
 
@@ -139,13 +141,18 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<CustomKeyValueStoreMO> template() {
-        return super.template();
+        CustomKeyValueStoreMO keyValueMO = ManagedObjectFactory.createCustomKeyValueStore();
+        keyValueMO.setKey("TemplateKey");
+        keyValueMO.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);
+        keyValueMO.setValue("TemplateValue".getBytes());
+        return super.createTemplateItem(keyValueMO);
     }
 }

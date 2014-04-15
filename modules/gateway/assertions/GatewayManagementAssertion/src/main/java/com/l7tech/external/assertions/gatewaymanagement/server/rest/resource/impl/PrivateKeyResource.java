@@ -235,13 +235,17 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<PrivateKeyMO> template() {
-        return super.template();
+        PrivateKeyMO privateKeyMO = ManagedObjectFactory.createPrivateKey();
+        privateKeyMO.setAlias("TemplateAlias");
+        privateKeyMO.setKeystoreId("TemplateKeystoreID");
+        return super.createTemplateItem(privateKeyMO);
     }
 }

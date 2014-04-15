@@ -128,20 +128,23 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
 
 
     /**
-     * This will return a template, example entity that can be used as a base to updating an assertion security zone.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<AssertionSecurityZoneMO> template() {
-        AssertionSecurityZoneMO resource = factory.getResourceTemplate();
+        AssertionSecurityZoneMO assertionSecurityZoneMO = ManagedObjectFactory.createAssertionAccess();
+        assertionSecurityZoneMO.setName("TemplateAssertionSecurityZone");
+        assertionSecurityZoneMO.setSecurityZoneId("SecurityZoneID");
+
         return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .addLinks(getRelatedLinks(resource))
-                .setContent(resource)
+                .addLinks(getRelatedLinks(assertionSecurityZoneMO))
+                .setContent(assertionSecurityZoneMO)
                 .build();
-
     }
 
     /**

@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.SiteMinderConfigurationTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.SiteMinderConfigurationMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -151,13 +149,19 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<SiteMinderConfigurationMO> template() {
-        return super.template();
+        SiteMinderConfigurationMO siteMinderConfiguration = ManagedObjectFactory.createSiteMinderConfiguration();
+        siteMinderConfiguration.setName("TemplateSiteMinderConfiguration");
+        siteMinderConfiguration.setAddress("SFTP");
+        siteMinderConfiguration.setEnabled(true);
+        siteMinderConfiguration.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("ConnectorProperty", "PropertyValue").map());
+        return super.createTemplateItem(siteMinderConfiguration);
     }
 }

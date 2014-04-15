@@ -6,10 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.InterfaceTagTransformer;
-import com.l7tech.gateway.api.InterfaceTagMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
@@ -153,13 +150,17 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     }
 
     /**
-     * This will return a template, example interface tag that can be used as a base to creating a new interface tag.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
-     * @return The template interface tag.
+     * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<InterfaceTagMO> template() {
-        return super.template();
+        InterfaceTagMO interfaceTagMO = ManagedObjectFactory.createInterfaceTag();
+        interfaceTagMO.setName("TemplateInterfaceTag");
+        interfaceTagMO.setAddressPatterns(CollectionUtils.list("0.0.0.0/00"));
+        return super.createTemplateItem(interfaceTagMO);
     }
 }

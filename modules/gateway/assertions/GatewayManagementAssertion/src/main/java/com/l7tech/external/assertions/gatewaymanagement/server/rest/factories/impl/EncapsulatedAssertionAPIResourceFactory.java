@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -28,13 +27,5 @@ public class EncapsulatedAssertionAPIResourceFactory extends WsmanBaseResourceFa
     @Inject
     public void setFactory(EncapsulatedAssertionResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public EncapsulatedAssertionMO getResourceTemplate() {
-        EncapsulatedAssertionMO encapsulatedAssertionMO = ManagedObjectFactory.createEncapsulatedAssertion();
-        encapsulatedAssertionMO.setName("Template Cluster Property Name");
-        encapsulatedAssertionMO.setGuid("Encapsulated Assertion Guid");
-        return encapsulatedAssertionMO;
     }
 }

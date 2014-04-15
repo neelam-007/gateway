@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
@@ -162,13 +163,21 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<HttpConfigurationMO> template() {
-        return super.template();
+        HttpConfigurationMO httpConfigurationMO = ManagedObjectFactory.createHttpConfiguration();
+        httpConfigurationMO.setUsername("userName");
+        httpConfigurationMO.setPort(8080);
+        httpConfigurationMO.setHost("templateHost");
+        httpConfigurationMO.setPasswordId(new Goid(0, 0).toString());
+        httpConfigurationMO.setProtocol(HttpConfigurationMO.Protocol.HTTP);
+        httpConfigurationMO.setPath("path");
+        return super.createTemplateItem(httpConfigurationMO);
     }
 }

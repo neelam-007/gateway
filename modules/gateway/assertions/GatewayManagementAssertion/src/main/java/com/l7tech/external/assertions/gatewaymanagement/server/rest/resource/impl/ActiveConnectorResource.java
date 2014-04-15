@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.ActiveConnectorMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -166,13 +167,19 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<ActiveConnectorMO> template() {
-        return super.template();
+        ActiveConnectorMO activeConnectorMO = ManagedObjectFactory.createActiveConnector();
+        activeConnectorMO.setName("TemplateActiveConnector");
+        activeConnectorMO.setType("SFTP");
+        activeConnectorMO.setEnabled(true);
+        activeConnectorMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("ConnectorProperty", "PropertyValue").map());
+        return super.createTemplateItem(activeConnectorMO);
     }
 }

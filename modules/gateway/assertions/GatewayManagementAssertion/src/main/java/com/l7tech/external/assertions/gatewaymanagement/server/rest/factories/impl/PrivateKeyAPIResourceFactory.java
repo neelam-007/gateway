@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PrivateKeyCreationContext;
 import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
@@ -30,15 +29,6 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
     @Inject
     public void setFactory(PrivateKeyResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public PrivateKeyMO getResourceTemplate() {
-        PrivateKeyMO privateKeyMO = ManagedObjectFactory.createPrivateKey();
-        privateKeyMO.setAlias("TemplateAlias");
-        privateKeyMO.setKeystoreId("TemplateKeystoreID");
-        return privateKeyMO;
-
     }
 
     public PrivateKeyMO createPrivateKey(PrivateKeyCreationContext resource, String id) throws ResourceFactory.InvalidResourceSelectors, ResourceFactory.InvalidResourceException {

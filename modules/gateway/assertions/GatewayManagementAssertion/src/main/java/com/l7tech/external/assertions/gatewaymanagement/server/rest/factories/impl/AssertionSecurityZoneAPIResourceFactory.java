@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.AssertionSecurity
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.AssertionSecurityZoneMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
@@ -34,14 +33,6 @@ public class AssertionSecurityZoneAPIResourceFactory extends WsmanBaseResourceFa
     @Inject
     public void setFactory(AssertionSecurityZoneResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public AssertionSecurityZoneMO getResourceTemplate() {
-        AssertionSecurityZoneMO activeConnectorMO = ManagedObjectFactory.createAssertionAccess();
-        activeConnectorMO.setName("TemplateAssertionSecurityZone");
-        activeConnectorMO.setSecurityZoneId("SecurityZoneID");
-        return activeConnectorMO;
     }
 
     public AssertionSecurityZoneMO updateResourceByName(String name, AssertionSecurityZoneMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {

@@ -6,9 +6,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ServiceAliasTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ServiceAliasMO;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -161,13 +160,17 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<ServiceAliasMO> template() {
-        return super.template();
+        ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
+        serviceAliasMO.setFolderId("Folder ID");
+        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, new Goid(3, 1).toString()));
+        return super.createTemplateItem(serviceAliasMO);
     }
 }

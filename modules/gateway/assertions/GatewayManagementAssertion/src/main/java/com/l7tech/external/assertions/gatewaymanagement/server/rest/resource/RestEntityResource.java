@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.TemplateFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
@@ -33,7 +32,7 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & TemplateFactory<R>, T extends APITransformer<R, ?>> implements URLAccessible<R> {
+public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T extends APITransformer<R, ?>> implements URLAccessible<R> {
     public static final String RestEntityResource_version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     /**
@@ -146,8 +145,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R> & Te
                 .build();
     }
 
-    public Item<R> template() {
-        R resource = factory.getResourceTemplate();
+    protected Item<R> createTemplateItem(@NotNull final R resource) {
         return new ItemBuilder<R>(getResourceType() + " Template", getResourceType())
                 .addLink(ManagedObjectFactory.createLink("self", getUrlString("template")))
                 .addLinks(getRelatedLinks(resource))

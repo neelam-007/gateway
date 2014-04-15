@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
-import com.l7tech.gateway.api.JMSConnection;
-import com.l7tech.gateway.api.JMSDestinationDetail;
 import com.l7tech.gateway.api.JMSDestinationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -30,21 +27,5 @@ public class JMSDestinationAPIResourceFactory extends WsmanBaseResourceFactory<J
     @Inject
     public void setFactory(JMSDestinationResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public JMSDestinationMO getResourceTemplate() {
-        JMSDestinationMO jmsDestinationMO = ManagedObjectFactory.createJMSDestination();
-        JMSDestinationDetail jmsDetails = ManagedObjectFactory.createJMSDestinationDetails();
-        JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
-
-        jmsDetails.setName("TemplateJMSDestination");
-        jmsDetails.setDestinationName("TemplateDestinationName");
-        jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
-
-        jmsDestinationMO.setJmsDestinationDetail( jmsDetails );
-        jmsDestinationMO.setJmsConnection( jmsConnection );
-        return jmsDestinationMO;
-
     }
 }

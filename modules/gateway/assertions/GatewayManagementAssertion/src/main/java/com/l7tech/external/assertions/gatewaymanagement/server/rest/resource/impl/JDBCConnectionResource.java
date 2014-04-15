@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.JDBCConnectionMO;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -168,13 +169,20 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<JDBCConnectionMO> template() {
-        return super.template();
+        JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+        jdbcConnectionMO.setName("TemplateJDBCConnection");
+        jdbcConnectionMO.setDriverClass("com.my.driver.class");
+        jdbcConnectionMO.setEnabled(true);
+        jdbcConnectionMO.setJdbcUrl("example.connection.url");
+        jdbcConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("ConnectionProperty", "PropertyValue").map());
+        return super.createTemplateItem(jdbcConnectionMO);
     }
 }

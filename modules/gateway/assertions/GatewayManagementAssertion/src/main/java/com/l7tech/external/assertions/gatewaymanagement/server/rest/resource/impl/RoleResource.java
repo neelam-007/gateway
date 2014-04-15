@@ -6,9 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RoleTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.RbacRoleMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
@@ -154,13 +152,35 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<RbacRoleMO> template() {
-        return super.template();
+        RbacRoleMO roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setName("TemplateRole");
+        roleMO.setDescription("This is an example description");
+
+        RbacRolePermissionMO permissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        permissionMO.setEntityType("ExampleEntity");
+        permissionMO.setOperation(RbacRolePermissionMO.OperationType.CREATE);
+
+        RbacRolePredicateMO rolePredicateMO = ManagedObjectFactory.createRbacRolePredicateMO();
+        rolePredicateMO.setType(RbacRolePredicateMO.Type.AttributePredicate);
+        rolePredicateMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("ExampleAttributeName", "ExampleAttributeValue").map());
+        permissionMO.setScope(Arrays.asList(rolePredicateMO));
+
+        roleMO.setPermissions(Arrays.asList(permissionMO));
+
+        RbacRoleAssignmentMO roleAssignmentMO = ManagedObjectFactory.createRbacRoleAssignmentMO();
+        roleAssignmentMO.setEntityType("User or Group");
+        roleAssignmentMO.setIdentityName("Name");
+        roleAssignmentMO.setProviderId("ProviderID");
+
+        roleMO.setAssignments(Arrays.asList(roleAssignmentMO));
+        return super.createTemplateItem(roleMO);
     }
 }

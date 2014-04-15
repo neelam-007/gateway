@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.ClusterPropertyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.ClusterPropertyMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -29,13 +28,5 @@ public class ClusterPropertyAPIResourceFactory extends WsmanBaseResourceFactory<
     @Inject
     public void setFactory(ClusterPropertyResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public ClusterPropertyMO getResourceTemplate() {
-        ClusterPropertyMO clusterPropertyMO = ManagedObjectFactory.createClusterProperty();
-        clusterPropertyMO.setName("Template Cluster Property Name");
-        clusterPropertyMO.setValue("Template Cluster Property Value");
-        return clusterPropertyMO;
     }
 }

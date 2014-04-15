@@ -4,10 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.ServiceAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ServiceMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -221,13 +218,22 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<ServiceMO> template() {
-        return super.template();
+        ServiceMO serviceMO = ManagedObjectFactory.createService();
+
+        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setEnabled(true);
+        serviceDetail.setFolderId("Folder ID");
+        serviceDetail.setName("Service Name");
+
+        serviceMO.setServiceDetail(serviceDetail);
+        return super.createTemplateItem(serviceMO);
     }
 }

@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.GenericEntityMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
@@ -150,13 +151,18 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<GenericEntityMO> template() {
-        return super.template();
+        GenericEntityMO genericEntityMO = ManagedObjectFactory.createGenericEntity();
+        genericEntityMO.setName("TemplateGenericEntity");
+        genericEntityMO.setDescription("template description");
+        genericEntityMO.setEntityClassName("com.foo");
+        return super.createTemplateItem(genericEntityMO);
     }
 }

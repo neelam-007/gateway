@@ -3,9 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.HttpConfigurationResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.HttpConfigurationMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -29,17 +27,5 @@ public class HttpConfigurationAPIResourceFactory extends WsmanBaseResourceFactor
     @Inject
     public void setFactory(com.l7tech.external.assertions.gatewaymanagement.server.HttpConfigurationResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public HttpConfigurationMO getResourceTemplate() {
-        HttpConfigurationMO httpConfigurationMO = ManagedObjectFactory.createHttpConfiguration();
-        httpConfigurationMO.setUsername("userName");
-        httpConfigurationMO.setPort(8080);
-        httpConfigurationMO.setHost("templateHost");
-        httpConfigurationMO.setPasswordId(new Goid(0,0).toString());
-        httpConfigurationMO.setProtocol(HttpConfigurationMO.Protocol.HTTP);
-        httpConfigurationMO.setPath("path");
-        return httpConfigurationMO;
     }
 }

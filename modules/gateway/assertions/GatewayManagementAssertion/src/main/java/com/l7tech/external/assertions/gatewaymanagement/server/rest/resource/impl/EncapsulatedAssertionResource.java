@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.EncapsulatedAssertionMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
@@ -149,13 +150,17 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
     }
 
     /**
-     * This will return a template, example entity that can be used as a base to creating a new entity.
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
      *
      * @return The template entity.
      */
     @GET
     @Path("template")
     public Item<EncapsulatedAssertionMO> template() {
-        return super.template();
+        EncapsulatedAssertionMO encapsulatedAssertionMO = ManagedObjectFactory.createEncapsulatedAssertion();
+        encapsulatedAssertionMO.setName("Template Cluster Property Name");
+        encapsulatedAssertionMO.setGuid("Encapsulated Assertion Guid");
+        return super.createTemplateItem(encapsulatedAssertionMO);
     }
 }

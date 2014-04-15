@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 import com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.IdentityProviderMO;
-import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
@@ -12,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.Arrays;
 
 /**
  *
@@ -32,22 +30,6 @@ public class IdentityProviderAPIResourceFactory extends WsmanBaseResourceFactory
     @Inject
     public void setFactory(IdentityProviderResourceFactory factory) {
         super.factory = factory;
-    }
-
-    @Override
-    public IdentityProviderMO getResourceTemplate() {
-        IdentityProviderMO identityProviderMO = ManagedObjectFactory.createIdentityProvider();
-        identityProviderMO.setName("My New ID Provider");
-        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP);
-        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("certificateValidation", "Validate Certificate Path")
-                .map());
-        IdentityProviderMO.BindOnlyLdapIdentityProviderDetail detailsBindOnly = identityProviderMO.getBindOnlyLdapIdentityProviderDetail();
-        detailsBindOnly.setServerUrls(Arrays.asList("server1", "server2"));
-        detailsBindOnly.setUseSslClientAuthentication(true);
-        detailsBindOnly.setBindPatternPrefix("prefix Pattern");
-        detailsBindOnly.setBindPatternSuffix("suffix Pattern");
-        return identityProviderMO;
     }
 
     @Override
