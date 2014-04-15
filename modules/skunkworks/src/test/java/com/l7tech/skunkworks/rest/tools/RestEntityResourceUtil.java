@@ -2,19 +2,16 @@ package com.l7tech.skunkworks.rest.tools;
 
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObject;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.Functions;
 
-import java.security.cert.CertificateEncodingException;
 import java.util.List;
 import java.util.Map;
 
 /**
  * These are the methods that a rest entity test must implement in order to have tests automatically run for it.
  */
-public interface RestEntityResourceUtil<E extends PersistentEntity, M extends ManagedObject> {
+public interface RestEntityResourceUtil<E, M extends ManagedObject> {
 
     /**
      * This returns a list of entity ids that are retrievable using the rest api
@@ -91,7 +88,7 @@ public interface RestEntityResourceUtil<E extends PersistentEntity, M extends Ma
      *
      * @return The entity type
      */
-    public EntityType getType();
+    public String getType();
 
     /**
      * The expected reference title of the given entity.
@@ -110,7 +107,7 @@ public interface RestEntityResourceUtil<E extends PersistentEntity, M extends Ma
     public void verifyLinks(String id, List<Link> links) throws FindException;
 
     /**
-     * This will chack that the managedObject is the correct managed object for the given entity.
+     * This will check that the managedObject is the correct managed object for the given entity.
      *
      * @param id            The entity
      * @param managedObject The managed object

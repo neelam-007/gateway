@@ -209,8 +209,8 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.SSG_ACTIVE_CONNECTOR;
+    public String getType() {
+        return EntityType.SSG_ACTIVE_CONNECTOR.name();
     }
 
     @Override

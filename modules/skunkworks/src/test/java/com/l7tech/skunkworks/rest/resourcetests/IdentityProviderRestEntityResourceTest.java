@@ -371,8 +371,8 @@ public class IdentityProviderRestEntityResourceTest extends RestEntityTests<Iden
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.ID_PROVIDER_CONFIG;
+    public String getType() {
+        return EntityType.ID_PROVIDER_CONFIG.name();
     }
 
     @Override

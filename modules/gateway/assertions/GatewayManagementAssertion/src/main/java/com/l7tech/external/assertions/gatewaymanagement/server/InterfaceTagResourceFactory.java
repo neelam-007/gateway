@@ -121,7 +121,10 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
 
     @Override
     void updateInternal( @NotNull final InterfaceTag oldInternal,
-                         @NotNull final InterfaceTag newInternal ) {
+                         @NotNull final InterfaceTag newInternal ) throws InvalidResourceException {
+        if(!oldInternal.getName().equals(newInternal.getName())){
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot change an interface tag's name");
+        }
         oldInternal.setIpPatterns( newInternal.getIpPatterns() );
     }
 
@@ -149,10 +152,10 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
                     return 0;
 
                 if(sortKey.equals("name")){
-                    return ascending ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
+                    return (ascending == null || ascending) ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
                 }
                 if(sortKey.equals("id")){
-                    return ascending ? nameAsIdentifier(o1.getName()).compareTo(nameAsIdentifier(o2.getName())) :
+                    return (ascending == null || ascending) ? nameAsIdentifier(o1.getName()).compareTo(nameAsIdentifier(o2.getName())) :
                                        nameAsIdentifier(o2.getName()).compareTo(nameAsIdentifier(o1.getName()));
                 }
                 return 0;

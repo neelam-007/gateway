@@ -156,7 +156,7 @@ public class InterfaceTagRestServerGatewayManagementAssertionTest extends Server
         RestResponse response = processRequest(interfaceTagBasePath + goid, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
         logger.info(response.toString());
 
-        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, response.getStatus());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, response.getStatus());
     }
 
     @Test

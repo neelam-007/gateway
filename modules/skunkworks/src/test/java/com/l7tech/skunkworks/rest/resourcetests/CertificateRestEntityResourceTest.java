@@ -363,8 +363,8 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.TRUSTED_CERT;
+    public String getType() {
+        return EntityType.TRUSTED_CERT.name();
     }
 
     @Override

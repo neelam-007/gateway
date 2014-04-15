@@ -171,8 +171,8 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.RBAC_ROLE;
+    public String getType() {
+        return EntityType.RBAC_ROLE.name();
     }
 
     @Override

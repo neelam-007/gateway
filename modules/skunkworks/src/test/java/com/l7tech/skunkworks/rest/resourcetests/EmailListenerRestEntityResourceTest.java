@@ -387,8 +387,8 @@ public class EmailListenerRestEntityResourceTest extends RestEntityTests<EmailLi
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.EMAIL_LISTENER;
+    public String getType() {
+        return EntityType.EMAIL_LISTENER.name();
     }
 
     @Override

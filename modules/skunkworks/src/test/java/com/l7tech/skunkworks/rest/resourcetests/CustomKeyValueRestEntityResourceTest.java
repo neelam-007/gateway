@@ -227,8 +227,8 @@ public class CustomKeyValueRestEntityResourceTest extends RestEntityTests<Custom
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.CUSTOM_KEY_VALUE_STORE;
+    public String getType() {
+        return EntityType.CUSTOM_KEY_VALUE_STORE.name();
     }
 
     @Override

@@ -11,7 +11,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ConfiguredSessionFactoryBean;
@@ -31,11 +30,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class RestEntityTests<E extends PersistentEntity, M extends ManagedObject> extends RestEntityTestBase implements RestEntityResourceUtil<E, M> {
+public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEntityTestBase implements RestEntityResourceUtil<E, M> {
     private static final Logger logger = Logger.getLogger(RestEntityTests.class.getName());
     private static IdentityProviderFactory identityProviderFactory;
     private static IdentityProvider provider;
-    private static UserManager userManager;
+    protected static UserManager userManager;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -65,7 +64,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Item item = MarshallingUtils.unmarshal(Item.class, source);
 
             Assert.assertEquals("Id's don't match", entityId, item.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(entityId), item.getName());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
@@ -124,7 +123,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         }
     }
 
-    private InternalUser createUnprivilegedUser() throws com.l7tech.objectmodel.SaveException {
+    protected InternalUser createUnprivilegedUser() throws com.l7tech.objectmodel.SaveException {
         InternalUser user = new InternalUser();
         user.setName("Unprivileged");
         user.setLogin("unprivilegedUser");
@@ -149,7 +148,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
             Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(item.getId()), item.getName());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
@@ -214,7 +213,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Item item = MarshallingUtils.unmarshal(Item.class, source);
 
             Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
@@ -263,7 +262,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
             Item item = MarshallingUtils.unmarshal(Item.class, source);
 
             Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
-            Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
+            Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
@@ -397,15 +396,19 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc", HttpMethod.GET, null, "");
                 testList("sort=id&order=desc", response, reverseList);
 
-                //test unprivileged
-                InternalUser user = createUnprivilegedUser();
-                try {
-                    response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
-                    testList("", response, Collections.<String>emptyList());
-                } finally {
-                    userManager.delete(user);
-                }
             }
+        }
+    }
+
+    @Test
+    public void testListEntitiesUnprivileged() throws Exception {
+        //test unprivileged
+        InternalUser user = createUnprivilegedUser();
+        try {
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
+            testList("", response, Collections.<String>emptyList());
+        } finally {
+            userManager.delete(user);
         }
     }
 
@@ -442,8 +445,8 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         Item item = MarshallingUtils.unmarshal(Item.class, source);
 
         Assert.assertNull("Id for template should be null", item.getId());
-        Assert.assertEquals("Type is incorrect", getType().toString(), item.getType());
-        Assert.assertEquals("Type is incorrect", getType().toString() + " Template", item.getName());
+        Assert.assertEquals("Type is incorrect", getType(), item.getType());
+        Assert.assertEquals("Type is incorrect", getType() + " Template", item.getName());
 
         Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
         Link self = findLink("self", item.getLinks());
@@ -462,7 +465,7 @@ public abstract class RestEntityTests<E extends PersistentEntity, M extends Mana
         ItemsList<M> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", "List", item.getType());
-        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType().toString() + " list", item.getName());
+        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType() + " list", item.getName());
 
         Assert.assertTrue("Error for search Query: " + query + "Message: " + "Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
         Link self = findLink("self", item.getLinks());

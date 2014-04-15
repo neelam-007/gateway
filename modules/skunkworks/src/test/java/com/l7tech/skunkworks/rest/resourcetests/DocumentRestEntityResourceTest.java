@@ -193,8 +193,8 @@ public class DocumentRestEntityResourceTest extends RestEntityTests<ResourceEntr
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.RESOURCE_ENTRY;
+    public String getType() {
+        return EntityType.RESOURCE_ENTRY.name();
     }
 
     @Override

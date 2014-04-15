@@ -84,13 +84,29 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                 try {
                     final ClusterProperty property = getClusterPropertyForRead( optional( selectorMap.get( VERSION_SELECTOR ) ));
                     final Option<R> resource = asResource(selectorMap, property);
-                    if (!resource.isSome()) throw new InvalidResourceSelectors();
+                    if (!resource.isSome()) throw new ResourceNotFoundException( "Resource not found: " + selectorMap );
                     return right( resource.some() );
                 } catch ( ResourceNotFoundException e ) {
                     return left( e );
                 }
             }
         }, true ) );
+    }
+
+    @Override
+    public boolean resourceExists(final Map<String,String> selectorMap) {
+        return transactional(new TransactionalCallback<Boolean>() {
+            @Override
+            public Boolean execute() {
+                try {
+                    final ClusterProperty property = getClusterPropertyForRead( optional( selectorMap.get( VERSION_SELECTOR ) ));
+                    final Option<R> resource = asResource(selectorMap, property);
+                    return resource.isSome();
+                } catch ( ResourceNotFoundException e ) {
+                    return false;
+                }
+            }
+        }, true );
     }
 
     @Override
@@ -129,7 +145,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                     final ClusterProperty property = getClusterPropertyForUpdate();
                     verifyVersion( property.getVersion(), optional(internalValue.right).orSome(VERSION_NOT_PRESENT) );
                     final Collection<RI> internalValues = parseProperty( property );
-                    final Collection<RI> updatedInternalValues = putInternal( internalValue.left, internalValues );
+                    final Collection<RI> updatedInternalValues = putInternal( selectorMap, internalValue.left, internalValues );
                     saveOrUpdateClusterProperty( property, formatProperty( updatedInternalValues ) );
                     return Eithers.right2( Option.<Void>none() );
                 } catch ( InvalidResourceException e ) {
@@ -317,18 +333,19 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     /**
      * Put the given resource to the internal value collection.
      *
+     * @param selectorMap The selector map identifying the interface tag to update
      * @param internalValue The updated internal value
      * @param internalValues The existing internal values
      * @return The (updated) existing internal values
      * @throws ResourceNotFoundException If the internal value does not currently exist
      */
-    Collection<RI> putInternal( final RI internalValue,
-                                final Collection<RI> internalValues ) throws ResourceNotFoundException {
-        final String identifier = getIdentifier( internalValue );
-        final Option<RI> internal = selectInternal( identifier, internalValues );
+    Collection<RI> putInternal(final Map<String, String> selectorMap,
+                               final RI internalValue,
+                               final Collection<RI> internalValues) throws ResourceNotFoundException, InvalidResourceException {
+        final Option<RI> internal = selectInternal( selectorMap, internalValues );
 
         if ( !internal.isSome() ) {
-            throw new ResourceNotFoundException( "Resource not found: " + identifier );
+            throw new ResourceNotFoundException( "Resource not found: " + selectorMap );
         }
 
         updateInternal( internal.some(), internalValue );
@@ -343,7 +360,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
      * @param newInternal The updated internal representation.
      */
     abstract void updateInternal( @NotNull final RI oldInternal,
-                                  @NotNull final RI newInternal );
+                                  @NotNull final RI newInternal ) throws ResourceNotFoundException, InvalidResourceException;
 
     /**
      * Delete the given internal value from the given values.

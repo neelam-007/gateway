@@ -302,8 +302,8 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.HTTP_CONFIGURATION;
+    public String getType() {
+        return EntityType.HTTP_CONFIGURATION.name();
     }
 
     @Override

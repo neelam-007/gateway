@@ -406,8 +406,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.POLICY;
+    public String getType() {
+        return EntityType.POLICY.name();
     }
 
     @Override
