@@ -12,6 +12,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.GoidUpgradeMapper;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +39,7 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
         List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {
-            for (String s : SecureSpanConstants.RESOLUTION_BY_ID_REGEXES) {
+            for (String s : SecureSpanConstants.getResolutionByIdRegexes()) {
                 compiled.add(Pattern.compile(s));
             }
         } catch (Exception e) {
@@ -90,10 +93,23 @@ public class ServiceIdResolver extends NameValueServiceResolver<String> {
             if (originalUrl == null) {
                 auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_NOHEADER, SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
             } else {
-                final String match = findMatch(originalUrl);
-                if (match != null) {
-                    auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
-                    return match.toLowerCase();
+                String matchString;
+                try {
+                    if(SecureSpanConstants.USE_RESOLUTION_BY_ID_PRE_8_1){
+                        matchString = originalUrl;
+                    }else {
+                        final URL url = new URL(originalUrl);
+                        matchString = url.getFile();
+                    }
+                    final String match = findMatch(matchString);
+                    if (match != null) {
+                        auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
+                        return match.toLowerCase();
+                    }
+                } catch (MalformedURLException e) {
+                    String err = MessageFormat.format("Invalid L7-Original-URL value: ''{0}''", originalUrl);
+                    logger.log(Level.WARNING, err, e);
+                    throw new ServiceResolutionException(err);
                 }
                 auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_NOMATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
             }

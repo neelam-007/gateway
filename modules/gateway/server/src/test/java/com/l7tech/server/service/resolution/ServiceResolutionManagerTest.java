@@ -4,6 +4,7 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.LoggingAudit;
@@ -18,6 +19,7 @@ import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
 import com.l7tech.test.BugId;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.GoidUpgradeMapperTestUtil;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapVersion;
@@ -239,6 +241,15 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNull( "Service not null (resolved 2)", service2 );
+    }
+
+    @Test
+    public void testResolutionServiceGoidPre81Fails() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/blah/service/"+new Goid(serviceUpgradePrefix,2L).toHexString()) );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNull( "Service not null (resolved 1)", service );
     }
 
     @Test

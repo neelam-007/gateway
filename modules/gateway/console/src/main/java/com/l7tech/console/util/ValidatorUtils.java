@@ -19,7 +19,7 @@ public class ValidatorUtils {
     private static final List<Pattern> compiled;
     static {
         List<Pattern> allCompiled = new ArrayList<Pattern>();
-        for (String s : SecureSpanConstants.RESOLUTION_BY_ID_REGEXES) {
+        for (String s : SecureSpanConstants.getResolutionByIdRegexes()) {
             allCompiled.add(Pattern.compile(s));
         }
         compiled = Collections.unmodifiableList(allCompiled);
@@ -54,7 +54,6 @@ public class ValidatorUtils {
     }
 
     private static boolean uriConflictsWithServiceIDResolver(String newURI) {
-
         for (Pattern regexPattern : compiled) {
             Matcher matcher = regexPattern.matcher(newURI);
             if (matcher.find() && matcher.groupCount() == 1) {

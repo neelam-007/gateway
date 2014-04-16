@@ -5,6 +5,8 @@
 
 package com.l7tech.common.protocol;
 
+import com.l7tech.util.ConfigFactory;
+
 /**
  * Holds the constants needed for communication between Bridge, Console and Gateway, and provides some
  * documentation of the protocols used.
@@ -28,9 +30,19 @@ public class SecureSpanConstants {
      * Each regex must match the service OID or GOID as match group #1 or else fail
      */
     public static final String[] RESOLUTION_BY_ID_REGEXES = {
-        "/service/(\\d{1,20})$",
-        "/service/([0-9a-fA-F]{32})$",
+        "^/service/(\\d{1,20})$",
+        "^/service/([0-9a-fA-F]{32})$",
     };
+    public static final String[] RESOLUTION_BY_ID_REGEXES_PRE_8_1 = {
+            "/service/(\\d{1,20})$",
+            "/service/([0-9a-fA-F]{32})$",
+    };
+
+    public static boolean USE_RESOLUTION_BY_ID_PRE_8_1 = ConfigFactory.getBooleanProperty("com.l7tech.common.serviceResolutionByIdPre81", false);
+
+    public static String[] getResolutionByIdRegexes(){
+        return USE_RESOLUTION_BY_ID_PRE_8_1 ? RESOLUTION_BY_ID_REGEXES_PRE_8_1 : RESOLUTION_BY_ID_REGEXES;
+    }
 
     /**
      * The filename portion of the URL of the message processing service on the Gateway.
