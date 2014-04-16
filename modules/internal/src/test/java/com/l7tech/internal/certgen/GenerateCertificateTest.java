@@ -63,6 +63,14 @@ public class GenerateCertificateTest {
     }
 
     @Test
+    public void testGenNotYetValid() throws Exception {
+        String got = generate("-notBefore", "Tue Apr 15 17:01:08 GMT 2036");
+        final X509Certificate cert = CertUtils.decodeFromPEM(got);
+        assertNotNull(cert);
+        assertTrue( cert.getNotBefore().toString().contains( "2036" ) );
+    }
+
+    @Test
     public void testGenKeystore() throws Exception {
         final String file = "CertificateGeneratorTest.p12";
         try {

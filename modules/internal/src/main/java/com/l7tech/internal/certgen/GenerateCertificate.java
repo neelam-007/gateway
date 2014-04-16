@@ -110,6 +110,7 @@ public class GenerateCertificate {
         put("keySize",              new GeneratorOption("rsabits\tSet the RSA key size in bits (default=512)", "keySize", 1));
         put("subject",              new GeneratorOption("dn\tSet the subject DN (default='cn=test')", "subject", 1));
         put("daysUntilExpiry",      new GeneratorOption("days\tNumber of days until expiry (default=7300)", "daysUntilExpiry", 1));
+        put("notBefore",            new GeneratorOption("date\tStart date of cert validity (default=now)", "notBefore", 1));
         put("signatureAlgorithm",   new GeneratorOption("string\tName of signature algorithm to use when signing (default=SHA1withRSA)", "signatureAlgorithm", 1));
         put("noExtensions",         new GeneratorOption("\tDo not include default extensions", "noExtensions", 0));
         put("noBasicConstraints",   new GeneratorOption("\tDo not include basic constraints extension", "noBasicConstraints", 0));
