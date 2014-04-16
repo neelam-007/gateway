@@ -29,27 +29,37 @@ public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<Ser
 
     @Override
     public Item<ServiceAliasMO> convertToItem(ServiceAliasMO m) {
-        Item<ServiceAliasMO> item = new ItemBuilder<ServiceAliasMO>(m.getServiceReference().getId(), m.getId(), factory.getType().name())
+        return new ItemBuilder<ServiceAliasMO>(findServiceAliasName(Goid.parseGoid(m.getServiceReference().getId())), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
-        try {
-            PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(m.getServiceReference().getId()));
-            if(service != null) {
-                item.setName(service.getName() + " alias");
-            }
-        } catch (Throwable t) {
-            //do nothing.
-        }
-        return item;
     }
 
     @Override
     public Item<ServiceAliasMO> convertToItem(EntityHeader header) {
         if (header instanceof AliasHeader) {
-            return new ItemBuilder<ServiceAliasMO>(((AliasHeader) header).getAliasedEntityId().toString(), header.getStrId(), factory.getType().name())
+            return new ItemBuilder<ServiceAliasMO>(findServiceAliasName(((AliasHeader) header).getAliasedEntityId()), header.getStrId(), factory.getType().name())
                     .build();
         } else {
             return super.convertToItem(header);
         }
+    }
+
+    /**
+     * Finds the service alias name by looking for the service with the given id. If this service cannot be found the service
+     * id is returned.
+     *
+     * @param serviceID The id of the service to search for
+     * @return The name of the service alias
+     */
+    private String findServiceAliasName(Goid serviceID) {
+        try {
+            PublishedService service = serviceManager.findByPrimaryKey(serviceID);
+            if (service != null) {
+                return service.getName() + " alias";
+            }
+        } catch (Throwable t) {
+            //we do not want to throw here and default to using the id if a service cannot be found
+        }
+        return serviceID.toString();
     }
 }

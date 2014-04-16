@@ -309,7 +309,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
                 assertNotNull(policyAliasDep);
                 assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasDep.getType());
                 assertEquals(policyAlias.getId(), policyAliasDep.getId());
-                assertEquals(policy.getId(), policyAliasDep.getName());
+                assertEquals(policy.getName() + " alias", policyAliasDep.getName());
 
                 // verify security zone dependency
                 DependencyMO securityZoneDep = getDependency(dependencyAnalysisMO.getDependencies(), securityZone1.getId());

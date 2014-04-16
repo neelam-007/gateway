@@ -159,7 +159,7 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
                 DependencyMO serviceAliasDep = getDependency(dependencyAnalysisMO,EntityType.SERVICE_ALIAS);
                 assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasDep.getType());
                 assertEquals(serviceAlias.getId(), serviceAliasDep.getId());
-                assertEquals(service.getId(), serviceAliasDep.getName());
+                assertEquals(service.getName() + " alias", serviceAliasDep.getName());
                 assertNotNull("Missing dependency:" + securityZone1.getId(), getDependency(serviceAliasDep.getDependencies(), securityZone1.getId()));
 
                 // verify security zone dependency

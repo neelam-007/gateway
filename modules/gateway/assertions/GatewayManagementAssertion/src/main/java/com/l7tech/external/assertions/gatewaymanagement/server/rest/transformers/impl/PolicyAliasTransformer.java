@@ -29,27 +29,37 @@ public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<Poli
 
     @Override
     public Item<PolicyAliasMO> convertToItem(PolicyAliasMO m) {
-        Item<PolicyAliasMO> item = new ItemBuilder<PolicyAliasMO>(m.getPolicyReference().getId(), m.getId(), factory.getType().name())
+        return new ItemBuilder<PolicyAliasMO>(findPolicyAliasName(Goid.parseGoid(m.getPolicyReference().getId())), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
-        try {
-            Policy policy = policyManager.findByPrimaryKey(Goid.parseGoid(m.getPolicyReference().getId()));
-            if(policy != null) {
-                item.setName(policy.getName() + " alias");
-            }
-        } catch (Throwable t) {
-            //do nothing.
-        }
-        return item;
     }
 
     @Override
     public Item<PolicyAliasMO> convertToItem(EntityHeader header) {
         if (header instanceof AliasHeader) {
-            return new ItemBuilder<PolicyAliasMO>(((AliasHeader) header).getAliasedEntityId().toString(), header.getStrId(), factory.getType().name())
+            return new ItemBuilder<PolicyAliasMO>(findPolicyAliasName(((AliasHeader) header).getAliasedEntityId()), header.getStrId(), factory.getType().name())
                     .build();
         } else {
             return super.convertToItem(header);
         }
+    }
+
+    /**
+     * Finds the policy alias name by looking for the policy with the given id. If this policy cannot be found the policy
+     * id is returned.
+     *
+     * @param policyID The id of the policy to search for
+     * @return The name of the policy alias
+     */
+    private String findPolicyAliasName(Goid policyID) {
+        try {
+            Policy policy = policyManager.findByPrimaryKey(policyID);
+            if (policy != null) {
+                return policy.getName() + " alias";
+            }
+        } catch (Throwable t) {
+            //we do not want to throw here and default to using the id if a policy cannot be found
+        }
+        return policyID.toString();
     }
 }
