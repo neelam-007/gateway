@@ -1,13 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -23,7 +25,9 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
     private DependencyAnalyzer dependencyAnalyzer;
 
     @Inject
-    private APIUtilityLocator apiUtilityLocator;
+    private ServiceManager serviceManager;
+    @Inject
+    private PolicyManager policyManager;
 
     @NotNull
     @Override
@@ -47,17 +51,7 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
     }
 
     @Override
-    public EntityHeader convertToHeader(DependencyListMO DependencyListMO) throws ResourceFactory.InvalidResourceException {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    @Override
     public Item<DependencyListMO> convertToItem(DependencyListMO DependencyListMO) {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    @Override
-    public Item<DependencyListMO> convertToItem(EntityHeader header) {
         throw new UnsupportedOperationException("TODO?");
     }
 
@@ -121,12 +115,53 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         }
     }
 
-    private Item buildReferenceFromEntityHeader(EntityHeader entityHeader) {
-        APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityHeader.getType().toString());
-        if (transformer != null) {
-            return transformer.convertToItem(entityHeader);
+    /**
+     * This method builds an Item from an entity header.
+     *
+     * @param header The entity header to build the item from
+     * @return The item created from the entity header.
+     */
+    private Item buildReferenceFromEntityHeader(EntityHeader header) {
+        //need to check some special cases
+        if (header instanceof ResourceEntryHeader) {
+            //document resources should use the uri as their name
+            return new ItemBuilder<ResourceDocumentMO>(((ResourceEntryHeader) header).getUri(), header.getStrId(), header.getType().name())
+                    .build();
+        } else if (header instanceof AliasHeader) {
+            //aliases should be their name from their backing policy or service.
+            return new ItemBuilder<PolicyAliasMO>(findAliasName(((AliasHeader) header).getAliasedEntityId(), header.getType()), header.getStrId(), header.getType().name())
+                    .build();
+        } else {
+            //the default item
+            return new ItemBuilder<>(header.getName(), header.getStrId(), header.getType().name())
+                    .build();
         }
-        throw new IllegalArgumentException("Could not find resource for entity type: " + entityHeader.getType());
     }
 
+    /**
+     * Finds the alias name by looking for the policy or service with the given id. If this policy or service cannot be
+     * found the id is returned.
+     *
+     * @param aliasID The id of the policy or service to search for
+     * @param type    The type of alias. Either Policy or service.
+     * @return The name of the alias
+     */
+    private String findAliasName(final Goid aliasID, final EntityType type) {
+        try {
+            final NamedEntity backingEntity;
+            if (EntityType.POLICY_ALIAS.equals(type)) {
+                backingEntity = policyManager.findByPrimaryKey(aliasID);
+            } else if (EntityType.SERVICE_ALIAS.equals(type)) {
+                backingEntity = serviceManager.findByPrimaryKey(aliasID);
+            } else {
+                backingEntity = null;
+            }
+            if (backingEntity != null) {
+                return backingEntity.getName() + " alias";
+            }
+        } catch (Throwable t) {
+            //we do not want to throw here and default to using the id if a policy or service cannot be found
+        }
+        return aliasID.toString();
+    }
 }

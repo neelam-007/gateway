@@ -7,7 +7,6 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
-import com.l7tech.objectmodel.EntityHeader;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -26,15 +25,5 @@ public class DocumentTransformer extends APIResourceWsmanBaseTransformer<Resourc
         return new ItemBuilder<ResourceDocumentMO>(m.getResource().getSourceUrl(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
-    }
-
-    @Override
-    public Item<ResourceDocumentMO> convertToItem(EntityHeader header){
-        if (header instanceof ResourceEntryHeader) {
-            return new ItemBuilder<ResourceDocumentMO>(((ResourceEntryHeader) header).getUri(), header.getStrId(), factory.getType().name())
-                    .build();
-        } else {
-            return super.convertToItem(header);
-        }
     }
 }

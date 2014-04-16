@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Item;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.bundling.EntityContainer;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,26 +58,10 @@ public interface APITransformer<M, E> {
     public EntityContainer<E> convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException;
 
     /**
-     * Converts the api object to its equivalent gateway entity header.
-     *
-     * @param m The api object to convert
-     * @return Returns the entityHeader represented by the given api object.
-     */
-    public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException;
-
-    /**
      * Converts the api object to an item properly populating all the item properties except links.
      *
      * @param m The api object to wrap in an {@link com.l7tech.gateway.api.Item}
      * @return The {@link com.l7tech.gateway.api.Item} wrapping the managed object.
      */
     public Item<M> convertToItem(M m);
-
-    /**
-     * Converts the header to an item properly populating all the item properties except links and content.
-     *
-     * @param header The header to create an {@link com.l7tech.gateway.api.Item} from
-     * @return The {@link com.l7tech.gateway.api.Item}.
-     */
-    public Item<M> convertToItem(EntityHeader header);
 }

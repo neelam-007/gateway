@@ -7,12 +7,9 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.PrivateKeyContainer;
-import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -52,16 +49,5 @@ public class PrivateKeyTransformer implements APITransformer<PrivateKeyMO, SsgKe
     @Override
     public EntityContainer<SsgKeyEntry> convertFromMO(PrivateKeyMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
         return new PrivateKeyContainer(new SsgKeyEntry(Goid.parseGoid(m.getKeystoreId()),m.getAlias(),null,null));
-    }
-
-    @Override
-    public EntityHeader convertToHeader(PrivateKeyMO m) throws ResourceFactory.InvalidResourceException {
-        return EntityHeaderUtils.fromEntity(convertFromMO(m).getEntity());
-    }
-
-    @Override
-    public Item<PrivateKeyMO> convertToItem(EntityHeader header){
-        return new ItemBuilder<PrivateKeyMO>(header.getName(), header.getStrId(), factory.getType().name())
-                .build();
     }
 }

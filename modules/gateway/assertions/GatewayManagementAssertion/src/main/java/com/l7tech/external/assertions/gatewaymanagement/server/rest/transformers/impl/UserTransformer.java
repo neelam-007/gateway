@@ -69,20 +69,9 @@ public class UserTransformer implements APITransformer<UserMO, User> {
     }
 
     @Override
-    public EntityHeader convertToHeader(UserMO userMO) throws ResourceFactory.InvalidResourceException {
-        return new IdentityHeader(Goid.parseGoid(userMO.getProviderId()), userMO.getId(), EntityType.USER, userMO.getLogin(), null, null, userMO.getVersion());
-    }
-
-    @Override
     public Item<UserMO> convertToItem(UserMO m) {
         return new ItemBuilder<UserMO>(m.getLogin(), m.getId(), EntityType.USER.name())
                 .setContent(m)
-                .build();
-    }
-
-    @Override
-    public Item<UserMO> convertToItem(EntityHeader header) {
-        return new ItemBuilder<UserMO>(header.getName(), header.getStrId(), EntityType.USER.name())
                 .build();
     }
 

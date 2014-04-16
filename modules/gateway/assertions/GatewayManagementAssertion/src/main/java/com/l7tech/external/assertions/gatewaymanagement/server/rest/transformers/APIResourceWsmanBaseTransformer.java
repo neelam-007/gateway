@@ -2,13 +2,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.EntityManagerResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.bundling.PersistentEntityContainer;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,16 +56,5 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
             entity.setGoid(Goid.parseGoid(m.getId()));
         }
         return new PersistentEntityContainer<E>(entity);
-    }
-
-    @Override
-    public EntityHeader convertToHeader(M m) throws ResourceFactory.InvalidResourceException {
-        return EntityHeaderUtils.fromEntity(convertFromMO(m).getEntity());
-    }
-
-    @Override
-    public Item<M> convertToItem(EntityHeader header){
-        return new ItemBuilder<M>(header.getName(), header.getStrId(), factory.getType().name())
-                .build();
     }
 }

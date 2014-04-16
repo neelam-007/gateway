@@ -134,28 +134,12 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         return new EntityContainer<EntityBundle>(new EntityBundle(entityContainers, mappingInstructions));
     }
 
-    /**
-     * This is not supported. A bundle can not be represented as a header
-     */
-    @Override
-    public EntityHeader convertToHeader(Bundle bundle) throws ResourceFactory.InvalidResourceException {
-        throw new UnsupportedOperationException("Cannot convert a bundle to a header.");
-    }
-
     @Override
     @NotNull
     public Item<Bundle> convertToItem(@NotNull Bundle bundle) {
         return new ItemBuilder<Bundle>("Bundle", "BUNDLE")
                 .setContent(bundle)
                 .build();
-    }
-
-    /**
-     * This is not supported. A bundle can not be represented as a header
-     */
-    @Override
-    public Item<Bundle> convertToItem(EntityHeader header) {
-        throw new UnsupportedOperationException("Cannot convert a bundle to an item given a header.");
     }
 
     /**

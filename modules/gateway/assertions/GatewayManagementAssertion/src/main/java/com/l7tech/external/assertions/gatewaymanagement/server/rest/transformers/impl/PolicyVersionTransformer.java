@@ -6,7 +6,9 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyVersionMO;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.bundling.PersistentEntityContainer;
 import com.l7tech.server.policy.PolicyManager;
@@ -14,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.List;
 
 @Component
 public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO, PolicyVersion> {
@@ -69,20 +70,9 @@ public class PolicyVersionTransformer implements APITransformer<PolicyVersionMO,
     }
 
     @Override
-    public EntityHeader convertToHeader(PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
-        return new EntityHeader(policyVersionMO.getId(), EntityType.POLICY_VERSION, null, null, policyVersionMO.getVersion());
-    }
-
-    @Override
     public Item<PolicyVersionMO> convertToItem(PolicyVersionMO m) {
         return new ItemBuilder<PolicyVersionMO>("Policy Version: " + m.getOrdinal(), m.getId(), EntityType.POLICY_VERSION.name())
                 .setContent(m)
-                .build();
-    }
-
-    @Override
-    public Item<PolicyVersionMO> convertToItem(EntityHeader header) {
-        return new ItemBuilder<PolicyVersionMO>("Policy Version: " + header.getVersion(), header.getStrId(), EntityType.POLICY_VERSION.name())
                 .build();
     }
 }

@@ -6,7 +6,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PolicyAliasMO;
 import com.l7tech.objectmodel.AliasHeader;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
@@ -32,16 +31,6 @@ public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<Poli
         return new ItemBuilder<PolicyAliasMO>(findPolicyAliasName(Goid.parseGoid(m.getPolicyReference().getId())), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
-    }
-
-    @Override
-    public Item<PolicyAliasMO> convertToItem(EntityHeader header) {
-        if (header instanceof AliasHeader) {
-            return new ItemBuilder<PolicyAliasMO>(findPolicyAliasName(((AliasHeader) header).getAliasedEntityId()), header.getStrId(), factory.getType().name())
-                    .build();
-        } else {
-            return super.convertToItem(header);
-        }
     }
 
     /**
