@@ -159,7 +159,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO certDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(certDependency);
@@ -251,7 +251,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(certDependency);
@@ -322,7 +322,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(jmsDependency);
@@ -412,7 +412,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
             Assert.assertNotNull(jmsDependency);
@@ -507,7 +507,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(jmsDependency);
@@ -608,7 +608,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(jmsDependency);

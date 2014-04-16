@@ -166,7 +166,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
         Assert.assertNotNull(passwordDependency);
@@ -247,7 +247,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -336,7 +336,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -461,7 +461,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
         Assert.assertNotNull(passwordDependency);
@@ -544,7 +544,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
             Assert.assertNotNull(passwordDependency);
@@ -632,7 +632,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -720,7 +720,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -842,7 +842,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -966,7 +966,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -1091,7 +1091,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);

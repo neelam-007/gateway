@@ -55,7 +55,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         //find the dependencies for the headers
         final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
         //create a flat dependency list
-        final List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults);
+        final List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults, true);
 
         final ArrayList<Entity> entities = new ArrayList<>();
         final ArrayList<EntityContainer> entityContainers = new ArrayList<>();

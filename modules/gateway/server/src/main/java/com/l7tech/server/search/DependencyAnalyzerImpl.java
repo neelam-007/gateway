@@ -38,7 +38,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @Override
     public DependencySearchResults getDependencies(EntityHeader entityHeader) throws FindException {
-        return getDependencies(entityHeader, Collections.<String,Object>emptyMap());
+        return getDependencies(entityHeader, Collections.<String, Object>emptyMap());
     }
 
     /**
@@ -55,7 +55,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @Override
     public List<DependencySearchResults> getDependencies(List<EntityHeader> entityHeaders) throws FindException {
-        return getDependencies(entityHeaders, Collections.<String,Object>emptyMap());
+        return getDependencies(entityHeaders, Collections.<String, Object>emptyMap());
     }
 
     /**
@@ -85,14 +85,23 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         dependencyFinder.replaceDependencies(entity, replacementMap);
     }
 
-    public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult) {
-        return buildFlatDependencyList(Arrays.asList(dependencySearchResult));
+    @Override
+    public List<DependentObject> buildFlatDependencyList(final DependencySearchResults dependencySearchResult, final boolean includeRootNode) {
+        return buildFlatDependencyList(Arrays.asList(dependencySearchResult),includeRootNode);
     }
 
-    public List<DependentObject> buildFlatDependencyList(List<DependencySearchResults> dependencySearchResults) {
+    @Override
+    public List<DependentObject> buildFlatDependencyList(final List<DependencySearchResults> dependencySearchResults, final boolean includeRootNode) {
         List<DependentObject> dependentObjects = new ArrayList<>();
         for (DependencySearchResults dependencySearchResult : dependencySearchResults) {
-            buildDependentObjectsList(dependentObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(),new ArrayList<DependentObject>());
+            if(includeRootNode) {
+                buildDependentObjectsList(dependentObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(),new ArrayList<DependentObject>());
+            }
+            else {
+                for (Dependency dep : dependencySearchResult.getDependencies()) {
+                    buildDependentObjectsList(dependentObjects, dep.getDependent(), dep.getDependencies(), new ArrayList<DependentObject>());
+                }
+            }
         }
         return dependentObjects;
     }

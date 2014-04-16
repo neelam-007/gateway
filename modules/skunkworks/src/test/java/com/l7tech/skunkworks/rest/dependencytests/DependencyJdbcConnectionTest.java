@@ -120,7 +120,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JDBC_CONNECTION);
                 assertEquals(jdbcConnection.getId(), dep.getId());
                 assertEquals(jdbcConnection.getName(), dep.getName());
@@ -157,7 +157,7 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JDBC_CONNECTION);
                 assertEquals(jdbcConnectionPassword.getId(), dep.getId());
                 assertEquals(jdbcConnectionPassword.getName(), dep.getName());

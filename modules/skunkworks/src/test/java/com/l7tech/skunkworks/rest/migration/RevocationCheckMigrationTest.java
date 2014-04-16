@@ -182,11 +182,10 @@ public class RevocationCheckMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(3, dependencies.size());
+        assertEquals(2, dependencies.size());
 
         assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(),dependencies.get(0).getType());
         assertEquals(EntityType.TRUSTED_CERT.toString(),dependencies.get(1).getType());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(2).getType());
     }
 
     @Test
@@ -245,11 +244,10 @@ public class RevocationCheckMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(3, dependencies.size());
+        assertEquals(2, dependencies.size());
 
         assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(),dependencies.get(0).getType());
         assertEquals(EntityType.TRUSTED_CERT.toString(),dependencies.get(1).getType());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(2).getType());
     }
 
     protected String objectToString(Object object) throws IOException {

@@ -258,7 +258,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(2, folderDependencies.size());
+        Assert.assertEquals(1, folderDependencies.size());
 
         DependencyMO policyDependency = getDependency(folderDependencies,policyItem.getId());
         Assert.assertNotNull(policyDependency);
@@ -327,9 +327,9 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(3, folderDependencies.size());
+        Assert.assertEquals(2, folderDependencies.size());
 
-        DependencyMO childFolderDependency = getDependency(folderDependencies,targetChild1FolderItem.getId());
+        DependencyMO childFolderDependency = getDependency(folderDependencies,sourceChild1FolderItem.getId());
         Assert.assertNotNull(childFolderDependency);
         Assert.assertNotNull(childFolderDependency.getDependencies());
 
@@ -418,7 +418,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(5, folderDependencies.size());
+        Assert.assertEquals(4, folderDependencies.size());
 
         validate(mappings);
     }
@@ -499,7 +499,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
         Assert.assertNotNull(folderDependencies);
-        Assert.assertEquals(7, folderDependencies.size());
+        Assert.assertEquals(6, folderDependencies.size());
 
         validate(mappings);
     }
@@ -592,7 +592,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
-            Assert.assertEquals(7, folderDependencies.size());
+            Assert.assertEquals(6, folderDependencies.size());
 
             // verify folder updated
             response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.GET, null, "");
@@ -730,7 +730,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
-            Assert.assertEquals(7, folderDependencies.size());
+            Assert.assertEquals(6, folderDependencies.size());
 
             // verify folder updated
             response = getTargetEnvironment().processRequest("policyAliases/"+policyAliasItem.getId(), HttpMethod.GET, null, "");

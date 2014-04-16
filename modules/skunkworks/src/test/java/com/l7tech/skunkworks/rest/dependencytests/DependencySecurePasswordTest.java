@@ -103,7 +103,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
 
@@ -134,7 +134,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO.getDependencies(),securePasswordZoned.getId());
                 assertNotNull("Missing dependency:" + securePasswordZoned.getId(),dep);
                 verifyItem(dep,securePasswordZoned);
@@ -181,7 +181,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -235,7 +235,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -289,7 +289,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -345,7 +345,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -379,7 +379,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -414,7 +414,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -441,7 +441,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -497,7 +497,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -526,7 +526,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }
@@ -556,7 +556,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,securePassword);
             }

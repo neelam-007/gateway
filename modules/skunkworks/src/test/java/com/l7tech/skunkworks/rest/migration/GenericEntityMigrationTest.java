@@ -140,7 +140,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO entityDependency = getDependency(policyDependencies, genericEntityItem.getId());
         Assert.assertNotNull(entityDependency);
@@ -209,7 +209,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO entityDependency = getDependency(policyDependencies, createdGenericEntity.getId());
             Assert.assertNotNull(entityDependency);
@@ -286,7 +286,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO entityDependency = getDependency(policyDependencies, createdGenericEntity.getId());
             Assert.assertNotNull(entityDependency);
@@ -359,7 +359,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO entityDependency = getDependency(policyDependencies, createdGenericEntity.getId());
             Assert.assertNotNull(entityDependency);

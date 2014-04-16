@@ -152,11 +152,10 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(2, dependencies.size());
+        assertEquals(1, dependencies.size());
 
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(0).getType());
         assertEquals(ldap.getId(),dependencies.get(0).getId());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(1).getType());
     }
 
     @Test
@@ -210,11 +209,10 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(2, dependencies.size());
+        assertEquals(1, dependencies.size());
 
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(0).getType());
         assertEquals(internalProviderId,dependencies.get(0).getId());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(1).getType());
     }
 
     protected String objectToString(Object object) throws IOException {

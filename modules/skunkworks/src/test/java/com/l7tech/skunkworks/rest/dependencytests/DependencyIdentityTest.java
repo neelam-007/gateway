@@ -138,7 +138,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 assertEquals(internalProviderId, dep.getId());
                 assertEquals("Internal Identity Provider", dep.getName());
@@ -172,7 +172,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
                 assertEquals(internalProviderId, idDep.getId());
                 assertEquals("Internal Identity Provider", idDep.getName());
@@ -185,7 +185,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertEquals(EntityType.USER.toString(), adminDep.getType());
 
                 // verify policy dependency
-                DependencyMO policyDep  = getDependency(dependencyAnalysisMO, EntityType.POLICY);
+                DependencyMO policyDep  = dependencyAnalysisMO.getSearchObjectItem();
                 assertNotNull("Missing dependency:" + new Goid(0,3).toString(), getDependency(policyDep.getDependencies(), new Goid(0,3).toString()));
                 assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
             }
@@ -215,7 +215,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
                 assertNotNull(idDep);
                 assertEquals(internalProviderId, idDep.getId());
@@ -230,7 +230,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertEquals(EntityType.GROUP.toString(), adminDep.getType());
 
                 // verify policy dependency
-                DependencyMO policyDep  = getDependency(dependencyAnalysisMO, EntityType.POLICY);
+                DependencyMO policyDep  = dependencyAnalysisMO.getSearchObjectItem();
                 assertNotNull("Missing dependency:" + internalGroup.getId(), getDependency(policyDep.getDependencies(), internalGroup.getId()));
                 assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
             }
@@ -257,7 +257,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.ID_PROVIDER_CONFIG);
                 assertNotNull(dep);
                 assertEquals(ldap.getId(), dep.getId());
@@ -295,7 +295,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
                 assertNotNull(dep);
                 assertEquals(ldapNtlmPassword.getId(), dep.getId());
@@ -359,7 +359,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 assertEquals(internalProviderId, dep.getId());
                 assertEquals("Internal Identity Provider", dep.getName());
@@ -401,7 +401,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
                 assertNotNull(dep);
                 assertEquals(ldap.getId(), dep.getId());
@@ -441,7 +441,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
                 assertNotNull(dep);
                 assertEquals(ldapNtlmPassword.getId(), dep.getId());

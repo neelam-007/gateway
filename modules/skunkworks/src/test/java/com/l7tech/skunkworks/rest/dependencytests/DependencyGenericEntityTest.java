@@ -78,7 +78,7 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 assertEquals(genericEntity.getName(), dep.getName());
                 assertEquals(EntityType.GENERIC.toString(), dep.getType());

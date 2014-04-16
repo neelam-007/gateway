@@ -298,7 +298,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(3, jdbcDependencies.size());
+            Assert.assertEquals(2, jdbcDependencies.size());
 
             DependencyMO passwordDependency = getDependency(jdbcDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -382,7 +382,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(3, jdbcDependencies.size());
+            Assert.assertEquals(2, jdbcDependencies.size());
 
             DependencyMO passwordDependency = getDependency(jdbcDependencies, EntityType.SECURE_PASSWORD);
             Assert.assertNotNull(passwordDependency);
@@ -649,7 +649,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(3, jdbcDependencies.size());
+            Assert.assertEquals(2, jdbcDependencies.size());
 
             DependencyMO passwordDependency = getDependency(jdbcDependencies, storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -797,7 +797,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(3, jdbcDependencies.size());
+            Assert.assertEquals(2, jdbcDependencies.size());
 
             DependencyMO passwordDependency = getDependency(jdbcDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
@@ -1011,7 +1011,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(3, jdbcDependencies.size());
+            Assert.assertEquals(2, jdbcDependencies.size());
 
             DependencyMO passwordDependency = getDependency(jdbcDependencies,securePasswordItem.getId());
             Assert.assertNotNull(passwordDependency);
@@ -1099,7 +1099,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1189,7 +1189,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionItem.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1281,7 +1281,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1375,7 +1375,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1469,7 +1469,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1561,7 +1561,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionMO.getId());
             Assert.assertNotNull(jdbcDependency);
@@ -1654,7 +1654,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO jdbcDependency = getDependency(policyDependencies,jdbcConnectionItem.getId());
             Assert.assertNotNull(jdbcDependency);

@@ -145,7 +145,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
         Assert.assertNotNull(certDependency);
@@ -223,7 +223,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -306,7 +306,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -420,7 +420,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
         Assert.assertNotNull(certDependency);
@@ -497,7 +497,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
             Assert.assertNotNull(certDependency);
@@ -578,7 +578,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -659,7 +659,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -766,7 +766,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency =getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -909,7 +909,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
@@ -1051,7 +1051,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);

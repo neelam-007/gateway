@@ -179,12 +179,11 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(3, dependencies.size());
+        assertEquals(2, dependencies.size());
 
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(0).getType());
         assertEquals(EntityType.GROUP.toString(),dependencies.get(1).getType());
         assertEquals(targetGroup.getId(),dependencies.get(1).getId());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(2).getType());
     }
 
     @Test
@@ -252,12 +251,11 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
 
         assertNotNull(dependencies);
-        assertEquals(3, dependencies.size());
+        assertEquals(2, dependencies.size());
 
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(0).getType());
         assertEquals(EntityType.GROUP.toString(),dependencies.get(1).getType());
         assertEquals(targetGroup.getId(),dependencies.get(1).getId());
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(2).getType());
     }
 
     protected String objectToString(Object object) throws IOException {

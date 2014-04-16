@@ -165,11 +165,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(3, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
         Assert.assertNotNull(getDependency(policyDependencies, adminUserItem.getId()));
         Assert.assertNotNull(getDependency(policyDependencies, idProviderItem.getId()));
-        Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
         validate(mappings);
     }
@@ -242,11 +241,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             Assert.assertNotNull(getDependency(policyDependencies, createdUser.getId()));
             Assert.assertNotNull(getDependency(policyDependencies, idProviderItem.getId()));
-            Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
             validate(mappings);
         }finally{
@@ -326,11 +324,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             Assert.assertNotNull(getDependency(policyDependencies, createdUser.getId()));
             Assert.assertNotNull(getDependency(policyDependencies, idProviderItem.getId()));
-            Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
             validate(mappings);
         }finally{

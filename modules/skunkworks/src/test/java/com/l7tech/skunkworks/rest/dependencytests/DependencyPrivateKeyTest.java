@@ -151,7 +151,7 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO mqDep = getDependency(dependencyAnalysisMO,EntityType.SSG_ACTIVE_CONNECTOR);
                 assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqDep.getType());
@@ -205,7 +205,7 @@ public class DependencyPrivateKeyTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO keyDep = getDependency(dependencyAnalysisMO,EntityType.SSG_KEY_ENTRY);
                 assertEquals(EntityType.SSG_KEY_ENTRY.toString(), keyDep.getType());

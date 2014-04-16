@@ -127,14 +127,14 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO securityZonedep =  getDependency(dependencyAnalysisMO,EntityType.SECURITY_ZONE);
                 assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getType());
                 assertEquals(securityZone.getId(), securityZonedep.getId());
                 assertEquals(securityZone.getName(), securityZonedep.getName());
 
-                DependencyMO serviceDep =  getDependency(dependencyAnalysisMO,EntityType.SERVICE);
+                DependencyMO serviceDep =  dependencyAnalysisMO.getSearchObjectItem();
                 assertEquals(EntityType.SERVICE.toString(), serviceDep.getType());
                 assertEquals(service.getId(), serviceDep.getId());
                 assertEquals(service.getName(), serviceDep.getName());
@@ -154,7 +154,7 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(5, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO serviceAliasDep = getDependency(dependencyAnalysisMO,EntityType.SERVICE_ALIAS);
                 assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasDep.getType());

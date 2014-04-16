@@ -167,7 +167,7 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
             List<DependencyMO> folderDependencies = folderCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(folderDependencies);
-            Assert.assertEquals(2, folderDependencies.size());
+            Assert.assertEquals(1, folderDependencies.size());
 
             DependencyMO securityZoneDependency = getDependency(folderDependencies,securityZoneItemTarget.getId());
             Assert.assertNotNull(securityZoneDependency);
@@ -268,7 +268,7 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO securityZoneDependency = getDependency(policyDependencies,securityZoneItemTarget.getId());
             Assert.assertNotNull(securityZoneDependency);

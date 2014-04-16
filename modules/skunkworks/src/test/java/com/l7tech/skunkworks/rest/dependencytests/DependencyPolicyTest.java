@@ -269,9 +269,9 @@ public class DependencyPolicyTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO policydep = getDependency(dependencyAnalysisMO.getDependencies(),policy.getId());
+                DependencyMO policydep = dependencyAnalysisMO.getSearchObjectItem();
                 assertEquals(EntityType.POLICY.toString(), policydep.getType());
                 assertEquals(policy.getId(), policydep.getId());
                 assertEquals(policy.getName(), policydep.getName());
@@ -303,7 +303,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(6, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(5, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO policyAliasDep = getDependency(dependencyAnalysisMO, EntityType.POLICY_ALIAS);
                 assertNotNull(policyAliasDep);

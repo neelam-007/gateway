@@ -185,9 +185,8 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(3, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
-        assertNotNull(getDependency(policyDependencies, policyItem.getId()));
         assertNotNull(getDependency(policyDependencies, siteminderItem.getId()));
         assertNotNull(getDependency(policyDependencies, passwordItem.getId()));
 
@@ -284,9 +283,8 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            assertNotNull(getDependency(policyDependencies, policyItem.getId()));
             assertNotNull(getDependency(policyDependencies, siteminderItem.getId()));
             assertNull(getDependency(policyDependencies, passwordItem.getId()));
             assertNotNull(getDependency(policyDependencies, passwordCreated.getId()));
@@ -401,9 +399,8 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            assertNotNull(getDependency(policyDependencies, policyItem.getId()));
             assertNotNull(getDependency(policyDependencies, siteminderItem.getId()));
             assertNotNull(getDependency(policyDependencies, passwordItem.getId()));
             assertNull(getDependency(policyDependencies, passwordCreated.getId()));
@@ -510,9 +507,8 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            assertNotNull(getDependency(policyDependencies, policyItem.getId()));
             assertNotNull(getDependency(policyDependencies, siteminderCreated.getId()));
             assertNotNull(getDependency(policyDependencies, passwordCreated.getId()));
 
@@ -601,9 +597,8 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
-            assertNotNull(getDependency(policyDependencies, policyItem.getId()));
             assertNotNull(getDependency(policyDependencies, siteminderItem.getId()));
             assertNotNull(getDependency(policyDependencies, passwordCreated.getId()));
 

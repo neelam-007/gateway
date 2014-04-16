@@ -148,10 +148,9 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         Assert.assertNotNull(getDependency(policyDependencies, clusterPropertyItem.getId()));
-        Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
         validate(mappings);
     }
@@ -219,10 +218,9 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             Assert.assertNotNull(getDependency(policyDependencies, clusterPropertyItem.getId()));
-            Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
             validate(mappings);
         }finally{
@@ -298,10 +296,9 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             Assert.assertNotNull(getDependency(policyDependencies, createdClusterPropertyItem.getId()));
-            Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
 
             validate(mappings);
 
@@ -378,10 +375,8 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
             Assert.assertNotNull(policyDependencies);
 
-            // only one dependency, cluster property reference in policy not updated
-            Assert.assertEquals(1, policyDependencies.size());
-
-            Assert.assertNotNull(getDependency(policyDependencies, policyItem.getId()));
+            // no dependency, cluster property reference in policy not updated
+            Assert.assertEquals(0, policyDependencies.size());
 
             validate(mappings);
 

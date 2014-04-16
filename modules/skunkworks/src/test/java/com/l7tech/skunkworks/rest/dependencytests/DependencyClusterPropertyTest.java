@@ -77,7 +77,7 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(2, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep,clusterProperty);
             }

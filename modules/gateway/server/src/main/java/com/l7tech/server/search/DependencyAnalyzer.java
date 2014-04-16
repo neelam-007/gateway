@@ -84,7 +84,7 @@ public interface DependencyAnalyzer {
      */
     public <E extends Entity> void replaceDependencies(E entity, Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException;
 
-    public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult);
+    public List<DependentObject> buildFlatDependencyList(DependencySearchResults dependencySearchResult, boolean includeRootNode);
 
-    public List<DependentObject> buildFlatDependencyList(List<DependencySearchResults> dependencySearchResults);
+    public List<DependentObject> buildFlatDependencyList(List<DependencySearchResults> dependencySearchResults, boolean includeRootNode);
 }

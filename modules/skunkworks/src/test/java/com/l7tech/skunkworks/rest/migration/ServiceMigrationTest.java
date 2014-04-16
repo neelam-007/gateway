@@ -126,10 +126,6 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
         assertOkDeleteResponse(response);
-
-        response = getTargetEnvironment().processRequest("services/" , HttpMethod.GET, null, "");
-        response = getTargetEnvironment().processRequest("serviceAliases/" , HttpMethod.GET, null, "");
-        response = getTargetEnvironment().processRequest("folders/" , HttpMethod.GET, null, "");
     }
 
     @Test

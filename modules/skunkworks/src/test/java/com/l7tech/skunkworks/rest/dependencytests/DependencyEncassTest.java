@@ -116,7 +116,7 @@ public class DependencyEncassTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO policydep  = dependencyAnalysisMO.getDependencies().get(0);
                 assertEquals(EntityType.POLICY.toString(), policydep.getType());
@@ -161,7 +161,7 @@ public class DependencyEncassTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(4, dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO policydep  = dependencyAnalysisMO.getDependencies().get(0);
                 assertEquals(EntityType.POLICY.toString(), policydep.getType());

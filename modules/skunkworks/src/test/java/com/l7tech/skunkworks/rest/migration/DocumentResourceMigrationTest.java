@@ -249,7 +249,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
@@ -342,7 +342,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(2, policyDependencies.size());
+            Assert.assertEquals(1, policyDependencies.size());
 
             DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
@@ -469,7 +469,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(3, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
         DependencyMO docDependency = getDependency(policyDependencies, resourceDocItem.getId());
         Assert.assertNotNull(docDependency);
@@ -559,7 +559,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO docDependency = getDependency(policyDependencies, resourceDocItem.getId());
             Assert.assertNotNull(docDependency);
@@ -654,7 +654,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO docDependency = getDependency(policyDependencies, resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
@@ -794,7 +794,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO docDependency = getDependency(policyDependencies,resourceDocItem.getId());
             Assert.assertNotNull(docDependency);

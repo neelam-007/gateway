@@ -114,7 +114,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep, trustedCert);
@@ -143,7 +143,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep, trustedCert);
@@ -203,7 +203,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep, trustedCert);
@@ -261,7 +261,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
                 verifyItem(dep, trustedCert);
@@ -295,7 +295,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(4,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.TRUSTED_CERT);
                 verifyItem(dep, trustedCertWithRevocationPolicy);

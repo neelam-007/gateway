@@ -168,7 +168,7 @@ public class DependencyJmsTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
                 verifyItem(dep,jmsEndpoint);
@@ -209,7 +209,7 @@ public class DependencyJmsTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
                 verifyItem(dep,jmsEndpoint1);
@@ -257,7 +257,7 @@ public class DependencyJmsTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
-                assertEquals(4,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.JMS_ENDPOINT);
                 verifyItem(dep, jmsEndpointTemplate);
                 assertNotNull("Missing dependency:" + securityZone.getId(), getDependency(dep.getDependencies(), securityZone.getId()));

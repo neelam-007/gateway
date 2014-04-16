@@ -97,7 +97,7 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
 
                 // verify security zone dependency
                 DependencyMO passwordDep  = dependencyAnalysisMO.getDependencies().get(0);

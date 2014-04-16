@@ -340,7 +340,7 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
             Assert.assertNotNull(dependencies);
-            Assert.assertEquals(3, dependencies.size());
+            Assert.assertEquals(2, dependencies.size());
             Assert.assertNotNull(getDependency(dependencies, createdEncassPolicy.getId()));
 
         }finally{
@@ -462,7 +462,7 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
             Assert.assertNotNull(dependencies);
-            Assert.assertEquals(3, dependencies.size());
+            Assert.assertEquals(2, dependencies.size());
             Assert.assertNotNull(getDependency(dependencies, createdEncassPolicy.getId()));
             Assert.assertNotNull(getDependency(dependencies, createdEncass.getId()));
 
@@ -585,7 +585,7 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
             Assert.assertNotNull(dependencies);
-            Assert.assertEquals(3, dependencies.size());
+            Assert.assertEquals(2, dependencies.size());
             Assert.assertNull(getDependency(dependencies, createdEncassPolicy.getId()));
             DependencyMO encassDep = getDependency(dependencies, createdEncass.getId());
             Assert.assertNotNull(encassDep);

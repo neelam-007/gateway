@@ -64,14 +64,34 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
     public DependencyListMO toDependencyListObject(DependencySearchResults dependencySearchResults) {
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
-        dependencyAnalysisMO.setSearchObjectItem(toReference(dependencySearchResults.getDependent()));
-        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults), new Functions.Unary<DependencyMO, DependentObject>() {
+        dependencyAnalysisMO.setSearchObjectItem( toDependencyManagedObject(dependencySearchResults.getDependent(), dependencySearchResults.getDependencies()));
+        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults, false), new Functions.Unary<DependencyMO, DependentObject>() {
             @Override
             public DependencyMO call(DependentObject dependentObject) {
                 return toManagedObject(dependentObject);
             }
         }));
         return dependencyAnalysisMO;
+    }
+
+    private DependencyMO toDependencyManagedObject(DependentObject depObject , List<Dependency> dependencies) {
+        List<DependencyMO> dependencyMOs = new ArrayList<>();
+        for (Dependency dependency : dependencies) {
+            DependencyMO dependencyMO = ManagedObjectFactory.createDependencyMO();
+            Item reference = toReference(dependency.getDependent());
+            dependencyMO.setName(reference.getName());
+            dependencyMO.setId(reference.getId());
+            dependencyMO.setType(reference.getType());
+            dependencyMOs.add(dependencyMO);
+        }
+
+        DependencyMO dependency = ManagedObjectFactory.createDependencyMO();
+        Item reference = toReference(depObject);
+        dependency.setName(reference.getName());
+        dependency.setId(reference.getId());
+        dependency.setType(reference.getType());
+        dependency.setDependencies(dependencyMOs.isEmpty() ? null : dependencyMOs);
+        return dependency;
     }
 
     private List<DependencyMO> toManagedObject(List<DependentObject> dependencies) {

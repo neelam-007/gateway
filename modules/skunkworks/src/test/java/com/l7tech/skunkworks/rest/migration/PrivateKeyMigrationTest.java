@@ -247,7 +247,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(3, policyDependencies.size());
+        Assert.assertEquals(2, policyDependencies.size());
 
         DependencyMO privateKeyDependency = getDependency(policyDependencies, privateKeyMapping.getTargetId());
         Assert.assertNotNull(privateKeyDependency);
@@ -329,7 +329,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(3, policyDependencies.size());
+            Assert.assertEquals(2, policyDependencies.size());
 
             DependencyMO privateKeyDependency = getDependency(policyDependencies, privateKeyMapping.getTargetId());
             Assert.assertNotNull(privateKeyDependency);
@@ -436,7 +436,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(2, policyDependencies.size());
+        Assert.assertEquals(1, policyDependencies.size());
 
         DependencyMO privateKeyDependency = getDependency(policyDependencies, privateKeyMapping.getTargetId());
         Assert.assertNotNull(privateKeyDependency);

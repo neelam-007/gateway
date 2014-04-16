@@ -1,9 +1,11 @@
 package com.l7tech.gateway.api;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import com.l7tech.gateway.api.impl.PropertiesMapType;
+
+import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This was created: 11/4/13 as 3:20 PM
@@ -13,6 +15,40 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement(name = "DependencyList")
 @XmlType(propOrder = {"options", "searchObjectItem", "dependencies"})
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class DependencyListMO extends DependencyResults<DependencyMO> {
+public class DependencyListMO  {
+
     protected DependencyListMO(){}
+
+    private Map<String,Object> options;
+    private DependencyMO searchObjectItem;
+    private List<DependencyMO> dependencies;
+
+    @XmlElement(name = "Options")
+    @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
+    public Map<String, Object> getOptions() {
+        return options;
+    }
+
+    public void setOptions(Map<String, Object> options) {
+        this.options = options;
+    }
+
+    @XmlElement(name = "Reference", required = true)
+    public DependencyMO getSearchObjectItem() {
+        return searchObjectItem;
+    }
+
+    public void setSearchObjectItem(DependencyMO searchObjectItem) {
+        this.searchObjectItem = searchObjectItem;
+    }
+
+    @XmlElement(name = "Dependency")
+    @XmlElementWrapper(name = "Dependencies")
+    public List<DependencyMO> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<DependencyMO> dependencies) {
+        this.dependencies = dependencies;
+    }
 }
