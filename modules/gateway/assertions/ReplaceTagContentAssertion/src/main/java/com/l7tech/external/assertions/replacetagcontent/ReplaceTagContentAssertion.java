@@ -81,7 +81,7 @@ public class ReplaceTagContentAssertion extends MessageTargetableAssertion imple
         meta.put(AssertionMetadata.SHORT_NAME, BASE_NAME);
         meta.put(AssertionMetadata.DESCRIPTION, "Search and replace text within specified tags.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SearchIdentityProvider16x16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SAMLAttributeStatement.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);

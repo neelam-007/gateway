@@ -35,8 +35,9 @@ public class ReplaceTagContentPropertiesDialog extends AssertionPropertiesOkCanc
         if (error != null) {
             throw new ValidationException(error);
         }
-        assertion.setSearchFor(searchTextField.getText().trim());
-        assertion.setReplaceWith(replaceTextField.getText().trim());
+        // do not trim search or replacement
+        assertion.setSearchFor(searchTextField.getText());
+        assertion.setReplaceWith(replaceTextField.getText());
         assertion.setTagsToSearch(tagsTextField.getText().trim());
         assertion.setCaseSensitive(!ignoreCaseCheckBox.isSelected());
         return assertion;
@@ -51,8 +52,17 @@ public class ReplaceTagContentPropertiesDialog extends AssertionPropertiesOkCanc
     protected void initComponents() {
         super.initComponents();
         validators = new InputValidator(this, getTitle());
-        validators.constrainTextFieldToBeNonEmpty("Search For", searchTextField, null);
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String error = null;
+                // completely empty is not valid but some whitespace is valid
+                if (searchTextField.getText().isEmpty()) {
+                    error = "The SearchFor field must not be empty.";
+                }
+                return error;
+            }
+        });
         validators.constrainTextFieldToBeNonEmpty("Search Within Tags", tagsTextField, null);
-        validators.constrainTextFieldToBeNonEmpty("Replace With", replaceTextField, null);
     }
 }

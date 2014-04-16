@@ -1268,9 +1268,10 @@ public class AssertionMessages extends Messages {
 
     // Replace Tag Content Assertion
     public static final M EMPTY_SEARCH_TEXT = m(10450, Level.WARNING, "Text to search is empty");
-    public static final M EMPTY_REPLACE_TEXT = m(10451, Level.WARNING, "Replacement text is empty");
-    public static final M EMPTY_TAGS_TEXT = m(10452, Level.WARNING, "Tags to search is empty");
-    public static final M EMPTY_TAG_TEXT = m(10453, Level.WARNING, "Ignoring empty tag");
+    public static final M EMPTY_TAGS_TEXT = m(10451, Level.WARNING, "Tags to search is empty");
+    public static final M EMPTY_TAG_TEXT = m(10452, Level.WARNING, "Ignoring empty tag");
+    public static final M TAG_NOT_FOUND = m(10453, Level.FINE, "Tag not found: {0}");
+    public static final M NO_REPLACEMENTS = m(10454, Level.FINE, "No replacements performed");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

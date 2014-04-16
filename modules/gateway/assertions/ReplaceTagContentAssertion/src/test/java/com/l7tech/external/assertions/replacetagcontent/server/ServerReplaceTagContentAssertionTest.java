@@ -137,6 +137,7 @@ public class ServerReplaceTagContentAssertionTest {
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertEquals(html, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_REPLACEMENTS));
     }
 
     @Test
@@ -155,6 +156,7 @@ public class ServerReplaceTagContentAssertionTest {
         configureAssertion("foo", "bar", "p");
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertEquals("", new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_REPLACEMENTS));
     }
 
     @Test
@@ -178,6 +180,7 @@ public class ServerReplaceTagContentAssertionTest {
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         // no change expected
         assertEquals(html, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_REPLACEMENTS));
     }
 
     @Test
@@ -189,6 +192,8 @@ public class ServerReplaceTagContentAssertionTest {
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         // no change expected
         assertEquals(html, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.TAG_NOT_FOUND));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_REPLACEMENTS));
     }
 
     @Test
@@ -301,8 +306,10 @@ public class ServerReplaceTagContentAssertionTest {
         configureAssertion("chicken", "${doesNotExist}", "main");
         initServerAssertion();
 
-        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_REPLACE_TEXT));
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        // to be consistent with regex assertion, we replace with an empty string
+        final String expected = "<dinner><appetizer>chicken salad</appetizer><main>bbq </main><dessert>ice cream</dessert></dinner>";
+        assertEquals(expected, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
     }
 
     @Test

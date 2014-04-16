@@ -56,17 +56,13 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
             logAndAudit(AssertionMessages.EMPTY_SEARCH_TEXT);
             return AssertionStatus.FALSIFIED;
         }
-        // replacement text should not be completely empty - but other whitespace is allowed
-        final String replaceWith = ExpandVariables.process(assertion.getReplaceWith(), variableMap, getAudit());
-        if (replaceWith.isEmpty()) {
-            logAndAudit(AssertionMessages.EMPTY_REPLACE_TEXT);
-            return AssertionStatus.FALSIFIED;
-        }
         final String commaSeparatedTags = ExpandVariables.process(assertion.getTagsToSearch(), variableMap, getAudit());
         if (StringUtils.isBlank(commaSeparatedTags)) {
             logAndAudit(AssertionMessages.EMPTY_TAGS_TEXT);
             return AssertionStatus.FALSIFIED;
         }
+        // empty string is valid for the replacement
+        final String replaceWith = ExpandVariables.process(assertion.getReplaceWith(), variableMap, getAudit());
         try {
             replaceByTag(message, searchFor, replaceWith, getUniqueTagsToSearch(commaSeparatedTags));
         } catch (final NoSuchPartException e) {
@@ -83,7 +79,7 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
         boolean atLeastOneReplace = false;
         for (final String tagToSearch : tagsToSearch) {
             final List<Element> elements = source.getAllElements(tagToSearch);
-            if (elements != null) {
+            if (elements != null && !elements.isEmpty()) {
                 for (final Element element : elements) {
                     final String elementContent = element.toString();
                     if ((assertion.isCaseSensitive() && elementContent.contains(searchFor)) ||
@@ -93,13 +89,15 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
                         atLeastOneReplace = true;
                     }
                 }
+            } else {
+                logAndAudit(AssertionMessages.TAG_NOT_FOUND, tagToSearch);
             }
         }
         if (atLeastOneReplace) {
             logger.log(Level.FINEST, "Re-initializing message " + message);
             message.initialize(firstPart.getContentType(), output.toString().getBytes());
         } else {
-            logger.log(Level.FINEST, "No replacements performed.");
+            logAndAudit(AssertionMessages.NO_REPLACEMENTS);
         }
     }
 
