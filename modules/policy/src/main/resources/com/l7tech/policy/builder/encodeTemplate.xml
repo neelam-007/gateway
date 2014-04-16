@@ -1,0 +1,6 @@
+<L7p:EncodeDecode xmlns:L7p="http://www.layer7tech.com/ws/policy">
+    <L7p:SourceVariableName stringValue="{0}"/>
+    <L7p:TargetDataType variableDataType="string"/>
+    <L7p:TargetVariableName stringValue="{1}"/>
+    <L7p:TransformType transformType="URL_ENCODE"/>
+</L7p:EncodeDecode>

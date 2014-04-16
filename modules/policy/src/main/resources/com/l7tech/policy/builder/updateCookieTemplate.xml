@@ -1,0 +1,87 @@
+<L7p:ManageCookie xmlns:L7p="http://www.layer7tech.com/ws/policy">
+    <L7p:CookieAttributes mapValue="included">
+        <L7p:entry>
+            <L7p:key stringValue="name"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="name"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="secure"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="secure"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue="false"/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="httpOnly"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="httpOnly"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue="false"/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="path"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="path"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="domain"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="domain"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="value"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="value"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="comment"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="comment"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="version"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="version"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+        <L7p:entry>
+            <L7p:key stringValue="max-age"/>
+            <L7p:value cookieAttribute="included">
+                <L7p:Key stringValue="max-age"/>
+                <L7p:UseOriginalValue booleanValue="true"/>
+                <L7p:Value stringValue=""/>
+            </L7p:value>
+        </L7p:entry>
+    </L7p:CookieAttributes>
+    <L7p:CookieCriteria mapValue="included">
+        <L7p:entry>
+            <L7p:key stringValue="domain"/>
+            <L7p:value cookieCriteria="included">
+                <L7p:Key stringValue="domain"/>
+                <L7p:Value stringValue="{0}"/>
+            </L7p:value>
+        </L7p:entry>
+    </L7p:CookieCriteria>
+    <L7p:Operation operation="UPDATE"/>
+    <L7p:Target target="{1}"/>
+</L7p:ManageCookie>

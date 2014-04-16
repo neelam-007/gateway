@@ -175,6 +175,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private PublishRestServiceAction publishRestServiceAction = null;
     private PublishInternalServiceAction publishInternalServiceAction;
+    private PublishReverseWebProxyAction publishReverseWebProxyAction;
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
@@ -1019,6 +1020,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getPublishNonSoapServiceAction());
             menu.add(getPublishRestServiceAction());
             menu.add(getPublishInternalServiceAction());
+            menu.add(getPublishReverseWebProxyAction());
             menu.addSeparator();
 
             menu.add(getManageCertificatesMenuItem());
@@ -4471,6 +4473,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         publishInternalServiceAction = new PublishInternalServiceAction();
         disableUntilLogin(publishInternalServiceAction);
         return publishInternalServiceAction;
+    }
+
+    public Action getPublishReverseWebProxyAction() {
+        if (publishReverseWebProxyAction != null) {
+            return publishReverseWebProxyAction;
+        }
+        publishReverseWebProxyAction = new PublishReverseWebProxyAction();
+        disableUntilLogin(publishReverseWebProxyAction);
+        return publishReverseWebProxyAction;
     }
 
     /**

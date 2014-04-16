@@ -201,6 +201,7 @@ public final class RootNode extends FolderNode {
         new PublishNonSoapServiceAction(),
         new PublishRestServiceAction(),
         new PublishInternalServiceAction(),
+        new PublishReverseWebProxyAction(),
         new CreatePolicyAction(),
         new CreateFolderAction(getFolder(), this, Registry.getDefault().getFolderAdmin()),
         new ConfigureSecurityZoneAction<Folder>(getFolder(), new EntitySaver<Folder>() {

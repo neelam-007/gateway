@@ -58,6 +58,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             new PublishNonSoapServiceAction(folder, this),
             new PublishRestServiceAction(folder, this),
             new PublishInternalServiceAction(folder, this),
+            new PublishReverseWebProxyAction(folder, this),
             new CreateEntityLogSinkAction(folderHeader),
             new CreatePolicyAction(folder, this),
             new FolderPropertiesAction(folder, folderHeader, this, folderAdmin),

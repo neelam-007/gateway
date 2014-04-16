@@ -1,0 +1,6 @@
+<L7p:ReplaceTagContent xmlns:L7p="http://www.layer7tech.com/ws/policy">
+    <L7p:ReplaceWith stringValue="{0}"/>
+    <L7p:SearchFor stringValue="{1}"/>
+    <L7p:TagsToSearch stringValue="${2}"/>
+    <L7p:Target target="{3}"/>
+</L7p:ReplaceTagContent>

@@ -1,0 +1,845 @@
+package com.l7tech.policy.builder;
+
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.SetVariableAssertion;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.wsp.WspConstants;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class PolicyBuilderTest {
+    private PolicyBuilder builder;
+
+    @Before
+    public void setup() {
+        builder = new PolicyBuilder();
+        final AssertionRegistry registry = new AssertionRegistry();
+        registry.registerAssertion(SetVariableAssertion.class);
+        WspConstants.setTypeMappingFinder(registry);
+    }
+
+    @Test
+    public void basePolicy() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\"/>\n" +
+                "</wsp:Policy>\n";
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void comment() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:CommentAssertion>\n" +
+                "            <L7p:Comment stringValue=\"foo\"/>\n" +
+                "        </L7p:CommentAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.comment("foo");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void setContextVariable() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:SetVariable>\n" +
+                "            <L7p:Base64Expression stringValue=\"YmFy\"/>\n" +
+                "            <L7p:VariableToSet stringValue=\"foo\"/>\n" +
+                "        </L7p:SetVariable>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.setContextVariable("foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void setContextVariableMessage() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:SetVariable>\n" +
+                "            <L7p:Base64Expression stringValue=\"YmFy\"/>\n" +
+                "            <L7p:ContentType stringValue=\"text/xml\"/>\n" +
+                "            <L7p:DataType variableDataType=\"message\"/>\n" +
+                "            <L7p:VariableToSet stringValue=\"foo\"/>\n" +
+                "        </L7p:SetVariable>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.setContextVariable("foo", "bar", DataType.MESSAGE, "text/xml");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setContextVariableMessageNullContentType() throws Exception {
+        builder.setContextVariable("foo", "bar", DataType.MESSAGE, null);
+    }
+
+    @Test
+    public void regexContains() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:Regex>\n" +
+                "            <L7p:Regex stringValue=\"foo\"/>\n" +
+                "        </L7p:Regex>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.regex(TargetMessageType.REQUEST, null, "foo", null);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void regexReplace() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:Regex>\n" +
+                "            <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            <L7p:Replace booleanValue=\"true\"/>\n" +
+                "            <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "        </L7p:Regex>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.regex(TargetMessageType.REQUEST, null, "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void regexOtherTarget() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:Regex>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "            <L7p:OtherTargetMessageVariable stringValue=\"otherMsg\"/>\n" +
+                "            <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            <L7p:Replace booleanValue=\"true\"/>\n" +
+                "            <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "            <L7p:Target target=\"OTHER\"/>\n" +
+                "        </L7p:Regex>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.regex(TargetMessageType.OTHER, "otherMsg", "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void regexOtherTargetTypeWithNullTargetName() {
+        builder.regex(TargetMessageType.OTHER, null, "foo", "bar");
+    }
+
+    @Test
+    public void urlEncode() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:EncodeDecode xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "            <L7p:SourceVariableName stringValue=\"foo\"/>\n" +
+                "            <L7p:TargetDataType variableDataType=\"string\"/>\n" +
+                "            <L7p:TargetVariableName stringValue=\"bar\"/>\n" +
+                "            <L7p:TransformType transformType=\"URL_ENCODE\"/>\n" +
+                "        </L7p:EncodeDecode>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.urlEncode("foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void manageCookieDomains() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "            <L7p:CookieAttributes mapValue=\"included\">\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"name\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"name\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"secure\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"secure\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"false\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"false\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"path\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"path\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"domain\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"domain\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
+                "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"value\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"value\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"comment\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"comment\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"version\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"version\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"max-age\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "            </L7p:CookieAttributes>\n" +
+                "            <L7p:CookieCriteria mapValue=\"included\">\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"domain\"/>\n" +
+                "                    <L7p:value cookieCriteria=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"domain\"/>\n" +
+                "                        <L7p:Value stringValue=\"whitby.redmond.local\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "            </L7p:CookieCriteria>\n" +
+                "            <L7p:Operation operation=\"UPDATE\"/>\n" +
+                "            <L7p:Target target=\"REQUEST\"/>\n" +
+                "        </L7p:ManageCookie>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "whitby.redmond.local", "localhost:8080");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void manageCookieDomainsOtherTargetMessage() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "            <L7p:CookieAttributes mapValue=\"included\">\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"name\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"name\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"secure\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"secure\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"false\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"false\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"path\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"path\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"domain\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"domain\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
+                "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"value\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"value\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"comment\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"comment\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"version\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"version\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"max-age\"/>\n" +
+                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
+                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "            </L7p:CookieAttributes>\n" +
+                "            <L7p:CookieCriteria mapValue=\"included\">\n" +
+                "                <L7p:entry>\n" +
+                "                    <L7p:key stringValue=\"domain\"/>\n" +
+                "                    <L7p:value cookieCriteria=\"included\">\n" +
+                "                        <L7p:Key stringValue=\"domain\"/>\n" +
+                "                        <L7p:Value stringValue=\"whitby.redmond.local\"/>\n" +
+                "                    </L7p:value>\n" +
+                "                </L7p:entry>\n" +
+                "            </L7p:CookieCriteria>\n" +
+                "            <L7p:Operation operation=\"UPDATE\"/>\n" +
+                "            <L7p:Target target=\"OTHER\"/>\n" +
+                "            <L7p:OtherTargetMessageVariable stringValue=\"myMsg\"/>\n" +
+                "        </L7p:ManageCookie>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.replaceHttpCookieDomains(TargetMessageType.OTHER, "myMsg", "whitby.redmond.local", "localhost:8080");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void manageCookieDomainsOtherTargetWithNullOtherTargetName() throws Exception {
+        builder.replaceHttpCookieDomains(TargetMessageType.OTHER, null, "whitby.redmond.local", "localhost:8080");
+    }
+
+    @Test
+    public void manageCookieNames() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
+                "            loopVariable=\"request.http.cookienames\" variablePrefix=\"cookiename\">\n" +
+                "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "                <wsp:All wsp:Usage=\"Required\">\n" +
+                "                    <L7p:SetVariable>\n" +
+                "                        <L7p:Base64Expression stringValue=\"JHtjb29raWVuYW1lLmN1cnJlbnR9\"/>\n" +
+                "                        <L7p:VariableToSet stringValue=\"l7_tmp_cname\"/>\n" +
+                "                    </L7p:SetVariable>\n" +
+                "                    <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                        <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                        <L7p:Expression1 stringValue=\"${l7_tmp_cname}\"/>\n" +
+                "                        <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                        <L7p:Predicates predicates=\"included\">\n" +
+                "                            <L7p:item binary=\"included\">\n" +
+                "                                <L7p:RightValue stringValue=\"foo\"/>\n" +
+                "                                <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                            </L7p:item>\n" +
+                "                        </L7p:Predicates>\n" +
+                "                    </L7p:ComparisonAssertion>\n" +
+                "                    <L7p:Regex>\n" +
+                "                        <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                        <L7p:OtherTargetMessageVariable stringValue=\"l7_tmp_cname\"/>\n" +
+                "                        <L7p:Regex stringValue=\"foo\"/>\n" +
+                "                        <L7p:Replace booleanValue=\"true\"/>\n" +
+                "                        <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "                        <L7p:Target target=\"OTHER\"/>\n" +
+                "                    </L7p:Regex>\n" +
+                "                    <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                        <L7p:CookieAttributes mapValue=\"included\">\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"name\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"name\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
+                "                                    <L7p:Value stringValue=\"${l7_tmp_cname}\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"secure\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"secure\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"false\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"httpOnly\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"httpOnly\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"false\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"path\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"path\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"domain\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"domain\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"value\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"value\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"comment\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"comment\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"version\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"version\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"max-age\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"max-age\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                        </L7p:CookieAttributes>\n" +
+                "                        <L7p:CookieCriteria mapValue=\"included\">\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"name\"/>\n" +
+                "                                <L7p:value cookieCriteria=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"name\"/>\n" +
+                "                                    <L7p:Value stringValue=\"${cookiename.current}\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                        </L7p:CookieCriteria>\n" +
+                "                        <L7p:Operation operation=\"UPDATE\"/>\n" +
+                "                        <L7p:Target target=\"REQUEST\"/>\n" +
+                "                    </L7p:ManageCookie>\n" +
+                "                </wsp:All>\n" +
+                "                <L7p:TrueAssertion/>\n" +
+                "            </wsp:OneOrMore>\n" +
+                "        </L7p:ForEachLoop>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.replaceHttpCookieNames(TargetMessageType.REQUEST, null, "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void manageCookieNamesOtherTarget() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:ForEachLoop L7p:Usage=\"Required\"\n" +
+                "            loopVariable=\"myMsg.http.cookienames\" variablePrefix=\"cookiename\">\n" +
+                "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "                <wsp:All wsp:Usage=\"Required\">\n" +
+                "                    <L7p:SetVariable>\n" +
+                "                        <L7p:Base64Expression stringValue=\"JHtjb29raWVuYW1lLmN1cnJlbnR9\"/>\n" +
+                "                        <L7p:VariableToSet stringValue=\"l7_tmp_cname\"/>\n" +
+                "                    </L7p:SetVariable>\n" +
+                "                    <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                        <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                        <L7p:Expression1 stringValue=\"${l7_tmp_cname}\"/>\n" +
+                "                        <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                        <L7p:Predicates predicates=\"included\">\n" +
+                "                            <L7p:item binary=\"included\">\n" +
+                "                                <L7p:RightValue stringValue=\"foo\"/>\n" +
+                "                                <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                            </L7p:item>\n" +
+                "                        </L7p:Predicates>\n" +
+                "                    </L7p:ComparisonAssertion>\n" +
+                "                    <L7p:Regex>\n" +
+                "                        <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                        <L7p:OtherTargetMessageVariable stringValue=\"l7_tmp_cname\"/>\n" +
+                "                        <L7p:Regex stringValue=\"foo\"/>\n" +
+                "                        <L7p:Replace booleanValue=\"true\"/>\n" +
+                "                        <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "                        <L7p:Target target=\"OTHER\"/>\n" +
+                "                    </L7p:Regex>\n" +
+                "                    <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                        <L7p:CookieAttributes mapValue=\"included\">\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"name\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"name\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
+                "                                    <L7p:Value stringValue=\"${l7_tmp_cname}\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"secure\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"secure\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"false\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"httpOnly\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"httpOnly\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"false\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"path\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"path\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"domain\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"domain\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"value\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"value\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"comment\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"comment\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"version\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"version\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"max-age\"/>\n" +
+                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"max-age\"/>\n" +
+                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
+                "                                    <L7p:Value stringValue=\"\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                        </L7p:CookieAttributes>\n" +
+                "                        <L7p:CookieCriteria mapValue=\"included\">\n" +
+                "                            <L7p:entry>\n" +
+                "                                <L7p:key stringValue=\"name\"/>\n" +
+                "                                <L7p:value cookieCriteria=\"included\">\n" +
+                "                                    <L7p:Key stringValue=\"name\"/>\n" +
+                "                                    <L7p:Value stringValue=\"${cookiename.current}\"/>\n" +
+                "                                </L7p:value>\n" +
+                "                            </L7p:entry>\n" +
+                "                        </L7p:CookieCriteria>\n" +
+                "                        <L7p:Operation operation=\"UPDATE\"/>\n" +
+                "                        <L7p:Target target=\"OTHER\"/>\n" +
+                "                        <L7p:OtherTargetMessageVariable stringValue=\"myMsg\"/>\n" +
+                "                    </L7p:ManageCookie>\n" +
+                "                </wsp:All>\n" +
+                "                <L7p:TrueAssertion/>\n" +
+                "            </wsp:OneOrMore>\n" +
+                "        </L7p:ForEachLoop>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.replaceHttpCookieNames(TargetMessageType.OTHER, "myMsg", "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void manageCookieNamesOtherTargetWithNullOtherTargetName() throws Exception {
+        builder.replaceHttpCookieNames(TargetMessageType.OTHER, null, "whitby.redmond.local", "localhost:8080");
+    }
+
+    @Test
+    public void routeForwardAllDoNotFailOnError() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:HttpRoutingAssertion>\n" +
+                "            <L7p:FailOnErrorStatus booleanValue=\"false\"/>\n" +
+                "            <L7p:ProtectedServiceUrl stringValue=\"http://whitby.redmond.local\"/>\n" +
+                "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:RequestHeaderRules>\n" +
+                "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:RequestParamRules>\n" +
+                "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:ResponseHeaderRules>\n" +
+                "        </L7p:HttpRoutingAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.routeForwardAll("http://whitby.redmond.local", false);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void routeForwardAllFailOnError() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:HttpRoutingAssertion>\n" +
+                "            <L7p:ProtectedServiceUrl stringValue=\"http://whitby.redmond.local\"/>\n" +
+                "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:RequestHeaderRules>\n" +
+                "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:RequestParamRules>\n" +
+                "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
+                "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
+                "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
+                "            </L7p:ResponseHeaderRules>\n" +
+                "        </L7p:HttpRoutingAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.routeForwardAll("http://whitby.redmond.local", true);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void rewriteHeader() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "            <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                    <L7p:Expression1 stringValue=\"${request.http.header.Location}\"/>\n" +
+                "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                    <L7p:Predicates predicates=\"included\">\n" +
+                "                        <L7p:item binary=\"included\">\n" +
+                "                            <L7p:Operator operator=\"EMPTY\"/>\n" +
+                "                            <L7p:Negated booleanValue=\"true\"/>\n" +
+                "                        </L7p:item>\n" +
+                "                    </L7p:Predicates>\n" +
+                "                </L7p:ComparisonAssertion>\n" +
+                "                <L7p:SetVariable>\n" +
+                "                    <L7p:Base64Expression stringValue=\"JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyLkxvY2F0aW9ufQ==\"/>\n" +
+                "                    <L7p:VariableToSet stringValue=\"l7_tmp_header\"/>\n" +
+                "                </L7p:SetVariable>\n" +
+                "                <L7p:Regex>\n" +
+                "                    <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                    <L7p:OtherTargetMessageVariable stringValue=\"l7_tmp_header\"/>\n" +
+                "                    <L7p:PatternContainsVariables booleanValue=\"true\"/>\n" +
+                "                    <L7p:Regex stringValue=\"foo\"/>\n" +
+                "                    <L7p:Replace booleanValue=\"true\"/>\n" +
+                "                    <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "                    <L7p:Target target=\"OTHER\"/>\n" +
+                "                </L7p:Regex>\n" +
+                "                <L7p:AddHeader>\n" +
+                "                    <L7p:HeaderName stringValue=\"Location\"/>\n" +
+                "                    <L7p:HeaderValue stringValue=\"${l7_tmp_header}\"/>\n" +
+                "                    <L7p:RemoveExisting booleanValue=\"true\"/>\n" +
+                "                </L7p:AddHeader>\n" +
+                "            </wsp:All>\n" +
+                "            <L7p:TrueAssertion/>\n" +
+                "        </wsp:OneOrMore>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.rewriteHeader(TargetMessageType.REQUEST, null, "Location", "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void rewriteHeaderOtherTargetMessage() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "            <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                    <L7p:Expression1 stringValue=\"${myMsg.http.header.Location}\"/>\n" +
+                "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                    <L7p:Predicates predicates=\"included\">\n" +
+                "                        <L7p:item binary=\"included\">\n" +
+                "                            <L7p:Operator operator=\"EMPTY\"/>\n" +
+                "                            <L7p:Negated booleanValue=\"true\"/>\n" +
+                "                        </L7p:item>\n" +
+                "                    </L7p:Predicates>\n" +
+                "                </L7p:ComparisonAssertion>\n" +
+                "                <L7p:SetVariable>\n" +
+                "                    <L7p:Base64Expression stringValue=\"JHtteU1zZy5odHRwLmhlYWRlci5Mb2NhdGlvbn0=\"/>\n" +
+                "                    <L7p:VariableToSet stringValue=\"l7_tmp_header\"/>\n" +
+                "                </L7p:SetVariable>\n" +
+                "                <L7p:Regex>\n" +
+                "                    <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                    <L7p:OtherTargetMessageVariable stringValue=\"l7_tmp_header\"/>\n" +
+                "                    <L7p:PatternContainsVariables booleanValue=\"true\"/>\n" +
+                "                    <L7p:Regex stringValue=\"foo\"/>\n" +
+                "                    <L7p:Replace booleanValue=\"true\"/>\n" +
+                "                    <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "                    <L7p:Target target=\"OTHER\"/>\n" +
+                "                </L7p:Regex>\n" +
+                "                <L7p:AddHeader>\n" +
+                "                    <L7p:HeaderName stringValue=\"Location\"/>\n" +
+                "                    <L7p:HeaderValue stringValue=\"${l7_tmp_header}\"/>\n" +
+                "                    <L7p:OtherTargetMessageVariable stringValue=\"myMsg\"/>\n" +
+                "                    <L7p:RemoveExisting booleanValue=\"true\"/>\n" +
+                "                    <L7p:Target target=\"OTHER\"/>\n" +
+                "                </L7p:AddHeader>\n" +
+                "            </wsp:All>\n" +
+                "            <L7p:TrueAssertion/>\n" +
+                "        </wsp:OneOrMore>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.rewriteHeader(TargetMessageType.OTHER, "myMsg", "Location", "foo", "bar");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rewriteHeaderOtherTargetWithNullOtherTargetMessageName() throws Exception {
+        builder.rewriteHeader(TargetMessageType.OTHER, null, "Location", "foo", "bar");
+    }
+
+    @Test
+    public void rewriteHtml() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "            <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                    <L7p:Expression1 stringValue=\"${request.http.header.content-type}\"/>\n" +
+                "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                    <L7p:Predicates predicates=\"included\">\n" +
+                "                        <L7p:item binary=\"included\">\n" +
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        </L7p:item>\n" +
+                "                    </L7p:Predicates>\n" +
+                "                </L7p:ComparisonAssertion>\n" +
+                "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
+                "                    <L7p:SearchFor stringValue=\"foo\"/>\n" +
+                "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
+                "                    <L7p:Target target=\"REQUEST\"/>\n" +
+                "                </L7p:ReplaceTagContent>\n" +
+                "            </wsp:All>\n" +
+                "            <L7p:TrueAssertion/>\n" +
+                "        </wsp:OneOrMore>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.rewriteHtml(TargetMessageType.REQUEST, null, "foo", "bar", "a,p,script");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void rewriteHtmlOtherTargetMessage() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "            <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                    <L7p:Expression1 stringValue=\"${myMsg.http.header.content-type}\"/>\n" +
+                "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                    <L7p:Predicates predicates=\"included\">\n" +
+                "                        <L7p:item binary=\"included\">\n" +
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        </L7p:item>\n" +
+                "                    </L7p:Predicates>\n" +
+                "                </L7p:ComparisonAssertion>\n" +
+                "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
+                "                    <L7p:SearchFor stringValue=\"foo\"/>\n" +
+                "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
+                "                    <L7p:Target target=\"OTHER\"/>\n" +
+                "                    <L7p:OtherTargetMessageVariable stringValue=\"myMsg\"/>\n" +
+                "                </L7p:ReplaceTagContent>\n" +
+                "            </wsp:All>\n" +
+                "            <L7p:TrueAssertion/>\n" +
+                "        </wsp:OneOrMore>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.rewriteHtml(TargetMessageType.OTHER, "myMsg", "foo", "bar", "a,p,script");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rewriteHtmlOtherTargetWithNullOtherTargetMessageName() throws Exception {
+        builder.rewriteHtml(TargetMessageType.OTHER, null, "foo", "bar", "a,p,script");
+    }
+}

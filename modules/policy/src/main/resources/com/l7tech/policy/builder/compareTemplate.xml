@@ -1,0 +1,7 @@
+<L7p:ComparisonAssertion xmlns:L7p="http://www.layer7tech.com/ws/policy">
+    <L7p:CaseSensitive booleanValue="false"/>
+    <L7p:Expression1 stringValue="{0}"/>
+    <L7p:ExpressionIsVariable booleanValue="false"/>
+    <L7p:Predicates predicates="included">
+    </L7p:Predicates>
+</L7p:ComparisonAssertion>
