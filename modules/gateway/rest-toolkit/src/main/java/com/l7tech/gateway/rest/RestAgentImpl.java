@@ -56,14 +56,23 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
         if (additionalResourceClasses != null) {
             resourceClassSet.addAll(additionalResourceClasses);
         }
-        //resourceClassSet.add(SpringBeanInjectionResolver.SpringBeanInjectionFeature.class);
-        //creates the resource config for the jersey application
-        ResourceConfig resourceConfig = ResourceConfig.forApplication(new Application() {
-            @Override
-            public Set<Class<?>> getClasses() {
-                return resourceClassSet;
+
+        final ResourceConfig resourceConfig;
+        try {
+            //resourceClassSet.add(SpringBeanInjectionResolver.SpringBeanInjectionFeature.class);
+            //creates the resource config for the jersey application
+            resourceConfig = ResourceConfig.forApplication(new Application() {
+                @Override
+                public Set<Class<?>> getClasses() {
+                    return resourceClassSet;
+                }
+            });
+        } catch (NoSuchMethodError e) {
+            if ("javax.ws.rs.core.Application.getProperties()Ljava/util/Map;".equals(e.getMessage())) {
+                logger.log(Level.WARNING, "Could not find correct 'javax.ws.rs-api-2.0.jar'. You likely have the SSG configured for IBM Websphere JMS MQ8.5 and have not copied the 'javax.ws.rs-api-2.0.jar' to the appropriate location. See documentation for configuring IBM Websphere JMS MQ8.5");
             }
-        });
+            throw e;
+        }
 
         //Add any additional properties to the rest application.
         if(resourceConfigProperties != null && !resourceConfigProperties.isEmpty()) {
