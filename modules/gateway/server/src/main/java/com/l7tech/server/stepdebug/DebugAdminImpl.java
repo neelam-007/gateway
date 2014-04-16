@@ -112,6 +112,11 @@ public class DebugAdminImpl implements DebugAdmin {
         debugManager.removeUserContextVariable(taskId, name);
     }
 
+    //- PACKAGE
+    void setDebugManager(@NotNull DebugManager debugManager) {
+        this.debugManager = debugManager;
+    }
+
     @NotNull
     private DebugResult createDebugResult(@NotNull DebugContext debugContext) {
         DebugResult debugResult = new DebugResult(debugContext.getTaskId());
