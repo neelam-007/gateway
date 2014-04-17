@@ -2,6 +2,7 @@ package com.l7tech.console.panels.reverseproxy;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.RunOnChangeListener;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -30,7 +31,7 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
     public ReverseWebProxyConfigurationPanel() {
         super(null);
         setLayout(new BorderLayout());
-        final KeyListener listener = new KeyListener() {
+        final KeyListener keyListener = new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
             }
@@ -44,9 +45,20 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
                 notifyListeners();
             }
         };
-        nameTextField.addKeyListener(listener);
-        webAppHostTextField.addKeyListener(listener);
-        routingUriTextField.addKeyListener(listener);
+        nameTextField.addKeyListener(keyListener);
+        webAppHostTextField.addKeyListener(keyListener);
+        routingUriTextField.addKeyListener(keyListener);
+        specifiedTagsTextField.addKeyListener(keyListener);
+        final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+                notifyListeners();
+            }
+        });
+        allContentRadio.addActionListener(changeListener);
+        noneRadioButton.addActionListener(changeListener);
+        specifiedTagsRadio.addActionListener(changeListener);
         platformComboBox.setModel(new DefaultComboBoxModel(new String[]{ReverseWebProxyConfig.WebApplicationType.SHAREPOINT.getName(), ReverseWebProxyConfig.WebApplicationType.GENERIC.getName()}));
         add(contentPanel);
     }
@@ -58,7 +70,10 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
 
     @Override
     public boolean canFinish() {
-        return !nameTextField.getText().isEmpty() && !webAppHostTextField.getText().isEmpty() && !routingUriTextField.getText().isEmpty();
+        return !nameTextField.getText().isEmpty() &&
+                !webAppHostTextField.getText().isEmpty() &&
+                !routingUriTextField.getText().isEmpty() &&
+                (!specifiedTagsRadio.isSelected() || StringUtils.isNotBlank(specifiedTagsTextField.getText()));
     }
 
     @Override
@@ -76,6 +91,7 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             allContentRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isBlank(config.getHtmlTagsToRewrite()));
             noneRadioButton.setSelected(!config.isRewriteResponseContent());
             specifiedTagsRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isNotBlank(config.getHtmlTagsToRewrite()));
+            enableDisable();
         }
     }
 
@@ -93,5 +109,9 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             config.setRewriteResponseContent(allContentRadio.isSelected() || specifiedTagsRadio.isSelected());
             config.setHtmlTagsToRewrite(specifiedTagsTextField.getText().trim());
         }
+    }
+
+    private void enableDisable() {
+        specifiedTagsTextField.setEnabled(specifiedTagsRadio.isSelected());
     }
 }
