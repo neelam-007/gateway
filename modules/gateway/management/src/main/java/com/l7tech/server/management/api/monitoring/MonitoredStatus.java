@@ -22,15 +22,30 @@ public abstract class MonitoredStatus {
     protected String monitorableId;
     protected String componentId;
     protected StatusType status;
-    protected Set<Goid> triggerGoids;
+    protected Set<String> triggerOids;
 
     protected MonitoredStatus(ComponentType type, final String monitorableId, String componentId, long timestamp, StatusType status, Set<Goid> triggerGoids) {
         this.type = type;
         this.monitorableId = monitorableId;
         this.componentId = componentId;
         this.timestamp = timestamp;
-        this.triggerGoids = triggerGoids;
+        this.triggerOids = convertTriggerIds(triggerGoids);
         this.status = status;
+    }
+
+    /**
+     * Converts a set of trigger ids which could be longs, goids, or strings to a set of string ids
+     *
+     * @param triggerOids The ids to convert
+     * @return The string version of the ids
+     */
+    private Set<String> convertTriggerIds(Set<?> triggerOids) {
+        return new HashSet<>(Functions.map(triggerOids, new Functions.Unary<String, Object>() {
+            @Override
+            public String call(Object oid) {
+                return oid.toString();
+            }
+        }));
     }
 
     @Deprecated // XML only
@@ -67,8 +82,8 @@ public abstract class MonitoredStatus {
      * for monitoring this property.
      */
     @XmlElementWrapper(name="triggerOids")
-    public Set<Goid> getTriggerGoids() {
-        return triggerGoids;
+    public Set<String> getTriggerOids() {
+        return triggerOids;
     }
 
     @Deprecated // XML only
@@ -97,18 +112,8 @@ public abstract class MonitoredStatus {
     }
 
     @Deprecated // XML only
-    protected void setTriggerOids(Set<Long> triggerOids) {
-        this.triggerGoids = new HashSet<>(Functions.map(triggerOids, new Functions.Unary<Goid, Long>() {
-            @Override
-            public Goid call(Long oid) {
-                return new Goid(0, oid);
-            }
-        }));
-    }
-
-    @Deprecated // XML only
-    protected void setTriggerGoids(Set<Goid> triggerGoids) {
-        this.triggerGoids = triggerGoids;
+    protected void setTriggerOids(Set<String> triggerOids) {
+        this.triggerOids = triggerOids;
     }
 
     @XmlEnum(String.class)
@@ -138,7 +143,7 @@ public abstract class MonitoredStatus {
                 ", monitorableId='" + monitorableId + '\'' +
                 ", componentId='" + componentId + '\'' +
                 ", status=" + status +
-                ", triggerGoids=" + triggerGoids +
+                ", triggerOids=" + triggerOids +
                 '}';
     }
 }

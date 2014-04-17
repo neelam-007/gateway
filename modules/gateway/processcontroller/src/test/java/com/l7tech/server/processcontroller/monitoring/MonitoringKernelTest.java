@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.server.processcontroller.CxfUtils;
+import com.l7tech.test.BugId;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ComparisonOperator;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.interceptor.LoggingOutInterceptor;
@@ -47,6 +49,78 @@ public class MonitoringKernelTest {
         //noinspection ThrowableInstanceNeverThrown
         Object successfulAttempt = new NotificationAttempt(new GenericHttpException("Oh noes"), System.currentTimeMillis());
         testMarshallRoundTrip(successfulAttempt);
+    }
+
+    @Test
+    public void testMarshallingMonitoringStatus() throws Exception {
+        Object successfulAttempt = new MonitoredPropertyStatus(
+                ComponentType.NODE,
+                "monitorableId",
+                "componentId",
+                System.currentTimeMillis(),
+                MonitoredStatus.StatusType.OK,
+                CollectionUtils.set(new Goid(123L, 456L), new Goid(444L, 555L)),
+                "value",
+                MonitoredPropertyStatus.ValueType.OK);
+        testMarshallRoundTrip(successfulAttempt);
+    }
+
+    @BugId("EM-999")
+    @Test
+    public void testUnMarshallingMonitoringStatusOidsVersions() throws Exception {
+        String oidsMarchalled = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<monitoredPropertyStatus xmlns:ns2=\"http://ns.l7tech.com/secureSpan/1.0/monitoring\" xmlns:ns3=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:ns4=\"http://ns.l7tech.com/secureSpan/1.0/monitoring/notification\" valueType=\"OK\" componentId=\"componentId\" monitorableId=\"monitorableId\" status=\"OK\" timestamp=\"1397760968529\" type=\"NODE\">\n" +
+                "    <triggerOids>\n" +
+                "        <triggerOids>123</triggerOids>\n" +
+                "        <triggerOids>456</triggerOids>\n" +
+                "    </triggerOids>\n" +
+                "    <value>value</value>\n" +
+                "</monitoredPropertyStatus>\n";
+
+        JAXBContext ctx = makeJaxbContext();
+
+        Marshaller marshaller = ctx.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+        Unmarshaller unmarshaller = ctx.createUnmarshaller();
+        Object mc2 = unmarshaller.unmarshal(new StringReader(oidsMarchalled));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(32768);
+        baos.reset();
+        marshaller.marshal(mc2, baos);
+        String doc2 = new String(baos.toByteArray(), "UTF-8");
+        System.out.println("re-marshalled: " + doc2);
+
+        assertEquals(oidsMarchalled, doc2);
+    }
+
+    @BugId("EM-999")
+    @Test
+    public void testUnMarshallingMonitoringStatusGoidsVersions() throws Exception {
+        String oidsMarchalled = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                "<monitoredPropertyStatus xmlns:ns2=\"http://ns.l7tech.com/secureSpan/1.0/monitoring\" xmlns:ns3=\"http://ns.l7tech.com/secureSpan/1.0/core\" xmlns:ns4=\"http://ns.l7tech.com/secureSpan/1.0/monitoring/notification\" valueType=\"OK\" componentId=\"componentId\" monitorableId=\"monitorableId\" status=\"OK\" timestamp=\"1397762286281\" type=\"NODE\">\n" +
+                "    <triggerOids>\n" +
+                "        <triggerOids>000000000000007b00000000000001c8</triggerOids>\n" +
+                "        <triggerOids>00000000000001bc000000000000022b</triggerOids>\n" +
+                "    </triggerOids>\n" +
+                "    <value>value</value>\n" +
+                "</monitoredPropertyStatus>\n";
+
+        JAXBContext ctx = makeJaxbContext();
+
+        Marshaller marshaller = ctx.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+        Unmarshaller unmarshaller = ctx.createUnmarshaller();
+        Object mc2 = unmarshaller.unmarshal(new StringReader(oidsMarchalled));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(32768);
+        baos.reset();
+        marshaller.marshal(mc2, baos);
+        String doc2 = new String(baos.toByteArray(), "UTF-8");
+        System.out.println("re-marshalled: " + doc2);
+
+        assertEquals(oidsMarchalled, doc2);
     }
 
     // Test the specified object to ensure it survives a round trip through the result of makeJaxbContext()
