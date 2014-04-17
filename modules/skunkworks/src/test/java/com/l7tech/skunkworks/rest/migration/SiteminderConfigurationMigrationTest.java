@@ -6,8 +6,6 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
@@ -20,7 +18,6 @@ import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -603,7 +600,11 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             assertNotNull(getDependency(policyDependencies, passwordCreated.getId()));
 
             validate(mappings);
-        }finally{
+        } finally {
+            //need to delete the siteminder configuration here before we can delete the password for avoid foreign constraint errors
+            response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+            mappingsToClean.getContent().getMappings().remove(1);
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }

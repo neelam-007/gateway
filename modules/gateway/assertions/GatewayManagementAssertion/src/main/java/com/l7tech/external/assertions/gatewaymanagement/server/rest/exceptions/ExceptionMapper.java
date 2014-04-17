@@ -10,6 +10,7 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.glassfish.jersey.server.ParamException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.xml.sax.SAXException;
 
@@ -77,9 +78,16 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
                 status = Response.Status.FORBIDDEN;
             } else if ( ExceptionUtils.causedBy( e, DataIntegrityViolationException.class) ) {
                 final DataIntegrityViolationException cause = ExceptionUtils.getCauseIfCausedBy( e, DataIntegrityViolationException.class );
-                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception",""));
-                logger.log( Level.INFO, "Resource deletion forbidden (in use), '"+ExceptionUtils.getMessage(cause)+"'", ExceptionUtils.getDebugException(e) );
-                status = Response.Status.FORBIDDEN;
+                if(cause.getCause() instanceof ConstraintViolationException){
+                    ConstraintViolationException constraintViolationException = (ConstraintViolationException) cause.getCause();
+                    errorResponse.setType("ConstraintViolation");
+                    errorResponse.setDetail(ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage()));
+                    status = Response.Status.BAD_REQUEST;
+                } else {
+                    errorResponse.setType(cause.getClass().getSimpleName().replace("Exception", ""));
+                    logger.log(Level.INFO, "Resource operation forbidden, '" + ExceptionUtils.getMessage(cause) + "'", ExceptionUtils.getDebugException(e));
+                    status = Response.Status.FORBIDDEN;
+                }
             } else if( ExceptionUtils.causedBy(e, SAXException.class))  {
                 final SAXException cause = ExceptionUtils.getCauseIfCausedBy( e, SAXException.class );
                 logger.log( Level.WARNING, ExceptionUtils.getMessage(cause), ExceptionUtils.getDebugException(e) );

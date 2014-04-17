@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.SecurePasswordAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
@@ -10,6 +11,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.StoredPasswordMO;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
@@ -19,6 +21,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -100,7 +103,7 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
-            @QueryParam("type") List<String> types) {
+            @QueryParam("type") @ChoiceParam({"Password", "PEM Private Key"}) List<String> types) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "type"));
 
@@ -109,10 +112,27 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
             filters.put("name", (List) names);
         }
         if (types != null && !types.isEmpty()) {
-            filters.put("type", (List) types);
+            filters.put("type", (List) convertTypes(types));
         }
         return super.list(sort, ascendingSort,
                 filters.map());
+    }
+
+    private List<SecurePassword.SecurePasswordType> convertTypes(List<String> types) {
+        List<SecurePassword.SecurePasswordType> passwordTypes = new ArrayList<>(types.size());
+        for(String typeString : types){
+            switch(typeString){
+                case "Password":
+                    passwordTypes.add(SecurePassword.SecurePasswordType.PASSWORD);
+                    break;
+                case "PEM Private Key":
+                    passwordTypes.add(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                    break;
+                default:
+                    throw new InvalidArgumentException("type", "Type is expected to be either 'Password' or 'PEM Private Key'");
+            }
+        }
+        return passwordTypes;
     }
 
     /**

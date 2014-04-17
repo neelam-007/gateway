@@ -11,15 +11,19 @@ UPDATE ssg_version SET current_version = '8.2.00';
 -- updating the http_configuration table to match the one in mysql.
 alter table http_configuration alter column tls_keystore_goid NOT NULL;
 alter table http_configuration
-    add constraint FK_PROXY_PASSWORD
+    add constraint FK_HTTP_CONFIG_PROXY_PASSWORD
     foreign key (proxy_password_goid)
-    references secure_password
-    on delete cascade;
+    references secure_password;
 alter table http_configuration
-    add constraint FK_PASSWORD
+    add constraint FK_HTTP_CONFIG_PASSWORD
     foreign key (password_goid)
-    references secure_password
-    on delete cascade;
+    references secure_password;
+
+-- updating the siteminder table to match the one in mysql
+alter table siteminder_configuration
+    add constraint FK_SITEMINDER_CONFIG_PASSWORD
+    foreign key (password_goid)
+    references secure_password;
 
 -- RABC for "debugger" other permission: Update "Administrator" canned role --
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -106), 0, toGoid(0, -100), 'OTHER', 'debugger', 'POLICY');

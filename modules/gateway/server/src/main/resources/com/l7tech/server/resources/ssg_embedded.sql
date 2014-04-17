@@ -1244,16 +1244,19 @@ alter table sample_messages
     on delete cascade;
 
 alter table http_configuration
-    add constraint FK_PROXY_PASSWORD
+    add constraint FK_HTTP_CONFIG_PROXY_PASSWORD
     foreign key (proxy_password_goid)
-    references secure_password
-    on delete cascade;
+    references secure_password;
 
 alter table http_configuration
-    add constraint FK_PASSWORD
+    add constraint FK_HTTP_CONFIG_PASSWORD
     foreign key (password_goid)
-    references secure_password
-    on delete cascade;
+    references secure_password;
+
+alter table siteminder_configuration
+    add constraint FK_SITEMINDER_CONFIG_PASSWORD
+    foreign key (password_goid)
+    references secure_password;
 
 -- **************************************************************************
 -- Populate initial data
