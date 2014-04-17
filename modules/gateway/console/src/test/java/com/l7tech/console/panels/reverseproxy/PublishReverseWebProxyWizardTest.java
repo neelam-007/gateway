@@ -10,6 +10,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -23,13 +26,13 @@ public class PublishReverseWebProxyWizardTest {
         config = new TestableReverseWebProxyConfig();
         when(builder.setContextVariable(anyString(), anyString())).thenReturn(builder);
         when(builder.setContextVariable(anyString(), anyString(), any(DataType.class), anyString())).thenReturn(builder);
-        when(builder.urlEncode(anyString(), anyString())).thenReturn(builder);
-        when(builder.regex(any(TargetMessageType.class), anyString(), anyString(), anyString())).thenReturn(builder);
-        when(builder.replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString())).thenReturn(builder);
-        when(builder.replaceHttpCookieDomains(any(TargetMessageType.class), anyString(), anyString(), anyString())).thenReturn(builder);
+        when(builder.urlEncode(anyString(), anyString(), anyString())).thenReturn(builder);
+        when(builder.regex(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
+        when(builder.replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
+        when(builder.replaceHttpCookieDomains(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
         when(builder.routeForwardAll(anyString(), anyBoolean())).thenReturn(builder);
-        when(builder.rewriteHeader(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString())).thenReturn(builder);
-        when(builder.rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString())).thenReturn(builder);
+        when(builder.rewriteHeader(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
+        when(builder.rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(builder);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -49,22 +52,24 @@ public class PublishReverseWebProxyWizardTest {
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
         // constants
-        verify(builder).setContextVariable("webAppHost", "default-generic.l7tech.com");
-        verify(builder).setContextVariable("response.cookie.overwriteDomain", "false");
-        verify(builder).setContextVariable("response.cookie.overwritePath", "false");
-        verify(builder).setContextVariable("query", "${request.url.query}");
+        final Map<String, String> constants = new HashMap<>();
+        constants.put("webAppHost", "default-generic.l7tech.com");
+        constants.put("response.cookie.overwriteDomain", "false");
+        constants.put("response.cookie.overwritePath", "false");
+        constants.put("query", "${request.url.query}");
+        verify(builder).setContextVariables(constants, "// CONSTANTS");
 
         // url rewriting + route
-        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}", true, "// REWRITE REQUEST COOKIE DOMAINS");
         verify(builder).routeForwardAll("http://${webAppHost}${request.url.path}${" + "query" + "}", false);
-        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}");
-        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}");
-        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", true, "// REWRITE RESPONSE COOKIE DOMAINS");
+        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE LOCATION HEADER");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE RESPONSE BODY");
 
-        verify(builder, never()).urlEncode(anyString(), anyString());
-        verify(builder, never()).regex(eq(TargetMessageType.OTHER), anyString(), anyString(), anyString());
-        verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
+        verify(builder, never()).regex(eq(TargetMessageType.OTHER), anyString(), anyString(), anyString(), anyBoolean(), anyString());
+        verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -76,18 +81,23 @@ public class PublishReverseWebProxyWizardTest {
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
         // constants + route
-        verify(builder).setContextVariable("webAppHost", "default-generic.l7tech.com");
-        verify(builder).setContextVariable("response.cookie.overwriteDomain", "false");
-        verify(builder).setContextVariable("response.cookie.overwritePath", "false");
-        verify(builder).setContextVariable("query", "${request.url.query}");
+        final Map<String, String> constants = new HashMap<>();
+        constants.put("webAppHost", "default-generic.l7tech.com");
+        constants.put("response.cookie.overwriteDomain", "false");
+        constants.put("response.cookie.overwritePath", "false");
+        constants.put("query", "${request.url.query}");
+        verify(builder).setContextVariables(constants, "// CONSTANTS");
         verify(builder).routeForwardAll("http://${webAppHost}${request.url.path}${query}", false);
 
-        verify(builder, never()).urlEncode(anyString(), anyString());
-        verify(builder, never()).replaceHttpCookieDomains(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).regex(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHeader(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
+        // disabled policy
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}", false, "// REWRITE REQUEST COOKIE DOMAINS");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", false, "// REWRITE RESPONSE COOKIE DOMAINS");
+        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE LOCATION HEADER");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE RESPONSE BODY");
+
+        verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString());
+        verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -105,8 +115,8 @@ public class PublishReverseWebProxyWizardTest {
         config.setHtmlTagsToRewrite("p,script");
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
-        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script");
-        verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString());
+        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
+        verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
     }
 
     @Test
@@ -116,27 +126,29 @@ public class PublishReverseWebProxyWizardTest {
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
         // constants
-        verify(builder).setContextVariable("webAppHost", "default-sharepoint.l7tech.com");
-        verify(builder).setContextVariable("response.cookie.overwriteDomain", "false");
-        verify(builder).setContextVariable("response.cookie.overwritePath", "false");
-        verify(builder).setContextVariable("query", "${request.url.query}");
+        final Map<String, String> constants = new HashMap<>();
+        constants.put("webAppHost", "default-sharepoint.l7tech.com");
+        constants.put("response.cookie.overwriteDomain", "false");
+        constants.put("response.cookie.overwritePath", "false");
+        constants.put("query", "${request.url.query}");
+        verify(builder).setContextVariables(constants, "// CONSTANTS");
 
         // encoding
-        verify(builder).urlEncode("webAppHost", "webAppHostEncoded");
-        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E");
-        verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B");
-        verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D");
+        verify(builder).urlEncode("webAppHost", "webAppHostEncoded", "// ENCODE WEB APP HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.' IN WEB APP HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
 
         // url rewriting + route
-        verify(builder).replaceHttpCookieNames(TargetMessageType.REQUEST, null, "${request.url.host}%3A${request.url.port}", "${webAppHostEncoded}");
-        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}");
+        verify(builder).replaceHttpCookieNames(TargetMessageType.REQUEST, null, "${request.url.host}%3A${request.url.port}", "${webAppHostEncoded}", true, "// REWRITE REQUEST COOKIE NAMES");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}", true, "// REWRITE REQUEST COOKIE DOMAINS");
         verify(builder).routeForwardAll("http://${webAppHost}${request.url.path}${query}", false);
-        verify(builder).replaceHttpCookieNames(TargetMessageType.RESPONSE, null, "${webAppHostEncoded}", "${request.url.host}%3A${request.url.port}");
-        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}");
-        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}");
-        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}");
+        verify(builder).replaceHttpCookieNames(TargetMessageType.RESPONSE, null, "${webAppHostEncoded}", "${request.url.host}%3A${request.url.port}", true, "// REWRITE RESPONSE COOKIE NAMES");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", true, "// REWRITE RESPONSE COOKIE DOMAINS");
+        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE LOCATION HEADER");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE RESPONSE BODY");
 
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -149,23 +161,28 @@ public class PublishReverseWebProxyWizardTest {
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
         // constants
-        verify(builder).setContextVariable("webAppHost", "default-sharepoint.l7tech.com");
-        verify(builder).setContextVariable("response.cookie.overwriteDomain", "false");
-        verify(builder).setContextVariable("response.cookie.overwritePath", "false");
-        verify(builder).setContextVariable("query", "${request.url.query}");
+        final Map<String, String> constants = new HashMap<>();
+        constants.put("webAppHost", "default-sharepoint.l7tech.com");
+        constants.put("response.cookie.overwriteDomain", "false");
+        constants.put("response.cookie.overwritePath", "false");
+        constants.put("query", "${request.url.query}");
+        verify(builder).setContextVariables(constants, "// CONSTANTS");
 
         // encoding + route
-        verify(builder).urlEncode("webAppHost", "webAppHostEncoded");
-        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E");
-        verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B");
-        verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
         verify(builder).routeForwardAll("http://${webAppHost}${request.url.path}${query}", false);
 
-        verify(builder, never()).replaceHttpCookieDomains(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHeader(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
-        verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString());
+        // disabled policy
+        verify(builder).replaceHttpCookieNames(TargetMessageType.REQUEST, null, "${request.url.host}%3A${request.url.port}", "${webAppHostEncoded}", false, "// REWRITE REQUEST COOKIE NAMES");
+        verify(builder).replaceHttpCookieNames(TargetMessageType.RESPONSE, null, "${webAppHostEncoded}", "${request.url.host}%3A${request.url.port}", false, "// REWRITE RESPONSE COOKIE NAMES");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}", false, "// REWRITE REQUEST COOKIE DOMAINS");
+        verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", false, "// REWRITE RESPONSE COOKIE DOMAINS");
+        verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE LOCATION HEADER");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE RESPONSE BODY");
+
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
     }
 
     @Test
@@ -185,8 +202,8 @@ public class PublishReverseWebProxyWizardTest {
         config.setHtmlTagsToRewrite("p,script");
         PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
 
-        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script");
-        verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString());
+        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
+        verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
     }
 
     private class TestableReverseWebProxyConfig extends ReverseWebProxyConfig {

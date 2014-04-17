@@ -32,6 +32,7 @@ public class PolicyBuilder {
     private static final String UPDATE_COOKIE = BASE_PATH + "updateCookieTemplate.xml";
     private static final String REPLACE_TAG_CONTENT = BASE_PATH + "replaceTagContentTemplate.xml";
     private static final String COMPARE = BASE_PATH + "compareTemplate.xml";
+    private static final String ASSERTION_COMMENT = BASE_PATH + "assertionCommentTemplate.xml";
 
     // namespaces
     private static final String XML_SOAP_NS = "http://schemas.xmlsoap.org/ws/2002/12/policy";
@@ -52,6 +53,8 @@ public class PolicyBuilder {
     private static final String TRUE = "true";
     private static final String FALSE = "false";
     private static final String ITEM = "item";
+    private static final String ENABLED = "Enabled";
+    private static final String PROPERTIES = "Properties";
 
     // cookie
     private static final String COOKIE_ATTRIBUTES = "CookieAttributes";
@@ -101,8 +104,17 @@ public class PolicyBuilder {
         return policyDoc;
     }
 
-    public PolicyBuilder comment(@NotNull final String comment) {
-        addAssertion(new CommentAssertion(comment));
+    /**
+     * Append a CommentAssertion to the Document.
+     *
+     * @param comment the comment to add.
+     * @param enable  false if the comment should be disabled.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder comment(@NotNull final String comment, final boolean enable) {
+        final CommentAssertion com = new CommentAssertion(comment);
+        com.setEnabled(enable);
+        addAssertion(com);
         return this;
     }
 
@@ -142,15 +154,36 @@ public class PolicyBuilder {
     }
 
     /**
+     * Append multiple set variable assertions (string) to the document in an 'all' folder.
+     *
+     * @param vars    the name=value variables to set.
+     * @param comment an optional comment to set on the 'all' folder.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder setContextVariables(@NotNull final Map<String, String> vars, @Nullable final String comment) throws IOException {
+        final AllAssertion all = new AllAssertion();
+        addRightComment(comment, all);
+        for (final Map.Entry<String, String> entry : vars.entrySet()) {
+            all.addChild(new SetVariableAssertion(entry.getKey(), entry.getValue()));
+        }
+        addAssertion(all);
+        return this;
+    }
+
+    /**
      * Appends a regex assertion to the document.
      *
      * @param targetMessage          the {@link TargetMessageType} to target.
      * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
      * @param regexPattern           the regex pattern to match.
      * @param replacement            the optional replacement if the regex matches.
+     * @param enable                 false if the appended policy should be disabled.
+     * @param comment                an optional comment to add to the regex.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder regex(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull final String regexPattern, @Nullable final String replacement) {
+    public PolicyBuilder regex(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                               @NotNull final String regexPattern, @Nullable final String replacement,
+                               final boolean enable, @Nullable final String comment) {
         validateTarget(targetMessage, otherTargetMessageName);
         final Regex regex = new Regex();
         regex.setTarget(targetMessage);
@@ -160,6 +193,8 @@ public class PolicyBuilder {
         regex.setPatternContainsVariables(Syntax.isAnyVariableReferenced(regexPattern));
         regex.setReplace(replacement != null);
         regex.setReplacement(replacement);
+        regex.setEnabled(enable);
+        addRightComment(comment, regex);
         addAssertion(regex);
         return this;
     }
@@ -169,36 +204,46 @@ public class PolicyBuilder {
      *
      * @param srcVarName    the name of the context variable to encode.
      * @param targetVarName the name of the target context variable in which to store the encoded value.
+     * @param comment       an optional comment to add to the assertion.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder urlEncode(@NotNull final String srcVarName, @NotNull final String targetVarName) throws IOException {
+    public PolicyBuilder urlEncode(@NotNull final String srcVarName, @NotNull final String targetVarName, @Nullable final String comment) throws IOException {
         final Document encodeDoc = readResource(ENCODE);
         final Element srcVarNameElement = XmlUtil.findFirstChildElementByName(encodeDoc.getDocumentElement(), L7_NS, SOURCE_VARIABLE_NAME);
         srcVarNameElement.setAttribute(STRING_VALUE, srcVarName);
         final Element targetVarNameElement = XmlUtil.findFirstChildElementByName(encodeDoc.getDocumentElement(), L7_NS, TARGET_VARIABLE_NAME);
         targetVarNameElement.setAttribute(STRING_VALUE, targetVarName);
+        createAndAppendCommentElement(encodeDoc, comment);
         addNode(encodeDoc.getDocumentElement());
         return this;
     }
 
     /**
-     * Appends policy which replaces whole cookie domain attribute values to the Document.
+     * Appends a ManageCookie assertion which replaces whole cookie domain attribute values to the Document.
      *
      * @param targetMessage          the {@link TargetMessageType} to target.
      * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
      * @param domainToMatch          the cookie domain to replace.
      * @param domainToSet            the cookie domain replacement to set if a match is found.
+     * @param enable                 false if the appended policy should be disabled.
+     * @param comment                an optional comment to add to the assertion.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder replaceHttpCookieDomains(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull final String domainToMatch, @NotNull final String domainToSet) throws IOException {
+    public PolicyBuilder replaceHttpCookieDomains(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                                  @NotNull final String domainToMatch, @NotNull final String domainToSet,
+                                                  final boolean enable, @Nullable final String comment) throws IOException {
         validateTarget(targetMessage, otherTargetMessageName);
         final Document cookieDoc = readResource(UPDATE_COOKIE);
+        createAndAppendCommentElement(cookieDoc, comment);
         setCookieAttributeValue(DOMAIN, domainToSet, cookieDoc);
         setSingleCookieCriteriaValue(DOMAIN, domainToMatch, cookieDoc);
         final Element target = XmlUtil.findFirstChildElementByName(cookieDoc.getDocumentElement(), L7_NS, TARGET);
         target.setAttribute(TARGET.toLowerCase(), targetMessage.name());
         if (otherTargetMessageName != null) {
             createAndAppendOtherTargetNameElement(otherTargetMessageName, cookieDoc);
+        }
+        if (!enable) {
+            createAndAppendDisabledElement(cookieDoc);
         }
         addNode(cookieDoc.getDocumentElement());
         return this;
@@ -211,9 +256,13 @@ public class PolicyBuilder {
      * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
      * @param toSearch               the text to replace in the cookie name.
      * @param toReplace              the replacement text if a match is found.
+     * @param enable                 false if the appended policy should be disabled.
+     * @param comment                an optional comment to add to the policy.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder replaceHttpCookieNames(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull final String toSearch, @NotNull final String toReplace) throws IOException {
+    public PolicyBuilder replaceHttpCookieNames(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                                @NotNull final String toSearch, @NotNull final String toReplace,
+                                                final boolean enable, @Nullable final String comment) throws IOException {
         validateTarget(targetMessage, otherTargetMessageName);
         final OneOrMoreAssertion oneOrMore = new OneOrMoreAssertion();
         oneOrMore.addChild(new AllAssertion());
@@ -224,6 +273,8 @@ public class PolicyBuilder {
         forEach.setLoopVariableName(loopVarName);
         forEach.setVariablePrefix(COOKIENAME);
         forEach.addChild(oneOrMore);
+        forEach.setEnabled(enable);
+        addRightComment(comment, forEach);
         final Document forEachDoc = WspWriter.getPolicyDocument(forEach);
         final Element allElement = XmlUtil.findFirstDescendantElement(forEachDoc.getDocumentElement(), XML_SOAP_NS, ALL);
 
@@ -294,9 +345,13 @@ public class PolicyBuilder {
      * @param headerName             the name of the header to rewrite.
      * @param patternToMatch         the header value pattern to match.
      * @param replacement            the replacement if the pattern matches.
+     * @param enable                 false if the appended policy should be disabled.
+     * @param comment                an optional comment to add to the policy.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder rewriteHeader(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull final String headerName, @NotNull final String patternToMatch, @NotNull final String replacement) throws IOException {
+    public PolicyBuilder rewriteHeader(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                       @NotNull final String headerName, @NotNull final String patternToMatch,
+                                       @NotNull final String replacement, final boolean enable, @Nullable final String comment) throws IOException {
         validateTarget(targetMessage, otherTargetMessageName);
         final String targetName = targetMessage == TargetMessageType.OTHER ? otherTargetMessageName : targetMessage.name().toLowerCase();
         final String headerContextVariable = "${" + targetName + ".http.header." + headerName + "}";
@@ -331,6 +386,8 @@ public class PolicyBuilder {
         final OneOrMoreAssertion oneOrMore = new OneOrMoreAssertion();
         oneOrMore.addChild(all);
         oneOrMore.addChild(new TrueAssertion());
+        oneOrMore.setEnabled(enable);
+        addRightComment(comment, oneOrMore);
 
         final Map<String, Pair<String, String>> itemElements = new HashMap<>();
         itemElements.put(NEGATED, new Pair(BOOLEAN_VALUE, TRUE));
@@ -353,9 +410,12 @@ public class PolicyBuilder {
      * @param searchFor              the text to replace.
      * @param replaceWith            the text to use as a replacement if matches are found.
      * @param tagsToSearch           the HTML tags to search within.
+     * @param comment                an optional comment to add to the policy.
      * @return the PolicyBuilder.
      */
-    public PolicyBuilder rewriteHtml(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull final String searchFor, @NotNull final String replaceWith, @NotNull final String tagsToSearch) throws IOException {
+    public PolicyBuilder rewriteHtml(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                     @NotNull final String searchFor, @NotNull final String replaceWith,
+                                     @NotNull final String tagsToSearch, @Nullable final String comment) throws IOException {
         validateTarget(targetMessage, otherTargetMessageName);
         final Map<String, Pair<String, String>> itemElements = new HashMap<>();
         itemElements.put(CASE_SENSITIVE, new Pair(BOOLEAN_VALUE, FALSE));
@@ -380,6 +440,7 @@ public class PolicyBuilder {
         final OneOrMoreAssertion oneOrMore = new OneOrMoreAssertion();
         oneOrMore.addChild(new AllAssertion());
         oneOrMore.addChild(new TrueAssertion());
+        addRightComment(comment, oneOrMore);
 
         final Document oneOrMoreDoc = WspWriter.getPolicyDocument(oneOrMore);
         final Element all = XmlUtil.findFirstChildElementByName(oneOrMoreDoc.getDocumentElement().getFirstChild(), XML_SOAP_NS, ALL);
@@ -390,10 +451,27 @@ public class PolicyBuilder {
         return this;
     }
 
+    private void createAndAppendDisabledElement(final Document doc) {
+        final Element targetName = doc.createElementNS(L7_NS, L7P_PREFIX + ENABLED);
+        targetName.setAttribute(BOOLEAN_VALUE, "false");
+        doc.getDocumentElement().appendChild(targetName);
+    }
+
     private void createAndAppendOtherTargetNameElement(final String otherTargetMessageName, final Document doc) {
         final Element targetName = doc.createElementNS(L7_NS, L7P_PREFIX + OTHER_TARGET_NAME);
         targetName.setAttribute(STRING_VALUE, otherTargetMessageName);
         doc.getDocumentElement().appendChild(targetName);
+    }
+
+    private void createAndAppendCommentElement(final Document doc, final String comment) throws IOException {
+        if (comment != null) {
+            final Document commentDoc = readResource(ASSERTION_COMMENT);
+            final Element propertiesElement = XmlUtil.findFirstChildElementByName(commentDoc.getDocumentElement(), L7_NS, PROPERTIES);
+            final Element entryElement = XmlUtil.findFirstChildElementByName(propertiesElement, L7_NS, ENTRY);
+            final Element valueElement = XmlUtil.findFirstChildElementByName(entryElement, L7_NS, VALUE.toLowerCase());
+            valueElement.setAttribute(STRING_VALUE, comment);
+            doc.getDocumentElement().appendChild(doc.importNode(commentDoc.getDocumentElement(), true));
+        }
     }
 
     private void validateTarget(TargetMessageType targetMessage, String otherTargetMessageName) {
@@ -470,5 +548,13 @@ public class PolicyBuilder {
         key.setAttribute(STRING_VALUE, attributeName);
         final Element value = XmlUtil.findFirstChildElementByName(mapValue, L7_NS, VALUE);
         value.setAttribute(STRING_VALUE, attributeValue);
+    }
+
+    private void addRightComment(@Nullable final String comment, @NotNull final Assertion assertion) {
+        if (comment != null) {
+            final Assertion.Comment com = new Assertion.Comment();
+            com.setComment(comment, Assertion.Comment.RIGHT_COMMENT);
+            assertion.setAssertionComment(com);
+        }
     }
 }

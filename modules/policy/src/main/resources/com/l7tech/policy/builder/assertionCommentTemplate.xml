@@ -1,0 +1,8 @@
+<L7p:AssertionComment assertionComment="included" xmlns:L7p="http://www.layer7tech.com/ws/policy">
+    <L7p:Properties mapValue="included">
+        <L7p:entry>
+            <L7p:key stringValue="RIGHT.COMMENT"/>
+            <L7p:value stringValue="{0}"/>
+        </L7p:entry>
+    </L7p:Properties>
+</L7p:AssertionComment>
