@@ -38,7 +38,7 @@ public class DebugPecDataTest {
     public void testHttpRequestMessage() throws Exception {
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -57,7 +57,7 @@ public class DebugPecDataTest {
     public void testHttpResponseMessage() throws Exception {
         Message response = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletResponse hResponse = new MockHttpServletResponse();
-        response.attachKnob(HttpResponseKnob.class, new HttpServletResponseKnob(hResponse));
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(hResponse));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             response.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -106,7 +106,7 @@ public class DebugPecDataTest {
         //
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -145,7 +145,7 @@ public class DebugPecDataTest {
         //
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -183,7 +183,7 @@ public class DebugPecDataTest {
         //
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -222,7 +222,7 @@ public class DebugPecDataTest {
         //
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
@@ -279,7 +279,7 @@ public class DebugPecDataTest {
         //
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
-        request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(hRequest));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }

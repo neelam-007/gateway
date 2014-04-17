@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class DebugAdminImplTest {
     private static final Goid POLICY_GOID = new Goid(0, 12345L);
-    private static final long MAX_WAIT_TIME_MILLIS = 1000L;
+    private static final long MAX_WAIT_TIME_MILLIS = 500L;
 
     private final AuditFactory auditFactory = new TestAudit().factory();
     private DebugAdminImpl admin;
