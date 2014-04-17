@@ -45,6 +45,14 @@ public class GenericEntity extends NamedEntityImp {
     }
 
     @RbacAttribute
+    @Size(min = 1, max = 255)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
+    }
+
+    @RbacAttribute
     @Size(min=0,max=131072) // limit to 128k
     @Column(name="description", length=Integer.MAX_VALUE)
     @Lob

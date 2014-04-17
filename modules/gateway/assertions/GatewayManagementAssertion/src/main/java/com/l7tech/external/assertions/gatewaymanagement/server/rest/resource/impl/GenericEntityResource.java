@@ -45,10 +45,10 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * Creates a new entity
+     * Creates a new generic entity.
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The generic entity to create
+     * @return a reference to the newly created generic entity
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -59,10 +59,10 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Retrieves a generic entity given its id
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The id of the generic entity to retrieve
+     * @return The generic entity.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -72,18 +72,17 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
+     * This will return a list of generic entity references. A sort can be specified to allow the resulting list to be
+     * sorted in either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
-     * /restman/services?name=MyService
+     * /restman/genericEntities?name=MyGeneric
      * <p/>
-     * Returns services with name = "MyService"
+     * Returns the generic entities with name = "MyGeneric"
      * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
+     * /restman/genericEntities?entityClassName=foo.GenericFoo&name=MyGeneric&name=MyGeneric2
      * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
+     * Returns generic entities with class name foo.GenericFoo and with name either "MyGeneric" or "MyGeneric2"
      * <p/>
-     * If a parameter is not a valid search value it will be ignored.
      *
      * @param sort             the key to sort the list by.
      * @param order            the order to sort the list. true for ascending, false for descending. null implies
@@ -91,7 +90,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
      * @param names            The name filter
      * @param enabled          the enabled filter
      * @param entityClassNames The entityClassName filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @return A list of generic entities. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -115,17 +114,17 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
             filters.put("enabled", (List) Arrays.asList(enabled));
         }
         if (entityClassNames != null && !entityClassNames.isEmpty()) {
-            filters.put("type", (List) entityClassNames);
+            filters.put("entityClassName", (List) entityClassNames);
         }
         return super.list(sort, ascendingSort,
                 filters.map());
     }
 
     /**
-     * Updates an existing entity
+     * Updates an existing generic entity
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
+     * @param resource The updated generic entity
+     * @param id       The id of the generic entity to update
      * @return a reference to the newly updated entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -138,9 +137,9 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing generic entity.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The id of the generic entity to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -151,18 +150,19 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * This will return a template, example generic entity that can be used as a reference for what generic entity
+     * objects should look like.
      *
-     * @return The template entity.
+     * @return The template generic entity.
      */
     @GET
     @Path("template")
     public Item<GenericEntityMO> template() {
         GenericEntityMO genericEntityMO = ManagedObjectFactory.createGenericEntity();
         genericEntityMO.setName("TemplateGenericEntity");
-        genericEntityMO.setDescription("template description");
         genericEntityMO.setEntityClassName("com.foo");
+        genericEntityMO.setEnabled(true);
+        genericEntityMO.setValueXml("value_xml");
         return super.createTemplateItem(genericEntityMO);
     }
 }

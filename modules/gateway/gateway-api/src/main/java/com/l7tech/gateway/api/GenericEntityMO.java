@@ -153,7 +153,7 @@ public class GenericEntityMO extends AccessibleObject {
         this.valueXml = valueXml;
     }
 
-    @XmlElement(name = "Enabled")
+    @XmlElement(name = "Enabled", required = true)
     protected AttributeExtensibleBoolean getEnabledValue() {
         return enabled;
     }
