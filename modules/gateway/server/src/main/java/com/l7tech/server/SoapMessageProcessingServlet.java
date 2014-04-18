@@ -126,12 +126,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     protected void service( final HttpServletRequest hrequest, final HttpServletResponse hresponse)
             throws ServletException, IOException
     {
-        try {
-            // Initialize processing context
-            final Message response = new Message();
-            final Message request = new Message();
-            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
-
+        // Initialize processing context
+        final Message response = new Message();
+        final Message request = new Message();
+        try ( PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response, true ) ) {
             final AssertionStatus[] status = { null };
 
             auditContextFactory.doWithNewAuditContext( new Callable<Object>() {
@@ -417,8 +415,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } catch (SAXException e1) {
                 throw new ServletException(e1);
             }
-        } finally {
-            context.close();
         }
         return status;
     }
