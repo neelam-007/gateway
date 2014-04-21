@@ -32,6 +32,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ServerSiteMinderCheckProtectedAssertionTest {
+    public static final String SOURCE_IP_ADDRESS = "10.7.22.22";
     @Mock
     SiteMinderContext mockContext;
     @Mock
@@ -122,5 +123,22 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
         verify(mockHla, times(1)).checkProtected((String)isNull(), eq("agent"), eq(assertion.getProtectedResource()), eq(assertion.getAction()), eq(mockContext));
         verify(mockContext,times(1)).setAgent(mockLla);
+    }
+
+    @Test
+    public void shouldUseSourceIpFromAssertion() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setProtectedResource("/protected");
+        assertion.setAgentId("agent");
+        assertion.setAgentGoid(Goid.DEFAULT_GOID);
+        assertion.setAction("POST");
+        assertion.setSmAgentName("agent");
+        assertion.setSourceIpAddress(SOURCE_IP_ADDRESS);
+        when(mockHla.checkProtected(eq(SOURCE_IP_ADDRESS), eq("agent"), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
+
+        fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+        verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
+        verify(mockHla, times(1)).checkProtected(eq(SOURCE_IP_ADDRESS), eq("agent"), eq(assertion.getProtectedResource()), eq(assertion.getAction()), any(SiteMinderContext.class));
     }
 }

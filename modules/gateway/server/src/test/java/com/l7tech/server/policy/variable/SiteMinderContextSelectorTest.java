@@ -32,6 +32,7 @@ public class SiteMinderContextSelectorTest {
     public static final String RESDEF_SERVER = "server_name";
     public static final String RESDEF_RESOURCE = "/resource";
     public static final String RESDEF_ACTION = "POST";
+    public static final String USER_IP = "10.7.22.22";
     SiteMinderContext context;
     SiteMinderContextSelector fixture;
     List<SiteMinderContext.AuthenticationScheme> authschemes;
@@ -57,6 +58,7 @@ public class SiteMinderContextSelectorTest {
         context.setAttrList(attrs);
         context.setSsoToken(SSO_TOKEN);
         context.setTransactionId(TRANSACTION_ID);
+        context.setSourceIpAddress(USER_IP);
         authschemes = new ArrayList<>();
         authschemes.add(SiteMinderContext.AuthenticationScheme.FORM);
         authschemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
@@ -251,6 +253,13 @@ public class SiteMinderContextSelectorTest {
     public void shouldReturnSessReason() throws Exception {
         ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "sessDef.reason", mockSyntaxErrorHandler, false);
         assertEquals(Integer.toString(SESSDEF_REASON), actual.getSelectedValue());
+        assertTrue(actual.getRemainingName() == null);
+    }
+
+    @Test
+    public void shouldReturnSourceIpAddress() throws Exception {
+        ExpandVariables.Selector.Selection actual = fixture.select("siteminder.smcontext", context, "sourceIpAddress", mockSyntaxErrorHandler, false);
+        assertEquals(USER_IP, actual.getSelectedValue());
         assertTrue(actual.getRemainingName() == null);
     }
 }

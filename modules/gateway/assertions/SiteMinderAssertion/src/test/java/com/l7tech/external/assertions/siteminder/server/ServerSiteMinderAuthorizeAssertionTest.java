@@ -12,6 +12,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
+import com.l7tech.test.BugId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,6 +30,8 @@ import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -40,6 +43,7 @@ import static org.mockito.Mockito.when;
 public class ServerSiteMinderAuthorizeAssertionTest {
 
     private static final String SSO_TOKEN = "abcdef0123456789==";
+    private static final String SOURCE_IP = "10.7.22.22";
     ServerSiteMinderAuthorizeAssertion fixture;
 
     @Mock
@@ -90,6 +94,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertTrue(pec.getResponse().getHttpResponseKnob() != null);
         assertTrue(pec.getResponse().getHttpCookiesKnob().getCookies().isEmpty());
+        verify(mockContext, times(1)).getSourceIpAddress();
 
     }
 
@@ -181,5 +186,23 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion,mockAppCtx);
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+    }
+
+    @BugId("SSG-7535")
+    @Test
+    public void shouldAuthorizeWhenSourceIpInSmContext() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setUseVarAsCookieSource(false);
+        assertion.setSetSMCookie(false);
+        pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
+        when(mockContext.getSourceIpAddress()).thenReturn(SOURCE_IP);
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        when(mockHla.processAuthorizationRequest(eq(SOURCE_IP), (String) isNull(), eq(mockContext))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        verify(mockContext, times(2)).getSourceIpAddress();
+        assertTrue(pec.getResponse().getHttpResponseKnob() != null);
+        assertTrue(pec.getResponse().getHttpCookiesKnob().getCookies().isEmpty());
+
     }
 }

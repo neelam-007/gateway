@@ -77,7 +77,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);
-            int result = hla.processAuthenticationRequest(credentials, getClientIp(message), ssoToken, smContext);
+            int result = hla.processAuthenticationRequest(credentials, getClientIp(message, smContext), ssoToken, smContext);
             if(result == SM_YES) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 addAuthenticatedUserToContext(authContext, smContext);

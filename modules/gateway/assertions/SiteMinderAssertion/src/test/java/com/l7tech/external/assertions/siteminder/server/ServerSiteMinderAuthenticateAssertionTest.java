@@ -44,6 +44,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     public static final String USER_LOGIN = "user";
     public static final String USER_PASSWORD = "password";
     public static final byte[] certBytes = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
+    public static final String SOURCE_IP = "10.7.22.22";
 
     @Mock
     SiteMinderContext mockContext;
@@ -118,7 +119,9 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
         assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
         assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
+        verify(mockContext, times(1)).getSourceIpAddress();
         verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), isNull(String.class), isNull(String.class), eq(mockContext));
+
 
     }
 
@@ -396,6 +399,35 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         String[] usedVars = Syntax.getReferencedNames(expression);
         Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
         return ExpandVariables.process(expression, vars, auditor);
+    }
+
+    @Test
+    public void shouldAuthenticateUserWhenSourceIpIsSet() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+
+        smAuthenticateAssertion.setLastCredential(true);
+        smAuthenticateAssertion.setUseSMCookie(false);
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        AuthenticationContext ac = pec.getDefaultAuthenticationContext();
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.METADATA);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        when(mockContext.getAttrList()).thenReturn(attrList);
+        when(mockContext.getSourceIpAddress()).thenReturn(SOURCE_IP);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password")), eq(SOURCE_IP), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+        assertEquals(USER_LOGIN, expandVariable(pec, "${request.authenticatedUser}"));
+        verify(mockContext, times(2)).getSourceIpAddress();
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN, USER_PASSWORD)), eq(SOURCE_IP), isNull(String.class), eq(mockContext));
     }
 
 }

@@ -35,6 +35,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private JComboBox<String> actionComboBox;
     private TargetVariablePanel prefixTargetVariablePanel;
     private JTextField smAgentTextField;
+    private JTextField sourceIpAddressTextField;
     private InputValidator inputValidator;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
@@ -146,6 +147,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         smAgentTextField.setText(assertion.getSmAgentName());
         resourceTextField.setText(assertion.getProtectedResource());
         actionComboBox.getModel().setSelectedItem(assertion.getAction());
+        sourceIpAddressTextField.setText(assertion.getSourceIpAddress());
 
         if (assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
             prefixTargetVariablePanel.setVariable(assertion.getPrefix());
@@ -178,6 +180,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         assertion.setProtectedResource(resourceTextField.getText().trim());
         assertion.setSmAgentName(smAgentTextField.getText().trim());
         assertion.setAction(getSelectedAction());
+        assertion.setSourceIpAddress(sourceIpAddressTextField.getText().trim());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
 
         return assertion;

@@ -12,6 +12,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -55,6 +56,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         String smAgentName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSmAgentName(), variableMap, getAudit());
         String resource = SiteMinderAssertionUtil.extractContextVarValue(assertion.getProtectedResource(), variableMap, getAudit());
         String action = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAction(), variableMap, getAudit());
+        String userIpAddress = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSourceIpAddress(), variableMap, getAudit());
         SiteMinderContext smContext = null;
         try {
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
@@ -71,9 +73,14 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
 
         String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
         smContext.setTransactionId(transactionId);
+
+        if(StringUtils.isNotBlank(userIpAddress)){
+            smContext.setSourceIpAddress(userIpAddress);
+        }
+
         try {
             //check if protected and return AssertionStatus.NONE if it is
-            if(hla.checkProtected(getClientIp(message), smAgentName, resource, action, smContext)) {
+            if(hla.checkProtected(getClientIp(message, smContext), smAgentName, resource, action, smContext)) {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
                 status = AssertionStatus.NONE;
             }

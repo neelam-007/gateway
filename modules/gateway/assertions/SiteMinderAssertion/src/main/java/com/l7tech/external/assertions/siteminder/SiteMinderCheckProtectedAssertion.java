@@ -31,6 +31,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     private String action;
     private String smAgentName;
     private String prefix;
+    private String sourceIpAddress;
     protected final MessageTargetableSupport messageTargetableSupport;
 
     public SiteMinderCheckProtectedAssertion() {
@@ -89,6 +90,14 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
+    }
+
+    public String getSourceIpAddress() {
+        return sourceIpAddress;
+    }
+
+    public void setSourceIpAddress(String sourceIpAddress) {
+        this.sourceIpAddress = sourceIpAddress;
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)

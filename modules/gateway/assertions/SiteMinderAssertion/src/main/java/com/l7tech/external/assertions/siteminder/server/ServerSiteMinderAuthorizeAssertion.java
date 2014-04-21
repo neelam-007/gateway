@@ -6,8 +6,6 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.HttpCookiesKnob;
-import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -85,7 +83,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         }
 
         try {
-            int result = hla.processAuthorizationRequest(getClientIp(message), ssoToken, smContext);
+            int result = hla.processAuthorizationRequest(getClientIp(message, smContext), ssoToken, smContext);
             if(result == SM_YES) {
                 context.setVariable(varPrefix + "." + smCookieName, smContext.getSsoToken());
                 /////////////////////////////////////////////////////////////////////////////////////////////

@@ -15,10 +15,10 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -67,15 +67,21 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
         pac.setVariable(prefix + "." + SiteMinderAssertionUtil.SMCONTEXT, context);
     }
 
-    protected String getClientIp(Message target) {
-        //in case we don't have tcp knob use predefined address from the SiteMinderConfig
+    protected String getClientIp(Message target, SiteMinderContext context) {
         String address = null;
-        TcpKnob tcpKnob = target.getKnob(TcpKnob.class);
-        if(tcpKnob != null) {
-            address = tcpKnob.getRemoteAddress();
+        //first check the context if we have the user IP set
+        if(context != null && StringUtils.isNotBlank(context.getSourceIpAddress())){
+            address = context.getSourceIpAddress().trim();
         }
         else {
-            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
+            //in case we don't have tcp knob use predefined address from the SiteMinderConfig
+            TcpKnob tcpKnob = target.getKnob(TcpKnob.class);
+            if(tcpKnob != null) {
+                address = tcpKnob.getRemoteAddress();
+            }
+            else {
+                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
+            }
         }
 
         return address;

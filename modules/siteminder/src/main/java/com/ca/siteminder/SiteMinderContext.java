@@ -30,11 +30,12 @@ public class SiteMinderContext {
     private ResourceContextDef resContextDef;
     private RealmDef realmDef;
     private SessionDef sessionDef;
-    private  String transactionId = null;
+    private String transactionId = null;
     private List<Pair<String, Object>> attrList = new ArrayList<>();
-    List<AuthenticationScheme> authSchemes = new ArrayList<>();
+    private List<AuthenticationScheme> authSchemes = new ArrayList<>();
     private String ssoToken;
     private SiteMinderLowLevelAgent agent;
+    private String sourceIpAddress;
 
     public SiteMinderContext() {
 
@@ -102,6 +103,14 @@ public class SiteMinderContext {
 
     public void setAuthSchemes(List<AuthenticationScheme> schemes) {
         authSchemes = schemes;
+    }
+
+    public String getSourceIpAddress() {
+        return sourceIpAddress;
+    }
+
+    public void setSourceIpAddress(@Nullable String sourceIpAddress) {
+        this.sourceIpAddress = sourceIpAddress;
     }
 
     public static class SessionDef  {
