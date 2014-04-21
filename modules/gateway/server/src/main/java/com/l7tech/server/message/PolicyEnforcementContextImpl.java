@@ -562,6 +562,9 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         assertionStatuses.put(assertion, status);
         if (traceListener != null)
             traceListener.assertionFinished(assertion, status);
+        if (debugContext != null) {
+            debugContext.onFinishAssertion(this);
+        }
         currentAssertion = null; // we don't currently keep a stack since composites are not interesting
     }
 

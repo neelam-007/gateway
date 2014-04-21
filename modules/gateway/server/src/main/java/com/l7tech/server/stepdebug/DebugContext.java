@@ -299,10 +299,12 @@ public class DebugContext {
     public void onMessageArrived(@NotNull PolicyEnforcementContext pec) {
         lock.lock();
         try {
-            this.currentLine = pec.getAssertionNumber();
-            this.setDebugState(DebugState.BREAK_AT_NEXT_BREAKPOINT);
-            this.debugPecData.update(pec, userContextVariables);
-            pec.setDebugContext(this);
+            if (!DebugState.STOPPED.equals(this.debugState)) {
+                this.currentLine = pec.getAssertionNumber();
+                this.setDebugState(DebugState.BREAK_AT_NEXT_BREAKPOINT);
+                this.debugPecData.update(pec, userContextVariables);
+                pec.setDebugContext(this);
+            }
         } finally {
             this.markAsDirty();
             lock.unlock();
@@ -310,7 +312,7 @@ public class DebugContext {
     }
 
     /**
-     * This method must be called each assertion is about to get executed in policy during debugging.
+     * This method must be called when each assertion is about to get executed during debugging.
      *
      * @param pec the PEC
      * @param serverAssertion the current server assertion
@@ -343,6 +345,23 @@ public class DebugContext {
                 }
             }
         }  finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * This method must be called when each assertion is finished execution during debugging.
+     *
+     * @param pec the PEC
+     */
+    public void onFinishAssertion(@NotNull PolicyEnforcementContext pec) {
+        lock.lock();
+        try {
+            if (!DebugState.STOPPED.equals(this.debugState)) {
+                this.debugPecData.update(pec, userContextVariables);
+            }
+        } finally {
+            this.markAsDirty();
             lock.unlock();
         }
     }
