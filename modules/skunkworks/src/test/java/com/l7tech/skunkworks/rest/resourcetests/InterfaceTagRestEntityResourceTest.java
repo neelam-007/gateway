@@ -105,6 +105,21 @@ public class InterfaceTagRestEntityResourceTest extends RestEntityTests<Interfac
     }
 
     @Override
+    @Test
+    public void testCreateEntitySpecifyIDFailed() throws Exception {
+        InterfaceTagMO interfaceTagMO = ManagedObjectFactory.createInterfaceTag();
+        interfaceTagMO.setId(nameAsIdentifier("MyNewInterfaceTag"));
+        interfaceTagMO.setName("MyNewInterfaceTag");
+        interfaceTagMO.setAddressPatterns(Arrays.asList("127.0.0.1"));
+
+        //specify id in mo but not in url
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(interfaceTagMO)));
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 400, response.getStatus());
+    }
+
+    @Override
     public List<InterfaceTagMO> getUpdateableManagedObjects() {
         List<InterfaceTagMO> interfaceTagMOs = new ArrayList<>();
 

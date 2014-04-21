@@ -6,6 +6,7 @@ import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.Sha512Crypt;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.PasswordFormatted;
@@ -15,7 +16,6 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -26,8 +26,6 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,13 +33,10 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -207,20 +202,20 @@ public class UserRestResourceFactory {
 
     private void validateCreateResource(String providerId, UserMO resource) {
         if ( resource.getProviderId() != null && !StringUtils.equals(providerId, resource.getProviderId())) {
-            throw new IllegalArgumentException("Must specify the same provider ID");
+            throw new InvalidArgumentException("providerId", "Must specify the same provider ID");
         }
         if (resource.getId() != null ) {
-            throw new IllegalArgumentException("Must not specify an ID when creating a new entity");
+            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity");
         }
     }
 
 
     private void validateUpdateResource(String providerId, String id, UserMO resource) {
         if ( resource.getProviderId() != null && !StringUtils.equals(providerId, resource.getProviderId())) {
-            throw new IllegalArgumentException("Must specify the same provider ID");
+            throw new InvalidArgumentException("providerId", "Must specify the same provider ID");
         }
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when updating a new entity, or id must equal entity id");
+            throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
     }
 

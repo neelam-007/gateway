@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
@@ -91,7 +92,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      */
     private void validateCreateResource(@Nullable String id, R resource) {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when creating a new entity, or id must equal new entity id");
+            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
         }
     }
 
@@ -103,7 +104,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
      */
     private void validateUpdateResource(String id, R resource) {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when updating a new entity, or id must equal entity id");
+            throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
     }
 

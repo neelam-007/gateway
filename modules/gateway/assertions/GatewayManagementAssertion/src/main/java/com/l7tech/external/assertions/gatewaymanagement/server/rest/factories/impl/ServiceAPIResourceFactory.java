@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.RestResourceFactoryUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PublishedServiceTransformer;
@@ -197,13 +198,13 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
     private void validateCreateResource(@Nullable String id, ServiceMO resource) {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when creating a new entity, or id must equal new entity id");
+            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
         }
     }
 
     public void updateResource(final @NotNull String id, final @NotNull ServiceMO resource, final String comment, final boolean active) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new IllegalArgumentException("Must not specify an ID when updating a new entity, or id must equal entity id");
+            throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
 
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);

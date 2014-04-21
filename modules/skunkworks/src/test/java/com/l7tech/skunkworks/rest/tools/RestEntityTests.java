@@ -165,6 +165,30 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
     }
 
     @Test
+    public void testCreateEntitySpecifyIDFailed() throws Exception {
+        List<M> entitiesToCreate = getCreatableManagedObjects();
+        if(entitiesToCreate != null && entitiesToCreate.size()>0){
+            M mo = entitiesToCreate.get(0);
+            Assert.assertNotNull(mo);
+            Assert.assertNotNull(mo.getId());
+
+            //specify id in mo but not in url
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
+            logger.log(Level.FINE, response.toString());
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals("Expected successful response", 400, response.getStatus());
+
+            //specify different id in mo and url
+            response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + getGoid(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
+            logger.log(Level.FINE, response.toString());
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals("Expected successful response", 400, response.getStatus());
+        }
+    }
+
+    @Test
     public void testCreateEntityFailed() throws Exception {
         Map<M,Functions.BinaryVoid<M,RestResponse>> entitiesToCreate = getUnCreatableManagedObjects();
 
@@ -288,6 +312,25 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
 
             entitiesToCreate.get(mo).call(mo, response);
+        }
+    }
+
+    @Test
+    public void testUpdateEntityDifferentIDFailed() throws Exception {
+        List<M> entitiesToUpdate = getUpdateableManagedObjects();
+        if(entitiesToUpdate != null && entitiesToUpdate.size()>0){
+            M mo = entitiesToUpdate.get(0);
+            Assert.assertNotNull(mo);
+            Assert.assertNotNull(mo.getId());
+
+            //specify different id in mo and url
+            String existingMOId = mo.getId();
+            mo.setId(getGoid().toString());
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + existingMOId, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
+            logger.log(Level.FINE, response.toString());
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals("Expected successful response", 400, response.getStatus());
         }
     }
 
