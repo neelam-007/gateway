@@ -66,6 +66,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             Assert.assertEquals("Id's don't match", entityId, item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Title is incorrect", getExpectedTitle(entityId), item.getName());
+            Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());
@@ -150,6 +151,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(item.getId()), item.getName());
+            Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());
@@ -239,6 +241,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
+            Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());
@@ -288,6 +291,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
             Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
+            Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());
@@ -490,6 +494,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         Assert.assertNull("Id for template should be null", item.getId());
         Assert.assertEquals("Type is incorrect", getType(), item.getType());
         Assert.assertEquals("Type is incorrect", getType() + " Template", item.getName());
+        Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
         Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
         Link self = findLink("self", item.getLinks());
@@ -509,6 +514,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", "List", item.getType());
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType() + " list", item.getName());
+        Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
         Assert.assertTrue("Error for search Query: " + query + "Message: " + "Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
         Link self = findLink("self", item.getLinks());
