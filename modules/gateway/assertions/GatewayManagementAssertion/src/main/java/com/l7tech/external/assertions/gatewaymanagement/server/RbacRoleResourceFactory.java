@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
@@ -253,7 +254,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
 
     private void permissionsFromResource(Role role, RbacRoleMO rbacRoleMO) throws InvalidResourceException, FindException {
         for (RbacRolePermissionMO rbacRolePermissionMO : rbacRoleMO.getPermissions()) {
-            Permission permission = new Permission(role, OperationType.valueOf(rbacRolePermissionMO.getOperation().name()), EntityType.valueOf(rbacRolePermissionMO.getEntityType()));
+            Permission permission = new Permission(role, OperationType.valueOf(rbacRolePermissionMO.getOperation().name()), getEntityTypeFromString(rbacRolePermissionMO.getEntityType()));
             permission.setOtherOperationName(rbacRolePermissionMO.getOtherOperationName());
             HashSet<ScopePredicate> scopeSet = new HashSet<>(rbacRolePermissionMO.getScope().size());
             for (RbacRolePredicateMO predicateMO : rbacRolePermissionMO.getScope()) {
@@ -264,7 +265,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                         ((AttributePredicate) scopePredicate).setMode(predicateMO.getProperties().get("mode"));
                         break;
                     case EntityFolderAncestryPredicate:
-                        scopePredicate = new EntityFolderAncestryPredicate(permission, EntityType.valueOf(predicateMO.getProperties().get("entityType")), predicateMO.getProperties().get("entityId"));
+                        scopePredicate = new EntityFolderAncestryPredicate(permission, getEntityTypeFromString(predicateMO.getProperties().get("entityType")), predicateMO.getProperties().get("entityId"));
                         break;
                     case FolderPredicate:
                         final Folder folder = folderManager.findByPrimaryKey(Goid.parseGoid(predicateMO.getProperties().get("folderId")));
@@ -295,6 +296,22 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
             }
             permission.setScope(scopeSet);
             role.getPermissions().add(permission);
+        }
+    }
+
+    /**
+     * Returns the EntityType from a string value or throws an exception if the string does not represent a valid entity
+     * type
+     *
+     * @param entityTypeString The entity type string
+     * @return The entity Type
+     * @throws InvalidArgumentException This is thrown if the entity type string is not a valid entity type
+     */
+    private EntityType getEntityTypeFromString(String entityTypeString) {
+        try {
+            return EntityType.valueOf(entityTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidArgumentException("entityType", "Unknown entity type: " + entityTypeString);
         }
     }
 

@@ -1,8 +1,6 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
-import com.l7tech.gateway.api.Link;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.RbacRoleMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -116,6 +114,47 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
             }
         });
 
+        //SSG-8118 - bad role permission entity type
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setName("My Role Created with bad entity type");
+        roleMO.setDescription(role.getName() + " Description");
+        roleMO.setUserCreated(true);
+        RbacRolePermissionMO rolePermissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        rolePermissionMO.setEntityType("Folder");
+        rolePermissionMO.setOperation(RbacRolePermissionMO.OperationType.CREATE);
+        roleMO.setPermissions(Arrays.asList(rolePermissionMO));
+
+        builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
+            @Override
+            public void call(RbacRoleMO roleMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //SSG-8118 - bad role permission entity type
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setName("My Role Created with bad entity type");
+        roleMO.setDescription(role.getName() + " Description");
+        roleMO.setUserCreated(true);
+        rolePermissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        rolePermissionMO.setEntityType("POLICY");
+        rolePermissionMO.setOperation(RbacRolePermissionMO.OperationType.CREATE);
+        RbacRolePredicateMO rolePredicateMO = ManagedObjectFactory.createRbacRolePredicateMO();
+        rolePredicateMO.setType(RbacRolePredicateMO.Type.EntityFolderAncestryPredicate);
+        rolePredicateMO.setProperties(CollectionUtils.MapBuilder.<String,String>builder()
+                .put("entityType", "Folder")
+                .put("entityId", getGoid().toString())
+                .map());
+        rolePermissionMO.setScope(Arrays.asList(rolePredicateMO));
+        roleMO.setPermissions(Arrays.asList(rolePermissionMO));
+
+        builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
+            @Override
+            public void call(RbacRoleMO roleMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
     }
 
@@ -129,6 +168,49 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
         roleMO.setName(this.roles.get(1).getName());
         roleMO.setDescription(roleMO.getName() + " Description");
         roleMO.setUserCreated(true);
+
+        builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
+            @Override
+            public void call(RbacRoleMO roleMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //SSG-8118 - bad role permission entity type
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setId(role.getId());
+        roleMO.setName(role.getName());
+        roleMO.setDescription(role.getDescription());
+        roleMO.setUserCreated(true);
+        RbacRolePermissionMO rolePermissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        rolePermissionMO.setEntityType("Folder");
+        rolePermissionMO.setOperation(RbacRolePermissionMO.OperationType.CREATE);
+        roleMO.setPermissions(Arrays.asList(rolePermissionMO));
+
+        builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
+            @Override
+            public void call(RbacRoleMO roleMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //SSG-8118 - bad role permission entity type
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setId(role.getId());
+        roleMO.setName(role.getName());
+        roleMO.setDescription(role.getDescription());
+        roleMO.setUserCreated(true);
+        rolePermissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        rolePermissionMO.setEntityType("POLICY");
+        rolePermissionMO.setOperation(RbacRolePermissionMO.OperationType.CREATE);
+        RbacRolePredicateMO rolePredicateMO = ManagedObjectFactory.createRbacRolePredicateMO();
+        rolePredicateMO.setType(RbacRolePredicateMO.Type.EntityFolderAncestryPredicate);
+        rolePredicateMO.setProperties(CollectionUtils.MapBuilder.<String,String>builder()
+                .put("entityType", "Folder")
+                .put("entityId", getGoid().toString())
+                .map());
+        rolePermissionMO.setScope(Arrays.asList(rolePredicateMO));
+        roleMO.setPermissions(Arrays.asList(rolePermissionMO));
 
         builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
             @Override
