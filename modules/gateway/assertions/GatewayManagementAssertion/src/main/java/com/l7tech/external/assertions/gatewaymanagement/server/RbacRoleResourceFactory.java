@@ -176,6 +176,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         ArrayList<RbacRolePredicateMO> rbacRolePredicateMOs = new ArrayList<>(predicates.size());
         for (ScopePredicate scopePredicate : predicates) {
             RbacRolePredicateMO rbacRolePredicateMO = ManagedObjectFactory.createRbacRolePredicateMO();
+            rbacRolePredicateMO.setId(scopePredicate.getId());
             if (scopePredicate instanceof AttributePredicate) {
                 AttributePredicate attributePredicate = (AttributePredicate) scopePredicate;
                 rbacRolePredicateMO.setType(RbacRolePredicateMO.Type.AttributePredicate);
@@ -358,9 +359,9 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         //add new assignments
         for (Permission newPermission : newEntity.getPermissions()) {
             Set<ScopePredicate> newScope = newPermission.getScope();
+            Permission permission = new Permission(oldEntity, newPermission.getOperation(), newPermission.getEntityType());
+            permission.setOtherOperationName(newPermission.getOtherOperationName());
             if (newScope != null && !newScope.isEmpty()) {
-                Permission permission = new Permission(oldEntity, newPermission.getOperation(), newPermission.getEntityType());
-                permission.setOtherOperationName(newPermission.getOtherOperationName());
                 HashSet<ScopePredicate> scopeSet = new HashSet<>(newScope.size());
                 for (ScopePredicate scopePredicate : newScope) {
                     final ScopePredicate predicate;
@@ -386,10 +387,8 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                     scopeSet.add(predicate);
                 }
                 permission.setScope(scopeSet);
-                oldEntity.getPermissions().add(permission);
-            } else {
-                throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "Role permission must supply predicates.");
             }
+            oldEntity.getPermissions().add(permission);
         }
     }
 
