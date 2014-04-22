@@ -1,9 +1,14 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.test.BugId;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.*;
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -297,5 +302,54 @@ public class GoidTest {
         byte[] bytes = new byte[16];
         random.nextBytes(bytes);
         return new Goid(bytes);
+    }
+
+    @BugId("SSG-8427")
+    @Test
+    public void testGoidSerialization() throws IOException, ClassNotFoundException {
+        for (Map.Entry<String, String> encodedGoidEntry : encodedGoids.entrySet()) {
+            byte[] data = HexUtils.decodeBase64(encodedGoidEntry.getValue());
+            ObjectInputStream ois = new ObjectInputStream(
+                    new ByteArrayInputStream(data));
+            Object deserializedGoid = ois.readObject();
+            ois.close();
+
+            Assert.assertNotNull(deserializedGoid);
+            Assert.assertTrue(deserializedGoid instanceof Goid);
+            Assert.assertEquals(encodedGoidEntry.getKey(), deserializedGoid.toString());
+        }
+    }
+
+    /**
+     * This is a map of goid string to encoded goid object. These are serialized and base 64 encoded goid's created from
+     * the release halibut codebase.
+     */
+    private static final Map<String, String> encodedGoids = CollectionUtils.MapBuilder.<String, String>builder()
+            .put("6c8fd78b903aad38d89f664ebdcb1501", "rO0ABXNyABtjb20ubDd0ZWNoLm9iamVjdG1vZGVsLkdvaWQNGhyyI/PtCwIAAkoABGhpZ2hKAANs\nb3d4cGyP14uQOq042J9mTr3LFQE=")
+            .put("539287b02cea19443cbcb2cf7c35fb74", "rO0ABXNyABtjb20ubDd0ZWNoLm9iamVjdG1vZGVsLkdvaWQNGhyyI/PtCwIAAkoABGhpZ2hKAANs\nb3d4cFOSh7As6hlEPLyyz3w1+3Q=")
+            .put("f7d23703ae0541969190678bb45d82b3", "rO0ABXNyABtjb20ubDd0ZWNoLm9iamVjdG1vZGVsLkdvaWQNGhyyI/PtCwIAAkoABGhpZ2hKAANs\nb3d4cPfSNwOuBUGWkZBni7RdgrM=")
+            .put("7fe7546ac2f512fdd84c17ef0c6f0c70", "rO0ABXNyABtjb20ubDd0ZWNoLm9iamVjdG1vZGVsLkdvaWQNGhyyI/PtCwIAAkoABGhpZ2hKAANs\nb3d4cH/nVGrC9RL92EwX7wxvDHA=")
+            .put("5a81377c7faf34248d845314f7707bad", "rO0ABXNyABtjb20ubDd0ZWNoLm9iamVjdG1vZGVsLkdvaWQNGhyyI/PtCwIAAkoABGhpZ2hKAANs\nb3d4cFqBN3x/rzQkjYRTFPdwe60=")
+            .map();
+
+    @Test
+    public void testSerializationRoundTrip() throws IOException, ClassNotFoundException {
+        for (int i = 0; i < 10; i++) {
+            final Goid goid = createRandomGoid();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(goid);
+            oos.close();
+            byte[] objectByteArray = baos.toByteArray();
+
+            ObjectInputStream ois = new ObjectInputStream(
+                    new ByteArrayInputStream(objectByteArray));
+            Object deserializedGoid = ois.readObject();
+            ois.close();
+
+            Assert.assertNotNull(deserializedGoid);
+            Assert.assertTrue(deserializedGoid instanceof Goid);
+            Assert.assertEquals(goid, deserializedGoid);
+        }
     }
 }
