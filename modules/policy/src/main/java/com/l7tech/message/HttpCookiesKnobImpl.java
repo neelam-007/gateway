@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+
 /**
  * HttpCookiesKnob implementation which wraps a HeadersKnob.
  */
@@ -55,14 +57,14 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     @Override
     public Set<HttpCookie> getCookies() {
         final Set<HttpCookie> cookies = new LinkedHashSet<>();
-        for (final String setCookieValue : delegate.getHeaderValues(HttpConstants.HEADER_SET_COOKIE)) {
+        for (final String setCookieValue : delegate.getHeaderValues(HttpConstants.HEADER_SET_COOKIE, HEADER_TYPE_HTTP)) {
             try {
                 cookies.add(new HttpCookie(setCookieValue));
             } catch (final HttpCookie.IllegalFormatException e) {
                 logger.log(Level.WARNING, "Skipping invalid Set-Cookie header: " + setCookieValue);
             }
         }
-        for (final String cookieValue : delegate.getHeaderValues(HttpConstants.HEADER_COOKIE)) {
+        for (final String cookieValue : delegate.getHeaderValues(HttpConstants.HEADER_COOKIE, HEADER_TYPE_HTTP)) {
             // it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
             // ex) Cookie: 1=one; 2=two                         ---> Netscape format
             // ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
@@ -130,7 +132,7 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
             deleteCookie(conflictingCookie);
             logger.log(Level.WARNING, "Removed conflicting cookie: " + conflictingCookie);
         }
-        delegate.addHeader(HttpConstants.HEADER_SET_COOKIE, toV1SetCookieHeader(cookie));
+        delegate.addHeader(HttpConstants.HEADER_SET_COOKIE, toV1SetCookieHeader(cookie), HEADER_TYPE_HTTP);
     }
 
     @Override
@@ -174,11 +176,11 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     }
 
     private void removeMatchingCookieHeaders(final String cookieHeaderName, final HttpCookie cookie) {
-        for (final String setCookieValue : delegate.getHeaderValues(cookieHeaderName)) {
+        for (final String setCookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
             try {
                 final HttpCookie fromHeader = new HttpCookie(setCookieValue);
                 if (cookie.getId().equals(fromHeader.getId())) {
-                    delegate.removeHeader(cookieHeaderName, setCookieValue);
+                    delegate.removeHeader(cookieHeaderName, setCookieValue, HEADER_TYPE_HTTP);
                 }
             } catch (final HttpCookie.IllegalFormatException e) {
                 logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + setCookieValue);

@@ -3,7 +3,9 @@ package com.l7tech.server.transport.jms;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 public class TextMessageStub implements TextMessage {
@@ -23,6 +25,8 @@ public class TextMessageStub implements TextMessage {
     private String replyTo;
     private String type;
     private boolean redelivered;
+
+    private HashMap<String, Object> properties = new HashMap<>();
 
     public void setThrowExceptionForHeaders(final boolean throwExceptionForHeaders) {
         this.throwExceptionForHeaders = throwExceptionForHeaders;
@@ -224,12 +228,12 @@ public class TextMessageStub implements TextMessage {
 
     @Override
     public Object getObjectProperty(String s) throws JMSException {
-        return null;
+        return properties.get(s);
     }
 
     @Override
-    public Enumeration getPropertyNames() throws JMSException {
-        return new StringTokenizer("");
+    public Enumeration<String> getPropertyNames() throws JMSException {
+        return Collections.enumeration(properties.keySet());
     }
 
     @Override
@@ -266,6 +270,7 @@ public class TextMessageStub implements TextMessage {
 
     @Override
     public void setObjectProperty(String s, Object o) throws JMSException {
+        properties.put(s, o);
     }
 
     @Override

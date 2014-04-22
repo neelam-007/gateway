@@ -3,9 +3,7 @@ package com.l7tech.server.transport.jms2;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.message.JmsKnob;
-import com.l7tech.message.MimeKnob;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -31,6 +29,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
+import javax.jms.Message;
 import javax.naming.NamingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,6 +38,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 
 /**
  * The JmsRequestHandler is responsible for processing inbound Jms request messages and providing
@@ -74,7 +74,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         clusterMaster = ctx.getBean("clusterMaster", ClusterMaster.class);
     }
 
-
     /**
      * Handle an incoming JMS SOAP request.  Also takes care of sending the reply if appropriate.
      *
@@ -100,6 +99,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         boolean responseSuccess = false;
         boolean messageTooLarge = false;
         Properties props = endpointCfg.getConnection().properties();
+
+        HeadersKnob requestMessageHeadersKnob = new HeadersKnobSupport();
+
         try {
             if ( topicMasterOnly && !endpointCfg.isQueue() && !clusterMaster.isMaster() ) {
                 status = AssertionStatus.NONE;
@@ -144,13 +146,15 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     messageTooLarge = true;
                 }
 
-                // Copies the request JMS message properties into the request JmsKnob.
-                final Map<String, Object> msgProps = new HashMap<String, Object>();
+                // Copy the request JMS message properties into the request JmsKnob and HeadersKnob
+                final Map<String, Object> msgProps = new HashMap<>();
                 for (Enumeration e = jmsRequest.getPropertyNames(); e.hasMoreElements() ;) {
                     final String name = (String)e.nextElement();
                     final Object value = jmsRequest.getObjectProperty(name);
                     msgProps.put(name, value);
+                    requestMessageHeadersKnob.addHeader(name, value, HEADER_TYPE_JMS_PROPERTY);
                 }
+
                 reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
                 reqJmsMsgHeaders = Collections.unmodifiableMap(JmsUtil.getJmsHeaders(jmsRequest));
 
@@ -163,10 +167,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     _logger.finer("Found JMS message property to use as SOAPAction value: " + jmsMsgPropWithSoapAction + "=" + soapActionValue);
                 }
                 soapAction = soapActionValue;
-            } catch (IOException ioe) {
+            } catch (IOException | JMSException ioe) {
                 throw new JmsRuntimeException("Error processing request message", ioe);
-            } catch (JMSException jmse) {
-                throw new JmsRuntimeException("Error processing request message", jmse);
             }
 
             try {
@@ -176,13 +178,13 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             }
 
             try {
-                final Goid[] hardwiredserviceGoidHolder = new Goid[]{PublishedService.DEFAULT_GOID};
+                final Goid[] hardwiredServiceGoidHolder = new Goid[]{PublishedService.DEFAULT_GOID};
                 try {
                     String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
                     if (tmp != null) {
                         if (Boolean.parseBoolean(tmp)) {
                             tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                            hardwiredserviceGoidHolder[0] = GoidUpgradeMapper.mapId(EntityType.SERVICE, tmp);
+                            hardwiredServiceGoidHolder[0] = GoidUpgradeMapper.mapId(EntityType.SERVICE, tmp);
                         }
                     }
                 } catch (Exception e) {
@@ -206,7 +208,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
                     @Override
                     public Goid getServiceGoid() {
-                        return hardwiredserviceGoidHolder[0];
+                        return hardwiredServiceGoidHolder[0];
                     }
 
                     @Override
@@ -224,6 +226,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         return reqJmsMsgHeaders.keySet().toArray(new String[reqJmsMsgHeaders.size()]);
                     }
                 });
+
+                // attach the HeadersKnob
+                request.attachKnob(HeadersKnob.class, requestMessageHeadersKnob);
 
                 PolicyEnforcementContext context = null;
                 String faultMessage = null;
@@ -303,13 +308,11 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
 
                     if (!stealthMode) {
-                        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
                         final byte[] responseBytes;
-                        try {
+
+                        try (PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream()) {
                             IOUtils.copyStream(responseStream, baos);
                             responseBytes = baos.toByteArray();
-                        } finally {
-                            baos.close();
                         }
 
                         if (jmsResponse instanceof BytesMessage) {
@@ -319,21 +322,25 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                             TextMessage tresp = (TextMessage)jmsResponse;
                             tresp.setText(new String(responseBytes, JmsUtil.DEFAULT_ENCODING));
                         } else {
-                            throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
-                                                           ". Only BytesMessage and TextMessage are supported" );
+                            throw new JmsRuntimeException("Can't send a " + jmsResponse.getClass().getName() +
+                                                          ". Only BytesMessage and TextMessage are supported");
                         }
 
-                        // Copies the JMS message properties from the response JmsKnob to the response JMS message.
-                        // Propagation rules has already been enforced in the knob by the JMS routing assertion.
-                        final JmsKnob jmsResponseKnob = context.getResponse().getKnob(JmsKnob.class);
-                        if (jmsResponseKnob != null) {
-                            final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
-                            for (String name : respJmsMsgProps.keySet()) {
-                                jmsResponse.setObjectProperty(name, respJmsMsgProps.get(name));
+                        // Copy the JMS Property headers from the response HeadersKnob to the response JMS message.
+                        // Propagation rules have already been enforced in the knob by the JMS routing assertion.
+                        final HeadersKnob responseMessageHeadersKnob = context.getResponse().getKnob(HeadersKnob.class);
+
+                        if (responseMessageHeadersKnob != null) {
+                            String[] propertyNames = responseMessageHeadersKnob.getHeaderNames(HEADER_TYPE_JMS_PROPERTY);
+
+                            for (String propertyName : propertyNames) {
+                                String[] propertyValues = responseMessageHeadersKnob.getHeaderValues(propertyName, HEADER_TYPE_JMS_PROPERTY);
+                                String propertyValue = propertyValues[propertyValues.length - 1]; // use the last (most recent) value
+                                jmsResponse.setObjectProperty(propertyName, propertyValue);
                             }
                         }
 
-                        responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, endpointCfg );
+                        responseSuccess = sendResponse(jmsRequest, jmsResponse, bag, endpointCfg);
                     } else { // is stealth mode
                         responseSuccess = true;
                     }
@@ -384,7 +391,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private ContentTypeHeader getContentType(Message jmsRequest, Properties props)
             throws JmsRuntimeException, JMSException, IOException {
         ContentTypeHeader ctype;
-        String requestCtype = null;
+        String requestCtype;
 
         if (jmsRequest instanceof TextMessage) return ContentTypeHeader.XML_DEFAULT;
 

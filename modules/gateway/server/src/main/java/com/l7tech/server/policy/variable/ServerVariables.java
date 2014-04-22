@@ -378,85 +378,110 @@ public class ServerVariables {
             new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
+                    final HeadersKnob headersKnob = context.getRequest().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
                     final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP + ".";
                     if (!name.startsWith(prefix)) {
                         logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
                     final String propName = name.substring(prefix.length());
-                    return jmsKnob.getJmsMsgPropMap().get(propName);
+
+                    String[] values = headersKnob.getHeaderValues(propName, JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+                    return values.length > 0 ? values[values.length - 1] : null;
                 }
             }),
 
             new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
+                    final HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
                     final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP + ".";
                     if (!name.startsWith(prefix)) {
                         logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
                     final String propName = name.substring(prefix.length());
-                    return jmsKnob.getJmsMsgPropMap().get(propName);
+
+                    String[] values = headersKnob.getHeaderValues(propName, JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+                    return values.length > 0 ? values[values.length - 1] : null;
                 }
             }),
 
             new Variable(BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
+                    final HeadersKnob headersKnob = context.getRequest().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
                     final String prefix = BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES;
                     if (!name.startsWith(prefix)) {
                         logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
-                    return jmsKnob.getJmsMsgPropMap().keySet().toArray();
+
+                    return headersKnob.getHeaderNames(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
                 }
             }),
 
             new Variable(BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
+                    final HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
                     final String prefix = BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES;
                     if (!name.startsWith(prefix)) {
                         logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
-                    return jmsKnob.getJmsMsgPropMap().keySet().toArray();
+
+                    return headersKnob.getHeaderNames(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
                 }
             }),
 
             new Variable(BuiltinVariables.REQUEST_JMS_MSG_ALL_PROP_VALS, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
-                    ArrayList<String> values = new ArrayList<String>();
+                    final HeadersKnob headersKnob = context.getRequest().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
+                    Collection<Header> headers = headersKnob.getHeaders(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+                    HashMap<String, String> propertyValuesMap = new HashMap<>();
                     final char delimiter = ':';
-                    for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
-                        values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
+
+                    for (Header header : headers) {
+                        propertyValuesMap.put(header.getKey(),
+                                header.getKey() + delimiter + header.getValue().toString());
                     }
-                    return values.toArray();
+
+                    return propertyValuesMap.values();
                 }
             }),
+
             new Variable(BuiltinVariables.RESPONSE_JMS_MSG_ALL_PROP_VALS, new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                    if (jmsKnob == null) return null;
-                    ArrayList<String> values = new ArrayList<String>();
+                    final HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
+                    if (null == headersKnob) return null;
+
+                    Collection<Header> headers = headersKnob.getHeaders(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+                    HashMap<String, String> propertyValuesMap = new HashMap<>();
                     final char delimiter = ':';
-                    for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
-                        values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
+
+                    for (Header header : headers) {
+                        propertyValuesMap.put(header.getKey(),
+                                header.getKey() + delimiter + header.getValue().toString());
                     }
-                    return values.toArray();
+
+                    return propertyValuesMap.values();
                 }
             }),
 
@@ -494,12 +519,7 @@ public class ServerVariables {
                             return null;
                         final URL url = service.serviceUrl();
                         routingUrl = url == null ? null : url.toString();
-                    } catch (WSDLException e) {
-                        logger.log(
-                                Level.WARNING,
-                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + getMessage( e ) + "'.",
-                                getDebugException( e ));
-                    } catch (MalformedURLException e) {
+                    } catch (WSDLException | MalformedURLException e) {
                         logger.log(
                                 Level.WARNING,
                                 "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + getMessage( e ) + "'.",
@@ -741,8 +761,7 @@ public class ServerVariables {
                             index = Integer.parseInt(name.substring(0, dot));
                         }
                         AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(index);
-                        String output = message == null ? null : message.getMessage();
-                        return output;
+                        return message == null ? null : message.getMessage();
                     } catch (NumberFormatException nfe) {
                         logger.info("Invalid numeric index for audit detail message lookup");
                         return null;
@@ -1265,7 +1284,7 @@ public class ServerVariables {
             }
 
             // Build variable map, permitting only secpass refs
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
             for (String var : vars) {
                 Matcher matcher = SECPASS_PATTERN.matcher(var);
                 if (!matcher.matches()) {

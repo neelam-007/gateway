@@ -66,6 +66,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -174,7 +175,7 @@ public class ServerHttpRoutingAssertionTest {
 
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
-        request.getHeadersKnob().addHeader("Authorization", "abcde=");
+        request.getHeadersKnob().addHeader("Authorization", "abcde=", HEADER_TYPE_HTTP);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -304,7 +305,7 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
-        final Collection<Header> contentEncodingHeaders = pec.getResponse().getHeadersKnob().getHeaders("content-encoding");
+        final Collection<Header> contentEncodingHeaders = pec.getResponse().getHeadersKnob().getHeaders("content-encoding", HeadersKnob.HEADER_TYPE_HTTP);
         assertEquals(1, contentEncodingHeaders.size());
         assertFalse(contentEncodingHeaders.iterator().next().isPassThrough());
     }
@@ -325,7 +326,7 @@ public class ServerHttpRoutingAssertionTest {
         final String placeOrderSoapActionHeaderValue = "\"http://warehouse.acme.com/ws/placeOrder\"";
         hrequest.addHeader("SOAPAction", placeOrderSoapActionHeaderValue);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
-        request.getHeadersKnob().addHeader("SOAPACtion", placeOrderSoapActionHeaderValue);
+        request.getHeadersKnob().addHeader("SOAPACtion", placeOrderSoapActionHeaderValue, HEADER_TYPE_HTTP);
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
@@ -1121,14 +1122,14 @@ public class ServerHttpRoutingAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, assertionStatus);
         final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
-        assertEquals(3, responseHeadersKnob.getHeaderNames().length);
-        final String[] fooValues = responseHeadersKnob.getHeaderValues("foo");
+        assertEquals(3, responseHeadersKnob.getHeaderNames(HeadersKnob.HEADER_TYPE_HTTP).length);
+        final String[] fooValues = responseHeadersKnob.getHeaderValues("foo", HEADER_TYPE_HTTP);
         assertEquals(1, fooValues.length);
         assertEquals("bar", fooValues[0]);
-        final String[] contentTypeValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE);
+        final String[] contentTypeValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE, HEADER_TYPE_HTTP);
         assertEquals(1, contentTypeValues.length);
         assertEquals("text/plain", contentTypeValues[0]);
-        final String[] contentEncodingValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_ENCODING);
+        final String[] contentEncodingValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_ENCODING, HEADER_TYPE_HTTP);
         assertEquals(1, contentEncodingValues.length);
         assertEquals(HttpConstants.ENCODING_UTF8, contentEncodingValues[0]);
     }

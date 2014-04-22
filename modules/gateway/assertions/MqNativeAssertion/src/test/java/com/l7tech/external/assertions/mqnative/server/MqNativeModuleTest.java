@@ -110,7 +110,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         serverConfig = ApplicationContexts.getTestApplicationContext().getBean("serverConfig", ServerConfig.class);
         mqMessage = createMqMessage();
         mqNativeModule = createMqNativeModule();
-        MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
+        MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ,
+                new MqNativeModuleLoadListener.MqNativeHeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
                 Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
 
     }

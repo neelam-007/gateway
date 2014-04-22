@@ -66,7 +66,7 @@ public class ServletUtils {
             }
             final Enumeration headerValues = sourceRequest.getHeaders(headerName);
             while (headerValues.hasMoreElements()) {
-                headersKnob.addHeader(headerName, headerValues.nextElement(), passThrough);
+                headersKnob.addHeader(headerName, headerValues.nextElement(), HeadersKnob.HEADER_TYPE_HTTP, passThrough);
             }
         }
         final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();

@@ -10,10 +10,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.identity.User;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -126,22 +123,7 @@ public class TokenServiceServlet extends HttpServlet {
                 logger.log(Level.INFO, msg, e);
                 sendBackNonSoapError(res, HttpServletResponse.SC_BAD_REQUEST, msg);
                 return;
-            } catch (TokenServiceImpl.TokenServiceException e) {
-                String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
-                logger.log(Level.SEVERE, msg, e);
-                sendExceptionFault(context, e, res);
-                return;
-            } catch (ProcessorException e) {
-                String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
-                logger.log(Level.SEVERE, msg, e);
-                sendExceptionFault(context, e, res);
-                return;
-            } catch (BadSecurityContextException e) {
-                String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
-                logger.log(Level.SEVERE, msg, e);
-                sendExceptionFault(context, e, res);
-                return;
-            } catch (GeneralSecurityException e) {
+            } catch (TokenServiceImpl.TokenServiceException | ProcessorException | BadSecurityContextException | GeneralSecurityException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
                 sendExceptionFault(context, e, res);
@@ -234,7 +216,7 @@ public class TokenServiceServlet extends HttpServlet {
                     if ( sawInvalidClientCertException ) {
                         // set response header so that the XML VPN Client is made aware of this situation
                         context.getResponse().getHeadersKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                                                                              SecureSpanConstants.CERT_INVALID);
+                                SecureSpanConstants.CERT_INVALID, HeadersKnob.HEADER_TYPE_HTTP);
                     }
                 } else {
                     logger.finer("authenticated: " + authenticatedUser);

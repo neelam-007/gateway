@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+
 /**
  * Provides the interface of MQMessage decorator. Handle the decorator chain and provide common method to retrieve
  * customized header attributes.
@@ -101,12 +103,12 @@ public abstract class MqMessageDecorator extends MQMessage {
      * @return All name-value pair of header attributes.
      */
     protected Map<String, Object> getOutboundHeaderAttributes(String prefix) {
-        Map<String, Object> override = new LinkedHashMap<String, Object>();
+        Map<String, Object> override = new LinkedHashMap<>();
         if (headersKnob != null) {
-            String[] headernames = headersKnob.getHeaderNames();
+            String[] headernames = headersKnob.getHeaderNames(HEADER_TYPE_HTTP);
             for (String headername : headernames) {
                 if (headername.startsWith(prefix)) {
-                    String[] headervalues = headersKnob.getHeaderValues(headername);
+                    String[] headervalues = headersKnob.getHeaderValues(headername, HEADER_TYPE_HTTP);
                     if (headervalues != null && headervalues.length > 0) {
                         override.put(headername.substring(prefix.length()), headervalues[0]);
                     }
@@ -118,7 +120,7 @@ public abstract class MqMessageDecorator extends MQMessage {
 
     protected String getOutboundHeaderAttribute(String name) {
         if (headersKnob != null) {
-            String[] headervalues = headersKnob.getHeaderValues(name);
+            String[] headervalues = headersKnob.getHeaderValues(name, HEADER_TYPE_HTTP);
             if (headervalues != null && headervalues.length > 0) {
                 return headervalues[0];
             }

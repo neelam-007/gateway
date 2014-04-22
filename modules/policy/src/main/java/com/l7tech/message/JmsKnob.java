@@ -10,6 +10,9 @@ import java.util.Map;
  * Information about a message that was received or will be sent via JMS.
  */
 public interface JmsKnob extends MessageKnob, HasSoapAction, HasServiceId, HasHeaders {
+
+    public static final String HEADER_TYPE_JMS_PROPERTY = "JMS Property";
+
     boolean isBytesMessage();
 
     /**

@@ -43,7 +43,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
         debugPecData.update(pec, Collections.<String>emptySet());
@@ -62,7 +62,7 @@ public class DebugPecDataTest {
         MockHttpServletResponse hResponse = new MockHttpServletResponse();
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hResponse));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            response.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            response.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, response);
         debugPecData.update(pec, Collections.<String>emptySet());
@@ -111,7 +111,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
 
@@ -150,7 +150,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
 
@@ -188,7 +188,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
 
@@ -227,7 +227,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
 
@@ -329,7 +329,7 @@ public class DebugPecDataTest {
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
         for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
-            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
         pec.setPolicyResult(AssertionStatus.NONE);

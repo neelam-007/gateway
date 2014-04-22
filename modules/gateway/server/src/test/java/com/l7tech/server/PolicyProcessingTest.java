@@ -1624,7 +1624,7 @@ public class PolicyProcessingTest {
 
             // Add extra header if requested
             if ( extraHeader != null ) {
-                request.getHeadersKnob().addHeader(extraHeader.left, extraHeader.right);
+                request.getHeadersKnob().addHeader(extraHeader.left, extraHeader.right, HeadersKnob.HEADER_TYPE_HTTP);
             }
 
             status = messageProcessor.processMessage(context);

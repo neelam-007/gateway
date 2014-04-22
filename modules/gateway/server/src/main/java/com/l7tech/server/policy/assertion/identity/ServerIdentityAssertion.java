@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HeadersKnob;
-import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
@@ -144,7 +143,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                     HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
                     if(headersKnob != null) {
                         headersKnob.addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                                                   SecureSpanConstants.CERT_INVALID);
+                                SecureSpanConstants.CERT_INVALID, HeadersKnob.HEADER_TYPE_HTTP);
                     }
                 }
                 lastStatus = authFailed(pc, icce);
@@ -182,7 +181,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
 
         if ( authResult.isCertSignedByStaleCA() && isRequest() ) {
             HeadersKnob hrk = context.getResponse().getKnob(HeadersKnob.class);
-            hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
+            hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE, HeadersKnob.HEADER_TYPE_HTTP);
         }
 
         User user = authResult.getUser();

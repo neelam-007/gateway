@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.gateway.rest.RestResponse;
 import com.l7tech.identity.User;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -120,7 +121,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     continue;
                 }
                 for(Object value : managementResponse.getHeaders().get(header)){
-                    response.getHeadersKnob().addHeader(header, value.toString());
+                    response.getHeadersKnob().addHeader(header, value.toString(), HeadersKnob.HEADER_TYPE_HTTP);
                 }
             }
 

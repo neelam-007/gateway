@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -17,6 +18,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     private Operation operation = Operation.ADD;
     private String headerName;
     private String headerValue;
+    private String metadataType = HeadersKnob.HEADER_TYPE_HTTP;
     private boolean removeExisting;
     private boolean evaluateNameAsExpression;
     private boolean evaluateValueExpression;
@@ -35,6 +37,14 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
 
     public void setHeaderValue(String headerValue) {
         this.headerValue = headerValue;
+    }
+
+    public String getMetadataType() {
+        return metadataType;
+    }
+
+    public void setMetadataType(String metadataType) {
+        this.metadataType = metadataType;
     }
 
     /**
@@ -127,24 +137,30 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     private static final String META_INITIALIZED = AddHeaderAssertion.class.getName() + ".metadataInitialized";
-    private static final String baseName = "Manage Header";
+    private static final String baseName = "Manage Transport Headers / Properties";
 
     private static final AssertionNodeNameFactory<AddHeaderAssertion> nodeNameFactory = new AssertionNodeNameFactory<AddHeaderAssertion>() {
         @Override
         public String getAssertionName(final AddHeaderAssertion assertion, final boolean decorate) {
             if (!decorate) return baseName;
 
-            StringBuilder sb = new StringBuilder(assertion.getOperation().getName() + " Header");
+            StringBuilder sb = new StringBuilder(assertion.getOperation().getName());
+            sb.append(" ").append(assertion.getMetadataType());
+
             if (assertion.getOperation() == Operation.REMOVE) {
                 // possible to remove more than one header
                 sb.append("(s)");
             }
+
             sb.append(" ").append(assertion.getHeaderName());
+
             if (assertion.getOperation() == Operation.ADD || (assertion.getOperation() == Operation.REMOVE && StringUtils.isNotBlank(assertion.getHeaderValue()))) {
                 sb.append(":").append(assertion.getHeaderValue());
             }
+
             if (assertion.getOperation() == Operation.ADD && assertion.isRemoveExisting())
                 sb.append(" (replace existing)");
+
             return AssertionUtils.decorateName(assertion, sb);
         }
     };
@@ -158,7 +174,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
         meta.put(SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add, replace or remove header(s).");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-        meta.put(PALETTE_FOLDERS, new String[]{"routing"});
+        meta.put(PALETTE_FOLDERS, new String[] {"routing"});
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddHeaderAssertionDialog");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(POLICY_NODE_NAME_FACTORY, nodeNameFactory);

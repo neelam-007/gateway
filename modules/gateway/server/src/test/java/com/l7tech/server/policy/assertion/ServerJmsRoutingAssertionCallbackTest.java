@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
+import com.l7tech.message.*;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
@@ -19,6 +20,7 @@ import com.l7tech.server.transport.jms.TextMessageStub;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,11 +29,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
+import javax.jms.Queue;
 
+import java.util.*;
+
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -47,6 +52,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
     private ServerConfig serverConfig;
     private TextMessageStub jmsRequest;
     private TextMessageStub jmsResponse;
+
     @Mock
     private Queue inbound;
     @Mock
@@ -85,6 +91,8 @@ public class ServerJmsRoutingAssertionCallbackTest{
         assertion.setResponseJmsMessagePropertyRuleSet(ruleSet);
         serverAssertion = new ServerJmsRoutingAssertion(assertion, applicationContext);
         // ensure reply is expected
+        request = new Message();
+        response = new Message();
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
         callback = serverAssertion.new JmsRoutingCallback(policyContext, endpointConfig, new Destination[]{inbound});
         endpoint = new JmsEndpoint();
@@ -99,6 +107,68 @@ public class ServerJmsRoutingAssertionCallbackTest{
         when(session.createSender(outbound)).thenReturn(queueSender);
         when(session.createReceiver(inbound, null)).thenReturn(queueReceiver);
         when(queueReceiver.receive(anyLong())).thenReturn(jmsResponse);
+    }
+
+    @Test
+    public void callbackGetsJmsPropertiesFromHeadersKnobOnRequest() throws JMSException {
+        // add test properties to Request message HeadersKnob
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>("prop1", "val1"), new Pair<>("prop2", "val2"));
+
+        HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
+
+        for (Pair<String, String> property : testProperties) {
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+        }
+
+        request.attachKnob(HeadersKnob.class, requestHeadersKnob);
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+
+        callback.doWork(bag, contextProvider);
+
+        List<String> jmsRequestPropertyNames = Collections.list(jmsRequest.getPropertyNames());
+
+        assertEquals(testProperties.size(), jmsRequestPropertyNames.size());
+
+        // ensure each property added to the headers knob was set on jmsRequest message
+        for (Pair<String, String> testProperty : testProperties) {
+            assertTrue(jmsRequestPropertyNames.contains(testProperty.getKey()));
+            assertEquals(testProperty.getValue(), jmsRequest.getObjectProperty(testProperty.getKey()));
+        }
+    }
+
+    @Test
+    public void callbackSetsJmsPropertiesInJmsKnobAndHeadersKnobOnResponse() throws JMSException {
+        // add test properties to jmsResponse message
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>("prop1", "val1"), new Pair<>("prop2", "val2"));
+
+        for (Pair<String, String> property : testProperties) {
+            jmsResponse.setObjectProperty(property.getKey(), property.getValue());
+        }
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+
+        callback.doWork(bag, contextProvider);
+
+        JmsKnob responseJmsKnob = response.getKnob(JmsKnob.class);
+        assertNotNull(responseJmsKnob);
+
+        HeadersKnob responseHeadersKnob = response.getKnob(HeadersKnob.class);
+        assertNotNull(responseHeadersKnob);
+
+        Map<String, Object> jmsKnobPropertiesMap = responseJmsKnob.getJmsMsgPropMap();
+        Collection<Header> headersKnobJmsPropertyHeaders = responseHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
+
+        assertEquals(testProperties.size(), jmsKnobPropertiesMap.size());
+        assertEquals(testProperties.size(), headersKnobJmsPropertyHeaders.size());
+
+        for (Pair<String, String> testProperty : testProperties) {
+            List<String> values = Arrays.asList(responseHeadersKnob.getHeaderValues(testProperty.getKey()));
+            assertTrue(values.contains(testProperty.getValue()));
+            assertEquals(jmsKnobPropertiesMap.get(testProperty.getKey()), testProperty.getValue());
+        }
     }
 
     @Test
@@ -117,6 +187,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
 
         callback.doWork(bag, contextProvider);
 
+        //noinspection ThrowableResultOfMethodCallIgnored
         assertTrue(callback.getException() instanceof JMSException);
     }
 }

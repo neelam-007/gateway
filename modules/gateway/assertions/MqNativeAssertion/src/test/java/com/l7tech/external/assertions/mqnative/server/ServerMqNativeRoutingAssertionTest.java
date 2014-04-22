@@ -190,7 +190,8 @@ public class ServerMqNativeRoutingAssertionTest {
 
         assertion.setSsgActiveConnectorGoid(connector.getGoid());
 
-        MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + "." , true,
+        MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ,
+                new MqNativeModuleLoadListener.MqNativeHeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
                 Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
     }
 

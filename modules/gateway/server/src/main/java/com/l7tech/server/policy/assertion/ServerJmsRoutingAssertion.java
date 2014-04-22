@@ -9,9 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
-import com.l7tech.message.JmsKnob;
-import com.l7tech.message.MessageRole;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.JmsDynamicProperties;
@@ -37,6 +35,7 @@ import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
+import javax.jms.Message;
 import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
@@ -48,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 
@@ -330,23 +330,31 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 final Destination jmsInboundDestination = jmsInboundDestinationHolder[0];
 
                 // Enforces rules on propagation of request JMS message properties.
-                final JmsKnob jmsInboundKnob = requestMessage.getKnob(JmsKnob.class);
-                Map<String, Object> inboundRequestProps;
-                if ( jmsInboundKnob != null ) {
-                    inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
-                } else {
-                    inboundRequestProps = new HashMap<String, Object>();
+                final HeadersKnob jmsInboundHeadersKnob = requestMessage.getKnob(HeadersKnob.class);
+
+                Map<String, Object> inboundRequestProps = new HashMap<>();
+
+                if (jmsInboundHeadersKnob != null) {
+                    String[] propertyNames = jmsInboundHeadersKnob.getHeaderNames(HEADER_TYPE_JMS_PROPERTY);
+
+                    for (String propertyName : propertyNames) {
+                        String[] propertyValues = jmsInboundHeadersKnob.getHeaderValues(propertyName, HEADER_TYPE_JMS_PROPERTY);
+                        String propertyValue = propertyValues[propertyValues.length - 1]; // use the last (most recent) value
+                        inboundRequestProps.put(propertyName, propertyValue);
+                    }
                 }
-                final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
+
+                final Map<String, Object> outboundRequestProps = new HashMap<>();
                 enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
-                for ( String name : outboundRequestProps.keySet() ) {
+
+                for (String name : outboundRequestProps.keySet()) {
                     try {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
                     } catch ( MessageFormatException e ) {
                         if ( e.getErrorCode() != null && e.getErrorCode().startsWith("MQ") ) {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, (Throwable)ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                         } else {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, (Throwable)ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
                         }
                     }
                 }
@@ -356,8 +364,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
 
                 final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), getAudit() );
-                MessageProducer jmsProducer = null;
-                jmsProducer = bag.getMessageProducer();
+                MessageProducer jmsProducer = bag.getMessageProducer();
 
                 final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
                 final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
@@ -374,6 +381,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 } else {
                     jmsProducer.send( jmsOutboundRequest );
                 }
+
                 messageSent = true; // no retries once sent
 
                 if ( logger.isLoggable( Level.FINE ))
@@ -389,10 +397,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     int emergencyTimeoutDefault = 10000;
                     String timeoutStr = assertion.getResponseTimeout();
                     int timeout;
+
                     if (timeoutStr == null) {
                         timeout = serverConfig.getIntProperty( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT, emergencyTimeoutDefault);
-                    }
-                    else  {
+                    } else {
                         // try resolving context var
                         timeoutStr = ExpandVariables.process(timeoutStr,variables,getAudit());
                         try {
@@ -406,8 +414,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
                     }
+
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
+
                     try {
                         jmsConsumer = JmsUtil.createMessageConsumer( bag.getSession(), jmsInboundDestination, selector );
 
@@ -428,31 +438,33 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     context.routingFinished();
                     routingFinished = true;
+
                     if ( jmsResponse == null ) {
                         logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, String.valueOf(timeout));
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
 
                     // enforce size restriction
-                    long sizeLimit = 0L;
-                    if (assertion.getResponseSize()== null)
-                    {
+                    long sizeLimit;
+
+                    if (assertion.getResponseSize()== null) {
                         long clusterPropValue = serverConfig.getLongProperty(ServerConfigParams.PARAM_JMS_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES);
                         if(clusterPropValue >= 0L ){
                             sizeLimit = clusterPropValue;
                         }else{
                             sizeLimit = com.l7tech.message.Message.getMaxBytes();
                         }
-                    }else{
+                    } else {
                         sizeLimit = expandVariableAsLong( assertion.getResponseSize(), "response message size", 0L, Long.MAX_VALUE, variables );
                     }
 
-                    long size = 0;
+                    long size;
+
                     if ( jmsResponse instanceof TextMessage ) {
                         size = ((TextMessage)jmsResponse).getText().length() ;
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         size = ((BytesMessage)jmsResponse).getBodyLength();
-                    }else {
+                    } else {
                         logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
@@ -463,14 +475,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     final com.l7tech.message.Message responseMessage;
+
                     try {
                         responseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
                     } catch (NoSuchVariableException e) {
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
                     }
-
-
 
                     // copy into response message
                     if ( jmsResponse instanceof TextMessage ) {
@@ -483,12 +494,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
+
                     logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
 
                     // Copies the response JMS message properties into the response JmsKnob.
                     // Do this before enforcing the propagation rules so that they will
                     // be available as context variables.                       ;
-                    final Map<String, Object> inResJmsMsgProps = new HashMap<String, Object>();
+                    final Map<String, Object> inResJmsMsgProps = new HashMap<>();
                     for (Enumeration e = jmsResponse.getPropertyNames(); e.hasMoreElements() ;) {
                         final String name = (String)e.nextElement();
                         final Object value = jmsResponse.getObjectProperty(name);
@@ -518,11 +530,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         @Override
                         public String[] getHeaderValues(final String name) {
                             final String headerValue = inResJmsMsgHeaders.get(name);
-                        if (headerValue != null) {
-                            return new String[]{headerValue};
-                        } else {
-                            return new String[0];
-                        }
+
+                            if (headerValue != null) {
+                                return new String[]{headerValue};
+                            } else {
+                                return new String[0];
+                            }
                         }
 
                         @Override
@@ -531,31 +544,31 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         }
                     });
 
-                    final Map<String, Object> outResJmsMsgProps = new HashMap<String, Object>();
+                    final Map<String, Object> outResJmsMsgProps = new HashMap<>();
                     enforceJmsMessagePropertyRuleSet(context, assertion.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
                     // After enforcing propagation rules, replace the JMS message properties
-                    // in the response JmsKnob with enforced/expanded values.
+                    // in the response JmsKnob with enforced/expanded values and copy them to the response HeadersKnob.
                     responseMessage.getJmsKnob().getJmsMsgPropMap().clear();
                     responseMessage.getJmsKnob().getJmsMsgPropMap().putAll(outResJmsMsgProps);
 
-                    context.setRoutingStatus( RoutingStatus.ROUTED );
+                    HeadersKnob responseMessageHeadersKnob = new HeadersKnobSupport();
+
+                    for (Map.Entry<String, Object> property : outResJmsMsgProps.entrySet()) {
+                        responseMessageHeadersKnob.addHeader(property.getKey(),
+                                property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+                    }
+
+                    responseMessage.attachKnob(HeadersKnob.class, responseMessageHeadersKnob);
+
+                    context.setRoutingStatus(RoutingStatus.ROUTED);
 
                     // todo: move to abstract routing assertion
                     requestMessage.notifyMessage(responseMessage, MessageRole.RESPONSE);
                     responseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
                 }
-            } catch ( JMSException e ) {
+            } catch (JMSException | SAXException | IOException | NamingException | NumberFormatException e) {
                 exception = e;
-            } catch ( SAXException e ) {
-                exception = e;
-            } catch ( IOException e ) {
-                exception = e;
-            } catch ( NamingException e ) {
-                exception = e;
-            } catch ( NumberFormatException e ) {
-                exception = e;
-            } finally
-            {
+            } finally {
                 if ( closeDestinationIfTemporaryQueue( jmsInboundDestinationHolder[0] ) ) {
                     jmsInboundDestinationHolder[0] = null;
                 }
@@ -683,23 +696,23 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final JmsEndpoint outboundRequestEndpoint = endpointCfg.getEndpoint();
 
         javax.jms.Message outboundRequestMsg;
-        PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;
         com.l7tech.message.Message requestMessage;
+
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
             logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), getMessage( e ));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
+
         final MimeKnob mk = requestMessage.getMimeKnob();
-        try {
+
+        try (PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream()) {
             IOUtils.copyStream(mk.getEntireMessageBodyAsInputStream(), outputStream);
             outboundRequestBytes = outputStream.toByteArray();
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Couldn't read from JMS request"); // can't happen
-        } finally {
-            outputStream.close();
         }
 
         final JmsOutboundMessageType outboundType = outboundRequestEndpoint.getOutboundMessageType();
@@ -746,11 +759,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             default:
                 throw new java.lang.IllegalStateException("Unknown JmsReplyType " + replyType);
         }
-    }
-
-    private Destination getRoutedRequestDestination( final JmsResourceManager.JndiContextProvider jndiContextProvider,
-                                                     final JmsEndpointConfig cfg) throws JMSException, NamingException {
-        return JmsUtil.cast( jndiContextProvider.lookup(cfg.getEndpoint().getDestinationName()), Destination.class );
     }
 
     private String getSelector( final Message jmsOutboundRequest,

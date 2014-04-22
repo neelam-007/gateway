@@ -6,11 +6,14 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.message.HeadersKnob;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -22,8 +25,6 @@ import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.Pair;
-import org.apache.commons.lang.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -69,16 +70,67 @@ public class MqNativeModuleLoadListener {
             prInfo( MQ_CONNECTION_CACHE_MAX_SIZE_PROPERTY, MQ_CONNECTION_CACHE_MAX_SIZE_UI_PROPERTY, MQ_CONNECTION_CACHE_MAX_SIZE_DESC, "100" )
     );
 
+    public static class MqNativeHeaderSelector implements MessageSelector.MessageAttributeSelector {
+        final String prefix;
+        final boolean multi;
+        final List<Class<? extends HasHeaders>> supportedClasses;
+
+        public MqNativeHeaderSelector(final String prefix, final boolean multi, final List<Class<? extends HasHeaders>> supportedClasses) {
+            this.prefix = prefix;
+            this.multi = multi;
+            this.supportedClasses = supportedClasses;
+        }
+
+        @Override
+        public ExpandVariables.Selector.Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            boolean sawHeaderHaver = false;
+            final String hname = name.substring(prefix.length());
+            for (Class<? extends HasHeaders> headerKnob : supportedClasses) {
+                HasHeaders hrk = message.getKnob(headerKnob);
+                if (hrk != null) {
+                    sawHeaderHaver = true;
+                    String[] vals = hrk.getHeaderValues(hname);
+                    if (vals != null && vals.length > 0) {
+                        return new ExpandVariables.Selector.Selection(multi ? vals : vals[0]);
+                    }
+                }
+            }
+
+            if (sawHeaderHaver) {
+                String msg = handler.handleBadVariable(hname + " header was empty");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            } else {
+                String msg = handler.handleBadVariable(name + " in " + message.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+        }
+    }
+
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         if (mqNativeListenerModule != null) {
             logger.log(Level.WARNING, "MQ Native active connector module is already initialized");
         } else {
             final List<MessageSelector.MessageAttributeSelector> selectors = new ArrayList<>();
-            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
-                    Arrays.<Class<? extends HasHeaders>>asList(HeadersKnob.class)));
-            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
+
+            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".") {
+                @Override
+                protected ExpandVariables.Selector.Selection createSelection(String headerName, HeadersKnob headersKnob) {
+                    String[] values = headersKnob.getHeaderValues(headerName, HeadersKnob.HEADER_TYPE_HTTP);
+
+                    if (values != null && values.length > 0) {
+                        return new ExpandVariables.Selector.Selection(values); // return all values
+                    } else {
+                        return null;
+                    }
+                }
+            });
+
+            selectors.add(new MqNativeHeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
                     Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
+
             MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ, new MessageSelector.ChainedSelector(selectors));
             // Create (if does not exist) all context variables used by this module
             initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));

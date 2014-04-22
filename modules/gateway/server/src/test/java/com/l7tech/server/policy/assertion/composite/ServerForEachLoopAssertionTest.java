@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -286,7 +287,7 @@ public class ServerForEachLoopAssertionTest {
         ass.setVariablePrefix("i");
         ass.setLoopVariableName("request.http.allheadervalues");
         context = context();
-        context.getRequest().getHeadersKnob().addHeader("foo", "bar");
+        context.getRequest().getHeadersKnob().addHeader("foo", "bar", HeadersKnob.HEADER_TYPE_HTTP);
 
         checkRequest();
         assertEquals(1, context.getVariable("i.iterations"));
@@ -301,7 +302,7 @@ public class ServerForEachLoopAssertionTest {
         context = context();
         final Message myMsg = new Message();
         myMsg.initialize(XmlUtil.createEmptyDocument());
-        myMsg.getHeadersKnob().addHeader("foo", "bar");
+        myMsg.getHeadersKnob().addHeader("foo", "bar", HeadersKnob.HEADER_TYPE_HTTP);
         context.setVariable("myMsg", myMsg);
 
         checkRequest();

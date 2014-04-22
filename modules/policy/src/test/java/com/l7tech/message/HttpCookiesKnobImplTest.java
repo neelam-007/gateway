@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static org.junit.Assert.*;
 
 public class HttpCookiesKnobImplTest {
@@ -26,10 +27,11 @@ public class HttpCookiesKnobImplTest {
         final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", true);
         cookiesKnob.addCookie(cookie);
         assertEquals(1, cookiesKnob.getCookies().size());
-        assertEquals(1, headersKnob.getHeaderNames().length);
-        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie").length);
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
         assertEquals(cookie, cookiesKnob.getCookies().iterator().next());
-        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure; HttpOnly", headersKnob.getHeaderValues("Set-Cookie")[0]);
+        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure; HttpOnly", 
+                headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP)[0]);
     }
 
     @Test
@@ -37,10 +39,11 @@ public class HttpCookiesKnobImplTest {
         final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false);
         cookiesKnob.addCookie(cookie);
         assertEquals(1, cookiesKnob.getCookies().size());
-        assertEquals(1, headersKnob.getHeaderNames().length);
-        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie").length);
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
         assertEquals(cookie, cookiesKnob.getCookies().iterator().next());
-        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60", headersKnob.getHeaderValues("Set-Cookie")[0]);
+        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60", 
+                headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP)[0]);
     }
 
     @Test
@@ -53,9 +56,9 @@ public class HttpCookiesKnobImplTest {
         assertEquals(2, cookies.size());
         assertTrue(cookies.contains(cookie1));
         assertTrue(cookies.contains(cookie2));
-        assertEquals(1, headersKnob.getHeaderNames().length);
-        assertEquals(2, headersKnob.getHeaderValues("Set-Cookie").length);
-        final List<String> setCookieValues = Arrays.asList(headersKnob.getHeaderValues("Set-Cookie"));
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(2, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
+        final List<String> setCookieValues = Arrays.asList(headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP));
         assertTrue(setCookieValues.contains("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60"));
         assertTrue(setCookieValues.contains("foo=bar; Version=1; Domain=different; Path=/; Comment=test; Max-Age=60"));
     }
@@ -70,9 +73,9 @@ public class HttpCookiesKnobImplTest {
         assertEquals(2, cookies.size());
         assertTrue(cookies.contains(cookie1));
         assertTrue(cookies.contains(cookie2));
-        assertEquals(1, headersKnob.getHeaderNames().length);
-        assertEquals(2, headersKnob.getHeaderValues("Set-Cookie").length);
-        final List<String> setCookieValues = Arrays.asList(headersKnob.getHeaderValues("Set-Cookie"));
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(2, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
+        final List<String> setCookieValues = Arrays.asList(headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP));
         assertTrue(setCookieValues.contains("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60"));
         assertTrue(setCookieValues.contains("foo=bar; Version=1; Domain=localhost; Path=/different; Comment=test; Max-Age=60"));
     }
@@ -86,20 +89,21 @@ public class HttpCookiesKnobImplTest {
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(1, cookies.size());
         assertEquals(cookie2, cookies.iterator().next());
-        assertEquals(1, headersKnob.getHeaderNames().length);
-        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie").length);
-        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure", headersKnob.getHeaderValues("Set-Cookie")[0]);
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
+        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure",
+                headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP)[0]);
     }
 
     @Test
     public void getCookiesFromSetCookieHeaderV0AllAttributes() {
-        headersKnob.addHeader("Set-Cookie", "1=allAttributesV0; expires=Fri, 20-Dec-2013 00:00:00 PST; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "2=allAttributesV0; expires=Friday, 20-Dec-13 00:00:00 PST; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "3=allAttributesV0; expires=Fri, 20 Dec 2013 00:00:00 PST; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "4=allAttributesV0; expires=Fri, 20 Dec 13 00:00:00 PST; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "5=allAttributesV0; expires=Fri Dec 20 00:00:00 2013; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "6=allAttributesV0; expires=Fri Dec 20 00:00:00 2013 PST; domain=netscape; path=/netscape; secure;");
-        headersKnob.addHeader("Set-Cookie", "7=allAttributesV0NoWhitespace;expires=Fri Dec 20 00:00:00 2013 PST;domain=netscape;path=/netscape;secure;");
+        headersKnob.addHeader("Set-Cookie", "1=allAttributesV0; expires=Fri, 20-Dec-2013 00:00:00 PST; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "2=allAttributesV0; expires=Friday, 20-Dec-13 00:00:00 PST; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "3=allAttributesV0; expires=Fri, 20 Dec 2013 00:00:00 PST; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "4=allAttributesV0; expires=Fri, 20 Dec 13 00:00:00 PST; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "5=allAttributesV0; expires=Fri Dec 20 00:00:00 2013; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "6=allAttributesV0; expires=Fri Dec 20 00:00:00 2013 PST; domain=netscape; path=/netscape; secure;", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "7=allAttributesV0NoWhitespace;expires=Fri Dec 20 00:00:00 2013 PST;domain=netscape;path=/netscape;secure;", HEADER_TYPE_HTTP);
 
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertTrue(containsCookie(cookies, new HttpCookie("1", "allAttributesV0", 0, "/netscape", "netscape", -1, true, null, false), false));
@@ -118,7 +122,7 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesFromSetCookieHeaderV0MinimalAttributes() {
-        headersKnob.addHeader("Set-Cookie", "foo=bar");
+        headersKnob.addHeader("Set-Cookie", "foo=bar", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(1, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false)));
@@ -126,9 +130,9 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesFromSetCookieHeaderV1() {
-        headersKnob.addHeader("Set-Cookie", "1=allAttributesV1; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure; HttpOnly");
-        headersKnob.addHeader("Set-Cookie", "2=minimumV1; Version=1");
-        headersKnob.addHeader("Set-Cookie", "3=noWhiteSpace;Version=1;Domain=localhost;Path=/;Comment=test;Max-Age=60;Secure;HttpOnly");
+        headersKnob.addHeader("Set-Cookie", "1=allAttributesV1; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure; HttpOnly", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "2=minimumV1; Version=1", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "3=noWhiteSpace;Version=1;Domain=localhost;Path=/;Comment=test;Max-Age=60;Secure;HttpOnly", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(3, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "allAttributesV1", 1, "/", "localhost", 60, true, "test", true)));
@@ -138,13 +142,13 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesFromInvalidSetCookieHeader() {
-        headersKnob.addHeader("Set-Cookie", "invalid");
+        headersKnob.addHeader("Set-Cookie", "invalid", HEADER_TYPE_HTTP);
         assertTrue(cookiesKnob.getCookies().isEmpty());
     }
 
     @Test
     public void getCookiesFromCookieHeaderV0() {
-        headersKnob.addHeader("Cookie", "foo=bar");
+        headersKnob.addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(1, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false)));
@@ -152,9 +156,9 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesFromCookieHeaderV1() {
-        headersKnob.addHeader("Cookie", "1=allAttributesV1; $Version=1; $Path=/; $Domain=localhost");
-        headersKnob.addHeader("Cookie", "2=minimumV1; $Version=1");
-        headersKnob.addHeader("Cookie", "3=allAttributesV1NoWhitespace;$Version=1;$Path=/;$Domain=localhost");
+        headersKnob.addHeader("Cookie", "1=allAttributesV1; $Version=1; $Path=/; $Domain=localhost", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Cookie", "2=minimumV1; $Version=1", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Cookie", "3=allAttributesV1NoWhitespace;$Version=1;$Path=/;$Domain=localhost", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(3, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "allAttributesV1", 1, "/", "localhost", -1, false, null, false)));
@@ -164,13 +168,13 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesFromInvalidCookieHeader() {
-        headersKnob.addHeader("Cookie", "invalid");
+        headersKnob.addHeader("Cookie", "invalid", HEADER_TYPE_HTTP);
         assertTrue(cookiesKnob.getCookies().isEmpty());
     }
 
     @Test
     public void getCookiesMultipleInCookieHeaderV0() {
-        headersKnob.addHeader("Cookie", "1=one; 2=two");
+        headersKnob.addHeader("Cookie", "1=one; 2=two", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(2, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, null, null, -1, false, null, false)));
@@ -179,7 +183,7 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesMultipleInCookieHeaderV1() {
-        headersKnob.addHeader("Cookie", "1=one; $Version=1; 2=two; $Version=1");
+        headersKnob.addHeader("Cookie", "1=one; $Version=1; 2=two; $Version=1", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(2, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 1, null, null, -1, false, null, false)));
@@ -188,7 +192,7 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesMultipleInCookieHeaderV1VersionFirst() {
-        headersKnob.addHeader("Cookie", "$Version=1; 1=one; $Version=1; 2=two");
+        headersKnob.addHeader("Cookie", "$Version=1; 1=one; $Version=1; 2=two", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(2, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 1, null, null, -1, false, null, false)));
@@ -197,7 +201,7 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void getCookiesMultipleInSetCookieHeader() {
-        headersKnob.addHeader("Set-Cookie", "1=one; 2=two");
+        headersKnob.addHeader("Set-Cookie", "1=one; 2=two", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = cookiesKnob.getCookies();
         assertEquals(1, cookies.size());
         assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, null, null, -1, false, null, false)));
@@ -247,7 +251,7 @@ public class HttpCookiesKnobImplTest {
 
     @Test
     public void deleteCookieNotSetCookieHeader() {
-        headersKnob.addHeader("Cookie", "foo=bar");
+        headersKnob.addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
         assertEquals(1, cookiesKnob.getCookies().size());
         cookiesKnob.deleteCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
         assertTrue(cookiesKnob.getCookies().isEmpty());
@@ -258,7 +262,7 @@ public class HttpCookiesKnobImplTest {
         final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
         cookiesKnob.addCookie(cookie);
         // having an invalid cookie header should not affect the result
-        headersKnob.addHeader("Set-Cookie", "invalidCookieHeader");
+        headersKnob.addHeader("Set-Cookie", "invalidCookieHeader", HEADER_TYPE_HTTP);
         assertEquals(1, cookiesKnob.getCookies().size());
         cookiesKnob.deleteCookie(cookie);
         assertTrue(cookiesKnob.getCookies().isEmpty());
@@ -314,6 +318,6 @@ public class HttpCookiesKnobImplTest {
                 cookie1.getVersion() == cookie2.getVersion() && ObjectUtils.equals(cookie1.getDomain(), cookie2.getDomain()) &&
                 ObjectUtils.equals(cookie1.getPath(), cookie2.getPath()) && ObjectUtils.equals(cookie1.getComment(), cookie2.getComment()) &&
                 cookie1.isSecure() == cookie2.isSecure() && cookie1.isHttpOnly() == cookie2.isHttpOnly() &&
-                (compareMaxAge ? cookie1.getMaxAge() == cookie2.getMaxAge() : true);
+                (!compareMaxAge || cookie1.getMaxAge() == cookie2.getMaxAge());
     }
 }

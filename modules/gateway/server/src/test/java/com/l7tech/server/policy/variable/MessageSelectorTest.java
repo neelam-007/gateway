@@ -30,6 +30,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -42,8 +44,6 @@ public class MessageSelectorTest {
     private static final Audit audit = new LoggingAudit(logger);
     private MessageSelector selector;
     private Message message;
-    private JmsKnobStub jmsKnob;
-    private Map<String, String> headers;
     private DefaultSyntaxErrorHandler handler;
 
     private String messageWithBinaryMimePart =
@@ -95,14 +95,7 @@ public class MessageSelectorTest {
     @Before
     public void setup() {
         selector = new MessageSelector();
-        headers = new HashMap<String, String>();
-        headers.put("h1", "h1value");
-        headers.put("h2", "h2value");
-        headers.put("h3", "h3value");
-        jmsKnob = new JmsKnobStub(new Goid(0, 1234L), false, null);
-        jmsKnob.setHeaders(headers);
         message = new Message();
-        message.attachJmsKnob(jmsKnob);
         handler = new DefaultSyntaxErrorHandler(new TestAudit());
     }
 
@@ -116,7 +109,7 @@ public class MessageSelectorTest {
 
         Audit audit = mock(Audit.class);
 
-        Map<String, Object> vars = new HashMap<String, Object>();
+        Map<String, Object> vars = new HashMap<>();
         vars.put("request", message);
 
         PartInfo part = (PartInfo) ExpandVariables.processSingleVariableAsObject("${request.parts.2}", vars, audit);
@@ -127,6 +120,8 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderNames() {
+        addJmsProperties();
+
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
 
         final String[] selectedValue = (String[]) selection.getSelectedValue();
@@ -139,8 +134,7 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderNamesNone() {
-        headers.clear();
-
+        message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
 
         final String[] selectedValue = (String[]) selection.getSelectedValue();
@@ -149,6 +143,8 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeader() {
+        addJmsProperties();
+
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.h2", handler, false);
 
         final String selectedValue = (String) selection.getSelectedValue();
@@ -164,20 +160,24 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderValues() {
+        HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("propertyName", "originalValue", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("propertyName", "secondValue", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("propertyName", "expectedValue", HEADER_TYPE_JMS_PROPERTY);
+
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
-        final List<Object> asList = Arrays.asList(selectedValue);
-        assertEquals(3, asList.size());
-        assertTrue(asList.contains("h1:h1value"));
-        assertTrue(asList.contains("h2:h2value"));
-        assertTrue(asList.contains("h3:h3value"));
+        final List<Object> valueList = Arrays.asList(selectedValue);
+
+        // ensure only the most recent value is returned for the property
+        assertEquals(1, valueList.size());
+        assertEquals("propertyName:expectedValue", valueList.get(0));
     }
 
     @Test
     public void selectJmsHeaderValuesNone() {
-        headers.clear();
-
+        message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
@@ -213,9 +213,9 @@ public class MessageSelectorTest {
         assertEquals(user2.getName(), ExpandVariables.process("${request.authenticateduser.login}", vars, audit));
 
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("h1", "h1value");
-        headersKnob.addHeader("h1", "h12value");
-        headersKnob.addHeader("h2", "h2value");
+        headersKnob.addHeader("h1", "h1value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h1", "h12value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h2", "h2value", HEADER_TYPE_HTTP);
 
         assertEquals("h1, h2", ExpandVariables.process("${request.http.headernames}", vars, audit));
         assertEquals("h1:h1value, h12value, h2:h2value", ExpandVariables.process("${request.http.allheaderValues}", vars, audit));
@@ -249,9 +249,9 @@ public class MessageSelectorTest {
         assertEquals(Integer.toString(ac.getAllAuthenticationResults().size()), ExpandVariables.process("${request.authenticateddns.length}", vars, audit));
 
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("h1", "h1value");
-        headersKnob.addHeader("h1", "h12value");
-        headersKnob.addHeader("h2", "h2value");
+        headersKnob.addHeader("h1", "h1value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h1", "h12value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h2", "h2value", HEADER_TYPE_HTTP);
 
         assertEquals("2", ExpandVariables.process("${request.http.headernames.length}", vars, audit));
         assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
@@ -267,9 +267,9 @@ public class MessageSelectorTest {
         }};
 
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("h1.length", "h1value");
-        headersKnob.addHeader("h1.length", "h12value");
-        headersKnob.addHeader("h2", "h2value");
+        headersKnob.addHeader("h1.length", "h1value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h1.length", "h12value", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("h2", "h2value", HEADER_TYPE_HTTP);
 
         assertEquals("h1value, h12value", ExpandVariables.process("${request.http.headerValues.h1.length}", vars, audit));
         assertEquals("2", ExpandVariables.process("${request.http.headerValues.h1.length.length}", vars, audit));
@@ -325,7 +325,7 @@ public class MessageSelectorTest {
 
     @Test
     public void selectHeaderFromHeadersKnob() {
-        message.getHeadersKnob().addHeader("test", "value");
+        message.getHeadersKnob().addHeader("test", "value", HEADER_TYPE_HTTP);
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("value", selectedValue);
@@ -334,7 +334,7 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderDoesNotLookAtRequestKnob() {
         message.attachHttpRequestKnob(new HttpRequestKnobStub(Collections.<HttpHeader>singletonList(new GenericHttpHeader("test", "requestKnobValue"))));
-        message.getHeadersKnob().addHeader("test", "headersKnobValue");
+        message.getHeadersKnob().addHeader("test", "headersKnobValue", HEADER_TYPE_HTTP);
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("headersKnobValue", selectedValue);
@@ -350,18 +350,18 @@ public class MessageSelectorTest {
             }
         });
         message.attachKnob(HttpInboundResponseKnob.class, facet);
-        message.getHeadersKnob().addHeader("test", "onHeadersKnob");
+        message.getHeadersKnob().addHeader("test", "onHeadersKnob", HEADER_TYPE_HTTP);
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.test", handler, false);
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("onHeadersKnob", selectedValue);
     }
 
     @Test
-    public void selectAllHeaderValues() {
+    public void selectHttpAllHeaderValues() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("1", "first");
+        headersKnob.addHeader("1", "first", HEADER_TYPE_HTTP);
         // non-passthrough headers should be included
-        headersKnob.addHeader("2", "second", false);
+        headersKnob.addHeader("2", "second", HEADER_TYPE_HTTP, false);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -371,10 +371,10 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectAllHeaderValuesDuplicate() {
+    public void selectHttpAllHeaderValuesDuplicate() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("3", "third");
-        headersKnob.addHeader("3", "anotherThird");
+        headersKnob.addHeader("3", "third", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("3", "anotherThird", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -383,10 +383,10 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectAllHeaderValuesCaseInsensitive() {
+    public void selectHttpAllHeaderValuesCaseInsensitive() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("testcase", "lower");
-        headersKnob.addHeader("TESTCASE", "UPPER");
+        headersKnob.addHeader("testcase", "lower", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("TESTCASE", "UPPER", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.allheadervalues", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -395,7 +395,7 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectAllHeaderValuesNone() {
+    public void selectHttpAllHeaderValuesNone() {
         // make sure there is a headers knob
         message.getHeadersKnob();
 
@@ -404,7 +404,7 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectAllHeaderValuesNoneStrict() {
+    public void selectHttpAllHeaderValuesNoneStrict() {
         // make sure there is a headers knob
         message.getHeadersKnob();
 
@@ -413,12 +413,12 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectAllHeaderValuesNoHeadersKnob() {
+    public void selectHttpAllHeaderValuesNoHeadersKnob() {
         assertNull(selector.select(null, message, "http.allheadervalues", handler, false));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void selectAllHeaderValuesNoHeadersKnobStrict() {
+    public void selectHttpAllHeaderValuesNoHeadersKnobStrict() {
         try {
             selector.select(null, message, "http.allheadervalues", handler, true);
             fail("Expected IllegalArgumentException due to no headers knob");
@@ -431,9 +431,9 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderNames() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("1", "first");
+        headersKnob.addHeader("1", "first", HEADER_TYPE_HTTP);
         // non-passthrough headers should be included
-        headersKnob.addHeader("2", "second", false);
+        headersKnob.addHeader("2", "second", HEADER_TYPE_HTTP, false);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -445,8 +445,8 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderNamesDuplicate() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("3", "third");
-        headersKnob.addHeader("3", "anotherThird");
+        headersKnob.addHeader("3", "third", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("3", "anotherThird", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -457,8 +457,8 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderNamesCaseInsensitive() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("foo", "bar");
-        headersKnob.addHeader("FOO", "BAR");
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("FOO", "BAR", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headernames", handler, false);
         final List<Object> headers = Arrays.asList((Object[]) selection.getSelectedValue());
@@ -486,7 +486,7 @@ public class MessageSelectorTest {
     public void selectHeadersByNameSingle() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
         // non-passthrough headers should be included
-        headersKnob.addHeader("1", "first", false);
+        headersKnob.addHeader("1", "first", HEADER_TYPE_HTTP, false);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.1", handler, false);
         assertEquals("first", selection.getSelectedValue());
@@ -495,8 +495,8 @@ public class MessageSelectorTest {
     @Test
     public void selectHeadersByNameMultiple() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("foo", "bar");
-        headersKnob.addHeader("foo", "anotherBar");
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("foo", "anotherBar", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.foo", handler, false);
         // returns the first only
@@ -504,9 +504,21 @@ public class MessageSelectorTest {
     }
 
     @Test
+    public void selectJmsPropertyByName_MultiplePresent_LastValueSetReturned() {
+        final HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "anotherBar", HEADER_TYPE_JMS_PROPERTY);
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.foo", handler, false);
+
+        // returns the last only
+        assertEquals("anotherBar", selection.getSelectedValue());
+    }
+
+    @Test
     public void selectHeadersByNameCaseInsensitive() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("FOO", "BAR");
+        headersKnob.addHeader("FOO", "BAR", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.header.foo", handler, false);
         // returns the first only
@@ -554,7 +566,7 @@ public class MessageSelectorTest {
     public void selectHeaderValuesByNameSingle() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
         // non-passthrough headers should be included
-        headersKnob.addHeader("1", "first", false);
+        headersKnob.addHeader("1", "first", HEADER_TYPE_HTTP, false);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.1", handler, false);
         final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
@@ -565,8 +577,8 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderValuesByNameMultiple() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("foo", "bar");
-        headersKnob.addHeader("foo", "anotherBar");
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("foo", "anotherBar", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.foo", handler, false);
         final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
@@ -578,7 +590,7 @@ public class MessageSelectorTest {
     @Test
     public void selectHeaderValuesByNameCaseInsensitive() {
         final HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("FOO", "BAR");
+        headersKnob.addHeader("FOO", "BAR", HEADER_TYPE_HTTP);
 
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.headervalues.foo", handler, false);
         final List<String> values = Arrays.asList(((String[]) selection.getSelectedValue()));
@@ -843,5 +855,12 @@ public class MessageSelectorTest {
     public void selectFtpReplyTextValueNullFtpResponseKnob() {
         assertNull(message.getKnob(FtpResponseKnob.class));
         assertNull(selector.select(null, message, "ftp.replytext", handler, false));
+    }
+
+    private void addJmsProperties() {
+        HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("h1", "h1value", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("h2", "h2value", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("h3", "h3value", HEADER_TYPE_JMS_PROPERTY);
     }
 }

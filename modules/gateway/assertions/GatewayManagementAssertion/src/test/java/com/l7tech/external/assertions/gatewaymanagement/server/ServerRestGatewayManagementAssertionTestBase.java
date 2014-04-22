@@ -12,10 +12,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -166,8 +163,8 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
             String responseBody = bout.toString("UTF-8");
             HashMap<String, String[]> headers = new HashMap<>();
-            for (String header : response.getHeadersKnob().getHeaderNames()) {
-                headers.put(header, response.getHeadersKnob().getHeaderValues(header));
+            for (String header : response.getHeadersKnob().getHeaderNames(HeadersKnob.HEADER_TYPE_HTTP)) {
+                headers.put(header, response.getHeadersKnob().getHeaderValues(header, HeadersKnob.HEADER_TYPE_HTTP));
             }
             return new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
         } finally {

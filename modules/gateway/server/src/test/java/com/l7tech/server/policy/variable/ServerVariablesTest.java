@@ -69,6 +69,8 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 
 /**
@@ -173,7 +175,7 @@ public class ServerVariablesTest {
             assertEquals("assertion number str variable", "1.2.3", numberStrValue);
         }
 
-        pec.assertionStarting( new ServerTrueAssertion<TrueAssertion>( new TrueAssertion() ) );
+        pec.assertionStarting( new ServerTrueAssertion<>( new TrueAssertion() ) );
 
         final Integer[] numberValue = (Integer[])ServerVariables.get("assertion.number", pec);
         assertArrayEquals("assertion number (with assertion)", new Integer[]{ 1,2,3,1 }, numberValue);
@@ -190,6 +192,149 @@ public class ServerVariablesTest {
     @Test
     public void testResponse() throws Exception {
         doTestMessage("response", RESPONSE_BODY);
+    }
+
+    /**
+     * Test 'request.jms.property' prefix for property name that is not present.
+     * Result should be empty String.
+     */
+    @Test
+    public void testGetJmsPropertyValueFromRequest_PropertyDoesNotExist_EmptyStringReturned() throws Exception {
+        expandAndCheck(context(), "${request.jms.property.foo}", "");
+    }
+
+    /**
+     * Test 'request.jms.property' prefix for a property with multiple entries in the Request message.
+     * Result should be the most recently set value for the property.
+     */
+    @Test
+    public void testGetJmsPropertyValueFromRequest_MultipleEntriesForProperty_MostRecentValueReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+
+        // ensure the value returned is the most recently set one
+        expandAndCheck(context, "${request.jms.property.foo}", "baz");
+    }
+
+    /**
+     * Test 'response.jms.property' prefix for property in Response message.
+     * Result should be the most recently set value for the property.
+     */
+    @Test
+    public void testGetJmsPropertyValueFromResponse_PropertyExists_ValueReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getResponse().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+
+        // ensure the value returned is the most recently set one
+        expandAndCheck(context, "${response.jms.property.foo}", "baz");
+    }
+
+    /**
+     * Test 'request.jms.propertynames' variable for case where no properties are present in Request message.
+     * Result should be an empty String.
+     */
+    @Test
+    public void testGetJmsPropertyNamesFromRequest_NoPropertiesExist_EmptyStringReturned() throws Exception {
+        expandAndCheck(context(), "${request.jms.propertynames}", "");
+    }
+
+    /**
+     * Test 'response.jms.propertynames' variable for case where no properties are present in Response message.
+     * Result should be an empty String.
+     */
+    @Test
+    public void testGetJmsPropertyNamesFromResponse_NoPropertiesExist_EmptyStringReturned() throws Exception {
+        expandAndCheck(context(), "${response.jms.propertynames}", "");
+    }
+
+    /**
+     * Test 'request.jms.propertynames' variable for case where multiple properties are present in Request message.
+     * Result should be all unique property names, separated by ', '.
+     */
+    @Test
+    public void testGetJmsPropertyNamesFromRequest_MultiplePropertiesExist_NamesReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
+
+        expandAndCheck(context, "${request.jms.propertynames}", "foo, fuz");
+    }
+
+    /**
+     * Test 'response.jms.propertynames' variable for case where multiple properties are present in Response message.
+     * Result should be all unique property names, separated by ', '.
+     */
+    @Test
+    public void testGetJmsPropertyNamesFromResponse_MultiplePropertiesExist_NamesReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getResponse().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
+
+        expandAndCheck(context, "${response.jms.propertynames}", "foo, fuz");
+    }
+
+    /**
+     * Test 'request.jms.allpropertyvalues' variable for case where no properties are present in Request message.
+     * Result should be an empty String.
+     */
+    @Test
+    public void testGetJmsValuesFromRequest_NoValuesExist_EmptyStringReturned() throws Exception {
+        expandAndCheck(context(), "${request.jms.allpropertyvalues}", "");
+    }
+
+    /**
+     * Test 'response.jms.allpropertyvalues' variable for case where no properties are present in Response message.
+     * Result should be an empty String.
+     */
+    @Test
+    public void testGetJmsValuesFromResponse_NoValuesExist_EmptyStringReturned() throws Exception {
+        expandAndCheck(context(), "${response.jms.allpropertyvalues}", "");
+    }
+
+    /**
+     * Test 'request.jms.allpropertyvalues' prefix for a property with multiple entries in the Request message.
+     * Result should be all property names and corresponding values (the most recently set), separated by ', '.
+     */
+    @Test
+    public void testGetAllJmsPropertyValuesFromRequest_MultipleValuesExist_LatestValueForEachHeaderReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
+
+        // ensure the values returned for each name are the most recently set ones
+        expandAndCheck(context, "${request.jms.allpropertyvalues}", "[fuz:buz, foo:baz]");
+    }
+
+    /**
+     * Test 'response.jms.allpropertyvalues' prefix for property in Response message.
+     * Result should be all property names and corresponding values (the most recently set), separated by ', '.
+     */
+    @Test
+    public void testGetAllJmsPropertyValuesFromResponse_MultipleValuesExist_LatestValueForEachHeaderReturned() throws Exception {
+        PolicyEnforcementContext context = context();
+        HeadersKnob headersKnob = context.getResponse().getHeadersKnob();
+
+        headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("foo", "baz", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
+
+        // ensure the values returned for each name are the most recently set ones
+        expandAndCheck(context, "${response.jms.allpropertyvalues}", "[fuz:buz, foo:baz]");
     }
 
     /**
@@ -1184,7 +1329,7 @@ public class ServerVariablesTest {
             });
 
             final T returnVal = function.call();
-            return new Pair<Long, T>(currentTime, returnVal);
+            return new Pair<>(currentTime, returnVal);
         } finally {
             setTimeSourceMethod.invoke(classWithTimeSource, new TimeSource());
         }
@@ -1214,10 +1359,10 @@ public class ServerVariablesTest {
         context.getRequest().attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
 
         final HeadersKnob headersKnob = context.getRequest().getHeadersKnob();
-        headersKnob.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
-        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
-        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
-        headersKnob.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
+        headersKnob.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+        headersKnob.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.TEXT_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+        headersKnob.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
 
         return context;
     }

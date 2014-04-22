@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutorService;
  *
  * TODO: Need to add tests while waiting for responses (w/ tempQueues & reply-to-queue)
  *
- * @author: vchan
+ * @author vchan
  */
 @Ignore("These tests require a JMS queue")
 public class ServerJmsRoutingAssertionTest {
@@ -135,7 +135,6 @@ public class ServerJmsRoutingAssertionTest {
 //            testPolicy = TEST_POLICY_MQSeries;
 //            testPolicy = TEST_POLICY_FMQ;
         }
-
     }
 
     /**
@@ -207,7 +206,8 @@ public class ServerJmsRoutingAssertionTest {
         }
     }
 
-
+    @Ignore("This test requires a JMS queue")
+    @Test
     public void testConcurrent4T() {
 
         ServerJmsRoutingAssertion as;
@@ -241,7 +241,6 @@ public class ServerJmsRoutingAssertionTest {
                 exec.shutdown();
         }
     }
-
 
     private PolicyEnforcementContext createPEContext(String testMessage) throws Exception {
 

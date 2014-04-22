@@ -312,7 +312,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                final Collection<Header> ct = responseHeaders.getHeaders(HEADER_CONTENT_TYPE, false);
+                final Collection<Header> ct = responseHeaders.getHeaders(HEADER_CONTENT_TYPE, HeadersKnob.HEADER_TYPE_HTTP, false);
                 if (ct == null || ct.isEmpty()) {
                     final ContentTypeHeader mimeKnobCt = responseMimeKnob.getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
@@ -424,7 +424,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      */
     private Collection<Pair<String, Object>> getPassThroughHeaders(final HeadersKnob headersKnob) {
         final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
-        for (final Header header : headersKnob.getHeaders(false)) {
+        for (final Header header : headersKnob.getHeaders(HeadersKnob.HEADER_TYPE_HTTP, false)) {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
                 passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
             } else if (header.getValue() instanceof String) {

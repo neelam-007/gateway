@@ -10,10 +10,7 @@ import com.l7tech.external.assertions.whichmodule.GenericEntityManagerDemoAssert
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -43,6 +40,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
 /**
  * This will bring up an entire database backed rest management assertion environment.
@@ -192,8 +191,8 @@ public class DatabaseBasedRestManagementEnvironment {
             IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
             String responseBody = bout.toString("UTF-8");
             HashMap<String, String[]> headers = new HashMap<>();
-            for (String header : response.getHeadersKnob().getHeaderNames()) {
-                headers.put(header, response.getHeadersKnob().getHeaderValues(header));
+            for (String header : response.getHeadersKnob().getHeaderNames(HEADER_TYPE_HTTP)) {
+                headers.put(header, response.getHeadersKnob().getHeaderValues(header, HEADER_TYPE_HTTP));
             }
             RestResponse restResponse = new RestResponse(assertionStatus, responseBody, response.getHttpResponseKnob().getStatus(), headers);
             logger.log(Level.INFO, restResponse.toString());

@@ -52,6 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -1129,9 +1130,9 @@ public class ExpandVariablesTest {
         params.put("foo", new String[] { "bar" });
         params.put("BaZ", new String[] { "quux", "xyzzy"});
         foo.attachHttpRequestKnob(new HttpRequestKnobAdapter("/foo", params, new MimeHeaders(headers)));
-        foo.getHeadersKnob().addHeader("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT.getFullValue());
-        foo.getHeadersKnob().addHeader("magic", "foo");
-        foo.getHeadersKnob().addHeader("magic", "bar");
+        foo.getHeadersKnob().addHeader("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+        foo.getHeadersKnob().addHeader("magic", "foo", HEADER_TYPE_HTTP);
+        foo.getHeadersKnob().addHeader("magic", "bar", HEADER_TYPE_HTTP);
         return foo;
     }
 

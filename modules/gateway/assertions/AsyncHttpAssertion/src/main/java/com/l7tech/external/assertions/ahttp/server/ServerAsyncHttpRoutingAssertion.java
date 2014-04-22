@@ -197,9 +197,9 @@ public class ServerAsyncHttpRoutingAssertion extends AbstractServerHttpRoutingAs
 
         final HeadersKnob heads = targetMessage.getKnob(HeadersKnob.class);
         if (heads != null) {
-            String[] names = heads.getHeaderNames();
+            String[] names = heads.getHeaderNames(HeadersKnob.HEADER_TYPE_HTTP);
             for (String name : names) {
-                String[] values = heads.getHeaderValues(name);
+                String[] values = heads.getHeaderValues(name, HeadersKnob.HEADER_TYPE_HTTP);
                 for (String value : values) {
                     httpRequest.addHeader(name, value);
                 }
