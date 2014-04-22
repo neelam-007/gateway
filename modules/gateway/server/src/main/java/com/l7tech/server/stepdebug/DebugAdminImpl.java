@@ -135,6 +135,7 @@ public class DebugAdminImpl implements DebugAdmin {
         //
         DebugPecData debugPecData = debugContext.getDebugPecData();
         debugResult.setContextVariables(debugPecData.getContextVariables());
+        debugResult.setPolicyResult(debugPecData.getPolicyResult());
 
         return debugResult;
     }

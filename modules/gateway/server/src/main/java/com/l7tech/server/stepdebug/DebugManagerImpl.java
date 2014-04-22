@@ -241,6 +241,10 @@ public class DebugManagerImpl implements DebugManager {
         try {
             DebugContext debugContext = pec.getDebugContext();
             if (debugContext != null) {
+                // Call DebugContext#onMessageFinished() prior to calling stopDebug().
+                // stopDebug() will reset the current line member variable of debug context.
+                //
+                debugContext.onMessageFinished(pec);
                 this.stopDebug(debugContext.getTaskId());
             }
         } finally {

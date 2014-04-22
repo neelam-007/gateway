@@ -292,6 +292,24 @@ public class DebugContext {
     }
 
     /**
+     * This method must be called when a message finishes processing.
+     *
+     * @param pec the PEC
+     */
+    public void onMessageFinished(@NotNull PolicyEnforcementContext pec) {
+        lock.lock();
+        try {
+            if (!DebugState.STOPPED.equals(this.debugState)) {
+                this.debugPecData.update(pec, userContextVariables);
+                this.debugPecData.setPolicyResult(pec, currentLine);
+            }
+        }  finally {
+            this.markAsDirty();
+            lock.unlock();
+        }
+    }
+
+    /**
      * This method must be called when a message arrives.
      *
      * @param pec the PEC

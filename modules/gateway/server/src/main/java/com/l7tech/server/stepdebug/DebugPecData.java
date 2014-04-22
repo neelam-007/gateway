@@ -2,7 +2,9 @@ package com.l7tech.server.stepdebug;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
+import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.message.*;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -18,6 +20,7 @@ public class DebugPecData {
 
     private final Audit audit;
     private final Set<DebugContextVariableData> contextVariables;
+    private String policyResult;
 
     private static final String[] builtInMessageContextVars = {
         "mainpart",
@@ -36,6 +39,7 @@ public class DebugPecData {
     public DebugPecData(@NotNull Audit audit) {
         this.audit = audit;
         this.contextVariables = Collections.synchronizedSet(new TreeSet<DebugContextVariableData>());
+        this.policyResult = null;
     }
 
     /**
@@ -73,8 +77,49 @@ public class DebugPecData {
         }
     }
 
+    /**
+     * Sets the policy result.
+     *
+     * @param pec The PEC
+     * @param currentLine the current line (equivalent to last assertion line executed)
+     */
+    public void setPolicyResult(@NotNull PolicyEnforcementContext pec, @Nullable Collection<Integer> currentLine) {
+        AssertionStatus status = pec.getPolicyResult();
+        if (status != null) {
+            if (AssertionStatus.NONE.equals(status)) {
+                // Successful.
+                //
+                policyResult = DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE;
+            } else  {
+                // Error.
+                // Add error message and assertion number.
+                //
+                StringBuilder sb = new StringBuilder(status.getMessage());
+                sb.append(": assertion number ");
+                if (currentLine != null) {
+                    boolean firstRun = true;
+                    for (Integer number : currentLine) {
+                        if (!firstRun) {
+                            sb.append(".");
+                        }
+                        firstRun = false;
+                        sb.append(number.toString());
+                    }
+                } else {
+                    // Unexpected. But still handle it.
+                    //
+                    sb.append("unknown");
+                }
+                policyResult = sb.toString();
+            }
+        } else {
+            policyResult = null;
+        }
+    }
+
     public void reset(@NotNull Set<String> userContextVariables) {
         contextVariables.clear();
+        policyResult = null;
 
         // Only retain user added context variables only.
         //
@@ -114,6 +159,16 @@ public class DebugPecData {
         synchronized (contextVariables) {
             return Collections.unmodifiableSet(new TreeSet<>(contextVariables));
         }
+    }
+
+    /**
+     * Returns the policy evaluation result.
+     *
+     * @return the policy evaluation result
+     */
+    @Nullable
+    public String getPolicyResult() {
+        return policyResult;
     }
 
     @NotNull

@@ -15,6 +15,7 @@ import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.Timer;
@@ -27,13 +28,15 @@ public class PolicyStepDebugDialog extends JFrame {
     protected static final Logger logger = Logger.getLogger(PolicyStepDebugDialog.class.getName());
 
     private static final ImageIcon DIALOG_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/layer7_logo_small_32x32.png"));
+    private static final ImageIcon POLICY_RESULT_ERROR_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Alert16x16.gif"));
     private static final long MAX_WAIT_TIME_MILLIS = 30000L;
     private static final long REFRESH_TIMER_MILLIS = 1L;
 
     private JPanel mainForm;
     private JSplitPane splitPane;
-    private DebugContextVariableTreePanel contextVariableTreePanel;
     private DebugPolicyTreePanel policyTreePanel;
+    private DebugContextVariableTreePanel contextVariableTreePanel;
+    private JLabel policyResultLabel;
     private JButton startButton;
     private JButton stopButton;
     private JButton stepOverButton;
@@ -406,6 +409,23 @@ public class PolicyStepDebugDialog extends JFrame {
             debugResult.getDebugState().equals(DebugState.AT_BREAKPOINT);
         policyTreePanel.update(scrollToCurrentLine);
         contextVariableTreePanel.update(debugResult.getContextVariables());
+
+        String policyResult = debugResult.getPolicyResult();
+        if (policyResult != null) {
+            policyResultLabel.setText(policyResult);
+            if (policyResult.equals(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE)) {
+                policyResultLabel.setForeground(null);
+                policyResultLabel.setIcon(null);
+            } else {
+                policyResultLabel.setForeground(Color.RED);
+                policyResultLabel.setIcon(POLICY_RESULT_ERROR_ICON);
+            }
+        } else {
+            // Set the label to an none empty value so that the height of the JLabel does not change.
+            policyResultLabel.setText(" ");
+            policyResultLabel.setForeground(null);
+            policyResultLabel.setIcon(null);
+        }
 
         // Rest to scroll to current line.
         scrollToCurrentLineOnRefresh = true;
