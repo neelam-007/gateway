@@ -5,13 +5,16 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
+import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerSetVariableAssertion;
+import com.l7tech.test.BugId;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -179,6 +182,32 @@ public class DebugContextTest {
         debugContext.removeUserContextVariable(USER_ADDED_CONTEXT_VARIABLE_NAME);
         debugContext.onStartAssertion(pec, serverAssertion);
         this.checkDebugContext(DebugState.BREAK_AT_NEXT_BREAKPOINT, true, 0, 1);
+    }
+
+    @BugId("SSM-4578")
+    @Test
+    public void testOnMessageFinishedSuccessfully() throws Exception {
+        when(pec.getPolicyResult()).thenReturn(AssertionStatus.NONE);
+        debugContext.onMessageFinished(pec);
+
+        // Verify policy result.
+        //
+        DebugPecData debugPecData = debugContext.getDebugPecData();
+        Assert.assertNotNull(debugPecData);
+        Assert.assertEquals(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
+    }
+
+    @BugId("SSM-4578")
+    @Test
+    public void testOnMessageFinishedUnsuccessfully() throws Exception {
+        when(pec.getPolicyResult()).thenReturn(AssertionStatus.AUTH_REQUIRED);
+        debugContext.onMessageFinished(pec);
+
+        // Verify policy result.
+        //
+        DebugPecData debugPecData = debugContext.getDebugPecData();
+        Assert.assertNotNull(debugPecData);
+        Assert.assertNotSame(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
     }
 
     private void setMessageArrived() {

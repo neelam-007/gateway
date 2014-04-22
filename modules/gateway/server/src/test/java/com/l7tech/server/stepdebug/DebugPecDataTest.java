@@ -5,10 +5,13 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
+import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.message.*;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -273,6 +276,51 @@ public class DebugPecDataTest {
         Assert.assertFalse(isUserAddedFound);
     }
 
+
+    @BugId("SSM-4578")
+    @Test
+    public void testPolicyResultSuccessful() throws Exception {
+        // Setup test data.
+        //
+        Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
+        MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
+        request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
+        pec.setPolicyResult(AssertionStatus.NONE);
+
+        List<Integer> currentLine = new ArrayList<>(1);
+        currentLine.add(2);
+        debugPecData.setPolicyResult(pec, currentLine);
+
+        // Verify policy result.
+        //
+        Assert.assertNotNull(debugPecData.getPolicyResult());
+        Assert.assertEquals(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
+    }
+
+    @BugId("SSM-4578")
+    @Test
+    public void testPolicyResultUnsuccessful() throws Exception {
+        // Setup test data.
+        //
+        Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
+        MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
+        request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
+        pec.setPolicyResult(AssertionStatus.AUTH_REQUIRED);
+
+        List<Integer> currentLine = new ArrayList<>(1);
+        currentLine.add(2);
+        debugPecData.setPolicyResult(pec, currentLine);
+
+        // Verify policy result.
+        //
+        Assert.assertNotNull(debugPecData.getPolicyResult());
+        Assert.assertNotSame(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
+        Assert.assertTrue(debugPecData.getPolicyResult().contains(AssertionStatus.AUTH_REQUIRED.getMessage()));
+        Assert.assertTrue(debugPecData.getPolicyResult().contains("assertion number"));
+    }
+
     @Test
     public void testReset() throws Exception {
         // Setup test data.
@@ -284,6 +332,7 @@ public class DebugPecDataTest {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix]);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
+        pec.setPolicyResult(AssertionStatus.NONE);
 
         // Add user context variable
         //
@@ -292,6 +341,9 @@ public class DebugPecDataTest {
         Set<String> userContextVariables = new TreeSet<>();
         userContextVariables.add(cxt_name);
         debugPecData.update(pec, userContextVariables);
+        List<Integer> currentLine = new ArrayList<>(1);
+        currentLine.add(2);
+        debugPecData.setPolicyResult(pec, currentLine);
 
         // Verify result.
         //
@@ -314,8 +366,9 @@ public class DebugPecDataTest {
         }
         Assert.assertTrue(isBuiltInFound);
         Assert.assertTrue(isUserAddedFound);
+        Assert.assertNotNull(debugPecData.getPolicyResult());
 
-        // Remove user context variable
+        // Reset user context variable
         //
         debugPecData.reset(userContextVariables);
 
@@ -340,6 +393,7 @@ public class DebugPecDataTest {
         }
         Assert.assertFalse(isBuiltInFound);
         Assert.assertTrue(isUserAddedFound);
+        Assert.assertNull(debugPecData.getPolicyResult());
     }
 
     // Check that debugPecData contains 1 context variable of Message type.
