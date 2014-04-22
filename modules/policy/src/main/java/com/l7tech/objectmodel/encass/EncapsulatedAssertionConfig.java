@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import javax.validation.Valid;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.lang.reflect.InvocationTargetException;
@@ -68,6 +69,18 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();
     private Set<EncapsulatedAssertionResultDescriptor> resultDescriptors = new HashSet<EncapsulatedAssertionResultDescriptor>();
     private Map<String,String> properties = new HashMap<String,String>();
+
+    /**
+     * Sets the name of the encapsulated assertion. This is here to enforce the name length
+     * @return The encapsulated assertion name.
+     */
+    @RbacAttribute
+    @Size(min=1,max=128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
+    }
 
     /**
      * @return the GUID for this encapsulated assertion configuration, or null if not yet assigned.

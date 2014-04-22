@@ -200,7 +200,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                 guid = UUID.randomUUID().toString();
             encassEntity.setGuid(guid);
 
-            encassEntity.setProperties(new HashMap<String, String>(encassResource.getProperties()));
+            encassEntity.setProperties(encassResource.getProperties() != null ? new HashMap<>(encassResource.getProperties()) : new HashMap<String, String>());
             encassEntity.setArgumentDescriptors(getArgumentDescriptorSet(encassResource, encassEntity));
             encassEntity.setResultDescriptors(getResultDescriptorSet(encassResource, encassEntity));
 
