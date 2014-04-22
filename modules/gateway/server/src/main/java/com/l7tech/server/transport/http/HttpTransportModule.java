@@ -86,6 +86,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
 
     static boolean testMode = false; // when test mode enabled, will always use the following two fields
+    static final String APACHE_ALLOW_BACKSLASH = "org.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH";
     static SsgConnector testConnector = null;
     static HttpTransportModule testModule = null;
 
@@ -438,6 +439,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private void startInitialConnectors(boolean actuallyStartThem) throws ListenerException {
         final boolean wasSystem = AuditContextUtils.isSystem();
+        boolean allowBackslash = serverConfig.getBooleanProperty( ServerConfigParams.PARAM_IO_HTTP_ALLOW_BACKSLASH, false);
+        if (allowBackslash) {
+            SyspropUtil.setProperty(APACHE_ALLOW_BACKSLASH, String.valueOf(allowBackslash));
+        }
         try {
             AuditContextUtils.setSystem(true);
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
