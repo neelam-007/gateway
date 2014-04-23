@@ -970,7 +970,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             logAndAudit(AssertionMessages.HTTPROUTE_BAD_GZIP_STREAM);
             assertionStatus = AssertionStatus.FALSIFIED;
         } catch (Exception e) {
-            logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, ExceptionUtils.getDebugException(e));
             assertionStatus = AssertionStatus.FALSIFIED;
         }
         return assertionStatus;

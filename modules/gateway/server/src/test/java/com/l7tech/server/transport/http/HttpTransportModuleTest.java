@@ -8,6 +8,7 @@ import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +45,11 @@ public class HttpTransportModuleTest {
                 connectorManager,
                 trustedCertServices,
                 Collections.<SsgConnectorActivationListener>emptySet());
+    }
+
+    @After
+    public void teardown() {
+        SyspropUtil.clearProperty(HttpTransportModule.APACHE_ALLOW_BACKSLASH);
     }
 
     @Test
