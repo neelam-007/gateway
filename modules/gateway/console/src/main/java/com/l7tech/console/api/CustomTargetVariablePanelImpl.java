@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.commonui.CustomTargetVariablePanel;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 
 /**
  * Implementation of CustomTargetVariablePanel interface.
@@ -52,6 +53,16 @@ public class CustomTargetVariablePanelImpl implements CustomTargetVariablePanel 
     @Override
     public String getVariable (){
         return panel.getVariable();
+    }
+
+    @Override
+    public void addChangeListener(ChangeListener listener) {
+        panel.addChangeListener(listener);
+    }
+
+    @Override
+    public void removeChangeListener(ChangeListener listener) {
+        panel.removeChangeListener(listener);
     }
 
     @Override

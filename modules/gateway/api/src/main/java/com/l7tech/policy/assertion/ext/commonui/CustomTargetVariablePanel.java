@@ -1,6 +1,7 @@
 package com.l7tech.policy.assertion.ext.commonui;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 
 /**
  * The target variable panel.
@@ -48,6 +49,23 @@ public interface CustomTargetVariablePanel {
      * @return the variable
      */
     String getVariable();
+
+    /**
+     * Adds a <code>ChangeListener</code>.
+     * <p>
+     * The <code>ChangeListener</code> will receive a <code>ChangeEvent</code>
+     * when a change has been made in the target variable text field.
+     *
+     * @param listener the <code>ChangeListener</code> that is to be notified
+     */
+    void addChangeListener(ChangeListener listener);
+
+    /**
+     * Removes a <code>ChangeListener</code>.
+     *
+     * @param listener the <code>ChangeListener</code> to remove
+     */
+    void removeChangeListener(ChangeListener listener);
 
     /**
      * Gets the panel.
