@@ -542,7 +542,7 @@ public final class Message implements Closeable {
             // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
             try {
                 if (preferDOM) {
-                    getXmlKnob().getDocumentReadOnly();   
+                    getXmlKnob().getDocumentReadOnly();
                 }
                 info = SoapFacet.getSoapInfo(this);
             } catch (NoSuchPartException e) {
@@ -737,7 +737,10 @@ public final class Message implements Closeable {
     public HttpCookiesKnob getHttpCookiesKnob() {
         HttpCookiesKnob cookiesKnob = getKnob(HttpCookiesKnob.class);
         if (cookiesKnob == null) {
-            rootFacet = new KnobHolderFacet(this, rootFacet, new HttpCookiesKnobImpl(getHeadersKnob()), false, HttpCookiesKnob.class);
+            rootFacet = new KnobHolderFacet(this, rootFacet,
+                        new HttpCookiesKnobImpl(getHeadersKnob(),
+                            isHttpResponse() ? HttpConstants.HEADER_SET_COOKIE : HttpConstants.HEADER_COOKIE),
+                            false, HttpCookiesKnob.class);
             cookiesKnob = getKnob(HttpCookiesKnob.class);
             if (cookiesKnob == null) {
                 throw new IllegalStateException("Could not create HttpCookiesKnob");
@@ -753,7 +756,7 @@ public final class Message implements Closeable {
     public Message getRelated(MessageRole role) {
         return relatedMessages.get(role);
     }
-    
+
     /**
      * Attach the specified knob to this message if and only if it does not already provide that knob.
      * <p/>

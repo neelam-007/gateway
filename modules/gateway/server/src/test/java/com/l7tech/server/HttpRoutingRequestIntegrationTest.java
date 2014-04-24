@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.test.BugId;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Ignore;
@@ -209,6 +210,49 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         final String responseBody = printResponseDetails(response);
         final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
         assertHeaderValues(routedHeaders, "host", "customHost:8888");
+    }
+
+    @Test
+    public void customizeRequestHostToPassThroughUsingAddHeader() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughCustomHost");
+        routeParams.put(SERVICEURL, "/passThroughCustomHost");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("Host", "fromAddHeader", true),
+                createRouteAssertion(ECHO_HEADERS_URL, true))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughCustomHost"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "testHost"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "host", "fromAddHeader");
+    }
+
+    @BugId("SSG-8415")
+    @Test
+    public void hostHeaderRuleOverridesAddHeader() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughCustomHost");
+        routeParams.put(SERVICEURL, "/passThroughCustomHost");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("Host", "fromAddHeader"),
+                createRouteAssertion(ECHO_HEADERS_URL, false, new HttpPassthroughRule("Host", true, "fromRule")))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughCustomHost"));
+        params.addExtraHeader(new GenericHttpHeader("Host", "testHost"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "host", "fromRule:8080");
     }
 
     @Test
@@ -489,6 +533,9 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(routedHeaders, "cookie", "1=one; 2=two");
     }
 
+    /**
+     * Behaviour changed as of Icefish.
+     */
     @Test
     public void requestAllHeaderValuesContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -517,6 +564,9 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(headers, "setonoriginalrequest", "setOnOriginalRequestValue");
     }
 
+    /**
+     * Behaviour changed as of Icefish.
+     */
     @Test
     public void requestHeaderNamesContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -545,6 +595,9 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertTrue(headerNames.contains("addedByAssertion"));
     }
 
+    /**
+     * Behaviour changed as of Icefish.
+     */
     @Test
     public void requestHeaderValuesByNameContextVariable() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();
@@ -568,5 +621,49 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(headers, "foo", "assertionFoo");
         assertHeaderValues(headers, "addedByAssertion", "addedByAssertionValue");
         assertHeaderValues(headers, "setOnOriginalRequest", "setOnOriginalRequestValue");
+    }
+
+    @BugId("SSG-8415")
+    @Test
+    public void customizeCookieToPassThrough() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughCustomCookie");
+        routeParams.put(SERVICEURL, "/passThroughCustomCookie");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("Cookie", "addHeaderName=addHeaderValue"),
+                createRouteAssertion(ECHO_HEADERS_URL, false, new HttpPassthroughRule("Cookie", true, "ruleName=ruleValue")))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughCustomCookie"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "originalName=originalValue"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "cookie", "ruleName=ruleValue");
+    }
+
+    @BugId("SSG-8416")
+    @Test
+    public void passThroughSetCookieHeaderAsRequestHeader() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughSetCookie");
+        routeParams.put(SERVICEURL, "/passThroughSetCookie");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createRouteAssertion(ECHO_HEADERS_URL, true))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughSetCookie"));
+        final String setCookieValue = "foo=bar; version=1; domain=foo; path=/; comment=test";
+        params.addExtraHeader(new GenericHttpHeader("Set-Cookie", setCookieValue));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertHeaderValues(routedHeaders, "set-cookie", setCookieValue);
     }
 }

@@ -236,7 +236,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
             request.initialize(stashManager, ctype, requestInput, maxBytes);
-            ServletUtils.loadHeadersAndCookies(hrequest, request);
 
             final Goid hardwiredServiceGoid = connector.getGoidProperty(EntityType.SERVICE, SsgConnector.PROP_HARDWIRED_SERVICE_ID, PersistentEntity.DEFAULT_GOID);
             if (!Goid.isDefault(hardwiredServiceGoid) ) {
@@ -246,6 +245,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final MimeKnob mk = request.getMimeKnob();
             HttpServletRequestKnob reqKnob = new HttpServletRequestKnob(new LazyInputStreamServletRequestWrapper(hrequest, new MimeKnobInputStreamHolder(mk)));
             request.attachHttpRequestKnob(reqKnob);
+            ServletUtils.loadHeadersAndCookies(hrequest, request);
 
             final HttpServletResponseKnob respKnob = logger.isLoggable( Level.FINE ) ?
                     new HttpServletResponseKnob( new DebugHttpServletResponse( hresponse, logger ) ) :

@@ -605,29 +605,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            String useHostName = null;
-            HttpPassthroughRuleSet ruleSet = assertion.getRequestHeaderRules();
-            if(ruleSet!=null && ruleSet.getRules()!=null && ruleSet.getRules().length>0){
-                //check for host header rule and set the virtual host based on what was set here.
-                HttpPassthroughRule[] rules = ruleSet.getRules();
-                for(HttpPassthroughRule r: rules){
-                    if(r.getName().toLowerCase().equals("host")){
-                        useHostName = r.getCustomizeValue();
-                    }
-                }
-            }
-
-              if(useHostName!=null){
-                if (vars == null)
-                    vars = context.getVariableMap(varNames, getAudit());
-
-                final String vhostValue = ExpandVariables.process(useHostName, vars, getAudit());
-                if (vhostValue != null && vhostValue.length() > 0) {
-                    routedRequestParams.setVirtualHost(vhostValue);
-                    logger.fine("virtual-host override set: " + vhostValue);
-                }
-            }
-
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.

@@ -236,6 +236,32 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals("a=apple", requestParams.getExtraHeaders().get(0).getFullValue());
     }
 
+    @BugId("SSG-8415")
+    @Test
+    public void requestCookiesCustomizedWithRule() throws Exception {
+        rules.add(new HttpPassthroughRule("Cookie", true, "ruleName=ruleValue"));
+        ruleSet.setForwardAll(false);
+        ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("knobName", "knobValue", 0, "/", TARGET_DOMAIN));
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("ruleName=ruleValue", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    /**
+     * If the request has a set-cookie header (which is actually a response header), treat it like any other header.
+     */
+    @BugId("SSG-8416")
+    @Test
+    public void requestWithSetCookieHeader() throws Exception {
+        request.getHeadersKnob().addHeader("Set-Cookie", "foo=bar; version=1; domain=localhost; path=/; comment=test", HEADER_TYPE_HTTP);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("Set-Cookie", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("foo=bar; version=1; domain=localhost; path=/; comment=test", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
     @Test
     public void requestRuleWithCustomValue() throws Exception {
         rules.add(new HttpPassthroughRule("foo", true, "custom"));
@@ -351,13 +377,15 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertFalse(headersOnKnob.contains("add"));
     }
 
-    @BugId("SSG-6543")
+    @BugId("SSG-6543,SSG-8415")
     @Test
-    public void requestRuleWithHostIgnored() throws Exception {
-        rules.add(new HttpPassthroughRule("host", true, "customHost"));
+    public void requestRuleWithHost() throws Exception {
+        rules.add(new HttpPassthroughRule("host", true, "fromRule"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
+        request.getHeadersKnob().addHeader("Host", "fromAddHeader", HEADER_TYPE_HTTP);
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals("fromRule", requestParams.getVirtualHost());
         assertEquals(0, requestParams.getExtraHeaders().size());
     }
 

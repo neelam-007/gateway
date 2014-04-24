@@ -115,15 +115,14 @@ public class ServletUtilsTest {
         assertEquals("two", cookie2.getCookieValue());
 
         final Map<String, List<Header>> knobHeaders = toHeadersMap(message.getHeadersKnob().getHeaders());
-        assertEquals(3, knobHeaders.size());
+        assertEquals(2, knobHeaders.size());
         final Header header1 = knobHeaders.get("foo").iterator().next();
         assertEquals("foo", header1.getKey());
         assertEquals("bar", header1.getValue());
-        final Header header2 = knobHeaders.get("Cookie").iterator().next();
-        assertEquals("1=one", header2.getValue());
-        // cookies on the request (not as a header) are stored as Set-Cookie headers
-        final Header header3 = knobHeaders.get("Set-Cookie").iterator().next();
-        assertEquals("2=two; Version=0", header3.getValue());
+        final List<Header> cookieHeaders = knobHeaders.get("Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertEquals("1=one", cookieHeaders.get(0).getValue());
+        assertEquals("2=two; Version=0", cookieHeaders.get(1).getValue());
     }
 
     @Test
