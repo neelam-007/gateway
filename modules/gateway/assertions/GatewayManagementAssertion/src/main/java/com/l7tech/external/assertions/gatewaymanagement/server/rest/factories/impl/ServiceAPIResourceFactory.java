@@ -114,6 +114,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     Goid id = serviceManager.save(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
                     saveServiceDocuments(id, newServiceEntity.getServiceDocuments());
+                    serviceManager.createRoles(newService);
 
                     resource.setId(id.toString());
                     return id.toString();
@@ -162,9 +163,11 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     beforeCreate(newService);
 
+
                     serviceManager.save(Goid.parseGoid(id), newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
                     saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
+                    serviceManager.createRoles(newService);
 
                     return null;
 

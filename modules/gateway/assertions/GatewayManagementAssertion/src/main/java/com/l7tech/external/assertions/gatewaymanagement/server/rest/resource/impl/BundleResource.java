@@ -15,6 +15,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.glassfish.jersey.process.internal.RequestScoped;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /*
  * Do not make this a @Provider the will make allow
@@ -137,9 +140,17 @@ public class BundleResource {
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    public Response importBundle(@QueryParam("test") @DefaultValue("false") boolean test, Bundle bundle) throws ResourceFactory.InvalidResourceException {
+    public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test, final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
-        List<Mapping> mappings = bundleImporter.importBundle(bundle, test);
+        // todo: why this works? create new audit context to collect audits and outputs when operation commits. Move to server.
+        AuditContextUtils.setSystem(true);
+        List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(),new Callable<List<Mapping>>() {
+            @Override
+            public List<Mapping> call() throws Exception {
+                return  bundleImporter.importBundle(bundle, test);
+            }
+        });
+        AuditContextUtils.setSystem(false);
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .setContent(ManagedObjectFactory.createMappings(mappings))

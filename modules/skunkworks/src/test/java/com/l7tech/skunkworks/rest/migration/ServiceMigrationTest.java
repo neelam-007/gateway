@@ -137,7 +137,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         Assert.assertEquals("The bundle should have 1 item. A service", 1, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals("The bundle should have 2 mappings. A policy, a service", 2, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The bundle should have 2 mappings. A folder, a service", 2, bundleItem.getContent().getMappings().size());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -171,6 +171,77 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         mappingsToClean = mappings;
 
         validate(mappings);
+    }
+
+    @Test
+    public void testImportNewFolder() throws Exception {
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        folderMO.setName("New Target folder");
+        RestResponse response = getTargetEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        logger.log(Level.INFO, response.toString());
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        folderMO.setId(folderCreated.getId());
+        folderCreated.setContent(folderMO);
+
+        try{
+            response = getSourceEnvironment().processRequest("bundle/service/" + serviceItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 1 item. A service", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 2 mappings. A folder, a service", 2, bundleItem.getContent().getMappings().size());
+
+            // update mapping
+            bundleItem.getContent().getMappings().get(0).setTargetId(folderCreated.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(folderCreated.getId(), rootFolderMapping.getTargetId());
+
+            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            //verify service
+            response = getTargetEnvironment().processRequest("services/"+serviceItem.getId(), HttpMethod.GET, null,"");
+            Item<ServiceMO> targetService = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(2, targetService.getContent().getResourceSets().size());
+            Assert.assertEquals("wsdl", targetService.getContent().getResourceSets().get(1).getTag());
+            Assert.assertEquals(folderCreated.getId(), targetService.getContent().getServiceDetail().getFolderId());
+            mappingsToClean = mappings;
+
+            validate(mappings);
+        }finally{
+
+            response = getTargetEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+            assertOkDeleteResponse(response);
+
+            mappingsToClean = null;
+        }
     }
 
     @Test

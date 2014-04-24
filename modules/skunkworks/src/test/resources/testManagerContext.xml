@@ -1550,4 +1550,37 @@
         <!-- passwordChangeDaily -->
     </bean>
 
+    <bean id="activateServerAuditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryActivator" depends-on="cryptoInit">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditContextFactory"/>
+        <constructor-arg index="2" ref="auditRecordManager"/>
+        <constructor-arg index="3" ref="clusterNodeId"/>
+        <constructor-arg index="4" ref="defaultKey"/>
+        <constructor-arg index="5" ref="auditPolicyEvaluator"/>
+        <constructor-arg index="6" ref="auditFilterPolicyManager"/>
+    </bean>
+
+    <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="policyCache"/>
+        <constructor-arg index="2" ref="policyManager"/>
+        <constructor-arg index="3" ref="jdbcConnectionPoolManager"/>
+    </bean>
+
+    <bean id="auditFilterPolicyManager" class="com.l7tech.server.audit.AuditFilterPolicyManager">
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="stashManagerFactory"/>
+    </bean>
+
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
+        <constructor-arg ref="jdbcConnectionManager" />
+    </bean>
+
+   <!--blah -->
+
+    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="auditContextFactory"/>
+    </bean>
+
 </beans>

@@ -37,9 +37,6 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
     @Inject
     private SecurityZoneManager securityZoneManager;
 
-    @Inject
-    private FolderManager folderManager;
-
     /**
      * Finds the dependencies in a policy by looking at the assertions contained in the policy
      *
@@ -130,19 +127,5 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
                 policy.setSecurityZone(securityZone);
             }
         }
-
-
-//        // replace parent folder
-//
-//        final EntityHeader srcFolderHeader = EntityHeaderUtils.fromEntity(policy.getFolder());
-//        EntityHeader folderHeaderToUse = replacementMap.get(srcFolderHeader);
-//        if(folderHeaderToUse != null) {
-//            try {
-//                Folder folder = folderManager.findByHeader(folderHeaderToUse);
-//                policy.setFolder(folder);
-//            } catch (FindException e) {
-//                throw new CannotRetrieveDependenciesException(folderHeaderToUse.getName(), Folder.class, policy.getClass(), "Cannot find folder", e);
-//            }
-//        }
     }
 }

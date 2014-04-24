@@ -258,7 +258,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         //Create the source header from the entity
         EntityHeader sourceHeader;
         if(entity == null ) {
-            if(mapping.getProperties().containsKey(IdentityProvider)){
+            if(mapping.getProperties()!= null && mapping.getProperties().containsKey(IdentityProvider)){
                 sourceHeader = new IdentityHeader(Goid.parseGoid((String)mapping.getProperties().get(IdentityProvider)),mapping.getSrcId(),EntityType.valueOf(mapping.getType()),null,null,null,null);
 
             }else{
