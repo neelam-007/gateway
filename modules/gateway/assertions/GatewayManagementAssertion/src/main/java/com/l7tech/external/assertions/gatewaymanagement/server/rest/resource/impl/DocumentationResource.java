@@ -3,7 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.util.IOUtils;
 
 import javax.inject.Singleton;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
@@ -23,22 +26,16 @@ public class DocumentationResource {
     protected UriInfo uriInfo;
 
     /**
-     * The xsl style sheet
-     *
-     * @return The xsl style sheet
+     * Returns the home page of the documentation.
+     * @return The documentation home page.
      */
     @GET
-    @Produces({"text/html"})
     public Response documentation() {
         //Need to enforce that the doc url ends with a / This way document resources will load properly
         if(!uriInfo.getPath().endsWith("/")){
-            return Response.temporaryRedirect(uriInfo.getRequestUriBuilder().path("/").build()).build();
+            return Response.status(Response.Status.MOVED_PERMANENTLY).header("Location", uriInfo.getRequestUriBuilder().path("/").build().toString()).build();
         }
-        return Response.ok(new StreamingOutput() {
-            public void write(OutputStream output) throws IOException {
-                IOUtils.copyStream(DocumentationResource.this.getClass().getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/doc/restDoc.html"), output);
-            }
-        }).build();
+        return documentationResources("home.html");
     }
 
     /**
@@ -69,6 +66,8 @@ public class DocumentationResource {
             response.header(HttpHeaders.CONTENT_TYPE, "text/javascript");
         } else if(resource.endsWith(".html")){
             response.header(HttpHeaders.CONTENT_TYPE, "text/html");
+        } else if(resource.endsWith(".png")){
+            response.header(HttpHeaders.CONTENT_TYPE, "image/png");
         }
 
         return response.build();
