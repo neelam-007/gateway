@@ -317,7 +317,7 @@ public class ServerVariablesTest {
         headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
 
         // ensure the values returned for each name are the most recently set ones
-        expandAndCheck(context, "${request.jms.allpropertyvalues}", "[fuz:buz, foo:baz]");
+        expandAndCheck(context, "${request.jms.allpropertyvalues}", "fuz:buz, foo:baz");
     }
 
     /**
@@ -334,7 +334,7 @@ public class ServerVariablesTest {
         headersKnob.addHeader("fuz", "buz", HEADER_TYPE_JMS_PROPERTY);
 
         // ensure the values returned for each name are the most recently set ones
-        expandAndCheck(context, "${response.jms.allpropertyvalues}", "[fuz:buz, foo:baz]");
+        expandAndCheck(context, "${response.jms.allpropertyvalues}", "fuz:buz, foo:baz");
     }
 
     /**

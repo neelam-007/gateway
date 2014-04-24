@@ -461,7 +461,7 @@ public class ServerVariables {
                                 header.getKey() + delimiter + header.getValue().toString());
                     }
 
-                    return propertyValuesMap.values();
+                    return propertyValuesMap.values().toArray();
                 }
             }),
 
@@ -481,7 +481,7 @@ public class ServerVariables {
                                 header.getKey() + delimiter + header.getValue().toString());
                     }
 
-                    return propertyValuesMap.values();
+                    return propertyValuesMap.values().toArray();
                 }
             }),
 
