@@ -1,32 +1,44 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocumentResources;
-import com.l7tech.gateway.common.service.ServiceTemplate;
-import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.system.LicenseChangeEvent;
+import com.l7tech.server.event.system.Started;
+import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.ModularAssertionModule;
+import com.l7tech.server.service.ServiceDocumentManager;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
-import java.util.Arrays;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +83,10 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     public GatewayManagementModuleLifecycle( final ApplicationContext spring ) {
         this.serviceTemplateManager = spring.getBean("serviceTemplateManager", ServiceTemplateManager.class);
+        this.serviceManager = spring.getBean("serviceManager", ServiceManager.class);
+        this.serviceDocumentManager = spring.getBean("serviceDocumentManager", ServiceDocumentManager.class);
+        this.policyVersionManager = spring.getBean("policyVersionManager", PolicyVersionManager.class);
+        this.folderManager = spring.getBean("folderManager", FolderManager.class);
         this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
@@ -78,8 +94,27 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof LicenseChangeEvent) {
+        if ( event instanceof LicenseChangeEvent ) {
             handleLicenceEvent();
+        }
+        if( event instanceof Started){
+            if ( isLicensed() ) {
+                installBootstrapServices();
+            }
+        }
+        if(event instanceof AssertionModuleRegistrationEvent){
+            AssertionModuleRegistrationEvent regEvent = (AssertionModuleRegistrationEvent)event;
+            if (regEvent.getModule() instanceof ModularAssertionModule) {
+                final ModularAssertionModule assMod = (ModularAssertionModule)regEvent.getModule();
+                Set<? extends Assertion> protos = assMod.getAssertionPrototypes();
+                if (protos.size() > 0) {
+                    Assertion proto = protos.iterator().next();
+                    if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
+                        // Our module has just been registered.
+                        installBootstrapServices();
+                    }
+                }
+            }
         }
     }
 
@@ -139,9 +174,15 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     private static final String FAKE_URL_PREFIX = "file://__ssginternal/";
 
+    private static final String BOOTSTRAP_SERVICES_FOLDER = ConfigFactory.getProperty("bootstrap.folder.services");
+
     private static GatewayManagementModuleLifecycle instance = null;
 
     private final ServiceTemplateManager serviceTemplateManager;
+    private final FolderManager folderManager;
+    private final ServiceManager serviceManager;
+    private final ServiceDocumentManager serviceDocumentManager;
+    private final PolicyVersionManager policyVersionManager;
     private final ApplicationEventProxy applicationEventProxy;
     private final ApplicationContext spring;
 
@@ -156,7 +197,7 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         }
     }
 
-    private void initialize() {
+    protected void initialize() {
         serviceTemplate = createServiceTemplate();
 
         restServiceTemplate = createRestServiceTemplate();
@@ -230,5 +271,103 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         WspWriter.writePolicy(allAss, outputStream);
         return HexUtils.decodeUtf8(outputStream.toByteArray());
+    }
+
+    protected void installBootstrapServices() {
+        // if no services are installed try installing services
+        try {
+            AdminInfo.find(false).wrapCallable(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+
+                    if (serviceManager.findAll().isEmpty() && BOOTSTRAP_SERVICES_FOLDER != null) {
+                        File serviceFolder = new File(BOOTSTRAP_SERVICES_FOLDER);
+                        if (!serviceFolder.exists()) return false;
+                        if (!serviceFolder.isDirectory()) return false;
+                        File[] serviceFiles = serviceFolder.listFiles();
+                        if (serviceFiles == null) return false;
+
+                        boolean created = false;
+                        for (File serviceFile : serviceFiles) {
+                            if (serviceFile.getName().equals("wsman")) {
+                                // install wsman service
+                                created = installTemplateService(serviceTemplate) || created;
+                            } else if (serviceFile.getName().equals("restman")) {
+                                // install rest-man service
+                                created = installTemplateService(restServiceTemplate) || created;
+                            }
+                        }
+                    }
+
+                    return false;
+                }
+            }).call();
+        } catch ( Exception e ) {
+            logger.warning(ExceptionUtils.getMessageWithCause(e));
+        }
+    }
+
+    private boolean installTemplateService(@NotNull ServiceTemplate template) {
+        try {
+
+            PublishedService service = new PublishedService();
+            service.setFolder(folderManager.findRootFolder());
+
+            service.setName(template.getName());
+            service.getPolicy().setXml(template.getDefaultPolicyXml());
+            service.setRoutingUri(template.getDefaultUriPrefix());
+            service.setSoap(template.isSoap());
+            if(!template.isSoap()){
+                // set supported http methods
+                service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
+            }
+            service.setInternal(true);
+            service.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(template.getServiceDocuments()));
+            service.setWsdlUrl(template.getServiceDescriptorUrl());
+            service.setWsdlXml(template.getServiceDescriptorXml());
+
+            service.setDisabled(false);
+
+            // SAVING NEW SERVICE
+            logger.fine("Saving new PublishedService");
+
+            final Policy policy = service.getPolicy();
+            if(policy != null && policy.getGuid() == null) {
+                UUID guid = UUID.randomUUID();
+                policy.setGuid(guid.toString());
+            }
+
+            // Services may not be saved for the first time with the trace bit set.
+            service.setTracingEnabled(false);
+
+            final Goid serviceGoid = serviceManager.save(service);
+            if (policy != null) {
+                policyVersionManager.checkpointPolicy(policy, true, true);
+            }
+
+            if(template.isSoap()){
+
+                Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(serviceGoid);
+                for (ServiceDocument serviceDocument : existingServiceDocuments) {
+                    serviceDocumentManager.delete(serviceDocument);
+                }
+                for (ServiceDocument serviceDocument : template.getServiceDocuments()) {
+                    serviceDocument.setGoid(ServiceDocument.DEFAULT_GOID);
+                    serviceDocument.setServiceId(serviceGoid);
+                    serviceDocumentManager.save(serviceDocument);
+                }
+            }
+
+            serviceManager.createRoles(service);
+
+
+            logger.info("Internal service " + template.getName() + " created");
+            return true;
+
+        } catch ( ObjectModelException | IOException e) {
+            logger.warning("Error creating internal service " + template.getName() + " caused by:" + e.getMessage());
+            return false;
+        }
+
     }
 }

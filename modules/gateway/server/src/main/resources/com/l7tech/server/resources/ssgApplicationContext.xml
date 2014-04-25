@@ -1610,6 +1610,10 @@
 
     <bean id="licenseManager" class="com.l7tech.server.licensing.GatewayCompositeLicenseManager" depends-on="systemAuditListener"/>
 
+    <bean id="bootstrapLicenseService" class="com.l7tech.server.licensing.BootstrapLicenseService">
+        <constructor-arg index="0" ref="licenseDocumentManager"/>
+    </bean>
+
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="certValidationProcessor"/>
