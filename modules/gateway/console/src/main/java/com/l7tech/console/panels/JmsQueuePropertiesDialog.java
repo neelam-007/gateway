@@ -843,16 +843,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (useJmsMsgPropAsSoapActionRadioButton.isSelected()) {
             properties.setProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
         }
-
-        if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem())) {
-            properties.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
-            properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitSpinner.getValue().toString());
+        if (inboundRadioButton.isSelected()) {
+            if (TYPE_QUEUE.equals(destinationTypeComboBox.getSelectedItem())) {
+                properties.setProperty(JmsConnection.PROP_IS_DEDICATED_CONSUMER, Boolean.TRUE.toString());
+                properties.setProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE, dedicatedConsumerConnectionLimitSpinner.getValue().toString());
+            }
         }
-
-        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
-        properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
-        properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
-
+        else {
+            properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
+            properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
+            properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
+        }
         conn.properties(properties);
         conn.setSecurityZone(zoneControl.getSelectedZone());
         return conn;
