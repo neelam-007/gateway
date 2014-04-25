@@ -220,6 +220,47 @@ public class DebugPecDataTest {
     }
 
     @Test
+    public void testUserContextVariableMultiValueTypeIndexed() throws Exception {
+        // Setup test data.
+        //
+        Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
+        MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
+        for (int ix = 0; ix < HEADER_NAMES.length; ix++) {
+            request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
+        }
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
+
+        // Add user context variable
+        //
+        String cxt_name = "request.http.allheadervalues[0]";
+        debugPecData.addUserContextVariable(cxt_name);
+        Set<String> userContextVariables = new TreeSet<>();
+        userContextVariables.add(cxt_name);
+        debugPecData.update(pec, userContextVariables);
+
+        // Verify result.
+        //
+        Set<DebugContextVariableData> vars = debugPecData.getContextVariables();
+        Assert.assertNotNull(vars);
+
+        boolean isUserAddedFound = false;
+        for (DebugContextVariableData var : vars) {
+            Assert.assertNotNull(var);
+            if (var.getIsUserAdded()) {
+                Assert.assertTrue(cxt_name.equals(var.getName()));
+                Assert.assertNotNull(var.getChildren());
+                Assert.assertEquals(0, var.getChildren().size());
+                Assert.assertTrue(var.toString().contains(HEADER_NAMES[0]));
+                Assert.assertTrue(var.toString().contains(HEADER_VALUES[0]));
+                isUserAddedFound = true;
+                break;
+            }
+        }
+        Assert.assertTrue(isUserAddedFound);
+    }
+
+    @Test
     public void testRemoveUserContextVariable() throws Exception {
         // Setup test data.
         //

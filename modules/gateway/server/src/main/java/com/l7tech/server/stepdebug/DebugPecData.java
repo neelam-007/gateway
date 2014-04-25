@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +73,9 @@ public class DebugPecData {
         // User added context variables.
         //
         for (String name : userContextVariables) {
-            Object value = ExpandVariables.processSingleVariableAsObject("${" + name + "}", pec.getVariableMap(new String[]{name}, audit), audit);
+            String expr = Syntax.SYNTAX_PREFIX + name + Syntax.SYNTAX_SUFFIX;
+            Map<String, Object> vars = pec.getVariableMap(new String[]{Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER).remainingName}, audit);
+            Object value = ExpandVariables.processSingleVariableAsObject(expr, vars, audit);
             contextVariables.add(this.convertToDebugContextVariableData(pec, name, value, true));
         }
     }
