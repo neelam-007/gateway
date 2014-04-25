@@ -4,6 +4,10 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.validator.InjectionThreatProtectionAssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 
@@ -45,11 +49,10 @@ public class SqlAttackAssertion extends InjectionThreatProtectionAssertion {
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
-
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
         meta.put(PROPERTIES_ACTION_NAME, "SQL Attack Protection Properties");        
         meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.SqlAttackAssertionAdvice");
-        meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SqlAttackAssertionValidator");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, SqlAttackAssertionValidator.class.getName());
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, SqlAttackAssertion>(){
             @Override
             public Set<ValidatorFlag> call(SqlAttackAssertion assertion) {
@@ -183,5 +186,45 @@ public class SqlAttackAssertion extends InjectionThreatProtectionAssertion {
     @Override
     protected String getBaseName() {
         return baseName;
+    }
+
+    public static class SqlAttackAssertionValidator extends InjectionThreatProtectionAssertionValidator {
+        private final SqlAttackAssertion assertion;
+
+        public SqlAttackAssertionValidator(SqlAttackAssertion assertion) {
+            super(assertion);
+
+            this.assertion = assertion;
+        }
+
+        @Override
+        public void validate(AssertionPath assertionPath, PolicyValidationContext pvc, PolicyValidatorResult result) {
+            super.validate(assertionPath, pvc, result);
+
+            // Check if any WSS Token Assertions violate the option "Invasive SQL Injection Attack Protection" or not.
+            if (assertion.isSqlMetaEnabled() && hasWssAssertion(assertionPath.getPath(), assertion)) {
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
+                        "WS-Security message decoration violates the selected " +
+                                "\"Invasive SQL Injection Attack Protection\".", null));
+            }
+        }
+
+        @Override
+        protected boolean isAtLeastOneProtectionEnabled() {
+            return !assertion.getProtections().isEmpty();
+        }
+
+        private boolean hasWssAssertion(final Assertion[] path, final MessageTargetable messageTargetable) {
+            for (Assertion assertion : path) {
+                if (!assertion.isEnabled()) continue;
+
+                if (Assertion.isWSSecurity(assertion) &&
+                        AssertionUtils.isSameTargetMessage(assertion, messageTargetable)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

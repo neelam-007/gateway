@@ -3,6 +3,7 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.validator.InjectionThreatProtectionAssertionValidator;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 
@@ -106,6 +107,7 @@ public class CodeInjectionProtectionAssertion extends InjectionThreatProtectionA
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
@@ -114,12 +116,14 @@ public class CodeInjectionProtectionAssertion extends InjectionThreatProtectionA
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Code Injection Protection Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_VALIDATOR_CLASSNAME, CodeInjectionProtectionAssertionValidator.class.getName());
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>() {
             @Override
             public Set<ValidatorFlag> call(CodeInjectionProtectionAssertion assertion) {
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
+
         return meta;
     }
 
@@ -143,5 +147,20 @@ public class CodeInjectionProtectionAssertion extends InjectionThreatProtectionA
         }
 
         includeBody = includeRequestBody || includeResponseBody;
+    }
+
+    public static class CodeInjectionProtectionAssertionValidator extends InjectionThreatProtectionAssertionValidator {
+        private final CodeInjectionProtectionAssertion assertion;
+
+        public CodeInjectionProtectionAssertionValidator(CodeInjectionProtectionAssertion assertion) {
+            super(assertion);
+
+            this.assertion = assertion;
+        }
+
+        @Override
+        protected boolean isAtLeastOneProtectionEnabled() {
+            return assertion.getProtections().length > 0;
+        }
     }
 }
