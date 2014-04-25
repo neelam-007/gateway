@@ -969,7 +969,7 @@ public class DBActions {
                 ResultSet createFunctions = getCreateFunctionsStmt.executeQuery("show create function " + functionName);
                 while (createFunctions.next()) {
                     String functionString = createFunctions.getString(3);
-                    if(!functionString.isEmpty()) {
+                    if(functionString != null && !functionString.isEmpty()) {
                         String s = functionString.replace("\n", " ");
                         //need to replace the definer section otherwise the bd user that is creating these functions wont be able to call them.
                         s = s.replaceAll("CREATE DEFINER=`[^`]*`@`[^`]*` FUNCTION", "CREATE FUNCTION");
