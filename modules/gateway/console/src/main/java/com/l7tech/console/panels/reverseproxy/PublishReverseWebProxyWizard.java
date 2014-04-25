@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.AbstractPublishServiceWizard;
+import com.l7tech.console.panels.IdentityProviderWizardPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -13,7 +14,9 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.builder.PolicyBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -23,10 +26,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +39,7 @@ import static com.l7tech.policy.assertion.TargetMessageType.*;
 public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final Logger logger = Logger.getLogger(PublishReverseWebProxyWizard.class.getName());
     private ReverseWebProxyConfigurationPanel configPanel;
+    private IdentityProviderWizardPanel authPanel;
     private ReverseWebProxyConfig config;
     private static final String WEB_APP_HOST = "webAppHost";
     private static final String WEB_APP_HOST_ENCODED = "webAppHostEncoded";
@@ -64,19 +66,25 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String ENCODE_DOT_COMMENT = "// ENCODE AND REPLACE '.' IN WEB APP HOST";
     private static final String ENCODE_OPEN_CURLY_COMMENT = "// ENCODE AND REPLACE '{' IN QUERY";
     private static final String ENCODE_CLOSE_CURLY_COMMENT = "// ENCODE AND REPLACE '}' IN QUERY";
+    private static final String AUTHORIZATION_COMMENT = "// AUTHORIZATION";
 
     public static PublishReverseWebProxyWizard getInstance(@NotNull final Frame parent) {
         final ReverseWebProxyConfigurationPanel configPanel = new ReverseWebProxyConfigurationPanel();
-        configPanel.setNextPanel(null);
-        return new PublishReverseWebProxyWizard(parent, configPanel);
+        IdentityProviderWizardPanel authPanel = null;
+        if (Registry.getDefault().getLicenseManager().isAuthenticationEnabled()) {
+            authPanel = new IdentityProviderWizardPanel(false);
+        }
+        configPanel.setNextPanel(authPanel);
+        return new PublishReverseWebProxyWizard(parent, configPanel, authPanel);
     }
 
-    private PublishReverseWebProxyWizard(@NotNull final Frame parent, @NotNull final ReverseWebProxyConfigurationPanel configPanel) {
+    private PublishReverseWebProxyWizard(@NotNull final Frame parent, @NotNull final ReverseWebProxyConfigurationPanel configPanel, @NotNull final IdentityProviderWizardPanel authPanel) {
         super(parent, configPanel);
-        setTitle("Publish Reverse Web Proxy");
+        setTitle("Publish Reverse Web Proxy Wizard");
         this.config = new ReverseWebProxyConfig();
         this.wizardInput = config;
         this.configPanel = configPanel;
+        this.authPanel = authPanel;
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -102,8 +110,14 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
                     routingUri = "/" + routingUri;
                 }
                 service.setRoutingUri(routingUri);
+                final ArrayList<Assertion> authAssertions = new ArrayList<>();
+                if (authPanel != null) {
+                    authPanel.readSettings(authAssertions);
+                    service.setSecurityZone(authPanel.getSelectedSecurityZone());
+                    service.getPolicy().setSecurityZone(authPanel.getSelectedSecurityZone());
+                }
                 final PolicyBuilder builder = new PolicyBuilder();
-                buildPolicyXml(config, builder);
+                buildPolicyXml(config, authAssertions, builder);
                 service.getPolicy().setXml(XmlUtil.nodeToFormattedString(builder.getPolicy()));
                 final Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
                 service.setGoid(goid);
@@ -126,10 +140,11 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         }
     }
 
-    static void buildPolicyXml(@NotNull final ReverseWebProxyConfig config, @NotNull final PolicyBuilder builder) throws IOException {
+    static void buildPolicyXml(@NotNull final ReverseWebProxyConfig config, @NotNull final List<Assertion> authAssertions, @NotNull final PolicyBuilder builder) throws IOException {
         if (StringUtils.isBlank(config.getWebAppHost())) {
             throw new IllegalArgumentException("Configured web app host is null or empty");
         }
+        authorize(authAssertions, builder);
         setConstants(config, builder);
         encodeSpecialCharacters(config, builder);
         handleRequestCookies(config, builder);
@@ -140,6 +155,13 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         // handle redirects
         builder.rewriteHeader(RESPONSE, null, LOCATION, $_WEB_APP_HOST, $_HOST_AND_PORT, config.isRewriteLocationHeader(), REWRITE_LOCATION_COMMENT);
         rewriteResponseBody(config, builder);
+    }
+
+    private static void authorize(final List<Assertion> authAssertions, final PolicyBuilder builder) {
+        if (!authAssertions.isEmpty()) {
+            final AllAssertion allAuth = new AllAssertion(authAssertions);
+            builder.appendAssertion(allAuth, AUTHORIZATION_COMMENT);
+        }
     }
 
     private static void rewriteResponseBody(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {

@@ -105,6 +105,30 @@ public class PolicyBuilder {
     }
 
     /**
+     * Append the given assertion to the Document.
+     *
+     * @param assertion the assertion to append.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder appendAssertion(@NotNull final Assertion assertion) {
+        return appendAssertion(assertion, null);
+    }
+
+    /**
+     * Append the given assertion to the Document.
+     *
+     * @param assertion the assertion to append.
+     * @param comment   an optional comment to set on the assertion.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder appendAssertion(@NotNull final Assertion assertion, @Nullable final String comment) {
+        addRightComment(comment, assertion);
+        final Document assertionDoc = WspWriter.getPolicyDocument(assertion);
+        addNode(assertionDoc.getDocumentElement().getFirstChild());
+        return this;
+    }
+
+    /**
      * Append a CommentAssertion to the Document.
      *
      * @param comment the comment to add.
@@ -114,7 +138,7 @@ public class PolicyBuilder {
     public PolicyBuilder comment(@NotNull final String comment, final boolean enable) {
         final CommentAssertion com = new CommentAssertion(comment);
         com.setEnabled(enable);
-        addAssertion(com);
+        appendAssertion(com);
         return this;
     }
 
@@ -149,7 +173,7 @@ public class PolicyBuilder {
         if (dataType == DataType.MESSAGE) {
             setVar.setContentType(contentType);
         }
-        addAssertion(setVar);
+        appendAssertion(setVar);
         return this;
     }
 
@@ -166,7 +190,7 @@ public class PolicyBuilder {
         for (final Map.Entry<String, String> entry : vars.entrySet()) {
             all.addChild(new SetVariableAssertion(entry.getKey(), entry.getValue()));
         }
-        addAssertion(all);
+        appendAssertion(all);
         return this;
     }
 
@@ -195,7 +219,7 @@ public class PolicyBuilder {
         regex.setReplacement(replacement);
         regex.setEnabled(enable);
         addRightComment(comment, regex);
-        addAssertion(regex);
+        appendAssertion(regex);
         return this;
     }
 
@@ -333,7 +357,7 @@ public class PolicyBuilder {
         route.getRequestParamRules().setRules(emptyRules);
         route.getResponseHeaderRules().setForwardAll(true);
         route.getResponseHeaderRules().setRules(emptyRules);
-        addAssertion(route);
+        appendAssertion(route);
         return this;
     }
 
@@ -499,11 +523,6 @@ public class PolicyBuilder {
             item.appendChild(element);
         }
         return item;
-    }
-
-    private void addAssertion(final Assertion assertion) {
-        final Document assertionDoc = WspWriter.getPolicyDocument(assertion);
-        addNode(assertionDoc.getDocumentElement().getFirstChild());
     }
 
     private void addNode(final Node node) {

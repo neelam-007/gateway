@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
 import org.junit.Before;
@@ -31,6 +32,39 @@ public class PolicyBuilderTest {
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\"/>\n" +
                 "</wsp:Policy>\n";
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void appendAssertion() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\"/>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.appendAssertion(new AllAssertion());
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void appendAssertionWithComment() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <L7p:assertionComment>\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:assertionComment>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.appendAssertion(new AllAssertion(), "test");
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
     }
 

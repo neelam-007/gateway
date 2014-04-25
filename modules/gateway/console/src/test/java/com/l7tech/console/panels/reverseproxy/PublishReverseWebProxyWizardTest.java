@@ -1,7 +1,10 @@
 package com.l7tech.console.panels.reverseproxy;
 
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.builder.PolicyBuilder;
 import com.l7tech.policy.variable.DataType;
 import org.junit.Before;
@@ -10,7 +13,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.*;
@@ -37,19 +42,19 @@ public class PublishReverseWebProxyWizardTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void nullWebAppHost() throws Exception {
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptyWebAppHost() throws Exception {
         config.setWebAppHost("");
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
     }
 
     @Test
     public void defaultGeneric() throws Exception {
         config.setWebAppHost("default-generic.l7tech.com");
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         // constants
         final Map<String, String> constants = new HashMap<>();
@@ -78,7 +83,7 @@ public class PublishReverseWebProxyWizardTest {
         config.setRewriteCookies(false);
         config.setRewriteLocationHeader(false);
         config.setRewriteResponseContent(false);
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         // constants + route
         final Map<String, String> constants = new HashMap<>();
@@ -104,7 +109,7 @@ public class PublishReverseWebProxyWizardTest {
     public void genericViaHttps() throws Exception {
         config.setWebAppHost("default-generic.l7tech.com");
         config.setUseHttps(true);
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         verify(builder).routeForwardAll("https://${webAppHost}${request.url.path}${query}", false);
     }
@@ -113,17 +118,32 @@ public class PublishReverseWebProxyWizardTest {
     public void genericRewriteSpecificTags() throws Exception {
         config.setWebAppHost("default-generic.l7tech.com");
         config.setHtmlTagsToRewrite("p,script");
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
         verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
     }
 
     @Test
+    public void genericWithAuthorization() throws Exception {
+        config.setWebAppHost("default-generic.l7tech.com");
+        final List<Assertion> authAssertions = Collections.<Assertion>singletonList(new AuthenticationAssertion());
+        PublishReverseWebProxyWizard.buildPolicyXml(config, authAssertions, builder);
+        verify(builder).appendAssertion(any(AllAssertion.class), eq("// AUTHORIZATION"));
+    }
+
+    @Test
+    public void genericWithEmptyAuthorizationList() throws Exception {
+        config.setWebAppHost("default-generic.l7tech.com");
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
+        verify(builder, never()).appendAssertion(any(Assertion.class), eq("// AUTHORIZATION"));
+    }
+
+    @Test
     public void defaultSharepoint() throws Exception {
         config.setWebAppHost("default-sharepoint.l7tech.com");
         config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.SHAREPOINT);
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         // constants
         final Map<String, String> constants = new HashMap<>();
@@ -158,7 +178,7 @@ public class PublishReverseWebProxyWizardTest {
         config.setRewriteCookies(false);
         config.setRewriteLocationHeader(false);
         config.setRewriteResponseContent(false);
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         // constants
         final Map<String, String> constants = new HashMap<>();
@@ -190,7 +210,7 @@ public class PublishReverseWebProxyWizardTest {
         config.setWebAppHost("default-sharepoint.l7tech.com");
         config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.SHAREPOINT);
         config.setUseHttps(true);
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         verify(builder).routeForwardAll("https://${webAppHost}${request.url.path}${query}", false);
     }
@@ -200,7 +220,7 @@ public class PublishReverseWebProxyWizardTest {
         config.setWebAppHost("default-sharepoint.l7tech.com");
         config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.SHAREPOINT);
         config.setHtmlTagsToRewrite("p,script");
-        PublishReverseWebProxyWizard.buildPolicyXml(config, builder);
+        PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
         verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
         verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
