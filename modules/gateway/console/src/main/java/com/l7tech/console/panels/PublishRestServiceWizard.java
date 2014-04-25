@@ -1,20 +1,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
@@ -24,13 +14,10 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Option;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -44,11 +31,9 @@ import java.util.regex.Pattern;
 /**
  * Wizard that guides the administrator through the publication of a RESTful Service Proxy.
  */
-public class PublishRestServiceWizard extends Wizard {
+public class PublishRestServiceWizard extends AbstractPublishServiceWizard {
     private static final Logger logger = Logger.getLogger(PublishRestServiceWizard.class.getName());
     private IdentityProviderWizardPanel authorizationPanel;
-
-    private Option<Folder> folder = Option.none();
 
     public static PublishRestServiceWizard getInstance(final Frame parent) {
         IdentityProviderWizardPanel authorizationPanel = null;
@@ -63,32 +48,24 @@ public class PublishRestServiceWizard extends Wizard {
         return output;
     }
 
-    public PublishRestServiceWizard(Frame parent, WizardStepPanel panel) {
-        super(parent, panel);
-        setTitle("Publish REST Service Proxy Wizard");
-
-        getButtonHelp().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Actions.invokeHelp(PublishRestServiceWizard.this);
-            }
-        });
+    private PublishRestServiceWizard(Frame parent, WizardStepPanel panel) {
+        super(parent, panel, "Publish REST Service Proxy Wizard");
         this.wizardInput = new RestServiceConfig();
     }
 
     @Override
-    protected void finish( final ActionEvent evt ) {
+    protected void finish(final ActionEvent evt) {
         super.finish(evt);
-        if(wizardInput instanceof RestServiceConfig){
-            RestServiceConfig config = (RestServiceConfig)wizardInput;
+        if (wizardInput instanceof RestServiceConfig) {
+            RestServiceConfig config = (RestServiceConfig) wizardInput;
             //deploy all services
-            for(RestServiceInfo rsi : config.getServices()){
+            for (RestServiceInfo rsi : config.getServices()) {
                 deployService(rsi);
             }
         }
     }
 
-    private Assertion createRegexAssertion(final RestServiceInfo serviceInfo){
+    private Assertion createRegexAssertion(final RestServiceInfo serviceInfo) {
         Regex regexAssertion = new Regex();
         regexAssertion.setRegexName("Remove Gateway URL from ${request.http.path}");
         regexAssertion.setCaseInsensitive(true);
@@ -100,7 +77,7 @@ public class PublishRestServiceWizard extends Wizard {
             logger.log(Level.WARNING, "Could not encode gateway url: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         gatewayUrl = normalizeUrl(gatewayUrl);
-        if(gatewayUrl.endsWith("/")) gatewayUrl = gatewayUrl.substring(0, gatewayUrl.length() - 1);
+        if (gatewayUrl.endsWith("/")) gatewayUrl = gatewayUrl.substring(0, gatewayUrl.length() - 1);
         regexAssertion.setRegex(Pattern.quote(gatewayUrl) + "(.*)");
         regexAssertion.setAutoTarget(false);
         regexAssertion.setTarget(TargetMessageType.OTHER);
@@ -110,7 +87,7 @@ public class PublishRestServiceWizard extends Wizard {
         return regexAssertion;
     }
 
-    private void deployService(final RestServiceInfo serviceInfo){
+    private void deployService(final RestServiceInfo serviceInfo) {
         final PublishedService service = new PublishedService();
         final ArrayList<Assertion> allAssertions = new ArrayList<Assertion>();
         try {
@@ -125,12 +102,12 @@ public class PublishRestServiceWizard extends Wizard {
             //if we have a custom gateway url, make sure to remove it so that it is routed to the
             //correct REST endpoint
             String remotePath = "${request.http.uri}";
-            if(!gatewayUrl.isEmpty()){
+            if (!gatewayUrl.isEmpty()) {
                 policy.addChild(createRegexAssertion(serviceInfo));
                 remotePath = "${uri}";
             }
             String backendUrl = serviceInfo.getBackendUrl();
-            if(backendUrl.endsWith("/")) backendUrl = backendUrl.substring(0, backendUrl.length() - 1);
+            if (backendUrl.endsWith("/")) backendUrl = backendUrl.substring(0, backendUrl.length() - 1);
             policy.addChild(new HttpRoutingAssertion(backendUrl + remotePath + "${request.url.query}"));
 
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -147,89 +124,21 @@ public class PublishRestServiceWizard extends Wizard {
             gatewayUrl = normalizeUrl(gatewayUrl);
             gatewayUrl = gatewayUrl.endsWith("/") ? gatewayUrl + "*" : gatewayUrl + "/*";
             service.setRoutingUri(gatewayUrl);
-            final Runnable saver = new Runnable(){
-                @Override
-                public void run() {
-                    try {
-                        Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
-                        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                        service.setGoid(goid);
-                        Thread.sleep(1000);
-                        PublishRestServiceWizard.this.notify(new ServiceHeader(service));
-                    } catch ( Exception e ) {
-                        if (e instanceof PermissionDeniedException) {
-                            PermissionDeniedErrorHandler.showMessageDialog((PermissionDeniedException) e, logger);
-                        } else {
-                            DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() + "'"), getParent(), "Error", null);
-                        }
-                    }
-                }
-            };
-
-            if ( ServicePropertiesDialog.hasResolutionConflict( service, null ) ) {
-                final String message =
-                        "Resolution parameters conflict for service '" + service.getName() + "'\n" +
-                                "because an existing service is already using the URI " + service.getRoutingUri() + "\n\n" +
-                                "Do you want to save this service?";
-                DialogDisplayer.showConfirmDialog(this, message, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(final int option) {
-                        if (option == JOptionPane.YES_OPTION) {
-                            saver.run();
-                        }
-                    }
-                });
-            } else {
-                saver.run();
-            }
+            checkResolutionConflictAndSave(service);
         } catch (Exception e) {
-            DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() +"'"), this, "Error", null);
+            DialogDisplayer.display(new JOptionPane("Error saving the service '" + service.getName() + "'"), this, "Error", null);
         }
     }
 
-    private void notify(EntityHeader header) {
-        EntityEvent event = new EntityEvent(this, header);
-        EntityListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (EntityListener listener : listeners) {
-            listener.entityAdded(event);
-        }
-    }
-
-    private String normalizeUrl(final String url){
+    private String normalizeUrl(final String url) {
         String gatewayUrl = url;
-        if(gatewayUrl != null){
+        if (gatewayUrl != null) {
             gatewayUrl = gatewayUrl.replaceAll("\\\\+", "/").replaceAll("/{2,}", "/");
-            if(!gatewayUrl.startsWith("/")){
+            if (!gatewayUrl.startsWith("/")) {
                 gatewayUrl = "/" + gatewayUrl;
             }
         }
         return gatewayUrl;
-    }
-    /**
-     * add the EntityListener
-     *
-     * @param listener the EntityListener
-     */
-    public void addEntityListener(EntityListener listener) {
-        listenerList.add(EntityListener.class, listener);
-    }
-
-    /**
-     * remove the the EntityListener
-     *
-     * @param listener the EntityListener
-     */
-    public void removeEntityListener(EntityListener listener) {
-        listenerList.remove(EntityListener.class, listener);
-    }
-
-    /**
-     * Set the Folder for the service.
-     *
-     * @param folder The folder to use (required)
-     */
-    public void setFolder( @NotNull final Folder folder ) {
-        this.folder = Option.some( folder );
     }
 
     public class RestServiceConfig {
@@ -258,7 +167,7 @@ public class PublishRestServiceWizard extends Wizard {
         private final String backendUrl;
         private final String gatewayUrl;
 
-        public static RestServiceInfo build(final String serviceName, final String backendUrl, final String gatewayUrl){
+        public static RestServiceInfo build(final String serviceName, final String backendUrl, final String gatewayUrl) {
             return new RestServiceInfo(serviceName, backendUrl, gatewayUrl);
         }
 

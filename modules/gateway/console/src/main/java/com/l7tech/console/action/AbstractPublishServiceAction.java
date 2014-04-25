@@ -10,13 +10,16 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -27,17 +30,31 @@ import java.util.logging.Level;
  * Parent class for all actions which publish a service.
  */
 public abstract class AbstractPublishServiceAction extends SecureAction {
-    private final Option<Folder> folder;
-    private final Option<AbstractTreeNode> parentNode;
+    @NotNull private final Option<Folder> folder;
+    @NotNull private final Option<AbstractTreeNode> parentNode;
 
-    public AbstractPublishServiceAction(@NotNull final AttemptedOperation attemptedOperation, @NotNull final Option<Folder> folder,
+    public AbstractPublishServiceAction(@NotNull final AttemptedOperation attemptedOperation,
+                                        @NotNull final Option<Folder> folder,
                                         @NotNull final Option<AbstractTreeNode> parentNode) {
         super(attemptedOperation);
         this.folder = folder;
         this.parentNode = parentNode;
     }
 
-    public abstract AbstractPublishServiceWizard createWizard();
+    public AbstractPublishServiceAction(@NotNull final AttemptedOperation attemptedOperation,
+                                        @NotNull final Option<Folder> folder,
+                                        @NotNull final Option<AbstractTreeNode> parentNode,
+                                        @Nullable String requiredFeaturesetLicense) {
+        super(attemptedOperation, requiredFeaturesetLicense);
+        this.folder = folder;
+        this.parentNode = parentNode;
+    }
+
+    public AbstractPublishServiceAction() {
+        this(new AttemptedCreate(EntityType.SERVICE), Option.<Folder>none(), Option.<AbstractTreeNode>none());
+    }
+
+    protected abstract AbstractPublishServiceWizard createWizard();
 
     @Override
     protected void performAction() {
@@ -47,6 +64,7 @@ public abstract class AbstractPublishServiceAction extends SecureAction {
             dialog.setFolder(folder.some());
         }
         dialog.pack();
+        dialog.setModal(true);
         Utilities.centerOnScreen(dialog);
         DialogDisplayer.display(dialog);
     }

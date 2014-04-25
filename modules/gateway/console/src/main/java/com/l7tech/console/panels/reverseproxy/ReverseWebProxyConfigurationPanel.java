@@ -77,6 +77,11 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
     }
 
     @Override
+    public boolean canAdvance() {
+        return canFinish();
+    }
+
+    @Override
     public void readSettings(final Object settings) throws IllegalArgumentException {
         if (settings instanceof ReverseWebProxyConfig) {
             final ReverseWebProxyConfig config = (ReverseWebProxyConfig) settings;

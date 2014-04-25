@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
  * Configuration POJO for a reverse web proxy policy.
  */
 public class ReverseWebProxyConfig {
-    private Folder folder;
     private String name;
     private String webAppHost;
     private String routingUri = "*";
@@ -19,19 +18,6 @@ public class ReverseWebProxyConfig {
     private boolean rewriteResponseContent = true;
     private boolean useHttps;
     private String htmlTagsToRewrite;
-
-    public ReverseWebProxyConfig() {
-        this.folder = getDefaultFolder();
-    }
-
-    @NotNull
-    public Folder getFolder() {
-        return folder;
-    }
-
-    public void setFolder(@NotNull final Folder folder) {
-        this.folder = folder;
-    }
 
     @Nullable
     public String getName() {

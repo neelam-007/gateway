@@ -2,20 +2,13 @@ package com.l7tech.console.panels.reverseproxy;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.AbstractPublishServiceWizard;
 import com.l7tech.console.panels.IdentityProviderWizardPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.builder.PolicyBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -24,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -38,9 +30,7 @@ import static com.l7tech.policy.assertion.TargetMessageType.*;
  */
 public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final Logger logger = Logger.getLogger(PublishReverseWebProxyWizard.class.getName());
-    private ReverseWebProxyConfigurationPanel configPanel;
-    private IdentityProviderWizardPanel authPanel;
-    private ReverseWebProxyConfig config;
+    private static final String TITLE = "Publish Reverse Web Proxy Wizard";
     private static final String WEB_APP_HOST = "webAppHost";
     private static final String WEB_APP_HOST_ENCODED = "webAppHostEncoded";
     private static final String QUERY = "query";
@@ -67,6 +57,9 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String ENCODE_OPEN_CURLY_COMMENT = "// ENCODE AND REPLACE '{' IN QUERY";
     private static final String ENCODE_CLOSE_CURLY_COMMENT = "// ENCODE AND REPLACE '}' IN QUERY";
     private static final String AUTHORIZATION_COMMENT = "// AUTHORIZATION";
+    private ReverseWebProxyConfigurationPanel configPanel;
+    private IdentityProviderWizardPanel authPanel;
+    private ReverseWebProxyConfig config;
 
     public static PublishReverseWebProxyWizard getInstance(@NotNull final Frame parent) {
         final ReverseWebProxyConfigurationPanel configPanel = new ReverseWebProxyConfigurationPanel();
@@ -78,19 +71,14 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         return new PublishReverseWebProxyWizard(parent, configPanel, authPanel);
     }
 
-    private PublishReverseWebProxyWizard(@NotNull final Frame parent, @NotNull final ReverseWebProxyConfigurationPanel configPanel, @NotNull final IdentityProviderWizardPanel authPanel) {
-        super(parent, configPanel);
-        setTitle("Publish Reverse Web Proxy Wizard");
+    private PublishReverseWebProxyWizard(@NotNull final Frame parent,
+                                         @NotNull final ReverseWebProxyConfigurationPanel configPanel,
+                                         @NotNull final IdentityProviderWizardPanel authPanel) {
+        super(parent, configPanel, TITLE);
         this.config = new ReverseWebProxyConfig();
         this.wizardInput = config;
         this.configPanel = configPanel;
         this.authPanel = authPanel;
-        getButtonHelp().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Actions.invokeHelp(PublishReverseWebProxyWizard.this);
-            }
-        });
     }
 
     @Override
@@ -100,34 +88,37 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
             final ReverseWebProxyConfig config = (ReverseWebProxyConfig) wizardInput;
             try {
                 validateFinishedConfig(config);
-                final PublishedService service = new PublishedService();
-                service.setName(config.getName());
-                service.setSoap(false);
-                service.setFolder(config.getFolder());
-                service.setHttpMethods(new HashSet<>(Arrays.asList(HttpMethod.values())));
-                String routingUri = config.getRoutingUri();
-                if (!routingUri.startsWith("/")) {
-                    routingUri = "/" + routingUri;
-                }
-                service.setRoutingUri(routingUri);
-                final ArrayList<Assertion> authAssertions = new ArrayList<>();
-                if (authPanel != null) {
-                    authPanel.readSettings(authAssertions);
-                    service.setSecurityZone(authPanel.getSelectedSecurityZone());
-                    service.getPolicy().setSecurityZone(authPanel.getSelectedSecurityZone());
-                }
-                final PolicyBuilder builder = new PolicyBuilder();
-                buildPolicyXml(config, authAssertions, builder);
-                service.getPolicy().setXml(XmlUtil.nodeToFormattedString(builder.getPolicy()));
-                final Goid goid = Registry.getDefault().getServiceManager().savePublishedService(service);
-                service.setGoid(goid);
-                notify(new ServiceHeader(service));
-            } catch (final IllegalArgumentException | IOException | ObjectModelException | VersionException | PolicyAssertionException e) {
+                final PublishedService service = createService(config);
+                checkResolutionConflictAndSave(service);
+            } catch (final IllegalArgumentException | IOException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error publishing reverse web proxy.", "Error", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                        "Error publishing reverse web proxy.", "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
-        super.finish(evt);
+    }
+
+    private PublishedService createService(final ReverseWebProxyConfig config) throws IOException {
+        final PublishedService service = new PublishedService();
+        service.setName(config.getName());
+        service.setSoap(false);
+        service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
+        service.setHttpMethods(new HashSet<>(Arrays.asList(HttpMethod.values())));
+        String routingUri = config.getRoutingUri();
+        if (!routingUri.startsWith("/")) {
+            routingUri = "/" + routingUri;
+        }
+        service.setRoutingUri(routingUri);
+        final ArrayList<Assertion> authAssertions = new ArrayList<>();
+        if (authPanel != null) {
+            authPanel.readSettings(authAssertions);
+            service.setSecurityZone(authPanel.getSelectedSecurityZone());
+            service.getPolicy().setSecurityZone(authPanel.getSelectedSecurityZone());
+        }
+        final PolicyBuilder builder = new PolicyBuilder();
+        buildPolicyXml(config, authAssertions, builder);
+        service.getPolicy().setXml(XmlUtil.nodeToFormattedString(builder.getPolicy()));
+        return service;
     }
 
     private void validateFinishedConfig(final ReverseWebProxyConfig config) throws IllegalArgumentException {
@@ -214,10 +205,5 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         constants.put(RESPONSE_COOKIE_OVERWRITE_DOMAIN, "false");
         constants.put(QUERY, $_REQUEST_URL_QUERY);
         builder.setContextVariables(constants, CONSTANTS_COMMENT);
-    }
-
-    @Override
-    public void setFolder(@NotNull Folder folder) {
-        config.setFolder(folder);
     }
 }

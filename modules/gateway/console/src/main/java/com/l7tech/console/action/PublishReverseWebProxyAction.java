@@ -14,8 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * Action which opens up the
  */
 public class PublishReverseWebProxyAction extends AbstractPublishServiceAction {
-
-    public PublishReverseWebProxyAction(@NotNull final Option<Folder> folder, @NotNull final Option<AbstractTreeNode> parentNode) {
+    public PublishReverseWebProxyAction(@NotNull final Option<Folder> folder,
+                                        @NotNull final Option<AbstractTreeNode> parentNode) {
         super(new AttemptedCreate(EntityType.SERVICE), folder, parentNode);
     }
 
@@ -30,21 +30,25 @@ public class PublishReverseWebProxyAction extends AbstractPublishServiceAction {
 
     @Override
     public String getName() {
-        return "Publish Reverse Web Proxy";
+        return TITLE;
     }
 
     @Override
     public String getDescription() {
-        return "Publish a Reverse Web Proxy";
+        return DESCRIPTION;
     }
 
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/services16.png";
+        return ICON;
     }
 
     @Override
-    public AbstractPublishServiceWizard createWizard() {
+    protected AbstractPublishServiceWizard createWizard() {
         return PublishReverseWebProxyWizard.getInstance(TopComponents.getInstance().getTopParent());
     }
+
+    private static final String TITLE = "Publish Reverse Web Proxy";
+    private static final String DESCRIPTION = "Publish a Reverse Web Proxy service";
+    private static final String ICON = "com/l7tech/console/resources/services16.png";
 }
