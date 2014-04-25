@@ -2,8 +2,8 @@ package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -15,6 +15,7 @@ import static junit.framework.Assert.assertTrue;
 
 public class LicenseBootstrapServiceTest {
 
+    @Ignore
     @Test
     public void Test() throws Exception{
         URL license = this.getClass().getResource("bootstrap/ValidLicenseDocument.xml");
