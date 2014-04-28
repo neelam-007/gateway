@@ -5,6 +5,7 @@ import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +15,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.event.*;
 import java.util.*;
+import java.util.regex.Matcher;
 
 /**
  * A panel that contains context variables tree, user context variable combo box, and add button.
@@ -179,25 +181,14 @@ public class DebugContextVariableTreePanel extends JPanel {
 
         contextVariableComboBox.setModel(new DefaultComboBoxModel<>(new String[]{}));
         contextVariableComboBox.setEditable(true);
-        contextVariableComboBox.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
+        contextVariableComboBox.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
-                // Do nothing.
-            }
-
-            @Override
-            public void keyPressed(KeyEvent e) {
-                // Do nothing.
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
                 if (e.getKeyChar() == KeyEvent.VK_ENTER) {
                     onAddUserContextVariable();
                 }
             }
         });
-
         for (String var : sortedBuiltInVars) {
             contextVariableComboBox.addItem(var);
         }
@@ -211,14 +202,24 @@ public class DebugContextVariableTreePanel extends JPanel {
     }
 
     private void onAddUserContextVariable() {
-        String name = ((String) contextVariableComboBox.getSelectedItem());
-        if (name == null || name.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "The Name field must not be empty.",
+        String name = ((String) contextVariableComboBox.getSelectedItem()).trim();
+
+        // Remove leading "${" and trailing "}", if found.
+        //
+        Matcher mather = Syntax.oneVarPattern.matcher(name);
+        if (mather.matches()) {
+            name = mather.group(1);
+        }
+
+        // Validate name.
+        //
+        if (VariableMetadata.isNameValid(name, true)) {
+            policyStepDebugDialog.addUserContextVariable(name);
+        } else {
+            JOptionPane.showMessageDialog(this.policyStepDebugDialog,
+                "Invalid variable name syntax.",
                 "Error",
                 JOptionPane.ERROR_MESSAGE);
-        } else {
-            policyStepDebugDialog.addUserContextVariable(name.trim());
         }
     }
 
