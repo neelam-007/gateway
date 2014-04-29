@@ -9,10 +9,12 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.policy.AssertionAccessManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Functions;
 import com.sun.istack.Nullable;
@@ -20,6 +22,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
 
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
 
 /**
  * Only GET, PUT and Enumerate operations are supported
@@ -39,14 +43,36 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                                                 final SecurityFilter securityFilter,
                                                 final PlatformTransactionManager transactionManager,
                                                 final AssertionAccessManager assertionAccessManager,
-                                                final SecurityZoneManager securityZoneManager) {
+                                                final SecurityZoneManager securityZoneManager,
+                                                final AssertionRegistry assertionRegistry) {
         super(false, true, rbacServices, securityFilter, transactionManager, assertionAccessManager, securityZoneManager);
         this.assertionAccessManager = assertionAccessManager;
+        this.assertionRegistry = assertionRegistry;
     }
 
     @Override
     public boolean isCreateSupported() {
         return false;
+    }
+
+    @Override
+    public AssertionSecurityZoneMO getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
+        return Eithers.extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,AssertionSecurityZoneMO>>(){
+            @Override
+            public Either<ResourceNotFoundException,AssertionSecurityZoneMO> execute() throws ObjectModelException {
+                try {
+                    EntityBag<AssertionAccess> entityBag = selectEntityBag(selectorMap);
+                    //check if this is a registered assertion.
+                    if(!assertionRegistry.isAssertionRegistered(entityBag.getEntity().getName())){
+                        return left(new ResourceNotFoundException("Assertion is not registered: " + entityBag.getEntity().getName()));
+                    }
+                    checkPermitted( OperationType.READ, null, entityBag.getEntity() );
+                    return right( identify( asResource( entityBag ), entityBag.getEntity() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
     }
 
     @Override
@@ -56,11 +82,11 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
             @SuppressWarnings({"unchecked"})
             @Override
             public Eithers.E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
-                EntityBag<AssertionAccess> oldEntityBag = null;
+                EntityBag<AssertionAccess> oldEntityBag;
                 try {
                     oldEntityBag = selectEntityBag(selectorMap);
                 } catch (ResourceNotFoundException e) {
-                    // create the assertion security zone
+                    return Eithers.left2_1(e);
                 }
 
                 try {
@@ -163,7 +189,8 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                         match = match &&  filtersMap.get("id").contains(assertionAccess.getGoid());
                     }
                     if (match && filtersMap.containsKey("securityZone.id") ) {
-                        match = match && (assertionAccess.getSecurityZone()!= null && filtersMap.get("securityZone.id").contains(assertionAccess.getSecurityZone().getGoid()));
+                        //if the search key contains the default security zone id, return all asertion accesses that do not have a security zone.
+                        match = match && (assertionAccess.getSecurityZone() == null ? filtersMap.get("securityZone.id").contains(Goid.DEFAULT_GOID) : filtersMap.get("securityZone.id").contains(assertionAccess.getSecurityZone().getGoid()));
                     }
                     return match;
                 }
@@ -249,15 +276,16 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
 
     @Override
     protected void updateEntity(AssertionAccess oldEntity, AssertionAccess newEntity) throws InvalidResourceException {
-
-        oldEntity.setName( newEntity.getName() );
+        if(!oldEntity.getName().equals(newEntity.getName())){
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "cannot update an assertion access name");
+        }
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );
     }
 
     @Override
     protected AssertionAccess selectEntityCustom(Map<String, String> selectorMap) throws ResourceAccessException, InvalidResourceSelectors {
         String name = selectorMap.get(NAME_SELECTOR);
-        if(name !=null){
+        if(name != null && assertionRegistry.isAssertionRegistered(name)){
             return new AssertionAccess(name);
         }
         return null;
@@ -266,4 +294,5 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
     //- PRIVATE
 
     private AssertionAccessManager assertionAccessManager;
+    private AssertionRegistry assertionRegistry;
 }

@@ -22,7 +22,7 @@ public class AssertionSecurityZoneTransformer extends APIResourceWsmanBaseTransf
 
     @Override
     public Item<AssertionSecurityZoneMO> convertToItem(AssertionSecurityZoneMO m) {
-        return new ItemBuilder<AssertionSecurityZoneMO>(m.getName(), m.getId(), factory.getType().name())
+        return new ItemBuilder<AssertionSecurityZoneMO>(m.getName(), m.getName(), factory.getType().name())
                 .setContent(m)
                 .build();
     }

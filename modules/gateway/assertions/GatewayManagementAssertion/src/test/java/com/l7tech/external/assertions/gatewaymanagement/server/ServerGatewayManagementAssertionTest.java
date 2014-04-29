@@ -37,6 +37,7 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
@@ -789,7 +790,7 @@ public class ServerGatewayManagementAssertionTest {
         final Element assSecurityZoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "AssertionSecurityZone");
         final Element nameElm = XmlUtil.findExactlyOneChildElementByName(assSecurityZoneElm, NS_GATEWAY_MANAGEMENT, "Name");
 
-        assertEquals("Test assertion access 1", DomUtils.getTextValue(nameElm));
+        assertEquals(JmsRoutingAssertion.class.getName(), DomUtils.getTextValue(nameElm));
         assertEquals(idStr, assSecurityZoneElm.getAttribute("securityZoneId"));
     }
 
@@ -2771,7 +2772,7 @@ public class ServerGatewayManagementAssertionTest {
                         "  </s:Header>\n" +
                         "  <s:Body> \n" +
                         "     <l7:AssertionSecurityZone xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"00000000000000000000000000000001\">\n" +
-                        "       <l7:Name>New AssertionSecurityZone</l7:Name>\n" +
+                        "       <l7:Name>"+JmsRoutingAssertion.class.getName()+"</l7:Name>\n" +
                         "    </l7:AssertionSecurityZone>\n" +
                         "  </s:Body>\n" +
                         "</s:Envelope>";
@@ -2783,7 +2784,8 @@ public class ServerGatewayManagementAssertionTest {
                 final Element zoneElm = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "AssertionSecurityZone");
                 final Element nameElm = XmlUtil.findExactlyOneChildElementByName(zoneElm, NS_GATEWAY_MANAGEMENT, "Name");
 
-                assertEquals("New AssertionSecurityZone", DomUtils.getTextValue(nameElm));
+                assertEquals(JmsRoutingAssertion.class.getName(), DomUtils.getTextValue(nameElm));
+                assertFalse(zoneElm.hasAttribute("securityZoneId"));
             }
         };
 
@@ -5382,14 +5384,15 @@ public class ServerGatewayManagementAssertionTest {
         // assertion security zone
         final AssertionAccess assAccess1 = new AssertionAccess();
         assAccess1.setGoid(new Goid(0,1));
-        assAccess1.setName("Test assertion access 1");
+        assAccess1.setName(JmsRoutingAssertion.class.getName());
         assAccess1.setSecurityZone(securityZone1);
 
         final AssertionAccess assAccess2 = new AssertionAccess();
         assAccess2.setGoid(new Goid(0,2));
-        assAccess2.setName("Test assertion access 2");
+        assAccess2.setName(GatewayManagementAssertion.class.getName());
         assAccess2.setSecurityZone(securityZone2);
         applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub(assAccess1,assAccess2));
+        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", new AssertionRegistryStub());
 
         // policy alias
         final PolicyAlias pAlias1 = new PolicyAlias(testPolicy1,testFolder);

@@ -16,6 +16,7 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.AssertionRegistryStub;
 import com.l7tech.policy.PolicyValidatorStub;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
@@ -175,6 +176,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("siteMinderConfigurationManager", new SiteMinderConfigurationManagerStub());
         applicationContext.getBeanFactory().registerSingleton( "entityCrud", new EntityFinderStub() );
         applicationContext.getBeanFactory().registerSingleton("assertionAccessManager", new AssertionAccessManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("assertionRegistry", new AssertionRegistryStub());
         applicationContext.getBeanFactory().registerSingleton("policyAliasManager", new PolicyAliasManagerStub());
         applicationContext.getBeanFactory().registerSingleton("serviceAliasManager", new ServiceAliasManagerStub());
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub());

@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityHeader;
@@ -9,7 +10,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.server.AssertionAccessManagerStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
 import com.l7tech.util.CollectionUtils;
@@ -36,6 +39,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 
     private static final AssertionAccess assertionSecurityZone = new AssertionAccess();
     private static AssertionAccessManagerStub assertionSecurityZoneManager;
+    private static AssertionRegistry assertionRegistry;
     private static SecurityZone securityZone;
     private static SecurityZoneManagerStub securityZoneManager;
     private static final String assertionSecurityZoneBasePath = "assertionSecurityZones/";
@@ -53,10 +57,14 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         securityZoneManager = applicationContext.getBean("securityZoneManager", SecurityZoneManagerStub.class);
         securityZoneManager.save(securityZone);
 
+        assertionRegistry = applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
+        assertionRegistry.registerAssertion(JmsRoutingAssertion.class);
+        assertionRegistry.registerAssertion(GatewayManagementAssertion.class);
+
         assertionSecurityZoneManager = applicationContext.getBean("assertionAccessManager", AssertionAccessManagerStub.class);
-        assertionSecurityZoneManager.setRegisteredAssertions("TestAssertion","Assertion2");
+        assertionSecurityZoneManager.setRegisteredAssertions(JmsRoutingAssertion.class.getName(),GatewayManagementAssertion.class.getName());
         assertionSecurityZone.setGoid(new Goid(0, 1234L));
-        assertionSecurityZone.setName("TestAssertion");
+        assertionSecurityZone.setName(JmsRoutingAssertion.class.getName());
         assertionSecurityZone.setSecurityZone(securityZone);
         assertionSecurityZoneManager.save(assertionSecurityZone);
 
@@ -91,7 +99,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-        assertEquals("Assertion Security Zone identifier:", assertionSecurityZone.getId(), item.getId());
+        assertEquals("Assertion Security Zone identifier:", assertionSecurityZone.getId(), ((AssertionSecurityZoneMO) item.getContent()).getId());
         assertEquals("Assertion Security Zone name:", assertionSecurityZone.getName(), ((AssertionSecurityZoneMO) item.getContent()).getName());
         assertEquals("Assertion Security Zone security zone id:", securityZone.getId(), ((AssertionSecurityZoneMO) item.getContent()).getSecurityZoneId());
     }
@@ -101,7 +109,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 
         AssertionSecurityZoneMO createObject = assertionSecurityZoneResourceFactory.asResource(assertionSecurityZone);
         createObject.setId(null);
-        createObject.setName("Assertion2");
+        createObject.setName(GatewayManagementAssertion.class.getName());
         createObject.setSecurityZoneId(securityZone.getId());
         Document request = ManagedObjectFactory.write(createObject);
         RestResponse response = processRequest(assertionSecurityZoneBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
@@ -121,7 +129,7 @@ public class AssertionSecurityZoneRestServerGatewayManagementAssertionTest exten
 
         AssertionSecurityZoneMO createObject = assertionSecurityZoneResourceFactory.asResource(assertionSecurityZone);
         createObject.setId(null);
-        createObject.setName("Assertion2");
+        createObject.setName(GatewayManagementAssertion.class.getName());
         createObject.setSecurityZoneId(securityZone.getId());
         Document request = ManagedObjectFactory.write(createObject);
         RestResponse response = processRequest(assertionSecurityZoneBasePath + createObject.getName(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));

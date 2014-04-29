@@ -79,6 +79,10 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         }
     }
 
+    protected String getId(M item) {
+        return item.getId();
+    }
+
     @Test
     public void testGetNotExisting() throws Exception {
         Goid badId = new Goid(0, 0);
@@ -240,7 +244,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
             Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(item.getId()), item.getName());
             Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
@@ -278,7 +282,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         List<M> entitiesToUpdate = getUpdateableManagedObjects();
 
         for (M mo : entitiesToUpdate) {
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + getId(mo), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)));
             logger.log(Level.FINE, response.toString());
 
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -288,20 +292,20 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             final StreamSource source = new StreamSource(new StringReader(response.getBody()));
             Item item = MarshallingUtils.unmarshal(Item.class, source);
 
-            Assert.assertEquals("Id's don't match", mo.getId(), item.getId());
+            Assert.assertEquals("Id's don't match", getId(mo), item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(mo.getId()), item.getName());
+            Assert.assertEquals("Type is incorrect", getExpectedTitle(getId(mo)), item.getName());
             Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
             Link self = findLink("self", item.getLinks());
             Assert.assertNotNull("self link must be present", self);
-            Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + mo.getId(), self.getUri());
+            Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + getId(mo), self.getUri());
 
-            verifyLinks(mo.getId(), item.getLinks());
+            verifyLinks(getId(mo), item.getLinks());
 
             Assert.assertNull(item.getContent());
-            verifyEntity(mo.getId(), mo);
+            verifyEntity(getId(mo), mo);
         }
     }
 
@@ -345,7 +349,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             List<M> entitiesToCreate = getUpdateableManagedObjects();
 
             for (M mo : entitiesToCreate) {
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + getId(mo), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -433,18 +437,22 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
                 List<String> orderedList = new ArrayList<>(expectedIds);
                 Collections.sort(orderedList);
 
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=asc", HttpMethod.GET, null, "");
-                testList("sort=id&order=asc", response, orderedList);
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName() + "&order=asc", HttpMethod.GET, null, "");
+                testList("sort=" + getIdName() + "&order=asc", response, orderedList);
 
                 List<String> reverseList = new ArrayList<>(expectedIds);
                 Collections.sort(reverseList);
                 Collections.reverse(reverseList);
 
-                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=id&order=desc", HttpMethod.GET, null, "");
-                testList("sort=id&order=desc", response, reverseList);
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName() + "&order=desc", HttpMethod.GET, null, "");
+                testList("sort=" + getIdName() + "&order=desc", response, reverseList);
 
             }
         }
+    }
+
+    protected String getIdName() {
+        return "id";
     }
 
     @Test
@@ -531,7 +539,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             for (int i = 0; i < expectedIds.size(); i++) {
                 Item<M> entity = references.get(i);
 
-                Assert.assertEquals("Error for search Query: " + query + "Message: " + "Returned entities are either incorrect or in the wrong order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), entity.getId());
+                Assert.assertEquals("Error for search Query: " + query + "Message: " + "Returned entities are either incorrect or in the wrong order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), getId(entity.getContent()));
             }
         }
     }

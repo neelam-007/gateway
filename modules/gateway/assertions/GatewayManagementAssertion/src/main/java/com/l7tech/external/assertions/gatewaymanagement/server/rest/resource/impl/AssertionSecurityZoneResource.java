@@ -81,12 +81,12 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<AssertionSecurityZoneMO> list(
-            @QueryParam("sort") @ChoiceParam({"id", "name", "securityZone.id"}) String sort,
+            @QueryParam("sort") @ChoiceParam({"name", "securityZone.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParamsNoDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
@@ -161,6 +161,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
     public Response update(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
         return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(updatedResource))
+                .setContent(null)
                 .addLink(getLink(resource))
                 .addLinks(getRelatedLinks(updatedResource))
                 .build()).build();
