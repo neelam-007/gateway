@@ -8,6 +8,8 @@ import java.util.logging.Level;
 /**
  * Message catalog for messages audited by policy assertions.
  * The ID range 4000-99999 inclusive is reserved for these messages.
+ *
+ * N.B. Don't change semantics or number of parameters! See MessagesTest.testMessageParameters()
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class AssertionMessages extends Messages {
@@ -717,7 +719,7 @@ public class AssertionMessages extends Messages {
     public static final M COMPARISON_RIGHT_IS_NULL = m(7107, Level.INFO, "Right value of null is not supported by comparison ''{0}''");
 
     // CodeInjectionProtectionAssertion
-    public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Request is not HTTP.");
+    public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Target message is not HTTP.");
     public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED = m(7151, Level.FINE, "No response body to check because request has not been routed yet.");
     public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
@@ -740,7 +742,7 @@ public class AssertionMessages extends Messages {
     public static final M SQLATTACK_ALREADY_ROUTED = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
     public static final M SQLATTACK_REJECTED = m(7204, Level.WARNING, true, false, "{0} was flagged by Protect Against SQL Attacks Assertion");
     public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
-    public static final M SQLATTACK_NOT_HTTP = m(7210, Level.FINE, "Request is not HTTP.");
+    public static final M SQLATTACK_NOT_HTTP = m(7210, Level.FINE, "Target message is not HTTP.");
     public static final M SQLATTACK_SCANNING_URL_QUERY_STRING = m(7211, Level.FINE, "Scanning request URL query string.");
     public static final M SQLATTACK_SCANNING_BODY_TEXT = m(7212, Level.FINE, "Scanning {0} message body as text.");
     public static final M SQLATTACK_CANNOT_PARSE = m(7213, Level.WARNING, "Cannot parse {0} as {1}.");

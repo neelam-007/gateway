@@ -36,5 +36,13 @@ public abstract class InjectionThreatProtectionAssertionValidator implements Ass
         }
     }
 
+    /**
+     * Returns true if at least one protection has been selected to apply.
+     *
+     * Due to the pre-existing differences between threat protection assertions in representing selected protections,
+     * this method must be implemented to query the assertion-specific Collection/Array/etc.
+     *
+     * @return true if at least one protection measure has been selected
+     */
     protected abstract boolean isAtLeastOneProtectionEnabled();
 }
