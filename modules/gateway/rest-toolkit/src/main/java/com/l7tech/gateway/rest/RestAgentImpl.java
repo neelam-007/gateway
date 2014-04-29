@@ -142,10 +142,16 @@ public final class RestAgentImpl implements RestAgent, ApplicationContextAware {
             throw new RequestProcessingException("The Rest handler has not yet been initialized. Cannot process requests until it have been.");
         }
 
-        ByteArrayOutputStream bout = new ByteArrayOutputStream(BUFFER_SIZE);
-        ContainerResponse response = handler.handle(requesterHost, baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
-        final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
-        return new RestResponse(bin, response.getMediaType() != null ? response.getMediaType().toString() : null, response.getStatus(), response.getHeaders());
+        RestResponse restResponse = null;
+        try {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(BUFFER_SIZE);
+            ContainerResponse response = handler.handle(requesterHost, baseUri, uri, httpMethod, contentType, body, securityContext, bout, properties);
+            final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+            restResponse = new RestResponse(bin, response.getMediaType() != null ? response.getMediaType().toString() : null, response.getStatus(), response.getHeaders());
+        } finally {
+            logger.log(Level.FINER, String.format("Processed rest Request\nRequest Host: %s\nBase Uri: %s\nURI: %s\nHTTP Method: %s\nContent Type: %s\nResponse status: %s\n", requesterHost, baseUri, uri.toString(), httpMethod, contentType, restResponse == null ? "Exception Encountered" : restResponse.getStatus()));
+        }
+        return restResponse;
     }
 
     /**
