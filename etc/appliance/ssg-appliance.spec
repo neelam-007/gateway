@@ -214,23 +214,31 @@ else
 	echo "kernel.panic = 10" >> /etc/sysctl.conf
 fi
 
-# fix file limits
-
-#look for a limits.conf that we have modified.
-L7MARKER=`egrep -e "^# Layer 7 Limits$" /etc/security/limits.conf`
-#L7MARKER=`egrep -e \^\*\ Layer\ 7\ Limits\.\*\$ /etc/security/limits.conf`
-#if we don't find one then just add one the way we like it
-if [ -z "${L7MARKER}" ] ; then
-    echo "# Layer 7 Limits"  >> /etc/security/limits.conf
-	echo "*               soft    nproc   5120"  >> /etc/security/limits.conf
-	echo "*               hard    nproc   16384"  >> /etc/security/limits.conf
-	echo "*               soft    nofile  4096"  >> /etc/security/limits.conf
-	echo "*               hard    nofile  63536"  >> /etc/security/limits.conf
-	echo "# End Layer 7 Limits"  >> /etc/security/limits.conf
-	# 4096 files open and stuff
+# set process, thread, and open file limits (SSG-8322)
+# find the maximum number of processes that the kernel can create
+if [ -f "/proc/sys/kernel/pid_max" ]; then
+	KERNEL_PID_MAX=$(cat /proc/sys/kernel/pid_max)
 else
-    sed -r -i -e 's/(^.*soft.*nproc[ \t]+)[0-9]+(.*)$/\15120/g' /etc/security/limits.conf
+	# choose the value we used to use
+	KERNEL_PID_MAX=6120
 fi
+# determine the max processes/threads for the gateway user
+# (leaving some room for the process controller)
+let GATEWAY_NPROCS=$KERNEL_PID_MAX-1000
+# create the file using a here document
+cat <<EndOfFile > /etc/security/limits.d/99-ssg-appliance.conf
+# Layer 7 Limits (SSG-8322)
+# gateway user value based on /proc/sys/kernel/pid_max
+*               hard    maxlogins    10
+*               hard    core    0
+*               soft    nproc   5120
+*               hard    nproc   16384
+*               soft    nofile  4096
+*               hard    nofile  63536
+gateway         soft    nproc   $GATEWAY_NPROCS
+gateway         hard    nproc   $GATEWAY_NPROCS
+# End Layer 7 Limits
+EndOfFile
 
 if [ -f "/etc/redhat-release" ]; then
 	RHEL_MAJOR_RELEASE=`cat /etc/redhat-release | awk -F'release' '{ print $2 }' | awk '{ print $1 }' | awk -F'.' '{ print $1 }'`
