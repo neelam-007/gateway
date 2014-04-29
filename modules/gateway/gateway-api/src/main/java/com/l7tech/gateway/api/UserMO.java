@@ -55,7 +55,7 @@ public class UserMO extends AccessibleObject {
      *
      * @return The identity provider id.
      */
-    @XmlAttribute
+    @XmlAttribute( required = true)
     public String getProviderId() {
         return providerId;
     }

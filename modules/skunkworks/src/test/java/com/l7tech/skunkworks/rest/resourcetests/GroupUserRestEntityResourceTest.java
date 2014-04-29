@@ -467,6 +467,10 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         userMO.setLogin("login");
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword(strongPassword);
+        userMO.setPassword(password);
         String userMOString = writeMOToString(userMO);
 
         // non internal id provider
@@ -488,6 +492,25 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
         assertEquals("ResourceNotFound",error.getType());
         assertEquals("IdentityProvider not found",error.getDetail());
+
+        // id provider different in MO and query
+        userMO.setProviderId(internalProviderId);
+        userMOString = writeMOToString(userMO);
+        response = processRequest("identityProviders/"+usersToCleanup.get(1)+"/users/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(400, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidArgument",error.getType());
+        assertEquals("Invalid value for argument 'providerId'. Must specify the same provider ID",error.getDetail());
+
+        // no identity provider
+        userMO.setProviderId(null);
+        userMOString = writeMOToString(userMO);
+        response = processRequest("identityProviders/"+internalProviderId+"/users/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),userMOString);
+        assertEquals(400, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("BadRequest",error.getType());
     }
 
     @Test
