@@ -23,6 +23,33 @@ public interface CustomTargetVariablePanel {
     void setAcceptEmpty(boolean acceptEmpty);
 
     /**
+     * Sets whether or not the value will be read.
+     * <p>
+     * Default is false.
+     *
+     * @param valueWillBeRead true if value will be read, false otherwise
+     */
+    void setValueWillBeRead(boolean valueWillBeRead);
+
+    /**
+     * Sets whether or not the value will be written.
+     * <p>
+     * Default is true.
+     *
+     * @param valueWillBeWritten true if value will be written, false otherwise
+     */
+    void setValueWillBeWritten(boolean valueWillBeWritten);
+
+    /**
+     * Sets whether or not to allow variable syntax such as array de-referencing (eg, "foo[4]").
+     * <p>
+     * Default is false.
+     *
+     * @param alwaysPermitSyntax true if additional syntax should always be allowed, false otherwise
+     */
+    void setAlwaysPermitSyntax(boolean alwaysPermitSyntax);
+
+    /**
      * Checks if the entry is valid.
      *
      * @return true if the entry is valid, false otherwise

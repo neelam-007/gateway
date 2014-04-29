@@ -36,6 +36,21 @@ public class CustomTargetVariablePanelImpl implements CustomTargetVariablePanel 
     }
 
     @Override
+    public void setValueWillBeRead(boolean valueWillBeRead) {
+        panel.setValueWillBeRead(valueWillBeRead);
+    }
+
+    @Override
+    public void setValueWillBeWritten(boolean valueWillBeWritten) {
+        panel.setValueWillBeWritten(valueWillBeWritten);
+    }
+
+    @Override
+    public void setAlwaysPermitSyntax(boolean alwaysPermitSyntax) {
+        panel.setAlwaysPermitSyntax(alwaysPermitSyntax);
+    }
+
+    @Override
     public boolean isEntryValid (){
         return panel.isEntryValid();
     }
