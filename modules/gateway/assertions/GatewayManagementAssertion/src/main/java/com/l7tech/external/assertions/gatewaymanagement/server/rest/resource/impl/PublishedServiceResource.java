@@ -117,6 +117,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      *                        ascending
      * @param names           The name filter
      * @param guids           the guid filter
+     * @param enabled         The enabled filter
      * @param soap            The soap filter
      * @param parentFolderIds The parent folder id filter
      * @param securityZoneIds the securityzone id filter
@@ -132,15 +133,19 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
             @QueryParam("guid") List<String> guids,
+            @QueryParam("enabled") Boolean enabled,
             @QueryParam("soap") Boolean soap,
             @QueryParam("parentFolder.id") List<Goid> parentFolderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "guid", "soap", "parentFolder.id", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "guid", "enabled", "soap", "parentFolder.id", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
+        }
+        if (enabled != null) {
+            filters.put("disabled", (List) Arrays.asList(!enabled));
         }
         if (soap != null) {
             filters.put("soap", (List) Arrays.asList(soap));
@@ -227,13 +232,19 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     @Path("template")
     public Item<ServiceMO> template() {
         ServiceMO serviceMO = ManagedObjectFactory.createService();
-
         ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
-        serviceDetail.setEnabled(true);
-        serviceDetail.setFolderId("Folder ID");
-        serviceDetail.setName("Service Name");
-
+        serviceDetail.setName("My New Service");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId("FolderID");
         serviceMO.setServiceDetail(serviceDetail);
+        ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+        Resource policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent("Policy XML");
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
         return super.createTemplateItem(serviceMO);
     }
 }

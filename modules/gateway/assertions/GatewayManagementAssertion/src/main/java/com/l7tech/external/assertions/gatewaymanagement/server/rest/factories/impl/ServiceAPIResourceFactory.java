@@ -27,12 +27,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
@@ -98,11 +96,9 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
     public String createResource(@NotNull final ServiceMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
         validateCreateResource(null, resource);
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly(false);
-        return tt.execute(new TransactionCallback<String>() {
+        return RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
             @Override
-            public String doInTransaction(final TransactionStatus transactionStatus) {
+            public String call() throws ResourceFactory.InvalidResourceException {
                 try {
                     PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource,true);
                     PublishedService newService = newServiceEntity.getEntity();
@@ -111,6 +107,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     beforeCreate(newService);
 
+                    RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
                     Goid id = serviceManager.save(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
                     saveServiceDocuments(id, newServiceEntity.getServiceDocuments());
@@ -119,12 +116,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     resource.setId(id.toString());
                     return id.toString();
 
-                } catch (ResourceFactory.InvalidResourceException e) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
                 } catch (ObjectModelException ome) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to create service.", ome);
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create service: " + ome.getMessage());
                 }
             }
         });
@@ -149,11 +142,9 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
     public void createResource(@NotNull final String id, @NotNull final ServiceMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
         validateCreateResource(id, resource);
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly(false);
-        tt.execute(new TransactionCallback() {
+        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
             @Override
-            public Object doInTransaction(final TransactionStatus transactionStatus) {
+            public String call() throws ResourceFactory.InvalidResourceException {
                 try {
                     PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
                     PublishedService newService = newServiceEntity.getEntity();
@@ -163,7 +154,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     beforeCreate(newService);
 
-
+                    RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
                     serviceManager.save(Goid.parseGoid(id), newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
                     saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
@@ -171,12 +162,8 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     return null;
 
-                } catch (ResourceFactory.InvalidResourceException e) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
                 } catch (ObjectModelException ome) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to create service.", ome);
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create service: " + ome.getMessage());
                 }
             }
         });
@@ -210,16 +197,14 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
 
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly(false);
-        tt.execute(new TransactionCallback() {
+        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<ServiceMO, ResourceFactory.InvalidResourceException>() {
             @Override
-            public Object doInTransaction(final TransactionStatus transactionStatus) {
+            public ServiceMO call() throws ResourceFactory.InvalidResourceException {
                 try {
-                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
+                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer) serviceTransformer.convertFromMO(resource);
                     PublishedService newService = newServiceEntity.getEntity();
                     PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
-                    if(oldService != null)
+                    if (oldService != null)
                         rbacAccessService.validatePermitted(oldService, OperationType.UPDATE);
 
                     newService.setGoid(Goid.parseGoid(id));
@@ -228,18 +213,15 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     newService.setPolicy(oldService.getPolicy());
                     newService.setVersion(resource.getVersion());
 
+                    RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
                     serviceManager.update(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), active, comment, false);
                     saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
 
                     return serviceTransformer.convertToMO(newServiceEntity.getEntity());
 
-                } catch (ResourceFactory.InvalidResourceException e) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
                 } catch (ObjectModelException ome) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to update service.", ome);
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to update service: " + ome.getMessage());
                 }
             }
         });
