@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Server-side assertion implementation of ReplaceTagContentAssertion which searches and replaces text within specified tags.
@@ -84,7 +86,9 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
                     final String elementContent = element.toString();
                     if ((assertion.isCaseSensitive() && elementContent.contains(searchFor)) ||
                             (!assertion.isCaseSensitive() && StringUtils.containsIgnoreCase(elementContent, searchFor))) {
-                        final String replacement = assertion.isCaseSensitive() ? elementContent.replaceAll(searchFor, replaceWith) : elementContent.replaceAll(IGNORE_CASE_REGEX + searchFor, replaceWith);
+                        final String replacement = assertion.isCaseSensitive() ?
+                                elementContent.replace(searchFor, replaceWith) :
+                                elementContent.replaceAll(IGNORE_CASE_REGEX + Pattern.quote(searchFor), Matcher.quoteReplacement(replaceWith));
                         output.replace(element, replacement);
                         atLeastOneReplace = true;
                     }

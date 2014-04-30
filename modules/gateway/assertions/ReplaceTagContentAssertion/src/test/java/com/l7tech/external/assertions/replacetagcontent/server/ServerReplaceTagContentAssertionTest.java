@@ -349,6 +349,29 @@ public class ServerReplaceTagContentAssertionTest {
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EMPTY_TAG_TEXT));
     }
 
+    @Test
+    public void regexSpecialCharactersTreatedLiterally() throws Exception {
+        final String html = "<script type=\"text/javascript\">RegisterSod(\"sp.res.resx\", \"\\u002f_layouts\\u002fScriptResx.ashx\");</script>";
+        request.initialize(ContentTypeHeader.parseValue(TEXT_HTML), html.getBytes());
+        configureAssertion("\"\\u002f_layouts", "\"\\u002fsp\\u002f_layouts", "script");
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        final String expected = "<script type=\"text/javascript\">RegisterSod(\"sp.res.resx\", \"\\u002fsp\\u002f_layouts\\u002fScriptResx.ashx\");</script>";
+        assertEquals(expected, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+    }
+
+    @Test
+    public void regexSpecialCharactersTreatedLiterallyCaseInsensitive() throws Exception {
+        final String html = "<script type=\"text/javascript\">RegisterSod(\"sp.res.resx\", \"\\u002f_layouts\\u002fScriptResx.ashx\");</script>";
+        request.initialize(ContentTypeHeader.parseValue(TEXT_HTML), html.getBytes());
+        configureAssertion("\"\\U002F_LAYOUTS", "\"\\u002fsp\\u002f_layouts", "script");
+        assertion.setCaseSensitive(false);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        final String expected = "<script type=\"text/javascript\">RegisterSod(\"sp.res.resx\", \"\\u002fsp\\u002f_layouts\\u002fScriptResx.ashx\");</script>";
+        assertEquals(expected, new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+    }
+
     private void configureAssertion(final String searchFor, final String replaceWith, final String commaSeparatedTags) throws PolicyAssertionException {
         if (searchFor != null) {
             assertion.setSearchFor(searchFor);

@@ -1,10 +1,9 @@
 package com.l7tech.external.assertions.replacetagcontent;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import org.jetbrains.annotations.NotNull;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 
 /**
  * Assertion which can search and replace inside specified tags.
@@ -84,7 +83,26 @@ public class ReplaceTagContentAssertion extends MessageTargetableAssertion imple
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SAMLAttributeStatement.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(POLICY_NODE_NAME_FACTORY, NODE_NAME_FACTORY);
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
+    private final AssertionNodeNameFactory<ReplaceTagContentAssertion> NODE_NAME_FACTORY = new AssertionNodeNameFactory<ReplaceTagContentAssertion>() {
+        @Override
+        public String getAssertionName(final ReplaceTagContentAssertion assertion, final boolean decorate) {
+            final StringBuilder sb = new StringBuilder();
+            if (decorate && assertion.getSearchFor() != null && assertion.getTagsToSearch() != null && assertion.getReplaceWith() != null) {
+                sb.append("Replace ");
+                sb.append(assertion.getSearchFor());
+                sb.append(" in ");
+                sb.append(assertion.getTagsToSearch());
+                sb.append(" with ");
+                sb.append(assertion.getReplaceWith());
+            } else {
+                sb.append(BASE_NAME);
+            }
+            return decorate ? AssertionUtils.decorateName(assertion, sb) : sb.toString();
+        }
+    };
 }
