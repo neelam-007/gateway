@@ -65,10 +65,10 @@ public class DependencyResource {
         if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-
-        return new ItemBuilder<DependencyListMO>(entityHeader.toString() + " dependencies", "Dependency")
+        DependencyListMO dependencyListMO = transformer.toDependencyListObject( dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map()));
+        return new ItemBuilder<DependencyListMO>(dependencyListMO.getSearchObjectItem().getName() + " dependencies", "Dependency")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(transformer.toDependencyListObject(dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map())))
+                .setContent(dependencyListMO)
                 .build();
     }
 }

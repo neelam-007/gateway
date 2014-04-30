@@ -120,6 +120,7 @@ public class DependencyActiveConnectorTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
+                assertEquals("Test Policy dependencies", dependencyItem.getName());
                 assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
                 DependencyMO zoneDep = dependencyAnalysisMO.getDependencies().get(0);
