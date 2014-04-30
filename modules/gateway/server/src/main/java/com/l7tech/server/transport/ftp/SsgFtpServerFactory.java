@@ -1,8 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.InetAddressUtil;
@@ -24,21 +23,13 @@ public class SsgFtpServerFactory {
     private static final String DEFAULT_LISTENER_NAME = "default";
     private static final String DEFAULT_FTPLET_NAME = "default";
 
-    private static final String LISTEN_PROP_SESSION_IDLE_TIMEOUT = "ftpSessionIdleTimeout"; // defines both the listener idle timeout and user maximum idle time
-    private static final String LISTEN_PROP_MAX_REQUEST_PROCESSING_THREADS = "ftpMaxRequestProcessingThreads";
-    private static final String LISTEN_PROP_ANONYMOUS_LOGINS_ENABLED = "ftpAnonymousLoginsEnabled";
-    private static final String LISTEN_PROP_MAX_ANONYMOUS_LOGINS = "ftpMaxAnonymousLogins";
-    private static final String LISTEN_PROP_MAX_CONCURRENT_LOGINS = "ftpMaxConcurrentLogins";
-    private static final String LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS = "ftpUserMaxConcurrentLogins";
-    private static final String LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP = "ftpUserMaxConcurrentLoginsPerIp";
-
-    private static final String CLUSTER_PROP_SESSION_IDLE_TIMEOUT = "ftp.sessionIdleTimeout";
-    private static final String CLUSTER_PROP_MAX_REQUEST_PROCESSING_THREADS = "ftp.maxRequestProcessingThreads";
-    private static final String CLUSTER_PROP_ANONYMOUS_LOGINS_ENABLED = "ftp.anonymousLoginsEnabled";
-    private static final String CLUSTER_PROP_MAX_ANONYMOUS_LOGINS = "ftp.maxAnonymousLogins";
-    private static final String CLUSTER_PROP_MAX_CONCURRENT_LOGINS = "ftp.maxConcurrentLogins";
-    private static final String CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS = "ftp.userMaxConcurrentLogins";
-    private static final String CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP = "ftp.userMaxConcurrentLoginsPerIp";
+    private static final String PROPERTY_SESSION_IDLE_TIMEOUT = "ftp.sessionIdleTimeout"; // defines both the listener idle timeout and user maximum idle time
+    private static final String PROPERTY_MAX_REQUEST_PROCESSING_THREADS = "ftp.maxRequestProcessingThreads";
+    private static final String PROPERTY_ANONYMOUS_LOGINS_ENABLED = "ftp.anonymousLoginsEnabled";
+    private static final String PROPERTY_MAX_ANONYMOUS_LOGINS = "ftp.maxAnonymousLogins";
+    private static final String PROPERTY_MAX_CONCURRENT_LOGINS = "ftp.maxConcurrentLogins";
+    private static final String PROPERTY_USER_MAX_CONCURRENT_LOGINS = "ftp.userMaxConcurrentLogins";
+    private static final String PROPERTY_USER_MAX_CONCURRENT_LOGINS_PER_IP = "ftp.userMaxConcurrentLoginsPerIp";
 
     @Autowired
     private FtpSslFactory ftpSslFactory;
@@ -53,7 +44,7 @@ public class SsgFtpServerFactory {
     private SsgConnectorManager connectorManager;
 
     @Autowired
-    private ClusterPropertyManager clusterPropertyManager;
+    private ServerConfig serverConfig;
 
     public FtpServer create(SsgConnector connector) throws ListenerException {
         return new DefaultFtpServer(createServerContext(connector));
@@ -95,29 +86,26 @@ public class SsgFtpServerFactory {
      * @return a new ConnectionConfig
      */
     private ConnectionConfig createConnectionConfig(SsgConnector connector) throws ListenerException {
-        boolean anonymousLoginEnabled;
+        boolean anonymousLoginsEnabled;
 
-        String anonymousLoginEnabledProperty = connector.getProperty(LISTEN_PROP_ANONYMOUS_LOGINS_ENABLED);
+        String anonymousLoginEnabledListenerProperty = connector.getProperty(PROPERTY_ANONYMOUS_LOGINS_ENABLED);
 
-        if (null != anonymousLoginEnabledProperty) {
-            anonymousLoginEnabled = Boolean.parseBoolean(anonymousLoginEnabledProperty);
+        if (null != anonymousLoginEnabledListenerProperty) {
+            anonymousLoginsEnabled = Boolean.parseBoolean(anonymousLoginEnabledListenerProperty);
         } else {
-            anonymousLoginEnabled =
-                    Boolean.parseBoolean(getDefaultConfigurationClusterProperty(CLUSTER_PROP_ANONYMOUS_LOGINS_ENABLED));
+            anonymousLoginsEnabled =
+                    Boolean.parseBoolean(serverConfig.getProperty(PROPERTY_ANONYMOUS_LOGINS_ENABLED));
         }
 
-        int maxAnonymousLogins = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_MAX_ANONYMOUS_LOGINS, CLUSTER_PROP_MAX_ANONYMOUS_LOGINS);
+        int maxAnonymousLogins = getIntegerConfigurationProperty(connector, PROPERTY_MAX_ANONYMOUS_LOGINS);
 
-        int maxLogins = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_MAX_CONCURRENT_LOGINS, CLUSTER_PROP_MAX_CONCURRENT_LOGINS);
+        int maxLogins = getIntegerConfigurationProperty(connector, PROPERTY_MAX_CONCURRENT_LOGINS);
 
-        int maxThreads = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_MAX_REQUEST_PROCESSING_THREADS, CLUSTER_PROP_MAX_REQUEST_PROCESSING_THREADS);
+        int maxThreads = getIntegerConfigurationProperty(connector, PROPERTY_MAX_REQUEST_PROCESSING_THREADS);
 
         ConnectionConfigFactory factory = new ConnectionConfigFactory();
 
-        factory.setAnonymousLoginEnabled(anonymousLoginEnabled);
+        factory.setAnonymousLoginEnabled(anonymousLoginsEnabled);
         factory.setMaxAnonymousLogins(maxAnonymousLogins);
         factory.setMaxLogins(maxLogins);
         factory.setMaxThreads(maxThreads);
@@ -142,14 +130,13 @@ public class SsgFtpServerFactory {
      * @return the new FtpUserManager
      */
     private UserManager createUserManager(SsgConnector connector) throws ListenerException {
-        int userMaxConcurrentLogins = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS, CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS);
+        int userMaxConcurrentLogins =
+                getIntegerConfigurationProperty(connector, PROPERTY_USER_MAX_CONCURRENT_LOGINS);
 
-        int userMaxConcurrentLoginsPerIP = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP, CLUSTER_PROP_USER_MAX_CONCURRENT_LOGINS_PER_IP);
+        int userMaxConcurrentLoginsPerIP =
+                getIntegerConfigurationProperty(connector, PROPERTY_USER_MAX_CONCURRENT_LOGINS_PER_IP);
 
-        int idleTimeout = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_SESSION_IDLE_TIMEOUT, CLUSTER_PROP_SESSION_IDLE_TIMEOUT);
+        int idleTimeout = getIntegerConfigurationProperty(connector, PROPERTY_SESSION_IDLE_TIMEOUT);
 
         return new FtpUserManager(userMaxConcurrentLogins, userMaxConcurrentLoginsPerIP, idleTimeout);
     }
@@ -162,8 +149,7 @@ public class SsgFtpServerFactory {
     private Listener createListener(SsgConnector connector) throws ListenerException {
         ListenerFactory factory = new ListenerFactory();
 
-        int idleTimeout = getIntegerConfigurationProperty(connector,
-                LISTEN_PROP_SESSION_IDLE_TIMEOUT, CLUSTER_PROP_SESSION_IDLE_TIMEOUT);
+        int idleTimeout = getIntegerConfigurationProperty(connector, PROPERTY_SESSION_IDLE_TIMEOUT);
 
         factory.setIdleTimeout(idleTimeout);
         factory.setPort(connector.getPort());
@@ -236,27 +222,18 @@ public class SsgFtpServerFactory {
      * @throws ListenerException if a property value is not formatted correctly, or if the default cluster property
      * does not exist
      */
-    private int getIntegerConfigurationProperty(SsgConnector connector, String connectorProperty,
-                                                String clusterProperty) throws ListenerException {
+    private int getIntegerConfigurationProperty(SsgConnector connector, String property) throws ListenerException {
         int value;
 
-        String connectorPropertyValue = connector.getProperty(connectorProperty);
+        String connectorPropertyValue = connector.getProperty(property);
 
         if (null != connectorPropertyValue) {
-            value = toInt(connectorProperty, connectorPropertyValue);
+            value = toInt(property, connectorPropertyValue);
         } else {
-            value = toInt(clusterProperty, getDefaultConfigurationClusterProperty(clusterProperty));
+            value = toInt(property, serverConfig.getProperty(property));
         }
 
         return value;
-    }
-
-    private String getDefaultConfigurationClusterProperty(String property) throws ListenerException {
-        try {
-            return clusterPropertyManager.getProperty(property);
-        } catch (FindException e) {
-            throw new ListenerException("Failed to find default configuration property: " + property, e);
-        }
     }
 
     private int toInt(String name, String stringValue) throws ListenerException {
