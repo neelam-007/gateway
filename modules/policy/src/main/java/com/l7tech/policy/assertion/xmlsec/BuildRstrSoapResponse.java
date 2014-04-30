@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -10,7 +11,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NA
 /**
  * @author ghuang
  */
-public class BuildRstrSoapResponse extends MessageTargetableAssertion implements RequestIdentityTargetable, SecurityHeaderAddressable {
+public class BuildRstrSoapResponse extends MessageTargetableAssertion implements RequestIdentityTargetable, SecurityHeaderAddressable, UsesEntities {
     public static final String DEFAULT_VARIABLE_PREFIX = "responseBuilder";
     public static final String VARIABLE_RSTR_RESPONSE = "rstrResponse";
     public static final String VARIABLE_WSA_NAMESPACE = "wsaNamespace";
@@ -158,6 +159,16 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
             VARIABLE_WSA_NAMESPACE,
             VARIABLE_RSTR_WSA_ACTION,
         };
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget.getEntitiesUsed();
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        identityTarget.replaceEntity(oldEntityHeader,newEntityHeader);
     }
 
     @Override

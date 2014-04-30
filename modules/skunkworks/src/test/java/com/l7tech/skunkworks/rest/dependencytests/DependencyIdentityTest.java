@@ -238,6 +238,99 @@ public class DependencyIdentityTest extends DependencyTestBase {
     }
 
     @Test
+    public void BuildRstrSoapResponseAssertionGroupTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:BuildRstrSoapResponse>\n" +
+                "            <L7p:IdentityTarget IdentityTarget=\"included\">\n" +
+                "                <L7p:IdentityId stringValue=\""+internalGroup.getId()+"\"/>\n" +
+                "                <L7p:IdentityInfo stringValue=\""+ internalGroup.getName()+"\"/>\n" +
+                "                <L7p:IdentityProviderOid goidValue=\""+ internalGroup.getProviderId()+"\"/>\n" +
+                "                <L7p:TargetIdentityType identityType=\"GROUP\"/>\n" +
+                "            </L7p:IdentityTarget>\n" +
+                "            <L7p:ResponseForIssuance booleanValue=\"false\"/>\n" +
+                "        </L7p:BuildRstrSoapResponse>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertNotNull(idDep);
+                assertEquals(internalProviderId, idDep.getId());
+                assertEquals("Internal Identity Provider", idDep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getType());
+
+                // verify admin user dependency
+                DependencyMO adminDep = getDependency(dependencyAnalysisMO, EntityType.GROUP);
+                assertNotNull(adminDep);
+                assertEquals(internalGroup.getId(), adminDep.getId());
+                assertEquals(internalGroup.getName(), adminDep.getName());
+                assertEquals(EntityType.GROUP.toString(), adminDep.getType());
+
+                // verify policy dependency
+                DependencyMO policyDep  = dependencyAnalysisMO.getSearchObjectItem();
+                assertNotNull("Missing dependency:" + internalGroup.getId(), getDependency(policyDep.getDependencies(), internalGroup.getId()));
+                assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
+            }
+        });
+    }
+
+    @Test
+    public void BuildRstrSoapResponseAssertionUserTest() throws Exception {
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:BuildRstrSoapResponse>\n" +
+                        "            <L7p:IdentityTarget IdentityTarget=\"included\">\n" +
+                        "                <L7p:IdentityId stringValue=\""+new Goid(0,3).toString()+"\"/>\n" +
+                        "                <L7p:IdentityInfo stringValue=\"admin\"/>\n" +
+                        "                <L7p:IdentityProviderOid goidValue=\""+ internalProviderId+"\"/>\n" +
+                        "                <L7p:TargetIdentityType identityType=\"USER\"/>\n" +
+                        "            </L7p:IdentityTarget>\n" +
+                        "            <L7p:ResponseForIssuance booleanValue=\"false\"/>\n" +
+                        "        </L7p:BuildRstrSoapResponse>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO idDep  = getDependency(dependencyAnalysisMO, EntityType.ID_PROVIDER_CONFIG);
+                assertEquals(internalProviderId, idDep.getId());
+                assertEquals("Internal Identity Provider", idDep.getName());
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idDep.getType());
+
+                // verify admin user dependency
+                DependencyMO adminDep  = getDependency(dependencyAnalysisMO, EntityType.USER);
+                assertEquals(new Goid(0,3).toString(), adminDep.getId());
+                assertEquals("admin", adminDep.getName());
+                assertEquals(EntityType.USER.toString(), adminDep.getType());
+
+                // verify policy dependency
+                DependencyMO policyDep  = dependencyAnalysisMO.getSearchObjectItem();
+                assertNotNull("Missing dependency:" + new Goid(0,3).toString(), getDependency(policyDep.getDependencies(), new Goid(0,3).toString()));
+                assertNotNull("Missing dependency:" + internalProviderId, getDependency(policyDep.getDependencies(), internalProviderId));
+            }
+        });
+    }
+
+    @Test
     public void ldapIdentityAssertionTest() throws Exception {
 
         final String assXml =

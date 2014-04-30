@@ -337,4 +337,120 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         }
 
     }
+
+    @Test
+    public void testBuildRstrSoapResponseAssertion() throws Exception{
+        RestResponse response;
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:BuildRstrSoapResponse>\n" +
+                        "            <L7p:IdentityTarget IdentityTarget=\"included\">\n" +
+                        "                <L7p:IdentityId stringValue=\""+userItem.getId()+"\"/>\n" +
+                        "                <L7p:IdentityInfo stringValue=\""+ userItem.getName()+"\"/>\n" +
+                        "                <L7p:IdentityProviderOid goidValue=\""+ idProviderItem.getId()+"\"/>\n" +
+                        "                <L7p:TargetIdentityType identityType=\"USER\"/>\n" +
+                        "            </L7p:IdentityTarget>\n" +
+                        "            <L7p:ResponseForIssuance booleanValue=\"false\"/>\n" +
+                        "        </L7p:BuildRstrSoapResponse>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+
+        // update policy to use BuildRstrSoapResponseAssertion
+        response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        PolicyMO policyMO = policyItem.getContent();
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent(assXml);
+        response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkResponse(response);
+        policyItem.setContent(policyMO);
+
+        //create user
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(idProviderItem.getId());
+        userMO.setLogin("targetUser");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
+        response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
+        assertOkCreatedResponse(response);
+        Item<UserMO> createdUser = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        try{
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 1 item. A policy, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 mappings. A policy, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
+
+            // map
+            bundleItem.getContent().getMappings().get(1).setTargetId(createdUser.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping idProviderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idProviderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, idProviderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, idProviderMapping.getActionTaken());
+            Assert.assertEquals(idProviderItem.getId(), idProviderMapping.getSrcId());
+            Assert.assertEquals(idProviderMapping.getSrcId(), idProviderMapping.getTargetId());
+
+            Mapping userMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.USER.toString(), userMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, userMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, userMapping.getActionTaken());
+            Assert.assertEquals(userItem.getId(), userMapping.getSrcId());
+            Assert.assertEquals(createdUser.getId(), userMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            // verify dependencies
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(2, policyDependencies.size());
+
+            Assert.assertNotNull(getDependency(policyDependencies, createdUser.getId()));
+            Assert.assertNotNull(getDependency(policyDependencies, idProviderItem.getId()));
+
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
+            assertOkDeleteResponse(response);
+
+        }
+
+    }
 }
