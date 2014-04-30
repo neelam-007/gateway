@@ -296,6 +296,8 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
                 .put("securityZone.id=" + securityZone1.getId(), Arrays.asList(assertionAccesses.get(0).getName()))
                 .put("securityZone.id=" + securityZone2.getId(), Arrays.asList(assertionAccesses.get(1).getName()))
                 .put("name=" + URLEncoder.encode(assertionAccesses.get(0).getName()) + "&name=" + URLEncoder.encode(assertionAccesses.get(1).getName()) + "&sort=name&order=desc", Arrays.asList(assertionAccesses.get(1).getName(), assertionAccesses.get(0).getName()))
+                //order not specified: SSG-8451
+                .put("name=" + URLEncoder.encode(assertionAccesses.get(0).getName()) + "&name=" + URLEncoder.encode(assertionAccesses.get(1).getName()) + "&sort=name", Arrays.asList(assertionAccesses.get(0).getName(), assertionAccesses.get(1).getName()))
                 .map();
     }
 }

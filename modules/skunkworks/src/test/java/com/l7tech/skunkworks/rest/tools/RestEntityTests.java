@@ -440,6 +440,10 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName() + "&order=asc", HttpMethod.GET, null, "");
                 testList("sort=" + getIdName() + "&order=asc", response, orderedList);
 
+                //test without specifying order SSG-8451
+                response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName(), HttpMethod.GET, null, "");
+                testList("sort=" + getIdName(), response, orderedList);
+
                 List<String> reverseList = new ArrayList<>(expectedIds);
                 Collections.sort(reverseList);
                 Collections.reverse(reverseList);

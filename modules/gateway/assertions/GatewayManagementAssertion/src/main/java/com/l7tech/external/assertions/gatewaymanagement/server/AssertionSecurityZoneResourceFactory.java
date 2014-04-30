@@ -203,19 +203,19 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                         return 0;
 
                     if(sortKey.equals("name")){
-                        return ascending ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
+                        return (ascending == null || ascending) ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
                     }
                     if(sortKey.equals("id")){
-                        return ascending ? o1.getId().compareTo(o2.getId()) :  o2.getId().compareTo(o1.getId());
+                        return (ascending == null || ascending) ? o1.getId().compareTo(o2.getId()) :  o2.getId().compareTo(o1.getId());
                     }
                     if(sortKey.equals("securityZone.id")){
                         if(o1.getSecurityZone().equals(o2.getSecurityZone()))
                             return 0;
                         if(o1.getSecurityZone() == null)
-                            return ascending ? 1: -1;
+                            return (ascending == null || ascending) ? 1: -1;
                         if(o2.getSecurityZone() == null)
-                            return ascending ? -1: 1;
-                        return ascending ? o1.getSecurityZone().getId().compareTo(o2.getSecurityZone().getId()) :  o2.getSecurityZone().getId().compareTo(o1.getSecurityZone().getId());
+                            return (ascending == null || ascending) ? -1: 1;
+                        return (ascending == null || ascending) ? o1.getSecurityZone().getId().compareTo(o2.getSecurityZone().getId()) :  o2.getSecurityZone().getId().compareTo(o1.getSecurityZone().getId());
                     }
                     return 0;
                 }
