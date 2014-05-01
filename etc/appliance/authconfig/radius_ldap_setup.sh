@@ -514,10 +514,10 @@ doConfigureLDAPonly () {
         toLog "   Info - FILE $OPENLDAP_CONF_FILE CONFIGURATION:"
         # BASE field
         if [ "X$LDAP_BASE" != "X" ]; then
-			sed -i "/^BASE[[:space:]]*/d" "$OPENLDAP_CONF_FILE"
-			if [ $? -ne 0 ]; then
-				toLog "    ERROR - Could not remove preexisting BASE lines in $OPENLDAP_CONF_FILE."
-				STATUS=1
+            sed -i "/^BASE[[:space:]]*/d" "$OPENLDAP_CONF_FILE"
+            if [ $? -ne 0 ]; then
+                toLog "    ERROR - Could not remove preexisting BASE lines in $OPENLDAP_CONF_FILE."
+                STATUS=1
             fi
             sed -i "s|\(^#BASE.*$\)|\1\n# Added by $0 on $DATE_TIME:\nBASE $LDAP_BASE\n|" $OPENLDAP_CONF_FILE
             if [ $? -ne 0 ] || [ "$(grep "^BASE" $OPENLDAP_CONF_FILE)" != "BASE $LDAP_BASE" ]; then
@@ -531,11 +531,11 @@ doConfigureLDAPonly () {
             STATUS=1
         fi
         # URI field
-		sed -i "/^URI[[:space:]]*/d" "$OPENLDAP_CONF_FILE"
-		if [ $? -ne 0 ]; then
-			toLog "    ERROR - Could not remove preexisting URI lines in $OPENLDAP_CONF_FILE."
-			STATUS=1
-		fi
+        sed -i "/^URI[[:space:]]*/d" "$OPENLDAP_CONF_FILE"
+        if [ $? -ne 0 ]; then
+            toLog "    ERROR - Could not remove preexisting URI lines in $OPENLDAP_CONF_FILE."
+            STATUS=1
+        fi
         sed -i "s|\(^#URI.*$\)|\1\n# Added by $0 on $DATE_TIME:\nURI $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $OPENLDAP_CONF_FILE
         if [ $? -ne 0 ] || [ "X$(grep "^URI" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT" ]; then
             toLog "    ERROR - Configuring 'URI' field in $OPENLDAP_CONF_FILE failed."
@@ -595,8 +595,18 @@ doConfigureLDAPonly () {
                 fi
             fi
 
-            # TLS_CACERT in /etc/openldap/ldap.conf
+
             if [ "X$CACERT_FILE_NAME" != "X" ]; then
+              # tls_cacertfile  in /etc/nslcd.conf
+                echo "# Added by $0 on $DATE_TIME:" >> $NSS_LDAP_CONF_FILE
+                echo "tls_cacertfile $LDAPS_CERTS_DIR/$CACERT_FILE_NAME" >> $NSS_LDAP_CONF_FILE
+                if [ $? -ne 0 ] || [ "X$(grep "^tls_cacertfile " $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR/$CACERT_FILE_NAME" ]; then
+                    toLog "    ERROR - Configuring 'tls_cacertfile' field in $NSS_LDAP_CONF_FILE failed."
+                    STATUS=1
+                else
+                    toLog "    Success - 'tls_cacertfile' set to $LDAPS_CERTS_DIR/$CACERT_FILE_NAME in $NSS_LDAP_CONF_FILE."
+                fi
+              # TLS_CACERT in /etc/openldap/ldap.conf
               echo "TLS_CACERT $LDAPS_CERTS_DIR/$CACERT_FILE_NAME" >> $OPENLDAP_CONF_FILE
                 if [ $? -ne 0 ] || [ "X$(grep "^TLS_CACERT " $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR/$CACERT_FILE_NAME" ]; then
                     toLog "    ERROR - Configuring 'TLS_CACERT' field in $OPENLDAP_CONF_FILE failed."
@@ -605,6 +615,8 @@ doConfigureLDAPonly () {
                     toLog "    Success - 'TLS_CACERT' set to $LDAPS_CERTS_DIR/$CACERT_FILE_NAME in $OPENLDAP_CONF_FILE."
                 fi
             fi
+
+
 
             # TLS_REQCERT in /etc/openldap/ldap.conf
             if [ "X$LDAP_TLS_REQCERT" != "X" ]; then
@@ -620,11 +632,11 @@ doConfigureLDAPonly () {
 
             # tls_cacert in /etc/ldap.conf
             if [ "X$CACERT_FILE_NAME" != "X" ]; then
-				sed -i "/^tls_cacertdir[[:space:]]*/d" "$NSS_LDAP_CONF_FILE"
-				if [ $? -ne 0 ]; then
-					toLog "    ERROR - Could not remove preexisting tls_cacertdir lines in $NSS_LDAP_CONF_FILE."
-					STATUS=1
-				fi
+                sed -i "/^tls_cacertdir[[:space:]]*/d" "$NSS_LDAP_CONF_FILE"
+                if [ $? -ne 0 ]; then
+                    toLog "    ERROR - Could not remove preexisting tls_cacertdir lines in $NSS_LDAP_CONF_FILE."
+                    STATUS=1
+                fi
                 sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacertdir $LDAPS_CERTS_DIR\n|" $NSS_LDAP_CONF_FILE
                 if [ $? -ne 0 ] || [ "X$(grep "^tls_cacertdir" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR" ]; then
                     toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed."
@@ -659,11 +671,11 @@ doConfigureLDAPonly () {
         elif [ "X$LDAP_TYPE" == "Xldap" ]; then
             # ssl field will be set to no:
             # sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl no\n|" $NSS_LDAP_CONF_FILE
-			sed -i "/^ssl[[:space:]]*/d" "$NSS_LDAP_CONF_FILE"
-			if [ $? -ne 0 ]; then
-				toLog "    ERROR - Could not remove preexisting ssl lines in $NSS_LDAP_CONF_FILE."
-				STATUS=1
-			fi
+            sed -i "/^ssl[[:space:]]*/d" "$NSS_LDAP_CONF_FILE"
+            if [ $? -ne 0 ]; then
+                toLog "    ERROR - Could not remove preexisting ssl lines in $NSS_LDAP_CONF_FILE."
+                STATUS=1
+            fi
             echo -e "\n# Added by $0 on $DATE_TIME:\nssl no\n" >> $NSS_LDAP_CONF_FILE
             if [ $? -ne 0 ] || [ "X$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "Xno" ]; then
                 toLog "    ERROR - Disabling 'ssl' in $NSS_LDAP_CONF_FILE failed."
@@ -1087,11 +1099,11 @@ doConfigureLDAPonly () {
 
         # uri field
         if [ "X$LDAP_TYPE" != "X" ] && [ "X$LDAP_SRV" != "X" ] && [ "X$LDAP_PORT" != "X" ]; then
-			sed -i "/^uri[[:space:]]*/d" "$PAM_LDAP_CONF_FILE"
-			if [ $? -ne 0 ]; then
-				toLog "    ERROR - Could not remove preexisting URI lines in $PAM_LDAP_CONF_FILE."
-				STATUS=1
-			fi
+            sed -i "/^uri[[:space:]]*/d" "$PAM_LDAP_CONF_FILE"
+            if [ $? -ne 0 ]; then
+                toLog "    ERROR - Could not remove preexisting URI lines in $PAM_LDAP_CONF_FILE."
+                STATUS=1
+            fi
             sed -i "s|\(^#uri ldap:.*$\)|\1\n# Added by $0 on $DATE_TIME:\nuri $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $PAM_LDAP_CONF_FILE
             if [ $? -ne 0 ] || [ "X$(grep "^uri" $PAM_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT" ]; then
                 toLog "    ERROR - Configuring 'uri' field in $PAM_LDAP_CONF_FILE failed."
