@@ -261,6 +261,17 @@
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager">
     </bean>
 
+    <bean id="serviceTemplateBootstrapService" class="com.l7tech.server.service.ServiceTemplateBootstrapService">
+        <constructor-arg index="0" ref="folderManager"/>
+        <constructor-arg index="1" ref="serviceManager"/>
+        <constructor-arg index="2" ref="serviceDocumentManager"/>
+        <constructor-arg index="3" ref="policyVersionManager"/>
+        <constructor-arg index="4" ref="serviceTemplateManager"/>
+    </bean>
+
+    <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
+
+
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="certValidationProcessor"/>
