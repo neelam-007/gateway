@@ -96,6 +96,8 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
 
         if ( verifyCertificateGoid != null && !PersistentEntity.DEFAULT_GOID.equals(verifyCertificateGoid) ) {
             headers = new EntityHeader[] {new EntityHeader(verifyCertificateGoid, EntityType.TRUSTED_CERT, null, null)};
+        } else if ( verifyCertificateName != null ) {
+            headers = new EntityHeader[] {new EntityHeader(Goid.DEFAULT_GOID, EntityType.TRUSTED_CERT, verifyCertificateName, null)};
         }
 
         return headers;
@@ -108,6 +110,11 @@ public class XmlElementVerifierConfig implements Serializable, UsesVariables, Us
                 verifyCertificateGoid != null &&
                 verifyCertificateGoid.equals(oldEntityHeader.getGoid())) {
             verifyCertificateGoid = newEntityHeader.getGoid();
+        } else if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+                newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+                verifyCertificateName != null &&
+                verifyCertificateName.equals(oldEntityHeader.getName())) {
+            verifyCertificateName = newEntityHeader.getName();
         }
     }
 }

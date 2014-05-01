@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependencies;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
@@ -61,6 +62,9 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
 
     @Inject
     private CustomKeyValueStoreManager customKeyValueStoreManager;
+
+    @Inject
+    private TrustedCertManager trustedCertManager;
 
     @Inject
     DefaultKey defaultKey;
@@ -561,7 +565,16 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             if (customKeyValueStore == null)
                 throw new FindException("Couldn't find entity with id: \"" + entityId + "\"");
             return customKeyValueStore;
-        } else
+        } else if (EntityType.TRUSTED_CERT.equals(entityHeader.getType())) {
+            // may be referenced by name only
+            if(Goid.isDefault(entityHeader.getGoid())) {
+                return trustedCertManager.findByUniqueName(entityHeader.getName());
+            }
+            else {
+                return trustedCertManager.findByPrimaryKey(entityHeader.getGoid());
+            }
+        } else {
             return entityCrud.find(entityHeader);
+        }
     }
 }

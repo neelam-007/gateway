@@ -1,9 +1,8 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyListMO;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
@@ -123,7 +122,7 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
     }
 
     @Test
-    public void NonSoapVerifyXMLElementAssertionTest() throws Exception {
+    public void NonSoapVerifyXMLElementAssertionByGoidTest() throws Exception {
 
         final String assXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -136,6 +135,175 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 "        </L7p:NonSoapVerifyElement>" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
+    public void NonSoapVerifyXMLElementAssertionByNameTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:NonSoapVerifyElement>\n" +
+                        "            <L7p:VariablePrefix stringValueNull=\"null\"/>\n" +
+                        "            <L7p:VerifyCertificateName stringValue=\""+trustedCert.getName()+"\"/>\n" +
+                        "        </L7p:NonSoapVerifyElement>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
+    public void LookupTrustedCertificateAssertionTestName() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:LookupTrustedCertificate>\n" +
+                "            <L7p:TrustedCertificateName stringValue=\""+trustedCert.getName()+"\"/>\n" +
+                "        </L7p:LookupTrustedCertificate>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1, dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
+    public void LookupTrustedCertificateAssertionTestThumbprint() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:LookupTrustedCertificate>\n" +
+                        "            <L7p:CertThumbprintSha1 stringValue=\""+trustedCert.getThumbprintSha1()+"\"/>\n" +
+                        "            <L7p:LookupType security=\"CERT_THUMBPRINT_SHA1\"/>\n" +
+                        "        </L7p:LookupTrustedCertificate>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+
+    @Test
+    public void LookupTrustedCertificateAssertionTestSKI() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:LookupTrustedCertificate>\n" +
+                        "            <L7p:CertSubjectKeyIdentifier stringValue=\""+trustedCert.getSki()+"\"/>\n" +
+                        "            <L7p:LookupType security=\"CERT_SKI\"/>\n" +
+                        "        </L7p:LookupTrustedCertificate>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
+    public void LookupTrustedCertificateAssertionTestSubjectDn() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:LookupTrustedCertificate>\n" +
+                        "            <L7p:CertSubjectDn stringValue=\""+trustedCert.getSubjectDn()+"\"/>\n" +
+                        "            <L7p:LookupType security=\"CERT_SUBJECT_DN\"/>\n" +
+                        "        </L7p:LookupTrustedCertificate>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
+    public void LookupTrustedCertificateAssertionTestIssuerSerial() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:LookupTrustedCertificate>\n" +
+                        "            <L7p:CertIssuerDn stringValue=\""+trustedCert.getIssuerDn()+"\"/>\n" +
+                        "            <L7p:CertSerialNumber stringValue=\""+trustedCert.getSerial().toString()+"\"/>\n" +
+                        "            <L7p:LookupType security=\"CERT_ISSUER_SERIAL\"/>\n" +
+                        "        </L7p:LookupTrustedCertificate>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
 
         TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
 

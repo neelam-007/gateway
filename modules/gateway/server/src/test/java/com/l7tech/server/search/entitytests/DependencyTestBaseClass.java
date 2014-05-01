@@ -7,6 +7,8 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -40,6 +42,8 @@ public abstract class DependencyTestBaseClass {
     private DefaultKey defaultKey;
     @Mock
     private SsgKeyStoreManager keyStoreManager;
+    @Mock
+    private TrustedCertManager trustedCertManager;
 
     @Spy
     DependencyProcessorRegistry dependencyProcessorRegistry;
@@ -56,6 +60,8 @@ public abstract class DependencyTestBaseClass {
     SecurePasswordDependencyProcessor securePasswordDependencyProcessor = new SecurePasswordDependencyProcessor();
     @InjectMocks
     AssertionDependencyProcessor assertionDependencyProcessor = new AssertionDependencyProcessor();
+    @InjectMocks
+    AssertionLookupTrustedCertificateProcessor assertionLookupTrustedCertificate = new AssertionLookupTrustedCertificateProcessor();
     @InjectMocks
     JmsEndpointDependencyProcessor jdbcDependencyProcessor = new JmsEndpointDependencyProcessor();
     @InjectMocks
@@ -74,6 +80,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.JDBC_CONNECTION, jdbcConnectionDependencyProcessor)
             .put(Dependency.DependencyType.SECURE_PASSWORD, securePasswordDependencyProcessor)
             .put(Dependency.DependencyType.ASSERTION, assertionDependencyProcessor)
+            .put(Dependency.DependencyType.ASSERTION_LOOKUP_TRUSTED_CERTIFICATE, assertionLookupTrustedCertificate)
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
@@ -97,6 +104,9 @@ public abstract class DependencyTestBaseClass {
         } else if(entity instanceof SecurePassword){
             Mockito.when(securePasswordManager.findByUniqueName(entityHeader.getName())).thenReturn((SecurePassword) entity);
             Mockito.when(securePasswordManager.findByPrimaryKey(entityHeader.getGoid())).thenReturn((SecurePassword) entity);
+        } else if(entity instanceof TrustedCert){
+            Mockito.when(trustedCertManager.findByUniqueName(entityHeader.getName())).thenReturn((TrustedCert) entity);
+            Mockito.when(trustedCertManager.findByPrimaryKey(entityHeader.getGoid())).thenReturn((TrustedCert) entity);
         }
     }
 }

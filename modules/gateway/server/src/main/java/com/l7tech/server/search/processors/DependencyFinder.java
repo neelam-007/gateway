@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -213,9 +214,11 @@ public class DependencyFinder {
                 //Use the Generic dependency type for other entity types
                 return com.l7tech.search.Dependency.DependencyType.GENERIC;
             }
-        } else if (obj instanceof Assertion) {
+        } else if (obj instanceof LookupTrustedCertificateAssertion) {
+            return com.l7tech.search.Dependency.DependencyType.ASSERTION_LOOKUP_TRUSTED_CERTIFICATE;
+        }  else if (obj instanceof Assertion) {
             return com.l7tech.search.Dependency.DependencyType.ASSERTION;
-        } else {
+        }  else {
             return com.l7tech.search.Dependency.DependencyType.GENERIC;
         }
     }

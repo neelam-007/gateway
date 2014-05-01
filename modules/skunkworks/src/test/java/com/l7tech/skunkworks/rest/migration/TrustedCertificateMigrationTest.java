@@ -1065,4 +1065,336 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             assertOkDeleteResponse(response);
         }
     }
+
+    @Test
+    public void testMapLookupTrustedCertificateAssertionName() throws Exception {
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:LookupTrustedCertificate>\n" +
+                        "            <L7p:TrustedCertificateName stringValue=\""+trustedCertItem.getName()+"\"/>\n" +
+                        "        </L7p:LookupTrustedCertificate>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+
+        // update policy to use LookupTrustedCertificateAssertion
+        RestResponse response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        PolicyMO policyMO = policyItem.getContent();
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent(assXml);
+        response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkResponse(response);
+        policyItem.setContent(policyMO);
+
+        //create the cert on the target
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Target Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(new TestCertificateGenerator().subject("cn=target").generate()));
+        response = getTargetEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+        Item<TrustedCertificateMO> certCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        trustedCertificateMO.setId(certCreated.getId());
+
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy and trusted certificate", 2, bundleItem.getContent().getReferences().size());
+
+//            //update the bundle mapping to map the cert to the existing one
+//            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+//            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+//            bundleItem.getContent().getMappings().get(0).setTargetId(trustedCertificateMO.getId());
+//
+//            //import the bundle
+//            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+//            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+//                    objectToString(bundleItem.getContent()));
+//            assertOkResponse(response);
+//
+//            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+//            mappingsToClean = mappings;
+//
+//            //verify the mappings
+//            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+//            Mapping certMapping = mappings.getContent().getMappings().get(0);
+//            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
+//            Assert.assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
+//            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, certMapping.getActionTaken());
+//            Assert.assertEquals(trustedCertItem.getId(), certMapping.getSrcId());
+//            Assert.assertEquals(trustedCertificateMO.getId(), certMapping.getTargetId());
+//
+//            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+//            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+//            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+//            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+//            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+//            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+//
+//            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+//            assertOkResponse(response);
+//
+//            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+//            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+//
+//            logger.log(Level.INFO, policyXml);
+//
+//            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+//            assertOkResponse(response);
+//
+//            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+//            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+//
+//            Assert.assertNotNull(policyDependencies);
+//            Assert.assertEquals(1, policyDependencies.size());
+//
+//            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
+//            Assert.assertNotNull(certDependency);
+//            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+//            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+//            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
+//
+//            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+    }
+
+    @Test
+    public void testMapNonSoapVerifyXMLElementAssertionByGoid() throws Exception {
+        final String assXml =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:NonSoapVerifyElement>\n" +
+            "            <L7p:Target target=\"RESPONSE\"/>\n" +
+            "            <L7p:VariablePrefix stringValueNull=\"null\"/>\n" +
+            "            <L7p:VerifyCertificateGoid goidValue=\""+trustedCertItem.getId()+"\"/>\n" +
+            "        </L7p:NonSoapVerifyElement>" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+
+        // update policy to use LookupTrustedCertificateAssertion
+        RestResponse response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        PolicyMO policyMO = policyItem.getContent();
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent(assXml);
+        response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkResponse(response);
+        policyItem.setContent(policyMO);
+
+        //create the cert on the target
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Target Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(new TestCertificateGenerator().subject("cn=target").generate()));
+        response = getTargetEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+        Item<TrustedCertificateMO> certCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        trustedCertificateMO.setId(certCreated.getId());
+
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy and trusted certificate", 2, bundleItem.getContent().getReferences().size());
+
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            bundleItem.getContent().getMappings().get(0).setTargetId(trustedCertificateMO.getId());
+
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping certMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, certMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), certMapping.getSrcId());
+            Assert.assertEquals(trustedCertificateMO.getId(), certMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+
+            logger.log(Level.INFO, policyXml);
+
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
+
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
+
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+    }
+    @Test
+    public void testMapNonSoapVerifyXMLElementAssertionByName() throws Exception {
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:NonSoapVerifyElement>\n" +
+                "            <L7p:VariablePrefix stringValueNull=\"null\"/>\n" +
+                "            <L7p:VerifyCertificateName stringValue=\""+trustedCertItem.getName()+"\"/>\n" +
+                "        </L7p:NonSoapVerifyElement>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+
+        // update policy to use LookupTrustedCertificateAssertion
+        RestResponse response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        PolicyMO policyMO = policyItem.getContent();
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent(assXml);
+        response = getSourceEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkResponse(response);
+        policyItem.setContent(policyMO);
+
+        //create the cert on the target
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Target Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(new TestCertificateGenerator().subject("cn=target").generate()));
+        response = getTargetEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+        Item<TrustedCertificateMO> certCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        trustedCertificateMO.setId(certCreated.getId());
+
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy and trusted certificate", 2, bundleItem.getContent().getReferences().size());
+
+            //update the bundle mapping to map the cert to the existing one
+            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            bundleItem.getContent().getMappings().get(0).setTargetId(trustedCertificateMO.getId());
+
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundleItem.getContent()));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+            Mapping certMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, certMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), certMapping.getSrcId());
+            Assert.assertEquals(trustedCertificateMO.getId(), certMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
+
+            logger.log(Level.INFO, policyXml);
+
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
+
+            DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
+            Assert.assertNotNull(certDependency);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
+
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+    }
 }

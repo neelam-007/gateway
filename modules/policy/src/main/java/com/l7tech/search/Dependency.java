@@ -62,7 +62,8 @@ public @interface Dependency {
         GROUP(EntityType.GROUP),
         RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
-        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE);
+        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
+        ASSERTION_LOOKUP_TRUSTED_CERTIFICATE(null);
 
         private EntityType entityType;
 
