@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.ca.siteminder.*;
+import com.ca.siteminder.SiteMinderAgentConstants;
+import com.ca.siteminder.SiteMinderApiClassException;
+import com.ca.siteminder.SiteMinderContext;
+import com.ca.siteminder.SiteMinderCredentials;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthenticateAssertion;
 import com.l7tech.external.assertions.siteminder.util.SiteMinderAssertionUtil;
@@ -23,14 +26,16 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -136,71 +141,110 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
     }
 
 
-    SiteMinderCredentials collectCredentials(AuthenticationContext context,  Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
-        //determine the type of authentication scheme
-        List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes = smContext.getAuthSchemes();
-        if(supportedAuthSchemes.size() == 1 && supportedAuthSchemes.iterator().next() == SiteMinderContext.AuthenticationScheme.NONE) {
-            //logAndAudit
-            return null;//anonymous credentials
-        }
-        //get Credentials
-        LoginCredentials loginCredentials = null;
-        if(assertion.isLastCredential()) {
-            loginCredentials = context.getLastCredentials();
-        }
-        else{
-            String credentialsName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCredentialsName(), variableMap, getAudit());
-            if(StringUtils.isNotBlank(credentialsName)){
-                List<LoginCredentials> creds = context.getCredentials();
-                for(LoginCredentials cred : creds){
-                    if(cred.getFormat() == CredentialFormat.CLIENTCERT) {
-                        X509Certificate clientCert = cred.getClientCert();
-                        //now compare subject DN from the certificate or CN from the certificate
-                        if(clientCert != null &&
-                           (CertUtils.isEqualDNCanonical(CertUtils.getSubjectDN(clientCert), credentialsName) ||
-                            CertUtils.getCn(clientCert).equalsIgnoreCase(credentialsName))) {
-                            loginCredentials = cred;
-                            break;
-                        }
-                    }
-                    else if((cred.getFormat() == CredentialFormat.BASIC ||
-                            cred.getFormat() == CredentialFormat.CLEARTEXT) &&
-                            credentialsName.equals(cred.getName())) {
-                        loginCredentials = cred;
-                        break;
-                    }
-                }
-            }
+    private SiteMinderCredentials collectCredentials(AuthenticationContext context,  Map<String, Object> variableMap, SiteMinderContext smContext) throws PolicyAssertionException {
+
+        // Get auth schemes SiteMinder is requesting:
+        List<SiteMinderContext.AuthenticationScheme> requestedAuthSchemes = smContext.getAuthSchemes();
+
+        if(requestedAuthSchemes.size() == 1 && requestedAuthSchemes.iterator().next() == SiteMinderContext.AuthenticationScheme.NONE) {
+            return null; //anonymous credentials
         }
 
-        return buildSiteMinderCredentials(supportedAuthSchemes, loginCredentials);
+        boolean useLastCredential = assertion.isLastCredential();
+        boolean sendBasic = assertion.isSendUsernamePasswordCredential();
+        boolean sendCert = assertion.isSendX509CertificateCredential();
+
+        SiteMinderCredentials siteMinderCredentials = new SiteMinderCredentials();
+
+        if ( ! (sendBasic || sendCert ) ) {
+            logAndAudit(AssertionMessages.SITEMINDER_WARNING,"Neither Username and Password; or X509 Certificate Credentials selected to be sent to SiteMinder. No credentials sent.");
+            return siteMinderCredentials;
+        }
+
+        try {
+
+            if ( useLastCredential ) {
+                if ( sendBasic ) {
+                    addLastBasicCreds(context,siteMinderCredentials);
+                }
+
+                if ( sendCert ) {
+                    addLastCertCreds(context,siteMinderCredentials);
+                }
+            } else {
+                if ( sendBasic ) {
+                    addSpecificBasicCreds(SiteMinderAssertionUtil.extractContextVarValue(assertion.getNamedUser(),variableMap,getAudit()), context, siteMinderCredentials);
+                }
+
+                if ( sendCert ) {
+                    addSpecificCertCreds(SiteMinderAssertionUtil.extractContextVarValue(assertion.getNamedCertificate(),variableMap,getAudit()), context, siteMinderCredentials);
+                }
+            }
+
+        } catch ( CertificateEncodingException e ) {
+            logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to decode client certificate for login credentials.");
+            logger.log(Level.WARNING, "Certificate retrieve from Policy Context improperly encoded.", ExceptionUtils.getDebugException(e));
+        }
+
+        return siteMinderCredentials;
     }
 
-    private SiteMinderCredentials buildSiteMinderCredentials(List<SiteMinderContext.AuthenticationScheme> supportedAuthSchemes, LoginCredentials loginCredentials) {
-        if(loginCredentials != null) {
-            //X509 Certificate
-            if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERT)
-                    || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN)
-                    || supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN)) {
-                //certificate is a different case
-                if(loginCredentials.getFormat() == CredentialFormat.CLIENTCERT) {
-                    try {
-                        return  new SiteMinderCredentials(loginCredentials.getClientCert());
-                    } catch (CertificateEncodingException e) {
-                        logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to encode client certificate for login credentials:" + loginCredentials.getName());
-                        logger.log(Level.WARNING, "Unable to encode client certificate", ExceptionUtils.getDebugException(e));
+    private void addLastBasicCreds(AuthenticationContext context, SiteMinderCredentials smCreds) {
+        LoginCredentials lastBasic = getLastCredOfType(context.getCredentials(),CredentialFormat.CLEARTEXT);
+        if ( lastBasic != null ) {
+            smCreds.addUsernamePasswordCredentials(lastBasic.getLogin(), new String(lastBasic.getCredentials()));
+        }
+    }
+
+    private void addLastCertCreds(AuthenticationContext context, SiteMinderCredentials smCreds) throws CertificateEncodingException {
+        LoginCredentials lastCert = getLastCredOfType(context.getCredentials(),CredentialFormat.CLIENTCERT);
+        if ( lastCert != null ) {
+            smCreds.addClientCertificates(lastCert.getClientCert());
+        }
+    }
+
+    private void addSpecificBasicCreds(String user, AuthenticationContext context, SiteMinderCredentials smCreds) {
+       LoginCredentials basicCreds = getNamedCredOfType(context.getCredentials(),CredentialFormat.CLEARTEXT,user);
+       if ( basicCreds != null ) {
+           smCreds.addUsernamePasswordCredentials(basicCreds.getLogin(),new String(basicCreds.getCredentials()));
+       }
+    }
+
+    private void addSpecificCertCreds(String userDn, AuthenticationContext context, SiteMinderCredentials smCreds) throws CertificateEncodingException {
+        LoginCredentials certificateCred = getNamedCredOfType(context.getCredentials(),CredentialFormat.CLIENTCERT,userDn);
+        if (certificateCred != null) {
+            smCreds.addClientCertificates(certificateCred.getClientCert());
+        }
+    }
+
+    private LoginCredentials getLastCredOfType(List<LoginCredentials> creds,CredentialFormat type) {
+
+        for ( int i = creds.size() - 1; i >= 0; i-- ) {
+            if ( creds.get(i).getFormat() == type ) {
+                return creds.get(i);
+            }
+        }
+
+        return null;
+    }
+
+    private LoginCredentials getNamedCredOfType(List<LoginCredentials> creds, CredentialFormat type, String name) {
+
+        for ( LoginCredentials credential : creds ) {
+            if (credential.getFormat() == type) {
+                if (type == CredentialFormat.CLEARTEXT) {
+                    if (credential.getLogin().equals(name))
+                        return credential;
+                } else if (type == CredentialFormat.CLIENTCERT) {
+                    X509Certificate clientCert = credential.getClientCert();
+                    if (CertUtils.isEqualDNCanonical(CertUtils.getSubjectDN(clientCert), name) ||
+                            CertUtils.getCn(clientCert).equalsIgnoreCase(name)) {
+                        return credential;
                     }
                 }
             }
-            //BASIC authentication scheme
-            if(supportedAuthSchemes.contains(SiteMinderContext.AuthenticationScheme.BASIC)){
-                if(loginCredentials.getFormat() == CredentialFormat.CLEARTEXT || loginCredentials.getFormat() == CredentialFormat.BASIC) {
-                    return new SiteMinderCredentials(loginCredentials.getLogin(), new String(loginCredentials.getCredentials()));
-                }
-            }
-            //TODO: collect credentials of a different type (SAML, Kerberos, NTLM, etc.)
         }
-        return new SiteMinderCredentials();
+        return null;
     }
 
     /*

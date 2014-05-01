@@ -24,8 +24,11 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
     private boolean useSMCookie;
     private String prefix;
     private boolean isLastCredential = true;
-    private String credentialsName;
+    private String namedUser;
+    private String namedCertificate;
     protected final MessageTargetableSupport messageTargetableSupport;
+    private boolean sendUsernamePasswordCredential = true;
+    private boolean sendX509CertificateCredential = false;
 
     public SiteMinderAuthenticateAssertion() {
         this( TargetMessageType.REQUEST );
@@ -33,14 +36,6 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
     public SiteMinderAuthenticateAssertion(TargetMessageType defaultTargetMessageType) {
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, false);
-    }
-
-    public String getCredentialsName() {
-        return credentialsName;
-    }
-
-    public void setCredentialsName(String credentialsName) {
-        this.credentialsName = credentialsName;
     }
 
     public boolean isLastCredential() {
@@ -75,6 +70,22 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         this.prefix = prefix;
     }
 
+    public boolean isSendUsernamePasswordCredential() { return this.sendUsernamePasswordCredential; }
+
+    public void setSendUsernamePasswordCredential(boolean sendUnPw) { this.sendUsernamePasswordCredential = sendUnPw; }
+
+    public boolean isSendX509CertificateCredential() { return this.sendX509CertificateCredential; }
+
+    public void setSendX509CertificateCredential(boolean sendX509 ) { this.sendX509CertificateCredential = sendX509; }
+
+    public String getNamedUser() { return this.namedUser; }
+
+    public void setNamedUser(String username) { this.namedUser = username; }
+
+    public String getNamedCertificate() { return this.namedCertificate; }
+
+    public void setNamedCertificate(String certificateName) { this.namedCertificate = certificateName; }
+
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
@@ -86,7 +97,9 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         }
 
         if (!isLastCredential) {
-            String[] refNames = Syntax.getReferencedNames(credentialsName);
+            String[] refNames = Syntax.getReferencedNames(namedUser);
+            varsUsed.addAll(Arrays.asList(refNames));
+            refNames = Syntax.getReferencedNames(namedCertificate);
             varsUsed.addAll(Arrays.asList(refNames));
         }
 

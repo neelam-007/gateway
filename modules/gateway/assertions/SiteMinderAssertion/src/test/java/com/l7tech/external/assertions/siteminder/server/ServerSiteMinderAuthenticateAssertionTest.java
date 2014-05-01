@@ -96,6 +96,72 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     }
 
     @Test
+    public void shouldAuthenticateUserWhenMultipleCredentialsRequested() throws Exception {
+
+        AuthenticationContext ac = pec.getDefaultAuthenticationContext();
+
+        smAuthenticateAssertion.setLastCredential(true);
+        smAuthenticateAssertion.setUseSMCookie(false);
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(true);
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        X500Principal mockSubjectDn = new X500Principal("CN=user,OU=unit,O=CA Technologies,C=CA");
+        when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        when(mockContext.getAttrList()).thenReturn(attrList);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+
+    }
+
+    @Test
+    public void shouldNotAuthenticateUserWhenMultipleCredentialsRequestedButNotPermitted() throws Exception {
+
+        AuthenticationContext ac = pec.getDefaultAuthenticationContext();
+
+        smAuthenticateAssertion.setLastCredential(true);
+        smAuthenticateAssertion.setUseSMCookie(false);
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(true);
+        smAuthenticateAssertion.setSendX509CertificateCredential(false);
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        X500Principal mockSubjectDn = new X500Principal("CN=user,OU=unit,O=CA Technologies,C=CA");
+        when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+        attrList.add(new Pair<String, Object>(SiteMinderAgentConstants.ATTR_USERNAME, USER_LOGIN));
+        when(mockContext.getAttrList()).thenReturn(attrList);
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials("user", "password",new X509Certificate[]{mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE != fixture.checkRequest(pec));
+
+    }
+
+    @Test
     public void shouldAuthenticateUserWhenCredentialsPresent() throws Exception {
         smAuthenticateAssertion.setPrefix("siteminder");
 
@@ -188,7 +254,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         smAuthenticateAssertion.setLastCredential(false);
         smAuthenticateAssertion.setUseSMCookie(true);
-        smAuthenticateAssertion.setCredentialsName("user");
+        smAuthenticateAssertion.setNamedUser("user");
         smAuthenticateAssertion.setCookieSourceVar("cookie.SMSESSION");
 
         pec.setVariable("cookie.SMSESSION", SSO_TOKEN);
@@ -217,6 +283,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         smAuthenticateAssertion.setPrefix("siteminder");
 
         smAuthenticateAssertion.setLastCredential(true);
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
         smAuthenticateAssertion.setUseSMCookie(false);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
@@ -249,7 +316,8 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         smAuthenticateAssertion.setPrefix("siteminder");
 
         smAuthenticateAssertion.setLastCredential(false);
-        smAuthenticateAssertion.setCredentialsName("CN=user,OU=unit,O=CA Technologies,C=CA");
+        smAuthenticateAssertion.setNamedCertificate("CN=user,OU=unit,O=CA Technologies,C=CA");
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
         smAuthenticateAssertion.setUseSMCookie(false);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
@@ -282,7 +350,9 @@ public class ServerSiteMinderAuthenticateAssertionTest {
         smAuthenticateAssertion.setPrefix("siteminder");
 
         smAuthenticateAssertion.setLastCredential(false);
-        smAuthenticateAssertion.setCredentialsName("user");
+        smAuthenticateAssertion.setNamedUser("user");
+        smAuthenticateAssertion.setNamedCertificate("user");
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
         smAuthenticateAssertion.setUseSMCookie(false);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
@@ -311,11 +381,51 @@ public class ServerSiteMinderAuthenticateAssertionTest {
     }
 
     @Test
+    public void shouldAuthenticateWhenX509CertificateAndUsernamePasswordSpecified() throws Exception {
+        smAuthenticateAssertion.setPrefix("siteminder");
+
+        smAuthenticateAssertion.setLastCredential(false);
+        smAuthenticateAssertion.setNamedUser("user");
+        smAuthenticateAssertion.setNamedCertificate("CN=user,OU=unit,O=CA Technologies,C=CA");
+        smAuthenticateAssertion.setUseSMCookie(false);
+        smAuthenticateAssertion.setSendUsernamePasswordCredential(true);
+        smAuthenticateAssertion.setSendX509CertificateCredential(true);
+
+
+        pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
+
+        X500Principal mockSubjectDn = new X500Principal("CN=user,OU=unit,O=CA Technologies,C=CA");
+        when(mockClientCertificate.getSubjectX500Principal()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getSubjectDN()).thenReturn(mockSubjectDn);
+        when(mockClientCertificate.getEncoded()).thenReturn(certBytes);
+        AuthenticationContext ac = pec.getDefaultAuthenticationContext();
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("user", "password".toCharArray()), smAuthenticateAssertion.getClass()));
+        ac.addCredentials(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(mockClientCertificate), smAuthenticateAssertion.getClass()));
+
+        when(mockContext.getAgent()).thenReturn(mockLla);
+        List<SiteMinderContext.AuthenticationScheme> authSchemes = new ArrayList<>();
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERT);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN);
+        authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTUSERDN);
+        when(mockContext.getAuthSchemes()).thenReturn(authSchemes);
+        when(mockContext.getSsoToken()).thenReturn(SSO_TOKEN);
+
+        when(mockHla.processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD, new X509Certificate[] {mockClientCertificate})), anyString(), isNull(String.class), any(SiteMinderContext.class))).thenReturn(1);
+
+        fixture = new ServerSiteMinderAuthenticateAssertion(smAuthenticateAssertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+
+        verify(mockHla, times(1)).processAuthenticationRequest(eq(new SiteMinderCredentials(USER_LOGIN,USER_PASSWORD,new X509Certificate[]{mockClientCertificate})), isNull(String.class), isNull(String.class), eq(mockContext));
+
+    }
+
+    @Test
     public void shouldFailWhenX509CertificatePresentAndCredentialsDontMatch() throws Exception {
         smAuthenticateAssertion.setPrefix("siteminder");
 
         smAuthenticateAssertion.setLastCredential(false);
-        smAuthenticateAssertion.setCredentialsName("other user");
+        smAuthenticateAssertion.setNamedCertificate("other user");
         smAuthenticateAssertion.setUseSMCookie(false);
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 
@@ -349,7 +459,7 @@ public class ServerSiteMinderAuthenticateAssertionTest {
 
         smAuthenticateAssertion.setLastCredential(false);
         smAuthenticateAssertion.setUseSMCookie(false);
-        smAuthenticateAssertion.setCredentialsName("user");
+        smAuthenticateAssertion.setNamedUser("user");
 
         pec.setVariable(smAuthenticateAssertion.getPrefix() + ".smcontext", mockContext);
 

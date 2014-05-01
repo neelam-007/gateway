@@ -62,10 +62,20 @@ public final class SiteMinderCredentials {
         return credentials;
     }
 
-    public void addClientCertificates(X509Certificate[] certificates) throws CertificateEncodingException {
-        if(certificates != null && certificates.length > 0) {
-            SiteMinderUtil.handleCertificate(certificates[0], credentials);
-        }
+    public void addClientCertificates(X509Certificate certificates) throws CertificateEncodingException {
+        if ( certificates == null )
+            return;
+
+        SiteMinderUtil.handleCertificate(certificates, credentials);
+    }
+
+    public void addUsernamePasswordCredentials(String username, String password) {
+
+        if ( username == null || password == null )
+            return;
+
+        credentials.name = username;
+        credentials.password = password;
     }
 
     @Override
