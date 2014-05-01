@@ -3,7 +3,6 @@ package com.l7tech.server.ssh.client;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import com.l7tech.util.BufferPool;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -160,7 +159,7 @@ public class ScpClientImpl implements ScpClient {
             //lets the server know that we are starting to send data
             sendAck(channelOut, 0);
 
-            byte[] buf = BufferPool.getBuffer(16384);
+            byte[] buf = new byte[16384];
             int c = checkAck(channelIn);
             //TODO: directory copying?
             if (c != 'C') {
@@ -254,7 +253,9 @@ public class ScpClientImpl implements ScpClient {
                 fileTransferProgressMonitor.end();
             }
         } finally {
-            channel.disconnect();
+            if (channel != null) {
+                channel.disconnect();
+            }
         }
     }
 
@@ -327,7 +328,7 @@ public class ScpClientImpl implements ScpClient {
         if (b == 0) return b;
         if (b == -1) return b;
         if (b == 1 || b == 2) {
-            byte[] buf = BufferPool.getBuffer(4096);
+            byte[] buf = new byte[4096];
             final String errorMessage;
             for (int i = 0; ; i++) {
                 if (in.read(buf, i, 1) < 0) {
