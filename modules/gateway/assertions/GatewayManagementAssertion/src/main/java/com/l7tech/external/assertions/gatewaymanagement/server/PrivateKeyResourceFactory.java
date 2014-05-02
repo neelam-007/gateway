@@ -139,18 +139,18 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     @Override
-    public List<PrivateKeyMO> getResources(String sort, Boolean ascending, final Map<String, List<Object>> filters) {
-        return transactional(new TransactionalCallback<List<PrivateKeyMO>>() {
+    public List<PrivateKeyMO> getResources(String sort, final Boolean ascending, final Map<String, List<Object>> filters) {
+        List<PrivateKeyMO> privateKeys = transactional(new TransactionalCallback<List<PrivateKeyMO>>() {
             @Override
             public List<PrivateKeyMO> execute() throws ObjectModelException {
-                return Functions.map( getEntityHeaders(!filters.containsKey("alias")?null:Functions.map(filters.get("alias"), new Unary<String, Object>() {
+                return Functions.map(getEntityHeaders(!filters.containsKey("alias") ? null : Functions.map(filters.get("alias"), new Unary<String, Object>() {
                     @Override
                     public String call(Object o) {
                         return o.toString();
                     }
                 })), new Functions.UnaryThrows<PrivateKeyMO, SsgKeyHeader, FindException>() {
                     @Override
-                    public PrivateKeyMO call( final SsgKeyHeader header ) throws FindException{
+                    public PrivateKeyMO call(final SsgKeyHeader header) throws FindException {
                         SsgKeyEntry keyEntry;
                         try {
                             keyEntry = getSsgKeyEntry(new Pair<>(header.getKeystoreId(), header.getAlias()));
@@ -159,9 +159,25 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         }
                         return buildPrivateKeyResource(keyEntry, Option.<Collection<SpecialKeyType>>none());
                     }
-                } );
+                });
             }
         }, true);
+        //sort the keys if a sort is specified.
+        if(sort != null){
+            switch (sort) {
+                case "id":
+                    Collections.sort(privateKeys, new Comparator<PrivateKeyMO>() {
+                        @Override
+                        public int compare(PrivateKeyMO o1, PrivateKeyMO o2) {
+                            return (ascending == null || ascending) ? o1.getId().compareTo(o2.getId()) : o2.getId().compareTo(o1.getId());
+                        }
+                    });
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported sort type: " + sort);
+            }
+        }
+        return privateKeys;
     }
 
     @Override

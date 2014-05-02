@@ -42,12 +42,12 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
         return factory.exportPrivateKey(CollectionUtils.<String, String>mapBuilder().put("id", id).map(), context);
     }
 
-    public PrivateKeyMO importResource(String keystoreID, String alias, byte[] pkcs12Data, String password ) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public PrivateKeyMO importResource(String importId, String alias, byte[] pkcs12Data, String password ) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         PrivateKeyImportContext context = new PrivateKeyImportContext();
         context.setAlias(alias);
         context.setPkcs12Data(pkcs12Data);
         context.setPassword(password);
-        return factory.importPrivateKey(CollectionUtils.<String, String>mapBuilder().put("id", keystoreID+":"+alias).map(), context);
+        return factory.importPrivateKey(CollectionUtils.<String, String>mapBuilder().put("id", importId).map(), context);
     }
 
     public PrivateKeyMO setSpecialPurpose(String id, List<String> purpose) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {

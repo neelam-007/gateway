@@ -525,15 +525,6 @@ public class ManagedObjectFactory {
 
 
     /**
-     * Create a new PrivateKeyRestExport instance.
-     *
-     * @return The new instance
-     */
-    public static PrivateKeyRestExport createPrivateKeyRestExportMO() {
-        return new PrivateKeyRestExport();
-    }
-
-    /**
      * Create a new UserMO instance.
      *
      * @return The new instance

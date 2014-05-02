@@ -89,7 +89,7 @@ public class PrivateKeyRestServerGatewayManagementAssertionTest extends ServerRe
 
     @Test
     public void setSpecialPurposeTest() throws Exception {
-        RestResponse response = processRequest(privateKeyBasePath + "/specialPurpose?id="+ssgKeyEntry.getId()+"&purpose=AUDIT_VIEWER", HttpMethod.PUT, null, "");
+        RestResponse response = processRequest(privateKeyBasePath + ssgKeyEntry.getId() + "/specialPurpose?purpose=AUDIT_VIEWER", HttpMethod.PUT, null, "");
         logger.info(response.toString());
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));

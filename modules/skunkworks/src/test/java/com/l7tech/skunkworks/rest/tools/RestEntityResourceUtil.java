@@ -96,7 +96,7 @@ public interface RestEntityResourceUtil<E, M extends ManagedObject> {
      * @param id The entity to get the title for
      * @return The title for the given entity
      */
-    public String getExpectedTitle(String id) throws FindException;
+    public String getExpectedTitle(String id) throws Exception;
 
     /**
      * This will verify that the returned links are all pressent and correct. Note that the self link has already been verified
@@ -104,7 +104,7 @@ public interface RestEntityResourceUtil<E, M extends ManagedObject> {
      * @param id    The entity to verify the links for
      * @param links The links to verify
      */
-    public void verifyLinks(String id, List<Link> links) throws FindException;
+    public void verifyLinks(String id, List<Link> links) throws Exception;
 
     /**
      * This will check that the managedObject is the correct managed object for the given entity.

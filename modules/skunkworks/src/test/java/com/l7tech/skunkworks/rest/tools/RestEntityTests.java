@@ -21,7 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,27 +59,30 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + entityId, HttpMethod.GET, null, "");
             logger.log(Level.INFO, response.toString());
 
-            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
-            Assert.assertEquals("Expected successful response", 200, response.getStatus());
-            Assert.assertNotNull("Expected not null response body", response.getBody());
-
-            final StreamSource source = new StreamSource(new StringReader(response.getBody()));
-            Item item = MarshallingUtils.unmarshal(Item.class, source);
-
-            Assert.assertEquals("Id's don't match", entityId, item.getId());
-            Assert.assertEquals("Type is incorrect", getType(), item.getType());
-            Assert.assertEquals("Title is incorrect", getExpectedTitle(entityId), item.getName());
-            Assert.assertNotNull("TimeStamp must always be present", item.getDate());
-
-            Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
-            Link self = findLink("self", item.getLinks());
-            Assert.assertNotNull("self link must be present", self);
-            Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + entityId, self.getUri());
-
-            verifyLinks(entityId, item.getLinks());
-
-            verifyEntity(entityId, (M) item.getContent());
+            verifyMOResponse(entityId, response);
         }
+    }
+
+    protected void verifyMOResponse(String entityId, RestResponse response) throws Exception {
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 200, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+
+        Assert.assertEquals("Id's don't match", entityId, item.getId());
+        Assert.assertEquals("Type is incorrect", getType(), item.getType());
+        Assert.assertEquals("Title is incorrect", getExpectedTitle(entityId), item.getName());
+        Assert.assertNotNull("TimeStamp must always be present", item.getDate());
+
+        Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+        Link self = findLink("self", item.getLinks());
+        Assert.assertNotNull("self link must be present", self);
+        Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + entityId, self.getUri());
+
+        verifyLinks(entityId, item.getLinks());
+        verifyEntity(entityId, (M) item.getContent());
     }
 
     protected String getId(M item) {
@@ -561,5 +567,12 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
     protected Goid getGoid() {
         return (Goid) configuredGOIDGenerator.generate(null, null);
+    }
+
+    protected String objectToString(Object object) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        final StreamResult result = new StreamResult(bout);
+        MarshallingUtils.marshal(object, result, false);
+        return bout.toString();
     }
 }

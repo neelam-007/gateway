@@ -9,9 +9,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Res
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PrivateKeyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
+import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import org.glassfish.jersey.message.XmlHeader;
 
@@ -19,6 +19,7 @@ import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
+import java.math.BigInteger;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -51,29 +52,54 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This is not allowed to create private keys with a PrivateKeyMO. Adding the @DefaultValue annotation makes this
-     * method get ignored by jersey
-     */
-    @Override
-    public Response create(@DefaultValue("null") PrivateKeyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        throw new UnsupportedOperationException("Cannot create a new private key given a PrivateKeyMO");
-    }
-
-    /**
-     * Creates a new entity
+     * Creates a new private key given a PrivateKeyCreationContext. The PrivateKeyCreationContext is used specify how
+     * the private key should be created. The PrivateKeyCreationContext dn is the domain name to create the key with.
+     * The properties are optional but you may specify: <table> <tr><th>Key</th><th>Type</th><th>Description</th></tr>
+     * <tr><td>ecName</td><td>String</td><td>This the Elliptic Curve key type to use. If it is not specified an RSA key
+     * type is used.</td></tr> <tr><td>rsaKeySize</td><td>Integer</td><td>This is the rsa key size to use. This is only
+     * applicable if an ecName is not specified. Defaults to 2048</td></tr> <tr><td>daysUntilExpiry</td><td>Integer</td><td>Specify
+     * the number of days until the key expires. Defaults to 5 years.</td></tr> <tr><td>caCapable</td><td>Boolean</td><td>Specify
+     * if the certificate should be CA capable. Defaults to false</td></tr> <tr><td>signatureHashAlgorithm</td><td>String</td><td>The
+     * algorithm used for the signature hash.</td></tr> </table>
+     * <p/>
+     * Example request:
+<pre>
+     &lt;l7:PrivateKeyCreationContext xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+         &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
+         &lt;l7:Properties&gt;
+             &lt;l7:Property key=&quot;signatureHashAlgorithm&quot;&gt;
+                &lt;l7:StringValue&gt;SHA384&lt;/l7:StringValue&gt;
+             &lt;/l7:Property&gt;
+             &lt;l7:Property key=&quot;rsaKeySize&quot;&gt;
+                &lt;l7:IntegerValue&gt;516&lt;/l7:IntegerValue&gt;
+             &lt;/l7:Property&gt;
+             &lt;l7:Property key=&quot;ecName&quot;&gt;
+                &lt;l7:StringValue&gt;secp384r1&lt;/l7:StringValue&gt;
+             &lt;/l7:Property&gt;
+             &lt;l7:Property key=&quot;daysUntilExpiry&quot;&gt;
+                &lt;l7:IntegerValue&gt;2&lt;/l7:IntegerValue&gt;
+             &lt;/l7:Property&gt;
+                &lt;l7:Property key=&quot;caCapable&quot;&gt;
+             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+         &lt;/l7:Property&gt;
+         &lt;/l7:Properties&gt;
+     &lt;/l7:PrivateKeyCreationContext&gt;
+</pre>
+     * <p/>
+     * This responds with a reference to the newly created private key.
      *
-     * @param resource The entity to create
-     * @param id The identity of the entity to create in the form of [keystore id]:[alias]
-     * @return a reference to the newly created entity
+     * @param privateKeyCreationContext This specifies how to create the private key.
+     * @param id                        The identity of the private key to create in the form of [keystore id]:[alias]
+     * @return A reference to the newly created private key
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response createResource(PrivateKeyCreationContext resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response createResource(PrivateKeyCreationContext privateKeyCreationContext, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
 
-        PrivateKeyMO mo = factory.createPrivateKey(resource, id);
+        PrivateKeyMO mo = factory.createPrivateKey(privateKeyCreationContext, id);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(mo.getId());
         final URI uri = ub.build();
         return Response.created(uri).entity(new ItemBuilder<>(
@@ -86,10 +112,11 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Retrieve a private key by its ID. The ID is a combination of the keystoreId and the key alias seperated by a ':'.
+     * For example 00000000000000000000000000000002:mykey
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The identity of the key to select
+     * @return The selected private key.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -99,38 +126,31 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
+     * This will return a list of private keys. A sort can be specified to allow the resulting list to be sorted in
      * either ascending or descending order. Other params given will be used as search values. Examples:
      * <p/>
-     * /restman/services?name=MyService
+     * /restman/1.0/privateKeys?alias=mykey
      * <p/>
-     * Returns services with name = "MyService"
+     * Returns the private key with alias "mykey"
      * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
+     * /restman/1.0/privateKeys?alias=mykey&alias=myotherkey
      * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
+     * Returns the private keys with alias "mykey" and "myotherkey"
      * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * If a parameter is not a valid search value an error will be returned.
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param aliases         The alias filter
-     * @param keystores       the keystore filter
-     * @param securityZoneIds the securityzone id filter
+     * @param sort    The key to sort the list by. Currently only 'id' is supported.
+     * @param order   The order to sort the list. true for ascending, false for descending. null implies ascending
+     * @param aliases The alias filter
      * @return A list of entities. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
     @GET
     @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<PrivateKeyMO> list(
-            @QueryParam("sort") @ChoiceParam({"id", "alias", "keystore"}) String sort,
+            @QueryParam("sort") @ChoiceParam({"id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
-            @QueryParam("alias") List<String> aliases,
-            @QueryParam("keystore") List<String> keystores,
-            @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
+            @QueryParam("alias") List<String> aliases) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("alias", "keystore", "securityZone.id"));
 
@@ -138,93 +158,97 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         if (aliases != null && !aliases.isEmpty()) {
             filters.put("alias", (List) aliases);
         }
-        if (keystores != null && !keystores.isEmpty()) {
-            filters.put("keystore", (List) keystores);
-        }
-        if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
-            filters.put("securityZone.id", (List) securityZoneIds);
-        }
         return super.list(sort, ascendingSort,
                 filters.map());
     }
 
     /**
-     * Updates an existing entity
+     * Updates an existing private key. This api call can be used to replace a keys certificate chain or change its
+     * security zone.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource The updated private key.
+     * @param id       The id of the private key to update
+     * @return A reference to the newly updated private key.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(PrivateKeyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.update(resource, id);
     }
 
     /**
-     * Export a private key
+     * Export a private key. You can specify a password to secure the private key with.
      *
-     * @param id       The id of the key store
+     * @param id       The id of the key to export
      * @param password The password to export the private key with
-     * @param alias    The alias of the private key
      * @return The exported private key
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
      */
-    @POST
+    @PUT
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/export")
-    public Response exportPrivateKey(@PathParam("id") String id, Password password, @QueryParam("alias") String alias) throws ResourceFactory.ResourceNotFoundException, FindException {
-        PrivateKeyExportResult exportResult = factory.exportResource(id, password != null ? password.getValue() : "", alias);
-        PrivateKeyRestExport restExport = ManagedObjectFactory.createPrivateKeyRestExportMO();
-        restExport.setKeystoreID(id.substring(0, id.indexOf(":")));
-        restExport.setAlias(alias != null ? alias : id.substring(id.indexOf(":") + 1));
+    public Item<PrivateKeyExportResult> exportPrivateKey(@PathParam("id") final String id, final Password password) throws ResourceFactory.ResourceNotFoundException, FindException {
+        final String alias = id.substring(id.indexOf(":") + 1);
+        final String passwordString = (password != null && password.getValue() != null) ? password.getValue() : "";
+        final PrivateKeyExportResult exportResult = factory.exportResource(id, passwordString, alias);
+        final PrivateKeyExportResult restExport = new PrivateKeyExportResult();
         restExport.setPkcs12Data(exportResult.getPkcs12Data());
-        return Response.ok().entity(restExport).build();
+        return new ItemBuilder<PrivateKeyExportResult>(id + " Export", id, getResourceType() + "Export")
+                .setContent(restExport)
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
+                .build();
     }
 
     /**
-     * Import a private key
+     * Import a private key.
      *
-     * @param restExport The private key to import
-     * @return The import result
+     * @param id                      The id to import the key into
+     * @param privateKeyImportContext The private key to import
+     * @return A reference to the newly imported private key.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws FindException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @POST
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    @Path("{id}/import")
+    public Item<PrivateKeyMO> importPrivateKey(@PathParam("id") String id, PrivateKeyImportContext privateKeyImportContext) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
+        PrivateKeyMO importResult = factory.importResource(id, privateKeyImportContext.getAlias(), privateKeyImportContext.getPkcs12Data(), privateKeyImportContext.getPassword());
+        return new ItemBuilder<>(transformer.convertToItem(importResult))
+                .addLink(getLink(importResult))
+                .addLinks(getRelatedLinks(importResult))
+                .build();
+    }
+
+    /**
+     * Mark a private key for a special special purpose
+     *
+     * @param id      The id of the key to mark for special purpose
+     * @param purpose The special purpose to mark the key with. Can specify more then one special purposes.
+     * @return A reference to the newly updated private key.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    @Path("import")
-    public Response importPrivateKey(PrivateKeyRestExport restExport) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
-        PrivateKeyMO importResult = factory.importResource(restExport.getKeystoreID(), restExport.getAlias(), restExport.getPkcs12Data(), restExport.getPassword());
-        return Response.ok().entity(importResult).build();
-    }
-
-    /**
-     * Mark a private key as special purpose
-     *
-     * @param id      The keystore id
-     * @param purpose The purpose to mark it with
-     * @return The private key
-     * @throws ResourceFactory.ResourceNotFoundException
-     * @throws FindException
-     * @throws ResourceFactory.InvalidResourceException
-     */
-    @PUT
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    @Path("specialPurpose")
-    public Response markSpecialPurpose(@QueryParam("id") String id, @QueryParam("purpose") List<String> purpose) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
+    @Path("{id}/specialPurpose")
+    public Item<PrivateKeyMO> markSpecialPurpose(@PathParam("id") String id, @QueryParam("purpose") @ChoiceParam({"SSL", "CA", "AUDIT_VIEWER", "AUDIT_SIGNING"}) List<String> purpose) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         PrivateKeyMO resource = factory.setSpecialPurpose(id, purpose);
-        return Response.ok().entity(transformer.convertToItem(resource)).build();
+        return new ItemBuilder<>(transformer.convertToItem(resource))
+                .addLink(getLink(resource))
+                .addLinks(getRelatedLinks(resource))
+                .build();
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing private key.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The id of the private key to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -235,10 +259,10 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * This will return a template, example private key that can be used as a reference for what private key objects
+     * should look like.
      *
-     * @return The template entity.
+     * @return The template private key.
      */
     @GET
     @Path("template")
@@ -246,6 +270,13 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         PrivateKeyMO privateKeyMO = ManagedObjectFactory.createPrivateKey();
         privateKeyMO.setAlias("TemplateAlias");
         privateKeyMO.setKeystoreId("TemplateKeystoreID");
+        privateKeyMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("keyAlgorithm", "RSA").map());
+        CertificateData certificateData = ManagedObjectFactory.createCertificateData();
+        certificateData.setSubjectName("CN=subjectName");
+        certificateData.setIssuerName("CN=issuerName");
+        certificateData.setSerialNumber(new BigInteger("123"));
+        certificateData.setEncoded("encoded".getBytes());
+        privateKeyMO.setCertificateChain(Arrays.asList(certificateData));
         return super.createTemplateItem(privateKeyMO);
     }
 }

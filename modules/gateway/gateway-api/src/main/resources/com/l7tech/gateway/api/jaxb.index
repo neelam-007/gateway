@@ -14,7 +14,6 @@ PolicyAliasMO
 PolicyDetail
 PolicyExportResult
 PolicyImportResult
-PrivateKeyRestExport
 PolicyMO
 PolicyReferenceInstruction
 PolicyValidationResult
