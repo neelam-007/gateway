@@ -71,6 +71,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_MQNATIVE_MESSAGE_INPUT = "service:MqNativeMessageInput";
     public static final String SERVICE_EMAIL_MESSAGE_INPUT = "service:EmailMessageInput";
     public static final String SERVICE_L7RAWTCP_MESSAGE_INPUT = "service:L7RawTcpMessageInput";
+    public static final String SERVICE_WEBSOCKET_MESSAGE_INPUT = "service:WebSocketMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
     public static final String SERVICE_REMOTE_MANAGEMENT = "service:RemoteManagement";
     public static final String SERVICE_POLICYDISCO = "service:Policy";
@@ -831,7 +832,9 @@ public class GatewayFeatureSets {
                         mass("assertion:WebSocket"),
                         mass("assertion:WebSocketEntityManager"),
                         mass("assertion:WebSocketValidation"),
-                        mass("assertion:WebSocketMessageInjection"));
+                        mass("assertion:WebSocketMessageInjection"),
+                        mass("assertion:WebSocketTransport"),
+                        srv(SERVICE_WEBSOCKET_MESSAGE_INPUT, "Accept incoming messages over WebSocket"));
 
         GatewayFeatureSet xmppAssertions =
                 fsr("set:XMPP:Assertions",
