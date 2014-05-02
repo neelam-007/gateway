@@ -88,6 +88,20 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             RMD,
     };
 
+    private static final DefaultListCellRenderer DESCRIPTIVE_FTP_COMMAND_RENDERER = new DefaultListCellRenderer() {
+        public Component getListCellRendererComponent(JList list, Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            if (COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL.equals(value)) {
+                setText(COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL);
+            } else {
+                FtpCommand ftpCommand = FtpCommand.valueOf((String) value);
+                setText(ftpCommand.getDescription() + " (" + ftpCommand.toString() + ")");
+            }
+
+            return this;
+        }
+    };
+
     private JPanel _mainPanel;
     private JCheckBox verifyServerCertCheckBox;
     private JTextField hostNameTextField;
@@ -209,6 +223,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         commandComboBox.setModel(commandComboBoxModel);
+        commandComboBox.setRenderer(DESCRIPTIVE_FTP_COMMAND_RENDERER);
 
         commandComboBox.addItemListener(new ItemListener() {
             @Override
@@ -246,41 +261,35 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         // --- Authentication tab ---
 
-        // Pass through credentials option
-        passThroughCredsRadioButton.addActionListener(new ActionListener() {
+        final ActionListener credentialsPanelActionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableCredentialsPanelComponents();
             }
-        });
+        };
+
+        final ItemListener credentialsPanelItemListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                enableOrDisableCredentialsPanelComponents();
+            }
+        };
+
+        // Pass through credentials option
+        passThroughCredsRadioButton.addActionListener(credentialsPanelActionListener);
 
         // Specify user credentials option
-        specifyUserCredsRadioButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableOrDisableCredentialsPanelComponents();
-            }
-        });
+        specifyUserCredsRadioButton.addActionListener(credentialsPanelActionListener);
 
         // User name
         Utilities.enableGrayOnDisabled(userNameLabel);
         Utilities.enableGrayOnDisabled(userNameTextField);
 
         // Stored password option
-        storedPasswordRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableCredentialsPanelComponents();
-            }
-        });
+        storedPasswordRadioButton.addItemListener(credentialsPanelItemListener);
 
         // Plaintext password option
-        passwordExpressionRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableCredentialsPanelComponents();
-            }
-        });
+        passwordExpressionRadioButton.addItemListener(credentialsPanelItemListener);
 
         // Stored password combo box
         storedPasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
