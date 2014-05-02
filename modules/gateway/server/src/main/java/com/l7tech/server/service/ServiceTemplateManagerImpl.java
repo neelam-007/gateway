@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /** @author alex */
 public class ServiceTemplateManagerImpl implements ServiceTemplateManager {
     private final Set<ServiceTemplate> templates = new ConcurrentSkipListSet<ServiceTemplate>();
-    private final Map<String, String> autoProvisionNameMap = new ConcurrentHashMap<>();
+    private final Map<String, ServiceTemplate> autoProvisionNameMap = new ConcurrentHashMap<>();
 
     public Set<ServiceTemplate> findAll() {
         return Collections.unmodifiableSet(new HashSet<ServiceTemplate>(templates));
@@ -20,16 +20,7 @@ public class ServiceTemplateManagerImpl implements ServiceTemplateManager {
 
     @Override
     public ServiceTemplate findByAutoProvisionName(String autoProvisionName) {
-        String uri = autoProvisionNameMap.get(autoProvisionName);
-        if(uri == null)
-            return null;
-
-        for(ServiceTemplate template: templates){
-            if(template.getDefaultUriPrefix().equals(uri)){
-                return template;
-            }
-        }
-        return null;
+        return autoProvisionNameMap.get(autoProvisionName);
     }
 
     public void register(ServiceTemplate template) {
@@ -38,10 +29,11 @@ public class ServiceTemplateManagerImpl implements ServiceTemplateManager {
 
     public void register(ServiceTemplate template, String autoProvisionName) {
         templates.add(template);
-        autoProvisionNameMap.put(autoProvisionName,template.getDefaultUriPrefix());
+        autoProvisionNameMap.put(autoProvisionName,template);
     }
 
     public void unregister(ServiceTemplate template) {
         templates.remove(template);
+        autoProvisionNameMap.values().remove(template);
     }
 }
