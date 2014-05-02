@@ -103,7 +103,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource, smAgentName);
+        return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress);
     }
 
     //

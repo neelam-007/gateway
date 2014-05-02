@@ -141,4 +141,22 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
         verify(mockHla, times(1)).checkProtected(eq(SOURCE_IP_ADDRESS), eq("agent"), eq(assertion.getProtectedResource()), eq(assertion.getAction()), any(SiteMinderContext.class));
     }
+
+    @Test
+    public void shouldUseSourceIpContextVarFromAssertion() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setProtectedResource("/protected");
+        assertion.setAgentId("agent");
+        assertion.setAgentGoid(Goid.DEFAULT_GOID);
+        assertion.setAction("POST");
+        assertion.setSmAgentName("agent");
+        assertion.setSourceIpAddress("${sourceIp}");
+        pec.setVariable("sourceIp", SOURCE_IP_ADDRESS);
+        when(mockHla.checkProtected(eq(SOURCE_IP_ADDRESS), eq("agent"), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
+
+        fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
+        assertTrue(AssertionStatus.NONE == fixture.checkRequest(pec));
+        verify(mockSiteMinderConfigurationManager, times(1)).getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID);
+        verify(mockHla, times(1)).checkProtected(eq(SOURCE_IP_ADDRESS), eq("agent"), eq(assertion.getProtectedResource()), eq(assertion.getAction()), any(SiteMinderContext.class));
+    }
 }
