@@ -91,6 +91,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private static final DefaultListCellRenderer DESCRIPTIVE_FTP_COMMAND_RENDERER = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
                                                       int index, boolean isSelected, boolean cellHasFocus) {
+            Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
             if (COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL.equals(value)) {
                 setText(COMMAND_COMBO_ITEM_FROM_VARIABLE_LABEL);
             } else {
@@ -98,7 +100,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 setText(ftpCommand.getDescription() + " (" + ftpCommand.toString() + ")");
             }
 
-            return this;
+            return c;
         }
     };
 
