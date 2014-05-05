@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEntityTestBase implements RestEntityResourceUtil<E, M> {
     private static final Logger logger = Logger.getLogger(RestEntityTests.class.getName());
     private static IdentityProviderFactory identityProviderFactory;
-    private static IdentityProvider provider;
+    protected static IdentityProvider provider;
     protected static UserManager userManager;
 
     @BeforeClass
