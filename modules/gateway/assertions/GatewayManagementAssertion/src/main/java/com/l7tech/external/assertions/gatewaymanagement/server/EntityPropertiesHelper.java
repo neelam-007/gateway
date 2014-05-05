@@ -206,6 +206,7 @@ class EntityPropertiesHelper {
             .put( "soap", null )
             .put( "defaultRoutingUrl", null )
             .put( "wssProcessingEnabled", null )
+            .put( "tracingEnabled", null )
             .unmodifiableMap() )
         .put( ResourceEntry.class, MapBuilder.<String,String>builder()
             .put( "description", null )
@@ -268,6 +269,7 @@ class EntityPropertiesHelper {
             .put( "internal", false )
             .put( "soap", false )
             .put( "wssProcessingEnabled", true )
+            .put( "tracingEnabled", false )
             .unmodifiableMap()
         )
         .put( SecurePassword.class, MapBuilder.<String,Object>builder()
@@ -447,7 +449,6 @@ class EntityPropertiesHelper {
             "version",
             "name",
             "laxResolution",
-            "tracingEnabled",
             "goid",
             "disabled",
             "soapVersion",
