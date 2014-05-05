@@ -123,6 +123,12 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
         assertionSecurityZoneMO.setSecurityZoneId(null);
         assertionSecurityZoneMOs.add(assertionSecurityZoneMO);
 
+        //update twice
+        assertionSecurityZoneMO = ManagedObjectFactory.createAssertionAccess();
+        assertionSecurityZoneMO.setName(JdbcQueryAssertion.class.getName());
+        assertionSecurityZoneMO.setSecurityZoneId(null);
+        assertionSecurityZoneMOs.add(assertionSecurityZoneMO);
+
         return assertionSecurityZoneMOs;
     }
 

@@ -211,6 +211,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         List<PolicyMO> policyMOs = new ArrayList<>();
 
         Policy policy = this.policies.get(0);
+
+        //update name
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         policyMO.setId(policy.getId());
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
@@ -218,6 +220,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policyDetail.setFolderId(policy.getFolder().getId());
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
         policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion());
         ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag("policy");
         Resource resource = ManagedObjectFactory.createResource();
@@ -226,6 +229,25 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         resourceSet.setResources(Arrays.asList(resource));
         policyMO.setResourceSets(Arrays.asList(resourceSet));
         policyMOs.add(policyMO);
+
+        //update again SSG-8476
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setId(policy.getId());
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName() + "Updated");
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion() + 1);
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        policyMOs.add(policyMO);
+
         return policyMOs;
     }
 

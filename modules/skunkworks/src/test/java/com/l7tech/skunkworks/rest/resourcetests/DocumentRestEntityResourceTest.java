@@ -108,6 +108,19 @@ public class DocumentRestEntityResourceTest extends RestEntityTests<ResourceEntr
         resource.setContent("Updated" + createdResourceEntries.get(0).getContent());
         resourceDocumentMO.setResource(resource);
         resourceDocumentMOs.add(resourceDocumentMO);
+
+        //update twice
+        resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
+        resourceDocumentMO.setId(createdResourceEntries.get(0).getId());
+        resourceDocumentMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("publicIdentifier", "myDTDID")
+                .map());
+        resource = ManagedObjectFactory.createResource();
+        resource.setSourceUrl("Updated" + createdResourceEntries.get(0).getUri());
+        resource.setType("dtd");
+        resource.setContent("Updated" + createdResourceEntries.get(0).getContent());
+        resourceDocumentMO.setResource(resource);
+        resourceDocumentMOs.add(resourceDocumentMO);
         return resourceDocumentMOs;
     }
 

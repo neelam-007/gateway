@@ -222,6 +222,12 @@ public class SecurePasswordRestEntityResourceTest extends RestEntityTests<Secure
         storedPasswordMO.setName(securePasswords.get(2).getName() + "Updated");
         storedPasswordMOs.add(storedPasswordMO);
 
+        //update twice
+        storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setId(securePasswords.get(2).getId());
+        storedPasswordMO.setName(securePasswords.get(2).getName() + "Updated");
+        storedPasswordMOs.add(storedPasswordMO);
+
         return storedPasswordMOs;
     }
 

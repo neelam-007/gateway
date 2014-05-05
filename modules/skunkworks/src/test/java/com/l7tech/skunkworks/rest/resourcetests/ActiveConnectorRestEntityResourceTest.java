@@ -124,6 +124,21 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
                 .put("newProperty", "value")
                 .map());
         activeConnectors.add(activeConnector);
+
+        //update twice
+        activeConnector = ManagedObjectFactory.createActiveConnector();
+        activeConnector.setId(ssgActiveConnector.getId());
+        activeConnector.setName(ssgActiveConnector.getName() + " Updated");
+        activeConnector.setHardwiredId(new Goid(999, 567).toString());
+        activeConnector.setType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP);
+        activeConnector.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, "hostUpdated")
+                .put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_PORT, "23499")
+                .put(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME, "qManagerUpdated")
+                .put("newProperty", "value")
+                .map());
+        activeConnectors.add(activeConnector);
+
         return activeConnectors;
     }
 

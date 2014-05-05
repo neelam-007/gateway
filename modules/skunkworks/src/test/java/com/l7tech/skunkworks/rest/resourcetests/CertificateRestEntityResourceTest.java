@@ -234,6 +234,33 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
         trustedCertificateMO.setCertificateData(certificateData);
         trustedCertificateMOs.add(trustedCertificateMO);
 
+        //update twice
+        trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setId(trustedCert.getId());
+        trustedCertificateMO.setName(trustedCert.getName() + " Updated");
+        trustedCertificateMO.setRevocationCheckingPolicyId(trustedCert.getRevocationCheckPolicyOid().toString());
+        trustedCertificateMO.setProperties(CollectionUtils.MapBuilder.<String,Object>builder()
+                .put("trustedForSigningClientCerts", trustedCert.isTrustedForSigningClientCerts())
+                .put("trustedForSigningServerCerts", trustedCert.isTrustedForSigningServerCerts())
+                .put("trustedAsSamlAttestingEntity", trustedCert.isTrustedAsSamlAttestingEntity())
+                .put("trustedAsSamlIssuer", trustedCert.isTrustedAsSamlIssuer())
+                .put("trustedForSsl", trustedCert.isTrustedForSsl())
+                .put("trustAnchor", trustedCert.isTrustAnchor())
+                .put("verifyHostname", trustedCert.isVerifyHostname())
+                .put("revocationCheckingEnabled", true)
+                .map());
+        certificateData = ManagedObjectFactory.createCertificateData();
+        try {
+            certificateData.setEncoded(trustedCert.getCertificate().getEncoded());
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        certificateData.setIssuerName(trustedCert.getIssuerDn());
+        certificateData.setSubjectName(trustedCert.getSubjectDn());
+        certificateData.setSerialNumber(trustedCert.getSerial());
+        trustedCertificateMO.setCertificateData(certificateData);
+        trustedCertificateMOs.add(trustedCertificateMO);
+
         return trustedCertificateMOs;
     }
 

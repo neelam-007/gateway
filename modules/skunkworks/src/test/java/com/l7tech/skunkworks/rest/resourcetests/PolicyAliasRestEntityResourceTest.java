@@ -152,6 +152,13 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
         policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyAlias.getEntityGoid().toString()));
         policyAliasMOs.add(policyAliasMO);
 
+        //update twice
+        policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setId(policyAlias.getId());
+        policyAliasMO.setFolderId(myAliasFolder.getId());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policyAlias.getEntityGoid().toString()));
+        policyAliasMOs.add(policyAliasMO);
+
         return policyAliasMOs;
     }
 

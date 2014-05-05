@@ -96,6 +96,15 @@ public class CustomKeyValueRestEntityResourceTest extends RestEntityTests<Custom
         customKeyValueStoreMO.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);
         customKeyValueStoreMO.setValue(customKeyValueStore.getValue());
         customKeyValueStoreMOs.add(customKeyValueStoreMO);
+
+        //update twice
+        customKeyValueStoreMO = ManagedObjectFactory.createCustomKeyValueStore();
+        customKeyValueStoreMO.setId(customKeyValueStore.getId());
+        customKeyValueStoreMO.setKey("Updated" + customKeyValueStore.getName());
+        customKeyValueStoreMO.setStoreName(KeyValueStoreServices.INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME);
+        customKeyValueStoreMO.setValue(customKeyValueStore.getValue());
+        customKeyValueStoreMOs.add(customKeyValueStoreMO);
+
         return customKeyValueStoreMOs;
     }
 

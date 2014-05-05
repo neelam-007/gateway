@@ -152,6 +152,14 @@ public class EncapsulatedAssertionRestEntityResourceTest extends RestEntityTests
         encapsulatedAssertionMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, encapsulatedAssertionConfig.getPolicy().getId()));
         encapsulatedAssertionMOs.add(encapsulatedAssertionMO);
 
+        //update twice
+        encapsulatedAssertionMO = ManagedObjectFactory.createEncapsulatedAssertion();
+        encapsulatedAssertionMO.setId(encapsulatedAssertionConfig.getId());
+        encapsulatedAssertionMO.setGuid(encapsulatedAssertionConfig.getGuid());
+        encapsulatedAssertionMO.setName(encapsulatedAssertionConfig.getName() + "Updated");
+        encapsulatedAssertionMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, encapsulatedAssertionConfig.getPolicy().getId()));
+        encapsulatedAssertionMOs.add(encapsulatedAssertionMO);
+
         return encapsulatedAssertionMOs;
     }
 

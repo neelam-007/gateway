@@ -190,6 +190,14 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
         roleMO.setUserCreated(true);
         roles.add(roleMO);
 
+        //update twice
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setId(role.getId());
+        roleMO.setName("My Role Updated");
+        roleMO.setDescription(roleMO.getName() + " Description");
+        roleMO.setUserCreated(true);
+        roles.add(roleMO);
+
         //SSG-8125
         roleMO = ManagedObjectFactory.createRbacRoleMO();
         roleMO.setId(role.getId());
@@ -522,7 +530,7 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
         user.setHashedPassword(passwordHasher.hashPassword("password".getBytes()));
         userManager.save(user, null);
         //the second user
-        InternalUser user2 = new InternalUser();
+        final InternalUser user2 = new InternalUser();
         user2.setName("rbacUser2");
         user2.setLogin("rbacUser2");
         user2.setHashedPassword(passwordHasher.hashPassword("password".getBytes()));
@@ -567,9 +575,12 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
             Assert.assertNotNull(role);
             Assert.assertNotNull(role.getRoleAssignments());
             Assert.assertEquals(2, role.getRoleAssignments().size());
-            Iterator<RoleAssignment> iterator = role.getRoleAssignments().iterator();
-            iterator.next();
-            roleAssignment = iterator.next();
+            roleAssignment = Functions.grepFirst(role.getRoleAssignments(), new Functions.Unary<Boolean, RoleAssignment>() {
+                @Override
+                public Boolean call(RoleAssignment roleAssignment) {
+                    return user2.getId().equals(roleAssignment.getIdentityId());
+                }
+            });
             Assert.assertNotNull(roleAssignment);
             Assert.assertEquals("User", roleAssignment.getEntityType());
             Assert.assertEquals(user2.getId(), roleAssignment.getIdentityId());

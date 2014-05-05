@@ -177,6 +177,19 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
         httpConfigurationMO.setPath(httpConfiguration.getPath());
 
         httpConfigurations.add(httpConfigurationMO);
+
+        //update twice
+        httpConfigurationMO = ManagedObjectFactory.createHttpConfiguration();
+        httpConfigurationMO.setId(httpConfiguration.getId());
+        httpConfigurationMO.setUsername(httpConfiguration.getUsername());
+        httpConfigurationMO.setPasswordId(httpConfiguration.getPasswordGoid().toString());
+        httpConfigurationMO.setPort(httpConfiguration.getPort());
+        httpConfigurationMO.setHost(httpConfiguration.getHost() + "Updated");
+        httpConfigurationMO.setProtocol(HttpConfigurationMO.Protocol.HTTP);
+        httpConfigurationMO.setPath(httpConfiguration.getPath());
+
+        httpConfigurations.add(httpConfigurationMO);
+
         return httpConfigurations;
     }
 

@@ -141,6 +141,19 @@ public class JDBCConnectionRestEntityResourceTest extends RestEntityTests<JdbcCo
                 .put("password", jdbcConnection.getPassword())
                 .map());
         jdbcConnectionMOs.add(jdbcConnectionMO);
+
+        //update twice
+        jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+        jdbcConnectionMO.setId(jdbcConnection.getId());
+        jdbcConnectionMO.setName(jdbcConnection.getName() + " Updated");
+        jdbcConnectionMO.setDriverClass(jdbcConnection.getDriverClass());
+        jdbcConnectionMO.setJdbcUrl(jdbcConnection.getJdbcUrl());
+        jdbcConnectionMO.setEnabled(jdbcConnection.isEnabled());
+        jdbcConnectionMO.setConnectionProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("user", jdbcConnection.getUserName())
+                .put("password", jdbcConnection.getPassword())
+                .map());
+        jdbcConnectionMOs.add(jdbcConnectionMO);
         return jdbcConnectionMOs;
     }
 

@@ -383,6 +383,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
 
         PublishedService publishedService = publishedServices.get(0);
 
+        //update name
         ServiceMO serviceMO = ManagedObjectFactory.createService();
         serviceMO.setId(publishedService.getId());
         ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
@@ -393,6 +394,25 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         serviceMO.setVersion(publishedService.getVersion());
         ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
         Resource policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(publishedService.getPolicy().getXml());
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        serviceMOs.add(serviceMO);
+
+        //update again SSG-8476
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(publishedService.getId());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName(publishedService.getName() + "Updated");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId(publishedService.getFolder().getId());
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceMO.setVersion(publishedService.getVersion() + 1);
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
         policyResourceSet.setTag("policy");
         policyResource.setType("policy");
         policyResource.setContent(publishedService.getPolicy().getXml());

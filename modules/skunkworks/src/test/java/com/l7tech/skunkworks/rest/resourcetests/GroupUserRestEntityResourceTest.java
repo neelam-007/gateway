@@ -7,10 +7,11 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.token.SecurityTokenType;
@@ -19,13 +20,11 @@ import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Assert;
@@ -38,7 +37,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
@@ -257,6 +257,10 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertEquals("User Login:", userMO.getLogin(), user.getLogin());
         assertEquals("User First name:", userMO.getFirstName(), user.getFirstName());
         assertEquals("User last name:", userMO.getLastName(), user.getLastName());
+
+        //update twice test
+        response = processRequest("identityProviders/" + internalProviderId + "/users/" + userMO.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), userMOString);
+        assertEquals(200, response.getStatus());
     }
 
     @Test

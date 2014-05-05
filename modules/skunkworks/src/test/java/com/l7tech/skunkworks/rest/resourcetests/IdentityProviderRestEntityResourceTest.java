@@ -275,6 +275,22 @@ public class IdentityProviderRestEntityResourceTest extends RestEntityTests<Iden
         detailsBindOnly.setBindPatternPrefix(identityProviderConfig.getBindPatternPrefix());
         detailsBindOnly.setBindPatternSuffix(identityProviderConfig.getBindPatternSuffix());
         identityProviderMOs.add(identityProviderMO);
+
+        //update twice
+        identityProviderMO = ManagedObjectFactory.createIdentityProvider();
+        identityProviderMO.setId(identityProviderConfig.getId());
+        identityProviderMO.setName(identityProviderConfig.getName() + " Updated");
+        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP);
+        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("certificateValidation", "Validate Certificate Path")
+                .map());
+        detailsBindOnly = identityProviderMO.getBindOnlyLdapIdentityProviderDetail();
+        detailsBindOnly.setServerUrls(Arrays.asList(identityProviderConfig.getLdapUrl()));
+        detailsBindOnly.setUseSslClientAuthentication(identityProviderConfig.canIssueCertificates());
+        detailsBindOnly.setBindPatternPrefix(identityProviderConfig.getBindPatternPrefix());
+        detailsBindOnly.setBindPatternSuffix(identityProviderConfig.getBindPatternSuffix());
+        identityProviderMOs.add(identityProviderMO);
+
         return identityProviderMOs;
     }
 

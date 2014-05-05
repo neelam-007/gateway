@@ -121,6 +121,15 @@ public class GenericEntityRestEntityResourceTest extends RestEntityTests<Generic
         genericEntityMO.setValueXml(genericEntities.get(1).getValueXml());
         genericEntityMOs.add(genericEntityMO);
 
+        //update twice
+        genericEntityMO = ManagedObjectFactory.createGenericEntity();
+        genericEntityMO.setId(genericEntities.get(0).getId());
+        genericEntityMO.setName(genericEntities.get(0).getName()+"Updated");
+        genericEntityMO.setEnabled(true);
+        genericEntityMO.setEntityClassName(genericEntities.get(1).getEntityClassName());
+        genericEntityMO.setValueXml(genericEntities.get(1).getValueXml());
+        genericEntityMOs.add(genericEntityMO);
+
         return genericEntityMOs;
     }
 

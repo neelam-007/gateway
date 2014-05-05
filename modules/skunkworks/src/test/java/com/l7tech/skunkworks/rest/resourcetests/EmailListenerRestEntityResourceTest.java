@@ -165,6 +165,27 @@ public class EmailListenerRestEntityResourceTest extends RestEntityTests<EmailLi
                 .put(EmailListener.PROP_HARDWIRED_SERVICE_ID, emailListener.properties().getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID))
                 .map());
         emailListenerMOs.add(emailListenerMO);
+
+        //update twice
+        emailListenerMO = ManagedObjectFactory.createEmailListener();
+        emailListenerMO.setId(emailListener.getId());
+        emailListenerMO.setName(emailListener.getName() + "Updated");
+        emailListenerMO.setActive(emailListener.isActive());
+        emailListenerMO.setDeleteOnReceive(emailListener.isDeleteOnReceive());
+        emailListenerMO.setFolder(emailListener.getFolder());
+        emailListenerMO.setHostname(emailListener.getHost());
+        emailListenerMO.setPassword(emailListener.getPassword());
+        emailListenerMO.setPollInterval(emailListener.getPollInterval());
+        emailListenerMO.setUseSsl(emailListener.isUseSsl());
+        emailListenerMO.setPort(emailListener.getPort());
+        emailListenerMO.setUsername(emailListener.getUsername());
+        emailListenerMO.setServerType(EmailListenerMO.EmailServerType.valueOf(emailListener.getServerType().toString()));
+        emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put(EmailListener.PROP_IS_HARDWIRED_SERVICE, emailListener.properties().getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE))
+                .put(EmailListener.PROP_HARDWIRED_SERVICE_ID, emailListener.properties().getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID))
+                .map());
+        emailListenerMOs.add(emailListenerMO);
+
         return emailListenerMOs;
     }
 

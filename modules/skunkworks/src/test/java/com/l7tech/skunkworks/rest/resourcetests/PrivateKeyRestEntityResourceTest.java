@@ -201,6 +201,27 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
 
         privateKeyMOs.add(privateKeyMO);
 
+        //update twice
+        privateKeyMO = ManagedObjectFactory.createPrivateKey();
+        privateKeyMO.setId(ssgKeyEntry.getId());
+        certificateData = ManagedObjectFactory.createCertificateData("MIIDBzCCAe+gAwIBAgIJAPwknkAkOol6MA0GCSqGSIb3DQEBDAUAMBIxEDAOBgNVBAMTB215YWxpYXMwHhcNMTQwNTAxMTcyODAxWhcNMTYwNDMwMTcyODAxWjASMRAwDgYDVQQDEwd0ZXN0a2V5MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtxOwho2GTZE8o73+7CieN/qCS8XPyWu44nKJHrZ10GxPCdS8pdsogO7+jmcDyS519A7JOlK4tWVlveIFBX3BXMxY++N1Ltc+0IZIykRfL2nMQiiB6GnGLdtWJmZgjF6W+MfOhsHicFiif1s3qDq6zheaOj18ICAogGmCgL9tLJgIjHxaVzhenEohUgzhmkE13oEV1JbDhD9WUOnPKM7nnthxm6QKipO8LQ3by96P6w8iSgmDeoa0lqHAECKhqBkUQfGyZriP4kzGp5uAJfrwKlpFHd1o3dKzS4vhloXebic6keZXvBZvkmKCdtSJ6E9zGOCuNwa3VYXqqdWIqrwA3QIDAQABo2AwXjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIF4DAdBgNVHQ4EFgQUlwsKy2We9dHyINGe5+cH1D6RcfowHwYDVR0jBBgwFoAUvCsGYJAc220BIfW1wrUytQaTiPEwDQYJKoZIhvcNAQEMBQADggEBAIrQIpqEU9EKnTYrswheOru9SkDf+0pp2SZvxaCB0lFMcbALD9WWKowtTDr1sIYGURNKgPPhdFjw70htb8zIvFxeBkmKAD5s1xdDeMKHzLnFUTeObzxAPvFkLPNkdveskHfzp/6VSHOM0J9MZpOKMMocm2XzE5TJspFDNmq8Cdvi9YcSL9z80ATcUut0QombaHMBcwfd+yMC44rIOLUTTJFcTB6bloYIFIgrfDiYLDIeMaRklez8J6wGJ9m2e+gZnm8yR6W1ocFnrJhohNXgIOCVNrGnoNmJz8oe7cGoCjO/tNObYCN3dyw7/ifF5qLRpCV+aPi+HjkGklkxLSYLYRc=");
+        certificateData.setIssuerName("CN=myalias");
+        certificateData.setSubjectName("CN=testkey");
+        certificateData.setSerialNumber(new BigInteger("18168820795042335098"));
+        certificateData2 = ManagedObjectFactory.createCertificateData("MIIDDTCCAfWgAwIBAgIJAPJV6z3+qaB1MA0GCSqGSIb3DQEBDQUAMBIxEDAOBgNVBAMTB215YWxpYXMwHhcNMTQwNDMwMjE1MjUwWhcNMTkwNDI5MjE1MjUwWjASMRAwDgYDVQQDEwdteWFsaWFzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuYPMN6Mwr1YjVtUtHCwh2BdhmltsD2piVQaaCrceiJoV0F0h7vQ4jSZFgp1p2KnlZAFJbS1M6t63X1ncQLqgQTX+MDwg+MqMv1f9qI9opZwiazHrSygGpSBY3jo3d32SG3JJFnG9lYzN8gFv0I6YG6dZzrSzDB33rwvKa05yaMf/wThrTXvcKz76i+SihyrIYEXHg3Ku4od3VsxjTefaPTrCsQXaxMNpON5M/0CUZfQwM2yiMhGSe23h36EJJDr6jSZovx1c+3XTZUYSc44SbFPzlcai19VEv4Hwh7wURfbw841BYKqf5miDFiz5cB7+1Wlhwa4ISFsjzzVCtrZLLQIDAQABo2YwZDASBgNVHRMBAf8ECDAGAQH/AgEBMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUvCsGYJAc220BIfW1wrUytQaTiPEwHwYDVR0jBBgwFoAUvCsGYJAc220BIfW1wrUytQaTiPEwDQYJKoZIhvcNAQENBQADggEBAHpppRP7OoyI4S2RbQqExargTdbo2xnJYhnK0jqxbBoLPgdDxQ8EHoZCoUwf+8qtGZ0SA8g4OJb8R8ZA8rAI7BjNVwxYo/nEfJKlZYzzfWrb7cceFm6lyGJwjRNs8H3p9WEpS+VA+L4RnswFhyjzz95bdi89SMlFm2BfLGEcpey6lZChWlQYEO0vOoCeXu7f8VStZtwi4vQFfPY0v1niDhgMVT7CwPn/kxWfBtzJngog4C2FI06wINl2nF6Uq+HPfuYIgg9EV8u8jOUBGZQg0O2GlHceJ93nhihaGSvrJ2CBQJO/JNcdnVCvwA+qS19x1+kIdcoSbWJySDI3F6i3+uQ=");
+        certificateData2.setIssuerName("CN=myalias");
+        certificateData2.setSubjectName("CN=myalias");
+        certificateData2.setSerialNumber(new BigInteger("17462121781697028213"));
+
+        try {
+            privateKeyMO.setCertificateChain(Arrays.asList(certificateData, certificateData2));
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+        privateKeyMO.setAlias(ssgKeyEntry.getAlias());
+
+        privateKeyMOs.add(privateKeyMO);
+
         return privateKeyMOs;
     }
 

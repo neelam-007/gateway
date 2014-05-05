@@ -36,6 +36,10 @@ public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO,
         if(policyMO.getGuid() != null) {
             entityBag.getEntity().setGuid(policyMO.getGuid());
         }
+        //need to update the policy version as wsman does not set it. SSG-8476
+        if(policyMO.getVersion() != null) {
+            entityBag.getEntity().setVersion(policyMO.getVersion());
+        }
         return entityBag;
     }
 }

@@ -153,6 +153,13 @@ public class ServiceAliasRestEntityResourceTest extends RestEntityTests<Publishe
         serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, publishedServiceAlias.getEntityGoid().toString()));
         serviceAliasMOs.add(serviceAliasMO);
 
+        //update twice
+        serviceAliasMO = ManagedObjectFactory.createServiceAlias();
+        serviceAliasMO.setId(publishedServiceAlias.getId());
+        serviceAliasMO.setFolderId(myAliasFolder.getId());
+        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, publishedServiceAlias.getEntityGoid().toString()));
+        serviceAliasMOs.add(serviceAliasMO);
+
         return serviceAliasMOs;
     }
 
