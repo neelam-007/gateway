@@ -549,8 +549,9 @@ doConfigureLDAPonly () {
             toLog "   Info - '$LDAP_TYPE' will be configured."
             if [ ! -d "$LDAPS_CERTS_DIR" ]; then
                 mkdir "$LDAPS_CERTS_DIR"
+                chmod 644 "$LDAPS_CERTS_DIR"
                 if [ $? -ne 0 ]; then
-                    toLog "    ERROR - creating ldap cacert directory"
+                    toLog "    ERROR - creating ldap cert directory"
                     STATUS=1
                 fi
             fi
@@ -597,7 +598,12 @@ doConfigureLDAPonly () {
 
 
             if [ "X$CACERT_FILE_NAME" != "X" ]; then
-              # tls_cacertfile  in /etc/nslcd.conf
+                chmod 644 "$LDAPS_CERTS_DIR/$CACERT_FILE_NAME"
+                if [ $? -ne 0 ] ; then
+                    toLog "    ERROR - Changing cacert file permission."
+                    STATUS=1
+                fi
+                # tls_cacertfile  in /etc/nslcd.conf
                 echo "# Added by $0 on $DATE_TIME:" >> $NSS_LDAP_CONF_FILE
                 echo "tls_cacertfile $LDAPS_CERTS_DIR/$CACERT_FILE_NAME" >> $NSS_LDAP_CONF_FILE
                 if [ $? -ne 0 ] || [ "X$(grep "^tls_cacertfile " $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$LDAPS_CERTS_DIR/$CACERT_FILE_NAME" ]; then
