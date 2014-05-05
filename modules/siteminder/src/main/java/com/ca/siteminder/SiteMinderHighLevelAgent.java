@@ -34,7 +34,7 @@ public class SiteMinderHighLevelAgent {
         RealmDef realmDef = new RealmDef();
 
         // check the requested resource/action is actually protected by SiteMinder
-        boolean isProtected = agent.isProtected(userIp, resCtxDef, realmDef, context.getTransactionId());
+        boolean isProtected = agent.isProtected(userIp, resCtxDef, realmDef, context);
 
         //now set the context
         context.setResContextDef(new SiteMinderContext.ResourceContextDef(resCtxDef.agent, resCtxDef.server, resCtxDef.resource, resCtxDef.action));

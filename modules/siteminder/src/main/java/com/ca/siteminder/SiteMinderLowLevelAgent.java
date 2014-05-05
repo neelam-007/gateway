@@ -164,7 +164,7 @@ public class SiteMinderLowLevelAgent {
 
         SessionDef sessionDef = new SessionDef();
         AttributeList attrList = new AttributeList();
-        String clientIP = getClientIp(userIp);
+        String clientIP = getClientIp(userIp, context);
 
         int retCode = agentApi.loginEx(clientIP, resCtxDef, realmDef, userCreds, sessionDef, attrList, transactionId);
 
@@ -255,7 +255,7 @@ public class SiteMinderLowLevelAgent {
 
         AttributeList attributeList = new AttributeList();
         //TODO: use authorizeEx and return a list of SM variables for processing
-        result = agentApi.authorize(getClientIp(userIp), transactionId, resCtxDef, realmDef, sd, attributeList);
+        result = agentApi.authorize(getClientIp(userIp, context), transactionId, resCtxDef, realmDef, sd, attributeList);
         //might be some other context variables that needs to be set
         storeAttributes(attributes, attributeList);
 
@@ -337,8 +337,8 @@ public class SiteMinderLowLevelAgent {
      * @param resCtxDef the SiteMinder resource context definition to be initialized
      * @param realmDef  the SiteMinder realm definition to be initialized
      */
-    boolean isProtected(String userIp, ResourceContextDef resCtxDef, RealmDef realmDef, String transactionId) throws SiteMinderApiClassException {
-        int retCode = agentApi.isProtectedEx(getClientIp(userIp), resCtxDef, realmDef, transactionId);
+    boolean isProtected(String userIp, ResourceContextDef resCtxDef, RealmDef realmDef, SiteMinderContext context) throws SiteMinderApiClassException {
+        int retCode = agentApi.isProtectedEx(getClientIp(userIp, context), resCtxDef, realmDef, context.getTransactionId());
         if(retCode != AgentAPI.NO && retCode != AgentAPI.YES){
             throw new SiteMinderApiClassException(getCommonErrorMessage(retCode));
         }
@@ -391,7 +391,7 @@ public class SiteMinderLowLevelAgent {
 
         SessionDef sessionDef = createSmSessionFromAttributes(attrList);
 
-        result = agentApi.loginEx(getClientIp(userIp), resCtxDef, realmDef, userCreds, sessionDef, attrList, transactionId);
+        result = agentApi.loginEx(getClientIp(userIp, context), resCtxDef, realmDef, userCreds, sessionDef, attrList, transactionId);
 
         storeAttributes(attributes, attrList);//Populate context variable even if apiLogin failed
 
@@ -477,9 +477,14 @@ public class SiteMinderLowLevelAgent {
         return reasonCode;
     }
 
-    private String getClientIp(String userIp) {
-        if(agentCheckSessionIP)
-            return userIp != null ? userIp : agentIP;
+    private String getClientIp(String userIp, SiteMinderContext context) {
+        if(agentCheckSessionIP) {
+            String clientIp = userIp != null ? userIp : agentIP;
+            if(context != null && userIp == null) {
+                context.setSourceIpAddress(clientIp);//set source IP to client IP
+            }
+            return clientIp;
+        }
 
         return null;
     }

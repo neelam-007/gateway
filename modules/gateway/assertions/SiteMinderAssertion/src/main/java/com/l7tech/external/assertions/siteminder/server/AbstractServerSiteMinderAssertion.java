@@ -67,10 +67,13 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
         pac.setVariable(prefix + "." + SiteMinderAssertionUtil.SMCONTEXT, context);
     }
 
-    protected String getClientIp(Message target, SiteMinderContext context) {
+    protected String getClientIp(Message target, SiteMinderContext context) throws PolicyAssertionException{
         String address = null;
+        if(context == null) {
+            throw new PolicyAssertionException(assertion, "SiteMinder context is null");//this should never happen
+        }
         //first check the context if we have the user IP set
-        if(context != null && StringUtils.isNotBlank(context.getSourceIpAddress())){
+        if(StringUtils.isNotBlank(context.getSourceIpAddress())){
             address = context.getSourceIpAddress().trim();
         }
         else {
@@ -78,6 +81,8 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
             TcpKnob tcpKnob = target.getKnob(TcpKnob.class);
             if(tcpKnob != null) {
                 address = tcpKnob.getRemoteAddress();
+                //set the address in the context
+                context.setSourceIpAddress(address);
             }
             else {
                 logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
