@@ -122,7 +122,7 @@ public class ClusterPropertyResource extends RestEntityResource<ClusterPropertyM
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response update(ClusterPropertyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(ClusterPropertyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

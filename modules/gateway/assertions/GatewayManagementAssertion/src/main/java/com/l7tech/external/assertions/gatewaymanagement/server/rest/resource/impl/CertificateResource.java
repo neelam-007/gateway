@@ -127,7 +127,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response update(TrustedCertificateMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(TrustedCertificateMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

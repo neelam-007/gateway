@@ -157,7 +157,7 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response update(ResourceDocumentMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(ResourceDocumentMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

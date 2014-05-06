@@ -174,7 +174,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @PUT
     @Path("{id}")
-    public Response update(PrivateKeyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(PrivateKeyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

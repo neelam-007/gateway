@@ -137,7 +137,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response update(RbacRoleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(RbacRoleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

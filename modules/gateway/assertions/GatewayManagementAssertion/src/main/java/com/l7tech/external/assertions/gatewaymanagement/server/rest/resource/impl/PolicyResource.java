@@ -67,15 +67,14 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      * Creates a new entity
      *
      * @param resource The entity to create
+     * @param comment  The comment to add to the policy version when creating the policy
      * @return a reference to the newly created entity
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response create(PolicyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String comment = uriInfo.getQueryParameters().getFirst("versionComment");
-
+    public Response create(PolicyMO resource, @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource, comment);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
         final URI uri = ub.build();
@@ -199,6 +198,8 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      *
      * @param resource The updated entity
      * @param id       The id of the entity to update
+     * @param active   Should the policy be activated after the update.
+     * @param comment  The comment to add to the policy version when updating the policy
      * @return a reference to the newly updated entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -206,12 +207,10 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    @Override
-    public Response update(PolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-
-        String comment = uriInfo.getQueryParameters().getFirst("versionComment");
-        String activeStr = uriInfo.getQueryParameters().getFirst("active");
-        boolean active = activeStr == null ? true : Boolean.parseBoolean(activeStr);
+    public Response update(PolicyMO resource,
+                           @PathParam("id") String id,
+                           @QueryParam("active") @DefaultValue("true") Boolean active,
+                           @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
 
         boolean resourceExists = factory.resourceExists(id);
         final Response.ResponseBuilder responseBuilder;

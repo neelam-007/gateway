@@ -58,10 +58,6 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
                     policy.setName( container.getEntity().generatePolicyName());
                 }
             }
-            //need to update the service version as wsman does not set it. SSG-8476
-            if(serviceMO.getVersion() != null) {
-                container.getEntity().setVersion(serviceMO.getVersion());
-            }
         }
         return container;
     }

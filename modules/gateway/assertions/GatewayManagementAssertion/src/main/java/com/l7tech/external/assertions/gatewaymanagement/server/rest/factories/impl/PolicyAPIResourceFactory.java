@@ -18,19 +18,16 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 /**
@@ -43,11 +40,14 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
 
     @Inject
     private PlatformTransactionManager transactionManager;
-
     @Inject
     private RbacAccessService rbacAccessService;
-
-    public PolicyAPIResourceFactory() {}
+    @Inject
+    private PolicyVersionManager policyVersionManager;
+    @Inject
+    private PolicyManager policyManager;
+    @Inject
+    private PolicyTransformer policyTransformer;
 
     @NotNull
     @Override
@@ -61,59 +61,47 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
         super.factory = factory;
     }
 
-    @Inject
-    private PolicyVersionManager policyVersionManager;
-    @Inject
-    private PolicyManager policyManager;
-
-    @Inject
-    private PolicyTransformer policyTransformer;
-
-    public String createResource(@NotNull final PolicyMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
+    @NotNull
+    public String createResource(@NotNull final PolicyMO resource, @Nullable final String comment) throws ResourceFactory.InvalidResourceException {
         return createResourceInternal(null, resource, comment);
     }
 
-    public void createResource(@NotNull final String id, @NotNull final PolicyMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
+    public void createResource(@NotNull final String id, @NotNull final PolicyMO resource, @Nullable final String comment) throws ResourceFactory.InvalidResourceException {
         createResourceInternal(id, resource, comment);
     }
 
-    private String createResourceInternal(@Nullable final String id, @NotNull final PolicyMO resource, @Nullable final String comment) {
-        validateCreateResource(id, resource);
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly( false );
-        String savedId = tt.execute( new TransactionCallback<String>(){
+    @NotNull
+    private String createResourceInternal(@Nullable final String id, @NotNull final PolicyMO resource, @Nullable final String comment) throws ResourceFactory.InvalidResourceException {
+        if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
+            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
+        }
+
+        final String savedId = RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
             @Override
-            public String doInTransaction( final TransactionStatus transactionStatus ) {
+            public String call() throws ResourceFactory.InvalidResourceException {
                 try {
                     final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
                     final Policy newPolicy = newPolicyContainer.getEntity();
-                    rbacAccessService.validatePermitted(newPolicy, OperationType.CREATE);
                     newPolicy.setVersion(0);
                     //generate a new Guid if none is set.
-                    if(newPolicy.getGuid() == null) {
+                    if (newPolicy.getGuid() == null) {
                         newPolicy.setGuid(UUID.randomUUID().toString());
                     }
 
+                    rbacAccessService.validatePermitted(newPolicy, OperationType.CREATE);
+                    RestResourceFactoryUtils.validate(newPolicy, Collections.<String, String>emptyMap());
                     final String savedId;
-                    if(id == null){
+                    if (id == null) {
                         savedId = policyManager.save(newPolicy).toString();
                     } else {
-                        policyManager.save(Goid.parseGoid(id),newPolicy);
+                        policyManager.save(Goid.parseGoid(id), newPolicy);
                         savedId = id;
                     }
-                    policyVersionManager.checkpointPolicy(newPolicy, true , comment, true);
+                    policyVersionManager.checkpointPolicy(newPolicy, true, comment, true);
 
                     return savedId;
-                } catch(ResourceFactory.InvalidResourceException e){
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
-                } catch (IllegalArgumentException e) {
-                    transactionStatus.setRollbackOnly();
-                    Exception ire =  new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, ExceptionUtils.getMessage(e));
-                    throw new ResourceFactory.ResourceAccessException(ire);
-                } catch ( ObjectModelException ome ) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to save policy version when updating policy.", ome);
+                } catch (ObjectModelException ome) {
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create policy: " + ome.getMessage());
                 }
             }
         });
@@ -121,37 +109,40 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
         return savedId;
     }
 
-    private void validateCreateResource(@Nullable String id, PolicyMO resource) {
-        if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
-        }
-    }
-
-    public void updateResource(final @NotNull String id, final @NotNull PolicyMO resource, final String comment, final boolean active) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void updateResource(@NotNull final String id, @NotNull final PolicyMO resource, @Nullable final String comment, final boolean active) throws ResourceFactory.ResourceFactoryException {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
             throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
 
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-        tt.setReadOnly( false );
-        tt.execute( new TransactionCallback(){
+        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryVoidThrows<ResourceFactory.ResourceFactoryException>() {
             @Override
-            public Object doInTransaction( final TransactionStatus transactionStatus ) {
+            public void call() throws ResourceFactory.ResourceFactoryException {
                 try {
                     final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
                     final Policy newPolicy = newPolicyContainer.getEntity();
-                    rbacAccessService.validatePermitted(newPolicy, OperationType.UPDATE);
+                    final Policy oldPolicy = policyManager.findByPrimaryKey(Goid.parseGoid(id));
+                    if (oldPolicy == null) {
+                        throw new ResourceFactory.ResourceNotFoundException("Existing policy not found. ID: " + id);
+                    }
+
+                    //should not be able to change a policy guid. SSG-8280
+                    if(!oldPolicy.getGuid().equals(newPolicy.getGuid())) {
+                        throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot change a policy's guid. Existing Guid: " + oldPolicy.getGuid());
+                    }
+
+                    rbacAccessService.validatePermitted(oldPolicy, OperationType.UPDATE);
+                    RestResourceFactoryUtils.checkMovePermitted(rbacAccessService, oldPolicy.getFolder(), newPolicy.getFolder());
+
+                    newPolicy.setGoid(Goid.parseGoid(id));
+                    //need to update the policy version as wsman does not set it. SSG-8476
+                    if(resource.getVersion() != null) {
+                        newPolicy.setVersion(resource.getVersion());
+                    }
+                    RestResourceFactoryUtils.validate(newPolicy, Collections.<String, String>emptyMap());
                     policyManager.update(newPolicy);
                     policyVersionManager.checkpointPolicy(newPolicy, active, comment, false);
-
-                    return policyTransformer.convertToMO(newPolicy);
-
-                }catch(ResourceFactory.InvalidResourceException e){
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException(e);
                 } catch ( ObjectModelException ome ) {
-                    transactionStatus.setRollbackOnly();
-                    throw new ResourceFactory.ResourceAccessException("Unable to save policy version when updating policy.", ome);
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to update policy: " + ome.getMessage());
                 }
             }
         });

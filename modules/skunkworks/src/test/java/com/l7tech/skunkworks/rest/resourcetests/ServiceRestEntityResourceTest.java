@@ -310,6 +310,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         logger.info(response.toString());
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(200, response.getStatus());
         Assert.assertEquals(entityGot.getId(), getFirstReferencedGoid(response));
 
         // check entity
@@ -505,6 +506,30 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
             }
         });
 
+        //move to not existing folder. SSG-8477
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(publishedService.getId());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName(publishedService.getName() + "Updated");
+        serviceDetail.setEnabled(false);
+        serviceDetail.setFolderId(getGoid().toString());
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceMO.setVersion(publishedService.getVersion());
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(publishedService.getPolicy().getXml());
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        builder.put(serviceMO, new Functions.BinaryVoid<ServiceMO, RestResponse>() {
+            @Override
+            public void call(ServiceMO serviceMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
     }
 
@@ -584,6 +609,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
                 Assert.assertEquals(entity.isInternal(), managedObject.getServiceDetail().getProperties().get("internal"));
                 Assert.assertEquals(entity.isSoap(), managedObject.getServiceDetail().getProperties().get("soap"));
                 Assert.assertEquals(entity.isWssProcessingEnabled(), managedObject.getServiceDetail().getProperties().get("wssProcessingEnabled"));
+                Assert.assertEquals(entity.isTracingEnabled(), managedObject.getServiceDetail().getProperties().get("tracingEnabled"));
             }
 
             if(managedObject.getServiceDetail().getServiceMappings() != null) {

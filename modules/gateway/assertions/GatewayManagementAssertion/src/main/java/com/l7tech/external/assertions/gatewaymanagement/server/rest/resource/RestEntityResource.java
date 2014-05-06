@@ -166,7 +166,7 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T e
                 .build();
     }
 
-    public Response update(R resource, String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(R resource, String id) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
         final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {

@@ -50,7 +50,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.InvalidResourceException {
+    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceFactoryException {
         //validate that the resource is appropriate for create.
         validateCreateResource(id, resource);
         factory.createResource(id, resource);
@@ -58,7 +58,7 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
     }
 
     @Override
-    public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceFactoryException {
         validateUpdateResource(id, resource);
         factory.putResource(buildSelectorMap(id), resource);
         resource.setId(id);

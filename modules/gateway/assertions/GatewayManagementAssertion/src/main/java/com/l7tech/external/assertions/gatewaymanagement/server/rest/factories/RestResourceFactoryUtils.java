@@ -1,6 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Functions;
@@ -137,5 +141,22 @@ public class RestResourceFactoryUtils {
                 }
             }
         })).toNull();
+    }
+
+    /**
+     * This will throw InsufficientPermissionsException's if the current user does not have the proper permissions to
+     * move an entity from one forlder to another.
+     *
+     * @param rbacAccessService The rbacAccessService to use to perform the access checks
+     * @param oldFolder         The Folder that you are moving the entity from
+     * @param newFolder         The folder that you are moving the entity to.
+     */
+    public static void checkMovePermitted(@NotNull final RbacAccessService rbacAccessService, @NotNull final Folder oldFolder, @NotNull final Folder newFolder) {
+        //check if they are equal. If they are there is no need to do the permission check
+        if (!Goid.equals(oldFolder.getGoid(), newFolder.getGoid())) {
+            // consistent with FolderAdmin permissions
+            rbacAccessService.validatePermitted(newFolder, OperationType.UPDATE);
+            rbacAccessService.validatePermitted(oldFolder, OperationType.UPDATE);
+        }
     }
 }

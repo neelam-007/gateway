@@ -121,6 +121,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policy.setFolder(rootFolder);
         policy.setSoap(false);
         policy.setGuid(UUID.randomUUID().toString());
+        policy.setInternalTag("Test");
 
         policyManager.save(policy);
         policyVersionManager.checkpointPolicy(policy,true,comment,true);
@@ -221,6 +222,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
         policyMO.setPolicyDetail(policyDetail);
         policyMO.setVersion(policy.getVersion());
+        policyMO.setGuid(policy.getGuid());
         ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag("policy");
         Resource resource = ManagedObjectFactory.createResource();
@@ -239,6 +241,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
         policyMO.setPolicyDetail(policyDetail);
         policyMO.setVersion(policy.getVersion() + 1);
+        policyMO.setGuid(policy.getGuid());
         resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag("policy");
         resource = ManagedObjectFactory.createResource();
@@ -256,6 +259,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         CollectionUtils.MapBuilder<PolicyMO, Functions.BinaryVoid<PolicyMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
 
         Policy policy = this.policies.get(0);
+
+        //same name
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
         policyDetail.setName(policy.getName());
@@ -277,12 +282,36 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
             }
         });
 
+        //null policy type
         policyMO = ManagedObjectFactory.createPolicy();
         policyDetail = ManagedObjectFactory.createPolicyDetail();
         policyDetail.setName(policy.getName() + "Updated");
         policyDetail.setFolderId(policy.getFolder().getId());
         policyDetail.setPolicyType(null);
         policyMO.setPolicyDetail(policyDetail);
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //empty name SSG-8463
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName("");
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion());
         resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag("policy");
         resource = ManagedObjectFactory.createResource();
@@ -342,16 +371,96 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         CollectionUtils.MapBuilder<PolicyMO, Functions.BinaryVoid<PolicyMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
 
         Policy policy = this.policies.get(0);
+        //same name as other policy
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
         policyMO.setId(policy.getId());
         PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
         policyDetail.setName(this.policies.get(1).getName());
+        policyDetail.setGuid(policy.getGuid());
         policyDetail.setFolderId(policy.getFolder().getId());
         policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
         policyMO.setPolicyDetail(policyDetail);
+        policyMO.setGuid(policy.getGuid());
         ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
         resourceSet.setTag("policy");
         Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //move to not existing folder. SSG-8477
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setId(policy.getId());
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName());
+        policyDetail.setGuid(policy.getGuid());
+        policyDetail.setFolderId(getGoid().toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setGuid(policy.getGuid());
+
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //bad version SSG-8281
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setId(policy.getId());
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName());
+        policyDetail.setGuid(policy.getGuid());
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion() + 100);
+        policyMO.setGuid(policy.getGuid());
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
+        //change guid SSG-8280
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyMO.setId(policy.getId());
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName(policy.getName());
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion());
+        policyMO.setGuid(UUID.randomUUID().toString());
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
         resource.setType("policy");
         resource.setContent(policy.getXml());
         resourceSet.setResources(Arrays.asList(resource));
@@ -634,6 +743,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         logger.info(policyMOString.toString());
         response = processRequest(getResourceUri() + "/" + policies.get(0).getId() + "?active=false&versionComment="+comment, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
         logger.info(response.toString());
+
+        Assert.assertEquals(200, response.getStatus());
 
         Policy policySaved = policyManager.findByPrimaryKey(policies.get(0).getGoid());
         assertEquals("Policy Updated",policySaved.getName());

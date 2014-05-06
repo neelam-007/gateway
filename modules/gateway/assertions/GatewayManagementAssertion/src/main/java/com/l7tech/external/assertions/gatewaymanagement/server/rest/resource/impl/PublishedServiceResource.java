@@ -64,15 +64,14 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      * Creates a new entity
      *
      * @param resource The entity to create
+     * @param comment  The comment to add to the policy version when creating the service
      * @return a reference to the newly created entity
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response create(ServiceMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String comment = uriInfo.getQueryParameters().getFirst("versionComment");
-
+    public Response create(ServiceMO resource, @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         String id = factory.createResource(resource, comment);
         UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
         final URI uri = ub.build();
@@ -178,6 +177,8 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      *
      * @param resource The updated entity
      * @param id       The id of the entity to update
+     * @param active   Should the service be activated after the update
+     * @param comment  The comment to add to the policy version when creating the service
      * @return a reference to the newly updated entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -185,13 +186,10 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    @Override
-    public Response update(ServiceMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-
-        String comment = uriInfo.getQueryParameters().getFirst("versionComment");
-        String activeStr = uriInfo.getQueryParameters().getFirst("active");
-        boolean active = activeStr == null ? true : Boolean.parseBoolean(activeStr);
-
+    public Response update(ServiceMO resource,
+                           @PathParam("id") String id,
+                           @QueryParam("active") @DefaultValue("true") Boolean active,
+                           @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
         final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {

@@ -13,14 +13,11 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.bundling.PublishedServiceContainer;
 import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +38,20 @@ import java.util.UUID;
 @Component
 public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceMO, ServiceResourceFactory> {
 
-    public ServiceAPIResourceFactory() {}
+    @Inject
+    private PolicyVersionManager policyVersionManager;
+    @Inject
+    private PlatformTransactionManager transactionManager;
+    @Inject
+    private ServiceManager serviceManager;
+    @Inject
+    private PublishedServiceTransformer serviceTransformer;
+    @Inject
+    private PolicyHelper policyHelper;
+    @Inject
+    private ServiceDocumentManager serviceDocumentManager;
+    @Inject
+    private RbacAccessService rbacAccessService;
 
     @NotNull
     @Override
@@ -55,75 +65,70 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
         super.factory = factory;
     }
 
-    @Inject
-    private PolicyVersionManager policyVersionManager;
-
-    @Inject
-    private PlatformTransactionManager transactionManager;
-
-    @Inject
-    private ServiceManager serviceManager;
-
-    @Inject
-    private PublishedServiceTransformer serviceTransformer;
-
-    @Inject
-    private PolicyHelper policyHelper;
-
-    @Inject
-    private ServiceDocumentManager serviceDocumentManager;
-
-    @Inject
-    private RbacServices rbacServices;
-
-    @Inject
-    private RbacAccessService rbacAccessService;
-
     @Override
-    public String createResource(@NotNull ServiceMO resource) throws ResourceFactory.InvalidResourceException {
-        return createResource(resource, null);
+    public String createResource(@NotNull final ServiceMO resource) throws ResourceFactory.InvalidResourceException {
+        return createResource(null, resource, null);
+    }
+
+    public String createResource(@NotNull final ServiceMO resource, @Nullable final String comment) throws ResourceFactory.InvalidResourceException {
+        return createResource(null, resource, comment);
     }
 
     @Override
-    public void createResource(@NotNull String id, @NotNull ServiceMO resource) throws ResourceFactory.InvalidResourceException {
+    public void createResource(@NotNull final String id, @NotNull final ServiceMO resource) throws ResourceFactory.InvalidResourceException {
         createResource(id, resource, null);
     }
 
-    @Override
-    public void updateResource(@NotNull String id, @NotNull ServiceMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void updateResource(@NotNull final String id, @NotNull final ServiceMO resource) throws ResourceFactory.ResourceFactoryException {
         updateResource(id, resource, null, true);
     }
 
-    public String createResource(@NotNull final ServiceMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
-        validateCreateResource(null, resource);
-        return RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
+    @NotNull
+    public String createResource(@Nullable final String id, @NotNull final ServiceMO resource, @Nullable final String comment) throws ResourceFactory.InvalidResourceException {
+        if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
+            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
+        }
+        final String savedId = RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
             @Override
             public String call() throws ResourceFactory.InvalidResourceException {
                 try {
-                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource,true);
-                    PublishedService newService = newServiceEntity.getEntity();
+                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
+                    final PublishedService newService = newServiceEntity.getEntity();
                     newService.setVersion(0);
+
+                    //check assertion access
+                    final Policy policy = newService.getPolicy();
+                    policyHelper.checkPolicyAssertionAccess(policy);
+
+                    //need to set the policy GUID if this is not set creating a new service will fail
+                    if ( policy.getGuid() == null ) {
+                        policy.setGuid(UUID.randomUUID().toString());
+                    }
+
                     rbacAccessService.validatePermitted(newService, OperationType.CREATE);
-
-                    beforeCreate(newService);
-
                     RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
-                    Goid id = serviceManager.save(newService);
+                    final Goid savedId;
+                    if (id == null) {
+                        savedId = serviceManager.save(newService);
+                    } else {
+                        savedId = Goid.parseGoid(id);
+                        serviceManager.save(savedId, newService);
+                    }
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
-                    saveServiceDocuments(id, newServiceEntity.getServiceDocuments());
+                    saveServiceDocuments(savedId, newServiceEntity.getServiceDocuments());
                     serviceManager.createRoles(newService);
 
-                    resource.setId(id.toString());
-                    return id.toString();
-
+                    return savedId.toString();
                 } catch (ObjectModelException ome) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create service: " + ome.getMessage());
                 }
             }
         });
+        resource.setId(savedId);
+        return savedId;
     }
 
-    private void saveServiceDocuments(Goid serviceGoid, Collection<ServiceDocument> serviceDocuments) throws DeleteException, SaveException, FindException {
+    private void saveServiceDocuments(@NotNull final Goid serviceGoid, @Nullable final Collection<ServiceDocument> serviceDocuments) throws DeleteException, SaveException, FindException {
         if (serviceDocuments == null) return;
 
         final Collection<ServiceDocument> existingServiceDocuments = serviceDocumentManager.findByServiceId(serviceGoid);
@@ -140,125 +145,44 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
         }
     }
 
-    public void createResource(@NotNull final String id, @NotNull final ServiceMO resource, final String comment) throws ResourceFactory.InvalidResourceException {
-        validateCreateResource(id, resource);
-        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<String, ResourceFactory.InvalidResourceException>() {
-            @Override
-            public String call() throws ResourceFactory.InvalidResourceException {
-                try {
-                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
-                    PublishedService newService = newServiceEntity.getEntity();
-
-                    newService.setVersion(0);
-                    rbacAccessService.validatePermitted(newService, OperationType.CREATE);
-
-                    beforeCreate(newService);
-
-                    RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
-                    serviceManager.save(Goid.parseGoid(id), newService);
-                    policyVersionManager.checkpointPolicy(newService.getPolicy(), true, comment, true);
-                    saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
-                    serviceManager.createRoles(newService);
-
-                    return null;
-
-                } catch (ObjectModelException ome) {
-                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create service: " + ome.getMessage());
-                }
-            }
-        });
-        resource.setId(id);
-    }
-
-    private void beforeCreate(PublishedService service) throws SaveException {
-        final Policy policy = service.getPolicy();
-
-        try {
-            policyHelper.checkPolicyAssertionAccess(policy);
-        } catch (ResourceFactory.InvalidResourceException e) {
-            throw new SaveException(e);
-        }
-
-        //need to set the policy GUID if this is not set creating a new service will fail
-        if ( policy.getGuid() == null ) {
-            UUID guid = UUID.randomUUID();
-            policy.setGuid(guid.toString());
-        }
-    }
-
-    private void validateCreateResource(@Nullable String id, ServiceMO resource) {
-        if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
-            throw new InvalidArgumentException("id", "Must not specify an ID when creating a new entity, or id must equal new entity id");
-        }
-    }
-
-    public void updateResource(final @NotNull String id, final @NotNull ServiceMO resource, final String comment, final boolean active) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void updateResource(@NotNull final String id, @NotNull final ServiceMO resource, @Nullable final String comment, final boolean active) throws ResourceFactory.ResourceFactoryException {
         if (resource.getId() != null && !StringUtils.equals(id, resource.getId())) {
             throw new InvalidArgumentException("id", "Must not specify an ID when updating a new entity, or id must equal entity id");
         }
 
-        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryThrows<ServiceMO, ResourceFactory.InvalidResourceException>() {
+        RestResourceFactoryUtils.transactional(transactionManager, false, new Functions.NullaryVoidThrows<ResourceFactory.ResourceFactoryException>() {
             @Override
-            public ServiceMO call() throws ResourceFactory.InvalidResourceException {
+            public void call() throws ResourceFactory.ResourceFactoryException {
                 try {
-                    PublishedServiceContainer newServiceEntity = (PublishedServiceContainer) serviceTransformer.convertFromMO(resource);
-                    PublishedService newService = newServiceEntity.getEntity();
-                    PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
-                    if (oldService != null)
-                        rbacAccessService.validatePermitted(oldService, OperationType.UPDATE);
+                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer) serviceTransformer.convertFromMO(resource);
+                    final PublishedService newService = newServiceEntity.getEntity();
+                    final PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
+
+                    if (oldService == null) {
+                        throw new ResourceFactory.ResourceNotFoundException("Existing service not found. ID: " + id);
+                    }
+
+                    rbacAccessService.validatePermitted(oldService, OperationType.UPDATE);
+                    RestResourceFactoryUtils.checkMovePermitted(rbacAccessService, oldService.getFolder(), newService.getFolder());
 
                     newService.setGoid(Goid.parseGoid(id));
-                    newService.setFolder(checkMovePermitted(oldService.getFolder(), newService.getFolder()));
+                    //needs to be done this way to properly copy over the policy id.
                     oldService.getPolicy().setXml(newService.getPolicy().getXml());
                     newService.setPolicy(oldService.getPolicy());
-                    newService.setVersion(resource.getVersion());
+                    //need to update the service version as wsman does not set it. SSG-8476
+                    if(resource.getVersion() != null) {
+                        newService.setVersion(resource.getVersion());
+                    }
 
                     RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
                     serviceManager.update(newService);
                     policyVersionManager.checkpointPolicy(newService.getPolicy(), active, comment, false);
                     saveServiceDocuments(Goid.parseGoid(id), newServiceEntity.getServiceDocuments());
-
-                    return serviceTransformer.convertToMO(newServiceEntity.getEntity());
-
                 } catch (ObjectModelException ome) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to update service: " + ome.getMessage());
                 }
             }
         });
-    }
-
-    Folder checkMovePermitted(@Nullable final Folder oldFolder,
-                              @NotNull final Folder newFolder) {
-        Folder result = null;
-
-        if (oldFolder != null && Goid.equals(oldFolder.getGoid(), newFolder.getGoid())) {
-            result = oldFolder;
-        }
-
-        if (result == null) {
-            // consistent with FolderAdmin permissions
-
-
-            rbacAccessService.validatePermitted(newFolder, OperationType.UPDATE);
-            if (oldFolder != null)
-                rbacAccessService.validatePermitted(oldFolder, OperationType.UPDATE);
-            result = newFolder;
-        }
-
-        return result;
-    }
-
-    public String getPolicyIdForService(String id) throws ResourceFactory.ResourceNotFoundException {
-        try {
-            PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
-            if(service !=null){
-                rbacAccessService.validatePermitted(service, OperationType.READ);
-                return service.getPolicy().getId();
-            }
-            return null;
-        } catch (FindException e) {
-            throw new ResourceFactory.ResourceNotFoundException(ExceptionUtils.getMessage(e),e);
-        }
     }
 
     /**

@@ -122,7 +122,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     @PUT
     @Path("{id}")
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response update(InterfaceTagMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response update(InterfaceTagMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
         if (resourceExists) {
             factory.updateResource(id, resource);

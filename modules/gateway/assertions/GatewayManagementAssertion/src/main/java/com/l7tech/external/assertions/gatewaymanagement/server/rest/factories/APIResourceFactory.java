@@ -32,7 +32,7 @@ public interface APIResourceFactory<R> {
      * @param id       The id to create the resource with
      * @param resource The new resource to create.
      */
-    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.InvalidResourceException;
+    public void createResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceFactoryException;
 
     /**
      * This will update a resource with this given id.
@@ -44,7 +44,7 @@ public interface APIResourceFactory<R> {
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException
      *
      */
-    public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException;
+    public void updateResource(@NotNull String id, @NotNull R resource) throws ResourceFactory.ResourceFactoryException;
 
     /**
      * This will retrieve a resource with the given id.

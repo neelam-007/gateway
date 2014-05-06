@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.Re
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyVersionTransformer;
 import com.l7tech.gateway.api.PolicyVersionMO;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -13,8 +14,10 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +45,8 @@ public class PolicyVersionRestResourceFactory {
     private RbacAccessService rbacAccessService;
     @Inject
     private PolicyVersionTransformer transformer;
+    @Inject
+    private ServiceManager serviceManager;
 
     private static final Collection<PolicyType> availablePolicyTypes = Collections.unmodifiableCollection(Arrays.asList(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL, PolicyType.GLOBAL_FRAGMENT));
     private static final Map<String, String> propertyNamesMap = CollectionUtils.MapBuilder.<String, String>builder().put("name", "comment").map();
@@ -181,12 +186,33 @@ public class PolicyVersionRestResourceFactory {
             //this is a service ID
             //validate service exists and that the user has access to the service
             serviceAPIResourceFactory.validateExistsAndHasAccess(serviceOrPolicyId.left(), operationType);
-            return serviceAPIResourceFactory.getPolicyIdForService(serviceOrPolicyId.left());
+            return getPolicyIdForService(serviceOrPolicyId.left());
         } else {
             //This is a policy ID
             //validate policy exists and that the user has access to the policy
             policyAPIResourceFactory.validateExistsAndHasAccess(serviceOrPolicyId.right(), operationType, availablePolicyTypes);
             return serviceOrPolicyId.right();
+        }
+    }
+
+    /**
+     * Returns the policy id of the policy backing the service with the given id.
+     *
+     * @param id The id of the service to get the backing policy id for
+     * @return The policy id of the backing policy for the service with the given id.
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    private String getPolicyIdForService(@NotNull final String id) throws ResourceFactory.ResourceNotFoundException {
+        try {
+            PublishedService service = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
+            if (service != null && service.getPolicy() != null) {
+                rbacAccessService.validatePermitted(service, OperationType.READ);
+                return service.getPolicy().getId();
+            } else {
+                throw new ResourceFactory.ResourceNotFoundException("Could not find service with id " + id);
+            }
+        } catch (FindException e) {
+            throw new ResourceFactory.ResourceNotFoundException(ExceptionUtils.getMessage(e), e);
         }
     }
 
