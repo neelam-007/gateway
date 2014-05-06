@@ -86,6 +86,9 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
     public void setNamedCertificate(String certificateName) { this.namedCertificate = certificateName; }
 
+    // For compatibility: read old policy with Login element
+    public void setLogin(String login) { setNamedUser(login); }
+
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
