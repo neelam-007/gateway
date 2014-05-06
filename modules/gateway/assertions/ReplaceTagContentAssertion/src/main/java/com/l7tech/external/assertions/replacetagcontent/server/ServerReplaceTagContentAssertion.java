@@ -17,7 +17,7 @@ import net.htmlparser.jericho.Source;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +76,9 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
 
     private void replaceByTag(final Message message, final String searchFor, final String replaceWith, final Set<String> tagsToSearch) throws IOException, NoSuchPartException {
         final PartInfo firstPart = message.getMimeKnob().getFirstPart();
-        final Source source = new Source(firstPart.getInputStream(false));
+        final String charset = firstPart.getContentType().getEncoding().toString();
+        final Reader reader = new BufferedReader(new InputStreamReader(firstPart.getInputStream(false), charset));
+        final Source source = new Source(reader);
         final OutputDocument output = new OutputDocument(source);
         boolean atLeastOneReplace = false;
         for (final String tagToSearch : tagsToSearch) {
