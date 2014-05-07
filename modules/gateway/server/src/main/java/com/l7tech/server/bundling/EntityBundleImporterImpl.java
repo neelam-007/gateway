@@ -331,8 +331,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         if(entityContainer instanceof JmsContainer){
             JmsContainer jmsContainer = ((JmsContainer) entityContainer);
             if(existingEntity == null ){
-                entityCrud.save(jmsContainer.getJmsConnection().getGoid(),jmsContainer.getJmsConnection());
-                jmsContainer.getEntity().setConnectionGoid(jmsContainer.getJmsConnection().getGoid());
+                Goid connectionId = (Goid)entityCrud.save(jmsContainer.getJmsConnection());
+                jmsContainer.getEntity().setConnectionGoid(connectionId);
             }else{
                 if(existingEntity instanceof JmsEndpoint){
                     JmsEndpoint existingEndpoint = (JmsEndpoint)existingEntity;

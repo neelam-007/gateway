@@ -133,7 +133,8 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         if ( jmsConnectionMO.isTemplate() != null ) {
             jmsConnection.setTemplate( jmsConnectionMO.isTemplate() );
         }
-        setIdentifier( jmsConnection, jmsConnectionMO.getId(), false );
+
+        // ignore connection ID, uses existing on update and delete
         setVersion( jmsConnection, jmsConnectionMO.getVersion() );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
         setProperties( jmsConnection, jmsConnectionMO.getProperties(), JmsConnection.class );

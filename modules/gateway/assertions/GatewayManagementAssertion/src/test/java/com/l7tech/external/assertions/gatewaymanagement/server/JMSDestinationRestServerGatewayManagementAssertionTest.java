@@ -125,6 +125,22 @@ public class JMSDestinationRestServerGatewayManagementAssertionTest extends Serv
     }
 
     @Test
+    public void createEntityWithConnectionIDTest() throws Exception {
+
+        JMSDestinationMO createObject = jmsDestinationResourceFactory.asResource(new JMSDestinationResourceFactory.JmsEntityBag( jmsEndpoint, jmsConnection ));
+        createObject.setId(null);
+        createObject.getJmsDestinationDetail().setId(null);
+        createObject.getJmsDestinationDetail().setName("New jms name");
+        createObject.getJmsConnection().setId(new Goid(234,657).toString());
+        Document request = ManagedObjectFactory.write(createObject);
+        RestResponse response = processRequest(jmsDestinationBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
+
+        JmsEndpoint createdEntity = jmsEndpointManagerStub.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
+
+        assertEquals("JMS Destination name:", createObject.getJmsDestinationDetail().getName(), createdEntity.getName());
+    }
+
+    @Test
     public void createEntityWithIDTest() throws Exception {
 
         Goid goid = new Goid(12345678L, 5678);
