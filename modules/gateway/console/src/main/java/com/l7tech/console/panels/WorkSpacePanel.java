@@ -15,6 +15,7 @@ import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
@@ -405,8 +406,8 @@ public class WorkSpacePanel extends JPanel {
      * Update policy tabs information such as saving last opened tabs and validating policy tab properties.
      */
     public void updatePolicyTabsInformationIntoProperties() {
-        saveLastOpenedPolicyTabs();
         validatePolicyTabProperties();
+        saveLastOpenedPolicyTabs();
     }
 
     /**
@@ -536,9 +537,20 @@ public class WorkSpacePanel extends JPanel {
                     validPolicy = true;
                     try {
                         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(Goid.parseGoid(policyGoid));
-                        if (policy == null) validPolicy = false;
-                    } catch (FindException e) {
+                        if (policy == null) {
+                            validPolicy = false;
+                            log.fine("The policy (goid=" + policyGoid + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
+                        }
+                    } catch (PermissionDeniedException pde) {
+                        // Still treat this case as a valid policy
+                        log.fine(ExceptionUtils.getMessage(pde));
+                    } catch (Exception e) {
                         validPolicy = false;
+                        if (e instanceof FindException) {
+                            log.fine("The policy (goid=" + policyGoid + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                        } else {
+                            log.info("Error on finding a policy: " + ExceptionUtils.getMessage(e) + ".  The tab setting of the policy is removed from '" + propName + "'.");
+                        }
                     }
                     validationCache.put(policyGoid, validPolicy);
                 }
@@ -574,12 +586,19 @@ public class WorkSpacePanel extends JPanel {
                         try {
                             PolicyVersion policyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(Goid.parseGoid(policyGoid), Long.parseLong(versionOrdinal));
                             if (policyVersion == null) {
-                                log.fine("The policy (goid=" + policyGoid + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
+                                log.fine("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
                                 validPolicyVersion = false;
                             }
-                        } catch (FindException e) {
-                            log.fine("The policy (goid=" + policyGoid + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                        } catch (PermissionDeniedException pde) {
+                            // Still treat this case as a valid policy
+                            log.fine(ExceptionUtils.getMessage(pde));
+                        } catch (Exception e) {
                             validPolicyVersion = false;
+                            if (e instanceof FindException) {
+                                log.fine("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                            } else {
+                                log.info("Error on finding a policy version: " + ExceptionUtils.getMessage(e) + ".  The tab setting of the policy version is removed from '" + propName + "'.");
+                            }
                         }
                         validationCache.put(versionUniqueKey, validPolicyVersion);
                     }

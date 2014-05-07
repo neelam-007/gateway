@@ -4080,7 +4080,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 try {
                     entityWithPolicyNode = (EntityWithPolicyNode) rootNode.getNodeForEntity(Goid.parseGoid(policyNodeEntityGoid));
                 } catch (Exception e) {
-                    log.warning("The policy entity node (goid=" + policyNodeEntityGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                    log.info("The policy entity node (goid=" + policyNodeEntityGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
                     continue;
                 }
 
@@ -4089,11 +4089,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                 try {
                     Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(Goid.parseGoid(policyGoid));
                     if (policy == null) {
-                        log.warning("The policy (goid=" + policyGoid + ") does not exist, so the policy editor workspace cannot open a tab for it.");
+                        log.info("The policy (goid=" + policyGoid + ") does not exist, so the policy editor workspace cannot open a tab for it.");
                         continue;
                     }
                 } catch (FindException e) {
-                    log.warning("The policy (goid=" + policyGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                    log.info("The policy (goid=" + policyGoid + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                    continue;
+                } catch (Exception e1) {
+                    log.info("Cannot open a tab for the policy (goid=" + policyGoid + "): " + ExceptionUtils.getMessage(e1));
                     continue;
                 }
 
@@ -4106,11 +4109,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                     try {
                         fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(Goid.parseGoid(policyGoid), Long.parseLong(versionOrdinal));
                         if (fullPolicyVersion == null) {
-                            log.warning("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") does not exist, so the policy editor workspace cannot open a tab for it.");
+                            log.info("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") does not exist, so the policy editor workspace cannot open a tab for it.");
                             continue;
                         }
                     } catch (FindException e) {
-                        log.warning("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                        log.info("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, so the policy editor workspace cannot open a tab for it.");
+                        continue;
+                    } catch (Exception e1) {
+                        log.info("Cannot open a tab for the policy version (goid=" + policyGoid + ", version=" + versionOrdinal + "): " + ExceptionUtils.getMessage(e1));
                         continue;
                     }
 
