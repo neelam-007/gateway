@@ -1252,11 +1252,11 @@ public class AssertionMessages extends Messages {
     public static final M RADIUS_AUTH_NO_CREDENTIAL = m(10201, Level.INFO, "No credentials found!");
     public static final M RADIUS_AUTH_AUTHENTICATION_FAILED = m(10202, Level.FINE, "Authentication Against Radius Server failed for credentials: {0}");
 
-    // Manage Header Assertion
-    public static final M HEADER_ADDED = m(10350, Level.FINE, "Added header with name {0} and value {1}");
-    public static final M HEADER_REMOVED_BY_NAME = m(10351, Level.FINE, "Removed header with name {0}");
-    public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10352, Level.FINE, "Removed header with name {0} and value {1}");
-    public static final M EMPTY_HEADER_NAME = m(10353, Level.WARNING, "Header name is empty");
+    // Manage Transport Properties/Headers Assertion
+    public static final M HEADER_ADDED = m(10350, Level.FINE, "Added header/property with name {0} and value {1}");
+    public static final M HEADER_REMOVED_BY_NAME = m(10351, Level.FINE, "Removed header/property with name {0}");
+    public static final M HEADER_REMOVED_BY_NAME_AND_VALUE = m(10352, Level.FINE, "Removed header/property with name {0} and value {1}");
+    public static final M EMPTY_HEADER_NAME = m(10353, Level.WARNING, "Header/property name is empty");
 
     // Add or Remove Cookie Assertion
     public static final M INVALID_COOKIE_MAX_AGE = m(10400, Level.WARNING, "Cookie max age is invalid: {0}");
