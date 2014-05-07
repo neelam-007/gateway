@@ -61,7 +61,7 @@ public class AddHeaderAssertionTest {
     @Test
     public void getAssertionNameNoDecorate() {
         assertion.setHeaderName("foo");
-        assertEquals("Manage Transport Headers / Properties", assertionNameFactory.getAssertionName(assertion, false));
+        assertEquals("Manage Transport Properties/Headers", assertionNameFactory.getAssertionName(assertion, false));
     }
 
     @Test

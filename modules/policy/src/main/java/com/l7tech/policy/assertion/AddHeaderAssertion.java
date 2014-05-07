@@ -137,7 +137,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
     }
 
     private static final String META_INITIALIZED = AddHeaderAssertion.class.getName() + ".metadataInitialized";
-    private static final String baseName = "Manage Transport Headers / Properties";
+    private static final String baseName = "Manage Transport Properties/Headers";
 
     private static final AssertionNodeNameFactory<AddHeaderAssertion> nodeNameFactory = new AssertionNodeNameFactory<AddHeaderAssertion>() {
         @Override
