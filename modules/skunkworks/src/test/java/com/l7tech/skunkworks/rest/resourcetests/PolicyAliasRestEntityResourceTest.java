@@ -1,10 +1,9 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
-import com.l7tech.gateway.api.Link;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PolicyAliasMO;
-import com.l7tech.gateway.api.PolicyMO;
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -23,8 +22,13 @@ import com.l7tech.util.Functions;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.util.*;
+
+import static junit.framework.Assert.assertEquals;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAlias, PolicyAliasMO> {
@@ -341,5 +345,17 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
                 .put("folder.id=" + rootFolder.getId(), Arrays.asList(policyAliases.get(1).getId(), policyAliases.get(3).getId()))
                 .put("policy.id=" + policies.get(0).getId() + "&policy.id=" + policies.get(1).getId() + "&sort=policy.id&order=desc", Arrays.asList(policyAliases.get(3).getId(), policyAliases.get(2).getId(), policyAliases.get(1).getId(), policyAliases.get(0).getId()))
                 .map();
+    }
+
+
+    @Test
+    public void deleteNonEmptyFolderTest() throws Exception {
+        RestResponse response = processRequest("folders/" + myPolicyFolder.getId(), HttpMethod.DELETE, null, "");
+
+        assertEquals(403, response.getStatus());
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse returnedError = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceAccess", returnedError.getType());
+        assertEquals("Folder is not empty", returnedError.getDetail());
     }
 }

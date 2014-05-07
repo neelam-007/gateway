@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.objectmodel.folder.InvalidParentFolderException;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -44,9 +46,11 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
                                   final SecurityFilter securityFilter,
                                   final PlatformTransactionManager transactionManager,
                                   final FolderManager folderManager,
+                                  final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap,
                                   final SecurityZoneManager securityZoneManager ) {
         super( false, false, services, securityFilter, transactionManager, folderManager, securityZoneManager );
         this.folderManager = folderManager;
+        this.entityManagerMap = entityManagerMap;
     }
 
     //- PROTECTED
@@ -116,6 +120,7 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
     @Override
     protected void beforeDeleteEntity( final EntityBag<Folder> folderEntityBag ) throws ObjectModelException {
         checkRoot( folderEntityBag.getEntity() );
+        checkEmpty(folderEntityBag.getEntity());
     }
 
     @Override
@@ -258,8 +263,18 @@ public class FolderResourceFactory extends SecurityZoneableEntityManagerResource
     //- PRIVATE
 
     private FolderManager folderManager;
+    private final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap;
 
     private void checkRoot( final Folder folder ) throws ObjectModelException {
         if ( Folder.ROOT_FOLDER_ID.equals(folder.getGoid()) ) throw new ConstraintViolationException("Cannot update root folder");
+    }
+
+    private void checkEmpty( final Folder folder)  throws ObjectModelException {
+        for (final FolderedEntityManager folderedEntityManager : entityManagerMap.values()) {
+            final Collection entitiesInFolder = folderedEntityManager.findByFolder(folder.getGoid());
+            if (!entitiesInFolder.isEmpty()) {
+                throw new NonEmptyFolderDeletionException("Folder is not empty");
+            }
+        }
     }
 }

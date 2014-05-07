@@ -71,7 +71,26 @@
 
     <bean id="folderResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
         <constructor-arg index="3" ref="folderManager"/>
-        <constructor-arg index="4" ref="securityZoneManager"/>
+        <constructor-arg index="4">
+            <map>
+                <entry key="com.l7tech.objectmodel.folder.Folder">
+                    <ref bean="folderManager"/>
+                </entry>
+                <entry key="com.l7tech.policy.Policy">
+                    <ref bean="policyManager"/>
+                </entry>
+                <entry key="com.l7tech.gateway.common.service.PublishedService">
+                    <ref bean="serviceManager"/>
+                </entry>
+                <entry key="com.l7tech.policy.PolicyAlias">
+                    <ref bean="policyAliasManager"/>
+                </entry>
+                <entry key="com.l7tech.gateway.common.service.PublishedServiceAlias">
+                    <ref bean="serviceAliasManager"/>
+                </entry>
+            </map>
+        </constructor-arg>
+        <constructor-arg index="5" ref="securityZoneManager"/>
     </bean>
 
     <bean id="policyResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="entityResourceFactoryParent">
