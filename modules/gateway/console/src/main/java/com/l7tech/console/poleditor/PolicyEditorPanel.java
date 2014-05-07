@@ -771,14 +771,29 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * Refresh the policy editor panel including the policy xml.
-     * Note: this method is very similar with the above renderPolicy() method.
+     * Note: (1) This method is very similar with the above renderPolicy() method.
+     *       (2) If there are unsaved changes, save these changes first, then reload
+     *       the original policy version instead of the saved policy version.
      *
      * @throws FindException thrown when policy version cannot be found.
      * @throws IOException thrown when WspReader cannot parse policy xml.
      */
     public void refreshPolicyEditorPanel() throws FindException, IOException {
+        // Before refresh, preserve version number and active status
+        long versionNum = getVersionNumber();
+        boolean isActive = isVersionActive();
+
+        // Before refresh, check if the policy editor panel has any unsaved changes and save the unsaved changes.
+        try {
+            saveUnsavedPolicyChanges(null);
+            policyEditorToolbar.setSaveButtonsEnabled(false);
+            TopComponents.getInstance().firePolicyEditDone();
+        } catch (ContainerVetoException e) {
+            // Won't happen here at this case!
+        }
+
         // Get the refreshed policy assertion
-        final PolicyVersion fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(getPolicyGoid(), getVersionNumber());
+        final PolicyVersion fullPolicyVersion = Registry.getDefault().getPolicyAdmin().findPolicyVersionForPolicy(getPolicyGoid(), versionNum);
         final Assertion newPolicy = WspReader.getDefault().parsePermissively(fullPolicyVersion.getXml(), WspReader.INCLUDE_DISABLED);
 
         // Get the refresh entity node (ServiceNode or PolicyNode) in the ServicesAndPoliciesTree, associated with the policy editor panel.
@@ -797,6 +812,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         rootAssertion = newRootAssertion;
         ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(refreshedEntityNode));
         updateAssertions(newRootAssertion);
+
+        // Restore version number and active status
+        overrideVersionNumber = versionNum;
+        overrideVersionActive = isActive;
+        updateHeadings();
     }
 
     /**
@@ -1849,36 +1869,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
         if (e.getChild() == this) {
-            if (isUnsavedChanges()) {
-                if (!TopComponents.getInstance().isConnectionLost()) {
-                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                      "<html><center><b>Do you want to save changes to service policy " +
-                      "for<br> '" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "' ?</b><br>The changed policy will not be activated.</center></html>",
-                      "Save Service Policy",
-                      JOptionPane.YES_NO_CANCEL_OPTION));
-                    if (answer == JOptionPane.YES_OPTION) {
-                        policyEditorToolbar.buttonSaveOnly.getAction().actionPerformed(null);
-                    } else if ((answer == JOptionPane.CANCEL_OPTION)) {
-                        throw new ContainerVetoException(e, "User aborted");
-                    }
-                } else {
-                    String saveOption = "Save Policy";
-                    String discardOption = "Discard Policy";
-                    Object[] options = new String[] { saveOption, discardOption };
-
-                    int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
-                            "<html><center><b>Connection Lost.  Do you want to save changes to service policy " +
-                            "file?</b></center></html>",
-                            "Save Service Policy",
-                            JOptionPane.DEFAULT_OPTION,
-                            JOptionPane.WARNING_MESSAGE,
-                            null,
-                            options,
-                            saveOption);
-                    if (answer != 1)
-                        getSimpleExportAction().actionPerformed(null);
-                }
-            }
+            saveUnsavedPolicyChanges(e);
             final PolicyToolBar pt = topComponents.getPolicyToolBar();
             pt.disableAll();
             pt.unregisterPolicyTree(PolicyEditorPanel.this.getPolicyTree());
@@ -1886,8 +1877,41 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
+    private void saveUnsavedPolicyChanges(ContainerEvent e) throws ContainerVetoException {
+        if (! isUnsavedChanges()) return;
+
+        if (!TopComponents.getInstance().isConnectionLost()) {
+            int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
+                "<html><center><b>Do you want to save changes to service policy " +
+                    "for<br> '" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "' ?</b><br>The changed policy will not be activated.</center></html>",
+                "Save Service Policy",
+                JOptionPane.YES_NO_CANCEL_OPTION));
+            if (answer == JOptionPane.YES_OPTION) {
+                policyEditorToolbar.buttonSaveOnly.getAction().actionPerformed(null);
+            } else if ((answer == JOptionPane.CANCEL_OPTION)) {
+                if (e != null) throw new ContainerVetoException(e, "User aborted");
+            }
+        } else {
+            String saveOption = "Save Policy";
+            String discardOption = "Discard Policy";
+            Object[] options = new String[] { saveOption, discardOption };
+
+            int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                "<html><center><b>Connection Lost.  Do you want to save changes to service policy " +
+                    "file?</b></center></html>",
+                "Save Service Policy",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                options,
+                saveOption);
+            if (answer != 1)
+                getSimpleExportAction().actionPerformed(null);
+        }
+    }
+
     /**
-     * prune duplicate messsages
+     * prune duplicate messages
      *
      * @param result the validation result
      * @param extraWarnings extra warnings to mix in before we prune

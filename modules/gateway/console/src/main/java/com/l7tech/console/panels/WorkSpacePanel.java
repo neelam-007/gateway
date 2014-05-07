@@ -666,12 +666,14 @@ public class WorkSpacePanel extends JPanel {
      */
     public Collection<Refreshable> refreshWorkspace() {
         final Collection<Refreshable> alreadyRefreshed = new ArrayList<>();
+        final Component selectedComponent = tabbedPane.getSelectedComponent();
 
         for  (int i = 0; i < tabbedPane.getTabCount(); i++) {
             Component component = tabbedPane.getComponentAt(i);
 
             if (component instanceof PolicyEditorPanel) {
                 try {
+                    tabbedPane.setSelectedComponent(component);
                     ((PolicyEditorPanel) component).refreshPolicyEditorPanel();
 
                     // After refresh policy, the policy tree is refreshed too, so add it into the refresh list
@@ -689,6 +691,8 @@ public class WorkSpacePanel extends JPanel {
                 }
             }
         }
+
+        tabbedPane.setSelectedComponent(selectedComponent);
 
         return alreadyRefreshed;
     }
