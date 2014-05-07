@@ -189,7 +189,13 @@ public class PolicyDetail extends ElementExtensionSupport {
         /**
          * Global Policy Fragment
          */
-        @XmlEnumValue("Global") GLOBAL
+        @XmlEnumValue("Global") GLOBAL,
+
+        /**
+         * Identity Provider Policy
+         */
+        @XmlEnumValue("Identity Provider") ID_PROVIDER
+
     }
 
     //- PROTECTED

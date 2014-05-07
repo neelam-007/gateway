@@ -199,6 +199,9 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case GLOBAL_FRAGMENT:
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.GLOBAL );
                 break;
+            case IDENTITY_PROVIDER_POLICY:
+                policyDetail.setPolicyType( PolicyDetail.PolicyType.ID_PROVIDER );
+                break;
             default:
                 throw new ResourceAccessException( "Access of unsupported policy type." );
         }
@@ -251,6 +254,9 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case GLOBAL:
                 policyType = PolicyType.GLOBAL_FRAGMENT;
                 break;
+            case ID_PROVIDER:
+                policyType = PolicyType.IDENTITY_PROVIDER_POLICY;
+                break;
             default:
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown policy type" );
         }
@@ -261,6 +267,10 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
 
         // handle SecurityZone
         doSecurityZoneFromResource( policyMO, policy, strict );
+
+        if(!policy.getType().isSecurityZoneable() && policy.getSecurityZone()!=null){
+            throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Policy of type "+ policy.getType().getName()+ " is not security zoneable");
+        }
 
         return policy;
     }
@@ -296,6 +306,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                 case INCLUDE_FRAGMENT:
                 case INTERNAL:
                 case GLOBAL_FRAGMENT:
+                case IDENTITY_PROVIDER_POLICY:
                     filteredHeaders.add( policyHeader );
                     break;
             }
@@ -312,6 +323,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
             case INCLUDE_FRAGMENT:
             case INTERNAL:
             case GLOBAL_FRAGMENT:
+            case IDENTITY_PROVIDER_POLICY:
                 policy = entity;
                 break;
         }

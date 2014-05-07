@@ -40,6 +40,7 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
     private static final Policy policy1 = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy1", "", false);
     private static final Policy policy2 = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy2", "", false);
     private static final Policy policy3 = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy3", "", false);
+    private static final Policy policyIdProvider = new Policy(PolicyType.IDENTITY_PROVIDER_POLICY, "Policy ID Provider", "", false);
     private static PolicyManagerStub policyManager;
     private static PolicyVersionManager policyVersionManager;
     private static final String comment = "CreateComment";
@@ -97,13 +98,27 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
                 "    </wsp:Policy>\n" +
                 "</exp:Export>\n");
         policy3.setGuid(UUID.randomUUID().toString());
+        policyIdProvider.setFolder(rootFolder);
+        policyIdProvider.setXml("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <exp:References/>\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>\n");
+        policyIdProvider.setGuid(UUID.randomUUID().toString());
         policyManager = applicationContext.getBean("policyManager", PolicyManagerStub.class);
         policyManager.save(policy1);
         policyManager.save(policy2);
         policyManager.save(policy3);
+        policyManager.save(policyIdProvider);
         policyVersionManager.checkpointPolicy(policy1,true,true);
         policyVersionManager.checkpointPolicy(policy2,true,true);
         policyVersionManager.checkpointPolicy(policy3,true,comment,true);
+        policyVersionManager.checkpointPolicy(policyIdProvider,true,comment,true);
     }
 
     @After
@@ -383,6 +398,6 @@ public class PolicyRestServerGatewayManagementAssertionTest extends ServerRestGa
         ItemsList<PolicyMO> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         // check entity
-        Assert.assertEquals(3, item.getContent().size());
+        Assert.assertEquals(4, item.getContent().size());
     }
 }

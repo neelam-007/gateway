@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.BugId;
@@ -45,6 +46,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
     private List<Policy> policies = new ArrayList<>();
     private Folder rootFolder;
     private PolicyVersionManager policyVersionManager;
+    private SecurityZoneManager securityZoneManager;
+    private SecurityZone securityZone;
 
     private static final String comment = "MyComment1";
     private FolderManager folderManager;
@@ -60,6 +63,12 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
 
         myFolder = new Folder("MyFolder", rootFolder);
         folderManager.save(myFolder);
+
+        securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
+        securityZone = new SecurityZone();
+        securityZone.setName("Zone");
+        securityZone.setPermittedEntityTypes(CollectionUtils.set(EntityType.POLICY));
+        securityZoneManager.save(securityZone);
 
         //Create the policies
         Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy 1",
@@ -147,6 +156,26 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policyVersionManager.checkpointPolicy(policy,true,comment,true);
         policies.add(policy);
 
+        policy = new Policy(PolicyType.IDENTITY_PROVIDER_POLICY, "Policy 5",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<exp:Export Version=\"3.0\"\n" +
+                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <exp:References/>\n" +
+                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "        <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        </wsp:All>\n" +
+                        "    </wsp:Policy>\n" +
+                        "</exp:Export>\n",
+                false
+        );
+        policy.setFolder(rootFolder);
+        policy.setGuid(UUID.randomUUID().toString());
+
+        policyManager.save(policy);
+        policyVersionManager.checkpointPolicy(policy,true,comment,true);
+        policies.add(policy);
+
     }
 
     @After
@@ -156,6 +185,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
             policyManager.delete(policy.getGoid());
         }
         folderManager.delete(myFolder);
+        securityZoneManager.delete(securityZone);
     }
 
     @Override
@@ -165,7 +195,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
             public Boolean call(Policy policy) {
                 return PolicyType.INCLUDE_FRAGMENT.equals(policy.getType()) ||
                         PolicyType.INTERNAL.equals(policy.getType()) ||
-                        PolicyType.GLOBAL_FRAGMENT.equals(policy.getType());
+                        PolicyType.GLOBAL_FRAGMENT.equals(policy.getType()) ||
+                        PolicyType.IDENTITY_PROVIDER_POLICY.equals(policy.getType());
             }
         }), new Functions.Unary<String, Policy>() {
             @Override
@@ -575,6 +606,9 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
                 case INCLUDE_FRAGMENT:
                     Assert.assertEquals(PolicyDetail.PolicyType.INCLUDE, managedObject.getPolicyDetail().getPolicyType());
                     break;
+                case IDENTITY_PROVIDER_POLICY:
+                    Assert.assertEquals(PolicyDetail.PolicyType.ID_PROVIDER, managedObject.getPolicyDetail().getPolicyType());
+                    break;
                 default:
                     Assert.fail("should not be able to get policies of this type: " + entity.getType());
             }
@@ -594,7 +628,8 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
                     public Boolean call(Policy policy) {
                         return PolicyType.INCLUDE_FRAGMENT.equals(policy.getType()) ||
                                 PolicyType.INTERNAL.equals(policy.getType()) ||
-                                PolicyType.GLOBAL_FRAGMENT.equals(policy.getType());
+                                PolicyType.GLOBAL_FRAGMENT.equals(policy.getType())||
+                                PolicyType.IDENTITY_PROVIDER_POLICY.equals(policy.getType());
                     }
                 }), new Functions.Unary<String, Policy>() {
                     @Override
@@ -616,7 +651,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
                 .put("type=Internal", Arrays.asList(policies.get(1).getId()))
                 .put("type=Global", Arrays.asList(policies.get(2).getId()))
                 .put("soap=true", Arrays.asList(policies.get(0).getId(), policies.get(1).getId()))
-                .put("parentFolder.id=" + rootFolder.getId(), Arrays.asList(policies.get(0).getId(), policies.get(2).getId()))
+                .put("parentFolder.id=" + rootFolder.getId(), Arrays.asList(policies.get(0).getId(), policies.get(2).getId(), policies.get(4).getId()))
                 .put("parentFolder.id=" + myFolder.getId(), Arrays.asList(policies.get(1).getId()))
                 .map();
     }
@@ -712,6 +747,32 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         PolicyVersion version = policyVersionManager.findPolicyVersionForPolicy(goidReturned, 1);
         assertNotNull(version);
         assertEquals("Comment:", comment, version.getName());
+    }
+
+    @Test
+    public void updateIdentityProviderPolicyWithSecurityZoneTest() throws Exception {
+        RestResponse response = processRequest(getResourceUri() + "/" + policies.get(4).getId(), HttpMethod.GET, null, "");
+        logger.info(response.toString());
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        PolicyMO policyReturned = (PolicyMO) MarshallingUtils.unmarshal(Item.class, source).getContent();
+
+        // double check its the identity provider policy
+        assertEquals(PolicyDetail.PolicyType.ID_PROVIDER, policyReturned.getPolicyDetail().getPolicyType());
+
+        policyReturned.getPolicyDetail().setName("ID Provider Policy Updated");
+        policyReturned.setSecurityZoneId(securityZone.getId());
+
+        String policyMOString = writeMOToString(policyReturned);
+
+        logger.info(policyMOString.toString());
+        response = processRequest(getResourceUri() + "/" + policies.get(4).getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), policyMOString);
+        logger.info(response.toString());
+
+        assertEquals(400, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse returnedError = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource", returnedError.getType());
     }
 
     @Test
