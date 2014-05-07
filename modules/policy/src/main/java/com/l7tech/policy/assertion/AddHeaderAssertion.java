@@ -176,6 +176,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(PALETTE_FOLDERS, new String[] {"routing"});
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddHeaderAssertionDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Transport Properties/Headers Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(POLICY_NODE_NAME_FACTORY, nodeNameFactory);
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.AddHeaderAssertionValidator");
