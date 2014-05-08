@@ -2,11 +2,13 @@ package com.l7tech.message;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.xml.soap.SoapUtil;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -111,9 +113,20 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        // If it's not an HTTP form post, don't go looking for trouble
-        ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
-        if (!ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
+
+        ContentTypeHeader ctype = null;
+
+        //check if the Content-Type header is present
+        if(StringUtils.isNotBlank(request.getHeader(MimeUtil.CONTENT_TYPE))) {
+            // If it's not an HTTP form post, don't go looking for trouble
+            ctype = ContentTypeHeader.parseValue(request.getHeader(MimeUtil.CONTENT_TYPE));
+        }
+        //Any HTTP/1.1 message containing an entity-body SHOULD include a Content-Type header field defining
+        // the media type of that body. If and only if the media type is not given by a Content-Type field,
+        // the recipient MAY attempt to guess the media type via inspection of its content and/or the name
+        // extension(s) of the URI used to identify the resource. If the media type remains unknown,
+        // the recipient SHOULD treat it as type "application/octet-stream".
+        if (ctype != null && !ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
             // This stanza is copied because we don't want to parse the Content-Type unnecessarily
             nobody();
             return;
@@ -127,7 +140,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        Charset enc = ctype.getEncoding();
+        Charset enc = ctype != null? ctype.getEncoding():ContentTypeHeader.OCTET_STREAM_DEFAULT.getEncoding();
         byte[] buf = IOUtils.slurpStream(request.getInputStream());
         String blob = new String(buf, enc);
         requestBodyParams = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
