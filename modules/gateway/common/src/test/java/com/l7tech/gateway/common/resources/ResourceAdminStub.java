@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -205,6 +206,11 @@ public class ResourceAdminStub implements ResourceAdmin {
         return resolver.call( url );
     }
 
+    @Override
+    public JobId<String> resolveResourceAsync(String url) {
+        return null;
+    }
+
     //- PRIVATE
 
     private final Collection<ResourceEntry> resources;
@@ -216,4 +222,18 @@ public class ResourceAdminStub implements ResourceAdmin {
         }
     };
 
+    @Override
+    public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> void cancelJob(JobId<OUT> jobId, boolean interruptIfRunning) {
+
+    }
 }

@@ -25,6 +25,7 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
@@ -222,6 +223,23 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         } catch (SslCertificateSniffer.HostnameMismatchException e) {
             throw new HostnameMismatchException(e.getCertname(), e.getHostname());
         }
+    }
+
+    @Override
+    public JobId<X509Certificate[]> retrieveCertFromUrlAsync(final String purl, final boolean ignoreHostname) {
+        final FutureTask<X509Certificate[]> resolveUrlTask = new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<X509Certificate[]>() {
+            @Override
+            public X509Certificate[] call() throws Exception {
+                return retrieveCertFromUrl(purl, ignoreHostname);
+            }
+        }));
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                resolveUrlTask.run();
+            }
+        }, 0L);
+        return registerJob(resolveUrlTask, X509Certificate[].class);
     }
 
     @Override

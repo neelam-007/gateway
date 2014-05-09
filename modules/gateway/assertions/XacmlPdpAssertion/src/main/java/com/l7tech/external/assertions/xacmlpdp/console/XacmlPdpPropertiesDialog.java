@@ -11,6 +11,7 @@ import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.console.util.XMLContainerFactory;
@@ -42,6 +43,8 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -375,19 +378,30 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             serviceAdmin = reg.getServiceManager();
         }
 
-        final String policyXml;
+        Either<String, String> policyXml;
         try {
-            policyXml = serviceAdmin.resolveUrlTarget(urlstr, XacmlPdpAssertion.XACML_PDP_MAX_DOWNLOAD_SIZE);
-        } catch (IOException e) {
-            //this is likely to be a GenericHttpException
-            JOptionPane.showMessageDialog(this, "No content could be retrieved at URL '" + urlstr+"'. " +
-                    "Due to: " + ExceptionUtils.getMessage(e), "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+            policyXml = AdminGuiUtils.doAsyncAdmin(
+                    serviceAdmin,
+                    XacmlPdpPropertiesDialog.this,
+                    MessageFormat.format(resources.getString("urlLoadingDialog.title"), urlstr),
+                    resources.getString("urlLoadingDialog.message"),
+                    serviceAdmin.resolveUrlTargetAsync(urlstr, XacmlPdpAssertion.XACML_PDP_MAX_DOWNLOAD_SIZE));
+        } catch (InterruptedException e) {
+            //do nothing the user cancelled
+            return;
+        } catch (InvocationTargetException e) {
+            policyXml = Either.left(ExceptionUtils.getMessage(e));
+        }
+        if (policyXml.isLeft()) {
+            //An error occurred retrieving the document
+            JOptionPane.showMessageDialog(this, "No content could be retrieved at URL '" + urlstr + "'. " +
+                    "Due to: " + policyXml.left(), "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         final Document doc;
         try {
-            doc = XmlUtil.parse(policyXml);
+            doc = XmlUtil.parse(policyXml.right());
         } catch (SAXException e) {
             JOptionPane.showMessageDialog(this,
                     "Cannot parse the XML from URL '" + urlstr+ "' due to error: " + e.getMessage(),
@@ -400,7 +414,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         try {
             docIsXacmlPolicy(doc);
 
-            uiAccessibility.getEditor().setText(policyXml);
+            uiAccessibility.getEditor().setText(policyXml.right());
             uiAccessibility.getEditor().setCaretPosition(0);
 
             enableDisableComponents();

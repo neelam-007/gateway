@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.jsonschema.console;
 
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.*;
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 
@@ -31,9 +33,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -230,19 +234,31 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         }
 
         final ServiceAdmin schemaAdmin = getServiceAdmin();
-        final String jsonSchema;
+        Either<String, String> jsonSchema;
         try {
-            jsonSchema = schemaAdmin.resolveUrlTarget(url, JSONSchemaAssertion.CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
-        } catch (IOException e) {
-            //this is likely to be a GenericHttpException
-            final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
+            jsonSchema = AdminGuiUtils.doAsyncAdmin(
+                    schemaAdmin,
+                    JSONSchemaPropertiesDialog.this,
+                    resources.getString("urlLoadingDialog.title"),
+                    MessageFormat.format(resources.getString("urlLoadingDialog.message"), url),
+                    schemaAdmin.resolveUrlTargetAsync(url, JSONSchemaAssertion.CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE));
+        } catch (InterruptedException e) {
+            //do nothing the user cancelled
+            return;
+        } catch (InvocationTargetException e) {
+            jsonSchema = Either.left(ExceptionUtils.getMessage(e));
+        }
+
+        if (jsonSchema.isLeft()) {
+            //An error occurred retrieving the document
+            final String errorMsg = "Cannot download document: " + jsonSchema.left();
             displayError(errorMsg, "Errors downloading file");
-            logger.log(Level.FINE, errorMsg, e);
+            logger.log(Level.FINE, errorMsg);
             return;
         }
 
         try {
-            validateJsonSchema(jsonSchema);
+            validateJsonSchema(jsonSchema.right());
         } catch (ValidationException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Invalid JSON Schema: " + ExceptionUtils.getMessage(e);
@@ -251,7 +267,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             return;
         }
 
-        jsonTextArea.setText(jsonSchema);
+        jsonTextArea.setText(jsonSchema.right());
     }
 
     private ServiceAdmin getServiceAdmin() {

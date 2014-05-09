@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.resources;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -16,7 +17,7 @@ import java.util.Collection;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Administrative
 @Secured(types=EntityType.RESOURCE_ENTRY)
-public interface ResourceAdmin {
+public interface ResourceAdmin extends AsyncAdminMethods {
 
     /**
      * Find all resource entry headers.
@@ -281,4 +282,14 @@ public interface ResourceAdmin {
     @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     String resolveResource(String url) throws IOException;
 
+    /**
+     * This is the Async version of the {@link #resolveResource(String)} method.
+     *
+     * @param url the url that the gateway will use to resolve the resource. this may contain
+     *            userinfo type credentials
+     * @return the contents resolved by this url
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+    AsyncAdminMethods.JobId<String> resolveResourceAsync(String url);
 }

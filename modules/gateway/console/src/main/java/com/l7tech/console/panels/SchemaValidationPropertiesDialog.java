@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.*;
@@ -8,10 +7,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ResourceAdminEntityResolver;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -54,6 +50,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1111,18 +1108,30 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         final ResourceAdmin resourceAdmin = getResourceAdmin();
-        final String schemaXml;
+        Either<String, String> schemaXml;
         try {
-            schemaXml = resourceAdmin.resolveResource(url);
-        } catch (IOException e) {
-            //this is likely to be a GenericHttpException
-            final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
+            schemaXml = AdminGuiUtils.doAsyncAdmin(
+                    resourceAdmin,
+                    SchemaValidationPropertiesDialog.this,
+                    resources.getString("urlLoadingDialog.title"),
+                    MessageFormat.format(resources.getString("urlLoadingDialog.message"), url),
+                    resourceAdmin.resolveResourceAsync(url));
+        } catch (InterruptedException e) {
+            //do nothing the user cancelled
+            return null;
+        } catch (InvocationTargetException e) {
+            schemaXml = Either.left(ExceptionUtils.getMessage(e));
+        }
+
+        if (schemaXml.isLeft()) {
+            //An error occurred retrieving the document
+            final String errorMsg = "Cannot download document: " + schemaXml.left();
             displayError(errorMsg, "Errors downloading file");
-            log.log(Level.FINE, errorMsg, e);
+            log.log(Level.FINE, errorMsg, schemaXml.left());
             return null;
         }
 
-        return schemaXml;
+        return schemaXml.right();
     }
 
     private void importSchemaContent( final String uri,

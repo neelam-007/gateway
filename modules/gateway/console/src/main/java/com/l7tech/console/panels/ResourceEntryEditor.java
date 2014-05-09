@@ -7,6 +7,7 @@ import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.XMLContainerFactory;
@@ -20,10 +21,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -35,6 +33,7 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -223,12 +222,24 @@ public class ResourceEntryEditor extends JDialog {
             resourceAdmin = reg.getResourceAdmin();
         }
 
-        final String resourceContent;
+        Either<String, String> resourceContent;
         try {
-            resourceContent = resourceAdmin.resolveResource(url);
-        } catch ( IOException e) {
-            //this is likely to be a GenericHttpException
-            final String errorMsg = "Cannot download resource: " + ExceptionUtils.getMessage(e);
+            resourceContent = AdminGuiUtils.doAsyncAdmin(
+                    resourceAdmin,
+                    ResourceEntryEditor.this,
+                    "Retrieving Resource",
+                    "Retrieving resource from: " + url,
+                    resourceAdmin.resolveResourceAsync(url));
+        } catch (InterruptedException e) {
+            //do nothing the user cancelled
+            return;
+        } catch (InvocationTargetException e) {
+            resourceContent = Either.left(ExceptionUtils.getMessage(e));
+        }
+
+        if(resourceContent.isLeft()){
+            //An error occurred retrieving the document
+            final String errorMsg = "Cannot download resource: " + resourceContent.left();
             displayError(errorMsg, "Error Downloading Resource");
             return;
         }
@@ -237,7 +248,7 @@ public class ResourceEntryEditor extends JDialog {
         if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
             Document doc;
             try {
-                doc = XmlUtil.parse(new InputSource(new StringReader(resourceContent)), entityResolver);
+                doc = XmlUtil.parse(new InputSource(new StringReader(resourceContent.right())), entityResolver);
             } catch ( SAXException e) {
                 displayError("Error parsing schema from " + TextUtils.truncateStringAtEnd( url, 128 ) + " :\n" +
                         ExceptionUtils.getMessage( e ), null);
@@ -265,7 +276,7 @@ public class ResourceEntryEditor extends JDialog {
                 displayError("No XML Schema could be parsed from " + url, null);
             }
         } else {
-            setResourceContents(resourceContent);
+            setResourceContents(resourceContent.right());
             contentUpdated = true;
         }
 

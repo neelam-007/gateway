@@ -137,8 +137,42 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     }
 
     @Override
+    public JobId<String> resolveUrlTargetAsync(final String url, final String maxSizeClusterProperty) {
+        final FutureTask<String> resolveUrlTask = new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return resolveUrlTarget(url, maxSizeClusterProperty);
+            }
+        }));
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                resolveUrlTask.run();
+            }
+        }, 0L);
+        return asyncSupport.registerJob(resolveUrlTask, String.class);
+    }
+
+    @Override
     public String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException {
         return serviceDocumentResolver.resolveDocumentTarget(url, docType);
+    }
+
+    @Override
+    public JobId<String> resolveUrlTargetAsync(final String url, final DownloadDocumentType docType) {
+        final FutureTask<String> resolveUrlTask = new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return resolveUrlTarget(url, docType);
+            }
+        }));
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                resolveUrlTask.run();
+            }
+        }, 0L);
+        return asyncSupport.registerJob(resolveUrlTask, String.class);
     }
 
     @Override

@@ -9,7 +9,9 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -19,10 +21,7 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.TextUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.xslt.XsltUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -34,7 +33,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -198,19 +199,31 @@ public class XslTransformationSpecifyPanel extends JPanel {
             serviceAdmin = reg.getServiceManager();
         }
 
-        final String xslString;
+        Either<String, String> xslString;
         try {
-            xslString = serviceAdmin.resolveUrlTarget(urlstr, ServiceAdmin.DownloadDocumentType.XSL);
-        } catch (IOException e) {
-            //this is likely to be a GenericHttpException
-            xslDialog.displayError(resources.getString("error.urlnocontent") + " '" + urlstr+"'. " +
-                    "Due to: " + ExceptionUtils.getMessage(e), null);
+            xslString = AdminGuiUtils.doAsyncAdmin(
+                    serviceAdmin,
+                    TopComponents.getInstance().getTopParent(),
+                    resources.getString("urlLoadingDialog.title"),
+                    MessageFormat.format(resources.getString("urlLoadingDialog.message"), urlstr),
+                    serviceAdmin.resolveUrlTargetAsync(urlstr, ServiceAdmin.DownloadDocumentType.XSL));
+        } catch (InterruptedException e) {
+            //do nothing the user cancelled
+            return;
+        } catch (InvocationTargetException e) {
+            xslString = Either.left(ExceptionUtils.getMessage(e));
+        }
+
+        if (xslString.isLeft()) {
+            //An error occurred retrieving the document
+            xslDialog.displayError(resources.getString("error.urlnocontent") + " '" + urlstr + "'.\n" +
+                    "Due to: " + xslString.left(), null);
             return;
         }
 
         Document doc;
         try {
-            doc = XmlUtil.parse(xslString);
+            doc = XmlUtil.parse(xslString.right());
         } catch (SAXException e) {
             xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
@@ -220,7 +233,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
         // check if it's a xslt
         try {
             docIsXsl(doc, "2.0");
-            uiAccessibility.getEditor().setText(xslString);
+            uiAccessibility.getEditor().setText(xslString.right());
             //okButton.setEnabled(true);
         } catch (SAXException e) {
             xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + urlstr + ": " + ExceptionUtils.getMessage(e), null);

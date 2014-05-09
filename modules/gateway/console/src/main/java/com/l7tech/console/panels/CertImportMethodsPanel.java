@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
@@ -16,6 +17,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.WordUtils;
@@ -27,6 +29,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
@@ -36,6 +39,7 @@ import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -310,30 +314,34 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 return false;
             }
 
+            Either<String, X509Certificate[]> certChainJobResult;
             try {
+                TrustedCertAdmin trustedCertAdmin = getTrustedCertAdmin();
+                certChainJobResult = AdminGuiUtils.doAsyncAdmin(
+                        trustedCertAdmin,
+                        CertImportMethodsPanel.this.getOwner(),
+                        resources.getString("retrieving.via.ssl.dialog.title"),
+                        MessageFormat.format(resources.getString("retrieving.via.ssl.dialog.description"), certURL),
+                        trustedCertAdmin.retrieveCertFromUrlAsync(certURL, true));
 
-                certChain = getTrustedCertAdmin().retrieveCertFromUrl(certURL, true);
-
-            } catch (TrustedCertAdmin.HostnameMismatchException e) {
-                // This should never happen since we ask retrieveCertFromUrl() to ignore the mismatch
-                // It is a coding error if HostnameMismatchException is caught
-                logger.severe("Server coding error! Unexpected HostnameMismatchException caught");
-
+            } catch (InterruptedException e) {
+                //do nothing the user cancelled
                 return false;
+            } catch (InvocationTargetException e) {
+                certChainJobResult = Either.left(ExceptionUtils.getMessage(e));
+            }
 
-            } catch (IllegalArgumentException iae) {
-                 JOptionPane.showMessageDialog(this, iae.getMessage(),
-                                               resources.getString("view.error.title"),
-                                               JOptionPane.ERROR_MESSAGE);
-                return false;
-
-            } catch (IOException ioe) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.url.io.error") + "\n" +
-                        WordUtils.wrap(urlConnTextField.getText().trim(),
-                        Integer.valueOf(resources.getString("view.error.wrapCharLength")), null, true) + "\nPlease ensure the URL is correct.",
+            if (certChainJobResult.isLeft()) {
+                //An error occurred retrieving the document
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.url.io.error") + " " +
+                                WordUtils.wrap(urlConnTextField.getText().trim() + "\n" + certChainJobResult.left(),
+                                        Integer.valueOf(resources.getString("view.error.wrapCharLength")), null, true) + "\nPlease ensure the URL is correct.",
                         resources.getString("view.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.ERROR_MESSAGE
+                );
                 return false;
+            } else {
+                certChain = certChainJobResult.right();
             }
 
             if (certChain == null || certChain.length < 1) {

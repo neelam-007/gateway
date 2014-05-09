@@ -1,24 +1,26 @@
 package com.l7tech.server.globalresources;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.resources.*;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.service.ServiceDocumentResolver;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.Config;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
  * Resource administration implementation
  */
-public class ResourceAdminImpl implements ResourceAdmin {
+public class ResourceAdminImpl extends AsyncAdminMethodsImpl implements ResourceAdmin {
 
     //- PUBLIC
 
@@ -246,6 +248,23 @@ public class ResourceAdminImpl implements ResourceAdmin {
         }
 
         return serviceDocumentResolver.resolveDocumentTarget(url, type);
+    }
+
+    @Override
+    public AsyncAdminMethods.JobId<String> resolveResourceAsync(final String url) {
+        final FutureTask<String> resolveUrlTask = new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return resolveResource(url);
+            }
+        }));
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                resolveUrlTask.run();
+            }
+        }, 0L);
+        return registerJob(resolveUrlTask, String.class);
     }
     
     //- PRIVATE

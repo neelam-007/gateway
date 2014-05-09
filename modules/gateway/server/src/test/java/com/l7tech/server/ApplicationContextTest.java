@@ -57,6 +57,8 @@ public class ApplicationContextTest  {
     private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin");
+    //This is a set of getter methods to ignore when checking for getter read only transactional. The format is 'beanId.methodName'
+    private static final Set<String> TRANSACTIONAL_GETTER_METHOD_BLACKLIST = set("resourceAdmin.getJobStatus", "resourceAdmin.getJobResult");
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "debugAdmin", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager");
     private static final Set<String> SECURED_RETURNTYPE_WHITELIST = set(
             "com.l7tech.gateway.common.audit.AuditAdmin.getDigestsForAuditRecords",
@@ -425,7 +427,7 @@ public class ApplicationContextTest  {
                     boolean classReadonly = classTransAnn.readOnly() || classTransAnn.propagation()==Propagation.SUPPORTS;
 
                     for ( Method method : adminInterface.getMethods() ) {
-                        if ( method.getName().startsWith("get") ) {
+                        if (method.getName().startsWith("get") && !TRANSACTIONAL_GETTER_METHOD_BLACKLIST.contains(beanId + "." + method.getName())) {
                             Transactional transAnn = method.getAnnotation( Transactional.class );
                             if ( (transAnn!=null && !transAnn.readOnly() && transAnn.propagation()!=Propagation.SUPPORTS) || (transAnn==null && !classReadonly) ) {
                                 Assert.fail( "Administration bean '"+beanId+"' method '"+method.getName()+"', is a getter so should be Transactional(readOnly=true)." );

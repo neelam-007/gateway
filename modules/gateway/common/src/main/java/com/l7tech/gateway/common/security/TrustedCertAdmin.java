@@ -183,6 +183,17 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws IOException, HostnameMismatchException;
 
     /**
+     * This is the Async version of the {@link #retrieveCertFromUrl(String, boolean)} method.
+     *
+     * @param url the url from which to retrieve the cert.
+     * @param ignoreHostname whether or not the hostname match should be ignored when doing ssl handshake
+     * @return an {@link X509Certificate} chain.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=TRUSTED_CERT, stereotype = TEST_CONFIGURATION)
+    public JobId<X509Certificate[]> retrieveCertFromUrlAsync(final String url, final boolean ignoreHostname);
+
+    /**
      * Get the gateway's root cert.
      * @return the gateway's root cert
      * @throws IOException if the certificate cannot be retrieved

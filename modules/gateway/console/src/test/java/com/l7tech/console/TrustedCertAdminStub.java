@@ -86,6 +86,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public JobId<X509Certificate[]> retrieveCertFromUrlAsync(String url, boolean ignoreHostname) {
+        return null;
+    }
+
+    @Override
     public X509Certificate getSSGRootCert() throws IOException, CertificateException {
         return null;
     }

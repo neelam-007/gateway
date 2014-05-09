@@ -1,6 +1,5 @@
 package com.l7tech.server.service;
 
-import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -11,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.uddi.WsdlPortInfo;
@@ -86,7 +86,17 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
+    public JobId<String> resolveUrlTargetAsync(final String url, final String maxSizeClusterProperty) {
+        return null;
+    }
+
+    @Override
     public String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException {
+        return null;
+    }
+
+    @Override
+    public JobId<String> resolveUrlTargetAsync(String url, DownloadDocumentType docType) {
         return null;
     }
 

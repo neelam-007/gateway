@@ -114,6 +114,17 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     String resolveUrlTarget(String url, String maxSizeClusterProperty) throws IOException;
 
     /**
+     * This is the Async version of the {@link #resolveUrlTarget(String, String)} method.
+     *
+     * @param url                    String URL to download the document from
+     * @param maxSizeClusterProperty cluster property which will limit the maximum size of the document at the url. Required
+     * @return the contents resolved by this url
+     */
+    @Transactional(propagation = SUPPORTS)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    JobId<String> resolveUrlTargetAsync(String url, String maxSizeClusterProperty);
+
+    /**
      * Get a document from a URL.
      * <p/>
      * URL may be http or https with or without client auth, and may contain authentication information
@@ -127,6 +138,18 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     @Transactional(propagation = SUPPORTS)
     @Secured(stereotype=UNCHECKED_WIDE_OPEN)
     String resolveUrlTarget(String url, DownloadDocumentType docType) throws IOException;
+
+    /**
+     * This is the Async version of the {@link #resolveUrlTarget(String, com.l7tech.gateway.common.service.ServiceAdmin.DownloadDocumentType)}
+     * method.
+     *
+     * @param url     String URL to download the document from
+     * @param docType DownloadDocumentType type of document, which will govern it's max download size
+     * @return the contents resolved by this url
+     */
+    @Transactional(propagation = SUPPORTS)
+    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
+    JobId<String> resolveUrlTargetAsync(String url, DownloadDocumentType docType);
 
     /**
      * Retrieve all available service documents for the given published service.
