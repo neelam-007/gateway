@@ -133,7 +133,7 @@ public class ServiceCache
                     try {
                         tasker.checkIntegrity();
                     } catch(Exception e) {
-                        logger.log(Level.WARNING, "Error checking service cache integrity.", e);
+                        logger.log(Level.WARNING, "Error checking service cache integrity.", ExceptionUtils.getDebugException(e));
                     }
                 }
             };
