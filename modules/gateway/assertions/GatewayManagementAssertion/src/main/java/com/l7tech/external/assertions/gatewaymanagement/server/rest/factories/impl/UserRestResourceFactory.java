@@ -8,9 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
-import com.l7tech.gateway.api.CertificateData;
-import com.l7tech.gateway.api.PasswordFormatted;
-import com.l7tech.gateway.api.UserMO;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -36,9 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -76,30 +72,45 @@ public class UserRestResourceFactory {
     @Inject
     private ClientCertManager clientCertManager;
 
-    public List<UserMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
+    public List<UserMO> listResources(final String sortKey, final Boolean asc, @NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
         try {
             UserManager userManager  = retrieveUserManager(providerId);
-            List<IdentityHeader> users = new ArrayList<>();
-            if(filters.containsKey("login")){
+            List<User> users = new ArrayList<>();
+            if(filters!=null && filters.containsKey("login")){
                 for(Object login: filters.get("login")){
-                    users.add(userManager.userToHeader(userManager.findByLogin(login.toString())));
-                }
-            }else if(filters.containsKey("id")){
-                for(Object id: filters.get("id")){
-                    users.add(userManager.userToHeader(userManager.findByPrimaryKey(id.toString())));
+                    User user =  userManager.findByLogin(login.toString());
+                    if(user!=null){
+                        users.add(user);
+                    }
                 }
             }else{
-                users.addAll(userManager.findAllHeaders());
+                Collection<IdentityHeader> userHeaders = userManager.findAllHeaders();
+                for(IdentityHeader idHeader: userHeaders){
+                    users.add(userManager.findByPrimaryKey(idHeader.getStrId()));
+                }
             }
             users = rbacAccessService.accessFilter(users, EntityType.USER, OperationType.READ, null);
-            return Functions.map(users, new Functions.Unary<UserMO, IdentityHeader>() {
-                @Override
-                public UserMO call(IdentityHeader userHeader) {
-                    if(userHeader.getType().equals(EntityType.USER))
-                    {
-                        return userTransformer.convertToMO(userHeader);
+
+            // sort list
+            if (sortKey != null) {
+                Collections.sort(users, new Comparator<User>() {
+                    @Override
+                    public int compare(User o1, User o2) {
+                    if (sortKey.equals("login")) {
+                        return (asc == null || asc) ? o1.getLogin().compareTo(o2.getLogin()) : o2.getLogin().compareTo(o1.getLogin());
                     }
-                    return null;
+                    if (sortKey.equals("id")) {
+                        return (asc == null || asc) ? o1.getId().compareTo(o2.getId()) : o2.getId().compareTo(o1.getId());
+                    }
+                    return 0;
+                    }
+                });
+            }
+
+            return Functions.map(users, new Functions.Unary<UserMO, User>() {
+                @Override
+                public UserMO call(User user) {
+                    return userTransformer.convertToMO(user);
                 }
             });
         } catch (FindException e) {

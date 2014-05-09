@@ -143,6 +143,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         Item<UserMO> item = MarshallingUtils.unmarshal(Item.class, source);
         assertEquals("User Name:", userMO.getLogin(), item.getName());
         assertEquals(EntityType.USER.toString(), item.getType());
+        assertNull(item.getContent());
 
         String userId = item.getId();
         usersToCleanup.add(userId);
@@ -249,6 +250,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertEquals("User Name:", userMO.getLogin(), item.getName());
         assertEquals("User id:", userMO.getId(), item.getId());
         assertEquals(EntityType.USER.toString(), item.getType());
+        assertNull(item.getContent());
 
         User user = internalUserManager.findByPrimaryKey(userMO.getId());
 

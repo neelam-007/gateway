@@ -428,6 +428,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
     @Test
     public void testListEntities() throws Exception {
         Map<String, List<String>> listQueryAndExpectedResults = getListQueryAndExpectedResults();
+        boolean checkOrder = getDefaultListIsOrdered();
 
         Assert.assertNotNull("must have the empty query for a list all", listQueryAndExpectedResults.get(""));
         Assert.assertTrue("must have at least 2 listable elements", listQueryAndExpectedResults.get("").size() > 1);
@@ -437,28 +438,32 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             logger.log(Level.FINE, response.toString());
             List<String> expectedIds = listQueryAndExpectedResults.get(query);
 
-            testList(query, response, expectedIds);
+            testList(query, response, expectedIds, !query.isEmpty() ||  checkOrder);
 
             if (query.isEmpty()) {
                 List<String> orderedList = new ArrayList<>(expectedIds);
                 Collections.sort(orderedList);
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName() + "&order=asc", HttpMethod.GET, null, "");
-                testList("sort=" + getIdName() + "&order=asc", response, orderedList);
+                testList("sort=" + getIdName() + "&order=asc", response, orderedList,checkOrder);
 
                 //test without specifying order SSG-8451
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName(), HttpMethod.GET, null, "");
-                testList("sort=" + getIdName(), response, orderedList);
+                testList("sort=" + getIdName(), response, orderedList,checkOrder);
 
                 List<String> reverseList = new ArrayList<>(expectedIds);
                 Collections.sort(reverseList);
                 Collections.reverse(reverseList);
 
                 response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "sort=" + getIdName() + "&order=desc", HttpMethod.GET, null, "");
-                testList("sort=" + getIdName() + "&order=desc", response, reverseList);
+                testList("sort=" + getIdName() + "&order=desc", response, reverseList,checkOrder);
 
             }
         }
+    }
+
+    protected boolean getDefaultListIsOrdered() {
+        return false;
     }
 
     protected String getIdName() {
@@ -471,7 +476,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         InternalUser user = createUnprivilegedUser();
         try {
             RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
-            testList("", response, Collections.<String>emptyList());
+            testList("", response, Collections.<String>emptyList(), true);
         } finally {
             userManager.delete(user);
         }
@@ -522,7 +527,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         Assert.assertNotNull("template must not be null", item.getContent());
     }
 
-    protected void testList(String query, RestResponse response, List<String> expectedIds) throws java.io.IOException {
+    protected void testList(String query, RestResponse response, List<String> expectedIds, boolean checkOrder) throws java.io.IOException {
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Expected successful response", 200, response.getStatus());
         Assert.assertNotNull("Error for search Query: " + query + "Message: " + "Expected not null response body", response.getBody());
@@ -546,10 +551,16 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         } else {
             Assert.assertNotNull("Error for search Query: " + query, references);
             Assert.assertEquals("Error for search Query: " + query, expectedIds.size(), references.size());
-            for (int i = 0; i < expectedIds.size(); i++) {
-                Item<M> entity = references.get(i);
+            if(checkOrder) {
+                for (int i = 0; i < expectedIds.size(); i++) {
+                    Item<M> entity = references.get(i);
 
-                Assert.assertEquals("Error for search Query: " + query + "Message: " + "Returned entities are either incorrect or in the wrong order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), getId(entity.getContent()));
+                    Assert.assertEquals("Error for search Query: " + query + "Message: " + "Returned entities are either incorrect or in the wrong order. Expected item " + i + " to have a different ID. Expected Order: " + expectedIds.toString() + "\nActual Response:\n" + response.toString(), expectedIds.get(i), getId(entity.getContent()));
+                }
+            }else{
+                for(Item<M> ref: references){
+                    Assert.assertTrue("Error for search Query: " + query + "Message:" + "Item not expected:" + ref.getId(), expectedIds.contains(ref.getId()));
+                }
             }
         }
     }

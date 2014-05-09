@@ -228,7 +228,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 @Override
                 public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE);
-                    q.setString(0, identifier);
+                    q.setParameter(0, Goid.parseGoid(identifier));
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());
                     }

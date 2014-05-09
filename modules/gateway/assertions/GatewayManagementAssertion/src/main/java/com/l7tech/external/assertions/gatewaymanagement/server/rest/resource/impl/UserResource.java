@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.UserRestResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
@@ -79,6 +80,9 @@ public class UserResource implements URLAccessible<UserMO> {
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
+     * @param sort            the key to sort the list by.
+     * @param order           the order to sort the list. true for ascending, false for descending. null implies
+     *                        ascending
      * @param logins The login filter
      * @return A list of entities. If the list is empty then no entities were found.
      */
@@ -88,14 +92,18 @@ public class UserResource implements URLAccessible<UserMO> {
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<UserMO> list(
+            @QueryParam("sort") @ChoiceParam({"id", "login"}) String sort,
+            @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("login") List<String> logins) throws ResourceFactory.ResourceNotFoundException {
+
+        Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("login"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (logins != null && !logins.isEmpty()) {
             filters.put("login", (List) logins);
         }
-        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(providerId, filters.map()), new Functions.Unary<Item<UserMO>, UserMO>() {
+        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(sort,ascendingSort,providerId, filters.map()), new Functions.Unary<Item<UserMO>, UserMO>() {
             @Override
             public Item<UserMO> call(UserMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -257,6 +265,21 @@ public class UserResource implements URLAccessible<UserMO> {
         userRestResourceFactory.revokeCertificate(providerId, id);
     }
 
+    /**
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
+     *
+     * @return The template entity.
+     */
+    @GET
+    @Path("template")
+    public Item<UserMO> template() {
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(providerId);
+        userMO.setLogin("Login");
+        return createTemplateItem(userMO);
+    }
+
     @NotNull
     @Override
     public String getResourceType() {
@@ -288,6 +311,7 @@ public class UserResource implements URLAccessible<UserMO> {
     @Override
     public List<Link> getRelatedLinks(@Nullable final UserMO user) {
         return Arrays.asList(
+                ManagedObjectFactory.createLink("template", getUrlString(providerId,"template")),
                 ManagedObjectFactory.createLink("list", getUrlString(providerId,null)));
     }
 
@@ -300,5 +324,13 @@ public class UserResource implements URLAccessible<UserMO> {
             uriBuilder.path(userId);
         }
         return uriBuilder.build().toString();
+    }
+
+    protected Item<UserMO> createTemplateItem(@NotNull final UserMO resource) {
+        return new ItemBuilder<UserMO>(getResourceType() + " Template", getResourceType())
+                .addLink(ManagedObjectFactory.createLink("self", getUrlString(providerId,"template")))
+                .addLinks(getRelatedLinks(resource))
+                .setContent(resource)
+                .build();
     }
 }
