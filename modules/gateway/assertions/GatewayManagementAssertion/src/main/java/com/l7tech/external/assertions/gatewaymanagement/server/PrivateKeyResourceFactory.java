@@ -492,6 +492,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
                     } catch ( ExecutionException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                    } catch (IllegalArgumentException e) {
+                        return left(new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage()));
                     }
 
                     return right( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );

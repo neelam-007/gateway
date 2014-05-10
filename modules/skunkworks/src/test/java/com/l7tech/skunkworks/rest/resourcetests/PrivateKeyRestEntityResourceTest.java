@@ -232,6 +232,44 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         return builder.map();
     }
 
+    @Test
+    public void createPrivateKeysFailed() throws Exception {
+        Map<String, PrivateKeyCreationContext> privateKeyCreationContexts = new HashMap<>();
+
+        //invalid algorithm
+        PrivateKeyCreationContext privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setDn("CN=invalid_algorithm");
+        privateKeyCreationContext.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("signatureHashAlgorithm", "INVALID")
+                .map());
+        privateKeyCreationContexts.put(defaultKeystoreId + ":invalid_algorithm", privateKeyCreationContext);
+
+        //duplicate alias
+        privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setDn(ssgKeyEntries.get(1).getSubjectDN());
+        privateKeyCreationContexts.put(ssgKeyEntries.get(1).getId(), privateKeyCreationContext);
+
+        //invalid expiry days
+        privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setDn("CN=invalid_expiry_days");
+        privateKeyCreationContext.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("daysUntilExpiry", -1)
+                .map());
+        privateKeyCreationContexts.put(defaultKeystoreId + ":invalid_expiry_days", privateKeyCreationContext);
+
+        //invalid dn
+        privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setDn("invalid_dn");
+        privateKeyCreationContexts.put(defaultKeystoreId + ":invalid_dn", privateKeyCreationContext);
+
+        for (Map.Entry<String, PrivateKeyCreationContext> keyCreationContextEntry : privateKeyCreationContexts.entrySet()) {
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + keyCreationContextEntry.getKey(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(keyCreationContextEntry.getValue())));
+
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals("Expected successful response", 400, response.getStatus());
+        }
+    }
+
     @Override
     public Map<PrivateKeyMO, Functions.BinaryVoid<PrivateKeyMO, RestResponse>> getUnUpdateableManagedObjects() {
         CollectionUtils.MapBuilder<PrivateKeyMO, Functions.BinaryVoid<PrivateKeyMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();

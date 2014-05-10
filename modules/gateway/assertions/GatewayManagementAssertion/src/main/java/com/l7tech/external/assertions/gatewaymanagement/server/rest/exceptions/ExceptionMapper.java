@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions;
 
+import com.l7tech.common.io.DuplicateAliasException;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -95,6 +96,14 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             } else if( ExceptionUtils.causedBy(e, IllegalArgumentException.class))  {
                 final IllegalArgumentException cause = ExceptionUtils.getCauseIfCausedBy( e, IllegalArgumentException.class );
                 logger.log( Level.WARNING, ExceptionUtils.getMessage(cause), ExceptionUtils.getDebugException(e) );
+                errorResponse.setType("InvalidResource");
+                errorResponse.setDetail(ExceptionUtils.getMessageWithCause(cause));
+                status = Response.Status.BAD_REQUEST;
+            } else if( ExceptionUtils.causedBy(e, DuplicateAliasException.class))  {
+                final DuplicateAliasException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateAliasException.class );
+                logger.log( Level.WARNING, ExceptionUtils.getMessage(cause), ExceptionUtils.getDebugException(e) );
+                errorResponse.setType("InvalidResource");
+                errorResponse.setDetail(ExceptionUtils.getMessageWithCause(cause));
                 status = Response.Status.BAD_REQUEST;
             } else{
                 logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
