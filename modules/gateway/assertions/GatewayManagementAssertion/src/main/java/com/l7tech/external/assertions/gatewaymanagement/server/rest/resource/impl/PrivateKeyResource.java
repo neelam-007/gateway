@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Par
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PrivateKeyTransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
 import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
 import com.l7tech.gateway.rest.SpringBean;
@@ -179,10 +180,13 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * Export a private key. You can specify a password to secure the private key with.
+     * Export a private key.
      *
-     * @param id       The id of the key to export
-     * @param password The password to export the private key with
+     * @param id                      The id of the key to export
+     * @param privateKeyExportContext The export key context. This contains a password to secure the exported key with.
+     *                                The password must always be specified but can be the empty string to specify no
+     *                                password. This can also specify the alias to export the private key with. If no
+     *                                alias is specified the key will be exported with its current alias.
      * @return The exported private key
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
@@ -190,10 +194,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @PUT
     @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/export")
-    public Item<PrivateKeyExportResult> exportPrivateKey(@PathParam("id") final String id, final Password password) throws ResourceFactory.ResourceNotFoundException, FindException {
-        final String alias = id.substring(id.indexOf(":") + 1);
-        final String passwordString = (password != null && password.getValue() != null) ? password.getValue() : "";
-        final PrivateKeyExportResult exportResult = factory.exportResource(id, passwordString, alias);
+    public Item<PrivateKeyExportResult> exportPrivateKey(@PathParam("id") final String id, final PrivateKeyExportContext privateKeyExportContext) throws ResourceFactory.ResourceNotFoundException, FindException {
+        final PrivateKeyExportResult exportResult = factory.exportResource(id, privateKeyExportContext.getPassword(), privateKeyExportContext.getAlias());
         final PrivateKeyExportResult restExport = new PrivateKeyExportResult();
         restExport.setPkcs12Data(exportResult.getPkcs12Data());
         return new ItemBuilder<PrivateKeyExportResult>(id + " Export", id, getResourceType() + "Export")
@@ -207,7 +209,10 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * Import a private key.
      *
      * @param id                      The id to import the key into
-     * @param privateKeyImportContext The private key to import
+     * @param privateKeyImportContext The private key to import. This contains the key data. It contains the password
+     *                                that the key is secured with. An Alias can also be given to specify which alias to
+     *                                use if the key given contains more then one alias. By default the first alias in
+     *                                the given key is used.
      * @return A reference to the newly imported private key.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
@@ -278,5 +283,63 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         certificateData.setEncoded("encoded".getBytes());
         privateKeyMO.setCertificateChain(Arrays.asList(certificateData));
         return super.createTemplateItem(privateKeyMO);
+    }
+
+    /**
+     * This will return a template import context.
+     *
+     * @return The template private key import context.
+     */
+    @GET
+    @Path("template/privatekeyimportcontext")
+    public Item<PrivateKeyImportContext> templatePrivateKeyImportContext() {
+        PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
+        privateKeyImportContext.setPkcs12Data("keyData".getBytes());
+        privateKeyImportContext.setPassword("password");
+        privateKeyImportContext.setAlias("keyAlias");
+        return new ItemBuilder<PrivateKeyImportContext>("PrivateKeyImportContext Template", "PrivateKeyImportContext")
+                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeyimportcontext")))
+                .setContent(privateKeyImportContext)
+                .build();
+    }
+
+    /**
+     * This will return a template export context.
+     *
+     * @return The template private key export context.
+     */
+    @GET
+    @Path("template/privatekeyexportcontext")
+    public Item<PrivateKeyExportContext> templatePrivateKeyExportContext() {
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        privateKeyExportContext.setPassword("password");
+        privateKeyExportContext.setAlias("keyAlias");
+        return new ItemBuilder<PrivateKeyExportContext>("PrivateKeyExportContext Template", "PrivateKeyExportContext")
+                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeyexportcontext")))
+                .setContent(privateKeyExportContext)
+                .build();
+    }
+
+    /**
+     * This will return a template key creation context.
+     *
+     * @return The template private key creation context.
+     */
+    @GET
+    @Path("template/privatekeycreationcontext")
+    public Item<PrivateKeyCreationContext> templatePrivateKeyCreationContext() {
+        PrivateKeyCreationContext privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setDn("CN=keyAlias");
+        privateKeyCreationContext.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .put("rsaKeySize", 516)
+                .put("daysUntilExpiry", 2)
+                .put("caCapable", true)
+                .put("signatureHashAlgorithm", "SHA384")
+                .map());
+        return new ItemBuilder<PrivateKeyCreationContext>("PrivateKeyCreationContext Template", "PrivateKeyCreationContext")
+                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeycreationcontext")))
+                .setContent(privateKeyCreationContext)
+                .build();
     }
 }

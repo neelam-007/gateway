@@ -5,6 +5,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
 import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -453,8 +454,12 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
 
     @Test
     public void exportKey() throws Exception {
-        Password password = ManagedObjectFactory.createPassword();
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(password));
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        String password = "password";
+        String alias = ssgKeyEntries.get(0).getAlias();
+        privateKeyExportContext.setPassword(password);
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Item<PrivateKeyExportResult> item = MarshallingUtils.unmarshal(Item.class, source);
@@ -464,15 +469,20 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         Assert.assertNotNull(export.getPkcs12Data());
         Assert.assertTrue(export.getPkcs12Data().length > 0);
 
+        //test that the key is ok
         KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), "".toCharArray());
+        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
+        Assert.assertTrue(ks.containsAlias(alias));
     }
 
     @Test
-    public void exportKeyWithPassword() throws Exception {
-        Password password = ManagedObjectFactory.createPassword();
-        password.setValue("Password");
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(password));
+    public void exportKeyNoPassword() throws Exception {
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        String password = "";
+        String alias = ssgKeyEntries.get(0).getAlias();
+        privateKeyExportContext.setPassword(password);
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
 
         final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Item<PrivateKeyExportResult> item = MarshallingUtils.unmarshal(Item.class, source);
@@ -482,14 +492,42 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         Assert.assertNotNull(export.getPkcs12Data());
         Assert.assertTrue(export.getPkcs12Data().length > 0);
 
+        //test that the key is ok
         KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.getValue().toCharArray());
+        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
+        Assert.assertTrue(ks.containsAlias(alias));
+    }
+
+    @Test
+    public void exportKeyDifferentAlias() throws Exception {
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        String password = "password";
+        String alias = "myNewAlias";
+        privateKeyExportContext.setPassword(password);
+        privateKeyExportContext.setAlias(alias);
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyExportResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeyExportResult export = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(export.getPkcs12Data());
+        Assert.assertTrue(export.getPkcs12Data().length > 0);
+
+        //test that the key is ok
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
+        Assert.assertTrue(ks.containsAlias(alias));
     }
 
     @Test
     public void exportKeyFailNotExisting() throws Exception {
-        Password password = ManagedObjectFactory.createPassword();
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + defaultKeystoreId + ":badAlias" + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(password));
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        String password = "password";
+        privateKeyExportContext.setPassword(password);
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + defaultKeystoreId + ":badAlias" + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
 
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(404, response.getStatus());
@@ -546,5 +584,41 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
 
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void exportImportKey() throws Exception {
+        //EXPORT
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        String password = "password";
+        String alias = "myNewAlias";
+        privateKeyExportContext.setPassword(password);
+        privateKeyExportContext.setAlias(alias);
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyExportResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeyExportResult export = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(export.getPkcs12Data());
+        Assert.assertTrue(export.getPkcs12Data().length > 0);
+
+        //test that the key is ok
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
+        Assert.assertTrue(ks.containsAlias(alias));
+
+        //IMPORT
+        PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
+        privateKeyImportContext.setPkcs12Data(export.getPkcs12Data());
+        privateKeyImportContext.setPassword(password);
+        privateKeyImportContext.setAlias(alias);
+
+        String importId = defaultKeystoreId.toString() + ":importtest";
+        response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + importId + "/import", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyImportContext));
+
+        verifyMOResponse(importId, response);
     }
 }
