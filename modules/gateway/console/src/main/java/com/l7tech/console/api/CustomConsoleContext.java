@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.ServiceException;
+import com.l7tech.policy.assertion.ext.VariableServices;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
@@ -46,6 +47,10 @@ public class CustomConsoleContext {
 
     public static void addKeyValueStoreServices(Map<String, Object> consoleContext) {
         consoleContext.put(KeyValueStoreServices.CONSOLE_CONTEXT_KEY, new KeyValueStoreServicesImpl());
+    }
+
+    public static void addVariableServices(Map<String, Object> consoleContext, CustomAssertionHolder customAssertionHolder, Assertion previousAssertion) {
+        consoleContext.put(VariableServices.CONSOLE_CONTEXT_KEY, new VariableServicesImpl(customAssertionHolder, previousAssertion));
     }
 
     public static boolean isSupportedDataType(Type dataType) {

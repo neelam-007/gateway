@@ -10,6 +10,7 @@ import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.AssertionEditor;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
@@ -127,10 +128,12 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         try {
             customAssertionUI = registrar.getUI(cah.getCustomAssertion().getClass().getName());
             if (customAssertionUI instanceof UsesConsoleContext) {
-                Map<String, Object> consoleContext = new HashMap<>(3);
+                Map<String, Object> consoleContext = new HashMap<>(4);
                 addCustomExtensionInterfaceFinder(consoleContext);
-                addCommonUIServices(consoleContext, cah, ((AssertionTreeNode) node.getPreviousNode()).asAssertion());
+                Assertion previousAssertion = ((AssertionTreeNode) node.getPreviousNode()).asAssertion();
+                addCommonUIServices(consoleContext, cah, previousAssertion);
                 addKeyValueStoreServices(consoleContext);
+                addVariableServices(consoleContext, cah, previousAssertion);
                 ((UsesConsoleContext) customAssertionUI).setConsoleContextUsed(consoleContext);
             }
             registrarCalled = true;

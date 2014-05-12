@@ -4,17 +4,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.SetVariableAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
 import com.l7tech.policy.assertion.ext.commonui.CustomSecurePasswordPanel;
 import com.l7tech.policy.assertion.ext.commonui.CustomTargetVariablePanel;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
 import junit.framework.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,9 +31,6 @@ public class CommonUIServicesTest {
 
     @Mock
     private TrustedCertAdmin trustedCertAdmin;
-
-    @Mock
-    private GuidBasedEntityManager<Policy> policyFinder;
 
     @Test
     @Ignore("Developer Test")
@@ -100,65 +90,6 @@ public class CommonUIServicesTest {
         Assert.assertFalse(securePasswordPanel.containsItem(new Goid(0,1001L).toString()));
         Assert.assertTrue(securePasswordPanel.containsItem(new Goid(0,1002L).toString()));
         Assert.assertTrue(securePasswordPanel.containsItem(new Goid(0,1003L).toString()));
-    }
-
-    @Test
-    public void testGetVariablesSetByPredecessorsAddAssertion() throws Exception {
-        // Test scenario when an assertion is added to policy.
-        //
-        Registry.setDefault(registry);
-        when(registry.getPolicyFinder()).thenReturn(policyFinder);
-
-        // Setup test data.
-        //
-        SetVariableAssertion previousAssertion = new SetVariableAssertion();
-        previousAssertion.setDataType(DataType.STRING);
-        previousAssertion.setVariableToSet("test_var_name");
-        CustomAssertionHolder cah = new CustomAssertionHolder();
-
-        Map<String, Object> consoleContext = new HashMap<>(1);
-        CustomConsoleContext.addCommonUIServices(consoleContext, cah, previousAssertion);
-        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get(CommonUIServices.CONSOLE_CONTEXT_KEY);
-
-        Map<String, VariableMetadata> vars = commonUIServices.getVariablesSetByPredecessors();
-        Assert.assertNotNull(vars);
-        Assert.assertEquals(1, vars.size());
-        VariableMetadata var = vars.get("test_var_name");
-        Assert.assertNotNull(var);
-        Assert.assertEquals(DataType.STRING, var.getType());
-    }
-
-    @Test
-    public void testGetVariablesSetByPredecessorsExistingAssertion() throws Exception {
-        // Test scenario when an assertion is already in policy.
-        //
-        Registry.setDefault(registry);
-        when(registry.getPolicyFinder()).thenReturn(policyFinder);
-
-        // Setup test assertion.
-        //
-        SetVariableAssertion previousAssertion = new SetVariableAssertion();
-        previousAssertion.setDataType(DataType.MESSAGE);
-        previousAssertion.setVariableToSet("test_var_name");
-        CustomAssertionHolder cah = new CustomAssertionHolder();
-
-        List<Assertion> children = new ArrayList<>(3);
-        children.add(previousAssertion);
-        children.add(cah);
-
-        @SuppressWarnings("UnusedDeclaration")
-        AllAssertion allAssertion = new AllAssertion(children);
-
-        Map<String, Object> consoleContext = new HashMap<>(1);
-        CustomConsoleContext.addCommonUIServices(consoleContext, cah, previousAssertion);
-        CommonUIServices commonUIServices = (CommonUIServices) consoleContext.get(CommonUIServices.CONSOLE_CONTEXT_KEY);
-
-        Map<String, VariableMetadata> vars = commonUIServices.getVariablesSetByPredecessors();
-        Assert.assertNotNull(vars);
-        Assert.assertEquals(1, vars.size());
-        VariableMetadata var = vars.get("test_var_name");
-        Assert.assertNotNull(var);
-        Assert.assertEquals(DataType.MESSAGE, var.getType());
     }
 
     private List<SecurePassword> createSecurePasswordList() {

@@ -73,10 +73,11 @@ public class CreateMissingCustomKeyValueEntityDialog extends JDialog {
 
         this.propertiesPanel = propertiesPanel;
 
-        final Map<String, Object> consoleContext = new HashMap<>(3);
+        final Map<String, Object> consoleContext = new HashMap<>(4);
         addCustomExtensionInterfaceFinder(consoleContext);
         addCommonUIServices(consoleContext, null, null);
         addKeyValueStoreServices(consoleContext);
+        addVariableServices(consoleContext, null, null);
         this.propertiesPanel.setConsoleContextUsed(consoleContext);
         this.propertiesPanel.initialize(entity);
 

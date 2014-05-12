@@ -416,7 +416,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         //add the ServiceFinder
         final ServiceFinderImpl serviceFinder = new ServiceFinderImpl();
         serviceFinder.setCertificateFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager")));
-        serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit()));
+        serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit(), data));
         serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
         serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl((CustomKeyValueStoreManager) applicationContext.getBean("customKeyValueStoreManager")));
 

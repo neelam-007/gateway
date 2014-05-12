@@ -2,6 +2,7 @@ package com.l7tech.console.api;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.VariableServices;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceFinder;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
@@ -89,6 +90,19 @@ public class CustomConsoleContextTest {
 
         KeyValueStoreServices keyValueStoreServices = (KeyValueStoreServices) consoleContext.get(KeyValueStoreServices.CONSOLE_CONTEXT_KEY);
         assertNotNull(keyValueStoreServices);
+    }
+
+    @Test
+    public void addVariableServices() throws Exception {
+        // Test only for existence of VariableServices in the console context.
+        // The actual testing of VariableServices is implemented in
+        // com.l7tech.console.api.VariableServicesTest.
+        //
+        Map<String, Object> consoleContext = new HashMap<>(1);
+        CustomConsoleContext.addVariableServices(consoleContext, new CustomAssertionHolder(), null);
+
+        VariableServices variableServices = (VariableServices) consoleContext.get(VariableServices.CONSOLE_CONTEXT_KEY);
+        assertNotNull(variableServices);
     }
 
     private interface CustomExtensionInterfaceTestMethodSignatures {

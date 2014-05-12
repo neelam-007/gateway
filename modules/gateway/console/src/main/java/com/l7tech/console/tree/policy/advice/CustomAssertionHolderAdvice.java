@@ -93,10 +93,12 @@ public class CustomAssertionHolderAdvice implements Advice {
         AssertionEditor editor = null;
         if (customAssertionUI != null) {
             if (customAssertionUI instanceof UsesConsoleContext) {
-                Map<String, Object> consoleContext = new HashMap<>(3);
+                Map<String, Object> consoleContext = new HashMap<>(4);
                 addCustomExtensionInterfaceFinder(consoleContext);
-                addCommonUIServices(consoleContext, cah, pc.getChildLocation() == 0 ? pc.getParent().asAssertion() : ((AssertionTreeNode) (pc.getParent().getChildAt(pc.getChildLocation()-1))).asAssertion());
+                Assertion previousAssertion = pc.getChildLocation() == 0 ? pc.getParent().asAssertion() : ((AssertionTreeNode) (pc.getParent().getChildAt(pc.getChildLocation()-1))).asAssertion();
+                addCommonUIServices(consoleContext, cah, previousAssertion);
                 addKeyValueStoreServices(consoleContext);
+                addVariableServices(consoleContext, cah, previousAssertion);
                 ((UsesConsoleContext) customAssertionUI).setConsoleContextUsed(consoleContext);
             }
             editor = customAssertionUI.getEditor(cah.getCustomAssertion());

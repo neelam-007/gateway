@@ -74,10 +74,11 @@ public class CustomAssertionHolderAction extends BaseAction {
     @Override
     protected void performAction() {
         if (customTaskActionUi instanceof UsesConsoleContext) {
-            Map<String, Object> consoleContext = new HashMap<>(3);
+            Map<String, Object> consoleContext = new HashMap<>(4);
             addCustomExtensionInterfaceFinder(consoleContext);
             addCommonUIServices(consoleContext, null, null);
             addKeyValueStoreServices(consoleContext);
+            addVariableServices(consoleContext, null, null);
             ((UsesConsoleContext) customTaskActionUi).setConsoleContextUsed(consoleContext);
         }
 
