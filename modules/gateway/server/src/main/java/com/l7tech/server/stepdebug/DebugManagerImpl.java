@@ -252,6 +252,21 @@ public class DebugManagerImpl implements DebugManager {
         }
     }
 
+    //- PACKAGE
+
+    void cleanUp() {
+        // Cleanup debugContexts. Intended to be used only by JUnit test.
+        //
+        for (DebugContext context : debugTasks.values()) {
+            this.terminateDebug(context.getTaskId());
+        }
+
+        debugTasks.clear();
+        waitingForMsg.clear();
+    }
+
+    //- PRIVATE
+
     @NotNull
     private DebugContext getDebugContextFailIfNull(@NotNull String taskId) {
         return debugTasks.get(taskId);

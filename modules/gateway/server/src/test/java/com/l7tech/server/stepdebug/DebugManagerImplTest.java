@@ -82,14 +82,9 @@ public class DebugManagerImplTest {
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp, true);
 
         // Cleanup. Each test method should have stopped or terminated its debugger context.
-        // In case it didn't cleanup here, so that it prevent other test methods to execute.
+        // In case it didn't, cleanup here so that it does not prevent other test methods to execute.
         //
-        if (debugContext != null) {
-            if (!debugContext.isTerminated() &&
-                !DebugState.STOPPED.equals(debugContext.getDebugState())) {
-                debugContext.stopDebugging();
-            }
-        }
+        debugManager.cleanUp();
 
         debugContext = debugManager.createDebugContext(POLICY_GOID);
         Assert.assertEquals(DebugState.STOPPED, debugContext.getDebugState());
