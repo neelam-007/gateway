@@ -4,10 +4,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
-import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.*;
@@ -620,5 +617,44 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + importId + "/import", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyImportContext));
 
         verifyMOResponse(importId, response);
+    }
+
+    @Test
+    public void generateCSRSpecifyDN() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "csrSubjectDN=CN%3DmyCSRCN", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyGenerateCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeyGenerateCsrResult.getCsrData());
+        Assert.assertTrue(privateKeyGenerateCsrResult.getCsrData().length > 0);
+    }
+
+    @Test
+    public void generateCSRSpecifyDNAndHash() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "csrSubjectDN=CN%3DmyCSRCN&signatureHash=SHA256", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyGenerateCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeyGenerateCsrResult.getCsrData());
+        Assert.assertTrue(privateKeyGenerateCsrResult.getCsrData().length > 0);
+    }
+
+    @Test
+    public void generateCSR() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyGenerateCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeyGenerateCsrResult.getCsrData());
+        Assert.assertTrue(privateKeyGenerateCsrResult.getCsrData().length > 0);
     }
 }

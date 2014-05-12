@@ -5,13 +5,11 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.WsmanBaseResourceFactory;
 import com.l7tech.gateway.api.PrivateKeyCreationContext;
 import com.l7tech.gateway.api.PrivateKeyMO;
-import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
-import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
-import com.l7tech.gateway.api.impl.PrivateKeySpecialPurposeContext;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -55,6 +53,15 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
         ctx.setSpecialPurposes(purpose);
         ctx.setId(id);
         return factory.setSpecialPurposes(CollectionUtils.<String, String>mapBuilder().put("id", id).map(),ctx);
+    }
+
+    public PrivateKeyGenerateCsrResult generateCSR(@NotNull String id, @Nullable String dn, @Nullable String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        PrivateKeyGenerateCsrContext ctx = new PrivateKeyGenerateCsrContext();
+        ctx.setDn(dn);
+        if (signatureHash != null) {
+            ctx.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put(PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, signatureHash).map());
+        }
+        return factory.generateCSR(CollectionUtils.<String, String>mapBuilder().put("id", id).map(), ctx);
     }
 
     @NotNull

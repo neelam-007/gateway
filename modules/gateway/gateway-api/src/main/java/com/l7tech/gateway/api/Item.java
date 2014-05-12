@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
+import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrResult;
 import com.l7tech.util.NonObfuscatable;
 
 import javax.xml.bind.annotation.*;
@@ -40,6 +41,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = PolicyVersionMO.class),
             @XmlElementRef(type = PrivateKeyMO.class),
             @XmlElementRef(type = PrivateKeyExportResult.class),
+            @XmlElementRef(type = PrivateKeyGenerateCsrResult.class),
             @XmlElementRef(type = RevocationCheckingPolicyMO.class),
             @XmlElementRef(type = ServiceMO.class),
             @XmlElementRef(type = RbacRoleMO.class),
