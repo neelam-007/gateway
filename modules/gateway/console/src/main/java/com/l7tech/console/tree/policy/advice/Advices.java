@@ -37,7 +37,7 @@ public class Advices {
         }
 
         try {
-            List<Advice> advices = new ArrayList<Advice>();
+            List<Advice> advices = new ArrayList<>();
             for (Class<?> assertionClass : advicesMap.keySet()) {
                 if (assertionClass.isAssignableFrom(assertion.getClass())) {
                     Collection<Class<? extends Advice>> adviceClasses = advicesMap.get(assertionClass);
@@ -47,10 +47,12 @@ public class Advices {
                 }
             }
 
-            Advice advice = (Advice)assertion.meta().get(AssertionMetadata.POLICY_ADVICE_INSTANCE);
+            Advice advice = assertion.meta().get(AssertionMetadata.POLICY_ADVICE_INSTANCE);
             if (advice != null) advices.add(advice);
 
-            advices.add( new PolicyValidatorAdvice() );
+            if (Boolean.TRUE.equals(assertion.meta().get(AssertionMetadata.POLICY_VALIDATION_ADVICE_ENABLED))) {
+                advices.add(new PolicyValidatorAdvice());
+            }
 
             return advices.toArray(new Advice[advices.size()]);
         } catch (Exception e) {

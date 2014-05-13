@@ -290,6 +290,14 @@ public interface AssertionMetadata {
     String POLICY_ADVICE_INSTANCE = "policyAdviceInstance";
 
     /**
+     * Boolean value to indicate whether an assertion should enable a policy validation advice when all advices
+     * are retrieved for this assertion.  The default value is true.
+     *
+     * This property was first introduced in the Policy Diff feature for the Icefish release 8.2.
+     */
+    String POLICY_VALIDATION_ADVICE_ENABLED = "policyValidationAdviceEnabled";
+
+    /**
      * String classname.  Name of an AssertionValidator subclass that can be used to validate instances of this
      * assertion in the SSM and/or on the Gateway.
      * <p/>

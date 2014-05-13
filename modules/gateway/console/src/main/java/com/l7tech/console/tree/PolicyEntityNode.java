@@ -105,6 +105,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if (getEntityHeader().getPolicyType().equals(PolicyType.GLOBAL_FRAGMENT)) {
             actions.add(new PolicyStepDebugAction(this));
         }
+        actions.add(new DiffPolicyAction(this));
         if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
             try {
                 EncapsulatedAssertionConfig config;

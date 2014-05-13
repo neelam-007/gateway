@@ -7,14 +7,19 @@ import com.l7tech.console.action.HomeAction;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.util.*;
+import com.l7tech.console.util.Refreshable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
@@ -23,8 +28,11 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 import com.sun.java.swing.plaf.windows.WindowsTabbedPaneUI;
 
@@ -1125,6 +1133,19 @@ public class WorkSpacePanel extends JPanel {
                     popupMenu.add(reopenClosedTab);
                     reopenClosedTab.setEnabled(! closedTabs.isEmpty());
 
+                    // Policy Diff Action
+                    final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
+                    final JMenuItem diffPolicy = new JMenuItem("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+                    diffPolicy.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            diffPolicy(index);
+                        }
+                    });
+                    popupMenu.add(diffPolicy);
+                    diffPolicy.setEnabled(tabPane.getComponentAt(index) instanceof PolicyEditorPanel);
+
+                    // Show the popup menu now
                     popupMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
@@ -1179,6 +1200,46 @@ public class WorkSpacePanel extends JPanel {
             }
         }
 
+        public void diffPolicy(final int index) {
+            final Pair<String, PolicyTreeModel> leftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo();
+
+            if (leftPolicyInfo == null) {
+                TopComponents.getInstance().setLeftDiffPolicyInfo(getPolicyInfo(index));
+            } else {
+                final Pair<String, PolicyTreeModel> rightPolicyInfo = getPolicyInfo(index);
+                new PolicyDiffWindow(leftPolicyInfo, rightPolicyInfo).setVisible(true);
+            }
+        }
+
+        /**
+         * Obtain policy information such as policy full name and policy xml
+         *
+         * @param index: the index of the tab which mouse clicks on.
+         *
+         * @return a pair of two strings: policy full name (policy name, resolution, version, and active status) and policy xml.
+         */
+        private Pair<String, PolicyTreeModel> getPolicyInfo(final int index) {
+            final Component currentComponent = tabPane.getComponentAt(index);
+            if (! (currentComponent instanceof PolicyEditorPanel)) {
+                return null;
+            }
+
+            final String policyFullName = ((PolicyEditorPanel) currentComponent).getDisplayName();
+            // Get a fresh policy xml, since the policy might be changed and unsaved.
+            final String policyXml = WspWriter.getPolicyXml(((PolicyEditorPanel) currentComponent).getCurrentRoot().asAssertion());
+
+            PolicyTreeModel policyTreeModel;
+            try {
+                policyTreeModel = new PolicyTreeModel(WspReader.getDefault().parsePermissively(policyXml, WspReader.Visibility.includeDisabled));
+            } catch (IOException e) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                        "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+                return null;
+            }
+
+            return new Pair<>(policyFullName, policyTreeModel);
+        }
+
         private boolean hasUnmodified() {
             for (Component component: tabPane.getComponents()) {
                 if (component instanceof HomePagePanel ||
@@ -1188,7 +1249,7 @@ public class WorkSpacePanel extends JPanel {
             }
             return false;
         }
-    };
+    }
 
     /**
      * When user adds a service/policy into the policy editor panel, the service/policy maybe has a few other versions,

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.*;
@@ -58,6 +59,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private JTree policyTree;
     private JButton clearActiveButton;
     private JButton setCommentButton;
+    private JButton diffButton;
 
     private final EntityWithPolicyNode policyNode;
     private final Goid policyGoid;
@@ -152,6 +154,27 @@ public class PolicyRevisionsDialog extends JDialog {
             }
         });
 
+        final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
+        diffButton.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+
+        diffButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final Pair<String, PolicyTreeModel> leftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo();
+
+                if (leftPolicyInfo == null) {
+                    TopComponents.getInstance().setLeftDiffPolicyInfo(getPolicyInfo());
+                } else {
+                    final Pair<String, PolicyTreeModel> rightPolicyInfo = getPolicyInfo();
+                    new PolicyDiffWindow(leftPolicyInfo, rightPolicyInfo).setVisible(true);
+                    dispose();
+                }
+
+                final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
+                diffButton.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+            }
+        });
+
         Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(closeButton);
 
@@ -166,6 +189,41 @@ public class PolicyRevisionsDialog extends JDialog {
 
         enableOrDisableButtons();
         showSelectedPolicyXml(true);
+    }
+
+    /**
+     * Obtain policy information such as policy full name and policy xml
+     *
+     * @return a pair of two strings: policy full name (policy name, resolution, version, and active status) and policy xml.
+     */
+    private Pair<String, PolicyTreeModel> getPolicyInfo() {
+        final PolicyVersion selectedPolicyVersion = getSelectedPolicyVersion().right;
+
+        final Goid policyGoid;
+        try {
+            policyGoid = policyNode.getPolicy().getGoid();
+        } catch (FindException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Cannot find the policy, '" + policyNode.getName() + "'", "Policy Comparison Error",
+                JOptionPane.WARNING_MESSAGE, null
+            );
+            return null;
+        }
+        final PolicyVersion latestPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(policyGoid);
+        final long latestVersionNum = latestPolicyVersion.getOrdinal();
+        final String policyFullName = PolicyEditorPanel.getDisplayName(policyNode.getName(), selectedPolicyVersion.getOrdinal(), latestVersionNum, selectedPolicyVersion.isActive());
+        final String policyXml = selectedPolicyVersion.getXml();
+
+        PolicyTreeModel policyTreeModel;
+        try {
+            policyTreeModel = new PolicyTreeModel(WspReader.getDefault().parsePermissively(policyXml, WspReader.Visibility.includeDisabled));
+        } catch (IOException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+            return null;
+        }
+
+        return new Pair<>(policyFullName, policyTreeModel);
     }
 
     private void doEdit(ActionEvent evt) {

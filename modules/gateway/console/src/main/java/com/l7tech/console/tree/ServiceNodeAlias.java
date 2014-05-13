@@ -32,6 +32,7 @@ public class ServiceNodeAlias extends ServiceNode{
         if (getEntityHeader().isSoap()) actions.add(new EditServiceUDDISettingsAction(this));
         actions.add(new DeleteServiceAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
+        actions.add(new DiffPolicyAction(this));
         final PublishedServiceAlias alias = getAlias();
         if (alias != null) {
             actions.add(new ConfigureSecurityZoneAction<>(alias, new EntitySaver<PublishedServiceAlias>() {

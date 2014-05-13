@@ -158,6 +158,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem servicePropertiesMenuItem = null;
     private JMenuItem serviceUDDISettingsMenuItem = null;
     private JMenuItem deleteServiceMenuItem = null;
+    private JMenuItem policyDiffMenuItem;
 
     private JPopupMenu appletManagePopUpMenu;
 
@@ -541,6 +542,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getServicePropertiesMenuItem());
             menu.add(getServiceUDDISettingsMenuItem());
             menu.add(getDeleteServiceMenuItem());
+            menu.add(getPolicyDiffMenuItem());
 
             menu.addSeparator();
 
@@ -555,6 +557,13 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.setMnemonic(mnemonic);
 
             fileMenu = menu;
+
+            fileMenu.addChangeListener(new ChangeListener() {
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    updatePolicyDiffMenuItemText();
+                }
+            });
         }
         return fileMenu;
     }
@@ -613,6 +622,25 @@ public class MainWindow extends JFrame implements SheetHolder {
             //deleteServiceMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return deleteServiceMenuItem;
+    }
+
+    private JMenuItem getPolicyDiffMenuItem() {
+        if (policyDiffMenuItem == null) {
+            policyDiffMenuItem = new JMenuItem();
+            policyDiffMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/policyDiff16.png"));
+            policyDiffMenuItem.setIcon(icon);
+        }
+
+        updatePolicyDiffMenuItemText();
+        return policyDiffMenuItem;
+    }
+
+    private void updatePolicyDiffMenuItemText() {
+        if (policyDiffMenuItem == null) return;
+
+        final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
+        policyDiffMenuItem.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
     }
 
     private JMenuItem getValidateMenuItem() {
@@ -1778,6 +1806,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             getServicePropertiesMenuItem().setEnabled(connected);
             getServiceUDDISettingsMenuItem().setEnabled(connected);
             getDeleteServiceMenuItem().setEnabled(connected);
+            getPolicyDiffMenuItem().setEnabled(connected);
         }
         getHomeAction().setEnabled(connected);
     }
@@ -1948,6 +1977,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 getServicePropertiesMenuItem().setEnabled(enable);
                 getServiceUDDISettingsMenuItem().setEnabled(enable && soap);
                 getDeleteServiceMenuItem().setEnabled(enable);
+                getPolicyDiffMenuItem().setEnabled(enable);
                 if (enable) {
                     // go get the actions from the node
                     ServiceNode node = (ServiceNode) (servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
@@ -1955,6 +1985,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
                     if (soap) getServiceUDDISettingsMenuItem().setAction(new EditServiceUDDISettingsAction(node));
                     getDeleteServiceMenuItem().setAction((node instanceof ServiceNodeAlias) ? new DeleteServiceAliasAction((ServiceNodeAlias) node) : new DeleteServiceAction(node));
+                    getPolicyDiffMenuItem().setAction(new DiffPolicyAction(node));
                 }
             }
         });
@@ -2072,6 +2103,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getServicePropertiesMenuItem().setEnabled(false);
         getServiceUDDISettingsMenuItem().setEnabled(false);
         getDeleteServiceMenuItem().setEnabled(false);
+        getPolicyDiffMenuItem().setEnabled(false);
 
         TreeSelectionListener treeSelectionListener =
                 new TreeSelectionListener() {

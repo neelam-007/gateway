@@ -1,9 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.ConfigureSecurityZoneAction;
-import com.l7tech.console.action.DeletePolicyAliasAction;
-import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.action.PolicyRevisionsAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.util.EntitySaver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityType;
@@ -36,6 +33,7 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         actions.add(new EditPolicyAction(this));
         actions.add(new DeletePolicyAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
+        actions.add(new DiffPolicyAction(this));
         final PolicyAlias alias = getAlias();
         if (alias != null) {
             actions.add(new ConfigureSecurityZoneAction<>(alias, new EntitySaver<PolicyAlias>() {

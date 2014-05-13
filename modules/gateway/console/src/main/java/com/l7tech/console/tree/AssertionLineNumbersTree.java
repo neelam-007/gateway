@@ -4,8 +4,14 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.gui.util.ImageCache;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.tree.*;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -101,14 +107,18 @@ public class AssertionLineNumbersTree extends JTree {
     }
 
     private List<String> getOrdinals() {
-        List<String> lineNumbersList = new ArrayList<String>();
+        List<String> lineNumbersList = new ArrayList<>();
         if (policyTree == null) return lineNumbersList;
 
+        AssertionTreeNode node;
         for (int row = 0; row < policyTree.getRowCount(); row++) {
-            TreePath path = policyTree.getPathForRow(row);
-            AssertionTreeNode node = (AssertionTreeNode) path.getLastPathComponent();
+            node = (AssertionTreeNode) policyTree.getPathForRow(row).getLastPathComponent();
 
-            lineNumbersList.add(AssertionTreeNode.getVirtualOrdinalString(node));
+            if(node.asAssertion().getOrdinal() >= 1) {
+                lineNumbersList.add(AssertionTreeNode.getVirtualOrdinalString(node));
+            } else {
+                lineNumbersList.add("");
+            }
         }
         return lineNumbersList;
     }

@@ -730,6 +730,21 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         }
     }
 
+    public IncludeAssertionPolicyNode findTopmostIncludeAncestor() {
+        AssertionTreeNode parent = (AssertionTreeNode) getParent();
+
+        IncludeAssertionPolicyNode result = null;
+        while (parent != null) {
+            if (parent instanceof IncludeAssertionPolicyNode) {
+                result = (IncludeAssertionPolicyNode) parent;
+            }
+
+            parent = (AssertionTreeNode) parent.getParent();
+        }
+
+        return result;
+    }
+
     /**
      * Does the assertion node accepts the abstract tree node
      *

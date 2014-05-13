@@ -190,6 +190,19 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
+     * Returns the number of descendants for this node.
+     */
+    public int getDescendantCount() {
+        int count = 0;
+        for (int i = 0; i < getChildCount(); i++) {
+            count++;
+            AbstractTreeNode child = (AbstractTreeNode) getChildAt(i);
+            count += child.getDescendantCount();
+        }
+        return count;
+    }
+
+    /**
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
      */

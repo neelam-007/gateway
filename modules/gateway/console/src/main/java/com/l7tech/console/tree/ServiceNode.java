@@ -120,6 +120,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new CreateEntityLogSinkAction(this.getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new PolicyStepDebugAction(this));
+        actions.add(new DiffPolicyAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY, EntityType.SERVICE);
