@@ -151,6 +151,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                     if (policyVersion == null) throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Version not found " + resource.getVersionNumber());
                     checkPermitted(OperationType.UPDATE, null, policyVersion);
                     policyVersion.setName(resource.getComment());
+                    validate(policyVersion);
                     policyVersionManager.update(policyVersion);
                     return right2(policyVersion.getName());
                 } catch (FindException e) {
