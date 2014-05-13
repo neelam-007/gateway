@@ -469,8 +469,6 @@ public class HttpCookie {
     private static final Pattern WHITESPACE = Pattern.compile(";\\s*");
     private static final Pattern EQUALS = Pattern.compile("=");
 
-    private static final String NON_TOKEN_CHARS = ",; ";
-
     //store the full initial value of the cookie so that it can be regenerated later with ease
     private final String id;
     private final String fullValue;
@@ -509,35 +507,6 @@ public class HttpCookie {
         return trimmed;
     }
 
-    /**
-     * Check if the text is a "token" or if it contains any illegal characters.
-     *
-     * NOTE: According to the RFC all the characters below are non-token chars,
-     * Tomcat just checks for ",; " and < 32 >= 127, so we are doing the same.
-     *
-     *    0 - 31, 127
-     *     "(" | ")" | "<" | ">" | "@"
-     *   | "," | ";" | ":" | "\" | <">
-     *   | "/" | "[" | "]" | "?" | "="
-     *   | "{" | "}" | SP | HT
-     */
-    private static boolean isToken(final String text) {
-        boolean token = true;
-        if (text != null && text.length() > 0) {
-            for (int i=0; i<text.length(); i++) {
-                char character = text.charAt(i);
-                if (character < 32 || character >= 127) {
-                    token = false;
-                    break;
-                } else if (NON_TOKEN_CHARS.indexOf(character) > -1) {
-                    token = false;
-                    break;
-                }
-            }
-        }
-        return token;
-    }
-
     private static String escapeQuotes(final String text) {
         String escaped = text;
 
@@ -564,7 +533,7 @@ public class HttpCookie {
 
         if (quoted==null) {
             quoted = "";
-        } else if (!isToken(quoted)) {
+        } else if (!CookieUtils.isToken(quoted)) {
             quoted = "\"" + escapeQuotes(quoted) + "\"";
         }
 

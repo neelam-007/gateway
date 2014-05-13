@@ -66,20 +66,20 @@ public class SoapMessageProcessingServletTest {
         response = new MockHttpServletResponse();
         servlet = new TestableSoapMessageProcessingServlet();
         servlet.setLicenseManager(licenseManager);
-        servlet.setConfig( config );
-        servlet.setStashManagerFactory( stashManagerFactory );
-        servlet.setMessageProcessor( messageProcessor );
+        servlet.setConfig(config);
+        servlet.setStashManagerFactory(stashManagerFactory);
+        servlet.setMessageProcessor(messageProcessor);
         servlet.auditContextFactory = auditContextFactory;
         servlet.messageSummaryAuditFactory = messageSummaryAuditFactory;
         connector = new SsgConnector();
         connector.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.name());
         when(stashManagerFactory.createStashManager()).thenReturn(stashManager);
-        when( auditContextFactory.doWithNewAuditContext( Matchers.<Callable>any(), Matchers.<Functions.Nullary>any() )).then( new Answer<Object>() {
+        when(auditContextFactory.doWithNewAuditContext(Matchers.<Callable>any(), Matchers.<Functions.Nullary>any())).then(new Answer<Object>() {
             @Override
-            public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
-                return ((Callable)invocationOnMock.getArguments()[0]).call();
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return ((Callable) invocationOnMock.getArguments()[0]).call();
             }
-        } );
+        });
     }
 
     @Test
@@ -107,9 +107,9 @@ public class SoapMessageProcessingServletTest {
                 assertTrue(fooValues.contains("bar2"));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -140,9 +140,9 @@ public class SoapMessageProcessingServletTest {
                 }
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -173,9 +173,9 @@ public class SoapMessageProcessingServletTest {
                 }
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -190,7 +190,7 @@ public class SoapMessageProcessingServletTest {
                 responseHeadersKnob.addHeader("doNotPassThrough", "doNotPassThrough", HEADER_TYPE_HTTP, false);
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         assertEquals(1, response.getHeaderNames().size());
         final List<Object> headerValues = response.getHeaders("foo");
@@ -217,9 +217,9 @@ public class SoapMessageProcessingServletTest {
                 assertEquals("b", cookiesMap.get("2"));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     @Test
@@ -236,9 +236,9 @@ public class SoapMessageProcessingServletTest {
                 cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         final Map<String, String> cookiesMap = new HashMap<>();
         final Cookie[] cookies = response.getCookies();
         for (final Cookie cookie : cookies) {
@@ -268,9 +268,9 @@ public class SoapMessageProcessingServletTest {
                 cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         final Map<String, String> cookiesMap = new HashMap<>();
         final Cookie[] cookies = response.getCookies();
         for (final Cookie cookie : cookies) {
@@ -299,9 +299,9 @@ public class SoapMessageProcessingServletTest {
                 cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         final Map<String, String> cookiesMap = new HashMap<>();
         final Cookie[] cookies = response.getCookies();
         for (final Cookie cookie : cookies) {
@@ -331,9 +331,9 @@ public class SoapMessageProcessingServletTest {
                 cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         final Map<String, String> cookiesMap = new HashMap<>();
         final Cookie[] cookies = response.getCookies();
         for (final Cookie cookie : cookies) {
@@ -360,14 +360,38 @@ public class SoapMessageProcessingServletTest {
                 context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "invalidSetCookieHeaderValue", HEADER_TYPE_HTTP);
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         final Cookie[] cookies = response.getCookies();
         assertEquals(1, cookies.length);
         assertEquals("foo", cookies[0].getName());
         assertEquals("bar", cookies[0].getValue());
         assertEquals("invalidSetCookieHeaderValue", response.getHeader("Set-Cookie"));
+    }
+
+    @Test
+    public void contextResponseSetCookieHeaderWithSpecialCharacterAddedToResponse() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
+                context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "LSID=DQAAAK…Eaem_vYg", HEADER_TYPE_HTTP);
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        final Cookie[] cookies = response.getCookies();
+        assertEquals(1, cookies.length);
+        assertEquals("foo", cookies[0].getName());
+        assertEquals("bar", cookies[0].getValue());
+        assertEquals("LSID=DQAAAK…Eaem_vYg", response.getHeader("Set-Cookie"));
     }
 
     @Test
@@ -384,9 +408,9 @@ public class SoapMessageProcessingServletTest {
                 assertFalse(context.getResponse().getHeadersKnob().containsHeader("Content-Type", HEADER_TYPE_HTTP));
                 return AssertionStatus.NONE;
             }
-        }).when(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
-        verify(messageProcessor).processMessageNoAudit( any( PolicyEnforcementContext.class ) );
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         assertEquals(ContentTypeHeader.XML_DEFAULT.getFullValue(), response.getContentType());
     }
 

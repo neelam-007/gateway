@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /**
  * Utility methods for working with HttpCookies.
- *
+ * <p/>
  * User: steve
  * Date: Sep 27, 2005
  * Time: 1:18:52 PM
@@ -46,10 +46,12 @@ public class CookieUtils {
     public static final String RFC1036_RFC822_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
     public static final String ANSI_C_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s([0-9]{2}|\\s\\d){1}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}";
     public static final String AMAZON_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}\\s[a-zA-Z]{3}";
-    
+
+    private static final String NON_TOKEN_CHARS = ",; ";
+
     private static Calendar calendar = Calendar.getInstance();
 
-    static{
+    static {
         //Order is based on most likely to least likely
         //This could live somewhere else, or driven from configuration. Either way compile the patterns once and reuse
         datePatternToFormat = new HashMap<Pattern, String>();
@@ -77,13 +79,13 @@ public class CookieUtils {
 
         Pattern amazonDatePattern = Pattern.compile(AMAZON_PATTERN);
         datePatterns.add(amazonDatePattern);
-        datePatternToFormat.put(amazonDatePattern, AMAZON_DATEFORMAT);        
+        datePatternToFormat.put(amazonDatePattern, AMAZON_DATEFORMAT);
     }
 
     /*
     * @return an unmodifiable list of all the Pattern's we support for Cookie date formats
     * */
-    public static List<Pattern> getDatePatterns(){
+    public static List<Pattern> getDatePatterns() {
         return Collections.unmodifiableList(datePatterns);
     }
 
@@ -93,7 +95,7 @@ public class CookieUtils {
     * @param p the Pattern we want a String format for
     * @return the String which can be used to a parse a date with the pattern p
     * */
-    public static String getDateFormat(Pattern p){
+    public static String getDateFormat(Pattern p) {
         return datePatternToFormat.get(p);
     }
 
@@ -103,31 +105,32 @@ public class CookieUtils {
     * As many cookies are set with expiries well into the future we need to check if the year
     * is two digits. If it is expand it with the first two digits of the current century
     * */
-    public static String expandYear(String pattern, String expiry){
-        if(pattern.equals(CookieUtils.RFC850_PATTERN)){
+    public static String expandYear(String pattern, String expiry) {
+        if (pattern.equals(CookieUtils.RFC850_PATTERN)) {
             //Sunday, 06-Nov-38 08:49:37 GMT expand to Sunday, 06-Nov-2038 08:49:37
             int start = expiry.lastIndexOf("-");
-            String newDate = expiry.substring(0, start+1);
+            String newDate = expiry.substring(0, start + 1);
             int year = calendar.get(Calendar.YEAR);
             String yearStr = (new Integer(year)).toString();
-            String twoDigits = yearStr.substring(0,2);
-            newDate += twoDigits + expiry.substring(start+1, expiry.length());
+            String twoDigits = yearStr.substring(0, 2);
+            newDate += twoDigits + expiry.substring(start + 1, expiry.length());
             return newDate;
-        }else if(pattern.equals(CookieUtils.RFC1036_RFC822_PATTERN)){
+        } else if (pattern.equals(CookieUtils.RFC1036_RFC822_PATTERN)) {
             //Sun, 06 Nov 38 08:49:37 GMT expand to Sun, 06 Nov 2038 08:49:37 GMT
             int yearStart = 12;
             String newDate = expiry.substring(0, yearStart);
             int year = calendar.get(Calendar.YEAR);
             String yearStr = (new Integer(year)).toString();
-            String twoDigits = yearStr.substring(0,2);
+            String twoDigits = yearStr.substring(0, 2);
             newDate += twoDigits + expiry.substring(yearStart, expiry.length());
             return newDate;
         }
         return expiry;
     }
+
     /**
      * <p>Is the given cookie a gateway managed cookie?</p>
-     *
+     * <p/>
      * <p>If a cookie is gateway managed it should not be passed through the gateway.</p>
      *
      * @param cookie the cookie to check.
@@ -135,10 +138,10 @@ public class CookieUtils {
      */
     public static boolean isGatewayManagedCookie(HttpCookie cookie) {
         boolean managed = false;
-        String name = cookie==null ? null : cookie.getCookieName();
+        String name = cookie == null ? null : cookie.getCookieName();
 
-        if(name!=null) {
-            if(name.startsWith(PREFIX_GATEWAY_MANAGED)) managed = true;
+        if (name != null) {
+            if (name.startsWith(PREFIX_GATEWAY_MANAGED)) managed = true;
         }
 
         return managed;
@@ -160,20 +163,20 @@ public class CookieUtils {
 
     /**
      * <p>Ensures that the given cookie is valid to be returned from the given domain and path.</p>
-     *
+     * <p/>
      * <p>If the cookie is valid then it is returned, else a new cookie is created with the same
      * values but a modified domain and/or path.</p>
      *
      * @param cookie the cookie to check
      * @param domain the cookies target domain. If null, the cookie domain will be used for the return cookie domain.
-     * @param path the cookies target path (not that the path is trimmed up to and including the last /)
-     *             If null, the cookie path will be used for the return cookie path.
+     * @param path   the cookies target path (not that the path is trimmed up to and including the last /)
+     *               If null, the cookie path will be used for the return cookie path.
      * @return a valid cookie
      */
     public static HttpCookie ensureValidForDomainAndPath(HttpCookie cookie, String domain, String path) {
         HttpCookie result = cookie;
 
-        if(result!=null) {
+        if (result != null) {
             String cookieDomain = cookie.getDomain();
             String cookiePath = cookie.getPath();
 
@@ -184,13 +187,13 @@ public class CookieUtils {
 
             if (calcPath != null) {
                 int trim = calcPath.lastIndexOf('/');
-                if(trim>0) {
+                if (trim > 0) {
                     calcPath = calcPath.substring(0, trim);
                 }
             }
 
-            if((cookieDomain!=null && domain != null && !domain.endsWith(cookieDomain))
-            || (cookiePath!=null && calcPath != null && !calcPath.startsWith(cookiePath))){
+            if ((cookieDomain != null && domain != null && !domain.endsWith(cookieDomain))
+                    || (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
                 result = new HttpCookie(cookie, domain != null ? domain : cookieDomain, calcPath);
             }
         }
@@ -200,12 +203,12 @@ public class CookieUtils {
 
     /**
      * <p>Convert the given cookie to an HTTP Client cookies for use in a HTTP request.</p>
-     *
+     * <p/>
      * <p>Note that you may need to upate the domain/path to match your request URL (or
      * set to null).</p>
      *
      * @param httpCookie the cookie to convert.
-     * @param prefix the prefix to remove.
+     * @param prefix     the prefix to remove.
      * @return the HTTP Client cookie.
      */
     public static Cookie toHttpClientCookie(HttpCookie httpCookie, String prefix) {
@@ -224,7 +227,7 @@ public class CookieUtils {
         cookie.setPath(httpCookie.getPath());
         cookie.setComment(httpCookie.getComment());
         cookie.setSecure(httpCookie.isSecure());
-        if(httpCookie.hasExpiry()) cookie.setExpiryDate(new Date(httpCookie.getExpiryTime()));
+        if (httpCookie.hasExpiry()) cookie.setExpiryDate(new Date(httpCookie.getExpiryTime()));
 
         return cookie;
     }
@@ -233,29 +236,28 @@ public class CookieUtils {
      * <p>Create an HttpCookie from the given HTTP Client cookie.</p>
      *
      * @param httpClientCookie the Servlet cookie.
-     * @param isNew true if this is a "new" cookie (as though from a Set-Cookie header)
+     * @param isNew            true if this is a "new" cookie (as though from a Set-Cookie header)
      * @return the HttpCookie.
      */
     public static HttpCookie fromHttpClientCookie(Cookie httpClientCookie, boolean isNew) {
         HttpCookie cookie;
 
-        if(isNew) {
+        if (isNew) {
             cookie = new HttpCookie(httpClientCookie.getName()
-                                   ,httpClientCookie.getValue()
-                                   ,httpClientCookie.getVersion()
-                                   ,httpClientCookie.getPath()
-                                   ,httpClientCookie.getDomain()
-                                   ,httpClientCookie.getExpiryDate() == null ? -1 : (int)((httpClientCookie.getExpiryDate().getTime()-System.currentTimeMillis())/1000L)
-                                   ,httpClientCookie.isSecure()
-                                   ,httpClientCookie.getComment()
-                                   ,false); //httpclient 4.2.5 doesn't support httpOnly.
-        }
-        else {
+                    , httpClientCookie.getValue()
+                    , httpClientCookie.getVersion()
+                    , httpClientCookie.getPath()
+                    , httpClientCookie.getDomain()
+                    , httpClientCookie.getExpiryDate() == null ? -1 : (int) ((httpClientCookie.getExpiryDate().getTime() - System.currentTimeMillis()) / 1000L)
+                    , httpClientCookie.isSecure()
+                    , httpClientCookie.getComment()
+                    , false); //httpclient 4.2.5 doesn't support httpOnly.
+        } else {
             cookie = new HttpCookie(httpClientCookie.getName()
-                                   ,httpClientCookie.getValue()
-                                   ,httpClientCookie.getVersion()
-                                   ,httpClientCookie.getPath()
-                                   ,httpClientCookie.getDomain());
+                    , httpClientCookie.getValue()
+                    , httpClientCookie.getVersion()
+                    , httpClientCookie.getPath()
+                    , httpClientCookie.getDomain());
         }
 
         return cookie;
@@ -263,7 +265,7 @@ public class CookieUtils {
 
     /**
      * <p>Convert the given cookie to a Servlet cookie for use in an HTTP response.</p>
-     *
+     * <p/>
      * <p>Note that you may need to update the domain/path to match the request URL.</p>
      *
      * @param httpCookie the cookie to convert.
@@ -273,12 +275,12 @@ public class CookieUtils {
         javax.servlet.http.Cookie cookie = new javax.servlet.http.Cookie(httpCookie.getCookieName(), httpCookie.getCookieValue());
 
         cookie.setVersion(httpCookie.getVersion());
-        if(httpCookie.isDomainExplicit()) cookie.setDomain(httpCookie.getDomain());
+        if (httpCookie.isDomainExplicit()) cookie.setDomain(httpCookie.getDomain());
         cookie.setPath(httpCookie.getPath());
         cookie.setComment(httpCookie.getComment());
         cookie.setSecure(httpCookie.isSecure());
         cookie.setHttpOnly(httpCookie.isHttpOnly());
-        if(httpCookie.hasExpiry()) cookie.setMaxAge(httpCookie.getMaxAge());
+        if (httpCookie.hasExpiry()) cookie.setMaxAge(httpCookie.getMaxAge());
 
         return cookie;
     }
@@ -287,29 +289,28 @@ public class CookieUtils {
      * <p>Create an HttpCookie from the given Servlet cookie.</p>
      *
      * @param servletCookie the Servlet cookie.
-     * @param isNew true if this is a "new" cookie (as though from a Set-Cookie header)
+     * @param isNew         true if this is a "new" cookie (as though from a Set-Cookie header)
      * @return the HttpCookie.
      */
     public static HttpCookie fromServletCookie(javax.servlet.http.Cookie servletCookie, boolean isNew) {
         HttpCookie cookie;
 
-        if(isNew) {
+        if (isNew) {
             cookie = new HttpCookie(servletCookie.getName()
-                                   ,servletCookie.getValue()
-                                   ,servletCookie.getVersion()
-                                   ,servletCookie.getPath()
-                                   ,servletCookie.getDomain()
-                                   ,servletCookie.getMaxAge()
-                                   ,servletCookie.getSecure()
-                                   ,servletCookie.getComment()
-                                   ,servletCookie.isHttpOnly());
-        }
-        else {
+                    , servletCookie.getValue()
+                    , servletCookie.getVersion()
+                    , servletCookie.getPath()
+                    , servletCookie.getDomain()
+                    , servletCookie.getMaxAge()
+                    , servletCookie.getSecure()
+                    , servletCookie.getComment()
+                    , servletCookie.isHttpOnly());
+        } else {
             cookie = new HttpCookie(servletCookie.getName()
-                                   ,servletCookie.getValue()
-                                   ,servletCookie.getVersion()
-                                   ,servletCookie.getPath()
-                                   ,servletCookie.getDomain());
+                    , servletCookie.getValue()
+                    , servletCookie.getVersion()
+                    , servletCookie.getPath()
+                    , servletCookie.getDomain());
         }
 
         return cookie;
@@ -319,13 +320,13 @@ public class CookieUtils {
      * <p>Creates HttpCookies from the given Servlet cookies.</p>
      *
      * @param servletCookies the Servlet cookies (may be null).
-     * @param isNew true if these are "new" cookies (as though from a Set-Cookie header)
+     * @param isNew          true if these are "new" cookies (as though from a Set-Cookie header)
      * @return the HttpCookies (may be empty, never null).
      */
     public static HttpCookie[] fromServletCookies(javax.servlet.http.Cookie[] servletCookies, boolean isNew) {
         List<HttpCookie> out = new ArrayList<HttpCookie>();
 
-        if(servletCookies!=null) {
+        if (servletCookies != null) {
             for (javax.servlet.http.Cookie servletCookie : servletCookies) {
                 out.add(CookieUtils.fromServletCookie(servletCookie, isNew));
             }
@@ -337,7 +338,7 @@ public class CookieUtils {
     /**
      * Search a cookie array for a single cookie with the requested name.
      *
-     * @param cookies cookie array to search. Required.
+     * @param cookies    cookie array to search. Required.
      * @param cookieName name of cookie to search for.  Required.
      * @return a cookie with that name, or null.
      * @throws IOException if more than one cookie is found with that name.
@@ -353,6 +354,38 @@ public class CookieUtils {
             }
         }
         return found;
+    }
+
+    /**
+     * Check if the text is a "token" or if it contains any illegal characters.
+     * <p/>
+     * NOTE: According to the RFC all the characters below are non-token chars,
+     * Tomcat just checks for ",; " and < 32 >= 127, so we are doing the same.
+     * <p/>
+     * 0 - 31, 127
+     * "(" | ")" | "<" | ">" | "@"
+     * | "," | ";" | ":" | "\" | <">
+     * | "/" | "[" | "]" | "?" | "="
+     * | "{" | "}" | SP | HT
+     *
+     * @param text the String to check for illegal cookie value characters.
+     * @return true if the text contains illegal cookie value characters or is null or is empty; false otherwise.
+     */
+    public static boolean isToken(final String text) {
+        boolean token = true;
+        if (text != null && text.length() > 0) {
+            for (int i = 0; i < text.length(); i++) {
+                char character = text.charAt(i);
+                if (character < 32 || character >= 127) {
+                    token = false;
+                    break;
+                } else if (NON_TOKEN_CHARS.indexOf(character) > -1) {
+                    token = false;
+                    break;
+                }
+            }
+        }
+        return token;
     }
 
     //- PRIVATE

@@ -420,20 +420,27 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     /**
-     * @return a collection of headers should be passed through to the response.
+     * @return a collection of headers which should be passed through to the response.
      */
     private Collection<Pair<String, Object>> getPassThroughHeaders(final HeadersKnob headersKnob) {
         final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
         for (final Header header : headersKnob.getHeaders(HeadersKnob.HEADER_TYPE_HTTP, false)) {
-            if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
+            boolean passHeader = true;
+            if (header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE) && header.getValue() instanceof String) {
+                final String value = (String) header.getValue();
+                    try {
+                        final HttpCookie parsed = new HttpCookie(value);
+                        if (CookieUtils.isToken(parsed.getCookieValue())){
+                            // it's a valid cookie header - handle as a servlet cookie, not a header
+                            passHeader = false;
+                        }
+                    } catch (final HttpCookie.IllegalFormatException e) {
+                        // it's an invalid set-cookie header, so treat it as a regular header.
+                        logger.log(Level.INFO, "Could not parse cookie from header: " + value);
+                    }
+            }
+            if (passHeader) {
                 passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
-            } else if (header.getValue() instanceof String) {
-                try {
-                    new HttpCookie((String)header.getValue());
-                } catch (final HttpCookie.IllegalFormatException e) {
-                    // it's an invalid set-cookie header, so treat it as a regular header.
-                    passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
-                }
             }
         }
         return passThroughHeaders;
@@ -506,14 +513,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final Set<HttpCookie> cookies = new HashSet<>();
         Set<HttpCookie> knobCookies = context.getResponse().getHttpCookiesKnob().getCookies();
         for (HttpCookie cookie : knobCookies) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
+            if (CookieUtils.isToken(cookie.getCookieValue())) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
+                }
+                URI url = URI.create(reqKnob.getRequestUrl());
+                //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
+                cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie,
+                    context.isOverwriteResponseCookieDomain() ? url.getHost() : null,
+                    context.isOverwriteResponseCookiePath() ? url.getPath() : null));
+            } else {
+                // SSG-8486 cookie value contains an invalid character - process as regular header instead
+                logger.log(Level.INFO, "Skipping cookie with an invalid character: " + cookie);
             }
-            URI url = URI.create(reqKnob.getRequestUrl());
-            //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
-            cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie,
-                context.isOverwriteResponseCookieDomain() ? url.getHost() : null,
-                context.isOverwriteResponseCookiePath() ? url.getPath() : null));
         }
         return cookies;
     }

@@ -93,4 +93,44 @@ public class CookieUtilsTest {
         assertEquals(-1, cookie.getMaxAge());
         assertNull(cookie.getComment());
     }
+
+    @Test
+    public void isTokenFalse() {
+        // less than or equal to unicode 32
+        for (int i = 0; i <= 32; i++) {
+            final char c = (char) i;
+            assertFalse(CookieUtils.isToken(String.valueOf(c)));
+        }
+
+        // greater than or equal to unicode 127
+        char c = 127;
+        assertFalse(CookieUtils.isToken(String.valueOf(c)));
+        c = 128;
+        assertFalse(CookieUtils.isToken(String.valueOf(c)));
+
+        assertFalse(CookieUtils.isToken(","));
+        assertFalse(CookieUtils.isToken(";"));
+        assertFalse(CookieUtils.isToken(" "));
+    }
+
+    @Test
+    public void isTokenTrue() {
+        // greater than 33 and less than 127
+        for (int i = 33; i < 127; i++) {
+            if (i != 44 && i != 59) { // , and ; are not allowed
+                final char c = (char) i;
+                assertTrue(CookieUtils.isToken(String.valueOf(c)));
+            }
+        }
+    }
+
+    @Test
+    public void isTokenNull() {
+        assertTrue(CookieUtils.isToken(null));
+    }
+
+    @Test
+    public void isTokenEmpty() {
+        assertTrue(CookieUtils.isToken(""));
+    }
 }
