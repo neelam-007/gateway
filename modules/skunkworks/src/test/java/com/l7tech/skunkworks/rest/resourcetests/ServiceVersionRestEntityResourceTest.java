@@ -245,6 +245,9 @@ public class ServiceVersionRestEntityResourceTest extends RestEntityTestBase {
                 Assert.assertFalse("Version " + policyVersion.getOrdinal() + " should not be active", version.isActive());
             }
         }
+
+        PublishedService currentService = serviceManager.findByPrimaryKey(publishedService.getGoid());
+        Assert.assertEquals(currentService.getPolicy().getXml(), policyVersion.getXml());
     }
 
     public String getResourceUri() {

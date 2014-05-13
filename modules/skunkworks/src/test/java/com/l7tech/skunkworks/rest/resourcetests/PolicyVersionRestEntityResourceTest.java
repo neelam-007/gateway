@@ -269,6 +269,9 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
                 Assert.assertFalse("Version " + policyVersion.getOrdinal() + " should not be active", version.isActive());
             }
         }
+
+        Policy currentPolicy = policyManager.findByPrimaryKey(policy.getGoid());
+        Assert.assertEquals(currentPolicy.getXml(), policyVersion.getXml());
     }
 
     public String getResourceUri() {

@@ -11,8 +11,10 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
@@ -47,6 +49,8 @@ public class PolicyVersionRestResourceFactory {
     private PolicyVersionTransformer transformer;
     @Inject
     private ServiceManager serviceManager;
+    @Inject
+    private PolicyManager policyManager;
 
     private static final Collection<PolicyType> availablePolicyTypes = Collections.unmodifiableCollection(Arrays.asList(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL, PolicyType.GLOBAL_FRAGMENT));
     private static final Map<String, String> propertyNamesMap = CollectionUtils.MapBuilder.<String, String>builder().put("name", "comment").map();
@@ -159,13 +163,20 @@ public class PolicyVersionRestResourceFactory {
                 //check if the user has access to this policy version
                 rbacAccessService.validatePermitted(policyVersion, OperationType.UPDATE);
                 try {
-                    //deactivate other policy version
-                    policyVersionManager.deactivateVersions(Goid.parseGoid(policyId), policyVersion.getGoid());
+                    Policy policy = policyManager.findByPrimaryKey(Goid.parseGoid(policyId));
+                    if (policy == null) throw new FindException("No Policy found with policy Id=" + policyId); // shouldn't be possible
+
+                    //when a different policy version is used must update the xml of the policy to match that old policy version.
+                    policy.setXml(policyVersion.getXml());
                     //set the selected policy version as active
                     policyVersion.setActive(true);
+                    //update the policy with the correct xml
+                    policyManager.update(policy);
                     //update the policy version.
                     policyVersionManager.update(policyVersion);
-                } catch (UpdateException e) {
+                    //deactivate other policy version
+                    policyVersionManager.deactivateVersions(Goid.parseGoid(policyId), policyVersion.getGoid());
+                } catch (UpdateException | FindException e) {
                     throw new ResourceFactory.ResourceAccessException("Could not activate policy version '" + versionOrdinal + "' for policy " + policyId, e);
                 }
             }
