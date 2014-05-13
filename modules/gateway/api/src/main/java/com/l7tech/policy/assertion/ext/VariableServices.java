@@ -5,9 +5,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import java.util.Map;
 
 /**
- * Copyright: Layer 7 Technologies, 2013
- * User: ymoiseyenko
- * Date: 2/25/13
+ * Use this service to access context variables.
  */
 public interface VariableServices {
 
