@@ -31,7 +31,7 @@
         <dependency org="org.springframework" name="spring-context" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-core" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <!-- Saxon Enterprise Edition licensed to Layer 7 for redistribution -->
-        <dependency org="net.sf.saxon" name="saxon9ee" rev="9.4.0.4" force="true" conf="core"/>
+        <dependency org="net.sf.saxon" name="saxon9ee" rev="9.4.0.9" force="true" conf="core"/>
         <!-- Tarari is optional -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional,test"/>
         <dependency org="org.apache.xmlbeans" name="xmlbeans" rev="2.5.0" force="true" conf="core"/>
