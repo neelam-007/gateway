@@ -154,7 +154,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("alias") List<String> aliases) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("alias", "keystore", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("alias"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (aliases != null && !aliases.isEmpty()) {
