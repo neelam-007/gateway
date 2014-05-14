@@ -37,6 +37,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
     private Item<UserMO> adminUserItem;
     private Item<IdentityProviderMO> idProviderItem;
     private Item<PolicyMO> policyItem;
+    private Item<ServiceMO> serviceItem;
     private Item<Mappings> mappingsToClean;
 
     @Before
@@ -101,6 +102,42 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
         policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         policyItem.setContent(policyMO);
+
+        //create policy;
+        ServiceMO serviceMO = ManagedObjectFactory.createService();
+        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceDetail.setName("MyService");
+        serviceDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        serviceMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:SpecificUser>\n" +
+                "            <L7p:IdentityProviderOid goidValue=\""+idProviderItem.getId()+"\"/>\n" +
+                "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                "            <L7p:UserLogin stringValue=\""+adminUserItem.getName()+"\"/>\n" +
+                "            <L7p:UserName stringValue=\""+adminUserItem.getName()+"\"/>\n" +
+                "            <L7p:UserUid stringValue=\""+adminUserItem.getId()+"\"/>\n" +
+                "        </L7p:SpecificUser>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>");
+
+        response = getSourceEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+
+        assertOkCreatedResponse(response);
+
+        serviceItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceItem.setContent(serviceMO);
     }
 
     @After
@@ -328,6 +365,89 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
             Assert.assertNotNull(getDependency(policyDependencies, createdUser.getId()));
             Assert.assertNotNull(getDependency(policyDependencies, idProviderItem.getId()));
+
+            validate(mappings);
+        }finally{
+            response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
+            assertOkDeleteResponse(response);
+
+        }
+
+    }
+
+    @Test
+    public void testMapByNameInService() throws Exception{
+        RestResponse response;
+        //create user
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(idProviderItem.getId());
+        userMO.setLogin("targetUser");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
+        response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
+        assertOkCreatedResponse(response);
+        Item<UserMO> createdUser = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        try{
+            response = getSourceEnvironment().processRequest("bundle/service/" + serviceItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 1 item. A service, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 mappings. A service, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
+
+            // map
+            bundleItem.getContent().getMappings().get(1).getProperties().put("MapBy", "name");
+            bundleItem.getContent().getMappings().get(1).getProperties().put("MapTo", createdUser.getName());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping idProviderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idProviderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, idProviderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, idProviderMapping.getActionTaken());
+            Assert.assertEquals(idProviderItem.getId(), idProviderMapping.getSrcId());
+            Assert.assertEquals(idProviderMapping.getSrcId(), idProviderMapping.getTargetId());
+
+            Mapping userMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.USER.toString(), userMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, userMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, userMapping.getActionTaken());
+            Assert.assertEquals(adminUserItem.getId(), userMapping.getSrcId());
+            Assert.assertEquals(createdUser.getId(), userMapping.getTargetId());
+
+            Mapping serviceMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            // verify dependencies
+            response = getTargetEnvironment().processRequest("services/"+serviceMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> serviceCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> serviceDependencies = serviceCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(serviceDependencies);
+            Assert.assertEquals(2, serviceDependencies.size());
+
+            Assert.assertNotNull(getDependency(serviceDependencies, createdUser.getId()));
+            Assert.assertNotNull(getDependency(serviceDependencies, idProviderItem.getId()));
 
             validate(mappings);
         }finally{

@@ -52,6 +52,12 @@ public class ServiceDependencyProcessor extends GenericDependencyProcessor<Publi
     @Override
     public void replaceDependencies(@NotNull PublishedService object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(object, replacementMap, finder);
+
+        //This will replace dependencies in the assertions that this service contains
+        if(object.getPolicy() != null) {
+            PolicyDependencyProcessor.replacePolicyAssertionDependencies(object.getPolicy(), replacementMap, finder);
+        }
+
         // replace parent folder
 
         final EntityHeader srcFolderHeader = EntityHeaderUtils.fromEntity(object.getFolder());
