@@ -593,7 +593,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             serviceFinder = new ServiceFinderImpl();
             serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
             serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl(customKeyValueStoreManager));
-            serviceFinder.setSignerFactoryImpl(new SignerServicesImpl(ssgKeyStoreManager, defaultKey));
+            serviceFinder.setSignerServicesImpl(new SignerServicesImpl(ssgKeyStoreManager, defaultKey));
         }
         return serviceFinder;
     }

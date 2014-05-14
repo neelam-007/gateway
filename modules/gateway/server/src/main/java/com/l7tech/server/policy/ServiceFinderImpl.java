@@ -13,7 +13,7 @@ public class ServiceFinderImpl implements ServiceFinder {
     private VariableServicesImpl variableServices;
     private SecurePasswordServicesImpl securePasswordServices;
     private KeyValueStoreServicesImpl keyValueStoreServices;
-    private SignerServicesImpl signerFactory;
+    private SignerServicesImpl signerServices;
 
     public ServiceFinderImpl() {
     }
@@ -34,8 +34,8 @@ public class ServiceFinderImpl implements ServiceFinder {
         this.keyValueStoreServices = keyValueStoreServices;
     }
 
-    public void setSignerFactoryImpl(SignerServicesImpl signerFactory) {
-        this.signerFactory = signerFactory;
+    public void setSignerServicesImpl(SignerServicesImpl signerServices) {
+        this.signerServices = signerServices;
     }
 
     public <T> T lookupService(Class<T> serviceInterface) {
@@ -52,7 +52,7 @@ public class ServiceFinderImpl implements ServiceFinder {
             return (T) keyValueStoreServices;
         }
         if (SignerServices.class.equals(serviceInterface)) {
-            return (T) signerFactory;
+            return (T) signerServices;
         }
         return null;
     }
