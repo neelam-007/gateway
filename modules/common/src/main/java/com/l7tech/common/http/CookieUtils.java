@@ -1,7 +1,9 @@
 package com.l7tech.common.http;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -46,6 +48,17 @@ public class CookieUtils {
     public static final String RFC1036_RFC822_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
     public static final String ANSI_C_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s([0-9]{2}|\\s\\d){1}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}";
     public static final String AMAZON_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}\\s[a-zA-Z]{3}";
+
+    public static final String DOMAIN = "Domain";
+    public static final String PATH = "Path";
+    public static final String COMMENT = "Comment";
+    public static final String VERSION = "Version";
+    public static final String MAX_AGE = "Max-Age";
+    public static final String SECURE = "Secure";
+    public static final String HTTP_ONLY = "HttpOnly";
+    public static final String ATTRIBUTE_DELIMITER = "; ";
+    public static final String EQUALS = "=";
+    private static final int UNSPECIFIED_MAX_AGE = -1;
 
     private static final String NON_TOKEN_CHARS = ",; ";
 
@@ -386,6 +399,137 @@ public class CookieUtils {
             }
         }
         return token;
+    }
+
+    /**
+     * Same as {@link #getCookieHeader(java.util.Collection, boolean)} except always double-quotes special characters in the cookie value.
+     *
+     * @param cookies The collection of HttpCookie's to add
+     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
+     */
+    public static String getCookieHeader(final Collection<HttpCookie> cookies) {
+        return getCookieHeader(cookies, true);
+    }
+
+    /**
+     * Get the cookies as a string (as in a "Cookie:" header).
+     * <p/>
+     * NOTE: Since we may have modified the path/domain of the cookie when
+     * proxying it seems safest to drop this from the header (see RFC 2109
+     * section 4.3.4)
+     *
+     * @param cookies                The collection of HttpCookie's to add
+     * @param quoteSpecialCharacters true if the presence of special characters should cause the cookie value to be double-quoted.
+     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
+     */
+    public static String getCookieHeader(final Collection<HttpCookie> cookies, final boolean quoteSpecialCharacters) {
+        StringBuffer sb = new StringBuffer();
+
+        if (cookies != null) {
+            for (Iterator cookIter = cookies.iterator(); cookIter.hasNext(); ) {
+                HttpCookie cook = (HttpCookie) cookIter.next();
+                // always use V0, see note above
+                sb.append(getV0CookieHeaderPart(cook, quoteSpecialCharacters));
+                if (cookIter.hasNext())
+                    sb.append("; ");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Same as {@link #getV0CookieHeaderPart(HttpCookie, boolean)} except always double-quotes special characters in the cookie value.
+     *
+     * @return "<Name>=<Value>"
+     */
+    public static String getV0CookieHeaderPart(@NotNull final HttpCookie cookie) {
+        return getV0CookieHeaderPart(cookie, true);
+    }
+
+    /**
+     * Get this cookie formatted as part of a version 0 (Netscape) "cookie:"
+     * header.
+     *
+     * @param quoteSpecialCharacters true if the presence of special characters should cause the cookie value to be double-quoted.
+     * @return "<Name>=<Value>"
+     */
+    public static String getV0CookieHeaderPart(@NotNull final HttpCookie cookie, final boolean quoteSpecialCharacters) {
+        StringBuffer headerPart = new StringBuffer();
+        headerPart.append(cookie.getCookieName());
+        headerPart.append('=');
+        if (quoteSpecialCharacters) {
+            headerPart.append(quoteIfNeeded(cookie.getCookieValue()));
+        } else {
+            headerPart.append(cookie.getCookieValue());
+        }
+        return headerPart.toString();
+    }
+
+    /**
+     * Get a Set-Cookie header representation of the given cookie.
+     * <p/>
+     * Ex) name=value; Version=1; Domain=localhost; Path=/
+     *
+     * @param cookie the HttpCookie.
+     * @return a Set-Cookie header representation of the given cookie.
+     */
+    public static String getSetCookieHeader(@NotNull final HttpCookie cookie) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(cookie.getCookieName()).append(EQUALS).append(cookie.getCookieValue());
+        sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
+        appendIfNotBlank(sb, DOMAIN, cookie.getDomain());
+        appendIfNotBlank(sb, PATH, cookie.getPath());
+        appendIfNotBlank(sb, COMMENT, cookie.getComment());
+        if (cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
+            sb.append(ATTRIBUTE_DELIMITER).append(MAX_AGE).append(EQUALS).append(cookie.getMaxAge());
+        }
+        if (cookie.isSecure()) {
+            sb.append(ATTRIBUTE_DELIMITER).append(SECURE);
+        }
+        if (cookie.isHttpOnly()) {
+            sb.append(ATTRIBUTE_DELIMITER).append(HTTP_ONLY);
+        }
+        return sb.toString();
+    }
+
+    private static void appendIfNotBlank(final StringBuilder stringBuilder, final String attributeName, final String attributeValue) {
+        if (StringUtils.isNotBlank(attributeValue)) {
+            stringBuilder.append(ATTRIBUTE_DELIMITER).append(attributeName).append(EQUALS).append(attributeValue);
+        }
+    }
+
+    private static String quoteIfNeeded(final String cookieValue) {
+        String quoted = cookieValue;
+
+        if (quoted == null) {
+            quoted = "";
+        } else if (!isToken(quoted)) {
+            quoted = "\"" + escapeQuotes(quoted) + "\"";
+        }
+
+        return quoted;
+    }
+
+    private static String escapeQuotes(final String text) {
+        String escaped = text;
+
+        if (text != null && text.indexOf('"') > -1) {
+            StringBuffer buffer = new StringBuffer(text.length() + 16);
+
+            for (int i = 0; i < text.length(); i++) {
+                char character = text.charAt(i);
+                if (character == '"') {
+                    buffer.append("\\\"");
+                } else {
+                    buffer.append(character);
+                }
+            }
+
+            escaped = buffer.toString();
+        }
+
+        return escaped;
     }
 
     //- PRIVATE

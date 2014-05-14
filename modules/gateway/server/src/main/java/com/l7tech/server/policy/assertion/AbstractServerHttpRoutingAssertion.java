@@ -1,9 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -188,7 +185,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
                 Collection cookies = Collections.singletonList(ivUserCookie);
                 routedRequestParams.addExtraHeader(
                         new GenericHttpHeader(HttpConstants.HEADER_COOKIE,
-                                              HttpCookie.getCookieHeader(cookies)));
+                                              CookieUtils.getCookieHeader(cookies)));
 
                 // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
                 logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, IV_USER);

@@ -1360,7 +1360,7 @@ public class MessageProcessor {
                 HttpCookie cook = sessionCookies[i];
 
                 if (i > 0) sb.append("; ");
-                sb.append(cook.getV0CookieHeaderPart());
+                sb.append(CookieUtils.getV0CookieHeaderPart(cook));
             }
         }
 

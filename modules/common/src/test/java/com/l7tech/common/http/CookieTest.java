@@ -172,43 +172,6 @@ public class CookieTest {
     }
 
     @Test
-    public void testQuoting() {
-        HttpCookie cookie1 = new HttpCookie("name", "value with spaces", 1, "/some", ".domain.com");
-        String header1 = cookie1.getV0CookieHeaderPart();
-        assertEquals("Correctly quoted", "name=\"value with spaces\"", header1);
-
-        HttpCookie cookie2 = new HttpCookie("name", "value_with_;", 1, "/some", ".domain.com");
-        String header2 = cookie2.getV0CookieHeaderPart();
-        assertEquals("Correctly quoted", "name=\"value_with_;\"", header2);
-
-        HttpCookie cookie3 = new HttpCookie("name", "value_without_spaces", 1, "/some", ".domain.com");
-        String header3 = cookie3.getV0CookieHeaderPart();
-        assertEquals("Correctly quoted", "name=value_without_spaces", header3);
-    }
-
-    @Test
-    public void testCookieHeader() {
-        HttpCookie cookie1 = new HttpCookie("name", "value", 1, "/", ".layer7tech.com");
-        String header1 = HttpCookie.getCookieHeader(Collections.singletonList(cookie1));
-        assertEquals("Cookie header", "name=value", header1);
-
-        HttpCookie cookie2 = new HttpCookie("name2", "value2", 1, "/", ".layer7tech.com");
-        List cookieList2 = new ArrayList();
-        cookieList2.add(cookie1);
-        cookieList2.add(cookie2);
-        String header2 = HttpCookie.getCookieHeader(cookieList2);
-        assertEquals("Cookie header", "name=value; name2=value2", header2);
-
-        HttpCookie cookie3 = new HttpCookie("name3", "value with \"spaces", 1, "/", ".layer7tech.com");
-        List cookieList3 = new ArrayList();
-        cookieList3.add(cookie1);
-        cookieList3.add(cookie2);
-        cookieList3.add(cookie3);
-        String header3 = HttpCookie.getCookieHeader(cookieList3);
-        assertEquals("Cookie header", "name=value; name2=value2; name3=\"value with \\\"spaces\"", header3);
-    }
-
-    @Test
     public void testCookieWithEqualsInValue() throws Exception {
         // Test as though a Set-Cookie
         HttpCookie cookie1 = new HttpCookie(new URL("http://www.layer7tech.com/"), "iPlanetDirectoryPro=AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#");

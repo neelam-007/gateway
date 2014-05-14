@@ -386,46 +386,6 @@ public class HttpCookie {
         return buffer.toString();
     }
 
-    /**
-     * Get this cookie formatted as part of a version 0 (Netscape) "cookie:"
-     * header.
-     *
-     * @return "<Name>=<Value>"
-     */
-    public String getV0CookieHeaderPart() {
-        StringBuffer headerPart = new StringBuffer();
-        headerPart.append(cookieName);
-        headerPart.append('=');
-        headerPart.append(quoteIfNeeded(cookieValue));
-        return headerPart.toString();
-    }
-
-    /**
-     * Get the cookies as a string (as in a "Cookie:" header).
-     *
-     * NOTE: Since we may have modified the path/domain of the cookie when
-     * proxying it seems safest to drop this from the header (see RFC 2109
-     * section 4.3.4)
-     *
-     * @param cookies The collection of HttpCookie's to add
-     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
-     */
-    public static String getCookieHeader(final Collection cookies) {
-        StringBuffer sb = new StringBuffer();
-
-        if (cookies != null) {
-            for (Iterator cookIter = cookies.iterator(); cookIter.hasNext();) {
-                HttpCookie cook = (HttpCookie) cookIter.next();
-                // always use V0, see note above
-                sb.append(cook.getV0CookieHeaderPart());
-                if (cookIter.hasNext())
-                    sb.append("; ");
-            }
-        }
-
-        return sb.toString();
-    }
-
     public static Collection<HttpCookie> fromCookieHeader( final URL url,
                                                            final String cookieHeader ) throws HttpCookie.IllegalFormatException {
         final Collection<HttpCookie> cookies = new ArrayList<HttpCookie>();
@@ -505,38 +465,5 @@ public class HttpCookie {
         }
 
         return trimmed;
-    }
-
-    private static String escapeQuotes(final String text) {
-        String escaped = text;
-
-        if (text != null && text.indexOf('"') > -1) {
-            StringBuffer buffer = new StringBuffer(text.length() + 16);
-
-            for (int i=0; i<text.length(); i++) {
-                char character = text.charAt(i);
-                if (character == '"') {
-                    buffer.append("\\\"");
-                } else {
-                    buffer.append(character);
-                }
-            }
-
-            escaped = buffer.toString();
-        }
-
-        return escaped;
-    }
-
-    public static String quoteIfNeeded(final String cookieValue) {
-        String quoted = cookieValue;
-
-        if (quoted==null) {
-            quoted = "";
-        } else if (!CookieUtils.isToken(quoted)) {
-            quoted = "\"" + escapeQuotes(quoted) + "\"";
-        }
-
-        return quoted;
     }
 }

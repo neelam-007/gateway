@@ -370,6 +370,7 @@ public class SoapMessageProcessingServletTest {
         assertEquals("invalidSetCookieHeaderValue", response.getHeader("Set-Cookie"));
     }
 
+    @BugId("SSG-8486")
     @Test
     public void contextResponseSetCookieHeaderWithSpecialCharacterAddedToResponse() throws Exception {
         request.setContent("test".getBytes());
@@ -381,7 +382,7 @@ public class SoapMessageProcessingServletTest {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
                 cookiesKnob.addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
-                context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "LSID=DQAAAK…Eaem_vYg", HEADER_TYPE_HTTP);
+                context.getResponse().getHeadersKnob().addHeader("Set-Cookie", "LSID=DQAAAK…Eaem_vYg; domain=test.l7tech.com; path=/test", HEADER_TYPE_HTTP);
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
@@ -391,7 +392,31 @@ public class SoapMessageProcessingServletTest {
         assertEquals(1, cookies.length);
         assertEquals("foo", cookies[0].getName());
         assertEquals("bar", cookies[0].getValue());
-        assertEquals("LSID=DQAAAK…Eaem_vYg", response.getHeader("Set-Cookie"));
+        assertEquals("LSID=DQAAAK…Eaem_vYg; Version=0; Domain=test.l7tech.com; Path=/test", response.getHeader("Set-Cookie"));
+    }
+
+    @Test
+    public void contextResponseCookiesUniqueByNameDomainAndPath() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HeadersKnob headersknob = context.getResponse().getHeadersKnob();
+                headersknob.addHeader("Set-Cookie", "test=value1; domain=test.l7tech.com; path=/test", HeadersKnob.HEADER_TYPE_HTTP);
+                headersknob.addHeader("Set-Cookie", "test=value2; domain=test.l7tech.com; path=/test", HeadersKnob.HEADER_TYPE_HTTP);
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        final Cookie[] cookies = response.getCookies();
+        assertEquals(1, cookies.length);
+        final Cookie cookie = cookies[0];
+        assertEquals("test", cookie.getName());
+        assertEquals("value1", cookie.getValue());
     }
 
     @Test

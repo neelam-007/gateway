@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.UncheckedIOException;
@@ -942,16 +943,6 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
      * MessageAttributeSelector specific for selecting http cookies.
      */
     private static class CookiesSelector implements MessageAttributeSelector {
-        private static final String DOMAIN = "Domain";
-        private static final String PATH = "Path";
-        private static final String COMMENT = "Comment";
-        private static final String VERSION = "Version";
-        private static final String MAX_AGE = "Max-Age";
-        private static final String SECURE = "Secure";
-        private static final String ATTRIBUTE_DELIMITER = "; ";
-        private static final String EQUALS = "=";
-        private static final int UNSPECIFIED_MAX_AGE = -1;
-
         @Override
         public Selection select(final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
             Selection selection = null;
@@ -963,14 +954,14 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                     String cookieStr = null;
                     if (name.equals(HTTP_COOKIES)) {
                         // all attributes
-                        cookieStr = getCookieString(cookie);
+                        cookieStr = CookieUtils.getSetCookieHeader(cookie);
                     } else if (name.equals(HTTP_COOKIENAMES)) {
                         // only names
                         cookieStr = cookie.getCookieName();
                     } else if (name.startsWith(HTTP_COOKIES_PREFIX)) {
                         if (cookie.getCookieName().equals(prefixedName)) {
                             // all cookie attributes
-                            cookieStr = getCookieString(cookie);
+                            cookieStr = CookieUtils.getSetCookieHeader(cookie);
                         }
                     } else if (name.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
                         if (cookie.getCookieName().equals(prefixedName)) {
@@ -1004,28 +995,6 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                 prefixedName = selectionName.substring(HTTP_COOKIEVALUES_PREFIX.length());
             }
             return prefixedName;
-        }
-
-        private String getCookieString(final HttpCookie cookie) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append(cookie.getCookieName()).append(EQUALS).append(HttpCookie.quoteIfNeeded(cookie.getCookieValue()));
-            sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
-            appendIfNotBlank(sb, DOMAIN, cookie.getDomain());
-            appendIfNotBlank(sb, PATH, cookie.getPath());
-            appendIfNotBlank(sb, COMMENT, cookie.getComment());
-            if (cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
-                sb.append(ATTRIBUTE_DELIMITER).append(MAX_AGE).append(EQUALS).append(cookie.getMaxAge());
-            }
-            if (cookie.isSecure()) {
-                sb.append(ATTRIBUTE_DELIMITER).append(SECURE);
-            }
-            return sb.toString();
-        }
-
-        private void appendIfNotBlank(final StringBuilder stringBuilder, final String attributeName, final String attributeValue) {
-            if (StringUtils.isNotBlank(attributeValue)) {
-                stringBuilder.append(ATTRIBUTE_DELIMITER).append(attributeName).append(EQUALS).append(attributeValue);
-            }
         }
     }
 }

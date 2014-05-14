@@ -495,7 +495,7 @@ public class HttpForwardingRuleEnforcer {
         final List<HttpCookie> res = passableCookies(cookiesKnob, targetDomain, auditor);
         if (!res.isEmpty()) {
             // currently only passes the name and value cookie attributes
-            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(res)));
+            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, CookieUtils.getCookieHeader(res)));
         }
         cookieAlreadyHandled = true;
         return cookieAlreadyHandled;

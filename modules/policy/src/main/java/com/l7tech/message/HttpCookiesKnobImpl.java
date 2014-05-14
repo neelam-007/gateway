@@ -1,5 +1,6 @@
 package com.l7tech.message;
 
+import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import org.apache.commons.collections.ComparatorUtils;
@@ -13,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static com.l7tech.common.http.CookieUtils.*;
 
 /**
  * HttpCookiesKnob implementation which wraps a HeadersKnob.
@@ -20,17 +22,7 @@ import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     private static final Logger logger = Logger.getLogger(HttpCookiesKnobImpl.class.getName());
     private static final Comparator<String> COOKIE_ATTRIBUTE_COMPARATOR = ComparatorUtils.nullHighComparator(new CookieTokenComparator());
-    private static final String DOMAIN = "Domain";
-    private static final String PATH = "Path";
-    private static final String COMMENT = "Comment";
-    private static final String VERSION = "Version";
-    private static final String MAX_AGE = "Max-Age";
-    private static final String SECURE = "Secure";
-    private static final String HTTP_ONLY = "HttpOnly";
-    private static final String ATTRIBUTE_DELIMITER = "; ";
-    private static final String EQUALS = "=";
     private static final String DOLLAR_SIGN = "$";
-    private static final int UNSPECIFIED_MAX_AGE = -1;
     private static final Set<String> COOKIE_ATTRIBUTES;
     private final HeadersKnob delegate;
     private final String cookieHeaderName;
@@ -117,7 +109,10 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
         } else {
             for (final String cookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
                 try {
-                    cookies.add(new HttpCookie(cookieValue));
+                    final boolean added = cookies.add(new HttpCookie(cookieValue));
+                    if (!added) {
+                        logger.log(Level.WARNING, "Found duplicate cookie: " + cookieValue);
+                    }
                 } catch (final HttpCookie.IllegalFormatException e) {
                     logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
                 }
@@ -149,7 +144,7 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
             deleteCookie(conflictingCookie);
             logger.log(Level.WARNING, "Removed conflicting cookie: " + conflictingCookie);
         }
-        delegate.addHeader(cookieHeaderName, toV1SetCookieHeader(cookie), HEADER_TYPE_HTTP);
+        delegate.addHeader(cookieHeaderName, CookieUtils.getSetCookieHeader(cookie), HEADER_TYPE_HTTP);
     }
 
     @Override
@@ -201,31 +196,6 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
             } catch (final HttpCookie.IllegalFormatException e) {
                 logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
             }
-        }
-    }
-
-    private String toV1SetCookieHeader(final HttpCookie cookie) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append(cookie.getCookieName()).append(EQUALS).append(HttpCookie.quoteIfNeeded(cookie.getCookieValue()));
-        sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
-        appendIfNotBlank(sb, DOMAIN, cookie.getDomain());
-        appendIfNotBlank(sb, PATH, cookie.getPath());
-        appendIfNotBlank(sb, COMMENT, cookie.getComment());
-        if (cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
-            sb.append(ATTRIBUTE_DELIMITER).append(MAX_AGE).append(EQUALS).append(cookie.getMaxAge());
-        }
-        if (cookie.isSecure()) {
-            sb.append(ATTRIBUTE_DELIMITER).append(SECURE);
-        }
-        if (cookie.isHttpOnly()) {
-            sb.append(ATTRIBUTE_DELIMITER).append(HTTP_ONLY);
-        }
-        return sb.toString();
-    }
-
-    private void appendIfNotBlank(final StringBuilder stringBuilder, final String attributeName, final String attributeValue) {
-        if (StringUtils.isNotBlank(attributeValue)) {
-            stringBuilder.append(ATTRIBUTE_DELIMITER).append(attributeName).append(EQUALS).append(attributeValue);
         }
     }
 

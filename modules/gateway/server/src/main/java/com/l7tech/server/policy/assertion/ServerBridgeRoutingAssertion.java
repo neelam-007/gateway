@@ -833,7 +833,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
 
                                 //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getRequest().getHttpCookiesKnob().getCookies())));
+                                params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, CookieUtils.getCookieHeader(context.getRequest().getHttpCookiesKnob().getCookies())));
 
                                 return doGetResponse(false);
                             }
