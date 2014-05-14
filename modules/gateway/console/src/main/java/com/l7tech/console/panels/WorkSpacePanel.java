@@ -700,7 +700,9 @@ public class WorkSpacePanel extends JPanel {
             }
         }
 
-        tabbedPane.setSelectedComponent(selectedComponent);
+        if (tabbedPane.getTabCount() > 0 && selectedComponent != null) {
+            tabbedPane.setSelectedComponent(selectedComponent);
+        }
 
         return alreadyRefreshed;
     }
