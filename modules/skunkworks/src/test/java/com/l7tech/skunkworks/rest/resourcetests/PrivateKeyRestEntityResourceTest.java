@@ -15,6 +15,7 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -656,5 +657,25 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
         Assert.assertNotNull(privateKeyGenerateCsrResult.getCsrData());
         Assert.assertTrue(privateKeyGenerateCsrResult.getCsrData().length > 0);
+    }
+
+    @BugId("SSG-8539")
+    @Test
+    public void generateCSRBadSignature() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "signatureHash=Invalid", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+    }
+
+    @BugId("SSG-8539")
+    @Test
+    public void generateCSRBadCSRSubjectDN() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "csrSubjectDN=Invalid", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
     }
 }

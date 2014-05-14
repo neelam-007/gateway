@@ -114,6 +114,10 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             final InvalidArgumentException ex = (InvalidArgumentException) e;
             errorResponse.setDetail("Invalid value for argument" + (ex.getArgumentName() != null ? " '" + ex.getArgumentName() + "'" : "") + ". " + ex.getMessage());
             status = Response.Status.BAD_REQUEST;
+        } else if(e instanceof IllegalArgumentException)  {
+            logger.log( Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
+            errorResponse.setDetail(ExceptionUtils.getMessageWithCause(e));
+            status = Response.Status.BAD_REQUEST;
         } else if (e instanceof ParamException.QueryParamException) {
             logger.log(Level.WARNING, "QueryParamException error processing management request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             final ParamException.QueryParamException ex = (ParamException.QueryParamException) e;
