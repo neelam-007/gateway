@@ -3,6 +3,7 @@ package com.l7tech.console.api;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.commonui.CommonUIServices;
+import com.l7tech.policy.assertion.ext.commonui.CustomPrivateKeyPanel;
 import com.l7tech.policy.assertion.ext.commonui.CustomSecurePasswordPanel;
 import com.l7tech.policy.assertion.ext.commonui.CustomTargetVariablePanel;
 
@@ -33,5 +34,10 @@ public class CommonUIServicesImpl implements CommonUIServices {
     @Override
     public CustomSecurePasswordPanel createPEMPrivateKeyComboBoxPanel (JDialog owner) {
         return new CustomSecurePasswordPanelImpl(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY, owner);
+    }
+
+    @Override
+    public CustomPrivateKeyPanel createPrivateKeyComboBoxPanel(JDialog owner) {
+        return new CustomPrivateKeyPanelImpl(owner);
     }
 }

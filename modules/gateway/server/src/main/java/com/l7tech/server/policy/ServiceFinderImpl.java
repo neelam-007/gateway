@@ -2,7 +2,9 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.assertion.ext.password.SecurePasswordServices;
+import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
+import com.l7tech.server.security.SignerServicesImpl;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 
 
@@ -11,6 +13,7 @@ public class ServiceFinderImpl implements ServiceFinder {
     private VariableServicesImpl variableServices;
     private SecurePasswordServicesImpl securePasswordServices;
     private KeyValueStoreServicesImpl keyValueStoreServices;
+    private SignerServicesImpl signerFactory;
 
     public ServiceFinderImpl() {
     }
@@ -31,6 +34,10 @@ public class ServiceFinderImpl implements ServiceFinder {
         this.keyValueStoreServices = keyValueStoreServices;
     }
 
+    public void setSignerFactoryImpl(SignerServicesImpl signerFactory) {
+        this.signerFactory = signerFactory;
+    }
+
     public <T> T lookupService(Class<T> serviceInterface) {
         if (CertificateFinder.class.equals(serviceInterface)) {
             return (T) certificateFinder;
@@ -43,6 +50,9 @@ public class ServiceFinderImpl implements ServiceFinder {
         }
         if (KeyValueStoreServices.class.equals(serviceInterface)) {
             return (T) keyValueStoreServices;
+        }
+        if (SignerServices.class.equals(serviceInterface)) {
+            return (T) signerFactory;
         }
         return null;
     }

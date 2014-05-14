@@ -717,6 +717,8 @@
         <property name="extensionInterfaceManager" ref="extensionInterfaceManager"/>
         <property name="securePasswordManager" ref="securePasswordManager"/>
         <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
+        <property name="defaultKey" ref="defaultKey"/>
     </bean>
 
     <bean id="resourceEntrySchemaSourceResolver"

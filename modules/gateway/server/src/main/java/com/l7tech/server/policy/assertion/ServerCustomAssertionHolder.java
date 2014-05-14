@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.ext.message.format.CustomMessageFormatFactory
 import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
 import com.l7tech.policy.assertion.ext.message.knob.CustomPartsKnob;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.gateway.common.custom.CustomToMessageTargetableAdaptor;
 import com.l7tech.server.custom.format.CustomMessageFormatRegistry;
@@ -35,6 +36,8 @@ import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.custom.knob.CustomHttpHeadersKnobImpl;
 import com.l7tech.server.custom.knob.CustomPartsKnobImpl;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.security.SignerServicesImpl;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -419,6 +422,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         serviceFinder.setVariableServicesImpl(new VariableServicesImpl(getAudit(), data));
         serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl((SecurePasswordManager) applicationContext.getBean("securePasswordManager")));
         serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl((CustomKeyValueStoreManager) applicationContext.getBean("customKeyValueStoreManager")));
+        serviceFinder.setSignerFactoryImpl(new SignerServicesImpl(
+            (SsgKeyStoreManager) applicationContext.getBean("ssgKeyStoreManager"), (DefaultKey) applicationContext.getBean("defaultKey")));
 
         context.put("serviceFinder", serviceFinder);
 

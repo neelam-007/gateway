@@ -1257,6 +1257,8 @@
         <property name="extensionInterfaceManager" ref="extensionInterfaceManager"/>
         <property name="securePasswordManager" ref="securePasswordManager"/>
         <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
+        <property name="defaultKey" ref="defaultKey"/>
     </bean>
     <!-- jms connection manager -->
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerImpl"

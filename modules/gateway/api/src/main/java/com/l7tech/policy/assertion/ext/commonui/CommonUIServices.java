@@ -35,4 +35,12 @@ public interface CommonUIServices {
      * @return the secure password panel
      */
     CustomSecurePasswordPanel createPEMPrivateKeyComboBoxPanel (JDialog owner);
+
+    /**
+     * Create a private key panel with private keys combo box.
+     *
+     * @param owner the owner dialog
+     * @return the private key panel
+     */
+    CustomPrivateKeyPanel createPrivateKeyComboBoxPanel (JDialog owner);
 }

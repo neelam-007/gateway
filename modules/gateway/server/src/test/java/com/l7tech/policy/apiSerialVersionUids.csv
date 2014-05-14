@@ -14,5 +14,6 @@ com.l7tech.policy.assertion.ext.targetable.CustomMessageTargetableSupport, -7171
 com.l7tech.policy.variable.NoSuchVariableException, 6178749374710799495
 com.l7tech.policy.assertion.ext.message.CustomMessageAccessException, -621323549724703833
 com.l7tech.policy.assertion.ext.message.InvalidDataException, -1785875013351638986
+com.l7tech.policy.assertion.ext.security.SignerException, -8287434476129725209
 com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport$ReferenceElement, -1519739648961747529
 com.l7tech.policy.variable.VariableNotSettableException, 5030901721152784969

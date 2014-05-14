@@ -10,12 +10,15 @@ import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.licensing.CustomFeatureSetName;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.SecurePasswordServicesImpl;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.module.*;
+import com.l7tech.server.security.SignerServicesImpl;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.KeyValueStoreServicesImpl;
 import com.l7tech.util.*;
@@ -327,6 +330,14 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         this.customKeyValueStoreManager = customKeyValueStoreManager;
     }
 
+    public void setSsgKeyStoreManager(SsgKeyStoreManager ssgKeyStoreManager) {
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
+    }
+
+    public void setDefaultKey(DefaultKey defaultKey) {
+        this.defaultKey = defaultKey;
+    }
+
     /**
      * Perform bean initialization after properties are set.
      */
@@ -346,6 +357,14 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
         if (customKeyValueStoreManager == null) {
             throw new IllegalArgumentException("Custom Key Value Store Manager is required");
+        }
+
+        if (ssgKeyStoreManager == null) {
+            throw new IllegalArgumentException("SSG KeyStore Manager is required");
+        }
+
+        if (defaultKey == null) {
+            throw new IllegalArgumentException("Default Key is required");
         }
 
         // create custom assertion modules scanner config
@@ -412,6 +431,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private ExtensionInterfaceManager extensionInterfaceManager;
     private SecurePasswordManager securePasswordManager;
     private CustomKeyValueStoreManager customKeyValueStoreManager;
+    private SsgKeyStoreManager ssgKeyStoreManager;
+    private DefaultKey defaultKey;
 
     private Collection<CustomAssertionHolder> asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection<CustomAssertionHolder> result = new ArrayList<>();
@@ -559,6 +580,8 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     private ServiceFinderImpl getServiceFinderInstance() {
         if (securePasswordManager == null) throw new IllegalStateException("securePasswordManager is not initialized");
         if (customKeyValueStoreManager == null) throw new IllegalStateException("customKeyValueStoreManager is not initialized");
+        if (ssgKeyStoreManager == null) throw new IllegalStateException("ssgKeyStoreManager is not initialized");
+        if (defaultKey == null) throw new IllegalStateException("defaultKey is not initialized");
 
         if (serviceFinder == null) {
             // Set ServiceFinder used in CustomExtensionInterfaceBinding and CustomExternalReferenceResolver.
@@ -570,6 +593,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
             serviceFinder = new ServiceFinderImpl();
             serviceFinder.setSecurePasswordServicesImpl(new SecurePasswordServicesImpl(securePasswordManager));
             serviceFinder.setKeyValueStoreImpl(new KeyValueStoreServicesImpl(customKeyValueStoreManager));
+            serviceFinder.setSignerFactoryImpl(new SignerServicesImpl(ssgKeyStoreManager, defaultKey));
         }
         return serviceFinder;
     }

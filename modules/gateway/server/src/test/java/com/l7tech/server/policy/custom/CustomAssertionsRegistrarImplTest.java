@@ -6,9 +6,11 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomCredentialSource;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -35,6 +37,12 @@ public class CustomAssertionsRegistrarImplTest {
     @Mock
     private CustomKeyValueStoreManager customKeyValueStoreManagerMock;
 
+    @Mock
+    private SsgKeyStoreManager ssgKeyStoreManagerMock;
+
+    @Mock
+    private DefaultKey defaultKeyMock;
+
     @Before
     public void setUp() throws Exception {
         // clear all registered assertions per unit test
@@ -51,6 +59,8 @@ public class CustomAssertionsRegistrarImplTest {
         customAssertionsRegistrarImpl.setExtensionInterfaceManager(extensionInterfaceManager);
         customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
         customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
+        customAssertionsRegistrarImpl.setSsgKeyStoreManager(ssgKeyStoreManagerMock);
+        customAssertionsRegistrarImpl.setDefaultKey(defaultKeyMock);
 
         // register MyCustomExtensionInterfaceBinding which holds an implementation of MyInterface
         customAssertionsRegistrarImpl.registerCustomExtensionInterface(MyCustomExtensionInterfaceBinding.class);
@@ -84,6 +94,8 @@ public class CustomAssertionsRegistrarImplTest {
         customAssertionsRegistrarImpl.setExtensionInterfaceManager(extensionInterfaceManager);
         customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
         customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
+        customAssertionsRegistrarImpl.setSsgKeyStoreManager(ssgKeyStoreManagerMock);
+        customAssertionsRegistrarImpl.setDefaultKey(defaultKeyMock);
 
         String moduleFileName = "salesforce_poc.jar";
         String configFileName = "custom_assertions.properties";
@@ -161,6 +173,8 @@ public class CustomAssertionsRegistrarImplTest {
         customAssertionsRegistrarImpl.setExtensionInterfaceManager(mock(ExtensionInterfaceManager.class));
         customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
         customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
+        customAssertionsRegistrarImpl.setSsgKeyStoreManager(ssgKeyStoreManagerMock);
+        customAssertionsRegistrarImpl.setDefaultKey(defaultKeyMock);
 
         assertTrue("there are no assertions registered on startup", customAssertionsRegistrarImpl.getAssertions().isEmpty());
 
@@ -225,6 +239,8 @@ public class CustomAssertionsRegistrarImplTest {
         customAssertionsRegistrarImpl.setExtensionInterfaceManager(mock(ExtensionInterfaceManager.class));
         customAssertionsRegistrarImpl.setSecurePasswordManager(securePasswordManagerMock);
         customAssertionsRegistrarImpl.setCustomKeyValueStoreManager(customKeyValueStoreManagerMock);
+        customAssertionsRegistrarImpl.setSsgKeyStoreManager(ssgKeyStoreManagerMock);
+        customAssertionsRegistrarImpl.setDefaultKey(defaultKeyMock);
 
         assertTrue("there are no assertions registered on startup", customAssertionsRegistrarImpl.getAssertions().isEmpty());
 
