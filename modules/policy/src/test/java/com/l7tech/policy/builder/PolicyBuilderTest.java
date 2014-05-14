@@ -10,8 +10,7 @@ import com.l7tech.policy.wsp.WspConstants;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -1348,7 +1347,7 @@ public class PolicyBuilderTest {
                 "        </wsp:OneOrMore>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
-        builder.rewriteHtml(TargetMessageType.REQUEST, null, "foo", "bar", "a,p,script", null);
+        builder.rewriteHtml(TargetMessageType.REQUEST, null, Collections.singleton("foo"), "bar", "a,p,script", null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
     }
 
@@ -1383,12 +1382,52 @@ public class PolicyBuilderTest {
                 "        </wsp:OneOrMore>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>\n";
-        builder.rewriteHtml(TargetMessageType.OTHER, "myMsg", "foo", "bar", "a,p,script", null);
+        builder.rewriteHtml(TargetMessageType.OTHER, "myMsg", Collections.singleton("foo"), "bar", "a,p,script", null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void rewriteHtmlOtherTargetWithNullOtherTargetMessageName() throws Exception {
-        builder.rewriteHtml(TargetMessageType.OTHER, null, "foo", "bar", "a,p,script", null);
+        builder.rewriteHtml(TargetMessageType.OTHER, null, Collections.singleton("foo"), "bar", "a,p,script", null);
+    }
+
+    @Test
+    public void rewriteHtmlMultipleSearch() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+                "            <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:ComparisonAssertion xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                    <L7p:Expression1 stringValue=\"${request.http.header.content-type}\"/>\n" +
+                "                    <L7p:ExpressionIsVariable booleanValue=\"false\"/>\n" +
+                "                    <L7p:Predicates predicates=\"included\">\n" +
+                "                        <L7p:item binary=\"included\">\n" +
+                "                            <L7p:CaseSensitive booleanValue=\"false\"/>\n" +
+                "                            <L7p:RightValue stringValue=\"html\"/>\n" +
+                "                            <L7p:Operator operator=\"CONTAINS\"/>\n" +
+                "                        </L7p:item>\n" +
+                "                    </L7p:Predicates>\n" +
+                "                </L7p:ComparisonAssertion>\n" +
+                "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
+                "                    <L7p:SearchFor stringValue=\"foo2\"/>\n" +
+                "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
+                "                    <L7p:Target target=\"REQUEST\"/>\n" +
+                "                </L7p:ReplaceTagContent>\n" +
+                "                <L7p:ReplaceTagContent xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                "                    <L7p:ReplaceWith stringValue=\"bar\"/>\n" +
+                "                    <L7p:SearchFor stringValue=\"foo\"/>\n" +
+                "                    <L7p:TagsToSearch stringValue=\"a,p,script\"/>\n" +
+                "                    <L7p:Target target=\"REQUEST\"/>\n" +
+                "                </L7p:ReplaceTagContent>\n" +
+                "            </wsp:All>\n" +
+                "            <L7p:TrueAssertion/>\n" +
+                "        </wsp:OneOrMore>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.rewriteHtml(TargetMessageType.REQUEST, null, new HashSet<>(Arrays.asList("foo", "foo2")), "bar", "a,p,script", null);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
     }
 }

@@ -13,10 +13,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.mockito.Mockito.*;
 
@@ -37,7 +34,7 @@ public class PublishReverseWebProxyWizardTest {
         when(builder.replaceHttpCookieDomains(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
         when(builder.routeForwardAll(anyString(), anyBoolean())).thenReturn(builder);
         when(builder.rewriteHeader(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyString())).thenReturn(builder);
-        when(builder.rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(builder);
+        when(builder.rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString())).thenReturn(builder);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -74,7 +71,7 @@ public class PublishReverseWebProxyWizardTest {
         verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
         verify(builder, never()).regex(eq(TargetMessageType.OTHER), anyString(), anyString(), anyString(), anyBoolean(), anyString());
         verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString());
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -102,7 +99,7 @@ public class PublishReverseWebProxyWizardTest {
 
         verify(builder, never()).replaceHttpCookieNames(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyBoolean(), anyString());
         verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -120,7 +117,7 @@ public class PublishReverseWebProxyWizardTest {
         config.setHtmlTagsToRewrite("p,script");
         PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
-        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
+        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, Collections.singleton("${webAppHost}"), "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
         verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
     }
 
@@ -166,9 +163,9 @@ public class PublishReverseWebProxyWizardTest {
         verify(builder).replaceHttpCookieNames(TargetMessageType.RESPONSE, null, "${webAppHostEncoded}", "${request.url.host}%3A${request.url.port}", true, "// REWRITE RESPONSE COOKIE NAMES");
         verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", true, "// REWRITE RESPONSE COOKIE DOMAINS");
         verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE LOCATION HEADER");
-        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", true, "// REWRITE RESPONSE BODY");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}(:80)?", "${request.url.host}:${request.url.port}", true, "// REWRITE RESPONSE BODY");
 
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -199,9 +196,9 @@ public class PublishReverseWebProxyWizardTest {
         verify(builder).replaceHttpCookieDomains(TargetMessageType.REQUEST, null, "${request.url.host}", "${webAppHost}", false, "// REWRITE REQUEST COOKIE DOMAINS");
         verify(builder).replaceHttpCookieDomains(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}", false, "// REWRITE RESPONSE COOKIE DOMAINS");
         verify(builder).rewriteHeader(TargetMessageType.RESPONSE, null, "location", "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE LOCATION HEADER");
-        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", false, "// REWRITE RESPONSE BODY");
+        verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}(:80)?", "${request.url.host}:${request.url.port}", false, "// REWRITE RESPONSE BODY");
 
-        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString());
         verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
     }
 
@@ -222,7 +219,8 @@ public class PublishReverseWebProxyWizardTest {
         config.setHtmlTagsToRewrite("p,script");
         PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
-        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, "${webAppHost}", "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
+        verify(builder).rewriteHtml(TargetMessageType.RESPONSE, null, new HashSet<>(Arrays.asList("${webAppHost}:80", "${webAppHost}")),
+                "${request.url.host}:${request.url.port}", "p,script", "// REWRITE RESPONSE BODY");
         verify(builder, never()).regex(eq(TargetMessageType.RESPONSE), anyString(), anyString(), anyString(), anyBoolean(), anyString());
     }
 

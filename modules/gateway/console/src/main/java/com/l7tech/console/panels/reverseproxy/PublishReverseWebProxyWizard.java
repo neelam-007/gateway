@@ -45,6 +45,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String $_HOST_AND_PORT = $_REQUEST_URL_HOST + ":" + $_REQUEST_URL_PORT;
     private static final String $_REQUEST_URL_QUERY = "${request.url.query}";
     private static final String $_REQUEST_URL_PATH = "${request.url.path}";
+    private static final String OPTIONAL_PORT_80 = "(:80)?";
     private static final String CONSTANTS_COMMENT = "// CONSTANTS";
     private static final String REWRITE_REQ_COOKIE_NAMES_COMMENT = "// REWRITE REQUEST COOKIE NAMES";
     private static final String REWRITE_RESP_COOKIE_NAMES_COMMENT = "// REWRITE RESPONSE COOKIE NAMES";
@@ -157,13 +158,26 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
 
     private static void rewriteResponseBody(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         if (config.isRewriteResponseContent() && StringUtils.isNotBlank(config.getHtmlTagsToRewrite())) {
-            builder.rewriteHtml(RESPONSE, null, $_WEB_APP_HOST, $_HOST_AND_PORT, config.getHtmlTagsToRewrite(),
+            Set<String> search = new HashSet<>();
+            if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT && !mayContainPort(config)) {
+                search.add($_WEB_APP_HOST + ":80");
+            }
+            search.add($_WEB_APP_HOST);
+            builder.rewriteHtml(RESPONSE, null, search, $_HOST_AND_PORT, config.getHtmlTagsToRewrite(),
                     REWRITE_RESPONSE_COMMENT);
         } else {
             // blanket rewrite
-            builder.regex(RESPONSE, null, $_WEB_APP_HOST, $_HOST_AND_PORT, config.isRewriteResponseContent(),
+            String regex = $_WEB_APP_HOST;
+            if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT && !mayContainPort(config)) {
+                regex = regex + OPTIONAL_PORT_80;
+            }
+            builder.regex(RESPONSE, null, regex, $_HOST_AND_PORT, config.isRewriteResponseContent(),
                     REWRITE_RESPONSE_COMMENT);
         }
+    }
+
+    private static boolean mayContainPort(final ReverseWebProxyConfig config) {
+        return config.getWebAppHost().contains(":");
     }
 
     private static void handleResponseCookies(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {

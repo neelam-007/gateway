@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Builder which allows you to build up xml Documents that represent policy.
@@ -431,14 +432,14 @@ public class PolicyBuilder {
      *
      * @param targetMessage          the {@link TargetMessageType} to target.
      * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
-     * @param searchFor              the text to replace.
+     * @param searchFor              the text(s) to replace.
      * @param replaceWith            the text to use as a replacement if matches are found.
      * @param tagsToSearch           the HTML tags to search within.
      * @param comment                an optional comment to add to the policy.
      * @return the PolicyBuilder.
      */
     public PolicyBuilder rewriteHtml(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
-                                     @NotNull final String searchFor, @NotNull final String replaceWith,
+                                     @NotNull final Set<String> searchFor, @NotNull final String replaceWith,
                                      @NotNull final String tagsToSearch, @Nullable final String comment) throws IOException {
         validateTarget(targetMessage, otherTargetMessageName);
         final Map<String, Pair<String, String>> itemElements = new HashMap<>();
@@ -448,19 +449,6 @@ public class PolicyBuilder {
         String targetName = targetMessage == TargetMessageType.OTHER ? otherTargetMessageName : targetMessage.name().toLowerCase();
         final Document compareDoc = createComparisonAssertionDoc("${" + targetName + ".http.header.content-type}", itemElements);
 
-        final Document htmlDoc = readResource(REPLACE_TAG_CONTENT);
-        final Element search = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, SEARCH_FOR);
-        search.setAttribute(STRING_VALUE, searchFor);
-        final Element replace = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, REPLACE_WITH);
-        replace.setAttribute(STRING_VALUE, replaceWith);
-        final Element tags = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, TAGS_TO_SEARCH);
-        tags.setAttribute(STRING_VALUE, tagsToSearch);
-        final Element target = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, TARGET);
-        target.setAttribute(TARGET.toLowerCase(), targetMessage.name());
-        if (targetMessage == TargetMessageType.OTHER) {
-            createAndAppendOtherTargetNameElement(otherTargetMessageName, htmlDoc);
-        }
-
         final OneOrMoreAssertion oneOrMore = new OneOrMoreAssertion();
         oneOrMore.addChild(new AllAssertion());
         oneOrMore.addChild(new TrueAssertion());
@@ -469,9 +457,23 @@ public class PolicyBuilder {
         final Document oneOrMoreDoc = WspWriter.getPolicyDocument(oneOrMore);
         final Element all = XmlUtil.findFirstChildElementByName(oneOrMoreDoc.getDocumentElement().getFirstChild(), XML_SOAP_NS, ALL);
         all.appendChild(oneOrMoreDoc.importNode(compareDoc.getDocumentElement(), true));
-        all.appendChild(oneOrMoreDoc.importNode(htmlDoc.getDocumentElement(), true));
-        addNode(oneOrMoreDoc.getDocumentElement().getFirstChild());
 
+        for (final String searchStr : searchFor) {
+            final Document htmlDoc = readResource(REPLACE_TAG_CONTENT);
+            final Element search = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, SEARCH_FOR);
+            search.setAttribute(STRING_VALUE, searchStr);
+            final Element replace = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, REPLACE_WITH);
+            replace.setAttribute(STRING_VALUE, replaceWith);
+            final Element tags = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, TAGS_TO_SEARCH);
+            tags.setAttribute(STRING_VALUE, tagsToSearch);
+            final Element target = XmlUtil.findFirstChildElementByName(htmlDoc.getDocumentElement(), L7_NS, TARGET);
+            target.setAttribute(TARGET.toLowerCase(), targetMessage.name());
+            if (targetMessage == TargetMessageType.OTHER) {
+                createAndAppendOtherTargetNameElement(otherTargetMessageName, htmlDoc);
+            }
+            all.appendChild(oneOrMoreDoc.importNode(htmlDoc.getDocumentElement(), true));
+        }
+        addNode(oneOrMoreDoc.getDocumentElement().getFirstChild());
         return this;
     }
 
