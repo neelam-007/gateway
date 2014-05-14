@@ -664,7 +664,6 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     public void generateCSRBadSignature() throws Exception {
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "signatureHash=Invalid", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
 
-        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(400, response.getStatus());
     }
@@ -674,7 +673,6 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     public void generateCSRBadCSRSubjectDN() throws Exception {
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "csrSubjectDN=Invalid", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
 
-        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(400, response.getStatus());
     }
