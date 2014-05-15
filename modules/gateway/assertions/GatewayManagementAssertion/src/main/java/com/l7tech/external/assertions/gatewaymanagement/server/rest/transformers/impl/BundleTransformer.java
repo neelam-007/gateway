@@ -33,7 +33,6 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     private URLAccessibleLocator urlAccessibleLocator;
 
     //Theses are the different properties that can be in a Mapping
-    private static final String IdentityProvider = "IdentityProvider";
     private static final String FailOnNew = "FailOnNew";
     private static final String FailOnExisting = "FailOnExisting";
     private static final String MapBy = "MapBy";
@@ -123,6 +122,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
         });
 
+        //Validate entityMap has the same number of elements as there are entityContainers
+        if(entityContainerMap.size() != entityContainers.size()){
+            throw new IllegalStateException("Could not uniquely map EntityContainers by their id's.");
+        }
+
         //convert the mappings to entityMapping instruction.
         final List<EntityMappingInstructions> mappingInstructions = Functions.map(bundle.getMappings(), new Functions.UnaryThrows<EntityMappingInstructions, Mapping, ResourceFactory.InvalidResourceException>() {
             @Override
@@ -195,9 +199,6 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         if (entityMappingInstructions.shouldFailOnExisting()) {
             mapping.addProperty(FailOnExisting, Boolean.TRUE);
         }
-        if(entityMappingInstructions.getIdentityProviderId() != null ){
-            mapping.addProperty(IdentityProvider, entityMappingInstructions.getIdentityProviderId().toString());
-        }
         if (entityMappingInstructions.getTargetMapping() != null) {
             switch (entityMappingInstructions.getTargetMapping().getType()) {
                 case GUID:
@@ -257,14 +258,9 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull Mapping mapping, EntityContainer entity) {
         //Create the source header from the entity
         EntityHeader sourceHeader;
-        if(entity == null ) {
-            if(mapping.getProperties()!= null && mapping.getProperties().containsKey(IdentityProvider)){
-                sourceHeader = new IdentityHeader(Goid.parseGoid((String)mapping.getProperties().get(IdentityProvider)),mapping.getSrcId(),EntityType.valueOf(mapping.getType()),null,null,null,null);
-
-            }else{
-                // reference mappings have no referenced entity
-                sourceHeader = new EntityHeader(mapping.getSrcId(),EntityType.valueOf(mapping.getType()),null,null);
-            }
+        if (entity == null) {
+            // reference mappings have no referenced entity
+            sourceHeader = new EntityHeader(mapping.getSrcId(), EntityType.valueOf(mapping.getType()), null, null);
         }
         else {
             sourceHeader = EntityHeaderUtils.fromEntity((Entity)entity.getEntity());
@@ -281,9 +277,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         }
         Boolean isFailOnExisting = mapping.getProperty(FailOnExisting);
         Boolean isFailOnNew = mapping.getProperty(FailOnNew);
-        String idProviderStr = mapping.getProperty(IdentityProvider);
-        Goid idProvider = idProviderStr == null ? null : Goid.parseGoid(idProviderStr);
-        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false, idProvider);
+        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false);
     }
 
     /**

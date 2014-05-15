@@ -39,4 +39,17 @@ public class RevocationCheckingPolicyResourceFactory extends SecurityZoneableEnt
 
         return revocationCheckingPolicy;
     }
+
+    @Override
+    public RevocationCheckPolicy fromResource(Object resource, boolean strict) throws InvalidResourceException {
+        if (!(resource instanceof RevocationCheckingPolicyMO)) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected RevocationCheckingPolicy");
+        }
+        final RevocationCheckingPolicyMO revocationCheckingPolicyMO = (RevocationCheckingPolicyMO) resource;
+        final RevocationCheckPolicy revocationCheckPolicy = new RevocationCheckPolicy();
+
+        revocationCheckPolicy.setName(revocationCheckingPolicyMO.getName());
+
+        return revocationCheckPolicy;
+    }
 }

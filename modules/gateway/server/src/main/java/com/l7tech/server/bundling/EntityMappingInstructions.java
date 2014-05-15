@@ -1,8 +1,6 @@
 package com.l7tech.server.bundling;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.IdentityHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,12 +32,6 @@ public class EntityMappingInstructions {
      */
     @Nullable
     private final TargetMapping targetMapping;
-
-    /**
-     * The identity provider
-     */
-    @Nullable
-    private final Goid identityProvider;
 
     public enum MappingAction {
         NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore
@@ -90,6 +82,7 @@ public class EntityMappingInstructions {
     public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping, @NotNull MappingAction mappingAction) {
         this(sourceEntityHeader, targetMapping, mappingAction, false, false);
     }
+
     /**
      * Creates new mapping instructions.
      *
@@ -105,31 +98,11 @@ public class EntityMappingInstructions {
      * @param failOnExisting     If this is true the import will fail if there is an existing entity.
      */
     public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping, @NotNull MappingAction mappingAction, boolean failOnNew, boolean failOnExisting) {
-        this(sourceEntityHeader,targetMapping,mappingAction,failOnNew,failOnExisting,(sourceEntityHeader instanceof IdentityHeader) ? ((IdentityHeader)sourceEntityHeader).getProviderGoid() : null);
-    }
-
-    /**
-     * Creates new mapping instructions.
-     *
-     * @param sourceEntityHeader The source entity header. This must have an id specified and reference an entity with
-     *                           the same id in an {@link com.l7tech.server.bundling.EntityBundle}. Must not be null
-     * @param targetMapping      The target mapping. If this is null mapping will be done using the entity id. If it is
-     *                           not null mapping will be done using the {@link com.l7tech.server.bundling.EntityMappingInstructions.TargetMapping}
-     *                           type and id.
-     * @param mappingAction      The mapping action to take. This tells the {@link com.l7tech.server.bundling.EntityBundleImporter}
-     *                           how to behave if there is an existing entity in the gateway.
-     * @param failOnNew          If true this will fail the import if there isn't an existing entity to map the source
-     *                           entity to.
-     * @param failOnExisting     If this is true the import will fail if there is an existing entity.
-     * @param identityProvider   The identity provider if this is an identity mapping
-     */
-    public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping, @NotNull MappingAction mappingAction, boolean failOnNew, boolean failOnExisting, Goid identityProvider) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.targetMapping = targetMapping;
         this.mappingAction = mappingAction;
         this.failOnNew = failOnNew;
         this.failOnExisting = failOnExisting;
-        this.identityProvider = identityProvider;
     }
 
     /**
@@ -169,16 +142,6 @@ public class EntityMappingInstructions {
      */
     public boolean shouldFailOnExisting() {
         return failOnExisting;
-    }
-
-    /**
-     * Returns the identity provider id for identity mappings
-     *
-     * @return the identity provider
-     */
-    @Nullable
-    public Goid getIdentityProviderId() {
-        return identityProvider;
     }
 
     /**

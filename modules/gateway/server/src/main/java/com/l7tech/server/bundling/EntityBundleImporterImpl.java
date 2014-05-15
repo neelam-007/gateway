@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -453,8 +454,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         //check if should search by name
 
                         // todo refactor -  user/group, generic entity, general
-                        if(mapping.getIdentityProviderId()!= null){
-                            final Goid idProvider = getMappedIdentityProviderID(mapping.getIdentityProviderId(),resourceMapping);
+                        if ((EntityType.USER.equals(mapping.getSourceEntityHeader().getType()) || EntityType.GROUP.equals(mapping.getSourceEntityHeader().getType()))
+                                && entity instanceof Identity) {
+                            final Goid idProvider = getMappedIdentityProviderID(((Identity)entity).getProviderId(),resourceMapping);
                             IdentityProvider provider = identityProviderFactory.getProvider(idProvider);
                             if (provider == null) return null;
 

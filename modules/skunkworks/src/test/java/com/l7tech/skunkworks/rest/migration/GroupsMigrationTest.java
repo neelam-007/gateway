@@ -7,8 +7,6 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.internal.InternalGroup;
-import com.l7tech.identity.ldap.LdapGroup;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
@@ -33,14 +31,12 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
 *
@@ -123,7 +119,7 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 1 item. A policy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 item. A policy", 3, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 mappings. Root folder, a policy, a group, a id provider", 4, bundleItem.getContent().getMappings().size());
 
         cleanDatabase();
@@ -194,7 +190,7 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 1 item. A policy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 item. A policy", 3, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 mappings. Root folder, a policy, a group, a id provider", 4, bundleItem.getContent().getMappings().size());
 
         cleanDatabase();
@@ -289,7 +285,7 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 1 item. A policy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 item. A policy", 3, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 mappings. Root folder, a policy, a group, a id provider", 4, bundleItem.getContent().getMappings().size());
 
         cleanDatabase();

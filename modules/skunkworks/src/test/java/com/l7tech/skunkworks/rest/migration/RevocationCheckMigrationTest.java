@@ -2,13 +2,10 @@ package com.l7tech.skunkworks.rest.migration;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -17,18 +14,15 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import junit.framework.*;
 import org.apache.http.entity.ContentType;
-import org.junit.*;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamResult;
@@ -41,9 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.*;
 
 /**
 *
@@ -128,7 +120,7 @@ public class RevocationCheckMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 2 items. A policy, a trusted certificate", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 items. A policy, a trusted certificate", 3, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 items. Root folder, a policy, a trusted certificate, a revocation check policy", 4, bundleItem.getContent().getMappings().size());
 
         cleanDatabase();
@@ -196,7 +188,7 @@ public class RevocationCheckMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 2 items. A policy, a trusted certificate", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 items. A policy, a trusted certificate", 3, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 4 items. Root folder, a policy, a trusted certificate, a revocation check policy", 4, bundleItem.getContent().getMappings().size());
 
         cleanDatabase();

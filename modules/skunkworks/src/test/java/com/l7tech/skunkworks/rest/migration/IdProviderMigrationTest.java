@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
@@ -105,7 +104,7 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 1 items A policy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 2 items A policy", 2, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 3 mapping. Root folder, a policy, an id provider", 3, bundleItem.getContent().getMappings().size());
 
         cleanPolicies();
@@ -166,7 +165,7 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         assertEquals(200, response.getStatus());
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 1 items A policy", 1, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 2 items A policy", 2, bundleItem.getContent().getReferences().size());
         assertEquals("The bundle should have 3 mapping. Root folder, a policy, an id provider", 3, bundleItem.getContent().getMappings().size());
 
         cleanPolicies();

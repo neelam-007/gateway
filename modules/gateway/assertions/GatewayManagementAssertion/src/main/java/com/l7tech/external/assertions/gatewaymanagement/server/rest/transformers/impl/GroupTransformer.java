@@ -8,8 +8,12 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.bundling.IdentityEntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -59,7 +63,7 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
         group.setProviderId(identityProviderGoid);
         group.setName(groupMO.getName());
         group.setDescription(groupMO.getDescription());
-        return new EntityContainer<Group>(group);
+        return new IdentityEntityContainer<Group>(group);
     }
 
     @Override

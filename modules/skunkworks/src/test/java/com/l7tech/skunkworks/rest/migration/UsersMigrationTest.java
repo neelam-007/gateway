@@ -160,7 +160,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 1 item. A policy, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 3 item. A policy, an identity provider, a user", 3, bundleItem.getContent().getReferences().size());
         Assert.assertEquals("The bundle should have 4 mappings. A policy, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
 
         //import the bundle
@@ -233,7 +233,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 1 item. A policy, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 item. A policy, an identity provider, a user", 3, bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 4 mappings. A policy, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
 
             // map
@@ -315,7 +315,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 1 item. A policy, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 item. A policy, an identity provider, a user", 3, bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 4 mappings. A policy, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
 
             // map
@@ -398,7 +398,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 1 item. A service, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 item. A service, an identity provider, a user", 3, bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 4 mappings. A service, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
 
             // map
@@ -515,7 +515,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 1 item. A policy, an identity provider, a user", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 item. A policy, an identity provider, a user", 3, bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 4 mappings. A policy, root folder, an identity provider, a user", 4, bundleItem.getContent().getMappings().size());
 
             // map

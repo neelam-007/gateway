@@ -97,14 +97,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint,(JmsConnection)connection));
         }else if (entity instanceof Identity){
-            // not include identities in bundle
-            return;
-        }else if (entity instanceof IdentityProviderConfig){
-            // not include id providers in bundle
-            return;
-        }else if (entity instanceof RevocationCheckPolicy){
-            // not include revocation check policy in bundle
-            return;
+            entityContainers.add(new IdentityEntityContainer((Identity)entity));
         }else if(entity instanceof SsgKeyEntry){
             // not include private key entity info in bundle
             return;
