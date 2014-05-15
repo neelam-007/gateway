@@ -138,6 +138,7 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public int repopulate() {
         // Saves the current selection.
+        final boolean isDefaultSslSelected = isSelectedDefaultSsl();
         final Goid keystoreId = getSelectedKeystoreId();
         final String keyAlias = getSelectedKeyAlias();
 
@@ -145,7 +146,12 @@ public class PrivateKeysComboBox extends JComboBox {
         populate();
 
         // Reselects the previous selection; if still available.
-        return select(keystoreId, keyAlias);
+        if (isDefaultSslSelected) {
+            this.selectDefaultSsl();
+            return this.getSelectedIndex();
+        } else {
+            return select(keystoreId, keyAlias);
+        }
     }
 
     /**
