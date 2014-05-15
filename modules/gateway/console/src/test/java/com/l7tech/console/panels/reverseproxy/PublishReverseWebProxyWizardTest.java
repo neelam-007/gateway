@@ -50,6 +50,7 @@ public class PublishReverseWebProxyWizardTest {
 
     @Test
     public void defaultGeneric() throws Exception {
+        config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.GENERIC);
         config.setWebAppHost("default-generic.l7tech.com");
         PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);
 
@@ -76,6 +77,7 @@ public class PublishReverseWebProxyWizardTest {
 
     @Test
     public void minimalGeneric() throws Exception {
+        config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.GENERIC);
         config.setWebAppHost("default-generic.l7tech.com");
         config.setRewriteCookies(false);
         config.setRewriteLocationHeader(false);
@@ -113,6 +115,7 @@ public class PublishReverseWebProxyWizardTest {
 
     @Test
     public void genericRewriteSpecificTags() throws Exception {
+        config.setWebAppType(ReverseWebProxyConfig.WebApplicationType.GENERIC);
         config.setWebAppHost("default-generic.l7tech.com");
         config.setHtmlTagsToRewrite("p,script");
         PublishReverseWebProxyWizard.buildPolicyXml(config, Collections.<Assertion>emptyList(), builder);

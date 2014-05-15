@@ -12,7 +12,7 @@ public class ReverseWebProxyConfig {
     private String name;
     private String webAppHost;
     private String routingUri = "*";
-    private WebApplicationType webAppType = WebApplicationType.GENERIC;
+    private WebApplicationType webAppType = WebApplicationType.SHAREPOINT;
     private boolean rewriteLocationHeader = true;
     private boolean rewriteCookies = true;
     private boolean rewriteResponseContent = true;
@@ -97,7 +97,7 @@ public class ReverseWebProxyConfig {
     }
 
     public enum WebApplicationType {
-        SHAREPOINT("Sharepoint"), GENERIC("Generic");
+        SHAREPOINT("SharePoint"), GENERIC("Generic");
 
         private final String name;
 
