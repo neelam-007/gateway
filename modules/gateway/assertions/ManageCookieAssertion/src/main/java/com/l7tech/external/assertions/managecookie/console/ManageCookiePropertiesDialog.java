@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.managecookie.ManageCookieAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -67,7 +68,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     @Override
     public void setData(final ManageCookieAssertion assertion) {
         operationComboBox.setSelectedItem(assertion.getOperation());
-        final Map<String, CookieAttribute> cookieAttributes = assertion.getCookieAttributes();
+        final Map<String, NameValuePair> cookieAttributes = assertion.getCookieAttributes();
         nameTextField.setText(cookieAttributes.containsKey(NAME) ? cookieAttributes.get(NAME).getValue() : StringUtils.EMPTY);
         valueTextField.setText(cookieAttributes.containsKey(VALUE) ? cookieAttributes.get(VALUE).getValue() : StringUtils.EMPTY);
         domainTextField.setText(cookieAttributes.containsKey(DOMAIN) ? cookieAttributes.get(DOMAIN).getValue() : StringUtils.EMPTY);
@@ -77,15 +78,15 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         versionTextField.setText(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).getValue() : StringUtils.EMPTY);
         secureCheckBox.setSelected(cookieAttributes.containsKey(SECURE) ? Boolean.parseBoolean(cookieAttributes.get(SECURE).getValue()) : false);
         httpOnlyCheckBox.setSelected(cookieAttributes.containsKey(HTTP_ONLY) ? Boolean.parseBoolean(cookieAttributes.get(HTTP_ONLY).getValue()) : false);
-        originalName.setSelected(cookieAttributes.containsKey(NAME) ? cookieAttributes.get(NAME).isUseOriginalValue() : false);
-        originalValue.setSelected(cookieAttributes.containsKey(VALUE) ? cookieAttributes.get(VALUE).isUseOriginalValue() : false);
-        originalDomain.setSelected(cookieAttributes.containsKey(DOMAIN) ? cookieAttributes.get(DOMAIN).isUseOriginalValue() : false);
-        originalPath.setSelected(cookieAttributes.containsKey(PATH) ? cookieAttributes.get(PATH).isUseOriginalValue() : false);
-        originalComment.setSelected(cookieAttributes.containsKey(COMMENT) ? cookieAttributes.get(COMMENT).isUseOriginalValue() : false);
-        originalMaxAge.setSelected(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).isUseOriginalValue() : false);
-        originalVersion.setSelected(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).isUseOriginalValue() : false);
-        originalSecure.setSelected(cookieAttributes.containsKey(SECURE) ? cookieAttributes.get(SECURE).isUseOriginalValue() : false);
-        originalHttpOnly.setSelected(cookieAttributes.containsKey(HTTP_ONLY) ? cookieAttributes.get(HTTP_ONLY).isUseOriginalValue() : false);
+        originalName.setSelected(!cookieAttributes.containsKey(NAME));
+        originalValue.setSelected(!cookieAttributes.containsKey(VALUE));
+        originalDomain.setSelected(!cookieAttributes.containsKey(DOMAIN));
+        originalPath.setSelected(!cookieAttributes.containsKey(PATH));
+        originalComment.setSelected(!cookieAttributes.containsKey(COMMENT));
+        originalMaxAge.setSelected(!cookieAttributes.containsKey(MAX_AGE));
+        originalVersion.setSelected(!cookieAttributes.containsKey(VERSION));
+        originalSecure.setSelected(!cookieAttributes.containsKey(SECURE));
+        originalHttpOnly.setSelected(!cookieAttributes.containsKey(HTTP_ONLY));
         final Map<String, CookieCriteria> criteria = assertion.getCookieCriteria();
         if (criteria.containsKey(NAME)) {
             final CookieCriteria nameCriteria = criteria.get(NAME);
@@ -113,15 +114,15 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         }
         assertion.setOperation((Operation) operationComboBox.getSelectedItem());
         assertion.getCookieAttributes().clear();
-        setAttributeIfUseOriginalOrNotBlank(assertion, NAME, nameTextField, originalName);
-        setAttributeIfUseOriginalOrNotBlank(assertion, VALUE, valueTextField, originalValue);
-        setAttributeIfUseOriginalOrNotBlank(assertion, DOMAIN, domainTextField, originalDomain);
-        setAttributeIfUseOriginalOrNotBlank(assertion, PATH, pathTextField, originalPath);
-        setAttributeIfUseOriginalOrNotBlank(assertion, MAX_AGE, maxAgeTextField, originalMaxAge);
-        setAttributeIfUseOriginalOrNotBlank(assertion, VERSION, versionTextField, originalVersion);
-        setAttributeIfUseOriginalOrNotBlank(assertion, COMMENT, commentTextField, originalComment);
-        setAttributeIfUseOriginalOrNotBlank(assertion, SECURE, String.valueOf(secureCheckBox.isSelected()), originalSecure);
-        setAttributeIfUseOriginalOrNotBlank(assertion, HTTP_ONLY, String.valueOf(httpOnlyCheckBox.isSelected()), originalHttpOnly);
+        maybeSetAttribute(assertion, NAME, nameTextField, originalName);
+        maybeSetAttribute(assertion, VALUE, valueTextField, originalValue);
+        maybeSetAttribute(assertion, DOMAIN, domainTextField, originalDomain);
+        maybeSetAttribute(assertion, PATH, pathTextField, originalPath);
+        maybeSetAttribute(assertion, MAX_AGE, maxAgeTextField, originalMaxAge);
+        maybeSetAttribute(assertion, VERSION, versionTextField, originalVersion);
+        maybeSetAttribute(assertion, COMMENT, commentTextField, originalComment);
+        maybeSetAttribute(assertion, SECURE, secureCheckBox.isSelected() ? "true" : null, originalSecure);
+        maybeSetAttribute(assertion, HTTP_ONLY, httpOnlyCheckBox.isSelected() ? "true" : null, originalHttpOnly);
         assertion.getCookieCriteria().clear();
         setCriteriaIfNotBlank(assertion, NAME, nameMatchTextField, nameRegexCheckBox);
         setCriteriaIfNotBlank(assertion, DOMAIN, domainMatchTextField, domainRegexCheckBox);
@@ -129,14 +130,17 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         return assertion;
     }
 
-    private void setAttributeIfUseOriginalOrNotBlank(final ManageCookieAssertion assertion, final String attributeName, final String attributeValue, final JCheckBox originalCheckBox) {
-        if (originalCheckBox.isSelected() || StringUtils.isNotBlank(attributeValue)) {
-            assertion.getCookieAttributes().put(attributeName, new CookieAttribute(attributeName, attributeValue.trim(), originalCheckBox.isSelected()));
+    private void maybeSetAttribute(final ManageCookieAssertion assertion, final String attributeName, final String attributeValue, final JCheckBox originalCheckBox) {
+        final Operation operation = assertion.getOperation();
+        if (operation == UPDATE && !originalCheckBox.isSelected()) {
+            assertion.getCookieAttributes().put(attributeName, new NameValuePair(attributeName, attributeValue));
+        } else if (operation == ADD && StringUtils.isNotBlank(attributeValue)) {
+            assertion.getCookieAttributes().put(attributeName, new NameValuePair(attributeName, attributeValue));
         }
     }
 
-    private void setAttributeIfUseOriginalOrNotBlank(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox originalCheckBox) {
-        setAttributeIfUseOriginalOrNotBlank(assertion, attributeName, attributeTextField.getText(), originalCheckBox);
+    private void maybeSetAttribute(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox originalCheckBox) {
+        maybeSetAttribute(assertion, attributeName, attributeTextField.getText().trim(), originalCheckBox);
     }
 
     private void setCriteriaIfNotBlank(final ManageCookieAssertion assertion, final String attributeName, final JTextField attributeTextField, final JCheckBox regexCheckBox) {

@@ -12,6 +12,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Either;
+import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -178,7 +179,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
     }
 
     private boolean useExistingValue(final String attributeName) {
-        return assertion.getCookieAttributes().containsKey(attributeName) && assertion.getCookieAttributes().get(attributeName).isUseOriginalValue();
+        return !assertion.getCookieAttributes().containsKey(attributeName);
     }
 
     private String getAttributeValue(final String attributeName, final HttpCookie existingCookie, final Map<String, Object> variableMap) {
@@ -213,7 +214,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
 
     private void validateRequiredFields(final ManageCookieAssertion.Operation operation) throws PolicyAssertionException {
         if (operation == ManageCookieAssertion.Operation.ADD || operation == Operation.ADD_OR_REPLACE) {
-            final Map<String, ManageCookieAssertion.CookieAttribute> cookieAttributes = assertion.getCookieAttributes();
+            final Map<String, NameValuePair> cookieAttributes = assertion.getCookieAttributes();
             if (!cookieAttributes.containsKey(ManageCookieAssertion.NAME)) {
                 throw new PolicyAssertionException(assertion, "Missing cookie name");
             }

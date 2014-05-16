@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.managecookie;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.util.NameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,8 +28,8 @@ public class ManageCookieAssertionTest {
 
     @Test
     public void getAssertionNameAdd() {
-        assertion.getCookieAttributes().put(NAME, new ManageCookieAssertion.CookieAttribute(NAME, "foo", false));
-        assertion.getCookieAttributes().put(VALUE, new ManageCookieAssertion.CookieAttribute(VALUE, "bar", false));
+        assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
+        assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
         assertEquals("Request: Add Cookie foo=bar", assertionNameFactory.getAssertionName(assertion, true));
     }
 
@@ -47,16 +48,16 @@ public class ManageCookieAssertionTest {
     @Test
     public void getAssertionNameAddOrReplace() {
         assertion.setOperation(ManageCookieAssertion.Operation.ADD_OR_REPLACE);
-        assertion.getCookieAttributes().put(NAME, new ManageCookieAssertion.CookieAttribute(NAME, "foo", false));
-        assertion.getCookieAttributes().put(VALUE, new ManageCookieAssertion.CookieAttribute(VALUE, "bar", false));
+        assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
+        assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
         assertEquals("Request: Add or Replace Cookie foo", assertionNameFactory.getAssertionName(assertion, true));
     }
 
     @Test
     public void getAssertionNameResponse() {
         assertion.setTarget(TargetMessageType.RESPONSE);
-        assertion.getCookieAttributes().put(NAME, new ManageCookieAssertion.CookieAttribute(NAME, "foo", false));
-        assertion.getCookieAttributes().put(VALUE, new ManageCookieAssertion.CookieAttribute(VALUE, "bar", false));
+        assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
+        assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
         assertEquals("Response: Add Cookie foo=bar", assertionNameFactory.getAssertionName(assertion, true));
     }
 }

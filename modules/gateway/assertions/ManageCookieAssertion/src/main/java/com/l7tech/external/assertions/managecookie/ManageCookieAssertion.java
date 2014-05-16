@@ -59,11 +59,11 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
     }
 
     @NotNull
-    public Map<String, CookieAttribute> getCookieAttributes() {
+    public Map<String, NameValuePair> getCookieAttributes() {
         return cookieAttributes;
     }
 
-    public void setCookieAttributes(@NotNull final Map<String, CookieAttribute> cookieAttributes) {
+    public void setCookieAttributes(@NotNull final Map<String, NameValuePair> cookieAttributes) {
         this.cookieAttributes.clear();
         this.cookieAttributes.putAll(cookieAttributes);
     }
@@ -74,7 +74,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         for (final CookieCriteria criteria : cookieCriteria.values()) {
             varsUsed.add(criteria.getValue());
         }
-        for (final CookieAttribute attribute : cookieAttributes.values()) {
+        for (final NameValuePair attribute : cookieAttributes.values()) {
             varsUsed.add(attribute.getValue());
         }
         return super.doGetVariablesUsed().withExpressions(varsUsed);
@@ -93,7 +93,6 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new Java5EnumTypeMapping(Operation.class, "operation"),
-                new BeanTypeMapping(CookieAttribute.class, "cookieAttribute"),
                 new BeanTypeMapping(CookieCriteria.class, "cookieCriteria")
         )));
         meta.put(POLICY_NODE_NAME_FACTORY, NODE_NAME_FACTORY);
@@ -130,27 +129,7 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
 
     private final Map<String, CookieCriteria> cookieCriteria = new HashMap<>();
 
-    private final Map<String, CookieAttribute> cookieAttributes = new HashMap<>();
-
-    public static class CookieAttribute extends NameValuePair {
-        private boolean useOriginalValue;
-
-        public CookieAttribute() {
-        }
-
-        public CookieAttribute(final String name, final String value, final boolean useOriginalValue) {
-            super(name, value);
-            this.useOriginalValue = useOriginalValue;
-        }
-
-        public boolean isUseOriginalValue() {
-            return useOriginalValue;
-        }
-
-        public void setUseOriginalValue(final boolean useOriginalValue) {
-            this.useOriginalValue = useOriginalValue;
-        }
-    }
+    private final Map<String, NameValuePair> cookieAttributes = new HashMap<>();
 
     public static class CookieCriteria extends NameValuePair {
         private boolean regex;
