@@ -511,7 +511,7 @@ public class PolicyHelper {
         public JdbcConnection getJdbcConnectionById( final String id ) throws FindException {
             try {
                 return filter( jdbcConnectionManager.findByPrimaryKey( GoidUpgradeMapper.mapId(EntityType.JDBC_CONNECTION, id) ) );
-            } catch ( NumberFormatException nfe ) {
+            } catch ( IllegalArgumentException nfe ) {
                 return null;
             }
         }

@@ -195,7 +195,14 @@ public class ActiveConnectorRestEntityResourceTest extends RestEntityTests<SsgAc
 
     @Override
     public Map<String, Functions.BinaryVoid<String, RestResponse>> getUnGettableManagedObjectIds() {
-        return Collections.emptyMap();
+        CollectionUtils.MapBuilder<String, Functions.BinaryVoid<String, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
+        builder.put("asdf"+getGoid().toString(), new Functions.BinaryVoid<String, RestResponse>() {
+            @Override
+            public void call(String s, RestResponse restResponse) {
+                Assert.assertEquals("Expected successful response", 400, restResponse.getStatus());
+            }
+        });
+        return builder.map();
     }
 
     @Override

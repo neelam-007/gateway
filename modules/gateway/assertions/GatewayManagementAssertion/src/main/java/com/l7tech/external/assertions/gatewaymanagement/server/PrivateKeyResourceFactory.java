@@ -613,7 +613,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             }
             try {
                 keyStoreId = GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keystoreAndAlias[0]);
-            } catch ( NumberFormatException nfe ) {
+            } catch ( IllegalArgumentException nfe ) {
                 validationThrower.call();
                 keyStoreId = PersistentEntity.DEFAULT_GOID;
             }

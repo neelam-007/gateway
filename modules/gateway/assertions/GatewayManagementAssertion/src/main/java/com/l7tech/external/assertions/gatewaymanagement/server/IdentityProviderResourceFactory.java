@@ -203,7 +203,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                     }
                 });
                 federatedIdentityProviderConfig.setTrustedCertGoids(goids.toArray(new Goid[goids.size()]));
-            } catch ( NumberFormatException nfe ) {
+            } catch ( IllegalArgumentException nfe ) {
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid certificate reference");
             }
         }

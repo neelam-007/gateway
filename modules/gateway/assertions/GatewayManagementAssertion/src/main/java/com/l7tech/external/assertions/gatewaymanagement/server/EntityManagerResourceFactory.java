@@ -92,7 +92,11 @@ public abstract class EntityManagerResourceFactory<R, E extends PersistentEntity
 
                     final Goid goid;
                     if(id != null){
-                        goid = Goid.parseGoid(id);
+                        try {
+                            goid = Goid.parseGoid(id);
+                        }catch(IllegalArgumentException e){
+                            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES,ExceptionUtils.getMessage(e));
+                        }
                         doSaveEntity(goid, entityBag.getEntity());
                     } else {
                         goid = doSaveEntity(entityBag.getEntity());

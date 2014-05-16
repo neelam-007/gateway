@@ -278,7 +278,19 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
 
     @Override
     public Map<String, Functions.BinaryVoid<String, RestResponse>> getUnGettableManagedObjectIds() {
-        return Collections.emptyMap();
+        CollectionUtils.MapBuilder<String, Functions.BinaryVoid<String, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
+        builder.put("123"+ssgKeyEntries.get(0).getId(), new Functions.BinaryVoid<String, RestResponse>() {
+            @Override
+            public void call(String s, RestResponse restResponse) {
+                Assert.assertEquals("Expected successful response", 400, restResponse.getStatus());
+            }
+        }).put(ssgKeyEntries.get(0).getId()+"123", new Functions.BinaryVoid<String, RestResponse>() {
+            @Override
+            public void call(String s, RestResponse restResponse) {
+                Assert.assertEquals("Expected successful response", 404, restResponse.getStatus());
+            }
+        });
+        return builder.map();
     }
 
     @Override
