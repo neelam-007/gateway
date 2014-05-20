@@ -16,6 +16,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -56,14 +57,16 @@ public class HttpForwardingRuleEnforcerJavaTest {
         request = new Message(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream("<test></test>".getBytes()));
         response = new Message();
         requestParams = new GenericHttpRequestParams();
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
+        responseHeadersKnob = new HeadersKnobSupport();
+        response.attachKnob(responseHeadersKnob, HeadersKnob.class);
+        responseHeaders = new ArrayList<>();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         ruleSet = new HttpPassthroughRuleSet();
         ruleSet.setForwardAll(true);
         rules = new ArrayList<>();
         audit = new TestAudit();
         vars = new HashMap<>();
-        responseHeadersKnob = new HeadersKnobSupport();
-        responseHeaders = new ArrayList<>();
     }
 
     @Test
@@ -412,7 +415,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
     @Test
     public void forwardAllResponseHeaders() throws Exception {
         responseHeaders.add(new GenericHttpHeader("foo", "bar"));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals("foo", responseHeadersKnob.getHeaderNames()[0]);
         assertEquals(1, responseHeadersKnob.getHeaderValues("foo").length);
@@ -424,7 +427,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             responseHeaders.add(new GenericHttpHeader(specialHeader, "testValue"));
         }
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), responseHeadersKnob.getHeaderNames().length);
         final List<String> headerNames = Arrays.asList(responseHeadersKnob.getHeaderNames());
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
@@ -437,7 +440,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             responseHeaders.add(new GenericHttpHeader(specialHeader.toUpperCase(), "testValue"));
         }
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), responseHeadersKnob.getHeaderNames().length);
         final List<String> headerNames = Arrays.asList(responseHeadersKnob.getHeaderNames());
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
@@ -450,7 +453,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             responseHeaders.add(new GenericHttpHeader(specialHeader, "testValue"));
         }
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, false, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, false, context, requestParams, null, null);
         final Collection<Header> headers = responseHeadersKnob.getHeaders();
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), headers.size());
         for (final Header header : headers) {
@@ -465,8 +468,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "a=hasPath; path=/cookiePath"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(4, cookiesMap.size());
         final HttpCookie fooCookie = cookiesMap.get("foo");
@@ -499,8 +502,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
         context.setOverwriteResponseCookieDomain(false);
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(4, cookiesMap.size());
 
@@ -537,8 +540,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
         context.setOverwriteResponseCookiePath(false);
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(4, cookiesMap.size());
 
@@ -576,8 +579,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
         context.setOverwriteResponseCookieDomain(false);
         context.setOverwriteResponseCookiePath(false);
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(4, cookiesMap.size());
 
@@ -608,8 +611,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
         // invalid cookie should be filtered
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", ""));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(1, cookiesMap.size());
         assertEquals("bar", cookiesMap.get("foo").getCookieValue());
@@ -622,7 +625,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             responseHeaders.add(new GenericHttpHeader(specialHeader, "testValue"));
         }
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), responseHeadersKnob.getHeaderNames().length);
         final List<String> headerNames = Arrays.asList(responseHeadersKnob.getHeaderNames());
         for (final String specialHeader : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
@@ -636,7 +639,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("foo", true, "bar"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals(1, responseHeadersKnob.getHeaderValues("foo").length);
         assertEquals("bar", responseHeadersKnob.getHeaderValues("foo")[0]);
@@ -648,7 +651,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("foo", true, "${custom}"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, vars, vars.keySet().toArray(new String[vars.size()]));
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, vars, vars.keySet().toArray(new String[vars.size()]));
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals(1, responseHeadersKnob.getHeaderValues("foo").length);
         assertEquals("customValue", responseHeadersKnob.getHeaderValues("foo")[0]);
@@ -660,7 +663,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("foo", true, "${custom}"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, new String[]{"custom"});
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, new String[]{"custom"});
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals(1, responseHeadersKnob.getHeaderValues("foo").length);
         assertEquals("customValue", responseHeadersKnob.getHeaderValues("foo")[0]);
@@ -672,7 +675,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("foo", false, null));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals(1, responseHeadersKnob.getHeaderValues("foo").length);
         assertEquals("bar", responseHeadersKnob.getHeaderValues("foo")[0]);
@@ -683,7 +686,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("foo", false, null));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(0, responseHeadersKnob.getHeaderNames().length);
     }
 
@@ -691,7 +694,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
     public void responseRulesFilterHeaders() {
         responseHeaders.add(new GenericHttpHeader("notInRule", "shouldBeFiltered"));
         ruleSet.setForwardAll(false);
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(0, responseHeadersKnob.getHeaderNames().length);
     }
 
@@ -702,8 +705,8 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("Set-Cookie", false, "thisValueIsNotUsed"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals(1, context.getResponse().getHttpCookiesKnob().getCookies().size());
         final HttpCookie cookie = context.getResponse().getHttpCookiesKnob().getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
@@ -718,9 +721,41 @@ public class HttpForwardingRuleEnforcerJavaTest {
         rules.add(new HttpPassthroughRule("Set-Cookie", false, "thisValueIsNotUsed"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
-        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), responseHeadersKnob, audit, ruleSet, true, context, requestParams, null, null);
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, true, context, requestParams, null, null);
         assertEquals(0, responseHeadersKnob.getHeaderNames().length);
         assertEquals(0, context.getResponse().getHttpCookiesKnob().getCookies().size());
+    }
+
+    @BugId("SSG-8561")
+    @Test
+    public void nonDefaultResponseSetCookieHeaders() throws Exception {
+        requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "a=hasPath; path=/cookiePath"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "b=hasDomain; domain=cookieDomain"));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "c=hasPathAndDomain; domain=cookieDomain; path=/cookiePath"));
+        final Message nonDefaultResponse = new Message();
+        nonDefaultResponse.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
+        HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), nonDefaultResponse, audit, ruleSet, true, context, requestParams, null, null);
+        assertEquals(1, nonDefaultResponse.getHeadersKnob().getHeaderNames().length);
+        final Map<String, HttpCookie> cookiesMap = createCookiesMap(nonDefaultResponse);
+        assertEquals(4, cookiesMap.size());
+        final HttpCookie fooCookie = cookiesMap.get("foo");
+        assertEquals("bar", fooCookie.getCookieValue());
+        assertEquals("localhost", fooCookie.getDomain());
+        assertEquals("/test", fooCookie.getPath());
+        final HttpCookie aCookie = cookiesMap.get("a");
+        assertEquals("hasPath", aCookie.getCookieValue());
+        assertEquals("localhost", aCookie.getDomain());
+        assertEquals("/cookiePath", aCookie.getPath());
+        final HttpCookie bCookie = cookiesMap.get("b");
+        assertEquals("hasDomain", bCookie.getCookieValue());
+        assertEquals("cookieDomain", bCookie.getDomain());
+        assertEquals("/test", bCookie.getPath());
+        final HttpCookie cCookie = cookiesMap.get("c");
+        assertEquals("hasPathAndDomain", cCookie.getCookieValue());
+        assertEquals("cookieDomain", cCookie.getDomain());
+        assertEquals("/cookiePath", cCookie.getPath());
     }
 
     private Map<String, HttpCookie> createCookiesMap(final Message message) {

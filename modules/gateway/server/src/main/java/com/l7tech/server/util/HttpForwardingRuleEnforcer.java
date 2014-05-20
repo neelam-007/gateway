@@ -322,7 +322,7 @@ public class HttpForwardingRuleEnforcer {
     /**
      * Handle response http headers from a response
      * @param sourceOfResponseHeaders the response from the routing assertion
-     * @param targetForResponseHeaders the response HeadersKnob to put the pass-through headers into
+     * @param targetMessage the response Message to put the pass-through headers into
      * @param context the pec
      * @param rules http rules dictating what headers should be forwarded and under which conditions
      * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
@@ -332,7 +332,7 @@ public class HttpForwardingRuleEnforcer {
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
     public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
-                                              final HeadersKnob targetForResponseHeaders,
+                                              final Message targetMessage,
                                               final Audit auditor,
                                               final HttpPassthroughRuleSet rules,
                                               final boolean passThroughSpecialHeaders,
@@ -340,74 +340,79 @@ public class HttpForwardingRuleEnforcer {
                                               final GenericHttpRequestParams routedRequestParams,
                                               @Nullable Map<String,?> vars,
                                               @Nullable final String[] varNames) {
-        boolean passIncomingCookies = false;
-        if (rules.isForwardAll()) {
-            final boolean logFine = logger.isLoggable(Level.FINE);
-            for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
-                if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
-                    // special cookie handling happens outside this loop (see below)
-                } else {
-                    final boolean passThrough = passThroughSpecialHeaders || !headerShouldBeIgnored(headerFromResponse.getName());
-                    if (!passThrough && logFine) {
-                        logger.fine("Adding non-passThrough header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
-                    }
-                    targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP, passThrough);
-                }
-            }
-            passIncomingCookies = true;
-        } else {
-            if (passThroughSpecialHeaders) {
+        if (targetMessage != null && targetMessage.getHeadersKnob() != null) {
+            final HeadersKnob targetForResponseHeaders = targetMessage.getHeadersKnob();
+            boolean passIncomingCookies = false;
+            if (rules.isForwardAll()) {
+                final boolean logFine = logger.isLoggable(Level.FINE);
                 for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
-                    if (headerShouldBeIgnored(headerFromResponse.getName())) {
-                        targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP);
-                    }
-                }
-            }
-
-            for (final HttpPassthroughRule rule : rules.getRules()) {
-                if (rule.isUsesCustomizedValue()) {
-                    String headerValue = rule.getCustomizeValue();
-                    // resolve context variable if applicable
-                    if (varNames != null && varNames.length > 0) {
-                        if (vars == null) {
-                            vars = context.getVariableMap(varNames, auditor);
-                        }
-                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
-                    }
-                    targetForResponseHeaders.addHeader(rule.getName(), headerValue, HEADER_TYPE_HTTP);
-                } else {
-                    if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
-                        // special cookie handling outside this loop (see below)
-                        passIncomingCookies = true;
+                    if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
+                        // special cookie handling happens outside this loop (see below)
                     } else {
-                        final String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
-                        if (values != null && values.length > 0) {
-                            for (final String val : values) {
-                                targetForResponseHeaders.addHeader(rule.getName(), val, HEADER_TYPE_HTTP);
+                        final boolean passThrough = passThroughSpecialHeaders || !headerShouldBeIgnored(headerFromResponse.getName());
+                        if (!passThrough && logFine) {
+                            logger.fine("Adding non-passThrough header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
+                        }
+                        targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP, passThrough);
+                    }
+                }
+                passIncomingCookies = true;
+            } else {
+                if (passThroughSpecialHeaders) {
+                    for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
+                        if (headerShouldBeIgnored(headerFromResponse.getName())) {
+                            targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP);
+                        }
+                    }
+                }
+
+                for (final HttpPassthroughRule rule : rules.getRules()) {
+                    if (rule.isUsesCustomizedValue()) {
+                        String headerValue = rule.getCustomizeValue();
+                        // resolve context variable if applicable
+                        if (varNames != null && varNames.length > 0) {
+                            if (vars == null) {
+                                vars = context.getVariableMap(varNames, auditor);
                             }
+                            headerValue = ExpandVariables.process(headerValue, vars, auditor);
+                        }
+                        targetForResponseHeaders.addHeader(rule.getName(), headerValue, HEADER_TYPE_HTTP);
+                    } else {
+                        if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
+                            // special cookie handling outside this loop (see below)
+                            passIncomingCookies = true;
                         } else {
-                            logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
-                                    "incoming value but this header is not present.");
+                            final String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
+                            if (values != null && values.length > 0) {
+                                for (final String val : values) {
+                                    targetForResponseHeaders.addHeader(rule.getName(), val, HEADER_TYPE_HTTP);
+                                }
+                            } else {
+                                logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
+                                        "incoming value but this header is not present.");
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // handle cookies separately
-        if (passIncomingCookies) {
-            final String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
-            for (String setCookieValue : setCookieValues) {
-                try {
-                    final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
-                    final URL requestUrl = routedRequestParams.getTargetUrl();
-                    final HttpCookie cookie = new HttpCookie(context.isOverwriteResponseCookieDomain() ? requestUrl.getHost() : null,
-                            context.isOverwriteResponseCookiePath() ? requestUrl.getPath() : null, setCookieValue);
-                    cookiesKnob.addCookie(cookie);
-                } catch (final HttpCookie.IllegalFormatException e) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
+            // handle cookies separately
+            if (passIncomingCookies) {
+                final String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
+                for (String setCookieValue : setCookieValues) {
+                    try {
+                        final HttpCookiesKnob cookiesKnob = targetMessage.getHttpCookiesKnob();
+                        final URL requestUrl = routedRequestParams.getTargetUrl();
+                        final HttpCookie cookie = new HttpCookie(context.isOverwriteResponseCookieDomain() ? requestUrl.getHost() : null,
+                                context.isOverwriteResponseCookiePath() ? requestUrl.getPath() : null, setCookieValue);
+                        cookiesKnob.addCookie(cookie);
+                    } catch (final HttpCookie.IllegalFormatException e) {
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
+                    }
                 }
             }
+        } else {
+            logger.log(Level.WARNING, "Unable to forward response headers because headers knob is null.");
         }
     }
 

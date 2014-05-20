@@ -717,21 +717,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (assertionStatus == AssertionStatus.NONE && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
-
-                final HeadersKnob responseHeadersKnob = routedResponseDestination.getHeadersKnob();
-                if (responseHeadersKnob != null) {
-                    HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
-                                                                     responseHeadersKnob,
-                                                                     getAudit(),
-                                                                     assertion.getResponseHeaderRules(),
-                                                                     routedResponseDestinationIsContextVariable,
-                                                                     context,
-                                                                     routedRequestParams,
-                                                                     vars,
-                                                                     varNames);
-                } else {
-                    logger.log(Level.WARNING, "Unable to forward response headers because headers knob is null.");
-                }
+                HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
+                                                                 routedResponseDestination,
+                                                                 getAudit(),
+                                                                 assertion.getResponseHeaderRules(),
+                                                                 routedResponseDestinationIsContextVariable,
+                                                                 context,
+                                                                 routedRequestParams,
+                                                                 vars,
+                                                                 varNames);
             }
             if (assertion.isPassthroughHttpAuthentication()) {
                 boolean passed = false;
