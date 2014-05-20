@@ -214,7 +214,7 @@ public class XmlElementVerifier {
             final Goid certOid = config.getVerifyCertificateGoid();
             final String certName = config.getVerifyCertificateName();
 
-            if ( certOid != null ) {
+            if ( certOid != null && !Goid.DEFAULT_GOID.equals(certOid)) {
                 description = "id #" + certOid;
                 TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey(certOid);
                 if ( trustedCertificate != null ) {

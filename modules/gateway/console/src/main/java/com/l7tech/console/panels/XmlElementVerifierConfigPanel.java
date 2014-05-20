@@ -177,7 +177,7 @@ public class XmlElementVerifierConfigPanel extends ValidatedPanel<XmlElementVeri
     }
 
     public void setData(XmlElementVerifierConfig model) {
-        if (model.getVerifyCertificateGoid() != null) {
+        if (model.getVerifyCertificateGoid() != null && !Goid.DEFAULT_GOID.equals(model.getVerifyCertificateGoid())) {
             certSelectRadioButton.setSelected(true);
             keyInfoOverrideCheckBox.setSelected(model.isIgnoreKeyInfo());
             selectedVerifyCertificateOid = model.getVerifyCertificateGoid();
