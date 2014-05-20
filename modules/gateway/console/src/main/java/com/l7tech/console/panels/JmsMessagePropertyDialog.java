@@ -167,7 +167,7 @@ public class JmsMessagePropertyDialog extends JDialog {
         JmsMessagePropertyRule rule = new JmsMessagePropertyRule(name, passThru, customPattern);
         if (!jmsAdmin.isValidProperty(rule)) {
             JOptionPane.showMessageDialog(this,
-                    "Invalid JMS Defined Property Data Type.",
+                    "Invalid JMS Property Name/Data Type.",
                     "JMS Message Property Error",
                     JOptionPane.ERROR_MESSAGE);
             return;     // Don't exit the dialog. Let the user fix the error.

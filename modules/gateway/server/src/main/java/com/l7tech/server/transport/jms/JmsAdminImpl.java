@@ -9,6 +9,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -362,6 +363,8 @@ public class JmsAdminImpl implements JmsAdmin {
     @Override
     public boolean isValidProperty(JmsMessagePropertyRule rule) {
         if (rule != null) {
+            if(StringUtils.isBlank(rule.getName())) //empty or blank string is invalid jms property name according to the JMS spec
+                return false;
             if (!rule.isPassThru()) {
                 try {
                     JmsDefinedProperties.fromName(rule.getName());

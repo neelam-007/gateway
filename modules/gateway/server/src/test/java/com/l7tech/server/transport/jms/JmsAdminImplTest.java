@@ -2,6 +2,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
+import com.l7tech.test.BugId;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -30,5 +31,18 @@ public class JmsAdminImplTest {
         assertTrue(jmsAdmin.isValidProperty(rule));
         rule = new JmsMessagePropertyRule("NotPredefinedProperty", false, "string");
         assertTrue(jmsAdmin.isValidProperty(rule));
+    }
+
+    @BugId("SSG-8556")
+    @Test
+    public void shouldReturnFalseWhenJmsPropertyNameIsBlank() throws Exception {
+        JmsMessagePropertyRule rule = new JmsMessagePropertyRule("   ", false, "string");
+        assertFalse(jmsAdmin.isValidProperty(rule));
+        rule = new JmsMessagePropertyRule("\t", false, "string");
+        assertFalse(jmsAdmin.isValidProperty(rule));
+        rule = new JmsMessagePropertyRule("", false, "");
+        assertFalse(jmsAdmin.isValidProperty(rule));
+        rule = new JmsMessagePropertyRule(null, false, null);
+        assertFalse(jmsAdmin.isValidProperty(rule));
     }
 }
