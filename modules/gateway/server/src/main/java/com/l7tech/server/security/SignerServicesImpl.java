@@ -60,8 +60,6 @@ public class SignerServicesImpl implements SignerServices {
                 logger.log(Level.WARNING, "Unable to find Gateway's default SSL key: " + ExceptionUtils.getMessage(e), e);
                 ssgKeyEntry = null;
             }
-        } else if (keyId.equals(SignerServices.KEY_ID_CA)) {
-            ssgKeyEntry = defaultKey.getCaInfo();
         } else {
             String[] keyIdSplit = keyId.split(":");
             if (keyIdSplit.length != 2) {

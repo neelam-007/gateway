@@ -135,16 +135,6 @@ public class SignerServicesTest {
     }
 
     @Test
-    public void testCreateSignatureDefaultCaKey() throws Exception {
-        Signer signer = signerServices.createSigner(SignerServices.KEY_ID_CA);
-
-        // verify
-        Assert.assertNotNull(signer);
-        byte[] signature = signer.createSignature("SHA-256", new ByteArrayInputStream("hello".getBytes()));
-        Assert.assertNotNull(signature);
-    }
-
-    @Test
     public void testCreateSignatureKeyIdFoundAllKeystores() throws Exception {
         when(ssgKeyStoreManager.lookupKeyByKeyAlias("ssl", Goid.DEFAULT_GOID)).thenReturn(
             new SsgKeyEntry(
