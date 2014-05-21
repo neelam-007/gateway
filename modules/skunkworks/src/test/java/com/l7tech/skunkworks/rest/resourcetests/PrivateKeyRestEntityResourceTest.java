@@ -2,6 +2,8 @@ package com.l7tech.skunkworks.rest.resourcetests;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.*;
@@ -684,6 +686,107 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     @Test
     public void generateCSRBadCSRSubjectDN() throws Exception {
         RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/generateCSR", "csrSubjectDN=Invalid", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    public void signCert() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "subjectDN=CN%3Dname&signatureHash=SHA256", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeySignCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeySignCsrResult privateKeySignCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeySignCsrResult.getCertData());
+        Assert.assertTrue(privateKeySignCsrResult.getCertData().length() > 0);
+    }
+
+    @Test
+    public void signCertNohash() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "subjectDN=CN%3Dname", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeySignCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeySignCsrResult privateKeySignCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeySignCsrResult.getCertData());
+        Assert.assertTrue(privateKeySignCsrResult.getCertData().length() > 0);
+    }
+
+    @Test
+    public void signCertNoDN() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeySignCsrResult> item = MarshallingUtils.unmarshal(Item.class, source);
+
+        PrivateKeySignCsrResult privateKeySignCsrResult = item.getContent();
+        assertEquals("Private Key identifier:", ssgKeyEntries.get(0).getId(), item.getId());
+        Assert.assertNotNull(privateKeySignCsrResult.getCertData());
+        Assert.assertTrue(privateKeySignCsrResult.getCertData().length() > 0);
+    }
+
+    @Test
+    public void signCertBadDN() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "subjectDN=name", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    public void signCertBadHash() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "signatureHash=INVALID", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    public void signCertBadExpiry() throws Exception {
+        byte[] csrBytes = defaultKeyStore.makeCertificateSigningRequest(ssgKeyEntries.get(1).getAlias(), new CertGenParams(
+                ssgKeyEntries.get(1).getCertificate().getSubjectX500Principal(),
+                356,
+                false,
+                null)).getEncoded();
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "expiryAge=-10", HttpMethod.PUT, "application/x-pem-file", CertUtils.encodeCsrAsPEM(csrBytes));
+
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    public void signCertBadCert() throws Exception {
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + ssgKeyEntries.get(0).getId() + "/signCert", "", HttpMethod.PUT, "application/x-pem-file", "BADCERT");
 
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(400, response.getStatus());

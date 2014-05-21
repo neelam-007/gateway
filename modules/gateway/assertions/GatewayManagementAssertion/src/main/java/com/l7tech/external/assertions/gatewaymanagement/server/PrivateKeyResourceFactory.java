@@ -5,7 +5,10 @@ import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.CertificateData;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.PrivateKeyCreationContext;
+import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -13,11 +16,12 @@ import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
-import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.KeyUsageUtils;
 import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.PrivateKeyAdminHelper;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -35,6 +39,9 @@ import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import org.apache.commons.lang.NotImplementedException;
+import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -44,6 +51,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -437,6 +445,66 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     return left2_1( e );
                 } catch ( InvalidResourceException e ) {
                     return left2_2( e );
+                }
+            }
+        }, true ) );
+    }
+
+    public PrivateKeySignCsrResult signCert( final Map<String,String> selectorMap, final String subjectDN, final Integer expiryAge, final String signatureHash,
+                                                    final byte[] certificate ) throws ResourceNotFoundException, InvalidResourceException {
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, PrivateKeySignCsrResult>>() {
+            @Override
+            public E2<ResourceNotFoundException, InvalidResourceException, PrivateKeySignCsrResult> execute() throws ObjectModelException {
+                try {
+                    final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
+                    checkPermittedForAnyEntity( OperationType.UPDATE, EntityType.SSG_KEY_ENTRY );  // Consistent with TrustedCertAdmin.generateCSR
+
+                    X509Certificate cert;
+
+                    try {
+                        RsaSignerEngine signer = JceProvider.getInstance().createRsaSignerEngine(entry.getPrivateKey(), entry.getCertificateChain());
+
+
+                        byte[] decodedCsrBytes;
+                        decodedCsrBytes = CertUtils.csrPemToBinary(certificate);
+                        final X500Principal subject;
+                        if(subjectDN == null || subjectDN.isEmpty()) {
+                            PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
+                            CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
+                            subject = new X500Principal(certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols));
+                        } else {
+                            subject = new X500Principal(subjectDN);
+                        }
+
+                        final CertGenParams certGenParams = new CertGenParams(subject, expiryAge, false, null);
+                        certGenParams.setHashAlgorithm(signatureHash);
+
+                        cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, certGenParams.useUserCertDefaults());
+                    } catch (UnrecoverableKeyException e) {
+                        return left2_1(new ResourceNotFoundException("Error finding key in keystore", e));
+                    } catch (IOException e) {
+                        return left2_2(new InvalidResourceException(ExceptionType.INVALID_VALUES, "Error resding csr request: " + ExceptionUtils.getMessage(e)));
+                    } catch (Exception e) {
+                        return left2_2(new InvalidResourceException(ExceptionType.INVALID_VALUES, "Error signing certificate: " + ExceptionUtils.getMessage(e)));
+                    }
+
+                    X509Certificate[] caChain = entry.getCertificateChain();
+                    X509Certificate[] retChain = new X509Certificate[caChain.length + 1];
+                    System.arraycopy(caChain, 0, retChain, 1, caChain.length);
+                    retChain[0] = cert;
+
+                    String pemChain = "";
+                    try {
+                        for (X509Certificate aRetChain : retChain)
+                            pemChain += CertUtils.encodeAsPEM(aRetChain);
+                    } catch (CertificateEncodingException | IOException e) {
+                        return left2_2(new InvalidResourceException(ExceptionType.INVALID_VALUES, "Error encoding signed certificate: " + ExceptionUtils.getMessage(e)));
+                    }
+                    final PrivateKeySignCsrResult result = new PrivateKeySignCsrResult();
+                    result.setCertData(pemChain);
+                    return right2(result);
+                } catch ( ResourceNotFoundException e ) {
+                    return left2_1(e);
                 }
             }
         }, true ) );

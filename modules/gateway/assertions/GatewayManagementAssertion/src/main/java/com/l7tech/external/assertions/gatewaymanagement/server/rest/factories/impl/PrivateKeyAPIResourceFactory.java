@@ -64,6 +64,10 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
         return factory.generateCSR(CollectionUtils.<String, String>mapBuilder().put("id", id).map(), ctx);
     }
 
+    public PrivateKeySignCsrResult signCert(@NotNull String id, @Nullable String subjectDN, @NotNull Integer expiryAge, @Nullable String signatureHash, @NotNull String certificate) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return factory.signCert(CollectionUtils.<String, String>mapBuilder().put("id", id).map(), subjectDN, expiryAge, signatureHash, certificate.getBytes());
+    }
+
     @NotNull
     @Override
     public String getResourceType() {

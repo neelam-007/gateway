@@ -8,10 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Par
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PrivateKeyTransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
-import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrResult;
-import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.CollectionUtils;
@@ -256,15 +253,14 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      *
      * @param id            The id of the key to generate the CSR from
      * @param dn            The CSR subject dn to use. It defaults to the key's subject dn if none is specified.
-     * @param signatureHash The signature hash to use. Defaults to 'auto'
+     * @param signatureHash The signature hash to use. Defaults to 'Automatic'
      * @return The CSR data.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @GET
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/generateCSR")
-    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("signatureHash") String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, signatureHash);
         return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, getResourceType() + "CSR")
                 .setContent(privateKeyGenerateCsrResult)
@@ -284,6 +280,30 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @Override
     public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         super.delete(id);
+    }
+
+    /**
+     * Signs a csr pem file with the specified key.
+     *
+     * @param id            The id of the key to sign the certificate with
+     * @param subjectDN     The subject DN to set on the signed certificate
+     * @param expiryAge     The expiry age of the certificate
+     * @param signatureHash The signature hash to use. Defaults to 'Automatic'
+     * @param certificate   The certificate csr to sign
+     * @return The signed certificate.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @PUT
+    @Path("{id}/signCert")
+    @Consumes("application/x-pem-file")
+    public Item<PrivateKeySignCsrResult> signCert(@PathParam("id") String id, @QueryParam("subjectDN") String subjectDN, @QueryParam("expiryAge") @DefaultValue("730") Integer expiryAge, @QueryParam("signatureHash") @ChoiceParam({"Automatic", "SHA1", "SHA256", "SHA384", "SHA512"}) @DefaultValue("Automatic") String signatureHash, String certificate) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        PrivateKeySignCsrResult privateKeySignCsrResult = factory.signCert(id, subjectDN, expiryAge, signatureHash, certificate);
+        return new ItemBuilder<PrivateKeySignCsrResult>("Signed Cert", id, getResourceType() + "SignedCert")
+                .setContent(privateKeySignCsrResult)
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
+                .build();
     }
 
     /**
