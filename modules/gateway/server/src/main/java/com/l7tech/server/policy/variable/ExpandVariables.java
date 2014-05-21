@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
+import com.l7tech.gateway.common.QueuingSyntaxErrorHandler;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.variable.Syntax;
@@ -367,18 +368,20 @@ public final class ExpandVariables {
 
             @SuppressWarnings({ "unchecked" })
             Selector.Selection selection = null;
+            QueuingSyntaxErrorHandler queueingHandler = new QueuingSyntaxErrorHandler(handler);
             try {
-                selection = selector.select(contextName, contextValue, remainingName, handler, strict);
+                selection = selector.select(contextName, contextValue, remainingName, queueingHandler, strict);
             } catch (IllegalArgumentException e) {
                 //when strict, and unable to resolve the variable. Try to resolve it with suffix selector
-                selection = suffixSelectify(contextName, contextValue, remainingName, handler, strict, selector);
+                selection = suffixSelectify(contextName, contextValue, remainingName, queueingHandler, strict, selector);
             }
 
 
             if (selection == null) {
                 // This name is unknown to the selector, try suffix selector
-                selection = suffixSelectify(contextName, contextValue, remainingName, handler, strict, selector);
+                selection = suffixSelectify(contextName, contextValue, remainingName, queueingHandler, strict, selector);
                 if (selection == null) {
+                    queueingHandler.flushLogAuditEvents();
                     String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextObject.getClass().getName()));
                     if (strict) throw new IllegalArgumentException(msg);
                     return Selector.NOT_PRESENT;
