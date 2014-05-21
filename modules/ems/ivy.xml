@@ -46,11 +46,11 @@
 
 
         <!-- For the ESM, we'll always use the FIPS version of RSA for the time being -->
-        <dependency org="com.rsa" name="jcmFIPS" rev="6.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="core"/>
-        <dependency org="com.rsa" name="certj" rev="6.0" force="true" conf="core"/>
-        <dependency org="com.rsa" name="sslj" rev="6.0" force="true" conf="core"/>
+        <dependency org="com.rsa" name="jcmFIPS" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.1.2" force="true" conf="core"/>
+        <dependency org="com.rsa" name="certj" rev="6.1.1" force="true" conf="core"/>
+        <dependency org="com.rsa" name="sslj" rev="6.1.2" force="true" conf="core"/>
 
         <!-- org.apache.cxf exclusions -->
         <exclude org="org.apache.velocity" module="velocity"/>
