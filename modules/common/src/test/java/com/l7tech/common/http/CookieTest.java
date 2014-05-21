@@ -121,8 +121,8 @@ public class CookieTest {
         int maxAge = 300;
         String path = "/test/path";
         String domain = ".testdomain.com";
-        String comment = "This is a cookie";
-        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Max-Age=" +maxAge+ "; Comment=\""+comment+"\"; Secure; Version=1; HttpOnly";
+        String comment = "\"This is a cookie\"";
+        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Max-Age=" +maxAge+ "; Comment="+comment+"; Secure; Version=1; HttpOnly";
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
@@ -405,6 +405,18 @@ public class CookieTest {
         assertNull(copy.getDomain());
         assertNull(copy.getPath());
         assertFalse(copy.isDomainExplicit());
+    }
+
+    @Test
+    public void parseCookieDoesNotTrimQuotesForNonNumericAttributes() throws Exception {
+        final HttpCookie cookie = new HttpCookie("\"foo\"=\"bar\";domain=\"localhost\";path=\"/\";comment=\"test\";version=\"1\";max-age=\"60\"");
+        assertEquals("\"foo\"", cookie.getCookieName());
+        assertEquals("\"bar\"", cookie.getCookieValue());
+        assertEquals("\"localhost\"", cookie.getDomain());
+        assertEquals("\"/\"", cookie.getPath());
+        assertEquals("\"test\"", cookie.getComment());
+        assertEquals(1, cookie.getVersion());
+        assertEquals(60, cookie.getMaxAge());
     }
 
     //- PRIVATE

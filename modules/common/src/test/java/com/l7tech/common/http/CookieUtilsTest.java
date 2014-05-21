@@ -4,6 +4,7 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 import org.junit.Test;
 
 import javax.servlet.http.Cookie;
+import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -148,36 +149,13 @@ public class CookieUtilsTest {
         String header2 = CookieUtils.getCookieHeader(cookieList2);
         assertEquals("Cookie header", "name=value; name2=value2", header2);
 
-        HttpCookie cookie3 = new HttpCookie("name3", "value with \"spaces", 1, "/", ".layer7tech.com");
+        HttpCookie cookie3 = new HttpCookie("name3", "\"value with spaces\"", 1, "/", ".layer7tech.com");
         List cookieList3 = new ArrayList();
         cookieList3.add(cookie1);
         cookieList3.add(cookie2);
         cookieList3.add(cookie3);
         String header3 = CookieUtils.getCookieHeader(cookieList3);
-        assertEquals("Cookie header", "name=value; name2=value2; name3=\"value with \\\"spaces\"", header3);
-    }
-
-    @Test
-    public void testQuoting() {
-        HttpCookie cookie1 = new HttpCookie("name", "value with spaces", 1, "/some", ".domain.com");
-        String header1 = CookieUtils.getV0CookieHeaderPart(cookie1);
-        assertEquals("Correctly quoted", "name=\"value with spaces\"", header1);
-
-        HttpCookie cookie2 = new HttpCookie("name", "value_with_;", 1, "/some", ".domain.com");
-        String header2 = CookieUtils.getV0CookieHeaderPart(cookie2);
-        assertEquals("Correctly quoted", "name=\"value_with_;\"", header2);
-
-        HttpCookie cookie3 = new HttpCookie("name", "value_without_spaces", 1, "/some", ".domain.com");
-        String header3 = CookieUtils.getV0CookieHeaderPart(cookie3);
-        assertEquals("Correctly quoted", "name=value_without_spaces", header3);
-    }
-
-    @Test
-    public void getCookieHeaderQuoteSpecialCharacters() {
-        final Set<HttpCookie> cookies = new HashSet<>();
-        cookies.add(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", true));
-        cookies.add(new HttpCookie("specialChar", "DQAAAK…Eaem_vYg", 1, "/", "localhost", -1, false, null, false));
-        assertEquals("specialChar=\"DQAAAK…Eaem_vYg\"; foo=bar", CookieUtils.getCookieHeader(cookies));
+        assertEquals("Cookie header", "name=value; name2=value2; name3=\"value with spaces\"", header3);
     }
 
     @Test
@@ -185,7 +163,7 @@ public class CookieUtilsTest {
         final Set<HttpCookie> cookies = new HashSet<>();
         cookies.add(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", true));
         cookies.add(new HttpCookie("specialChar", "DQAAAK…Eaem_vYg", 1, "/", "localhost", -1, false, null, false));
-        assertEquals("specialChar=DQAAAK…Eaem_vYg; foo=bar", CookieUtils.getCookieHeader(cookies, false));
+        assertEquals("specialChar=DQAAAK…Eaem_vYg; foo=bar", CookieUtils.getCookieHeader(cookies));
     }
 
     @Test
@@ -195,15 +173,9 @@ public class CookieUtilsTest {
     }
 
     @Test
-    public void getV0CookieHeaderPartQuoteSpecialCharacters() {
-        final HttpCookie cookie = new HttpCookie("specialChar", "DQAAAK…Eaem_vYg", 1, "/", "localhost", -1, false, null, false);
-        assertEquals("specialChar=\"DQAAAK…Eaem_vYg\"", CookieUtils.getV0CookieHeaderPart(cookie));
-    }
-
-    @Test
     public void getV0CookieHeaderPartDoNotQuoteSpecialCharacters() {
         final HttpCookie cookie = new HttpCookie("specialChar", "DQAAAK…Eaem_vYg", 1, "/", "localhost", -1, false, null, false);
-        assertEquals("specialChar=DQAAAK…Eaem_vYg", CookieUtils.getV0CookieHeaderPart(cookie, false));
+        assertEquals("specialChar=DQAAAK…Eaem_vYg", CookieUtils.getV0CookieHeaderPart(cookie));
     }
 
     @Test
@@ -216,5 +188,19 @@ public class CookieUtilsTest {
     public void getSetCookieHeaderMinimal() {
         final HttpCookie cookie = new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false);
         assertEquals("foo=bar; Version=0", CookieUtils.getSetCookieHeader(cookie));
+    }
+
+    @Test
+    public void getFullValueFromParsedCookie() throws Exception {
+        assertEquals("1=a", new HttpCookie("1=a").getFullValue());
+        assertEquals("2=b", new HttpCookie("localhost", "/", "2=b").getFullValue());
+        assertEquals("3=c", new HttpCookie(new URL("http", "localhost", 8080, "foo"), "3=c").getFullValue());
+    }
+
+    @Test
+    public void getFullValueFromNonParsedCookie() throws Exception {
+        assertNull(new HttpCookie("1", "a", 1, "/", "localhost", 60, false, "test", false).getFullValue());
+        assertNull(new HttpCookie("2", "b", 1, "/", "localhost").getFullValue());
+        assertNull(new HttpCookie(new HttpCookie("1=a"), "localhost", "/").getFullValue()); // copied
     }
 }

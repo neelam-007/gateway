@@ -1,6 +1,7 @@
 package com.l7tech.common.http;
 
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -74,7 +75,7 @@ public class HttpCookie {
             throw new HttpCookie.IllegalFormatException("Cookie value is an invalid format: '" + headerFullValue + "'");
         }
         cookieName = nameValue[0];
-        cookieValue = trimQuotes(nameValue[1],1);
+        cookieValue = nameValue[1];
 
         // now parse each field from the rest of the cookie, if present
         boolean parsedSecure = false;
@@ -115,7 +116,7 @@ public class HttpCookie {
             explicitDomain = false;
         }
         else {
-            domain = trimQuotes(parsedDomain, parsedVersion);
+            domain = parsedDomain;
             explicitDomain = true;
         }
         if(parsedPath==null && requestPath != null) {
@@ -161,8 +162,8 @@ public class HttpCookie {
         secure = parsedSecure;
         httpOnly = parsedHttpOnly;
         maxAge = parsedMaxAge;
-        path = trimQuotes(parsedPath, parsedVersion);
-        comment = trimQuotes(parsedComment, parsedVersion);
+        path = parsedPath;
+        comment = parsedComment;
         version = parsedVersion;
 
         createdTime = System.currentTimeMillis();
@@ -341,6 +342,14 @@ public class HttpCookie {
         }
 
         return expired;
+    }
+
+    /**
+     * @return the full header value if this HttpCookie was parsed from a header.
+     */
+    @Nullable
+    public String getFullValue() {
+        return fullValue;
     }
 
     /**

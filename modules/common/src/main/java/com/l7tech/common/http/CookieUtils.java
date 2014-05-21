@@ -402,16 +402,6 @@ public class CookieUtils {
     }
 
     /**
-     * Same as {@link #getCookieHeader(java.util.Collection, boolean)} except always double-quotes special characters in the cookie value.
-     *
-     * @param cookies The collection of HttpCookie's to add
-     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
-     */
-    public static String getCookieHeader(final Collection<HttpCookie> cookies) {
-        return getCookieHeader(cookies, true);
-    }
-
-    /**
      * Get the cookies as a string (as in a "Cookie:" header).
      * <p/>
      * NOTE: Since we may have modified the path/domain of the cookie when
@@ -419,17 +409,16 @@ public class CookieUtils {
      * section 4.3.4)
      *
      * @param cookies                The collection of HttpCookie's to add
-     * @param quoteSpecialCharacters true if the presence of special characters should cause the cookie value to be double-quoted.
      * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
      */
-    public static String getCookieHeader(final Collection<HttpCookie> cookies, final boolean quoteSpecialCharacters) {
+    public static String getCookieHeader(final Collection<HttpCookie> cookies) {
         StringBuffer sb = new StringBuffer();
 
         if (cookies != null) {
             for (Iterator cookIter = cookies.iterator(); cookIter.hasNext(); ) {
                 HttpCookie cook = (HttpCookie) cookIter.next();
                 // always use V0, see note above
-                sb.append(getV0CookieHeaderPart(cook, quoteSpecialCharacters));
+                sb.append(getV0CookieHeaderPart(cook));
                 if (cookIter.hasNext())
                     sb.append("; ");
             }
@@ -439,30 +428,16 @@ public class CookieUtils {
     }
 
     /**
-     * Same as {@link #getV0CookieHeaderPart(HttpCookie, boolean)} except always double-quotes special characters in the cookie value.
+     * Get this cookie formatted as part of a version 0 (Netscape) "cookie:"
+     * header.
      *
      * @return "<Name>=<Value>"
      */
     public static String getV0CookieHeaderPart(@NotNull final HttpCookie cookie) {
-        return getV0CookieHeaderPart(cookie, true);
-    }
-
-    /**
-     * Get this cookie formatted as part of a version 0 (Netscape) "cookie:"
-     * header.
-     *
-     * @param quoteSpecialCharacters true if the presence of special characters should cause the cookie value to be double-quoted.
-     * @return "<Name>=<Value>"
-     */
-    public static String getV0CookieHeaderPart(@NotNull final HttpCookie cookie, final boolean quoteSpecialCharacters) {
         StringBuffer headerPart = new StringBuffer();
         headerPart.append(cookie.getCookieName());
         headerPart.append('=');
-        if (quoteSpecialCharacters) {
-            headerPart.append(quoteIfNeeded(cookie.getCookieValue()));
-        } else {
-            headerPart.append(cookie.getCookieValue());
-        }
+        headerPart.append(cookie.getCookieValue());
         return headerPart.toString();
     }
 
@@ -497,39 +472,6 @@ public class CookieUtils {
         if (StringUtils.isNotBlank(attributeValue)) {
             stringBuilder.append(ATTRIBUTE_DELIMITER).append(attributeName).append(EQUALS).append(attributeValue);
         }
-    }
-
-    private static String quoteIfNeeded(final String cookieValue) {
-        String quoted = cookieValue;
-
-        if (quoted == null) {
-            quoted = "";
-        } else if (!isToken(quoted)) {
-            quoted = "\"" + escapeQuotes(quoted) + "\"";
-        }
-
-        return quoted;
-    }
-
-    private static String escapeQuotes(final String text) {
-        String escaped = text;
-
-        if (text != null && text.indexOf('"') > -1) {
-            StringBuffer buffer = new StringBuffer(text.length() + 16);
-
-            for (int i = 0; i < text.length(); i++) {
-                char character = text.charAt(i);
-                if (character == '"') {
-                    buffer.append("\\\"");
-                } else {
-                    buffer.append(character);
-                }
-            }
-
-            escaped = buffer.toString();
-        }
-
-        return escaped;
     }
 
     //- PRIVATE
