@@ -54,6 +54,32 @@ public class DebugManagerImplTest {
             "            <L7p:Base64Expression stringValue=\"Y3h0X3RocmVlX3ZhbHVl\"/>\n" +
             "            <L7p:VariableToSet stringValue=\"cxt_three\"/>\n" +
             "        </L7p:SetVariable>\n" +
+            "        <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
+            "            <wsp:All wsp:Usage=\"Required\">\n" +
+            "                <L7p:SetVariable>\n" +
+            "                    <L7p:Base64Expression stringValue=\"b3V0MQ==\"/>\n" +
+            "                    <L7p:VariableToSet stringValue=\"output\"/>\n" +
+            "                </L7p:SetVariable>\n" +
+            "                <L7p:SetVariable>\n" +
+            "                    <L7p:Base64Expression stringValue=\"b3V0MQ==\"/>\n" +
+            "                    <L7p:VariableToSet stringValue=\"output\"/>\n" +
+            "                </L7p:SetVariable>\n" +
+            "            </wsp:All>\n" +
+            "            <wsp:All wsp:Usage=\"Required\">\n" +
+            "                <L7p:SetVariable>\n" +
+            "                    <L7p:Base64Expression stringValue=\"b3V0Mg==\"/>\n" +
+            "                    <L7p:VariableToSet stringValue=\"output\"/>\n" +
+            "                </L7p:SetVariable>\n" +
+            "                <L7p:SetVariable>\n" +
+            "                    <L7p:Base64Expression stringValue=\"b3V0Mg==\"/>\n" +
+            "                    <L7p:VariableToSet stringValue=\"output\"/>\n" +
+            "                </L7p:SetVariable>\n" +
+            "            </wsp:All>\n" +
+            "        </wsp:OneOrMore>\n" +
+            "        <L7p:SetVariable>\n" +
+            "            <L7p:Base64Expression stringValue=\"ZG9uZQ==\"/>\n" +
+            "            <L7p:VariableToSet stringValue=\"done\"/>\n" +
+            "        </L7p:SetVariable>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>\n";
 
@@ -264,6 +290,84 @@ public class DebugManagerImplTest {
     }
 
     @Test
+    public void testStepOverNestedAtLeastOne() throws Exception {
+        // Test Policy
+        //
+        // 2. Set Context Variable
+        // 3. Set Context Variable
+        // 4. Set Context Variable
+        // 5. At least one assertion
+        // 6.   All assertion
+        // 7.     Set Context Variable
+        // 8.     Set Context Variable
+        // 9.   All assertion
+        // 10.    Set Context Variable
+        // 11.    Set Context Variable
+        // 12. Set Context Variable
+
+        //
+        // Add a breakpoint at line 6.
+        //
+        final List<Integer> breakpoint = new ArrayList<>(1);
+        breakpoint.add(6);
+        debugManager.toggleBreakpoint(debugContext.getTaskId(), breakpoint);
+
+        //
+        // Set stepover breakpoint at line 9. Which won't be hit when stepping over
+        // at line 6.
+        //
+        final List<Integer> stepOverBreakpoint = new ArrayList<>(1);
+        stepOverBreakpoint.add(9);
+
+        Option<String> option = debugManager.startDebug(debugContext.getTaskId());
+        Assert.assertFalse(option.isSome());
+        Assert.assertEquals(DebugState.STARTED, debugContext.getDebugState());
+
+        final boolean[] finishedExecution = new boolean[2];
+
+        // Message Processor.
+        //
+        executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                messageProcessor.processMessage(pec);
+                finishedExecution[0] = true;
+                return null;
+            }
+        });
+
+        // The "client".
+        //
+        executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                while (true) {
+                    boolean updated = debugContext.waitForUpdates(MAX_WAIT_TIME_MILLI_SECONDS);
+                    if (updated) {
+                        DebugState state = debugContext.getDebugState();
+                        if (state.equals(DebugState.AT_BREAKPOINT)) {
+                            debugManager.stepOver(debugContext.getTaskId(), stepOverBreakpoint);
+                            break;
+                        }
+                    }
+                }
+                finishedExecution[1] = true;
+                return null;
+            }
+        });
+
+        executor.awaitTermination(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        Assert.assertFalse(finishedExecution[0]); // Still at a breakpoint.
+        Assert.assertTrue(finishedExecution[1]);
+        Assert.assertEquals(DebugState.AT_BREAKPOINT, debugContext.getDebugState());
+        Assert.assertNotNull(debugContext.getCurrentLine());
+        Assert.assertArrayEquals(new Integer[]{12}, debugContext.getCurrentLine().toArray());
+
+        debugManager.stopDebug(debugContext.getTaskId());
+        Assert.assertEquals(DebugState.STOPPED, debugContext.getDebugState());
+    }
+
+    @Test
     public void testStepInto() throws Exception {
         // Add a breakpoint so that the debugger will hit the breakpoint.
         //
@@ -376,6 +480,84 @@ public class DebugManagerImplTest {
         Assert.assertEquals(DebugState.AT_BREAKPOINT, debugContext.getDebugState());
         Assert.assertNotNull(debugContext.getCurrentLine());
         Assert.assertArrayEquals(stepOutBreakpoint.toArray(), debugContext.getCurrentLine().toArray());
+
+        debugManager.stopDebug(debugContext.getTaskId());
+        Assert.assertEquals(DebugState.STOPPED, debugContext.getDebugState());
+    }
+
+    @Test
+    public void testStepOutNestedAtLeastOne() throws Exception {
+        // Test Policy
+        //
+        // 2. Set Context Variable
+        // 3. Set Context Variable
+        // 4. Set Context Variable
+        // 5. At least one assertion
+        // 6.   All assertion
+        // 7.     Set Context Variable
+        // 8.     Set Context Variable
+        // 9.   All assertion
+        // 10.    Set Context Variable
+        // 11.    Set Context Variable
+        // 12. Set Context Variable
+
+        //
+        // Add a breakpoint at line 7.
+        //
+        final List<Integer> breakpoint = new ArrayList<>(1);
+        breakpoint.add(7);
+        debugManager.toggleBreakpoint(debugContext.getTaskId(), breakpoint);
+
+        //
+        // Set stepout breakpoint at line 9. Which won't be hit when stepping out
+        // at line 7.
+        //
+        final List<Integer> stepOutBreakpoint = new ArrayList<>(1);
+        stepOutBreakpoint.add(9);
+
+        Option<String> option = debugManager.startDebug(debugContext.getTaskId());
+        Assert.assertFalse(option.isSome());
+        Assert.assertEquals(DebugState.STARTED, debugContext.getDebugState());
+
+        final boolean[] finishedExecution = new boolean[2];
+
+        // Message Processor.
+        //
+        executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                messageProcessor.processMessage(pec);
+                finishedExecution[0] = true;
+                return null;
+            }
+        });
+
+        // The "client".
+        //
+        executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                while (true) {
+                    boolean updated = debugContext.waitForUpdates(MAX_WAIT_TIME_MILLI_SECONDS);
+                    if (updated) {
+                        DebugState state = debugContext.getDebugState();
+                        if (state.equals(DebugState.AT_BREAKPOINT)) {
+                            debugManager.stepOut(debugContext.getTaskId(), stepOutBreakpoint);
+                            break;
+                        }
+                    }
+                }
+                finishedExecution[1] = true;
+                return null;
+            }
+        });
+
+        executor.awaitTermination(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        Assert.assertFalse(finishedExecution[0]); // Still at a breakpoint.
+        Assert.assertTrue(finishedExecution[1]);
+        Assert.assertEquals(DebugState.AT_BREAKPOINT, debugContext.getDebugState());
+        Assert.assertNotNull(debugContext.getCurrentLine());
+        Assert.assertArrayEquals(new Integer[]{12}, debugContext.getCurrentLine().toArray());
 
         debugManager.stopDebug(debugContext.getTaskId());
         Assert.assertEquals(DebugState.STOPPED, debugContext.getDebugState());

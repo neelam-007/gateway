@@ -487,7 +487,7 @@ public class DebugContext {
         lock.lock();
         try {
             return breakpoints.contains(currentLine) ||
-                (breakNextLine != null && breakNextLine.equals(currentLine)) ;
+                this.checkBreakNextLine();
         }  finally {
             lock.unlock();
         }
@@ -501,6 +501,52 @@ public class DebugContext {
             this.debugContextUpdated.signal();
         }  finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Checks if the debugger should break at the current line based on
+     * the value of <code>breakNextLine</code> variable.
+     *
+     * @return true if the debugger should break at current line, false otherwise.
+     */
+    private boolean checkBreakNextLine() {
+        if (breakNextLine != null && currentLine != null) {
+            if (breakNextLine.equals(currentLine)) {
+                // Exact match found.
+                //
+                return true;
+            }
+
+            // If current line is larger than breakNextLine, then it means that the breakNextLine was not executed.
+            // This happens when breakNextLine is inside the "At least one assertion must evaluate to true" Assertion,
+            // but previous assertions evaluated to true.
+            // In this scenario, break at a line being executed that is after breakNextLine.
+            //
+            boolean result = false;
+            Iterator<Integer> currentLineItr = currentLine.iterator();
+            Iterator<Integer> breakNextLineItr = breakNextLine.iterator();
+            while (currentLineItr.hasNext()) {
+                Integer currentPart = currentLineItr.next();
+                if (breakNextLineItr.hasNext()) {
+                    Integer breakNextPart = breakNextLineItr.next();
+                    if (currentPart > breakNextPart) {
+                        result = true;
+                        break;
+                    } else if (currentPart < breakNextPart) {
+                        result = false;
+                        break;
+                    } // else continue while loop
+                } else {
+                    // Current line is larger than breakNextLine.
+                    //
+                    result = true;
+                    break;
+                }
+            }
+            return result;
+        } else {
+            return false;
         }
     }
 }
