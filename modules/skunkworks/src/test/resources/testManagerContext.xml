@@ -651,6 +651,7 @@
         <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">

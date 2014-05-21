@@ -7,9 +7,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Utility class for accessing {@link CustomReferenceEntitiesSupport} fields and methods
+ * Utility class for accessing {@link CustomReferenceEntitiesSupport} fields and methods.
+ * <p/>
+ * Typically used during policy migration (both policy import and export).
  */
-public final class CustomEntityReferenceSupportAdaptor {
+public final class CustomEntityReferenceSupportAccessor {
 
     /**
      * Get a read-only collection of all referenced entities in the specified support object.
@@ -68,12 +70,19 @@ public final class CustomEntityReferenceSupportAdaptor {
     }
 
     /**
-     * Extract specified referenced entity type.
+     * Convert specified referenced entity type, as string, into {@link CustomEntityType} enum.
+     *
+     * @return corresponding {@code CustomEntityType} or {@code null} if specified entity contains unrecognized type.
      * @see CustomEntityType
      */
-    @NotNull
+    @Nullable
     public static CustomEntityType getEntityType(final Object entityRef) {
-        return extractEntityObject(entityRef).getType();
+        final String entityTypeString = extractEntityObject(entityRef).getType();
+        try {
+            return entityTypeString != null ? CustomEntityType.valueOf(entityTypeString) : null;
+        } catch (final IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**
@@ -81,7 +90,7 @@ public final class CustomEntityReferenceSupportAdaptor {
      * @see CustomEntitySerializer
      */
     @Nullable
-    public static CustomEntitySerializer getEntitySerializer(final Object entityRef) {
-        return extractEntityObject(entityRef).getSerializer();
+    public static String getSerializerClassName(final Object entityRef) {
+        return extractEntityObject(entityRef).getSerializerClassName();
     }
 }

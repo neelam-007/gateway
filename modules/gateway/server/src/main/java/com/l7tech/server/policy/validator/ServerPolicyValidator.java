@@ -3,6 +3,7 @@ package com.l7tech.server.policy.validator;
 import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -21,6 +22,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -116,6 +118,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private JdbcConnectionManager jdbcConnectionManager;
     private Config config;
     private KeyValueStore keyValueStore;
+    private CustomAssertionsRegistrar customAssertionsRegistrar;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -410,7 +413,17 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
         if (!(assertion instanceof IdentityAssertion || assertion instanceof JmsRoutingAssertion)) {
             // getEntitiesUsed works only for UsesEntities and CustomAssertionHolder
-            for (EntityHeader header : EntitiesResolver.builder().keyValueStore(keyValueStore).build().getEntitiesUsed(assertion)) {
+            final EntitiesResolver entitiesResolver = EntitiesResolver
+                    .builder()
+                    .keyValueStore(keyValueStore)
+                    .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                        @Override
+                        public CustomEntitySerializer call(final String entitySerializerClassName) {
+                            return customAssertionsRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                        }
+                    })
+                    .build();
+            for (EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
                 Entity entity = null;
                 FindException thrown = null;
                 try {
@@ -763,6 +776,14 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         this.config = config;
     }
 
+    public void setKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager keyValueStoreManager) {
+        this.keyValueStore = new CustomKeyValueStoreImpl(keyValueStoreManager);
+    }
+
+    public void setCustomAssertionsRegistrar(@NotNull final CustomAssertionsRegistrar customAssertionsRegistrar) {
+        this.customAssertionsRegistrar = customAssertionsRegistrar;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
@@ -796,10 +817,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if (keyValueStore == null) {
             throw new IllegalArgumentException("Custom key value store is required");
         }
-    }
 
-    public void setKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager keyValueStoreManager) {
-        this.keyValueStore = new CustomKeyValueStoreImpl(keyValueStoreManager);
+        if (customAssertionsRegistrar == null) {
+            throw new IllegalArgumentException("Custom assertions registrar is required");
+        }
     }
 
     private static class PathContext {

@@ -45,7 +45,6 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
     public void setReference(final String attributeName, final String id, final CustomEntityType type) {
         if (attributeName == null) throw new IllegalArgumentException("attributeName cannot be null");
         if (id == null) throw new IllegalArgumentException("id cannot be null");
-        if (type == null) throw new IllegalArgumentException("type cannot be null");
 
         references.put(attributeName, new ReferenceElement(id, null, type, null));
     }
@@ -72,6 +71,17 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
         if (keyPrefix == null) throw new IllegalArgumentException("keyPrefix cannot be null for custom-key-values");
 
         references.put(attributeName, new ReferenceElement(key, keyPrefix, CustomEntityType.KeyValueStore, entitySerializer));
+    }
+
+    /**
+     * Remove entity reference identified with the specified {@code attributeName}
+     *
+     * @param attributeName    Mandatory. Use this unique {@code attributeName} for accessing the referenced entity.
+     * @return {@code true} if there was entity associated with {@code attributeName}, or {@code false} otherwise.
+     */
+    public boolean removeReference(final String attributeName) {
+        if (attributeName == null) throw new IllegalArgumentException("attributeName cannot be null");
+        return references.remove(attributeName) != null;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -106,21 +116,24 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
         private final String keyPrefix;
 
         /**
-         * Immutable. Specifies the entity {@link com.l7tech.policy.assertion.ext.entity.CustomEntityType type}. Mandatory and cannot be {@code null}
+         * Immutable. Specifies string representation of the entity {@link CustomEntityType type}.
+         * Mandatory and cannot be {@code null}
+         *
+         * @see CustomEntityType
          */
-        private final CustomEntityType type;
+        private final String type;
 
         /**
-         * Immutable. Entity serializer object in order to get entity object instance.
+         * Immutable. Entity serializer, represented by it's classname, used to get entity object instance.
          * Applicable for entities dependent on other entities, so having {@code null} means this entity doesn't
          * have any dependent references e.g. it's a reference to a password.
          */
-        private final CustomEntitySerializer entitySerializer;
+        private final String entitySerializerClassName;
 
         /**
          * Constructor
          * @param id                  entity id/key.
-         * @param keyPrefix            entity id/key prefix, if applicable.
+         * @param keyPrefix           entity id/key prefix, if applicable.
          * @param type                entity {@link com.l7tech.policy.assertion.ext.entity.CustomEntityType type}.
          * @param entitySerializer    entity serializer.
          */
@@ -130,10 +143,12 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
                 final CustomEntityType type,
                 final CustomEntitySerializer entitySerializer
         ) {
+            if (type == null) throw new IllegalArgumentException("type cannot be null");
+
             this.id = id;
             this.keyPrefix = keyPrefix;
-            this.type = type;
-            this.entitySerializer = entitySerializer;
+            this.type = type.name();
+            this.entitySerializerClassName = entitySerializer != null ? entitySerializer.getClass().getName() : null;
         }
 
         /**
@@ -158,11 +173,11 @@ public final class CustomReferenceEntitiesSupport implements Serializable {
         /**
          * Getter for {@link #type}
          */
-        public CustomEntityType getType() { return type; }
+        public String getType() { return type; }
 
         /**
-         * Getter for {@link #entitySerializer}
+         * Getter for {@link #entitySerializerClassName}
          */
-        public CustomEntitySerializer getSerializer() { return entitySerializer; }
+        public String getSerializerClassName() { return entitySerializerClassName; }
     }
 }

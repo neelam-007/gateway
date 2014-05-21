@@ -6,6 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This is entity header impl for a custom-key-value-store entity.
+ * <p/>
+ * Typically used during policy migration (both policy import and export) to reference missing custom key value store
+ * element.
  */
 public class CustomKeyStoreEntityHeader extends EntityHeader {
     private static final long serialVersionUID = 528163664043260635L;
@@ -97,5 +100,31 @@ public class CustomKeyStoreEntityHeader extends EntityHeader {
                 "\", hasBytes: \"" + String.valueOf(hasBytes()) +
                 "\", entitySerializer: " + getEntitySerializer() +
                 "]";
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (!(obj instanceof EntityHeader)) return false;
+        final EntityHeader theOtherOne = (EntityHeader)obj;
+        if (theOtherOne.type != this.type) return false;
+        if (getStrId() == null) {
+            return theOtherOne.getStrId() == null &&
+                    ( getName() != null ?
+                            getName().equals(theOtherOne.getName()) :
+                            theOtherOne.getName() == null );
+        }
+        return getStrId().equals(theOtherOne.getStrId()) &&
+                ( getName() != null ?
+                        getName().equals(theOtherOne.getName()) :
+                        theOtherOne.getName() == null );
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        result = (type != null ? type.hashCode() : 0);
+        result = 31 * result + (strId != null ? strId.hashCode() : 0);
+        result = 31 * result + (getName() != null ? getName().hashCode() : 0);
+        return result;
     }
 }

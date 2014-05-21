@@ -80,9 +80,6 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                     } else {
                         panel = new ResolveCustomKeyValuePanel(null, (CustomKeyValueReference) (ref));
                     }
-                    if (panel instanceof ResolveCustomKeyValuePanel) {
-                        ((ResolveCustomKeyValuePanel)panel).initialize();
-                    }
                 } else if (ref instanceof GlobalResourceReference) { // must be after ExternalSchemaReference since that is a subclass
                     panel = new ResolveGlobalResourcePanel(null, (GlobalResourceReference) (ref));
                 }

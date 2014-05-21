@@ -87,13 +87,28 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
         this.externalEntity = (CustomEntityDescriptor)entityObj;
 
         this.externalEntityTypeName =  safeString(externalEntity.getProperty(CustomEntityDescriptor.TYPE, String.class));
+
+        // initialize the panel
+        this.initializeWithSerializer();
+    }
+
+    /**
+     * Override and do nothing.<br/>
+     * This method will be called from the base class constructor and this panel initialization cannot start until this
+     * class constructor is complete, to be more precise, not until {@link #externalEntity} and {@link #externalEntityTypeName}
+     * fields are properly initialized.<br/>
+     * Therefore {@link #initializeWithSerializer()} method is introduced and will be called accordingly,
+     * from this class constructor.
+     */
+    @Override
+    protected void initialize() throws IOException {
+        // do nothing here
     }
 
     /**
      * Initialize the panel elements.
      */
-    @Override
-    public void initialize() throws IOException {
+    private void initializeWithSerializer() throws IOException {
         setLayout(new BorderLayout());
         add(mainPanel);
 
@@ -130,57 +145,8 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
             externalReferencePanel.setLayout(new BorderLayout());
             externalReferencePanel.add(entityDetailsPanel, BorderLayout.PAGE_START);
         } else {
-            // if no entityDetailsPanel provided create a default key-id, key-prefix, name layout
-            externalReferencePanel.removeAll();
-            externalReferencePanel.setLayout(new GridBagLayout());
-
-            // add key-id
-            externalReferencePanel.add(
-                    new JLabel(safeString(resources.getString("label.id"))),
-                    new GridBagConstraints() {{
-                        gridx = 0;
-                        gridy = 0;
-                        anchor = FIRST_LINE_START;
-                        fill = HORIZONTAL;
-                        insets = new Insets(0, 1, 2, 0);
-                    }}
-            );
-            externalReferencePanel.add(
-                    new JTextField(safeString(extractEntityNameFromKey(externalReference.getEntityKey(), externalReference.getEntityKeyPrefix()))) {{
-                        setEditable(false);
-                    }},
-                    new GridBagConstraints() {{
-                        gridx = 1;
-                        gridy = 0;
-                        weightx = 1.0;
-                        fill = HORIZONTAL;
-                        insets = new Insets(0, 2, 2, 1);
-                    }}
-            );
-
-            // add key-prefix
-            externalReferencePanel.add(
-                    new JLabel(safeString(resources.getString("label.prefix"))),
-                    new GridBagConstraints() {{
-                        gridx = 0;
-                        gridy = 1;
-                        anchor = FIRST_LINE_START;
-                        fill = HORIZONTAL;
-                        insets = new Insets(0, 1, 2, 0);
-                    }}
-            );
-            externalReferencePanel.add(
-                    new JTextField(safeString(externalReference.getEntityKeyPrefix())) {{
-                        setEditable(false);
-                    }},
-                    new GridBagConstraints() {{
-                        gridx = 1;
-                        gridy = 1;
-                        weightx = 1.0;
-                        fill = HORIZONTAL;
-                        insets = new Insets(0, 2, 2, 1);
-                    }}
-            );
+            // if no entityDetailsPanel provided create a default key-id, key-prefix and name layout
+            createDefaultExternalReferenceSummeryPanel();
 
             // add entity name
             externalReferencePanel.add(
@@ -190,7 +156,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                         gridy = 2;
                         anchor = FIRST_LINE_START;
                         fill = HORIZONTAL;
-                        insets = new Insets(0, 1, 0, 0);
+                        insets = new Insets(0, 1, 2, 0);
                     }}
             );
             externalReferencePanel.add(
@@ -202,7 +168,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                         gridy = 2;
                         weightx = 1.0;
                         fill = HORIZONTAL;
-                        insets = new Insets(0, 2, 0, 1);
+                        insets = new Insets(0, 2, 2, 1);
                     }}
             );
         }
@@ -343,6 +309,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                 externalEntity
         );
 
+        DialogDisplayer.pack(dlg);
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(
                 dlg,

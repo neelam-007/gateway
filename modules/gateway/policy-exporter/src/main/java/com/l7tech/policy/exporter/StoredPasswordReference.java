@@ -4,8 +4,10 @@ import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -67,11 +69,11 @@ public class StoredPasswordReference extends ExternalReference  {
 
     public static StoredPasswordReference parseFromElement( final ExternalReferenceFinder context, final Element elmt) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
-        if (!elmt.getNodeName().equals(ELMT_NAME_REF)) {
+        if (!ELMT_NAME_REF.equals(elmt.getNodeName())) {
             throw new InvalidDocumentFormatException("Expecting element of name " + ELMT_NAME_REF);
         }
 
-        StoredPasswordReference output = new StoredPasswordReference( context );
+        final StoredPasswordReference output = new StoredPasswordReference( context );
         output.id = Goid.parseGoid(getParamFromEl(elmt, ELMT_NAME_PASS_ID));
         output.name = getParamFromEl(elmt, ELMT_NAME_PASS_NAME);
         output.type = SecurePassword.SecurePasswordType.valueOf(getParamFromEl(elmt, ELMT_NAME_TYPE));
@@ -126,15 +128,14 @@ public class StoredPasswordReference extends ExternalReference  {
 
         final StoredPasswordReference ref = (StoredPasswordReference)obj;
         final Goid goid = getId();
-        final String name = getName();
 
-        if (goid != null) {
-            return (goid.equals(ref.getId()));
-        } else if (name != null) {
-            return ref.getId() == null && name.equals(ref.getName());
-        } else {
-            return ref.getId() == null && ref.getName() == null;
-        }
+        return goid != null ? goid.equals(ref.getId()) : ref.getId() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        final Goid goid = getId();
+        return goid != null ? goid.hashCode(): 0 ;
     }
 
     @Override
@@ -146,12 +147,18 @@ public class StoredPasswordReference extends ExternalReference  {
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE){
-            final EntitiesResolver entitiesResolver =
-                    EntitiesResolver.builder()
-                            .keyValueStore(getFinder().getCustomKeyValueStore())
-                            .build();
+            final EntitiesResolver entitiesResolver = EntitiesResolver
+                    .builder()
+                    .keyValueStore(getFinder().getCustomKeyValueStore())
+                    .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                        @Override
+                        public CustomEntitySerializer call(final String entitySerializerClassName) {
+                            return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                        }
+                    })
+                    .build();
             for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
-                if ( entityHeader.getType().equals(EntityType.SECURE_PASSWORD) && entityHeader.equalsId(id) ) {
+                if ( EntityType.SECURE_PASSWORD.equals(entityHeader.getType()) && entityHeader.equalsId(id) ) {
                     if(localizeType == LocalizeAction.REPLACE) {
                         if ( !localSecurePasswordId.equals(id)) {
                             EntityHeader newEntityHeader = new EntityHeader(localSecurePasswordId, EntityType.SECURE_PASSWORD, null, null);

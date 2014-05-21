@@ -40,8 +40,6 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
     // available entities for this external reference
     protected JComboBox<Object> customKeyValueComboBox; // items custom-key-value id's (prefix+id)
     protected JPanel mainPanel;
-    protected JTextField entityIdTextField;
-    protected JTextField entityPrefixTextField;
     protected JLabel titleLabel;
     protected JPanel externalReferencePanel;
 
@@ -65,23 +63,24 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
         this.externalEntityTypeName = safeString(resources.getString("generic.entity"));
 
         // some sanity check
-        if (externalReference.getEntityKey() == null || externalReference.getEntityKey().trim().isEmpty()) {
+        // no need to check for null since all methods below are annotated with @NotNull
+        if (externalReference.getEntityKey().trim().isEmpty()) {
             throw new IOException("Missing Entity Key cannot be null or empty");
         }
-
-        if (externalReference.getEntityKeyPrefix() == null || externalReference.getEntityKeyPrefix().trim().isEmpty()) {
+        if (externalReference.getEntityKeyPrefix().trim().isEmpty()) {
             throw new IOException("Missing Entity KeyPrefix cannot be null or empty");
         }
-
-        if (externalReference.getEntityBase64Value() == null || externalReference.getEntityBase64Value().trim().isEmpty()) {
+        if (externalReference.getEntityBase64Value().trim().isEmpty()) {
             throw new IOException("Missing Entity Base64Value cannot be null or empty");
         }
+
+        this.initialize();
     }
 
     /**
      * Initialize the panel elements.
      */
-    public void initialize() throws IOException {
+    protected void initialize() throws IOException {
         setLayout(new BorderLayout());
         add(mainPanel);
 
@@ -110,8 +109,9 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
                         externalEntityTypeName
                 )
         );
-        entityIdTextField.setText(safeString(extractEntityNameFromKey(externalReference.getEntityKey(), externalReference.getEntityKeyPrefix())));
-        entityPrefixTextField.setText(safeString(externalReference.getEntityKeyPrefix()));
+
+        // create the default summery panel
+        createDefaultExternalReferenceSummeryPanel();
 
         // default is delete
         removeRadioButton.setSelected(true);
@@ -351,5 +351,62 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
     @NotNull
     protected static String safeString(@Nullable final String value) {
         return value == null ? EMPTY_STRING : value;
+    }
+
+    /**
+     * Create default summery panel for the external reference, containing key-id and key-prefix.
+     */
+    protected void createDefaultExternalReferenceSummeryPanel() {
+        // remove any existing elements from the panel
+        externalReferencePanel.removeAll();
+        externalReferencePanel.setLayout(new GridBagLayout());
+
+        // add key-id
+        externalReferencePanel.add(
+                new JLabel(safeString(resources.getString("label.id"))),
+                new GridBagConstraints() {{
+                    gridx = 0;
+                    gridy = 0;
+                    anchor = FIRST_LINE_START;
+                    fill = HORIZONTAL;
+                    insets = new Insets(0, 1, 2, 0);
+                }}
+        );
+        externalReferencePanel.add(
+                new JTextField(safeString(extractEntityNameFromKey(externalReference.getEntityKey(), externalReference.getEntityKeyPrefix()))) {{
+                    setEditable(false);
+                }},
+                new GridBagConstraints() {{
+                    gridx = 1;
+                    gridy = 0;
+                    weightx = 1.0;
+                    fill = HORIZONTAL;
+                    insets = new Insets(0, 2, 2, 1);
+                }}
+        );
+
+        // add key-prefix
+        externalReferencePanel.add(
+                new JLabel(safeString(resources.getString("label.prefix"))),
+                new GridBagConstraints() {{
+                    gridx = 0;
+                    gridy = 1;
+                    anchor = FIRST_LINE_START;
+                    fill = HORIZONTAL;
+                    insets = new Insets(0, 1, 2, 0);
+                }}
+        );
+        externalReferencePanel.add(
+                new JTextField(safeString(externalReference.getEntityKeyPrefix())) {{
+                    setEditable(false);
+                }},
+                new GridBagConstraints() {{
+                    gridx = 1;
+                    gridy = 1;
+                    weightx = 1.0;
+                    fill = HORIZONTAL;
+                    insets = new Insets(0, 2, 2, 1);
+                }}
+        );
     }
 }

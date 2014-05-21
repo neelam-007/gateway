@@ -76,6 +76,7 @@
         <constructor-arg index="16" ref="httpConfigurationManager" />
         <constructor-arg index="17" ref="roleManager" />
         <constructor-arg index="18" ref="securePasswordManager" />
+        <constructor-arg index="19" ref="customKeyValueStoreManager" />
     </bean>
 
     <bean id="securityFilter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

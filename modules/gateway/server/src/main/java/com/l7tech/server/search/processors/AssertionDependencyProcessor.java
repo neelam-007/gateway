@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -11,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
@@ -22,6 +24,7 @@ import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.store.CustomKeyValueStoreImpl;
+import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +57,9 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     @Inject
     private CustomKeyValueStoreManager customKeyValueStoreManager;
 
+    @Inject
+    private CustomAssertionsRegistrar customAssertionRegistrar;
+
     private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
     private static final Pattern SECPASS_DESCRIPTION_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.description");
 
@@ -75,11 +81,16 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
         //uses the generic dependency processor to find dependencies using the methods defined by the assertion.
         final List<Dependency> dependencies = super.findDependencies(assertion, finder);
 
-        final EntitiesResolver entitiesResolver =
-                EntitiesResolver
-                        .builder()
-                        .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
-                        .build();
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
+                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                    @Override
+                    public CustomEntitySerializer call(final String entitySerializerClassName) {
+                        return customAssertionRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                    }
+                })
+                .build();
         for (EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
             final Entity entity = loadEntity(header);
             if (entity != null) {
@@ -184,11 +195,16 @@ public class AssertionDependencyProcessor extends GenericDependencyProcessor<Ass
     public void replaceDependencies(@NotNull Assertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(assertion, replacementMap, finder);
 
-        final EntitiesResolver entitiesResolver =
-                EntitiesResolver
-                        .builder()
-                        .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
-                        .build();
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
+                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                    @Override
+                    public CustomEntitySerializer call(final String entitySerializerClassName) {
+                        return customAssertionRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                    }
+                })
+                .build();
         final EntityHeader[] entitiesUsed = entitiesResolver.getEntitiesUsed(assertion);
         for (EntityHeader entityUsed : entitiesUsed) {
             EntityHeader newEntity = findMappedHeader(replacementMap,entityUsed);

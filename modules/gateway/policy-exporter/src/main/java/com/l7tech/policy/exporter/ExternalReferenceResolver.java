@@ -5,10 +5,12 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -397,6 +399,12 @@ class ExternalReferenceResolver {
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
                 .keyValueStore(finder.getCustomKeyValueStore())
+                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                    @Override
+                    public CustomEntitySerializer call(final String entitySerializerClassName) {
+                        return finder.getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                    }
+                })
                 .build();
         for (Iterator<ExternalReference> itr = references.iterator(); itr.hasNext(); ) {
             ExternalReference reference = itr.next();
@@ -420,6 +428,22 @@ class ExternalReferenceResolver {
                 TrustedCertReference trustedCertRef = (TrustedCertReference) reference;
                 for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
                     if ( entityHeader.equalsId(trustedCertRef.getGoid()) ) {
+                        itr.remove();
+                        break;
+                    }
+                }
+            } else if (reference instanceof StoredPasswordReference) {
+                final StoredPasswordReference passwordRef = (StoredPasswordReference)reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    if (passwordRef.getId().equals(entityHeader.getGoid())) {
+                        itr.remove();
+                        break;
+                    }
+                }
+            } else if (reference instanceof CustomKeyValueReference) {
+                final CustomKeyValueReference keyValueRef = (CustomKeyValueReference)reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    if (keyValueRef.getEntityKey().equals(entityHeader.getName())) {
                         itr.remove();
                         break;
                     }

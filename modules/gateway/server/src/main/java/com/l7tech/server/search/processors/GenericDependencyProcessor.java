@@ -557,7 +557,8 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             String entityId;
             CustomKeyValueStore customKeyValueStore;
             if (entityHeader.getGoid() == null || Goid.DEFAULT_GOID.equals(entityHeader.getGoid())){
-                customKeyValueStore = customKeyValueStoreManager.findByUniqueName(entityId = entityHeader.getName());
+                entityId = entityHeader.getName();
+                customKeyValueStore = customKeyValueStoreManager.findByUniqueName(entityId);
             } else {
                 entityId = entityHeader.getStrId();
                 customKeyValueStore = customKeyValueStoreManager.findByPrimaryKey(entityHeader.getGoid());

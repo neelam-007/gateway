@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +18,11 @@ import org.jetbrains.annotations.Nullable;
  * {@link #replaceEntity(com.l7tech.policy.assertion.Assertion, com.l7tech.objectmodel.EntityHeader, com.l7tech.objectmodel.EntityHeader)}
  * methods.<br/>
  * The Assertion can be a modular assertion implementing {@link com.l7tech.policy.assertion.UsesEntities UsesEntities}
- * or a custom assertion implementing {@link com.l7tech.policy.assertion.ext.entity.CustomReferenceEntities}.
+ * or a custom assertion implementing {@link com.l7tech.policy.assertion.ext.entity.CustomReferenceEntities}.<br/>
+ * <p/>
+ * Typically used during policy migration (both policy import and export).
+ *
+ * @see CustomEntitiesResolver
  */
 public class EntitiesResolver {
 
@@ -28,7 +33,7 @@ public class EntitiesResolver {
      * Construct the EntitiesResolver using the {@link Builder} object
      */
     private EntitiesResolver(@NotNull final Builder builder) {
-        this.entitiesResolver = (builder.keyValueStore != null) ? new CustomEntitiesResolver(builder.keyValueStore) : null;
+        this.entitiesResolver = (builder.keyValueStore != null) ? new CustomEntitiesResolver(builder.keyValueStore, builder.classNameToSerializerFunction) : null;
     }
 
     /**
@@ -78,10 +83,8 @@ public class EntitiesResolver {
      */
     @NotNull
     public EntityHeader[] getEntitiesUsed (@Nullable final Assertion assertion) {
-        if (assertion instanceof CustomAssertionHolder) {
-            if (entitiesResolver != null) {
-                return entitiesResolver.getEntitiesUsed((CustomAssertionHolder)assertion);
-            }
+        if (assertion instanceof CustomAssertionHolder && entitiesResolver != null) {
+            return entitiesResolver.getEntitiesUsed((CustomAssertionHolder)assertion);
         } else if (assertion instanceof UsesEntities) {
             return ((UsesEntities)assertion).getEntitiesUsed();
         }
@@ -102,10 +105,8 @@ public class EntitiesResolver {
             @NotNull EntityHeader oldEntity,
             @NotNull EntityHeader newEntity
     ) {
-        if (assertion instanceof CustomAssertionHolder) {
-            if (entitiesResolver != null) {
-                entitiesResolver.replaceEntity(oldEntity, newEntity, (CustomAssertionHolder) assertion);
-            }
+        if (assertion instanceof CustomAssertionHolder && entitiesResolver != null) {
+            entitiesResolver.replaceEntity(oldEntity, newEntity, (CustomAssertionHolder) assertion);
         } else if (assertion instanceof UsesEntities) {
             ((UsesEntities)assertion).replaceEntity(oldEntity, newEntity);
         }
@@ -120,11 +121,19 @@ public class EntitiesResolver {
         @Nullable
         private KeyValueStore keyValueStore;
 
+        @Nullable
+        private Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction;
+
         private Builder() {
         }
 
         public Builder keyValueStore(@Nullable final KeyValueStore keyValueStore) {
             this.keyValueStore = keyValueStore;
+            return this;
+        }
+
+        public Builder classNameToSerializerFunction(@Nullable final Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction) {
+            this.classNameToSerializerFunction = classNameToSerializerFunction;
             return this;
         }
 

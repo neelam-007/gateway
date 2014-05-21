@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.entity.*;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +21,8 @@ import java.util.logging.Logger;
  * Provides means to extract (using {@link #getEntitiesUsed(com.l7tech.policy.assertion.CustomAssertionHolder)}) and
  * modify (using {@link #replaceEntity(com.l7tech.objectmodel.EntityHeader, com.l7tech.objectmodel.EntityHeader, com.l7tech.policy.assertion.CustomAssertionHolder)}
  * Custom Assertion external entities, similar as {@code UsesEntities} for modular assertions.
+ * <p/>
+ * Typically used during policy migration (both policy import and export).
  *
  * @see com.l7tech.policy.assertion.UsesEntities
  */
@@ -27,20 +30,35 @@ public class CustomEntitiesResolver {
     private static final Logger logger = Logger.getLogger(CustomEntitiesResolver.class.getName());
 
     /**
-     * Access to CustomKeyValueStore entity.
+     * Access to CustomKeyValueStore entities.
      */
     @NotNull
     private final KeyValueStore keyValueStore;
 
     /**
+     * {@link CustomReferenceEntitiesSupport} holds entity serializer class name, therefore this unary function should
+     * locate and instantiate {@link CustomEntitySerializer} registered with the specified class name.
+     */
+    @NotNull
+    private final Functions.Unary<
+            CustomEntitySerializer, // output: CustomEntitySerializer reference corresponding to the input entity serializer class name
+            String                  // input: entity serializer class name
+            > classNameToSerializerFunction;
+
+    /**
      * Default constructor.
      */
-    public CustomEntitiesResolver(@NotNull final KeyValueStore keyValueStore) {
+    public CustomEntitiesResolver(
+            @NotNull final KeyValueStore keyValueStore,
+            @NotNull final Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction
+    ) {
         this.keyValueStore = keyValueStore;
+        this.classNameToSerializerFunction = classNameToSerializerFunction;
     }
 
     /**
-     * Returns a list of {@link EntityHeader}'s containing all external entities used by the specified custom assertion.
+     * Returns a list of {@link EntityHeader}'s containing all external entities used by the specified custom assertion.<br/>
+     * Typically used during policy import and export while gathering {@code CustomAssertionHolder}'s referenced entities.
      */
     @NotNull
     public EntityHeader[] getEntitiesUsed(@NotNull CustomAssertionHolder assertionHolder) {
@@ -60,6 +78,7 @@ public class CustomEntitiesResolver {
     /**
      * Utility function for creating an ordered list of {@link EntityHeader}'s based on {@link EntityType}.
      */
+    @NotNull
     private Collection<EntityHeader> createSortedEntitiesList() {
         //noinspection serial
         class TmpSortedArrayList extends ArrayList<EntityHeader> {
@@ -105,7 +124,7 @@ public class CustomEntitiesResolver {
      * <p/>
      * TODO: add extensive unit-testing here
      *
-     * TODO: add support for future types here
+     * *** add logic for future entity types here ***
      *
      * @param entityHeaders     self sorted list of entities found so far.
      * @param externalEntity    starting entity reference object.
@@ -121,10 +140,15 @@ public class CustomEntitiesResolver {
                 throw new IllegalArgumentException("CustomReferenceEntities method getReferenceEntitiesSupport() returning non-singleton instance!");
             }
             // loop through all references
-            for (final Object referenceObject : CustomEntityReferenceSupportAdaptor.getAllReferencedEntities(entityReferenceSupport)) {
+            for (final Object referenceObject : CustomEntityReferenceSupportAccessor.getAllReferencedEntities(entityReferenceSupport)) {
                 // gather entity id and type
-                final String entityId = CustomEntityReferenceSupportAdaptor.getEntityId(referenceObject);
-                final CustomEntityType entityType = CustomEntityReferenceSupportAdaptor.getEntityType(referenceObject);
+                final String entityId = CustomEntityReferenceSupportAccessor.getEntityId(referenceObject);
+                // extract entity type
+                final CustomEntityType entityType = CustomEntityReferenceSupportAccessor.getEntityType(referenceObject);
+                if (entityType == null) {
+                    // this entity contains unknown type, skip it
+                    continue;
+                }
                 // check whether we've processed this reference already
                 // should also guard against circular references
                 if (findDuplicateReference(entityHeaders, entityType, entityId)) {
@@ -138,9 +162,11 @@ public class CustomEntitiesResolver {
                         break;
                     case KeyValueStore:
                         // get the serializer in order to go through any potential reference dependencies
-                        final CustomEntitySerializer entitySerializer = CustomEntityReferenceSupportAdaptor.getEntitySerializer(referenceObject);
+                        final CustomEntitySerializer entitySerializer = findEntitySerializerFromClassName(
+                                CustomEntityReferenceSupportAccessor.getSerializerClassName(referenceObject)
+                        );
                         // get entity prefix, cannot be null so it will throw
-                        final String entityKeyPrefix = CustomEntityReferenceSupportAdaptor.getEntityKeyPrefix(referenceObject);
+                        final String entityKeyPrefix = CustomEntityReferenceSupportAccessor.getEntityKeyPrefix(referenceObject);
                         // first add the reference entity, never throws
                         final Object entityObject = addCustomKeyValuedEntity(entityHeaders, entityId, entityKeyPrefix, entitySerializer);
                         // next process any potential child entity dependencies
@@ -160,7 +186,8 @@ public class CustomEntitiesResolver {
      * Check whether the specified <tt>referenceElement</tt> has already been processed, i.e. has been added to our entity headers list.<br/>
      * This function should also guard against circular references.
      * <p/>
-     * TODO: add support for future types here
+     *
+     * *** add logic for future entity types here ***
      *
      * @param entityHeaders    self sorted list of entities found so far.
      * @param entityType       entity type
@@ -258,7 +285,8 @@ public class CustomEntitiesResolver {
 
     /**
      * For the specified custom assertion (i.e. {@code assertionHolder}}, replace dependent entity, {@code oldEntityHeader},
-     * with {@code newEntityHeader}.
+     * with {@code newEntityHeader}.<br/>
+     * Typically used during policy import while resolving {@code CustomAssertionHolder}'s missing entity.
      */
     public void replaceEntity(
             @NotNull EntityHeader oldEntityHeader, 
@@ -276,7 +304,7 @@ public class CustomEntitiesResolver {
                     newEntityHeader.getType() + "\"");
         }
 
-        // TODO: add support for future types here
+        // *** add logic for future entity types here ***
         final Set<Pair<CustomEntityType, String>> processedEntities = new HashSet<>();
         final CustomAssertion customAssertion = assertionHolder.getCustomAssertion();
         if (customAssertion instanceof CustomReferenceEntities) {
@@ -333,10 +361,15 @@ public class CustomEntitiesResolver {
                 throw new IllegalArgumentException("CustomReferenceEntities method getReferenceEntitiesSupport() returning non-singleton instance!");
             }
             // loop through all references
-            for (final Object referenceObject : CustomEntityReferenceSupportAdaptor.getAllReferencedEntities(entityReferenceSupport)) {
+            for (final Object referenceObject : CustomEntityReferenceSupportAccessor.getAllReferencedEntities(entityReferenceSupport)) {
                 // gather entity id and type
-                final String entityId = CustomEntityReferenceSupportAdaptor.getEntityId(referenceObject);
-                final CustomEntityType entityType = CustomEntityReferenceSupportAdaptor.getEntityType(referenceObject);
+                final String entityId = CustomEntityReferenceSupportAccessor.getEntityId(referenceObject);
+                // extract entity type
+                final CustomEntityType entityType = CustomEntityReferenceSupportAccessor.getEntityType(referenceObject);
+                if (entityType == null) {
+                    // this entity contains unknown type, skip it
+                    continue;
+                }
                 // check for circular references
                 if (processedEntities.contains(Pair.pair(entityType, entityId))) {
                     continue;  // skip entity if this is duplicate i.e. already processed
@@ -344,11 +377,13 @@ public class CustomEntitiesResolver {
                 processedEntities.add(Pair.pair(entityType, entityId));
                 // if the type and old value match, then change entity id/key
                 if (typeForReplace.equals(entityType) && oldId.equals(entityId)) {
-                    CustomEntityReferenceSupportAdaptor.setEntityId(referenceObject, newId);
+                    CustomEntityReferenceSupportAccessor.setEntityId(referenceObject, newId);
                     ret = true; // we've modify externalEntity object, continue further
                 } else {
                     // this is not the entity we need to change, so process its child entities
-                    final CustomEntitySerializer entitySerializer = CustomEntityReferenceSupportAdaptor.getEntitySerializer(referenceObject);
+                    final CustomEntitySerializer entitySerializer = findEntitySerializerFromClassName(
+                            CustomEntityReferenceSupportAccessor.getSerializerClassName(referenceObject)
+                    );
                     if (entitySerializer != null) {
                         try {
                             final byte[] bytes = extractEntityBytes(entityId, entityType);
@@ -378,7 +413,8 @@ public class CustomEntitiesResolver {
      * Utility function for extracting reference entity bytes, specified with id and type.<br/>
      * Currently we support only custom key value store.
      * <p/>
-     * TODO: add support for future types here
+     *
+     * *** add logic for future entity types here ***
      *
      * @param entityId     referenced entity id
      * @param entityType   referenced entity type
@@ -405,7 +441,8 @@ public class CustomEntitiesResolver {
     /**
      * Exported entity was modified during import, therefore save/update the modified entity using it's owner storage.
      * <p/>
-     * TODO: add support for future types here
+     *
+     * *** add logic for future entity types here ***
      *
      * @param entityType    entity type. Mandatory
      * @param entityKey     entity key. Mandatory
@@ -429,5 +466,19 @@ public class CustomEntitiesResolver {
                 logger.log(Level.WARNING, "saveExternalEntity called for unsupported type: \"" + entityType + "\", entity: \"" + entityKey + "\" will not be saved!");
                 break;
         }
+    }
+
+    /**
+     * Utility method for locating specified <tt>entitySerializerClassName</tt> through our entity serializers registry.
+     *
+     * @param entitySerializerClassName    entity serializer classname
+     * @return entity serializer object registered with the specified <tt>entitySerializerClassName</tt> or {@code null}
+     * if the specified <tt>entitySerializerClassName</tt> is not registered or {@code null}
+     */
+    @Nullable
+    private CustomEntitySerializer findEntitySerializerFromClassName(
+            @Nullable final String entitySerializerClassName
+    ) {
+        return (entitySerializerClassName != null) ? classNameToSerializerFunction.call(entitySerializerClassName) : null;
     }
 }

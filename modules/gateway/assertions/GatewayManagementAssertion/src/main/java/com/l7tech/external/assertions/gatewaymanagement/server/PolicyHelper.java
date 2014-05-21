@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.api.CustomKeyValueStoreImpl;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
@@ -29,6 +28,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
@@ -40,6 +41,7 @@ import com.l7tech.server.globalresources.HttpConfigurationManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.PolicyAssertionRbacChecker;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
@@ -370,6 +372,7 @@ public class PolicyHelper {
         private final HttpConfigurationManager httpConfigurationManager;
         private final RoleManager roleManager;
         private final SecurePasswordManager securePasswordManager;
+        private final CustomKeyValueStoreManager customKeyValueStoreManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -389,7 +392,8 @@ public class PolicyHelper {
                                                final GenericEntityManager genericEntityManager,
                                                final HttpConfigurationManager httpConfigurationManager,
                                                final RoleManager roleManager,
-                                               final SecurePasswordManager securePasswordManager) {
+                                               final SecurePasswordManager securePasswordManager,
+                                               final CustomKeyValueStoreManager customKeyValueStoreManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -409,6 +413,7 @@ public class PolicyHelper {
             this.httpConfigurationManager = httpConfigurationManager;
             this.roleManager = roleManager;
             this.securePasswordManager = securePasswordManager;
+            this.customKeyValueStoreManager = customKeyValueStoreManager;
         }
 
         private User getUser() {
@@ -637,7 +642,7 @@ public class PolicyHelper {
 
         @Override
         public KeyValueStore getCustomKeyValueStore() {
-            return new CustomKeyValueStoreImpl();
+            return new FilteringKeyValueStore(customKeyValueStoreManager);
         }
 
         @Override
@@ -652,6 +657,137 @@ public class PolicyHelper {
             return provider;
         }
 
+        /**
+         * Utility class for filtering CustomKeyValueStore entities based on user roles.
+         * <p/>
+         * Taking in count that the class can be used from ESM, we cannot use
+         * {@link com.l7tech.console.api.CustomKeyValueStoreImpl console version of KeyValueStore} since it uses
+         * {@link com.l7tech.console.util.Registry Registry} to call admin methods. <br/>
+         * Instead we have to use a server version of the {@code KeyValueStore} and implement filtering manually
+         * based on user roles.
+         * <p/>
+         * For convenience {@link GatewayExternalReferenceFinder#filter(com.l7tech.objectmodel.Entity)} method, and its
+         * variants, are used, therefore this class is designed as a inner class of {@link GatewayExternalReferenceFinder}
+         */
+        private class FilteringKeyValueStore implements KeyValueStore {
+            /**
+             * This is the server version of KeyValueStore manager.
+             */
+            @NotNull
+            private final CustomKeyValueStoreManager customKeyValueStoreManager;
+
+            public FilteringKeyValueStore(@NotNull final CustomKeyValueStoreManager customKeyValueStoreManager) {
+                this.customKeyValueStoreManager = customKeyValueStoreManager;
+            }
+
+            @Override
+            public Map<String, byte[]> findAllWithKeyPrefix(final String keyPrefix) throws KeyValueStoreException {
+                try {
+                    final Collection<CustomKeyValueStore> customKeyValues = filter(customKeyValueStoreManager.findByKeyPrefix(keyPrefix));
+                    final Map<String, byte[]> result = new HashMap<>(customKeyValues.size());
+                    for (CustomKeyValueStore customKeyValue : customKeyValues) {
+                        result.put(customKeyValue.getName(), customKeyValue.getValue());
+                    }
+                    return result;
+                } catch (FindException e) {
+                    throw new KeyValueStoreException("Unable to find all: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public byte[] get(final String key) throws KeyValueStoreException {
+                try {
+                    final CustomKeyValueStore customKeyValue = filter(customKeyValueStoreManager.findByUniqueName(key));
+                    return (customKeyValue != null) ? customKeyValue.getValue() : null;
+                } catch (FindException e) {
+                    throw new KeyValueStoreException("Unable to get: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public boolean contains(final String key) throws KeyValueStoreException {
+                try {
+                    return filter(customKeyValueStoreManager.findByUniqueName(key)) != null;
+                } catch (FindException e) {
+                    throw new KeyValueStoreException("Unable to check if key exists: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public void save(final String key, final byte[] value) throws KeyValueStoreException {
+                try {
+                    final User user = getUser();
+                    if (user != null) {
+                        // no need to check whether the key already exists or not, since it may be misleading in case
+                        // when the key already exists in the system but the user doesn't have read access to it.
+                        // This means that for the user the key doesn't exists but it does system wise.
+                        // We'll let CustomKeyValueStoreManager fail with proper SaveException.
+                        final EntityType entityType = EntityType.findTypeByEntity(CustomKeyValueStore.class);
+                        if (entityType != null && rbacServices.isPermittedForAnyEntityOfType(user, OperationType.CREATE, entityType)) {
+                            final CustomKeyValueStore customKeyValue = new CustomKeyValueStore();
+                            customKeyValue.setName(key);
+                            customKeyValue.setValue(value);
+                            customKeyValueStoreManager.save(customKeyValue);
+                        }
+                    }
+                } catch (FindException | SaveException e) {
+                    throw new KeyValueStoreException("Unable to save: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public void update(final String key, final byte[] value) throws KeyValueStoreException {
+                try {
+                    final User user = getUser();
+                    if (user != null) {
+                        final CustomKeyValueStore customKeyValue = customKeyValueStoreManager.findByUniqueName(key);
+                        if (customKeyValue != null &&
+                            rbacServices.isPermittedForEntity(user, customKeyValue, OperationType.READ, null) &&
+                            rbacServices.isPermittedForEntity(user, customKeyValue, OperationType.UPDATE, null))
+                        {
+                            customKeyValue.setValue(value);
+                            customKeyValueStoreManager.update(customKeyValue);
+                        }
+                    }
+                } catch (FindException | UpdateException e) {
+                    throw new KeyValueStoreException("Unable to update: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public void saveOrUpdate(final String key, final byte[] value) throws KeyValueStoreException {
+                if (!this.contains(key)) {
+                    this.save(key, value);
+                } else {
+                    this.update(key, value);
+                }
+            }
+
+            @Override
+            public void delete(final String key) throws KeyValueStoreException {
+                try {
+                    final User user = getUser();
+                    if (user != null) {
+                        final EntityType entityType = EntityType.findTypeByEntity(CustomKeyValueStore.class);
+                        if (entityType != null && rbacServices.isPermittedForAnyEntityOfType(user, OperationType.DELETE, entityType)) {
+                            customKeyValueStoreManager.deleteByKey(key);
+                        }
+                    }
+                } catch (FindException | DeleteException e) {
+                    throw new KeyValueStoreException("Unable to delete: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            @Override
+            public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+                throw new UnsupportedOperationException("Cannot add key value store change event listener here.");
+            }
+
+            @Override
+            public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
+                throw new UnsupportedOperationException("Cannot remove key value store change event listener here.");
+            }
+        }
     }
 
     //- PACKAGE

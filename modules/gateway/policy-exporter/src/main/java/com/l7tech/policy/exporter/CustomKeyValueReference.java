@@ -5,14 +5,12 @@ import com.l7tech.objectmodel.CustomKeyStoreEntityHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -38,6 +36,8 @@ import java.util.logging.Logger;
  * </CustomKeyValueReference>
  * }
  * </pre><blockquote>
+ * <p/>
+ * Typically used during both policy import and export to reference missing custom key value store element.
  */
 public class CustomKeyValueReference extends ExternalReference {
     private static final Logger logger = Logger.getLogger(CustomKeyValueReference.class.getName());
@@ -226,7 +226,7 @@ public class CustomKeyValueReference extends ExternalReference {
             @NotNull final Element element
     ) throws InvalidDocumentFormatException {
         // make sure passed element is ours
-        if (!element.getNodeName().equals(REFERENCE_ROOT_NODE)) {
+        if (!REFERENCE_ROOT_NODE.equals(element.getNodeName())) {
             throw new InvalidDocumentFormatException("Expecting element of name \"" + REFERENCE_ROOT_NODE + "\"");
         }
 
@@ -266,12 +266,18 @@ public class CustomKeyValueReference extends ExternalReference {
             return true;
         }
 
-        final EntitiesResolver entitiesResolver =
-                EntitiesResolver.builder()
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
                 .keyValueStore(getFinder().getCustomKeyValueStore())
+                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                    @Override
+                    public CustomEntitySerializer call(final String entitySerializerClassName) {
+                        return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                    }
+                })
                 .build();
         for (final EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
-            if (entityHeader.getType().equals(EntityType.CUSTOM_KEY_VALUE_STORE) && entityHeader.getName().equals(getEntityKey()) ) {
+            if (EntityType.CUSTOM_KEY_VALUE_STORE.equals(entityHeader.getType()) && entityHeader.getName().equals(getEntityKey()) ) {
                 if (localizeType == LocalizeAction.REPLACE) {
                     if (!getEntityKey().equals(replaceRefKey)) {
                         final EntityHeader newEntityHeader = new EntityHeader();
@@ -299,6 +305,11 @@ public class CustomKeyValueReference extends ExternalReference {
 
         final CustomKeyValueReference ref = (CustomKeyValueReference)obj;
         return getEntityKey().equals(ref.getEntityKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return getEntityKey().hashCode();
     }
 
     /**
