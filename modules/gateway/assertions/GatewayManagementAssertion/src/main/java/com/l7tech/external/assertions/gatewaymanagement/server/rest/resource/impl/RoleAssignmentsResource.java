@@ -8,6 +8,8 @@ import com.l7tech.gateway.rest.SpringBean;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
+import javax.ws.rs.QueryParam;
+import java.util.List;
 
 /**
  * The rbac role assignment resource
@@ -37,12 +39,14 @@ public class RoleAssignmentsResource {
     /**
      * Removes role assignments
      *
-     * @param removeAssignmentsContext The assignments to remove
+     * @param assignmentIds The assignments to remove
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @DELETE
-    public void deleteAssignment(RemoveAssignmentsContext removeAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void deleteAssignment(@QueryParam("id") List<String> assignmentIds) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        RemoveAssignmentsContext removeAssignmentsContext = new RemoveAssignmentsContext();
+        removeAssignmentsContext.setAssignmentIds(assignmentIds);
         factory.removeAssignments(roleId, removeAssignmentsContext);
     }
 }

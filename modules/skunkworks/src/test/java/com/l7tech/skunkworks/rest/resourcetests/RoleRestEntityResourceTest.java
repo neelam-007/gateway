@@ -5,7 +5,6 @@ import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
-import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.internal.InternalGroup;
@@ -640,26 +639,20 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
 
     @Test
     public void removeRoleAssignment() throws Exception {
-            RemoveAssignmentsContext removeAssignmentsContext = new RemoveAssignmentsContext();
-            removeAssignmentsContext.setAssignmentIds(Arrays.asList(roles.get(1).getRoleAssignments().iterator().next().getId()));
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + roles.get(1).getId() + "/assignments", "id=" + roles.get(1).getRoleAssignments().iterator().next().getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), null);
 
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + roles.get(1).getId() + "/assignments", HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), objectToString(removeAssignmentsContext));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
 
-            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
-            Assert.assertEquals(204, response.getStatus());
-
-            Role role = roleManager.findByPrimaryKey(roles.get(1).getGoid());
-            Assert.assertNotNull(role);
-            Assert.assertNotNull(role.getRoleAssignments());
-            Assert.assertTrue(role.getRoleAssignments().isEmpty());
+        Role role = roleManager.findByPrimaryKey(roles.get(1).getGoid());
+        Assert.assertNotNull(role);
+        Assert.assertNotNull(role.getRoleAssignments());
+        Assert.assertTrue(role.getRoleAssignments().isEmpty());
     }
 
     @Test
     public void removeNotExistingRoleAssignment() throws Exception {
-        RemoveAssignmentsContext removeAssignmentsContext = new RemoveAssignmentsContext();
-        removeAssignmentsContext.setAssignmentIds(Arrays.asList(getGoid().toString()));
-
-        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + roles.get(1).getId() + "/assignments", HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), objectToString(removeAssignmentsContext));
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + roles.get(1).getId() + "/assignments", "id=" + getGoid().toString(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), null);
 
         Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(400, response.getStatus());
