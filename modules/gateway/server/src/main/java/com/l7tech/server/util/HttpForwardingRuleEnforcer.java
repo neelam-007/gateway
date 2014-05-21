@@ -325,7 +325,6 @@ public class HttpForwardingRuleEnforcer {
      * @param targetMessage the response Message to put the pass-through headers into
      * @param context the pec
      * @param rules http rules dictating what headers should be forwarded and under which conditions
-     * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
      * @param auditor for runtime auditing
      * @param routedRequestParams httpclientproperty
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
@@ -335,7 +334,6 @@ public class HttpForwardingRuleEnforcer {
                                               final Message targetMessage,
                                               final Audit auditor,
                                               final HttpPassthroughRuleSet rules,
-                                              final boolean passThroughSpecialHeaders,
                                               final PolicyEnforcementContext context,
                                               final GenericHttpRequestParams routedRequestParams,
                                               @Nullable Map<String,?> vars,
@@ -349,7 +347,7 @@ public class HttpForwardingRuleEnforcer {
                     if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
                         // special cookie handling happens outside this loop (see below)
                     } else {
-                        final boolean passThrough = passThroughSpecialHeaders || !headerShouldBeIgnored(headerFromResponse.getName());
+                        final boolean passThrough = !headerShouldBeIgnored(headerFromResponse.getName());
                         if (!passThrough && logFine) {
                             logger.fine("Adding non-passThrough header " + headerFromResponse.getName() + " with value " + headerFromResponse.getFullValue());
                         }
@@ -358,14 +356,6 @@ public class HttpForwardingRuleEnforcer {
                 }
                 passIncomingCookies = true;
             } else {
-                if (passThroughSpecialHeaders) {
-                    for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
-                        if (headerShouldBeIgnored(headerFromResponse.getName())) {
-                            targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP);
-                        }
-                    }
-                }
-
                 for (final HttpPassthroughRule rule : rules.getRules()) {
                     if (rule.isUsesCustomizedValue()) {
                         String headerValue = rule.getCustomizeValue();

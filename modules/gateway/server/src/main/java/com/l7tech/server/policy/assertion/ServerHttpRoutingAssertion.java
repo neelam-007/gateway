@@ -673,9 +673,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // Determines the routed response destination.
             routedResponseDestination = context.getResponse();
-            boolean routedResponseDestinationIsContextVariable = false;
             if (assertion.getResponseMsgDest() != null) {
-                routedResponseDestinationIsContextVariable = true;
                 routedResponseDestination = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
                 if (routedResponseDestination.getKnob(MimeKnob.class) != null) {
                     //this Message has already been initialized, close it so it can be reused
@@ -721,7 +719,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  routedResponseDestination,
                                                                  getAudit(),
                                                                  assertion.getResponseHeaderRules(),
-                                                                 routedResponseDestinationIsContextVariable,
                                                                  context,
                                                                  routedRequestParams,
                                                                  vars,
