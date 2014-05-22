@@ -9,6 +9,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
@@ -207,6 +208,13 @@ public class PolicyExporter {
                 addReference( new EncapsulatedAssertionReference( finder, (GuidEntityHeader)entityHeader), refs);
             } else if( EntityType.SECURE_PASSWORD.equals(entityHeader.getType()) ) {
                 addReference( new StoredPasswordReference( finder, (SecurePasswordEntityHeader)entityHeader), refs);
+            } else if( entityHeader.getType().equals(EntityType.SSG_KEY_ENTRY)) {
+                SsgKeyHeader ssgKeyHeader = (SsgKeyHeader) entityHeader;
+                if (!SignerServices.KEY_ID_SSL.equals(ssgKeyHeader.getStrId())) {
+                    // Add none default keys only.
+                    //
+                    addReference(new PrivateKeyReference(finder, false, ssgKeyHeader.getKeystoreId(), ssgKeyHeader.getAlias()), refs);
+                }
             } else if( EntityType.CUSTOM_KEY_VALUE_STORE.equals(entityHeader.getType()) ) {
                 final CustomKeyStoreEntityHeader customKeyStoreEntityHeader = (CustomKeyStoreEntityHeader)entityHeader;
                 if (customKeyStoreEntityHeader.hasBytes()) {

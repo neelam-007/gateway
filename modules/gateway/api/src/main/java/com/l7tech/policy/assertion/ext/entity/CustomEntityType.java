@@ -12,6 +12,12 @@ public enum CustomEntityType {
     SecurePassword,
 
     /**
+     * This represents a private key, accessed using
+     * {@link com.l7tech.policy.assertion.ext.security.SignerServices SignerServices}
+     */
+    PrivateKey,
+
+    /**
      * This represents an entity backed with {@link com.l7tech.policy.assertion.ext.store.KeyValueStore KeyValueStore}
      */
     KeyValueStore

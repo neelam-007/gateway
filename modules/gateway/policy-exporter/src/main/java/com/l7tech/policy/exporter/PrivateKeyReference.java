@@ -1,14 +1,15 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.GoidRange;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
+import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,29 @@ public class PrivateKeyReference extends ExternalReference {
                 keystoreGoid = keyable.getNonDefaultKeystoreId();
                 keyAlias = keyable.getKeyAlias();
             }
+        }
+        localizeType = LocalizeAction.IGNORE;
+    }
+
+    /**
+     * Creates <code>PrivateKeyReference</code>.
+     *
+     * @param finder the external reference finder
+     * @param isDefaultKey true if using default key, false otherwise
+     * @param keystoreGoid the keystore GOID. Ignored if isDefaultKey is true.
+     * @param keyAlias the key alias. Ignored if isDefaultKey is true.
+     */
+    public PrivateKeyReference( final ExternalReferenceFinder finder,
+                                final boolean isDefaultKey,
+                                final Goid keystoreGoid,
+                                final String keyAlias) {
+        this(finder);
+        if (isDefaultKey) {
+            this.isDefaultKey = true;
+        } else {
+            this.isDefaultKey = false;
+            this.keystoreGoid = keystoreGoid;
+            this.keyAlias = keyAlias;
         }
         localizeType = LocalizeAction.IGNORE;
     }
@@ -225,6 +249,42 @@ public class PrivateKeyReference extends ExternalReference {
                     }  else if (localizeType == LocalizeAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;
+                    }
+                }
+            } else {
+                final EntitiesResolver entitiesResolver =
+                    EntitiesResolver.builder()
+                        .keyValueStore(getFinder().getCustomKeyValueStore())
+                        .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                            @Override
+                            public CustomEntitySerializer call(String entitySerializerClassName) {
+                                return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                            }
+                        })
+                        .build();
+                String keyId = keystoreGoid+":"+keyAlias;
+                String localKeyId = localKeystoreGoid+":"+localKeyAlias;
+                for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
+                    if (entityHeader.getType().equals(EntityType.SSG_KEY_ENTRY) && entityHeader.getStrId().equals(keyId)) {
+                        // No need to check for default key. Only none default keys are referenced.
+                        //
+                        if(localizeType == LocalizeAction.REPLACE) {
+                            if (!localKeyId.equals(keyId)) {
+                                if (localIsDefaultKey) {
+                                    SsgKeyHeader newEntityHeader = new SsgKeyHeader(SignerServices.KEY_ID_SSL, Goid.DEFAULT_GOID, null, null);
+                                    entitiesResolver.replaceEntity(assertionToLocalize, entityHeader, newEntityHeader);
+                                    logger.info("The private key ID of the imported assertion has been changed from " + keyId + " to " + "default key");
+                                } else {
+                                    SsgKeyHeader newEntityHeader = new SsgKeyHeader(localKeyId, localKeystoreGoid, localKeyAlias, null);
+                                    entitiesResolver.replaceEntity(assertionToLocalize, entityHeader, newEntityHeader);
+                                    logger.info("The private key ID of the imported assertion has been changed from " + keyId + " to " + localKeyId);
+                                    break;
+                                }
+                            }
+                        } else if(localizeType == LocalizeAction.DELETE) {
+                            logger.info("Deleted this assertion from the tree.");
+                            return false;
+                        }
                     }
                 }
             }

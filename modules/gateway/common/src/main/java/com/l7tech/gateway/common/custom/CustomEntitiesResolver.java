@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ReferenceEntityBytesException;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.entity.*;
+import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.util.Functions;
@@ -109,11 +110,13 @@ public class CustomEntitiesResolver {
                     private int entityTypeToOrdinal(@NotNull final EntityType type) {
                         switch (type) {
                             case SECURE_PASSWORD:
+                                return 2;
+                            case SSG_KEY_ENTRY:
                                 return 1;
                             case CUSTOM_KEY_VALUE_STORE:
                                 return 0;
                         }
-                        return 2;
+                        return 3;
                     }
                 }
         );
@@ -160,6 +163,12 @@ public class CustomEntitiesResolver {
                         // add reference entity, will throw with RuntimeException when the password-id is not a valid GOID.
                         addPasswordEntity(entityHeaders, entityId);
                         break;
+
+                    case PrivateKey:
+                        // add reference entity, will throw with RuntimeException when the key-id is invalid.
+                        addPrivateKeyEntity(entityHeaders, entityId);
+                        break;
+
                     case KeyValueStore:
                         // get the serializer in order to go through any potential reference dependencies
                         final CustomEntitySerializer entitySerializer = findEntitySerializerFromClassName(
@@ -204,6 +213,11 @@ public class CustomEntitiesResolver {
             switch (entityHeader.getType()) {
                 case SECURE_PASSWORD:
                     if (CustomEntityType.SecurePassword.equals(entityType) && entityId.equals(entityHeader.getStrId())) {
+                        return true;
+                    }
+                    break;
+                case SSG_KEY_ENTRY:
+                    if (CustomEntityType.PrivateKey.equals(entityType) && entityId.equals(entityHeader.getStrId())) {
                         return true;
                     }
                     break;
@@ -284,6 +298,28 @@ public class CustomEntitiesResolver {
     }
 
     /**
+     * Utility function for creating a {@link SsgKeyHeader}, from the specified <tt>keyId</tt> and
+     * adding the header to our <tt>entityHeaders</tt> collection.
+     *
+     * @param entityHeaders  self sorted list of entities found so far. Mandatory.
+     * @param keyId          the key ID
+     * @throws IllegalArgumentException if the key ID is invalid
+     */
+    private void addPrivateKeyEntity(Collection<EntityHeader> entityHeaders, String keyId) {
+        if (!SignerServices.KEY_ID_SSL.equals(keyId)) {
+            // Add none default key only.
+            //
+            String[] keyIdSplit = keyId.split(":");
+            if (keyIdSplit.length != 2) {
+                throw new IllegalArgumentException("Invalid key ID format.");
+            }
+            Goid keystoreId = Goid.parseGoid(keyIdSplit[0]);
+            String keyAlias = keyIdSplit[1];
+            entityHeaders.add(new SsgKeyHeader(keyId, keystoreId, keyAlias, null));
+        }
+    }
+
+    /**
      * For the specified custom assertion (i.e. {@code assertionHolder}}, replace dependent entity, {@code oldEntityHeader},
      * with {@code newEntityHeader}.<br/>
      * Typically used during policy import while resolving {@code CustomAssertionHolder}'s missing entity.
@@ -316,6 +352,14 @@ public class CustomEntitiesResolver {
                         CustomEntityType.SecurePassword,
                         (CustomReferenceEntities) customAssertion,
                         processedEntities
+                ); // no need to save custom assertion
+            } else if (EntityType.SSG_KEY_ENTRY.equals(entityType)) {
+                replaceEntityReference(
+                    oldEntityHeader.getStrId(),
+                    newEntityHeader.getStrId(),
+                    CustomEntityType.PrivateKey,
+                    (CustomReferenceEntities)customAssertion,
+                    processedEntities
                 ); // no need to save custom assertion
             } else if (EntityType.CUSTOM_KEY_VALUE_STORE.equals(entityType)) {
                 replaceEntityReference(

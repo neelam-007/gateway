@@ -440,6 +440,15 @@ class ExternalReferenceResolver {
                         break;
                     }
                 }
+            } else if (reference instanceof PrivateKeyReference) {
+                final PrivateKeyReference privateKeyRef = (PrivateKeyReference)reference;
+                for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
+                    String id = privateKeyRef.getKeystoreGoid().toString()+":"+privateKeyRef.getKeyAlias();
+                    if (id.equals(entityHeader.getStrId())) {
+                        itr.remove();
+                        break;
+                    }
+                }
             } else if (reference instanceof CustomKeyValueReference) {
                 final CustomKeyValueReference keyValueRef = (CustomKeyValueReference)reference;
                 for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
