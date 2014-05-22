@@ -339,7 +339,7 @@ public class DebugPecDataTest {
         Assert.assertEquals(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
     }
 
-    @BugId("SSM-4578")
+    @BugId("SSM-4578,SSM-4622")
     @Test
     public void testPolicyResultUnsuccessful() throws Exception {
         // Setup test data.
@@ -357,7 +357,7 @@ public class DebugPecDataTest {
         // Verify policy result.
         //
         Assert.assertNotNull(debugPecData.getPolicyResult());
-        Assert.assertNotSame(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
+        Assert.assertTrue(debugPecData.getPolicyResult().startsWith(DebugResult.ERROR_POLICY_RESULT_MESSAGE));
         Assert.assertTrue(debugPecData.getPolicyResult().contains(AssertionStatus.AUTH_REQUIRED.getMessage()));
         Assert.assertTrue(debugPecData.getPolicyResult().contains("assertion number"));
     }

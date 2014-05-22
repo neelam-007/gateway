@@ -13,6 +13,7 @@ import java.util.Set;
  */
 public class DebugResult implements Serializable {
     public static final String SUCCESSFUL_POLICY_RESULT_MESSAGE = "Policy completed successfully";
+    public static final String ERROR_POLICY_RESULT_MESSAGE = "Policy completed with error";
 
     private final String taskId;
     private DebugState debugState = DebugState.STOPPED;

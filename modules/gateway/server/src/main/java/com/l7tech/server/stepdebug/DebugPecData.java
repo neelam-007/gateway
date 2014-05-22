@@ -97,7 +97,9 @@ public class DebugPecData {
                 // Error.
                 // Add error message and assertion number.
                 //
-                StringBuilder sb = new StringBuilder(status.getMessage());
+                StringBuilder sb = new StringBuilder(DebugResult.ERROR_POLICY_RESULT_MESSAGE);
+                sb.append(". ");
+                sb.append(status.getMessage());
                 sb.append(": assertion number ");
                 if (currentLine != null) {
                     boolean firstRun = true;

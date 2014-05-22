@@ -197,7 +197,7 @@ public class DebugContextTest {
         Assert.assertEquals(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
     }
 
-    @BugId("SSM-4578")
+    @BugId("SSM-4578,SSM-4622")
     @Test
     public void testOnMessageFinishedUnsuccessfully() throws Exception {
         when(pec.getPolicyResult()).thenReturn(AssertionStatus.AUTH_REQUIRED);
@@ -207,7 +207,10 @@ public class DebugContextTest {
         //
         DebugPecData debugPecData = debugContext.getDebugPecData();
         Assert.assertNotNull(debugPecData);
-        Assert.assertNotSame(DebugResult.SUCCESSFUL_POLICY_RESULT_MESSAGE, debugPecData.getPolicyResult());
+        Assert.assertNotNull(debugPecData.getPolicyResult());
+        Assert.assertTrue(debugPecData.getPolicyResult().startsWith(DebugResult.ERROR_POLICY_RESULT_MESSAGE));
+        Assert.assertTrue(debugPecData.getPolicyResult().contains(AssertionStatus.AUTH_REQUIRED.getMessage()));
+        Assert.assertTrue(debugPecData.getPolicyResult().contains("assertion number"));
     }
 
     private void setMessageArrived() {
