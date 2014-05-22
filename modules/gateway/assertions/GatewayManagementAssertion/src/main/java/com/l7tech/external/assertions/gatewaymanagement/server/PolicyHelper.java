@@ -1180,6 +1180,30 @@ public class PolicyHelper {
                         (properties.get( propName ) instanceof Boolean) &&
                         ((Boolean)properties.get( propName ));
             }
+
+            @Override
+            public boolean applyRenameToResolvedReferences(Collection<ExternalReference> references) throws PolicyImportCancelledException {
+                final List<PolicyReferenceInstruction> instructions = policyImportContext.getPolicyReferenceInstructions();
+                boolean success = true;
+                if(instructions == null){
+                    return success;
+                }
+                for (final PolicyReferenceInstruction instruction : instructions) {
+                    if ( instruction.getPolicyReferenceInstructionType().equals(PolicyReferenceInstruction.PolicyReferenceInstructionType.RENAME) ) {
+                        for ( final ExternalReference reference : references ) {
+                            final String type = reference.getRefType();
+                            final String id = getId(reference);
+                            if (type.equals(instruction.getReferenceType()) && id.equals(handleReferenceId(instruction))) {
+                                final String mapName = instruction.getMappedName();
+                                if ( mapName != null && !mapName.trim().isEmpty() ) {
+                                    success = reference.setLocalizeRename( mapName.trim() );
+                                }
+                            }
+                        }
+                    }
+                }
+                return success ;
+            }
         };
     }
 

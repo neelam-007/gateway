@@ -308,6 +308,11 @@ public class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, 
     }
 
     @Override
+    public boolean applyRenameToResolvedReferences(Collection<ExternalReference> references) throws PolicyImportCancelledException {
+        return true;
+    }
+
+    @Override
     public boolean acceptPolicyConflict( final String policyName, final String existingPolicyName, final String guid ) {
         // Prompt an optional dialog to resolve policy fragment conflicts..
         int result = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),

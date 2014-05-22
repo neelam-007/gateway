@@ -75,6 +75,15 @@ class ExternalReferenceResolver {
                 return false;
             }
         }
+
+        // apply rename to resolved references
+        references.removeAll(unresolved);
+        if ( !advisor.applyRenameToResolvedReferences(references)){
+            return false;
+        }
+        // Add back the unresolved references
+        references.addAll(unresolved);
+
         resolvedReferences = references;
         return true;
     }

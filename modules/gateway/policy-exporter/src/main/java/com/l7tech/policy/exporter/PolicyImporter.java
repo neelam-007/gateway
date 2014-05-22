@@ -52,6 +52,7 @@ public class PolicyImporter {
         boolean mapReference( final String referenceType, final String referenceId, final String targetId );
         boolean resolveReferences( ExternalReference[] unresolvedRefsArray ) throws PolicyImportCancelledException;
         boolean acceptPolicyConflict( String policyName, String existingPolicyName, String guid );
+        boolean applyRenameToResolvedReferences(Collection<ExternalReference> references )throws PolicyImportCancelledException;
     }
 
     /**
