@@ -108,7 +108,11 @@ public class DebugPolicyTreePanel extends JPanel {
         panel.setBackground(policyTree.getBackground());
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.add(lineNumbersTree);
+        panel.add(Box.createHorizontalStrut(5));
+        panel.add(new JSeparator(SwingConstants.VERTICAL));
         panel.add(breakpointsTree);
+        panel.add(new JSeparator(SwingConstants.VERTICAL));
+
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setViewportView(policyTree);
         scrollPane.setRowHeaderView(panel);
