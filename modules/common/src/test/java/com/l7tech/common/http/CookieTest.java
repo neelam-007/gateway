@@ -1,21 +1,19 @@
 package com.l7tech.common.http;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import java.util.logging.Logger;
-import java.util.Locale;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.List;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for HttpCookies.
- *
+ * <p/>
  * User: steve
  * Date: Sep 28, 2005
  * Time: 10:07:11 AM
@@ -47,8 +45,8 @@ public class CookieTest {
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Checking max-age property", maxAge, cookie.getMaxAge());
         assertEquals("Should not be secure", false, cookie.isSecure());
-        assertEquals("Expiry set",true,cookie.hasExpiry());
-        assertNull("Checking comment property",cookie.getComment()); // should be null since version 0 cookies don't have comments
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertNull("Checking comment property", cookie.getComment()); // should be null since version 0 cookies don't have comments
         assertEquals("Should not be http only", httpOnly, cookie.isHttpOnly());
     }
 
@@ -60,7 +58,7 @@ public class CookieTest {
         String domain = "www.testdomain.com";
         String headerValue = name + "=" + value;
 
-        HttpCookie cookie = new HttpCookie(new URL("http://"+domain+path+"/apage.html"), headerValue);
+        HttpCookie cookie = new HttpCookie(new URL("http://" + domain + path + "/apage.html"), headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
@@ -78,7 +76,7 @@ public class CookieTest {
         String domain = "www.testdomain.com";
         String headerValue = name + "=" + value;
 
-        HttpCookie cookie = new HttpCookie(new URL("http://"+domain+path+"/apage.html"), headerValue);
+        HttpCookie cookie = new HttpCookie(new URL("http://" + domain + path + "/apage.html"), headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
@@ -95,20 +93,20 @@ public class CookieTest {
         String expires = "Sun, 17-Jan-2038 19:14:07 GMT";
         String path = "/test/path";
         String domain = ".testdomain.com";
-        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Expires=" +expires;
+        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Expires=" + expires;
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss 'GMT'", Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         expiryFormat.setLenient(false);
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -122,7 +120,7 @@ public class CookieTest {
         String path = "/test/path";
         String domain = ".testdomain.com";
         String comment = "\"This is a cookie\"";
-        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Max-Age=" +maxAge+ "; Comment="+comment+"; Secure; Version=1; HttpOnly";
+        String headerValue = name + "=" + value + "; Path=" + path + "; Domain=" + domain + "; Max-Age=" + maxAge + "; Comment=" + comment + "; Secure; Version=1; HttpOnly";
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
@@ -186,26 +184,26 @@ public class CookieTest {
     * Date Format: Sun, 17-Jan-2038 19:14:07 GMT
     * */
     @Test
-    public void testCookieExpiresNetscape() throws Exception{
+    public void testCookieExpiresNetscape() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sun, 17-Jan-2038 19:14:07 GMT";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.NETSCAPE_RFC850_DATEFORMAT, Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         expiryFormat.setLenient(false);
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -215,26 +213,26 @@ public class CookieTest {
     * Date format: Sun, 06 Nov 1994 08:49:37 GMT
     * */
     @Test
-    public void testCookieExpiresRfc1123() throws Exception{
+    public void testCookieExpiresRfc1123() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sun, 17 Jan 2038 19:14:07 GMT";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         expiryFormat.setLenient(false);
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -247,26 +245,26 @@ public class CookieTest {
     * Internally HttpCookie will expand the year to the current century
     * */
     @Test
-    public void testCookieExpiresRfc850() throws Exception{
+    public void testCookieExpiresRfc850() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sunday, 04-Nov-38 08:49:37 GMT";
         String expiresFullYear = "Sunday, 04-Nov-2038 08:49:37 GMT";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.NETSCAPE_RFC850_DATEFORMAT, Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         Date expiresDate = expiryFormat.parse(expiresFullYear);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -279,26 +277,26 @@ public class CookieTest {
     * Internally HttpCookie will expand the year to the current century
     * */
     @Test
-    public void testCookieExpiresRfc1036AndRfc822() throws Exception{
+    public void testCookieExpiresRfc1036AndRfc822() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sun, 06 Nov 16 08:49:37 GMT";
         String expiresFullYear = "Sun, 06 Nov 2016 08:49:37 GMT";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         Date expiresDate = expiryFormat.parse(expiresFullYear);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -308,26 +306,26 @@ public class CookieTest {
     * Date Format: Sun Nov  6 08:49:37 1994
     * */
     @Test
-    public void testCookieExpiresAnsiC_SingleDayDigit() throws Exception{
+    public void testCookieExpiresAnsiC_SingleDayDigit() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sun Nov  6 08:49:37 2038";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.ANSI_C_DATEFORMAT, Locale.US);
         //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
         //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -337,26 +335,26 @@ public class CookieTest {
     * Date Format: Sun Nov  6 08:49:37 1994
     * */
     @Test
-    public void testCookieExpiresAnsiC_DoubleDayDigit() throws Exception{
+    public void testCookieExpiresAnsiC_DoubleDayDigit() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Sun Nov 06 08:49:37 2038";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.ANSI_C_DATEFORMAT, Locale.US);
         //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
         //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -364,26 +362,26 @@ public class CookieTest {
 
     //Wed Aug 29 07:00:00 2007 GMT
     @Test
-    public void testCookieExpiresAmazon() throws Exception{
+    public void testCookieExpiresAmazon() throws Exception {
         String name = "test";
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
         String expires = "Wed Aug 29 07:00:00 2038 GMT";
-        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.AMAZON_DATEFORMAT, Locale.US);
         //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
         //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         Date expiresDate = expiryFormat.parse(expires);
-        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
 
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -419,7 +417,11 @@ public class CookieTest {
         assertEquals(60, cookie.getMaxAge());
     }
 
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(CookieTest.class.getName());
+    @Test
+    public void parseValueWithSemiColonInDoubleQuotes() throws Exception {
+        final HttpCookie cookie = new HttpCookie("SCALAEYE_SESSION=\"()<>@,;:\\\\\\”[]?={} \\t\"; Path=/");
+        assertEquals("SCALAEYE_SESSION", cookie.getCookieName());
+        assertEquals("\"()<>@,;:\\\\\\”[]?={} \\t\"", cookie.getCookieValue());
+        assertEquals("/", cookie.getPath());
+    }
 }

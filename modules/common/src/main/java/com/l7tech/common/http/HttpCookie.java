@@ -435,7 +435,7 @@ public class HttpCookie {
 
     //- PRIVATE
 
-    private static final Pattern WHITESPACE = Pattern.compile(";\\s*");
+    private static final Pattern WHITESPACE = Pattern.compile("(;\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // semi-colon followed by an even number of double quotes (it is not inside double quotes)
     private static final Pattern EQUALS = Pattern.compile("=");
 
     //store the full initial value of the cookie so that it can be regenerated later with ease
