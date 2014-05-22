@@ -134,7 +134,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         final Operation operation = assertion.getOperation();
         if (operation == UPDATE && !originalCheckBox.isSelected()) {
             assertion.getCookieAttributes().put(attributeName, new NameValuePair(attributeName, attributeValue));
-        } else if (operation == ADD && StringUtils.isNotBlank(attributeValue)) {
+        } else if (StringUtils.isNotBlank(attributeValue) && (operation == ADD || operation == ADD_OR_REPLACE)) {
             assertion.getCookieAttributes().put(attributeName, new NameValuePair(attributeName, attributeValue));
         }
     }
@@ -198,14 +198,39 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         switch (op) {
             case ADD_OR_REPLACE:
             case ADD:
-                validators.constrainTextFieldToBeNonEmpty("name", nameTextField, null);
-                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "version", versionTextField, false));
-                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "max age", maxAgeTextField, true));
+                validators.constrainTextFieldToBeNonEmpty(NAME, nameTextField, null);
+                validators.constrainTextFieldToBeNonEmpty(VALUE, valueTextField, null);
+                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, VERSION, versionTextField, true));
+                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, MAX_AGE, maxAgeTextField, true));
                 break;
             case UPDATE:
+                validators.addRule(new InputValidator.ValidationRule() {
+                    @Override
+                    public String getValidationError() {
+                        String error = null;
+                        if (originalName.isSelected() && originalValue.isSelected() && originalVersion.isSelected() &&
+                                originalDomain.isSelected() && originalPath.isSelected() && originalMaxAge.isSelected() &&
+                                originalComment.isSelected() && originalSecure.isSelected() && originalHttpOnly.isSelected()) {
+                            error = "At least one attribute must be updated.";
+                        } else {
+                            try {
+                                ensureCheckboxOrTextFieldHasInput(NAME, nameTextField, originalName);
+                                ensureCheckboxOrTextFieldHasInput(VALUE, valueTextField, originalValue);
+                                ensureCheckboxOrTextFieldHasInput(VERSION, versionTextField, originalVersion);
+                                ensureCheckboxOrTextFieldHasInput(DOMAIN, domainTextField, originalDomain);
+                                ensureCheckboxOrTextFieldHasInput(PATH, pathTextField, originalPath);
+                                ensureCheckboxOrTextFieldHasInput(MAX_AGE, maxAgeTextField, originalMaxAge);
+                                ensureCheckboxOrTextFieldHasInput(COMMENT, commentTextField, originalComment);
+                            } catch (final ValidationException e) {
+                                error = e.getMessage();
+                            }
+                        }
+                        return error;
+                    }
+                });
             case REMOVE:
-                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "version", versionTextField, true));
-                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, "max age", maxAgeTextField, true));
+                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, VERSION, versionTextField, true));
+                validators.addRule(new IntegerOrContextVariableValidationRule(0, Integer.MAX_VALUE, MAX_AGE, maxAgeTextField, true));
                 validators.addRule(new InputValidator.ValidationRule() {
                     @Override
                     public String getValidationError() {
@@ -219,6 +244,13 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
                 break;
             default:
                 logger.log(Level.WARNING, "Unrecognized operation: " + op);
+        }
+    }
+
+    private void ensureCheckboxOrTextFieldHasInput(final String fieldName, final JTextField textField, final JCheckBox checkBox) {
+        // if the original value isn't selected they must provide a value
+        if (!checkBox.isSelected() && StringUtils.isEmpty(textField.getText())) {
+            throw new ValidationException("The " + fieldName + " field must not be empty.");
         }
     }
 

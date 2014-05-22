@@ -111,9 +111,29 @@ public class ManageCookieAssertion extends MessageTargetableAssertion implements
                 final StringBuilder sb = new StringBuilder();
                 sb.append(assertion.getOperation().getName());
                 sb.append(" Cookie");
+                if (assertion.getOperation() == Operation.UPDATE || assertion.getOperation() == Operation.REMOVE) {
+                    sb.append("(s)");
+                    if (!assertion.getCookieCriteria().isEmpty()) {
+                        sb.append(" if ");
+                    }
+                    final Iterator<CookieCriteria> iterator = assertion.getCookieCriteria().values().iterator();
+                    while (iterator.hasNext()) {
+                        final CookieCriteria criteria = iterator.next();
+                        sb.append(criteria.getKey());
+                        if (criteria.isRegex()) {
+                            sb.append(" matches ");
+                        } else {
+                            sb.append(" equals ");
+                        }
+                        sb.append(criteria.getValue());
+                        if (iterator.hasNext()) {
+                            sb.append(" and ");
+                        }
+                    }
+                }
                 if (assertion.getCookieAttributes().containsKey(NAME) && (assertion.getOperation() == Operation.ADD || assertion.getOperation() == Operation.ADD_OR_REPLACE)) {
                     sb.append(" " + assertion.getCookieAttributes().get(NAME).getValue());
-                    if (assertion.getOperation() == Operation.ADD && assertion.getCookieAttributes().containsKey(VALUE)) {
+                    if (assertion.getCookieAttributes().containsKey(VALUE)) {
                         sb.append("=");
                         sb.append(assertion.getCookieAttributes().get(VALUE).getValue());
                     }

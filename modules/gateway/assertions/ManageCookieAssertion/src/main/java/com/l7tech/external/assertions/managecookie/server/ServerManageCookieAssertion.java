@@ -151,31 +151,50 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             final String value = getAttributeValue(VALUE, existingCookie, variableMap);
             final String path = getAttributeValue(PATH, existingCookie, variableMap);
             final String domain = getAttributeValue(DOMAIN, existingCookie, variableMap);
-            final String maxAge = getAttributeValue(MAX_AGE, existingCookie, variableMap);
+            final String maxAgeStr = getAttributeValue(MAX_AGE, existingCookie, variableMap);
             final String comment = getAttributeValue(COMMENT, existingCookie, variableMap);
             final String secure = getAttributeValue(SECURE, existingCookie, variableMap);
             final String httpOnly = getAttributeValue(HTTP_ONLY, existingCookie, variableMap);
             final String versionStr = getAttributeValue(VERSION, existingCookie, variableMap);
-            Integer version = null;
-            try {
-                version = Integer.valueOf(versionStr);
-            } catch (final NumberFormatException e) {
-                logAndAudit(AssertionMessages.INVALID_COOKIE_VERSION, versionStr);
-            }
-            if (version != null) {
-                try {
-                    final Integer maxAgeInt = StringUtils.isBlank(maxAge) ? -1 : Integer.valueOf(maxAge);
-                    cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
-                            StringUtils.isBlank(domain) ? null : domain, maxAgeInt, Boolean.parseBoolean(secure),
-                            StringUtils.isBlank(comment) ? null : comment, Boolean.parseBoolean(httpOnly));
-                } catch (final NumberFormatException e) {
-                    logAndAudit(AssertionMessages.INVALID_COOKIE_MAX_AGE, maxAge);
-                }
+            final Integer version = resolveVersion(versionStr);
+            final Integer maxAge = resolveMaxAge(maxAgeStr);
+            if (version != null && maxAge != null) {
+                cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
+                        StringUtils.isBlank(domain) ? null : domain, maxAge, Boolean.parseBoolean(secure),
+                        StringUtils.isBlank(comment) ? null : comment, Boolean.parseBoolean(httpOnly));
             }
         } else {
             logAndAudit(AssertionMessages.EMPTY_COOKIE_NAME);
         }
         return cookie;
+    }
+
+    private Integer resolveMaxAge(final String maxAge) {
+        Integer maxAgeInt = null;
+        if (maxAge != null && !maxAge.isEmpty()) {
+            try {
+                maxAgeInt = Integer.valueOf(maxAge);
+            } catch (final NumberFormatException e) {
+                logAndAudit(AssertionMessages.INVALID_COOKIE_MAX_AGE, maxAge);
+            }
+        } else {
+            maxAgeInt = -1;
+        }
+        return maxAgeInt;
+    }
+
+    private Integer resolveVersion(final String versionStr) {
+        Integer version = null;
+        if (versionStr != null && !versionStr.isEmpty()) {
+            try {
+                version = Integer.valueOf(versionStr);
+            } catch (final NumberFormatException e) {
+                logAndAudit(AssertionMessages.INVALID_COOKIE_VERSION, versionStr);
+            }
+        } else {
+            version = 0;
+        }
+        return version;
     }
 
     private boolean useExistingValue(final String attributeName) {
@@ -220,9 +239,6 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             }
             if (!cookieAttributes.containsKey(ManageCookieAssertion.VALUE)) {
                 throw new PolicyAssertionException(assertion, "Missing cookie value");
-            }
-            if (!cookieAttributes.containsKey(ManageCookieAssertion.VERSION)) {
-                throw new PolicyAssertionException(assertion, "Missing cookie version");
             }
         }
 

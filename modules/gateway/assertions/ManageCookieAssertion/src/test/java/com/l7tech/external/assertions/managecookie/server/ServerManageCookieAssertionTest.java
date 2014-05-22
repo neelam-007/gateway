@@ -47,14 +47,13 @@ public class ServerManageCookieAssertionTest {
     @Test
     public void addBasicCookie() throws Exception {
         assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
-        assertion.getCookieAttributes().put(VERSION, new NameValuePair(VERSION, "1"));
         assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
 
         assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
         final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
         assertEquals("foo", cookie.getCookieName());
         assertEquals("bar", cookie.getCookieValue());
-        assertEquals(1, cookie.getVersion());
+        assertEquals(0, cookie.getVersion());
         assertNull(cookie.getPath());
         assertNull(cookie.getDomain());
         assertEquals(-1, cookie.getMaxAge());
@@ -210,17 +209,17 @@ public class ServerManageCookieAssertionTest {
         assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test
     public void addCookieNoVersion() throws Exception {
         assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
         assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
-        try {
-            new ServerManageCookieAssertion(assertion);
-            fail("Expected PolicyAssertionException");
-        } catch (final PolicyAssertionException e) {
-            assertEquals("Missing cookie version", e.getMessage());
-            throw e;
-        }
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, request.getHttpCookiesKnob().getCookies().size());
+        final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
     }
 
     @Test
@@ -228,9 +227,13 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
         assertion.getCookieAttributes().put(VERSION, new NameValuePair(VERSION, "${version}"));
         assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.INVALID_COOKIE_VERSION));
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, request.getHttpCookiesKnob().getCookies().size());
+        final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
     }
 
     @Test
@@ -1042,21 +1045,18 @@ public class ServerManageCookieAssertionTest {
         }
     }
 
-    @Test(expected = PolicyAssertionException.class)
+    @Test
     public void addOrReplaceCookieNoVersion() throws Exception {
         assertion.setOperation(Operation.ADD_OR_REPLACE);
         assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
         assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
 
-        try {
-            new ServerManageCookieAssertion(assertion);
-            fail("Expected PolicyAssertionException");
-        } catch (final PolicyAssertionException e) {
-            assertEquals("Missing cookie version", e.getMessage());
-            assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
-            assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_REMOVED));
-            throw e;
-        }
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, request.getHttpCookiesKnob().getCookies().size());
+        final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
     }
 
     @Test
@@ -1090,9 +1090,13 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
         assertion.getCookieAttributes().put(VERSION, new NameValuePair(VERSION, "${version}"));
         assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
-        assertEquals(AssertionStatus.FALSIFIED, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.INVALID_COOKIE_VERSION));
-        assertFalse(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
+        assertEquals(1, request.getHttpCookiesKnob().getCookies().size());
+        final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
     }
 
     @Test
