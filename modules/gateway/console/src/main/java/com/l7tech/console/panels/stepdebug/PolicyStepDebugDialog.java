@@ -344,6 +344,7 @@ public class PolicyStepDebugDialog extends JFrame {
                     @Override
                     public void run() {
                         updateComponents();
+                        toFront();
                     }
                 });
             }
