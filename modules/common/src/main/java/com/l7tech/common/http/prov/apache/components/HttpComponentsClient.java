@@ -100,6 +100,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
     public static final Pattern INTERNET_PATTERN = Pattern.compile("([a-zA-Z0-9._%-]+)@([a-zA-Z0-9.-]+(\\\\.[a-zA-Z0-9.-])*)");
     public static final Pattern NETBIOS_PATTERN = Pattern.compile("([^\\*/?\":|+]+)\\\\([^\\*/?\":|+]+)");
+    public static final int DEFAULT_HTTPS_PORT = 443;
 
     private static HttpParams defaultHttpParams;
 
@@ -969,12 +970,12 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
         @Override
         public Socket connectSocket(Socket socket, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
-            return wrapSocket(super.connectSocket(socket, remoteAddress, localAddress, params), "https", traceSecureLogger);
+            return wrapSocket(super.connectSocket(socket, remoteAddress, localAddress, params), PROTOCOL_HTTPS, traceSecureLogger);
         }
 
         @Override
         public Socket createLayeredSocket(Socket socket, String host, int port, HttpParams params) throws IOException, UnknownHostException {
-            return wrapSocket(super.createLayeredSocket(socket, host, port, params), "https", traceSecureLogger);
+            return wrapSocket(super.createLayeredSocket(socket, host, port >= 0 ? port : DEFAULT_HTTPS_PORT, params), PROTOCOL_HTTPS, traceSecureLogger);
         }
     }
 
