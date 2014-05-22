@@ -330,75 +330,10 @@ public class PolicyBuilderTest {
                 "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "            <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"name\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"name\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"secure\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"secure\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"path\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"path\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
                 "                    <L7p:key stringValue=\"domain\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                    <L7p:value nameValuePair=\"included\">\n" +
                 "                        <L7p:Key stringValue=\"domain\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"value\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"value\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"comment\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"comment\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"version\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"version\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"max-age\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
                 "                    </L7p:value>\n" +
                 "                </L7p:entry>\n" +
                 "            </L7p:CookieAttributes>\n" +
@@ -428,75 +363,10 @@ public class PolicyBuilderTest {
                 "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "            <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"name\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"name\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"secure\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"secure\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"path\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"path\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
                 "                    <L7p:key stringValue=\"domain\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                    <L7p:value nameValuePair=\"included\">\n" +
                 "                        <L7p:Key stringValue=\"domain\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"value\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"value\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"comment\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"comment\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"version\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"version\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"max-age\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
                 "                    </L7p:value>\n" +
                 "                </L7p:entry>\n" +
                 "            </L7p:CookieAttributes>\n" +
@@ -527,75 +397,10 @@ public class PolicyBuilderTest {
                 "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "            <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"name\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"name\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"secure\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"secure\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"path\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"path\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
                 "                    <L7p:key stringValue=\"domain\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                    <L7p:value nameValuePair=\"included\">\n" +
                 "                        <L7p:Key stringValue=\"domain\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"value\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"value\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"comment\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"comment\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"version\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"version\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"max-age\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
                 "                    </L7p:value>\n" +
                 "                </L7p:entry>\n" +
                 "            </L7p:CookieAttributes>\n" +
@@ -633,75 +438,10 @@ public class PolicyBuilderTest {
                 "        <L7p:ManageCookie xmlns:L7p=\"http://www.layer7tech.com/ws/policy\">\n" +
                 "            <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"name\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"name\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"secure\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"secure\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"false\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"path\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"path\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
                 "                    <L7p:key stringValue=\"domain\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
+                "                    <L7p:value nameValuePair=\"included\">\n" +
                 "                        <L7p:Key stringValue=\"domain\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                        <L7p:Value stringValue=\"localhost:8080\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"value\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"value\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"comment\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"comment\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"version\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"version\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
-                "                    </L7p:value>\n" +
-                "                </L7p:entry>\n" +
-                "                <L7p:entry>\n" +
-                "                    <L7p:key stringValue=\"max-age\"/>\n" +
-                "                    <L7p:value cookieAttribute=\"included\">\n" +
-                "                        <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                        <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                        <L7p:Value stringValue=\"\"/>\n" +
                 "                    </L7p:value>\n" +
                 "                </L7p:entry>\n" +
                 "            </L7p:CookieAttributes>\n" +
@@ -765,74 +505,9 @@ public class PolicyBuilderTest {
                 "                        <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                            <L7p:entry>\n" +
                 "                                <L7p:key stringValue=\"name\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                <L7p:value nameValuePair=\"included\">\n" +
                 "                                    <L7p:Key stringValue=\"name\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                                    <L7p:Value stringValue=\"${l7_tmp_cname}\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"secure\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"secure\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"path\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"path\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"domain\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"domain\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"value\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"value\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"comment\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"comment\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"version\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"version\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"max-age\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
                 "                                </L7p:value>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:CookieAttributes>\n" +
@@ -894,74 +569,9 @@ public class PolicyBuilderTest {
                 "                        <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                            <L7p:entry>\n" +
                 "                                <L7p:key stringValue=\"name\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                <L7p:value nameValuePair=\"included\">\n" +
                 "                                    <L7p:Key stringValue=\"name\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                                    <L7p:Value stringValue=\"${l7_tmp_cname}\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"secure\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"secure\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"path\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"path\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"domain\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"domain\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"value\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"value\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"comment\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"comment\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"version\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"version\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"max-age\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
                 "                                </L7p:value>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:CookieAttributes>\n" +
@@ -1023,74 +633,9 @@ public class PolicyBuilderTest {
                 "                        <L7p:CookieAttributes mapValue=\"included\">\n" +
                 "                            <L7p:entry>\n" +
                 "                                <L7p:key stringValue=\"name\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
+                "                                <L7p:value nameValuePair=\"included\">\n" +
                 "                                    <L7p:Key stringValue=\"name\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"false\"/>\n" +
                 "                                    <L7p:Value stringValue=\"${l7_tmp_cname}\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"secure\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"secure\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"httpOnly\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"httpOnly\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"false\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"path\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"path\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"domain\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"domain\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"value\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"value\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"comment\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"comment\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"version\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"version\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
-                "                                </L7p:value>\n" +
-                "                            </L7p:entry>\n" +
-                "                            <L7p:entry>\n" +
-                "                                <L7p:key stringValue=\"max-age\"/>\n" +
-                "                                <L7p:value cookieAttribute=\"included\">\n" +
-                "                                    <L7p:Key stringValue=\"max-age\"/>\n" +
-                "                                    <L7p:UseOriginalValue booleanValue=\"true\"/>\n" +
-                "                                    <L7p:Value stringValue=\"\"/>\n" +
                 "                                </L7p:value>\n" +
                 "                            </L7p:entry>\n" +
                 "                        </L7p:CookieAttributes>\n" +

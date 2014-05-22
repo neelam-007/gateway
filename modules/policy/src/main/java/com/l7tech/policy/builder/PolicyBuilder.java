@@ -19,7 +19,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -260,8 +259,8 @@ public class PolicyBuilder {
         validateTarget(targetMessage, otherTargetMessageName);
         final Document cookieDoc = readResource(UPDATE_COOKIE);
         createAndAppendCommentElement(cookieDoc, comment);
-        setCookieAttributeValue(DOMAIN, domainToSet, cookieDoc);
-        setSingleCookieCriteriaValue(DOMAIN, domainToMatch, cookieDoc);
+        addCookieAttributeValue(DOMAIN, domainToSet, cookieDoc);
+        addSingleCookieCriteriaValue(DOMAIN, domainToMatch, cookieDoc);
         final Element target = XmlUtil.findFirstChildElementByName(cookieDoc.getDocumentElement(), L7_NS, TARGET);
         target.setAttribute(TARGET.toLowerCase(), targetMessage.name());
         if (otherTargetMessageName != null) {
@@ -327,8 +326,8 @@ public class PolicyBuilder {
         allElement.appendChild(forEachDoc.importNode(regexDoc.getDocumentElement().getFirstChild(), true));
 
         final Document cookieDoc = readResource(UPDATE_COOKIE);
-        setCookieAttributeValue(NAME, "${" + TEMP_COOKIE_NAME_VAR + "}", cookieDoc);
-        setSingleCookieCriteriaValue(NAME, "${" + COOKIENAME + ".current}", cookieDoc);
+        addCookieAttributeValue(NAME, "${" + TEMP_COOKIE_NAME_VAR + "}", cookieDoc);
+        addSingleCookieCriteriaValue(NAME, "${" + COOKIENAME + ".current}", cookieDoc);
         final Element target = XmlUtil.findFirstChildElementByName(cookieDoc.getDocumentElement(), L7_NS, TARGET);
         target.setAttribute(TARGET.toLowerCase(), targetMessage.name());
         if (otherTargetMessageName != null) {
@@ -544,31 +543,32 @@ public class PolicyBuilder {
         }
     }
 
-    private void setCookieAttributeValue(final String attributeName, final String attributeValue, final Document cookieDoc) {
+    private void addCookieAttributeValue(final String attributeName, final String attributeValue, final Document cookieDoc) {
         final Element mapElement = XmlUtil.findFirstChildElementByName(cookieDoc.getDocumentElement(), L7_NS, COOKIE_ATTRIBUTES);
-        final List<Element> mapEntries = XmlUtil.findChildElementsByName(mapElement, L7_NS, ENTRY);
-        for (final Element mapEntry : mapEntries) {
-            final Element mapKey = XmlUtil.findFirstChildElementByName(mapEntry, L7_NS, KEY.toLowerCase());
-            if (mapKey.getAttribute(STRING_VALUE).equals(attributeName)) {
-                final Element mapValue = XmlUtil.findFirstChildElementByName(mapEntry, L7_NS, VALUE.toLowerCase());
-                final Element value = XmlUtil.findFirstChildElementByName(mapValue, L7_NS, VALUE);
-                value.setAttribute(STRING_VALUE, attributeValue);
-                final Element useOriginalValue = XmlUtil.findFirstChildElementByName(mapValue, L7_NS, USE_ORIGINAL_VALUE);
-                useOriginalValue.setAttribute(BOOLEAN_VALUE, FALSE);
-            }
-        }
+        appendCookieMapEntry(attributeName, "nameValuePair", attributeValue, cookieDoc, mapElement);
     }
 
-    private void setSingleCookieCriteriaValue(final String attributeName, final String attributeValue, final Document cookieDoc) {
+    private void addSingleCookieCriteriaValue(final String attributeName, final String attributeValue, final Document cookieDoc) {
         final Element mapElement = XmlUtil.findFirstChildElementByName(cookieDoc.getDocumentElement(), L7_NS, COOKIE_CRITERIA);
-        final Element mapEntry = XmlUtil.findFirstChildElementByName(mapElement, L7_NS, ENTRY);
-        final Element mapKey = XmlUtil.findFirstChildElementByName(mapEntry, L7_NS, KEY.toLowerCase());
-        mapKey.setAttribute(STRING_VALUE, attributeName);
-        final Element mapValue = XmlUtil.findFirstChildElementByName(mapEntry, L7_NS, VALUE.toLowerCase());
-        final Element key = XmlUtil.findFirstChildElementByName(mapValue, L7_NS, KEY);
-        key.setAttribute(STRING_VALUE, attributeName);
-        final Element value = XmlUtil.findFirstChildElementByName(mapValue, L7_NS, VALUE);
-        value.setAttribute(STRING_VALUE, attributeValue);
+        appendCookieMapEntry(attributeName, "cookieCriteria", attributeValue, cookieDoc, mapElement);
+    }
+
+    private void appendCookieMapEntry(final String key, final String valueType, final String value, final Document doc, Element mapElement) {
+        final Element entryElement = doc.createElementNS(L7_NS, L7P_PREFIX + ENTRY);
+        final Element mapKeyElement = doc.createElementNS(L7_NS, L7P_PREFIX + KEY.toLowerCase());
+        mapKeyElement.setAttribute(STRING_VALUE, key);
+        final Element mapValueElement = doc.createElementNS(L7_NS, L7P_PREFIX + VALUE.toLowerCase());
+        mapValueElement.setAttribute(valueType, INCLUDED);
+        final Element pairKeyElement = doc.createElementNS(L7_NS, L7P_PREFIX + KEY);
+        pairKeyElement.setAttribute(STRING_VALUE, key);
+        final Element pairValueElement = doc.createElementNS(L7_NS, L7P_PREFIX + VALUE);
+        pairValueElement.setAttribute(STRING_VALUE, value);
+
+        mapValueElement.appendChild(pairKeyElement);
+        mapValueElement.appendChild(pairValueElement);
+        entryElement.appendChild(mapKeyElement);
+        entryElement.appendChild(mapValueElement);
+        mapElement.appendChild(entryElement);
     }
 
     private void addRightComment(@Nullable final String comment, @NotNull final Assertion assertion) {
