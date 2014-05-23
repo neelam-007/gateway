@@ -2,9 +2,11 @@ package com.l7tech.external.assertions.xmlsec.server;
 
 import com.l7tech.external.assertions.xmlsec.ItemLookupByIndexAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -14,6 +16,7 @@ import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -38,20 +41,21 @@ public class ServerItemLookupByIndexAssertion extends AbstractServerAssertion<It
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
-            final Map<String,Object> varMap = context.getVariableMap(varsUsed, getAudit());
-            long lindex = Math.round(Double.parseDouble(ExpandVariables.process(indexValue, varMap, getAudit(), true, 64)));
+            final Audit audit = getAudit();
+            final Map<String,Object> varMap = context.getVariableMap(varsUsed, audit);
+            long lindex = Math.round(Double.parseDouble(ExpandVariables.process(indexValue, varMap, audit, true, 64)));
             if (lindex < 0) throw new NumberFormatException();
             if (lindex > Integer.MAX_VALUE) throw new NumberFormatException();
 
-            Object multival = context.getVariable(multivaluedVariableName);
+            Object multival = ExpandVariables.processSingleVariableAsObject(Syntax.SYNTAX_PREFIX + multivaluedVariableName + Syntax.SYNTAX_SUFFIX, varMap, audit);
+            if (multival == null) {
+                multival = Collections.emptyList();
+            }
             Object value = getItemAtIndex(multivaluedVariableName, multival, (int) lindex);
 
             context.setVariable(outputVariableName, value);
             return AssertionStatus.NONE;
 
-        } catch (NoSuchVariableException e) {
-            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
-            return AssertionStatus.SERVER_ERROR;
         } catch (VariableNameSyntaxException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Bad variable syntax: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
