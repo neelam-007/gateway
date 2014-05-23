@@ -212,6 +212,25 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
+    public void requestCookiesWithInvalidCookie() throws Exception {
+        request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/", TARGET_DOMAIN));
+        request.getHeadersKnob().addHeader("Cookie", "invalid", HeadersKnob.HEADER_TYPE_HTTP);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("a=apple; invalid", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    @Test
+    public void requestCookieInvalid() throws Exception {
+        request.getHeadersKnob().addHeader("Cookie", "invalid", HeadersKnob.HEADER_TYPE_HTTP);
+        HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, TARGET_DOMAIN, ruleSet, audit, null, null);
+        assertEquals(1, requestParams.getExtraHeaders().size());
+        assertEquals("Cookie", requestParams.getExtraHeaders().get(0).getName());
+        assertEquals("invalid", requestParams.getExtraHeaders().get(0).getFullValue());
+    }
+
+    @Test
     public void requestGatewayManagedCookieHeadersNotPassed() throws Exception {
         request.getHttpCookiesKnob().addCookie(new HttpCookie("a", "apple", 0, "/", TARGET_DOMAIN));
         request.getHttpCookiesKnob().addCookie(new HttpCookie(CookieUtils.PREFIX_GATEWAY_MANAGED + "foo", "bar", 0, "/", TARGET_DOMAIN));
@@ -585,10 +604,13 @@ public class HttpForwardingRuleEnforcerJavaTest {
     public void responseSetCookieHeadersInvalidCookie() throws Exception {
         requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
         responseHeaders.add(new GenericHttpHeader("Set-Cookie", "foo=bar"));
-        // invalid cookie should be filtered
-        responseHeaders.add(new GenericHttpHeader("Set-Cookie", ""));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "invalid"));
         HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, context, requestParams, null, null);
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
+        final String[] cookieValues = responseHeadersKnob.getHeaderValues("Set-Cookie");
+        assertEquals(2, cookieValues.length);
+        assertEquals("foo=bar; Version=0; Domain=localhost; Path=/test", cookieValues[0]);
+        assertEquals("invalid", cookieValues[1]);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(1, cookiesMap.size());
         assertEquals("bar", cookiesMap.get("foo").getCookieValue());
@@ -677,12 +699,14 @@ public class HttpForwardingRuleEnforcerJavaTest {
     public void responseRuleWithSetCookieInvalidCookie() throws Exception {
         requestParams.setTargetUrl(new URL("http://localhost:8080/test"));
         // set-cookie value is empty
-        responseHeaders.add(new GenericHttpHeader("Set-Cookie", ""));
+        responseHeaders.add(new GenericHttpHeader("Set-Cookie", "invalid"));
         rules.add(new HttpPassthroughRule("Set-Cookie", false, "thisValueIsNotUsed"));
         ruleSet.setForwardAll(false);
         ruleSet.setRules(rules.toArray(new HttpPassthroughRule[rules.size()]));
         HttpForwardingRuleEnforcer.handleResponseHeaders(createInboundKnob(), response, audit, ruleSet, context, requestParams, null, null);
-        assertEquals(0, responseHeadersKnob.getHeaderNames().length);
+        assertEquals(1, responseHeadersKnob.getHeaderNames().length);
+        assertEquals("Set-Cookie", responseHeadersKnob.getHeaderNames()[0]);
+        assertEquals("invalid", responseHeadersKnob.getHeaderValues("Set-Cookie")[0]);
         assertEquals(0, context.getResponse().getHttpCookiesKnob().getCookies().size());
     }
 

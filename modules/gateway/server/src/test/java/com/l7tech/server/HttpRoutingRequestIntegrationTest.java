@@ -534,6 +534,49 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
     }
 
     /**
+     * Behaviour changed slightly as of Icefish.
+     */
+    @Test
+    public void invalidCookieFromClient() throws Exception {
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/basicRoutingService"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "invalid"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        final String responseBody = printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertEquals(1, routedHeaders.get("user-agent").size());
+        assertTrue(routedHeaders.get("user-agent").iterator().next().contains(L7_USER_AGENT));
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+        assertHeaderValues(routedHeaders, "cookie", "invalid");
+    }
+
+    @Test
+    public void invalidCookieFromAddHeader() throws Exception {
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "AddInvalidCookieHeader");
+        routeParams.put(SERVICEURL, "/addInvalidCookieHeader");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(
+                createAddHeaderAssertion("Cookie", "invalid"),
+                createRouteAssertion(ECHO_HEADERS_URL, true))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/addInvalidCookieHeader")), HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertHeaderValues(routedHeaders, "cookie", "invalid");
+        assertHeaderValues(routedHeaders, "user-agent", APACHE_USER_AGENT);
+        assertHeaderValues(routedHeaders, "host", BASE_URL + ":8080");
+        assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
+    }
+
+    /**
      * Behaviour changed as of Icefish.
      */
     @Test

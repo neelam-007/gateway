@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -136,10 +137,10 @@ public class HttpForwardingRuleEnforcer {
      * @param varNames The variables used in header rules (may be null)
      */
     public static void handleRequestHeaders( final Message sourceMessage,
-                                             final GenericHttpRequestParams httpRequestParams,
-                                             final PolicyEnforcementContext context,
-                                             final HttpPassthroughRuleSet rules,
-                                             final Audit auditor,
+                                            final GenericHttpRequestParams httpRequestParams,
+                                            final PolicyEnforcementContext context,
+                                            final HttpPassthroughRuleSet rules,
+                                            final Audit auditor,
                                              @Nullable Map<String,?> vars,
                                              @Nullable final String[] varNames ) {
         final HeadersKnob copy = copyAndFilterNonPassThroughHeaders(sourceMessage.getHeadersKnob());
@@ -208,9 +209,9 @@ public class HttpForwardingRuleEnforcer {
     }
 
     public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
-                                                       final Message sourceMessage,
-                                                       final HttpPassthroughRuleSet rules,
-                                                       final Audit auditor,
+                                                      final Message sourceMessage,
+                                                      final HttpPassthroughRuleSet rules,
+                                                      final Audit auditor,
                                                        @Nullable Map<String,?> vars,
                                                        @Nullable final String[] varNames ) throws IOException {
         // 1st, make sure we have a HttpServletRequestKnob
@@ -268,11 +269,11 @@ public class HttpForwardingRuleEnforcer {
     }
 
     public static void handleResponseHeaders( final HeadersKnob targetForResponseHeaders,
-                                              final Audit auditor,
-                                              final ServerBridgeRoutingAssertion.HeaderHolder hh,
-                                              final HttpPassthroughRuleSet rules,
+                                             final Audit auditor,
+                                             final ServerBridgeRoutingAssertion.HeaderHolder hh,
+                                             final HttpPassthroughRuleSet rules,
                                               @Nullable Map<String,?> vars,
-                                              @Nullable final String[] varNames,
+                                             @Nullable final String[] varNames,
                                               final PolicyEnforcementContext context ) {
         if (rules.isForwardAll()) {
             final HttpHeader[] headers = hh.getHeaders().toArray();
@@ -311,7 +312,7 @@ public class HttpForwardingRuleEnforcer {
                             }
                         } else {
                             logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
-                                        "incoming value but this header is not present.");
+                                    "incoming value but this header is not present.");
                         }
                     }
                 }
@@ -331,13 +332,13 @@ public class HttpForwardingRuleEnforcer {
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
     public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
-                                              final Message targetMessage,
-                                              final Audit auditor,
-                                              final HttpPassthroughRuleSet rules,
-                                              final PolicyEnforcementContext context,
-                                              final GenericHttpRequestParams routedRequestParams,
+                                             final Message targetMessage,
+                                             final Audit auditor,
+                                             final HttpPassthroughRuleSet rules,
+                                             final PolicyEnforcementContext context,
+                                             final GenericHttpRequestParams routedRequestParams,
                                               @Nullable Map<String,?> vars,
-                                              @Nullable final String[] varNames) {
+                                             @Nullable final String[] varNames) {
         if (targetMessage != null && targetMessage.getHeadersKnob() != null) {
             final HeadersKnob targetForResponseHeaders = targetMessage.getHeadersKnob();
             boolean passIncomingCookies = false;
@@ -397,7 +398,8 @@ public class HttpForwardingRuleEnforcer {
                                 context.isOverwriteResponseCookiePath() ? requestUrl.getPath() : null, setCookieValue);
                         cookiesKnob.addCookie(cookie);
                     } catch (final HttpCookie.IllegalFormatException e) {
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
+                        logger.log(Level.WARNING, "Could not parse set-cookie header: " + setCookieValue);
+                        targetForResponseHeaders.addHeader(HttpConstants.HEADER_SET_COOKIE, setCookieValue, HeadersKnob.HEADER_TYPE_HTTP);
                     }
                 }
             }
@@ -420,29 +422,37 @@ public class HttpForwardingRuleEnforcer {
         return HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains( headerName.toLowerCase() );
     }
 
-    private static List<HttpCookie> passableCookies(HttpCookiesKnob cookiesKnob, String targetDomain, Audit auditor) {
-        List<HttpCookie> output = new ArrayList<>();
-        Set<HttpCookie> contextCookies = cookiesKnob.getCookies();
-
-        for ( final HttpCookie httpCookie : contextCookies ) {
-            if (CookieUtils.isPassThroughCookie(httpCookie)) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, httpCookie.getCookieName(), String.valueOf(httpCookie.getVersion()));
-                HttpCookie newCookie = new HttpCookie(
-                        httpCookie.getCookieName(),
-                        httpCookie.getCookieValue(),
-                        httpCookie.getVersion(),
-                        "/",
-                        targetDomain,
-                        httpCookie.getMaxAge(),
-                        httpCookie.isSecure(),
-                        httpCookie.getComment(),
-                        httpCookie.isHttpOnly()
-                );
-                // attach and record
-                output.add(newCookie);
+    /**
+     * @return a pair where key = a list of valid HttpCookie and value = a set of string of cookie headers that could not be parsed.
+     */
+    private static Pair<List<HttpCookie>, Set<String>> passableCookies(HttpCookiesKnob cookiesKnob, String targetDomain, Audit auditor) {
+        final List<HttpCookie> validCookies = new ArrayList<>();
+        final Set<String> invalidCookies = new HashSet<>();
+        for (final String cookieHeader : cookiesKnob.getCookiesAsHeaders()) {
+            final HttpCookie httpCookie;
+            try {
+                httpCookie = new HttpCookie(cookieHeader);
+                if (CookieUtils.isPassThroughCookie(httpCookie)) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, httpCookie.getCookieName(), String.valueOf(httpCookie.getVersion()));
+                    HttpCookie newCookie = new HttpCookie(
+                            httpCookie.getCookieName(),
+                            httpCookie.getCookieValue(),
+                            httpCookie.getVersion(),
+                            "/",
+                            targetDomain,
+                            httpCookie.getMaxAge(),
+                            httpCookie.isSecure(),
+                            httpCookie.getComment(),
+                            httpCookie.isHttpOnly()
+                    );
+                    // attach and record
+                    validCookies.add(newCookie);
+                }
+            } catch (HttpCookie.IllegalFormatException e) {
+                invalidCookies.add(cookieHeader);
             }
         }
-        return output;
+        return new Pair<>(validCookies, invalidCookies);
     }
 
     /**
@@ -487,10 +497,19 @@ public class HttpForwardingRuleEnforcer {
 
     private static boolean setCookiesHeader(GenericHttpRequestParams requestParams, HttpCookiesKnob cookiesKnob, String targetDomain, Audit auditor) {
         boolean cookieAlreadyHandled;
-        final List<HttpCookie> res = passableCookies(cookiesKnob, targetDomain, auditor);
-        if (!res.isEmpty()) {
+        final Pair<List<HttpCookie>, Set<String>> result = passableCookies(cookiesKnob, targetDomain, auditor);
+        if (!result.getKey().isEmpty() || !result.getValue().isEmpty()) {
             // currently only passes the name and value cookie attributes
-            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, CookieUtils.getCookieHeader(res)));
+            final List<String> allCookies = new ArrayList<>();
+            if (!result.getKey().isEmpty()) {
+                final String validCookies = CookieUtils.getCookieHeader(result.getKey());
+                allCookies.add(validCookies);
+            }
+            if (!result.getValue().isEmpty()) {
+                allCookies.addAll(result.getValue());
+            }
+            final String joined = StringUtils.join(allCookies, "; ");
+            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, joined));
         }
         cookieAlreadyHandled = true;
         return cookieAlreadyHandled;

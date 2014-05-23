@@ -200,7 +200,7 @@ public class SoapMessageProcessingServletTest {
 
     @Test
     public void requestCookiesAddedToContext() throws Exception {
-        request.setCookies(new Cookie("1", "a"), new Cookie("2", "b"));
+        request.addHeader("Cookie", "1=a; 2=b");
         request.setContent("test".getBytes());
         doAnswer(new Answer() {
             @Override

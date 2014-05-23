@@ -11,9 +11,16 @@ import java.util.Set;
  */
 public interface HttpCookiesKnob extends MessageKnob {
     /**
-     * @return all HttpCookies in the knob.
+     * @return all HttpCookies in the knob, not including any invalid cookies.
      */
+    @NotNull
     public Set<HttpCookie> getCookies();
+
+    /**
+     * @return all HttpCookies in the knob as header values, including any invalid cookies.
+     */
+    @NotNull
+    public Set<String> getCookiesAsHeaders();
 
     /**
      * @param name   the name of the cookie to look for.

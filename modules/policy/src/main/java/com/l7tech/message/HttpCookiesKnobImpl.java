@@ -13,8 +13,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static com.l7tech.common.http.CookieUtils.*;
+import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
 /**
  * HttpCookiesKnob implementation which wraps a HeadersKnob.
@@ -65,39 +65,7 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
         final Set<HttpCookie> cookies = new LinkedHashSet<>();
         if (cookieHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
             for (final String cookieValue : delegate.getHeaderValues(HttpConstants.HEADER_COOKIE, HEADER_TYPE_HTTP)) {
-                // it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
-                // ex) Cookie: 1=one; 2=two                         ---> Netscape format
-                // ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
-                // ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
-                final String[] tokens = StringUtils.split(cookieValue, ATTRIBUTE_DELIMITER.trim());
-                final List<String> singleCookieValues = new ArrayList<>();
-                if (tokens.length > 0) {
-                    final List<String> group = new ArrayList<>();
-                    final String firstToken = tokens[0].trim();
-                    group.add(firstToken);
-                    boolean hasVersion = isVersion(firstToken);
-                    boolean hasName = !isCookieAttribute(firstToken);
-                    for (int i = 1; i < tokens.length; i++) {
-                        final String token = tokens[i].trim();
-                        if ((hasVersion && isVersion(token)) || (hasName && !isCookieAttribute(token))) {
-                            // current token is the start of a new cookie, so process the existing token group
-                            Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-                            singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
-                            group.clear();
-                            hasVersion = false;
-                            hasName = false;
-                        }
-                        group.add(token);
-                        if (isVersion(token)) {
-                            hasVersion = true;
-                        } else if (!isCookieAttribute(token)) {
-                            hasName = true;
-                        }
-                    }
-                    // process last group
-                    Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-                    singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
-                }
+                final List<String> singleCookieValues = splitCookieHeader(cookieValue);
                 for (final String singleCookieValue : singleCookieValues) {
                     try {
                         cookies.add(new HttpCookie(singleCookieValue));
@@ -119,6 +87,19 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
             }
         }
         return cookies;
+    }
+
+    @Override
+    public Set<String> getCookiesAsHeaders() {
+        final Set<String> cookieHeaders = new LinkedHashSet<>();
+        for (final String value : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
+            if (cookieHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                cookieHeaders.addAll(splitCookieHeader(value));
+            } else {
+                cookieHeaders.add(value);
+            }
+        }
+        return cookieHeaders;
     }
 
     @Override
@@ -150,6 +131,43 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     @Override
     public void deleteCookie(@NotNull final HttpCookie cookie) {
         removeMatchingCookieHeaders(cookieHeaderName, cookie);
+    }
+
+    private List<String> splitCookieHeader(final String cookieValue) {
+        // it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
+        // ex) Cookie: 1=one; 2=two                         ---> Netscape format
+        // ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
+        // ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
+        final String[] tokens = StringUtils.split(cookieValue, ATTRIBUTE_DELIMITER.trim());
+        final List<String> singleCookieValues = new ArrayList<>();
+        if (tokens.length > 0) {
+            final List<String> group = new ArrayList<>();
+            final String firstToken = tokens[0].trim();
+            group.add(firstToken);
+            boolean hasVersion = isVersion(firstToken);
+            boolean hasName = !isCookieAttribute(firstToken);
+            for (int i = 1; i < tokens.length; i++) {
+                final String token = tokens[i].trim();
+                if ((hasVersion && isVersion(token)) || (hasName && !isCookieAttribute(token))) {
+                    // current token is the start of a new cookie, so process the existing token group
+                    Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
+                    singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
+                    group.clear();
+                    hasVersion = false;
+                    hasName = false;
+                }
+                group.add(token);
+                if (isVersion(token)) {
+                    hasVersion = true;
+                } else if (!isCookieAttribute(token)) {
+                    hasName = true;
+                }
+            }
+            // process last group
+            Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
+            singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
+        }
+        return singleCookieValues;
     }
 
     /**

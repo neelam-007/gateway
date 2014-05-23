@@ -363,6 +363,48 @@ public class HttpCookiesKnobImplTest {
         assertFalse(setCookieKnob.containsCookie("foo", "localhost", "/"));
     }
 
+    @Test
+    public void getCookiesAsHeadersNone() {
+        assertTrue(cookieKnob.getCookiesAsHeaders().isEmpty());
+    }
+
+    @Test
+    public void getCookiesAsHeaders() {
+        cookieKnob.addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        cookieKnob.addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test", false));
+        headersKnob.addHeader("Cookie", "invalidCookie", HeadersKnob.HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "foo=bar", HeadersKnob.HEADER_TYPE_HTTP);
+
+        final Set<String> cookiesAsHeaders = cookieKnob.getCookiesAsHeaders();
+        assertEquals(3, cookiesAsHeaders.size());
+        assertTrue(cookiesAsHeaders.contains("invalidCookie"));
+        assertTrue(cookiesAsHeaders.contains("1=a; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+        assertTrue(cookiesAsHeaders.contains("2=b; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+    }
+
+    @Test
+    public void getCookiesAsHeadersMultipleInOneHeader() {
+        headersKnob.addHeader("Cookie", "1=a; 2=b", HeadersKnob.HEADER_TYPE_HTTP);
+        final Set<String> cookiesAsHeaders = cookieKnob.getCookiesAsHeaders();
+        assertEquals(2, cookiesAsHeaders.size());
+        assertTrue(cookiesAsHeaders.contains("1=a"));
+        assertTrue(cookiesAsHeaders.contains("2=b"));
+    }
+
+    @Test
+    public void getSetCookiesAsHeaders() {
+        setCookieKnob.addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
+        setCookieKnob.addCookie(new HttpCookie("2", "b", 1, "/", "localhost", 60, true, "test", false));
+        headersKnob.addHeader("Set-Cookie", "invalidCookie", HeadersKnob.HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Cookie", "foo=bar", HeadersKnob.HEADER_TYPE_HTTP);
+
+        final Set<String> cookiesAsHeaders = setCookieKnob.getCookiesAsHeaders();
+        assertEquals(3, cookiesAsHeaders.size());
+        assertTrue(cookiesAsHeaders.contains("invalidCookie"));
+        assertTrue(cookiesAsHeaders.contains("1=a; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+        assertTrue(cookiesAsHeaders.contains("2=b; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
+    }
+
     private boolean containsCookie(final Set<HttpCookie> toSearch, final HttpCookie toFind) {
         return containsCookie(toSearch, toFind, true);
     }

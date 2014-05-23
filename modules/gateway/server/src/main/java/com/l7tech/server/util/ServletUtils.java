@@ -49,13 +49,13 @@ public class ServletUtils {
     }
 
     /**
-     * Loads a HeadersKnob with headers and cookies from the request, filtering a specific set of 'non-application' headers.
+     * Loads a HeadersKnob with headers from the request, filtering a specific set of 'non-application' headers.
      *
      * @param sourceRequest the HttpServletRequest which is a source of headers.
      * @param message       the Message to load with headers from the request.
      * @see {@link com.l7tech.policy.assertion.HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
      */
-    public static void loadHeadersAndCookies(@NotNull final HttpServletRequest sourceRequest, @NotNull final Message message) {
+    public static void loadHeaders(@NotNull final HttpServletRequest sourceRequest, @NotNull final Message message) {
         final HeadersKnob headersKnob = message.getHeadersKnob();
         final Enumeration headerNames = sourceRequest.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -67,18 +67,6 @@ public class ServletUtils {
             final Enumeration headerValues = sourceRequest.getHeaders(headerName);
             while (headerValues.hasMoreElements()) {
                 headersKnob.addHeader(headerName, headerValues.nextElement(), HeadersKnob.HEADER_TYPE_HTTP, passThrough);
-            }
-        }
-        final HttpCookiesKnob cookiesKnob = message.getHttpCookiesKnob();
-        final Cookie[] cookies = sourceRequest.getCookies();
-        if (cookies != null) {
-            for (final Cookie cookie : cookies) {
-                if (!cookiesKnob.containsCookie(cookie.getName(), cookie.getDomain(), cookie.getPath())) {
-                    cookiesKnob.addCookie(CookieUtils.fromServletCookie(cookie, false));
-                } else{
-                    // may have been added by header processing
-                    logger.log(Level.FINEST, "Cookie " + cookie + " already exists in message " + message);
-                }
             }
         }
     }

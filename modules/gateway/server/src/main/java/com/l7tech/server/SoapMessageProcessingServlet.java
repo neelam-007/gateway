@@ -43,8 +43,6 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.xml.soap.SOAPConstants;
@@ -245,7 +243,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final MimeKnob mk = request.getMimeKnob();
             HttpServletRequestKnob reqKnob = new HttpServletRequestKnob(new LazyInputStreamServletRequestWrapper(hrequest, new MimeKnobInputStreamHolder(mk)));
             request.attachHttpRequestKnob(reqKnob);
-            ServletUtils.loadHeadersAndCookies(hrequest, request);
+            ServletUtils.loadHeaders(hrequest, request);
 
             final HttpServletResponseKnob respKnob = logger.isLoggable( Level.FINE ) ?
                     new HttpServletResponseKnob( new DebugHttpServletResponse( hresponse, logger ) ) :

@@ -116,8 +116,11 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar; Domain=original; Path=/routeToSetCookieService");
     }
 
+    /**
+     * Behaviour changed as of Icefish.
+     */
     @Test
-    public void responseInvalidSetCookieHeaderNotPassed() throws Exception {
+    public void responseInvalidSetCookieHeader() throws Exception {
         final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
         routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setCookieService");
         final String routePolicy = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
@@ -129,8 +132,7 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
 
         final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
                 createEchoHeadersHardcodedResponseAssertion(),
-                // set cookie header has empty value
-                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", ""))));
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", "invalid"))));
         final Map<String, String> setCookieParams = new HashMap<>();
         setCookieParams.put(SERVICENAME, "SetCookieService");
         setCookieParams.put(SERVICEURL, "/setCookieService");
@@ -141,7 +143,7 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         printResponseDetails(response);
         assertEquals(200, response.getStatus());
         final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
-        assertFalse(responseHeaders.containsKey("Set-Cookie"));
+        assertHeaderValues(responseHeaders, "Set-Cookie", "invalid");
     }
 
     /**

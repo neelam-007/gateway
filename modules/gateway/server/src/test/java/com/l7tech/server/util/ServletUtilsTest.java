@@ -32,7 +32,7 @@ public class ServletUtilsTest {
     @Test
     public void loadRequestHeaders() {
         request.addHeader("foo", "bar");
-        ServletUtils.loadHeadersAndCookies(request, message);
+        ServletUtils.loadHeaders(request, message);
         assertEquals(1, knob.getHeaderNames().length);
         assertEquals("foo", knob.getHeaderNames()[0]);
         assertEquals(1, knob.getHeaderValues("foo").length);
@@ -44,7 +44,7 @@ public class ServletUtilsTest {
     public void loadRequestHeadersMultipleValuesForHeader() {
         request.addHeader("foo", "bar");
         request.addHeader("foo", "bar2");
-        ServletUtils.loadHeadersAndCookies(request, message);
+        ServletUtils.loadHeaders(request, message);
         assertEquals(1, knob.getHeaderNames().length);
         assertEquals("foo", knob.getHeaderNames()[0]);
         assertEquals(2, knob.getHeaderValues("foo").length);
@@ -61,7 +61,7 @@ public class ServletUtilsTest {
         for (final String shouldNotBeForwarded : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             request.addHeader(shouldNotBeForwarded, "testValue");
         }
-        ServletUtils.loadHeadersAndCookies(request, message);
+        ServletUtils.loadHeaders(request, message);
         final Collection<Header> knobHeaders = knob.getHeaders();
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), knobHeaders.size());
         for (final Header knobHeader : knobHeaders) {
@@ -74,7 +74,7 @@ public class ServletUtilsTest {
         for (final String shouldNotBeForwarded : HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD) {
             request.addHeader(shouldNotBeForwarded.toUpperCase(), "testValue");
         }
-        ServletUtils.loadHeadersAndCookies(request, message);
+        ServletUtils.loadHeaders(request, message);
         final Collection<Header> knobHeaders = knob.getHeaders();
         assertEquals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.size(), knobHeaders.size());
         for (final Header knobHeader : knobHeaders) {
@@ -83,27 +83,11 @@ public class ServletUtilsTest {
     }
 
     @Test
-    public void loadCookies() {
-        request.setCookies(new Cookie("1", "one"), new Cookie("2", "two"));
-        ServletUtils.loadHeadersAndCookies(request, message);
-        final Set<HttpCookie> knobCookies = message.getHttpCookiesKnob().getCookies();
-        assertEquals(2, knobCookies.size());
-        final Iterator<HttpCookie> iterator = knobCookies.iterator();
-        final HttpCookie cookie1 = iterator.next();
-        assertEquals("1", cookie1.getCookieName());
-        assertEquals("one", cookie1.getCookieValue());
-        final HttpCookie cookie2 = iterator.next();
-        assertEquals("2", cookie2.getCookieName());
-        assertEquals("two", cookie2.getCookieValue());
-    }
-
-    @Test
     public void loadHeadersAndCookies() {
         request.addHeader("foo", "bar");
-        request.addHeader("Cookie", "1=one");
-        request.setCookies(new Cookie("2", "two"));
+        request.addHeader("Cookie", "1=one; 2=two");
 
-        ServletUtils.loadHeadersAndCookies(request, message);
+        ServletUtils.loadHeaders(request, message);
 
         final Map<String, HttpCookie> knobCookies = toCookiesMap(message.getHttpCookiesKnob().getCookies());
         assertEquals(2, knobCookies.size());
@@ -120,28 +104,8 @@ public class ServletUtilsTest {
         assertEquals("foo", header1.getKey());
         assertEquals("bar", header1.getValue());
         final List<Header> cookieHeaders = knobHeaders.get("Cookie");
-        assertEquals(2, cookieHeaders.size());
-        assertEquals("1=one", cookieHeaders.get(0).getValue());
-        assertEquals("2=two; Version=0", cookieHeaders.get(1).getValue());
-    }
-
-    @Test
-    public void loadHeadersAndCookiesDoesNotDuplicateCookies() {
-        request.addHeader("Cookie", "1=one");
-        request.setCookies(new Cookie("1", "one"));
-
-        ServletUtils.loadHeadersAndCookies(request, message);
-        final Set<HttpCookie> knobCookies = message.getHttpCookiesKnob().getCookies();
-        assertEquals(1, knobCookies.size());
-        final Iterator<HttpCookie> iterator = knobCookies.iterator();
-        final HttpCookie cookie = iterator.next();
-        assertEquals("1", cookie.getCookieName());
-        assertEquals("one", cookie.getCookieValue());
-        final Collection<Header> knobHeaders = message.getHeadersKnob().getHeaders();
-        assertEquals(1, knobHeaders.size());
-        final Header header = knobHeaders.iterator().next();
-        assertEquals("Cookie", header.getKey());
-        assertEquals("1=one", header.getValue());
+        assertEquals(1, cookieHeaders.size());
+        assertEquals("1=one; 2=two", cookieHeaders.get(0).getValue());
     }
 
     private Map<String, HttpCookie> toCookiesMap(final Collection<HttpCookie> cookies) {
