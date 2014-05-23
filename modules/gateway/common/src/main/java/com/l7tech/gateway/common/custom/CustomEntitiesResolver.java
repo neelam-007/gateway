@@ -305,7 +305,7 @@ public class CustomEntitiesResolver {
      * @param keyId          the key ID
      * @throws IllegalArgumentException if the key ID is invalid
      */
-    private void addPrivateKeyEntity(Collection<EntityHeader> entityHeaders, String keyId) {
+    private void addPrivateKeyEntity(@NotNull Collection<EntityHeader> entityHeaders, @NotNull String keyId) {
         if (!SignerServices.KEY_ID_SSL.equals(keyId)) {
             // Add none default key only.
             //

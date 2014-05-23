@@ -451,8 +451,8 @@ class ExternalReferenceResolver {
                 }
             } else if (reference instanceof PrivateKeyReference) {
                 final PrivateKeyReference privateKeyRef = (PrivateKeyReference)reference;
+                String id = privateKeyRef.getKeystoreGoid().toString()+":"+privateKeyRef.getKeyAlias();
                 for (EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertion)) {
-                    String id = privateKeyRef.getKeystoreGoid().toString()+":"+privateKeyRef.getKeyAlias();
                     if (id.equals(entityHeader.getStrId())) {
                         itr.remove();
                         break;

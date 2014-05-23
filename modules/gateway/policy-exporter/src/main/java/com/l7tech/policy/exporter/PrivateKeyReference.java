@@ -76,6 +76,13 @@ public class PrivateKeyReference extends ExternalReference {
         if (isDefaultKey) {
             this.isDefaultKey = true;
         } else {
+            if (keystoreGoid == null) {
+                throw new IllegalArgumentException("The keystore GOID cannot be null.");
+            }
+            if (keyAlias == null || keyAlias.length() == 0) {
+                throw new IllegalArgumentException("The key alias cannot be null or empty.");
+            }
+
             this.isDefaultKey = false;
             this.keystoreGoid = keystoreGoid;
             this.keyAlias = keyAlias;
@@ -265,7 +272,7 @@ public class PrivateKeyReference extends ExternalReference {
                 String keyId = keystoreGoid+":"+keyAlias;
                 String localKeyId = localKeystoreGoid+":"+localKeyAlias;
                 for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
-                    if (entityHeader.getType().equals(EntityType.SSG_KEY_ENTRY) && entityHeader.getStrId().equals(keyId)) {
+                    if (EntityType.SSG_KEY_ENTRY.equals(entityHeader.getType()) && keyId.equals(entityHeader.getStrId())) {
                         // No need to check for default key. Only none default keys are referenced.
                         //
                         if(localizeType == LocalizeAction.REPLACE) {

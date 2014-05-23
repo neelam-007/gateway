@@ -208,7 +208,7 @@ public class PolicyExporter {
                 addReference( new EncapsulatedAssertionReference( finder, (GuidEntityHeader)entityHeader), refs);
             } else if( EntityType.SECURE_PASSWORD.equals(entityHeader.getType()) ) {
                 addReference( new StoredPasswordReference( finder, (SecurePasswordEntityHeader)entityHeader), refs);
-            } else if( entityHeader.getType().equals(EntityType.SSG_KEY_ENTRY)) {
+            } else if( EntityType.SSG_KEY_ENTRY.equals(entityHeader.getType()) ) {
                 SsgKeyHeader ssgKeyHeader = (SsgKeyHeader) entityHeader;
                 if (!SignerServices.KEY_ID_SSL.equals(ssgKeyHeader.getStrId())) {
                     // Add none default keys only.
