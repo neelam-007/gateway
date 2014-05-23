@@ -12,43 +12,14 @@
 
     <!-- matches the root application -->
     <xsl:template match="wadl:application">
-        <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-            <head>
-                <title>Rest API Docs</title>
-                <link type="text/css" rel="stylesheet" href="docStyle.css"/>
-            </head>
-            <body>
-                <div id="top-container">
-                    <div id="header-container">
-                        <div class="header container">
-                            <a class="logo" title="CA Technologies" href="home.html"></a>
-                        </div>
-                    </div>
-                    <div id="content-container" class="container">
-                        <div id="content">
-                            <div id="content-body">
-                                <h1>Resources</h1>
-                                <xsl:call-template name="table-of-contents"/>
-                                <xsl:apply-templates select="wadl:resources/wadl:resource">
-                                    <!-- order by the resource name -->
-                                    <xsl:sort select="concat(wadl:doc[@title='title-javadoc'], wadl:doc[@title='title-src'], @path)"/>
-                                </xsl:apply-templates>
-                            </div>
-                            <div id="content-menu">
-                                <div class="menu-wrapper">
-                                    <ul>
-                                        <li><a href="home.html">Getting Started</a></li>
-                                        <li><a href="authentication.html">Authentication</a></li>
-                                        <li><a href="restDoc.html">Resources</a></li>
-                                        <li><a href="migration.html">Migration</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </body>
-        </html>
+        <div>
+            <h1>Resources</h1>
+            <xsl:call-template name="table-of-contents"/>
+            <xsl:apply-templates select="wadl:resources/wadl:resource">
+                <!-- order by the resource name -->
+                <xsl:sort select="concat(wadl:doc[@title='title-javadoc'], wadl:doc[@title='title-src'], @path)"/>
+            </xsl:apply-templates>
+        </div>
     </xsl:template>
 
     <xsl:template name="table-of-contents">
