@@ -1,10 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.EditPolicyAction;
+import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
@@ -154,24 +156,19 @@ public class PolicyRevisionsDialog extends JDialog {
             }
         });
 
-        final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
-        diffButton.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+        diffButton.setText("Compare Policy: " + (PolicyDiffContext.hasLeftDiffPolicy()? "Right" : "Left"));
 
         diffButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final Pair<String, PolicyTreeModel> leftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo();
-
-                if (leftPolicyInfo == null) {
-                    TopComponents.getInstance().setLeftDiffPolicyInfo(getPolicyInfo());
-                } else {
-                    final Pair<String, PolicyTreeModel> rightPolicyInfo = getPolicyInfo();
-                    new PolicyDiffWindow(leftPolicyInfo, rightPolicyInfo).setVisible(true);
+                if (PolicyDiffContext.hasLeftDiffPolicy()) {
+                    new PolicyDiffWindow(PolicyDiffContext.getLeftDiffPolicyInfo(), getPolicyInfo()).setVisible(true);
                     dispose();
+                } else {
+                    PolicyDiffContext.setLeftDiffPolicyInfo(getPolicyInfo());
                 }
 
-                final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
-                diffButton.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+                diffButton.setText("Compare Policy: " + (PolicyDiffContext.hasLeftDiffPolicy()? "Right" : "Left"));
             }
         });
 
@@ -211,7 +208,7 @@ public class PolicyRevisionsDialog extends JDialog {
         }
         final PolicyVersion latestPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(policyGoid);
         final long latestVersionNum = latestPolicyVersion.getOrdinal();
-        final String policyFullName = PolicyEditorPanel.getDisplayName(policyNode.getName(), selectedPolicyVersion.getOrdinal(), latestVersionNum, selectedPolicyVersion.isActive());
+        final String policyFullName = PolicyRevisionUtils.getDisplayName(policyNode.getName(), selectedPolicyVersion.getOrdinal(), latestVersionNum, selectedPolicyVersion.isActive());
         final String policyXml = selectedPolicyVersion.getXml();
 
         PolicyTreeModel policyTreeModel;

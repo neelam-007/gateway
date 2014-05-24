@@ -19,6 +19,8 @@ import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.beans.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -65,13 +67,21 @@ public class AssertionDiffUI {
     public AssertionDiffUI(@Nullable final JFrame parent, final AssertionTreeNode nodeL, final AssertionTreeNode nodeR) {
         this.parent = parent;
 
-        String nodeNameL = DefaultAssertionPolicyNode.getNameFromMeta(nodeL.asAssertion(), true, false);
-        leftAssertionLabel.setText(getDisplayingLabelName(nodeNameL));
+        final String nodeNameL = DefaultAssertionPolicyNode.getNameFromMeta(nodeL.asAssertion(), true, false);
+        leftAssertionLabel.setText(getDisplayingText(nodeNameL, leftAssertionLabel, contentPane));
         leftAssertionLabel.setToolTipText(nodeNameL);
 
-        String nodeNameR = DefaultAssertionPolicyNode.getNameFromMeta(nodeR.asAssertion(), true, false);
-        rightAssertionLabel.setText(getDisplayingLabelName(nodeNameR));
+        final String nodeNameR = DefaultAssertionPolicyNode.getNameFromMeta(nodeR.asAssertion(), true, false);
+        rightAssertionLabel.setText(getDisplayingText(nodeNameR, rightAssertionLabel, contentPane));
         rightAssertionLabel.setToolTipText(nodeNameR);
+
+        contentPane.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                leftAssertionLabel.setText(getDisplayingText(nodeNameL, leftAssertionLabel, contentPane));
+                rightAssertionLabel.setText(getDisplayingText(nodeNameR, rightAssertionLabel, contentPane));
+            }
+        });
 
         resultTabbedPane.addChangeListener(new ChangeListener() {
             @Override

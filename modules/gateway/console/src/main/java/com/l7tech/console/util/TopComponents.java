@@ -9,14 +9,11 @@ import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PaletteFolderRegistry;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.util.Pair;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextException;
@@ -43,7 +40,6 @@ public class TopComponents {
     private URL ssgURL;
     private String logonWarningBanner;
     private SsmPreferences preferences;
-    private Pair<String, PolicyTreeModel> leftDiffPolicyInfo;
 
     public ActiveKeypairJob getActiveKeypairJob() {
         return getMainWindow().getActiveKeypairJob();
@@ -95,15 +91,6 @@ public class TopComponents {
 
     public void setLogonWarningBanner(String logonWarningBanner) {
         this.logonWarningBanner = logonWarningBanner;
-    }
-
-    @Nullable
-    public Pair<String, PolicyTreeModel> getLeftDiffPolicyInfo() {
-        return leftDiffPolicyInfo;
-    }
-
-    public void setLeftDiffPolicyInfo(@Nullable final Pair<String, PolicyTreeModel> leftDiffPolicyInfo) {
-        this.leftDiffPolicyInfo = leftDiffPolicyInfo;
     }
 
     public void setServiceUrl(String url) {
@@ -242,7 +229,7 @@ public class TopComponents {
      * This should NOT be used for a dialog parent -- use getTopParent() instead, which works both in and
      * out of applet mode.
      *
-     * @return the applicaiton Main Window
+     * @return the application Main Window
      */
     private MainWindow getMainWindow() {
         Component c = getComponent("mainWindow");

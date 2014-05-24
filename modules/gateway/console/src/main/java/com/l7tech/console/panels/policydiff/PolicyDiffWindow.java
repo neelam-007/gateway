@@ -53,8 +53,8 @@ public class PolicyDiffWindow extends JFrame {
     private JButton closeButton;
     private JButton prevDiffButton;
     private JButton nextDiffButton;
-    private JLabel leftAssertionDiffPolicyNameLabel;
-    private JLabel rightAssertionDiffPolicyNameLabel;
+    private JLabel leftPolicyNameLabel;
+    private JLabel rightPolicyNameLabel;
     private PolicyDiffTree leftPolicyTree;
     private PolicyDiffTree rightPolicyTree;
     private JScrollPane leftPolicyTreeScrollPane;
@@ -112,19 +112,11 @@ public class PolicyDiffWindow extends JFrame {
 
         initializeComponents();
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                leftPolicyTree.getSelectionModel().clearSelection();
-                rightPolicyTree.getSelectionModel().clearSelection();
-
-                PolicyDiffWindow.this.pack();
-                Utilities.centerOnScreen(PolicyDiffWindow.this);
-            }
-        });
+        pack();
+        Utilities.centerOnScreen(this);
 
         // Clean the left policy reference, so policy diff menu item or button will display "Choose Left" next time.
-        TopComponents.getInstance().setLeftDiffPolicyInfo(null);
+        PolicyDiffContext.setLeftDiffPolicyInfo(null);
     }
 
     /**
@@ -142,13 +134,30 @@ public class PolicyDiffWindow extends JFrame {
     }
 
     /**
-     * Get a proper-length label name for displaying
+     * Get a proper length of displaying text.  If the given text is too long to fit the content pane, truncate the
+     * middle part of the text and replace the truncated part with "...".
      *
-     * @param labelName: the original label name
-     * @return a displaying label name with a fixed length 100.
+     * @param text: the text to be processed to get a proper length of displaying text
+     * @param label: a JLabel object to hold the proper length of displaying text.
+     * @param contentPane: a content pane, where the label resides
+     *
+     * @return a displaying text with a proper length to fit the content pane.
      */
-    public static String getDisplayingLabelName(String labelName) {
-        return labelName.length() > 100? (labelName.substring(0, 50) + "..." + labelName.substring(labelName.length() - 50)) : labelName;
+    public static String getDisplayingText(String text, JLabel label, JPanel contentPane) {
+        final int maxWidth = Math.max(contentPane.getPreferredSize().width, contentPane.getSize().width) / 2 - 10;
+        final FontMetrics fontMetrics = label.getFontMetrics(label.getFont());
+
+        int width = Utilities.computeStringWidth(fontMetrics, text);
+
+        while (width > maxWidth && text.length() > 4) {
+            if (text.length() > 13) {
+                int middleIdx = text.length() / 2;
+                text = text.substring(0, middleIdx - 5) + "..." + text.substring(middleIdx + 5);
+            }
+            width = Utilities.computeStringWidth(fontMetrics, text);
+        }
+
+        return text;
     }
 
     /**
@@ -166,6 +175,14 @@ public class PolicyDiffWindow extends JFrame {
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
+            }
+        });
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                leftPolicyNameLabel.setText(getDisplayingText(leftPolicyInfo.left, leftPolicyNameLabel, contentPane));
+                rightPolicyNameLabel.setText(getDisplayingText(rightPolicyInfo.left, rightPolicyNameLabel, contentPane));
             }
         });
 
@@ -208,11 +225,12 @@ public class PolicyDiffWindow extends JFrame {
         leftAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
         rightAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
 
-        leftAssertionDiffPolicyNameLabel.setText(getDisplayingLabelName(leftPolicyInfo.left));
-        leftAssertionDiffPolicyNameLabel.setToolTipText(leftPolicyInfo.left);
+        // Initialize the labels showing policy names
+        leftPolicyNameLabel.setText(getDisplayingText(leftPolicyInfo.left, leftPolicyNameLabel, contentPane));
+        leftPolicyNameLabel.setToolTipText(leftPolicyInfo.left);
 
-        rightAssertionDiffPolicyNameLabel.setText(getDisplayingLabelName(rightPolicyInfo.left));
-        rightAssertionDiffPolicyNameLabel.setToolTipText(rightPolicyInfo.left);
+        rightPolicyNameLabel.setText(getDisplayingText(rightPolicyInfo.left, rightPolicyNameLabel, contentPane));
+        rightPolicyNameLabel.setToolTipText(rightPolicyInfo.left);
 
         leftPolicyTree.setParentScrollPane(leftPolicyTreeScrollPane);
         rightPolicyTree.setParentScrollPane(rightPolicyTreeScrollPane);
@@ -222,7 +240,23 @@ public class PolicyDiffWindow extends JFrame {
 
         generateDiffResults();
 
+        // After the results obtained, initialize two assertion number trees
+        leftAssertionNumberTree = new AssertionLineNumbersTree(leftPolicyTree);
+        leftAssertionNumberTree.setVisible(true);
+        leftAssertionNumberTree.updateOrdinalsDisplaying();
+        leftAssertionNumScrollPane.getViewport().add(leftAssertionNumberTree);
+
+        rightAssertionNumberTree = new AssertionLineNumbersTree(rightPolicyTree);
+        rightAssertionNumberTree.setVisible(true);
+        rightAssertionNumberTree.updateOrdinalsDisplaying();
+        rightAssertionNumScrollPane.getViewport().add(rightAssertionNumberTree);
+
+        // Initialize diff navigation buttons
         enableOrDisableDiffNavigationButtons(-1);  // -1 means we force this method to use no selection in policy trees.
+
+        // Clean selection of two policy diff trees
+        leftPolicyTree.getSelectionModel().clearSelection();
+        rightPolicyTree.getSelectionModel().clearSelection();
     }
 
     /**
@@ -292,17 +326,6 @@ public class PolicyDiffWindow extends JFrame {
 
                 // Generate a diff navigation list
                 nextDiffRowList = getNextDiffRows();
-
-                // Initialize two assertion number trees
-                leftAssertionNumberTree = new AssertionLineNumbersTree(leftPolicyTree);
-                leftAssertionNumberTree.setVisible(true);
-                leftAssertionNumberTree.updateOrdinalsDisplaying();
-                leftAssertionNumScrollPane.getViewport().add(leftAssertionNumberTree);
-
-                rightAssertionNumberTree = new AssertionLineNumbersTree(rightPolicyTree);
-                rightAssertionNumberTree.setVisible(true);
-                rightAssertionNumberTree.updateOrdinalsDisplaying();
-                rightAssertionNumScrollPane.getViewport().add(rightAssertionNumberTree);
 
                 return null;
             }

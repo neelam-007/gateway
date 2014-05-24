@@ -1,9 +1,10 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -28,8 +29,7 @@ public class DiffPolicyAction extends EntityWithPolicyNodeAction<EntityWithPolic
 
     @Override
     public String getName() {
-        boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
-        return "Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left");
+        return "Compare Policy: " + (PolicyDiffContext.hasLeftDiffPolicy()? "Right" : "Left");
     }
 
     @Override
@@ -44,13 +44,10 @@ public class DiffPolicyAction extends EntityWithPolicyNodeAction<EntityWithPolic
 
     @Override
     protected void performAction() {
-        final Pair<String, PolicyTreeModel> leftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo();
-
-        if (leftPolicyInfo == null) {
-            TopComponents.getInstance().setLeftDiffPolicyInfo(getPolicyInfo());
+        if (PolicyDiffContext.hasLeftDiffPolicy()) {
+            new PolicyDiffWindow(PolicyDiffContext.getLeftDiffPolicyInfo(), getPolicyInfo()).setVisible(true);
         } else {
-            final Pair<String, PolicyTreeModel> rightPolicyInfo = getPolicyInfo();
-            new PolicyDiffWindow(leftPolicyInfo, rightPolicyInfo).setVisible(true);
+            PolicyDiffContext.setLeftDiffPolicyInfo(getPolicyInfo());
         }
     }
 
@@ -74,7 +71,7 @@ public class DiffPolicyAction extends EntityWithPolicyNodeAction<EntityWithPolic
 
         final Goid policyGoid = policy.getGoid();
         final PolicyVersion latestPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(policyGoid);
-        final String policyFullName = PolicyEditorPanel.getDisplayName(node.getName(), policy.getVersionOrdinal(), latestPolicyVersion.getOrdinal(), policy.isVersionActive());
+        final String policyFullName = PolicyRevisionUtils.getDisplayName(node.getName(), policy.getVersionOrdinal(), latestPolicyVersion.getOrdinal(), policy.isVersionActive());
 
         final String policyXml = policy.getXml();
         PolicyTreeModel policyTreeModel;

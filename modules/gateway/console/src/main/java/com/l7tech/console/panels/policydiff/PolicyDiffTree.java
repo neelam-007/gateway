@@ -1,21 +1,24 @@
 package com.l7tech.console.panels.policydiff;
 
+import com.l7tech.console.policy.PolicyTransferable;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
-import com.l7tech.console.tree.policy.PolicyTreeTransferHandler;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.policy.assertion.BlankAssertion;
 import com.l7tech.util.Pair;
 
 import javax.swing.*;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeWillExpandListener;
+import javax.swing.event.*;
 import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.console.panels.policydiff.PolicyDiffWindow.*;
 
@@ -50,15 +53,14 @@ class PolicyDiffTree extends JTree {
         setOpaque(false);
         setCellRenderer(new PolicyDiffTreeCellRenderer());
 
-        final TreeWillExpandListener treeWillExpandListener = new TreeWillExpandListener() {
+        addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
             public void treeWillExpand(TreeExpansionEvent e) {}
             @Override
             public void treeWillCollapse(TreeExpansionEvent e) throws ExpandVetoException {
                 throw new ExpandVetoException(e, "not allow to collapse the tree");
             }
-        };
-        addTreeWillExpandListener(treeWillExpandListener);
+        });
 
         addMouseListener(new PolicyDiffTreeMouseListener());
 
@@ -96,7 +98,7 @@ class PolicyDiffTree extends JTree {
             }
         });
 
-        setTransferHandler(new PolicyTreeTransferHandler());
+        setTransferHandler(new PolicyDiffTreeTransferHandler());
     }
 
     @Override
@@ -150,19 +152,41 @@ class PolicyDiffTree extends JTree {
     private class PolicyDiffTreeMouseListener extends PopUpMouseListener {
         @Override
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
-            if (SwingUtilities.isRightMouseButton(mouseEvent)) {
-                final JTree policyTree = (JTree) mouseEvent.getSource();
-                final int row = policyTree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
-                policyTree.setSelectionRow(row);
+            final JTree policyTree = (JTree) mouseEvent.getSource();
+            policyTree.requestFocus();
 
-                final JPopupMenu menu = new JPopupMenu();
+            final int closestRow = policyTree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
+            if (closestRow == -1) return;
 
-                menu.add(diffWindow.getAssertionDiffMenuAction(row));
-                menu.add(ClipboardActions.getGlobalCopyAction());
-                if (ClipboardActions.getGlobalCopyAllAction().isEnabled())
-                    menu.add(ClipboardActions.getGlobalCopyAllAction());
+            int[] rows = policyTree.getSelectionRows();
+            boolean found = false;
 
-                menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+            for (int i = 0; rows != null && i < rows.length; i++) {
+                if (rows[i] == closestRow) {
+                    found = true;
+                    break;
+                }
+            }
+            if (! found) {
+                policyTree.setSelectionRow(closestRow);
+            }
+
+            final JPopupMenu menu = new JPopupMenu();
+
+            menu.add(diffWindow.getAssertionDiffMenuAction(closestRow));
+            menu.add(ClipboardActions.getGlobalCopyAction());
+            if (ClipboardActions.getGlobalCopyAllAction().isEnabled())
+                menu.add(ClipboardActions.getGlobalCopyAllAction());
+
+            menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+
+            // If right clicking on a BlankAssertion, disable all actions.
+            AbstractTreeNode node = (AbstractTreeNode) policyTree.getPathForRow(closestRow).getLastPathComponent();
+            if (node.asAssertion() instanceof BlankAssertion) {
+                for (MenuElement menuElement: menu.getSubElements())  {
+                    JMenuItem item = (JMenuItem) menuElement;
+                    item.getAction().setEnabled(false);
+                }
             }
         }
 
@@ -175,6 +199,76 @@ class PolicyDiffTree extends JTree {
             if (e.getClickCount() != 2) return;
 
             diffWindow.getAssertionDiffMenuAction(row).actionPerformed(null);
+        }
+    }
+
+    /**
+     * A transfer handler is used by the policy diff tree for Copy and Copy All.
+     * Paste is disabled.
+     */
+    private class PolicyDiffTreeTransferHandler extends TreeNodeHidingTransferHandler {
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            PolicyDiffTree diffTree = c instanceof PolicyDiffTree? (PolicyDiffTree)c : PolicyDiffTree.this;
+            return createTransferable(diffTree);
+        }
+
+        @Override
+        public boolean importData(JComponent comp, Transferable t) {
+            // Pastes not accepted
+            return false;
+        }
+
+        @Override
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            // Pastes not accepted
+            return false;
+        }
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            return COPY;
+        }
+
+        private Transferable createTransferable(PolicyDiffTree policyDiffTree) {
+            TreePath[] paths = policyDiffTree.getSelectionPaths();
+            if (paths != null && paths.length > 0) {
+                final java.util.List<TreePath> treePathsWithoutDuplicates = new ArrayList<>();
+                for (TreePath path : paths) {
+                    if (treePathsWithoutDuplicates.size() == 0) {
+                        treePathsWithoutDuplicates.add(path);
+                        continue;
+                    }
+                    // Filter out those paths which are contained in some parent paths.
+                    boolean duplicate = false;
+                    for (TreePath path1: treePathsWithoutDuplicates) {
+                        if (path1.isDescendant(path)) {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (! duplicate) treePathsWithoutDuplicates.add(path);
+                }
+                final java.util.List<AbstractTreeNode> nodeList = new ArrayList<>();
+                for (TreePath path : paths) {
+                    AbstractTreeNode node = (AbstractTreeNode) path.getLastPathComponent();
+                    if (node.asAssertion() instanceof BlankAssertion) {
+                        continue;
+                    }
+                    nodeList.add(node);
+                }
+                return new PolicyTransferable(nodeList.toArray(new AbstractTreeNode[nodeList.size()]));
+            } else {
+                // No selection, so copy entire policy
+                Object node = PolicyDiffTree.this.getModel().getRoot();
+                if (node == null) return null;
+
+                if (node instanceof AbstractTreeNode) {
+                    return new PolicyTransferable(new AbstractTreeNode[] {(AbstractTreeNode)node});
+                } else {
+                    return null;
+                }
+            }
         }
     }
 

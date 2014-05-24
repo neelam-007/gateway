@@ -7,6 +7,7 @@ import com.l7tech.console.action.HomeAction;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
@@ -1136,8 +1137,7 @@ public class WorkSpacePanel extends JPanel {
                     reopenClosedTab.setEnabled(! closedTabs.isEmpty());
 
                     // Policy Diff Action
-                    final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
-                    final JMenuItem diffPolicy = new JMenuItem("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
+                    final JMenuItem diffPolicy = new JMenuItem("Compare Policy: " + (PolicyDiffContext.hasLeftDiffPolicy()? "Right" : "Left"));
                     diffPolicy.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
@@ -1203,13 +1203,10 @@ public class WorkSpacePanel extends JPanel {
         }
 
         public void diffPolicy(final int index) {
-            final Pair<String, PolicyTreeModel> leftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo();
-
-            if (leftPolicyInfo == null) {
-                TopComponents.getInstance().setLeftDiffPolicyInfo(getPolicyInfo(index));
+            if (PolicyDiffContext.hasLeftDiffPolicy()) {
+                new PolicyDiffWindow(PolicyDiffContext.getLeftDiffPolicyInfo(), getPolicyInfo(index)).setVisible(true);
             } else {
-                final Pair<String, PolicyTreeModel> rightPolicyInfo = getPolicyInfo(index);
-                new PolicyDiffWindow(leftPolicyInfo, rightPolicyInfo).setVisible(true);
+                PolicyDiffContext.setLeftDiffPolicyInfo(getPolicyInfo(index));
             }
         }
 

@@ -183,7 +183,7 @@ public class TreeDiff {
 
             // If tempNode2 does not match node1, but tempNode2 is an IncludePolicyNode or a CompositeAssertionTreeNode, then escape tempNode2's all descendant nodes.
             if (node2 instanceof IncludeAssertionPolicyNode || node2 instanceof CompositeAssertionTreeNode) {
-                i += node2.getDescendantCount();
+                i += getNodeDescendantsCount(node2);
             }
 
             depth++;
@@ -257,8 +257,8 @@ public class TreeDiff {
 
         // If nodeA and node2 are the same IncludeAssertionNode, then mark all their descendants as matched.
         if (node1 instanceof IncludeAssertionPolicyNode && node2 instanceof IncludeAssertionPolicyNode) {
-            int descendantCount1 = node1.getDescendantCount();
-            int descendantCount2 = node2.getDescendantCount();
+            int descendantCount1 = getNodeDescendantsCount(node1);
+            int descendantCount2 = getNodeDescendantsCount(node2);
             if (descendantCount1 != descendantCount2) {
                 // Should happen here!  Just for DEV check.
                 throw new RuntimeException("Two matched IncludePolicyNodes must be identical.");
@@ -308,7 +308,7 @@ public class TreeDiff {
         // so DELETED or INSERTED will be recorded in "repeatCount" times.
         int repeatCount = 1;
         if (node1 instanceof IncludeAssertionPolicyNode || node1 instanceof CompositeAssertionTreeNode) {
-            repeatCount += node1.getDescendantCount();
+            repeatCount += getNodeDescendantsCount(node1);
         }
         for (int i = 0; i < repeatCount; i++) {
             diffResultMap1.put(row1++, fromLeftToRight? DiffType.DELETED : DiffType.INSERTED);
@@ -399,5 +399,21 @@ public class TreeDiff {
         }
 
         return new Pair<>(parent, newNodeIdx);
+    }
+
+    /**
+     * Get the number of descendants for this assertion tree node.
+     *
+     * @param node the assertion tree node, whose descendants will be counted.
+     * @return a number of descendants under this node
+     */
+    private int getNodeDescendantsCount(AssertionTreeNode node) {
+        int count = 0;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            count++;
+            AssertionTreeNode child = (AssertionTreeNode) node.getChildAt(i);
+            count += getNodeDescendantsCount(child);
+        }
+        return count;
     }
 }

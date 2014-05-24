@@ -10,6 +10,7 @@ import com.l7tech.console.policy.PolicyTransferable;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TransferableTreePaths;
+import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
@@ -131,7 +132,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             public void valueChanged(TreeSelectionEvent e) {
                 Clipboard sel = Utilities.getDefaultSystemSelection();
                 if (sel == null) return;
-                sel.setContents(policyTreeTransferHandler.createTransferable(PolicyTree.this, e.getPaths()), owner);
+                sel.setContents(createTransferable(e.getPaths()), owner);
             }
         };
 
@@ -152,7 +153,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         });
 
-        setTransferHandler(policyTreeTransferHandler);
+        setTransferHandler(new PolicyTreeTransferHandler());
     }
 
     /**
@@ -285,6 +286,127 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return nodeToGoto;
         }
     }
+
+    private Transferable createTransferable(TreePath[] paths) {
+        if (paths != null && paths.length > 0) {
+            return new PolicyTransferable(getTrimmedFromSelection(paths));
+        } else {
+            // No selection, so copy entire policy
+            Object node = getModel().getRoot();
+            if (node == null) return null;
+            if (node instanceof AbstractTreeNode)
+                return new PolicyTransferable(new AbstractTreeNode[] {(AbstractTreeNode)node});
+            else
+                log.fine("Unable to create transferable for non-AbstractTreeNode: " + node.getClass().getName());
+        }
+        return null;
+    }
+
+    /**
+     * Sorts the selection.
+     * @return The sorted array of selected TreePath's.
+     */
+    private TreePath[] getSortedSelectedTreePaths() {
+        int[] selectedRows = getSelectionRows();
+
+        //if no selection, then we'll return empty tree path
+        if (selectedRows == null) return new TreePath[0];
+
+        Arrays.sort(selectedRows);
+        TreePath[] paths = new TreePath[selectedRows.length];
+        for(int i = 0;i < selectedRows.length;i++) {
+            paths[i] = getPathForRow(selectedRows[i]);
+        }
+
+        return paths;
+    }
+
+    /**
+     * Trims the input array of TreePath's.
+     * @param paths The selected TreePath's in sorted order
+     * @return The trimmed list of nodes
+     */
+    private AbstractTreeNode[] getTrimmedFromSelection(TreePath[] paths) {
+        HashMap<AbstractTreeNode, AbstractTreeNode> assertionMap = new HashMap<>();
+        HashSet<AbstractTreeNode> assertionsToSkip = new HashSet<>();
+
+        for(TreePath path : paths) {
+            if(path.getLastPathComponent() instanceof AbstractTreeNode) {
+                AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
+
+                // Check for selected ancestors
+                CompositeAssertionTreeNode currentAncestor = null;
+                CompositeAssertionTreeNode immediateParent = null;
+                HashMap<AbstractTreeNode, AbstractTreeNode> ancestorMap = new HashMap<>();
+                for(int i = path.getPathCount() - 2;i >= 0;i--) {
+                    if(path.getPathComponent(i) instanceof AbstractTreeNode) {
+                        AbstractTreeNode ancestor = (AbstractTreeNode)path.getPathComponent(i);
+
+                        CompositeAssertionTreeNode newAncestor;
+                        if(ancestor instanceof AllAssertionTreeNode) {
+                            newAncestor = new AllAssertionTreeNode(new AllAssertion());
+                        } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
+                            newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
+                        } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {
+                            final ForEachLoopAssertionPolicyNode forEachNode = (ForEachLoopAssertionPolicyNode) ancestor;
+                            final ForEachLoopAssertion forEach = new ForEachLoopAssertion();
+                            forEach.setLoopVariableName(forEachNode.assertion.getLoopVariableName());
+                            forEach.setVariablePrefix(forEachNode.assertion.getVariablePrefix());
+                            newAncestor = new ForEachLoopAssertionPolicyNode(forEach);
+                        } else {
+                            break;
+                        }
+
+                        if(currentAncestor != null) {
+                            newAncestor.add(currentAncestor);
+                            ((CompositeAssertion)newAncestor.asAssertion()).addChild(currentAncestor.asAssertion());
+                        }
+                        currentAncestor = newAncestor;
+                        ancestorMap.put(ancestor, currentAncestor);
+
+                        if(immediateParent == null) {
+                            immediateParent = newAncestor;
+                        }
+
+                        if(assertionMap.containsKey(ancestor)) {
+                            assertionsToSkip.add(node);
+
+                            immediateParent.add((AbstractTreeNode)node.clone());  // add copy, not move node
+                            ((CompositeAssertion)immediateParent.asAssertion()).addChild(node.asAssertion());
+
+                            if(assertionMap.get(ancestor) == ancestor) {
+                                assertionMap.putAll(ancestorMap);
+                            } else {
+                                CompositeAssertionTreeNode x = (CompositeAssertionTreeNode)assertionMap.get(ancestor);
+                                for(int j = 0;j < currentAncestor.getChildCount();j++) {
+                                    AbstractTreeNode child = (AbstractTreeNode)currentAncestor.getChildAt(j);
+                                    x.add(child);
+                                    ((CompositeAssertion)x.asAssertion()).addChild(child.asAssertion());
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+                }
+
+                assertionMap.put(node, node);
+            }
+        }
+
+        List<AbstractTreeNode> assertions = new ArrayList<>();
+        for(TreePath path : paths) {
+            if(path.getLastPathComponent() instanceof AbstractTreeNode) {
+                AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
+                if(!assertionsToSkip.contains(node)) {
+                    assertions.add(assertionMap.get(node));
+                }
+            }
+        }
+
+        return assertions.toArray(new AbstractTreeNode[assertions.size()]);
+    }
+
 
     /**
      * Import the specified assertion subtree into this policy.  Attempt to insert it at the current selection,
@@ -1682,7 +1804,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
         return new DefaultTreeSelectionModel();
     }
 
-    private PolicyTreeTransferHandler policyTreeTransferHandler = new PolicyTreeTransferHandler() {
+    private class PolicyTreeTransferHandler extends TreeNodeHidingTransferHandler {
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            PolicyTree policyTree = c instanceof PolicyTree ? (PolicyTree)c : PolicyTree.this;
+
+            return policyTree.createTransferable(policyTree.getSortedSelectedTreePaths());
+        }
+
         @Override
         public boolean importData(JComponent comp, Transferable t) {
             PolicyTree policyTree = comp instanceof PolicyTree ? (PolicyTree)comp : PolicyTree.this;
@@ -1785,5 +1915,35 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 return false;
             } 
         }
-    };
+
+        @Override
+        protected void exportDone(JComponent source, Transferable data, int action) {
+            if (action == TransferHandler.MOVE) {
+                PolicyTree policyTree = source instanceof PolicyTree ? (PolicyTree)source : PolicyTree.this;
+                TreePath[] paths = policyTree.getSelectionPaths();
+                PolicyTreeModel model = (PolicyTreeModel)policyTree.getModel();
+                for(TreePath path : paths) {
+                    model.removeNodeFromParent((MutableTreeNode)path.getLastPathComponent());
+                }
+            }
+        }
+
+        @Override
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            for (DataFlavor flav : transferFlavors) {
+                if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flav) || flav != null && DataFlavor.stringFlavor.equals(flav))
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            if(PolicyTree.this.getModel().getChildCount(PolicyTree.this.getModel().getRoot()) > 0) {
+                return COPY;
+            } else {
+                return NONE;
+            }
+        }
+    }
 }

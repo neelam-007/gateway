@@ -1,8 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.stepdebug.PolicyStepDebugDialog;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
@@ -51,7 +51,7 @@ public class PolicyStepDebugAction extends NodeAction {
             // Get the active version of policy.
             //
             Policy policy = policyAdmin.findPolicyByPrimaryKey(policyNode.getPolicy().getGoid());
-            String displayName = PolicyEditorPanel.getDisplayName(
+            String displayName = PolicyRevisionUtils.getDisplayName(
                 node.getName(),
                 policy.getVersionOrdinal(),
                 policyAdmin.findLatestRevisionForPolicy(policy.getGoid()).getOrdinal(),

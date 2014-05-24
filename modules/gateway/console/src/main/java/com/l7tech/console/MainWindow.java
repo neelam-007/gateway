@@ -11,6 +11,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
+import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.LogonListener;
@@ -557,13 +558,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.setMnemonic(mnemonic);
 
             fileMenu = menu;
-
-            fileMenu.addChangeListener(new ChangeListener() {
-                @Override
-                public void stateChanged(ChangeEvent e) {
-                    updatePolicyDiffMenuItemText();
-                }
-            });
         }
         return fileMenu;
     }
@@ -632,15 +626,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             policyDiffMenuItem.setIcon(icon);
         }
 
-        updatePolicyDiffMenuItemText();
+        PolicyDiffContext.setPolicyDiffMenuItem(policyDiffMenuItem);
+
         return policyDiffMenuItem;
-    }
-
-    private void updatePolicyDiffMenuItemText() {
-        if (policyDiffMenuItem == null) return;
-
-        final boolean hasLeftPolicyInfo = TopComponents.getInstance().getLeftDiffPolicyInfo() != null;
-        policyDiffMenuItem.setText("Compare Policy: " + (hasLeftPolicyInfo? "Right" : "Left"));
     }
 
     private JMenuItem getValidateMenuItem() {
@@ -3245,6 +3233,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             inactivityTimer.stop();
         }
         getFilterStatusLabel().setText(FILTER_STATUS_NONE);
+        PolicyDiffContext.setLeftDiffPolicyInfo(null);
     }
 
     private void addComponentToGridBagContainer(JComponent container, JComponent component) {
