@@ -119,9 +119,11 @@ public class JsonDocumentStructureAssertion extends MessageTargetableAssertion {
             return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Enable protection against JSON document structure threats such as oversized arrays and overdeep nesting.");
+        meta.put(AssertionMetadata.DESCRIPTION,
+                "Enable protection against JSON document structure threats such as oversized arrays and overdeep nesting.");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "threatProtection" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif"); // TODO jwilliams: need unique icon
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON,
+                "com/l7tech/external/assertions/jsondocumentstructure/console/resources/JsonDocumentStructure.png");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME,
                 "com.l7tech.external.assertions.jsondocumentstructure.console.JsonDocumentStructurePropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "JSON Document Structure Threat Protection Properties");
