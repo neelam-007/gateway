@@ -110,7 +110,17 @@ public class PolicyDiffWindow extends JFrame {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        initializeComponents();
+        try {
+            initializeComponents();
+        } catch (Throwable t) {
+            // Handle any exceptions and ask to retry.
+            dispose();
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Policy Comparison is terminated due to error.  Please try to choose left and right policies again!",
+                "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+            PolicyDiffContext.setLeftDiffPolicyInfo(null);
+            return;
+        }
 
         pack();
         Utilities.centerOnScreen(this);

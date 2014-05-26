@@ -162,8 +162,8 @@ public class PolicyRevisionsDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (PolicyDiffContext.hasLeftDiffPolicy()) {
-                    new PolicyDiffWindow(PolicyDiffContext.getLeftDiffPolicyInfo(), getPolicyInfo()).setVisible(true);
                     dispose();
+                    new PolicyDiffWindow(PolicyDiffContext.getLeftDiffPolicyInfo(), getPolicyInfo()).setVisible(true);
                 } else {
                     PolicyDiffContext.setLeftDiffPolicyInfo(getPolicyInfo());
                 }
