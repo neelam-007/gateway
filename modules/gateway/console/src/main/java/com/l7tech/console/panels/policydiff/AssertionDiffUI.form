@@ -84,7 +84,9 @@
                         <children>
                           <component id="12d99" class="javax.swing.JTextArea" binding="leftAssertionXmlTextArea">
                             <constraints/>
-                            <properties/>
+                            <properties>
+                              <editable value="false"/>
+                            </properties>
                           </component>
                         </children>
                       </scrollpane>
@@ -171,7 +173,9 @@
                         <children>
                           <component id="b6fe6" class="javax.swing.JTextArea" binding="rightAssertionXmlTextArea">
                             <constraints/>
-                            <properties/>
+                            <properties>
+                              <editable value="false"/>
+                            </properties>
                           </component>
                         </children>
                       </scrollpane>
