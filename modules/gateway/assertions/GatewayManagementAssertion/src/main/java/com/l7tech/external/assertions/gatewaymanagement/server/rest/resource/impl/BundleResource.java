@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExport
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
@@ -86,6 +87,53 @@ public class BundleResource {
     }
 
     /**
+     * Returns the bundle for the given resources.
+     *
+     * @param defaultAction                      The default bundling action. By default this is NewOrExisting
+     * @param includeRequestFolder               For a folder export, specifies whether to include the folder in the
+     *                                           bundle or just its contents.
+     * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
+     *                                           default.
+     * @param folderIds                          The folders to export
+     * @param serviceIds                         The services to export
+     * @param policyIds                          The policies to export
+     * @return The bundle for the resources
+     * @throws IOException
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws FindException
+     */
+    @GET
+    public Item<Bundle> exportBundle(@QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
+                                     @QueryParam("includeRequestFolder") @DefaultValue("true") Boolean includeRequestFolder,
+                                     @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
+                                     @QueryParam("folder") List<String> folderIds,
+                                     @QueryParam("service") List<String> serviceIds,
+                                     @QueryParam("policy") List<String> policyIds) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+        rbacAccessService.validateFullAdministrator();
+
+        //validate that something is being exported
+        if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty()) {
+            throw new InvalidArgumentException("Must specify at least one folder, service or policy to export");
+        }
+
+        List<EntityHeader> entityHeaders = new ArrayList<>(folderIds.size() + serviceIds.size() + policyIds.size());
+
+        for (String folderId : folderIds) {
+            entityHeaders.add(new EntityHeader(folderId, EntityType.FOLDER, null, null));
+        }
+        for (String serviceId : serviceIds) {
+            entityHeaders.add(new EntityHeader(serviceId, EntityType.SERVICE, null, null));
+        }
+        for (String policyId : policyIds) {
+            entityHeaders.add(new EntityHeader(policyId, EntityType.POLICY, null, null));
+        }
+
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
+                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .build();
+    }
+
+    /**
      * Returns the for the given resource type. The resource type is either a policy, service, or folder
      *
      * @param resourceType                       The resource type. Either folder, service or policy
@@ -103,7 +151,7 @@ public class BundleResource {
      */
     @GET
     @Path("{resourceType}/{id}")
-    public Item<Bundle> exportBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
+    public Item<Bundle> exportFolderServicePolicyBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
                                      @PathParam("id") Goid id,
                                      @QueryParam("defaultAction") @DefaultValue("NewOrExisting") Mapping.Action defaultAction,
                                      @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
@@ -144,10 +192,10 @@ public class BundleResource {
         rbacAccessService.validateFullAdministrator();
         // todo: why this works? create new audit context to collect audits and outputs when operation commits. Move to server.
         AuditContextUtils.setSystem(true);
-        List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(),new Callable<List<Mapping>>() {
+        List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<List<Mapping>>() {
             @Override
             public List<Mapping> call() throws Exception {
-                return  bundleImporter.importBundle(bundle, test);
+                return bundleImporter.importBundle(bundle, test);
             }
         });
         AuditContextUtils.setSystem(false);
@@ -213,7 +261,7 @@ public class BundleResource {
         //Add all the source uri's to the mappings
         for (Mapping mapping : bundle.getMappings()) {
             URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
-            if(itemMap.containsKey(mapping.getSrcId())){
+            if (itemMap.containsKey(mapping.getSrcId())) {
                 mapping.setSrcUri(urlAccessible.getUrl(itemMap.get(mapping.getSrcId()).getContent()));
             }
         }
