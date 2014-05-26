@@ -114,7 +114,7 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         meta.put( DESCRIPTION, "Encode or decode data." );
         meta.put( PALETTE_FOLDERS, new String[] { "xml" } );
         meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
-        meta.put( PROPERTIES_ACTION_NAME, "Encode / Decode Data Properties" );
+        meta.put( PROPERTIES_ACTION_NAME, "Encode/Decode Data Properties" );
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.encodedecode.console.EncodeDecodePropertiesDialog");
         meta.put( POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EncodeDecodeAssertion>(){
             @Override
