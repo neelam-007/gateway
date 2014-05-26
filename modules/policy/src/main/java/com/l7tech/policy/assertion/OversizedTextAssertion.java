@@ -204,7 +204,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         // Allow depth, but disallow the depth+1'th nested element.
         depth++;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < depth; ++i) {
             sb.append(XPATH_NESTING_STEP);
         }
@@ -223,7 +223,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         return XPATH_PAYLOAD_START + (maxPayloads + 1) + XPATH_PAYLOAD_END;
     }
 
-    private final static String baseName = "Protect Against Document Structure Threats";
+    private final static String baseName = "Protect Against XML Document Structure Threats";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<OversizedTextAssertion>(){
         @Override
@@ -242,7 +242,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         meta.put(PALETTE_FOLDERS, new String[] { "threatProtection" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
-        meta.put(PROPERTIES_ACTION_NAME, "Document Structure Threat Protection Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "XML Document Structure Threat Protection Properties");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, OversizedTextAssertion>(){
             @Override
@@ -270,7 +270,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
                 assertion.isLimitNamespacePrefixCount() ) {
                 warningStr = null;
             } else {
-                warningStr = "No Document Structure Threat Protections have been specified";
+                warningStr = "No XML Document Structure Threat Protections have been specified";
             }
         }
 

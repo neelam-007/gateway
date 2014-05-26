@@ -767,6 +767,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable JSON Schema validation functionality",
                 mass("assertion:JSONSchema"));
 
+        GatewayFeatureSet jsonDocumentStructureAssertion = fsr("set:JsonDocumentStructure:Assertions",
+                "The necessary assertions to protect against JSON document structure threats functionality",
+                mass("assertion:JsonDocumentStructure"));
+
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
                 mass("assertion:UpgradePortal"),
@@ -959,6 +963,7 @@ public class GatewayFeatureSets {
             fs(oAuthInstaller),
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
+            fs(jsonDocumentStructureAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1024,6 +1029,7 @@ public class GatewayFeatureSets {
             fs(oAuthInstaller),
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
+            fs(jsonDocumentStructureAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1090,6 +1096,7 @@ public class GatewayFeatureSets {
             fs(oAuthInstaller),
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
+            fs(jsonDocumentStructureAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1138,6 +1145,7 @@ public class GatewayFeatureSets {
                 fs(oAuthInstaller),
                 fs(oAuthValidationAssertions),
                 fs(jsonSchemaAssertion),
+                fs(jsonDocumentStructureAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),

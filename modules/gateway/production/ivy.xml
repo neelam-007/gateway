@@ -58,6 +58,7 @@
         <dependency name="GatewayManagementAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CacheAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JSONSchemaAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="JsonDocumentStructureAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SimpleRawTransportAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EncodeDecodeAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CsrfProtectionAssertion" rev="latest.integration" conf="module"/>
