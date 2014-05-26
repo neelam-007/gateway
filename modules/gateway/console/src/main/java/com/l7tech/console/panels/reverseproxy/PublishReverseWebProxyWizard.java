@@ -33,6 +33,8 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String TITLE = "Publish Reverse Web Proxy Wizard";
     private static final String WEB_APP_HOST = "webAppHost";
     private static final String WEB_APP_HOST_ENCODED = "webAppHostEncoded";
+    private static final String REQUEST_HOST = "requestHost";
+    private static final String REQUEST_HOST_ENCODED = "requestHostEncoded";
     private static final String QUERY = "query";
     private static final String LOCATION = "location";
     private static final String RESPONSE_COOKIE_OVERWRITE_PATH = "response.cookie.overwritePath";
@@ -40,6 +42,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String $_QUERY = "${" + QUERY + "}";
     private static final String $_WEB_APP_HOST_ENCODED = "${" + WEB_APP_HOST_ENCODED + "}";
     private static final String $_WEB_APP_HOST = "${" + WEB_APP_HOST + "}";
+    private static final String $_REQUEST_HOST_ENCODED = "${" + REQUEST_HOST_ENCODED + "}";
     private static final String $_REQUEST_URL_HOST = "${request.url.host}";
     private static final String $_REQUEST_URL_PORT = "${request.url.port}";
     private static final String $_HOST_AND_PORT = $_REQUEST_URL_HOST + ":" + $_REQUEST_URL_PORT;
@@ -54,10 +57,12 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String REWRITE_LOCATION_COMMENT = "// REWRITE LOCATION HEADER";
     private static final String REWRITE_RESPONSE_COMMENT = "// REWRITE RESPONSE BODY";
     private static final String ENCODE_WEB_APP_HOST_COMMENT = "// ENCODE WEB APP HOST";
+    private static final String ENCODE_REQUEST_HOST = "// ENCODE REQUEST HOST";
     private static final String ENCODE_DOT_COMMENT = "// ENCODE AND REPLACE '.' IN WEB APP HOST";
     private static final String ENCODE_OPEN_CURLY_COMMENT = "// ENCODE AND REPLACE '{' IN QUERY";
     private static final String ENCODE_CLOSE_CURLY_COMMENT = "// ENCODE AND REPLACE '}' IN QUERY";
     private static final String AUTHORIZATION_COMMENT = "// AUTHORIZATION";
+    private static final String REWRITE_REQ_QUERY = "// REWRITE REQUEST QUERY";
     private ReverseWebProxyConfigurationPanel configPanel;
     private IdentityProviderWizardPanel authPanel;
     private ReverseWebProxyConfig config;
@@ -139,6 +144,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         authorize(authAssertions, builder);
         setConstants(config, builder);
         encodeSpecialCharacters(config, builder);
+        rewriteQuery(config, builder);
         handleRequestCookies(config, builder);
         // route to web app
         final String protocol = config.isUseHttps() ? "https" : "http";
@@ -147,6 +153,12 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         // handle redirects
         builder.rewriteHeader(RESPONSE, null, LOCATION, $_WEB_APP_HOST, $_HOST_AND_PORT, config.isRewriteLocationHeader(), REWRITE_LOCATION_COMMENT);
         rewriteResponseBody(config, builder);
+    }
+
+    private static void rewriteQuery(final ReverseWebProxyConfig config, final PolicyBuilder builder) {
+        if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
+            builder.regex(OTHER, QUERY, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, REWRITE_REQ_QUERY);
+        }
     }
 
     private static void authorize(final List<Assertion> authAssertions, final PolicyBuilder builder) {
@@ -202,11 +214,12 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
 
     private static void encodeSpecialCharacters(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
-            // encode '.', '{' and '}'
-            if (config.isRewriteCookies()) {
-                builder.urlEncode(WEB_APP_HOST, WEB_APP_HOST_ENCODED, ENCODE_WEB_APP_HOST_COMMENT)
-                        .regex(OTHER, WEB_APP_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
-            }
+            // encode '.'
+            builder.urlEncode(WEB_APP_HOST, WEB_APP_HOST_ENCODED, ENCODE_WEB_APP_HOST_COMMENT)
+                    .regex(OTHER, WEB_APP_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
+            // encode request host : port
+            builder.urlEncode(REQUEST_HOST, REQUEST_HOST_ENCODED, ENCODE_REQUEST_HOST);
+            // encode '{' and '}'
             builder.regex(OTHER, QUERY, "\\{", "%7B", true, ENCODE_OPEN_CURLY_COMMENT)
                     .regex(OTHER, QUERY, "\\}", "%7D", true, ENCODE_CLOSE_CURLY_COMMENT);
         }
@@ -215,6 +228,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static void setConstants(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         final Map<String, String> constants = new HashMap<>();
         constants.put(WEB_APP_HOST, config.getWebAppHost());
+        constants.put(REQUEST_HOST, $_HOST_AND_PORT);
         constants.put(RESPONSE_COOKIE_OVERWRITE_PATH, "false");
         constants.put(RESPONSE_COOKIE_OVERWRITE_DOMAIN, "false");
         constants.put(QUERY, $_REQUEST_URL_QUERY);

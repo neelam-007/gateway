@@ -57,6 +57,7 @@ public class PublishReverseWebProxyWizardTest {
         // constants
         final Map<String, String> constants = new HashMap<>();
         constants.put("webAppHost", "default-generic.l7tech.com");
+        constants.put("requestHost", "${request.url.host}:${request.url.port}");
         constants.put("response.cookie.overwriteDomain", "false");
         constants.put("response.cookie.overwritePath", "false");
         constants.put("query", "${request.url.query}");
@@ -87,6 +88,7 @@ public class PublishReverseWebProxyWizardTest {
         // constants + route
         final Map<String, String> constants = new HashMap<>();
         constants.put("webAppHost", "default-generic.l7tech.com");
+        constants.put("requestHost", "${request.url.host}:${request.url.port}");
         constants.put("response.cookie.overwriteDomain", "false");
         constants.put("response.cookie.overwritePath", "false");
         constants.put("query", "${request.url.query}");
@@ -148,6 +150,7 @@ public class PublishReverseWebProxyWizardTest {
         // constants
         final Map<String, String> constants = new HashMap<>();
         constants.put("webAppHost", "default-sharepoint.l7tech.com");
+        constants.put("requestHost", "${request.url.host}:${request.url.port}");
         constants.put("response.cookie.overwriteDomain", "false");
         constants.put("response.cookie.overwritePath", "false");
         constants.put("query", "${request.url.query}");
@@ -156,8 +159,10 @@ public class PublishReverseWebProxyWizardTest {
         // encoding
         verify(builder).urlEncode("webAppHost", "webAppHostEncoded", "// ENCODE WEB APP HOST");
         verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.' IN WEB APP HOST");
+        verify(builder).urlEncode("requestHost", "requestHostEncoded", "// ENCODE REQUEST HOST");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "${requestHostEncoded}", "${webAppHostEncoded}", true, "// REWRITE REQUEST QUERY");
 
         // url rewriting + route
         verify(builder).replaceHttpCookieNames(TargetMessageType.REQUEST, null, "${request.url.host}%3A${request.url.port}", "${webAppHostEncoded}", true, "// REWRITE REQUEST COOKIE NAMES");
@@ -183,14 +188,19 @@ public class PublishReverseWebProxyWizardTest {
         // constants
         final Map<String, String> constants = new HashMap<>();
         constants.put("webAppHost", "default-sharepoint.l7tech.com");
+        constants.put("requestHost", "${request.url.host}:${request.url.port}");
         constants.put("response.cookie.overwriteDomain", "false");
         constants.put("response.cookie.overwritePath", "false");
         constants.put("query", "${request.url.query}");
         verify(builder).setContextVariables(constants, "// CONSTANTS");
 
         // encoding + route
+        verify(builder).urlEncode("webAppHost", "webAppHostEncoded", "// ENCODE WEB APP HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.' IN WEB APP HOST");
+        verify(builder).urlEncode("requestHost", "requestHostEncoded", "// ENCODE REQUEST HOST");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
+        verify(builder).regex(TargetMessageType.OTHER, "query", "${requestHostEncoded}", "${webAppHostEncoded}", true, "// REWRITE REQUEST QUERY");
         verify(builder).routeForwardAll("http://${webAppHost}${request.url.path}${query}", false);
 
         // disabled policy
@@ -202,7 +212,6 @@ public class PublishReverseWebProxyWizardTest {
         verify(builder).regex(TargetMessageType.RESPONSE, null, "${webAppHost}(:80)?", "${request.url.host}:${request.url.port}", false, "// REWRITE RESPONSE BODY");
 
         verify(builder, never()).rewriteHtml(any(TargetMessageType.class), anyString(), anySet(), anyString(), anyString(), anyString());
-        verify(builder, never()).urlEncode(anyString(), anyString(), anyString());
     }
 
     @Test
