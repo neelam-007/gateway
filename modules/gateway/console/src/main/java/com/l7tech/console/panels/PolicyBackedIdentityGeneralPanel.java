@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  */
 public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel {
     private static final Logger logger = Logger.getLogger(PolicyBackedIdentityGeneralPanel.class.getName());
+    private static final String CURRENT_ROLE_DETAILS_ARE_UNAVAILABLE = "Current role details are unavailable";
 
     private JPanel mainPanel;
     private JTextField providerNameField;
@@ -115,7 +116,7 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
     }
 
     private String getNameForRole(Role role) {
-        String name = "name unavailable";
+        String name = CURRENT_ROLE_DETAILS_ARE_UNAVAILABLE;
         try {
             name = Registry.getDefault().getEntityNameResolver().getNameForEntity(role, true);
             return name;
@@ -204,7 +205,7 @@ public class PolicyBackedIdentityGeneralPanel extends IdentityProviderStepPanel 
                 }
             } catch (final FindException | PermissionDeniedException e) {
                 logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                roleTextField.setText(roleId.toString());
+                roleTextField.setText(CURRENT_ROLE_DETAILS_ARE_UNAVAILABLE);
             }
         }
     }
