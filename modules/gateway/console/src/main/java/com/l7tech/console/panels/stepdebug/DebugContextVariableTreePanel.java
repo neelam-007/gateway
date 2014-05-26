@@ -4,9 +4,11 @@ import com.l7tech.console.panels.EditableSearchComboBox;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -276,6 +278,22 @@ public class DebugContextVariableTreePanel extends JPanel {
         };
 
         contextVariableSearchComboBox = new EditableSearchComboBox<DefaultMutableTreeNode>(filter) {};
+
+        // Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
+        // and the jlabel will not grow to accommodate it, if it is larger than the size of the combo box component
+        //
+        Functions.Unary<String, DefaultMutableTreeNode> accessorFunction = new Functions.Unary<String, DefaultMutableTreeNode>() {
+            @Override
+            public String call(DefaultMutableTreeNode treeNode) {
+                return treeNode.getUserObject().toString();
+            }
+        };
+
+        TextListCellRenderer<DefaultMutableTreeNode> renderer = new TextListCellRenderer<>(accessorFunction);
+        renderer.setRenderClipped(true);
+        //noinspection unchecked
+        contextVariableSearchComboBox.setRenderer(renderer);
+
         contextVariableSearchComboBox.setComparator(new Comparator<DefaultMutableTreeNode>() {
             @Override
             public int compare(DefaultMutableTreeNode o1, DefaultMutableTreeNode o2) {
