@@ -63,8 +63,6 @@ public class PolicyDiffWindow extends JFrame {
     private JScrollPane rightAssertionNumScrollPane;
     private JButton showOrHideAssertionDiffButton;
     private JSplitPane diffSplitPane;
-    private AssertionLineNumbersTree leftAssertionNumberTree;
-    private AssertionLineNumbersTree rightAssertionNumberTree;
 
     private List<Integer> nextDiffRowList;  // Store the row numbers of all next diffs in the diff result list
     private int currentDiffRow = -1;        // The index of a current element in nextDiffRowList.  It is not necessary that currentDiffRow is same as the selected row.
@@ -251,12 +249,12 @@ public class PolicyDiffWindow extends JFrame {
         generateDiffResults();
 
         // After the results obtained, initialize two assertion number trees
-        leftAssertionNumberTree = new AssertionLineNumbersTree(leftPolicyTree);
+        AssertionLineNumbersTree leftAssertionNumberTree = new AssertionLineNumbersTree(leftPolicyTree);
         leftAssertionNumberTree.setVisible(true);
         leftAssertionNumberTree.updateOrdinalsDisplaying();
         leftAssertionNumScrollPane.getViewport().add(leftAssertionNumberTree);
 
-        rightAssertionNumberTree = new AssertionLineNumbersTree(rightPolicyTree);
+        AssertionLineNumbersTree rightAssertionNumberTree = new AssertionLineNumbersTree(rightPolicyTree);
         rightAssertionNumberTree.setVisible(true);
         rightAssertionNumberTree.updateOrdinalsDisplaying();
         rightAssertionNumScrollPane.getViewport().add(rightAssertionNumberTree);
@@ -537,17 +535,19 @@ public class PolicyDiffWindow extends JFrame {
                     }
                 });
 
-                add(assertionDiffUI.getContentPane(), BorderLayout.CENTER);
+                final JPanel assertionDiffContentPane = assertionDiffUI.getContentPane();
+                assertionDiffContentPane.registerKeyboardAction(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        dispose();
+                    }
+                }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+                add(assertionDiffContentPane, BorderLayout.CENTER);
 
                 ((JComponent)getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
 
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        AssertionDiffWindow.this.pack();
-                        Utilities.centerOnScreen(AssertionDiffWindow.this);
-                    }
-                });
+                pack();
+                Utilities.centerOnScreen(this);
             }
         }
     }
