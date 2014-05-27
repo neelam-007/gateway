@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="456" height="297"/>
+      <xy x="48" y="54" width="523" height="297"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -38,7 +38,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="Name of header.  May use variables"/>
+          <toolTipText value="Name of property/header.  May use variables"/>
         </properties>
       </component>
       <component id="8a58" class="javax.swing.JTextField" binding="headerValueTextField" default-binding="true">
@@ -48,7 +48,7 @@
           </grid>
         </constraints>
         <properties>
-          <toolTipText value="Value of header. May use variables"/>
+          <toolTipText value="Value of property/header. May use variables"/>
         </properties>
       </component>
       <component id="cea95" class="javax.swing.JLabel">
@@ -71,7 +71,7 @@
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/panels/AddHeaderAssertionDialog" key="regexLabel"/>
-          <toolTipText value="Check to evaluate the header name as a regular expression"/>
+          <toolTipText value="Check to evaluate the property/header name as a regular expression"/>
         </properties>
       </component>
       <component id="c88cc" class="javax.swing.JCheckBox" binding="valueExpressionCheckBox">
@@ -80,7 +80,7 @@
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/panels/AddHeaderAssertionDialog" key="regexLabel"/>
-          <toolTipText value="Check to evaluate the header value as a regular expression"/>
+          <toolTipText value="Check to evaluate the property/header value as a regular expression"/>
         </properties>
       </component>
       <component id="7fac6" class="javax.swing.JLabel">

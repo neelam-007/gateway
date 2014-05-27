@@ -172,7 +172,7 @@ public class AddHeaderAssertion extends MessageTargetableAssertion implements Us
             return meta;
 
         meta.put(SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Add, replace or remove header(s).");
+        meta.put(AssertionMetadata.DESCRIPTION, "Add, replace or remove properties/headers.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(PALETTE_FOLDERS, new String[] {"routing"});
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddHeaderAssertionDialog");
