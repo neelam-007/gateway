@@ -69,8 +69,7 @@ public class PolicyDiffWindow extends JFrame {
 
     private Pair<String, PolicyTreeModel> leftPolicyInfo, rightPolicyInfo;
     private Map<Integer, DiffType> diffResultMapL;
-    private Map<Integer, AssertionDiffUI> assertionDiffUICache1 = new WeakHashMap<>(); // Store AssertionDiffUI objects embedded in the policy diff window.
-    private Map<Integer, AssertionDiffUI> assertionDiffUICache2 = new WeakHashMap<>(); // Store AssertionDiffUI objects embedded in the assertion diff window.
+    private Map<Integer, AssertionDiffUI> assertionDiffUICache = new WeakHashMap<>(); // Store AssertionDiffUI objects embedded in the policy diff window.
     private boolean isAssertionDiffPaneShown;
 
     /**
@@ -280,7 +279,7 @@ public class PolicyDiffWindow extends JFrame {
             // Create an empty AssertionDiffUI and display it
             diffSplitPane.setBottomComponent(new AssertionDiffUI(PolicyDiffWindow.this).getContentPane());
         } else {
-            AssertionDiffUI assertionDiffUI = assertionDiffUICache1.get(assertionNodeRow);
+            AssertionDiffUI assertionDiffUI = assertionDiffUICache.get(assertionNodeRow);
             if (assertionDiffUI == null) {
                 assertionDiffUI = new AssertionDiffUI(
                     PolicyDiffWindow.this,
@@ -288,7 +287,7 @@ public class PolicyDiffWindow extends JFrame {
                     (AssertionTreeNode) rightPolicyTree.getLastSelectedPathComponent()
                 );
                 // Put a new assertion panel into the cache1
-                assertionDiffUICache1.put(assertionNodeRow, assertionDiffUI);
+                assertionDiffUICache.put(assertionNodeRow, assertionDiffUI);
             }
 
             assertionDiffUI.movePropColumnToMiddle();
@@ -504,15 +503,10 @@ public class PolicyDiffWindow extends JFrame {
         public void actionPerformed(ActionEvent e) {
             if (! isAssertionDiffEnabled(assertionNodeRow)) return;
 
-            AssertionDiffUI assertionDiffUI = assertionDiffUICache2.get(assertionNodeRow);
-            if (assertionDiffUI == null) {
-                assertionDiffUI = new AssertionDiffUI(nodeL, nodeR);
-                assertionDiffUICache2.put(assertionNodeRow, assertionDiffUI);
-            }
-
+            final AssertionDiffUI assertionDiffUI = new AssertionDiffUI(nodeL, nodeR);
             assertionDiffUI.movePropColumnToLeft();
-            AssertionDiffWindow assertionDiffWindow = new AssertionDiffWindow(assertionDiffUI);
-            assertionDiffUI.setParent(assertionDiffWindow);
+
+            final AssertionDiffWindow assertionDiffWindow = new AssertionDiffWindow(assertionDiffUI);
             assertionDiffWindow.setVisible(true);
         }
 
@@ -534,6 +528,8 @@ public class PolicyDiffWindow extends JFrame {
                         dispose();
                     }
                 });
+
+                assertionDiffUI.setParent(this);
 
                 final JPanel assertionDiffContentPane = assertionDiffUI.getContentPane();
                 assertionDiffContentPane.registerKeyboardAction(new ActionListener() {
