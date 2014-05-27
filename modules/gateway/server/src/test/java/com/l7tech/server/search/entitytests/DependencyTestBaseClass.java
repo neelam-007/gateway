@@ -63,6 +63,8 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     AssertionLookupTrustedCertificateProcessor assertionLookupTrustedCertificate = new AssertionLookupTrustedCertificateProcessor();
     @InjectMocks
+    AssertionWsSecurityProcessor assertionWsSecurityProcessor = new AssertionWsSecurityProcessor();
+    @InjectMocks
     JmsEndpointDependencyProcessor jdbcDependencyProcessor = new JmsEndpointDependencyProcessor();
     @InjectMocks
     ClusterPropertyDependencyProcessor clusterPropertyDependencyProcessor = new ClusterPropertyDependencyProcessor();
@@ -81,6 +83,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.SECURE_PASSWORD, securePasswordDependencyProcessor)
             .put(Dependency.DependencyType.ASSERTION, assertionDependencyProcessor)
             .put(Dependency.DependencyType.ASSERTION_LOOKUP_TRUSTED_CERTIFICATE, assertionLookupTrustedCertificate)
+            .put(Dependency.DependencyType.ASSERTION_WS_SECURITY, assertionWsSecurityProcessor)
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)

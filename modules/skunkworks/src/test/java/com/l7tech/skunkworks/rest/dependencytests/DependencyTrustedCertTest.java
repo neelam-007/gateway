@@ -122,6 +122,34 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
     }
 
     @Test
+    public void WsSecurityAssertionByNameTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:WsSecurity>\n" +
+                        "            <L7p:RecipientTrustedCertificateName stringValue=\""+trustedCert.getName()+"\"/>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:WsSecurity>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep, trustedCert);
+            }
+        });
+    }
+
+    @Test
     public void NonSoapVerifyXMLElementAssertionByGoidTest() throws Exception {
 
         final String assXml =

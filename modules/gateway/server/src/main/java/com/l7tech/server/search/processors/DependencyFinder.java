@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -216,6 +217,8 @@ public class DependencyFinder {
             }
         } else if (obj instanceof LookupTrustedCertificateAssertion) {
             return com.l7tech.search.Dependency.DependencyType.ASSERTION_LOOKUP_TRUSTED_CERTIFICATE;
+        }  else if (obj instanceof WsSecurity) {
+            return com.l7tech.search.Dependency.DependencyType.ASSERTION_WS_SECURITY;
         }  else if (obj instanceof Assertion) {
             return com.l7tech.search.Dependency.DependencyType.ASSERTION;
         }  else {
