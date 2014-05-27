@@ -158,8 +158,9 @@ public class PublishReverseWebProxyWizardTest {
 
         // encoding
         verify(builder).urlEncode("webAppHost", "webAppHostEncoded", "// ENCODE WEB APP HOST");
-        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.' IN WEB APP HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.'");
         verify(builder).urlEncode("requestHost", "requestHostEncoded", "// ENCODE REQUEST HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "requestHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.'");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "${requestHostEncoded}", "${webAppHostEncoded}", true, "// REWRITE REQUEST QUERY");
@@ -196,8 +197,9 @@ public class PublishReverseWebProxyWizardTest {
 
         // encoding + route
         verify(builder).urlEncode("webAppHost", "webAppHostEncoded", "// ENCODE WEB APP HOST");
-        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.' IN WEB APP HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "webAppHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.'");
         verify(builder).urlEncode("requestHost", "requestHostEncoded", "// ENCODE REQUEST HOST");
+        verify(builder).regex(TargetMessageType.OTHER, "requestHostEncoded", "\\.", "%2E", true, "// ENCODE AND REPLACE '.'");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\{", "%7B", true, "// ENCODE AND REPLACE '{' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "\\}", "%7D", true, "// ENCODE AND REPLACE '}' IN QUERY");
         verify(builder).regex(TargetMessageType.OTHER, "query", "${requestHostEncoded}", "${webAppHostEncoded}", true, "// REWRITE REQUEST QUERY");

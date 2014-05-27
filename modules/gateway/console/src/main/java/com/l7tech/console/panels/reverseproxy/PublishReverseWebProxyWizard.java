@@ -58,7 +58,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String REWRITE_RESPONSE_COMMENT = "// REWRITE RESPONSE BODY";
     private static final String ENCODE_WEB_APP_HOST_COMMENT = "// ENCODE WEB APP HOST";
     private static final String ENCODE_REQUEST_HOST = "// ENCODE REQUEST HOST";
-    private static final String ENCODE_DOT_COMMENT = "// ENCODE AND REPLACE '.' IN WEB APP HOST";
+    private static final String ENCODE_DOT_COMMENT = "// ENCODE AND REPLACE '.'";
     private static final String ENCODE_OPEN_CURLY_COMMENT = "// ENCODE AND REPLACE '{' IN QUERY";
     private static final String ENCODE_CLOSE_CURLY_COMMENT = "// ENCODE AND REPLACE '}' IN QUERY";
     private static final String AUTHORIZATION_COMMENT = "// AUTHORIZATION";
@@ -214,11 +214,12 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
 
     private static void encodeSpecialCharacters(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
-            // encode '.'
+            // encode web app host, including '.'
             builder.urlEncode(WEB_APP_HOST, WEB_APP_HOST_ENCODED, ENCODE_WEB_APP_HOST_COMMENT)
                     .regex(OTHER, WEB_APP_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
-            // encode request host : port
-            builder.urlEncode(REQUEST_HOST, REQUEST_HOST_ENCODED, ENCODE_REQUEST_HOST);
+            // encode request host : port, including '.'
+            builder.urlEncode(REQUEST_HOST, REQUEST_HOST_ENCODED, ENCODE_REQUEST_HOST)
+                    .regex(OTHER, REQUEST_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
             // encode '{' and '}'
             builder.regex(OTHER, QUERY, "\\{", "%7B", true, ENCODE_OPEN_CURLY_COMMENT)
                     .regex(OTHER, QUERY, "\\}", "%7D", true, ENCODE_CLOSE_CURLY_COMMENT);
