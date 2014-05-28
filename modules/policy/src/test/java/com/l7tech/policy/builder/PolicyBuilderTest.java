@@ -195,11 +195,12 @@ public class PolicyBuilderTest {
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:Regex>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
                 "            <L7p:Regex stringValue=\"foo\"/>\n" +
                 "        </L7p:Regex>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
-        builder.regex(TargetMessageType.REQUEST, null, "foo", null, true, null);
+        builder.regex(TargetMessageType.REQUEST, null, "foo", null, false, true, null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
@@ -209,13 +210,14 @@ public class PolicyBuilderTest {
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:Regex>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
                 "            <L7p:Regex stringValue=\"foo\"/>\n" +
                 "            <L7p:Replace booleanValue=\"true\"/>\n" +
                 "            <L7p:Replacement stringValue=\"bar\"/>\n" +
                 "        </L7p:Regex>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
-        builder.regex(TargetMessageType.REQUEST, null, "foo", "bar", true, null);
+        builder.regex(TargetMessageType.REQUEST, null, "foo", "bar", false, true, null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
@@ -225,12 +227,13 @@ public class PolicyBuilderTest {
                 "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <L7p:Regex>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
                 "            <L7p:Enabled booleanValue=\"false\"/>\n" +
                 "            <L7p:Regex stringValue=\"foo\"/>\n" +
                 "        </L7p:Regex>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
-        builder.regex(TargetMessageType.REQUEST, null, "foo", null, false, null);
+        builder.regex(TargetMessageType.REQUEST, null, "foo", null, false, false, null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
@@ -248,11 +251,12 @@ public class PolicyBuilderTest {
                 "                    </L7p:entry>\n" +
                 "                </L7p:Properties>\n" +
                 "            </L7p:AssertionComment>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
                 "            <L7p:Regex stringValue=\"foo\"/>\n" +
                 "        </L7p:Regex>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
-        builder.regex(TargetMessageType.REQUEST, null, "foo", null, true, "// LOOK FOR FOO");
+        builder.regex(TargetMessageType.REQUEST, null, "foo", null, false, true, "// LOOK FOR FOO");
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
@@ -271,13 +275,31 @@ public class PolicyBuilderTest {
                 "        </L7p:Regex>\n" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
-        builder.regex(TargetMessageType.OTHER, "otherMsg", "foo", "bar", true, null);
+        builder.regex(TargetMessageType.OTHER, "otherMsg", "foo", "bar", false, true, null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void regexOtherTargetTypeWithNullTargetName() {
-        builder.regex(TargetMessageType.OTHER, null, "foo", "bar", true, null);
+        builder.regex(TargetMessageType.OTHER, null, "foo", "bar", false, true, null);
+    }
+
+    @Test
+    public void regexCaseInsensitive() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:Regex>\n" +
+                "            <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "            <L7p:CaseInsensitive booleanValue=\"true\"/>\n" +
+                "            <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            <L7p:Replace booleanValue=\"true\"/>\n" +
+                "            <L7p:Replacement stringValue=\"bar\"/>\n" +
+                "        </L7p:Regex>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        builder.regex(TargetMessageType.REQUEST, null, "foo", "bar", true, true, null);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
     @Test

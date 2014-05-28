@@ -42,6 +42,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String $_QUERY = "${" + QUERY + "}";
     private static final String $_WEB_APP_HOST_ENCODED = "${" + WEB_APP_HOST_ENCODED + "}";
     private static final String $_WEB_APP_HOST = "${" + WEB_APP_HOST + "}";
+    private static final String $_REQUEST_HOST = "${" + REQUEST_HOST + "}";
     private static final String $_REQUEST_HOST_ENCODED = "${" + REQUEST_HOST_ENCODED + "}";
     private static final String $_REQUEST_URL_HOST = "${request.url.host}";
     private static final String $_REQUEST_URL_PORT = "${request.url.port}";
@@ -55,6 +56,8 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String REWRITE_REQ_COOKIE_DOMAINS_COMMENT = "// REWRITE REQUEST COOKIE DOMAINS";
     private static final String REWRITE_RESP_COOKIE_DOMAINS_COMMENT = "// REWRITE RESPONSE COOKIE DOMAINS";
     private static final String REWRITE_LOCATION_COMMENT = "// REWRITE LOCATION HEADER";
+    private static final String REWRITE_REQUEST_COMMENT = "// REWRITE REQUEST BODY";
+    private static final String REWRITE_ENCODED_REQUEST_COMMENT = "// REWRITE ENCODED REQUEST BODY";
     private static final String REWRITE_RESPONSE_COMMENT = "// REWRITE RESPONSE BODY";
     private static final String ENCODE_WEB_APP_HOST_COMMENT = "// ENCODE WEB APP HOST";
     private static final String ENCODE_REQUEST_HOST = "// ENCODE REQUEST HOST";
@@ -145,6 +148,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         setConstants(config, builder);
         encodeSpecialCharacters(config, builder);
         rewriteQuery(config, builder);
+        rewriteRequestBody(config, builder);
         handleRequestCookies(config, builder);
         // route to web app
         final String protocol = config.isUseHttps() ? "https" : "http";
@@ -155,9 +159,16 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         rewriteResponseBody(config, builder);
     }
 
+    private static void rewriteRequestBody(final ReverseWebProxyConfig config, final PolicyBuilder builder) {
+        builder.regex(REQUEST, null, $_REQUEST_HOST, $_WEB_APP_HOST, true, config.isRewriteRequestContent(), REWRITE_REQUEST_COMMENT);
+        if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
+            builder.regex(REQUEST, null, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, config.isRewriteRequestContent(), REWRITE_ENCODED_REQUEST_COMMENT);
+        }
+    }
+
     private static void rewriteQuery(final ReverseWebProxyConfig config, final PolicyBuilder builder) {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
-            builder.regex(OTHER, QUERY, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, REWRITE_REQ_QUERY);
+            builder.regex(OTHER, QUERY, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, true, REWRITE_REQ_QUERY);
         }
     }
 
@@ -183,7 +194,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
             if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT && !mayContainPort(config)) {
                 regex = regex + OPTIONAL_PORT_80;
             }
-            builder.regex(RESPONSE, null, regex, $_HOST_AND_PORT, config.isRewriteResponseContent(),
+            builder.regex(RESPONSE, null, regex, $_HOST_AND_PORT, true, config.isRewriteResponseContent(),
                     REWRITE_RESPONSE_COMMENT);
         }
     }
@@ -216,13 +227,13 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
             // encode web app host, including '.'
             builder.urlEncode(WEB_APP_HOST, WEB_APP_HOST_ENCODED, ENCODE_WEB_APP_HOST_COMMENT)
-                    .regex(OTHER, WEB_APP_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
+                    .regex(OTHER, WEB_APP_HOST_ENCODED, "\\.", "%2E", true, true, ENCODE_DOT_COMMENT);
             // encode request host : port, including '.'
             builder.urlEncode(REQUEST_HOST, REQUEST_HOST_ENCODED, ENCODE_REQUEST_HOST)
-                    .regex(OTHER, REQUEST_HOST_ENCODED, "\\.", "%2E", true, ENCODE_DOT_COMMENT);
+                    .regex(OTHER, REQUEST_HOST_ENCODED, "\\.", "%2E", true, true, ENCODE_DOT_COMMENT);
             // encode '{' and '}'
-            builder.regex(OTHER, QUERY, "\\{", "%7B", true, ENCODE_OPEN_CURLY_COMMENT)
-                    .regex(OTHER, QUERY, "\\}", "%7D", true, ENCODE_CLOSE_CURLY_COMMENT);
+            builder.regex(OTHER, QUERY, "\\{", "%7B", true, true, ENCODE_OPEN_CURLY_COMMENT)
+                    .regex(OTHER, QUERY, "\\}", "%7D", true, true, ENCODE_CLOSE_CURLY_COMMENT);
         }
     }
 

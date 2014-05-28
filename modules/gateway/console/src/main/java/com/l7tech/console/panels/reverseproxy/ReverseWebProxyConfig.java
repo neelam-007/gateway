@@ -15,6 +15,7 @@ public class ReverseWebProxyConfig {
     private WebApplicationType webAppType = WebApplicationType.SHAREPOINT;
     private boolean rewriteLocationHeader = true;
     private boolean rewriteCookies = true;
+    private boolean rewriteRequestContent = true;
     private boolean rewriteResponseContent = true;
     private boolean useHttps;
     private String htmlTagsToRewrite;
@@ -69,6 +70,14 @@ public class ReverseWebProxyConfig {
 
     public void setRewriteCookies(final boolean rewriteCookies) {
         this.rewriteCookies = rewriteCookies;
+    }
+
+    public boolean isRewriteRequestContent() {
+        return rewriteRequestContent;
+    }
+
+    public void setRewriteRequestContent(final boolean rewriteRequestContent) {
+        this.rewriteRequestContent = rewriteRequestContent;
     }
 
     public boolean isRewriteResponseContent() {

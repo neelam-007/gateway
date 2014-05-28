@@ -201,22 +201,26 @@ public class PolicyBuilder {
      * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
      * @param regexPattern           the regex pattern to match.
      * @param replacement            the optional replacement if the regex matches.
+     * @param caseInsensitive        true if the matching should be case-insensitive.
      * @param enable                 false if the appended policy should be disabled.
      * @param comment                an optional comment to add to the regex.
      * @return the PolicyBuilder.
      */
     public PolicyBuilder regex(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
-                               @NotNull final String regexPattern, @Nullable final String replacement,
+                               @NotNull final String regexPattern, @Nullable final String replacement, final boolean caseInsensitive,
                                final boolean enable, @Nullable final String comment) {
         validateTarget(targetMessage, otherTargetMessageName);
         final Regex regex = new Regex();
-        regex.setTarget(targetMessage);
-        regex.setAutoTarget(otherTargetMessageName == null);
+        if (targetMessage != TargetMessageType.REQUEST) {
+            regex.setTarget(targetMessage);
+        }
+        regex.setAutoTarget(false);
         regex.setOtherTargetMessageVariable(otherTargetMessageName);
         regex.setRegex(regexPattern);
         regex.setPatternContainsVariables(Syntax.isAnyVariableReferenced(regexPattern));
         regex.setReplace(replacement != null);
         regex.setReplacement(replacement);
+        regex.setCaseInsensitive(caseInsensitive);
         regex.setEnabled(enable);
         addRightComment(comment, regex);
         appendAssertion(regex);

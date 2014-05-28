@@ -21,12 +21,14 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
     private JLabel gatewayUrlLabel;
     private JCheckBox locationCheckBox;
     private JCheckBox cookieCheckBox;
-    private JRadioButton allContentRadio;
+    private JRadioButton allRespContentRadio;
     private JRadioButton specifiedTagsRadio;
-    private JRadioButton noneRadioButton;
+    private JRadioButton noneRespRadioButton;
     private JTextField specifiedTagsTextField;
     private JComboBox platformComboBox;
     private JCheckBox httpsCheckBox;
+    private JRadioButton allReqRadioButton;
+    private JRadioButton noneReqRadioButton1;
 
     public ReverseWebProxyConfigurationPanel() {
         super(null);
@@ -56,8 +58,8 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
                 notifyListeners();
             }
         });
-        allContentRadio.addActionListener(changeListener);
-        noneRadioButton.addActionListener(changeListener);
+        allRespContentRadio.addActionListener(changeListener);
+        noneRespRadioButton.addActionListener(changeListener);
         specifiedTagsRadio.addActionListener(changeListener);
         platformComboBox.setModel(new DefaultComboBoxModel(new String[]{ReverseWebProxyConfig.WebApplicationType.SHAREPOINT.getName(), ReverseWebProxyConfig.WebApplicationType.GENERIC.getName()}));
         add(contentPanel);
@@ -93,8 +95,10 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             httpsCheckBox.setSelected(config.isUseHttps());
             locationCheckBox.setSelected(config.isRewriteLocationHeader());
             cookieCheckBox.setSelected(config.isRewriteCookies());
-            allContentRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isBlank(config.getHtmlTagsToRewrite()));
-            noneRadioButton.setSelected(!config.isRewriteResponseContent());
+            allReqRadioButton.setSelected(config.isRewriteRequestContent());
+            noneReqRadioButton1.setSelected(!config.isRewriteRequestContent());
+            allRespContentRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isBlank(config.getHtmlTagsToRewrite()));
+            noneRespRadioButton.setSelected(!config.isRewriteResponseContent());
             specifiedTagsRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isNotBlank(config.getHtmlTagsToRewrite()));
             enableDisable();
         }
@@ -111,7 +115,8 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             config.setUseHttps(httpsCheckBox.isSelected());
             config.setRewriteLocationHeader(locationCheckBox.isSelected());
             config.setRewriteCookies(cookieCheckBox.isSelected());
-            config.setRewriteResponseContent(allContentRadio.isSelected() || specifiedTagsRadio.isSelected());
+            config.setRewriteRequestContent(allReqRadioButton.isSelected());
+            config.setRewriteResponseContent(allRespContentRadio.isSelected() || specifiedTagsRadio.isSelected());
             config.setHtmlTagsToRewrite(specifiedTagsTextField.getText().trim());
         }
     }
