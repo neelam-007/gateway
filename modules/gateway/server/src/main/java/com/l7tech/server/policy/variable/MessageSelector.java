@@ -118,9 +118,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String SOAP_ENVELOPE_URI = "soap.envelopens";
     private static final String SOAP_VERSION = "soap.version";
 
-    private static final String JMS_HEADER_PREFIX = "jms.header.";
-    private static final String JMS_HEADERNAMES = "jms.headernames";
-    private static final String JMS_ALLHEADERVALUES = "jms.allheadervalues";
+    private static final String JMS_PROPERTY_PREFIX = "jms.property.";
+    private static final String JMS_PROPERTYNAMES = "jms.propertynames";
+    private static final String JMS_ALLPROPERTYVALUES = "jms.allpropertyvalues";
 
     private static final String FTP_REPLY_CODE = "ftp.replycode";
     private static final String FTP_REPLY_TEXT = "ftp.replytext";
@@ -233,12 +233,12 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = select(new AuthenticatedUserGetter<>(AUTH_USER_DNS, true, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
         } else if (lname.startsWith(AUTH_USER_DN)) {
             selector = select(new AuthenticatedUserGetter<>(AUTH_USER_DN, false, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
-        } else if (lname.startsWith(JMS_HEADER_PREFIX)) {
-            selector = jmsHeaderSelector;
-        } else if (lname.startsWith(JMS_HEADERNAMES)) {
-            selector = jmsHeaderNamesSelector;
-        } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
-            selector = jmsAllHeaderValuesSelector;
+        } else if (lname.startsWith(JMS_PROPERTY_PREFIX)) {
+            selector = jmsPropertySelector;
+        } else if (lname.startsWith(JMS_PROPERTYNAMES)) {
+            selector = jmsPropertyNamesSelector;
+        } else if (lname.startsWith(JMS_ALLPROPERTYVALUES)) {
+            selector = jmsAllPropertyValuesSelector;
         } else if (lname.startsWith(COMMAND_PARAMETER_PREFIX)) {
             selector = commandParameterSelector;
         } else if (lname.startsWith(COMMAND_TYPE_NAME)) {
@@ -693,7 +693,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     }
 
     private static final MessageAttributeSelector httpHeaderNamesSelector = new HeaderNamesSelector(HeadersKnob.HEADER_TYPE_HTTP);
-    private static final MessageAttributeSelector jmsHeaderNamesSelector = new HeaderNamesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+    private static final MessageAttributeSelector jmsPropertyNamesSelector = new HeaderNamesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
 
     private static class HeaderNamesSelector implements MessageAttributeSelector {
         final String headerType;
@@ -731,7 +731,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
-    private static final MessageAttributeSelector jmsAllHeaderValuesSelector =
+    private static final MessageAttributeSelector jmsAllPropertyValuesSelector =
             new AllHeaderValuesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY) {
         @Override
         protected String getFormattedValueString(final String[] headerValues, final Syntax syntax,
@@ -801,7 +801,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
-    private static final HeaderSelector jmsHeaderSelector = new HeaderSelector(JMS_HEADER_PREFIX) {
+    private static final HeaderSelector jmsPropertySelector = new HeaderSelector(JMS_PROPERTY_PREFIX) {
         @Override
         protected Selection createSelection(final String headerName, final HeadersKnob headersKnob) {
             String[] values = headersKnob.getHeaderValues(headerName, JmsKnob.HEADER_TYPE_JMS_PROPERTY);

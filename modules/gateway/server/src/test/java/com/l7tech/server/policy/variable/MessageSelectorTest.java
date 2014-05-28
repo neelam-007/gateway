@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -46,7 +45,7 @@ public class MessageSelectorTest {
     private Message message;
     private DefaultSyntaxErrorHandler handler;
 
-    private String messageWithBinaryMimePart =
+    private static final String messageWithBinaryMimePart =
             "UFVUIC9wdXR0ZXIgSFRUUC8xLjENCkFjY2VwdC1FbmNvZGluZzogZ3ppcCxkZWZsYXRlDQpDb250\n" +
                     "ZW50LVR5cGU6IG11bHRpcGFydC9mb3JtLWRhdGE7IGJvdW5kYXJ5PSItLS0tPV9QYXJ0XzBfMjg3\n" +
                     "NzQ1NDU5LjEzNDU3NjYxNDMzMzEiDQpNSU1FLVZlcnNpb246IDEuMA0KVXNlci1BZ2VudDogSmFr\n" +
@@ -73,7 +72,7 @@ public class MessageSelectorTest {
                     "CGfOoMRBxcJR3u7HewnBsfn+wt7yofnptzLY3WFS6TampAgNCi0tLS0tLT1fUGFydF8wXzI4Nzc0\n" +
                     "NTQ1OS4xMzQ1NzY2MTQzMzMxLS0NCg==";
 
-    private static String base64EncodedMimePart =
+    private static final String base64EncodedMimePart =
             "MIIDBjCCAe6gAwIBAgIIQl0Hp2IqR3UwDQYJKoZIhvcNAQEMBQAwITEQMA4GA1UE" +
                     "ERMHYWJjZGVmZzENMAsGA1UEAxMEZnJlZDAeFw0xMjA0MDUyMTE0MzNaFw0xNzA0" +
                     "MDQyMTE0MzNaMCExEDAOBgNVBBETB2FiY2RlZmcxDTALBgNVBAMTBGZyZWQwggEi" +
@@ -112,17 +111,24 @@ public class MessageSelectorTest {
         Map<String, Object> vars = new HashMap<>();
         vars.put("request", message);
 
+        byte partBytes[];
+
         PartInfo part = (PartInfo) ExpandVariables.processSingleVariableAsObject("${request.parts.2}", vars, audit);
-        InputStream is = part.getInputStream(false);
-        byte partBytes[] = part.getBytesIfAlreadyAvailable();
-        assertTrue(HexUtils.encodeBase64(partBytes, true).equals(base64EncodedMimePart));
+
+        if (part != null) {
+            part.getInputStream(false);
+            partBytes = part.getBytesIfAlreadyAvailable();
+            assertTrue(HexUtils.encodeBase64(partBytes, true).equals(base64EncodedMimePart));
+        } else {
+            fail();
+        }
     }
 
     @Test
     public void selectJmsHeaderNames() {
         addJmsProperties();
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.propertynames", handler, false);
 
         final String[] selectedValue = (String[]) selection.getSelectedValue();
         final List<String> asList = Arrays.asList(selectedValue);
@@ -135,7 +141,7 @@ public class MessageSelectorTest {
     @Test
     public void selectJmsHeaderNamesNone() {
         message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.propertynames", handler, false);
 
         final String[] selectedValue = (String[]) selection.getSelectedValue();
         assertEquals(0, selectedValue.length);
@@ -145,7 +151,7 @@ public class MessageSelectorTest {
     public void selectJmsHeader() {
         addJmsProperties();
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.h2", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.h2", handler, false);
 
         final String selectedValue = (String) selection.getSelectedValue();
         assertEquals("h2value", selectedValue);
@@ -153,7 +159,7 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderNotFound() {
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.h4", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.h4", handler, false);
 
         assertNull(selection);
     }
@@ -165,7 +171,7 @@ public class MessageSelectorTest {
         headersKnob.addHeader("propertyName", "secondValue", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("propertyName", "expectedValue", HEADER_TYPE_JMS_PROPERTY);
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allpropertyvalues", handler, false);
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
         final List<Object> valueList = Arrays.asList(selectedValue);
@@ -178,7 +184,7 @@ public class MessageSelectorTest {
     @Test
     public void selectJmsHeaderValuesNone() {
         message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allpropertyvalues", handler, false);
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
         assertEquals(0, selectedValue.length);
@@ -509,7 +515,7 @@ public class MessageSelectorTest {
         headersKnob.addHeader("foo", "bar", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("foo", "anotherBar", HEADER_TYPE_JMS_PROPERTY);
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.foo", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.foo", handler, false);
 
         // returns the last only
         assertEquals("anotherBar", selection.getSelectedValue());
