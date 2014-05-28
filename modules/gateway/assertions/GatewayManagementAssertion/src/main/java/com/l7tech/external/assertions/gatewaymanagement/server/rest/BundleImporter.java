@@ -26,13 +26,15 @@ public class BundleImporter {
      * Imports the bundle
      * @param bundle The bundle to import
      * @param test if true the bundle import is tested, no changes will be persisted
+     * @param active True to activate the updated services and policies.
+     * @param versionComment The comment to set for updated/created services and policies
      * @return Returns the resulting mappings for the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
     @NotNull
-    public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test) throws ResourceFactory.InvalidResourceException {
+    public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test, final boolean active, final String versionComment) throws ResourceFactory.InvalidResourceException {
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle).getEntity();
-        List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test);
+        List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
         return bundleTransformer.updateMappings(bundle.getMappings(), mappingsPerformed);
     }
 }

@@ -184,21 +184,27 @@ public class BundleResource {
      *
      * @param test   If true the bundle import will be tested no changes will be made to the gateway.,
      * @param bundle The bundle to import
+     * @param active True to activate the updated services and policies.
+     * @param versionComment The comment to set for updated/created services and policies
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test, final Bundle bundle) throws Exception {
+    public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
+                                 @QueryParam("active") @DefaultValue("false") final boolean active,
+                                 @QueryParam("versionComment") final String versionComment,
+                                 final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
-        // todo: why this works? create new audit context to collect audits and outputs when operation commits. Move to server.
+
         AuditContextUtils.setSystem(true);
         List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<List<Mapping>>() {
             @Override
             public List<Mapping> call() throws Exception {
-                return bundleImporter.importBundle(bundle, test);
+                return bundleImporter.importBundle(bundle, test, active, versionComment);
             }
         });
         AuditContextUtils.setSystem(false);
+
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .setContent(ManagedObjectFactory.createMappings(mappings))

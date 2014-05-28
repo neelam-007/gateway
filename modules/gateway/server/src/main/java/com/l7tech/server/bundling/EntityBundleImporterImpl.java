@@ -17,9 +17,12 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
@@ -64,6 +67,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private IdentityProviderFactory identityProviderFactory;
     @Inject
     private GenericEntityManager genericEntityManager;
+    @Inject
+    private PolicyManager policyManager;
+    @Inject
+    private ServiceManager serviceManager;
+    @Inject
+    private PolicyVersionManager policyVersionManager;
 
     /**
      * This will import the given entity bundle. If test is true or there is an error during bundle import nothing is
@@ -72,10 +81,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param bundle The bundle to import
      * @param test   if true the bundle import will be performed but rolled back afterwards and the results of the
      *               import will be returned. If false the bundle import will be committed it if is successful.
+     * @param active True to activate the updated services and policies.
+     * @param versionComment The comment to set for updated/created services and policies
      * @return The mapping results of the bundle import.
      */
     @NotNull
-    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test) {
+    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean active, final String versionComment) {
         if (!test) {
             logger.log(Level.INFO, "Importing bundle!");
         } else {
@@ -120,12 +131,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, active,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, active,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -147,7 +158,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity.
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, null);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, null, active,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -207,6 +218,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param mapping         The mapping instructions for the entity to create or update
      * @param resourceMapping The existing mappings that have been performed
      * @param existingEntity  The existing entity for update, null for create
+     * @param active True to activate the updated services and policies.
+     * @param versionComment The comment to set for updated/created services and policies
      * @return The entity header of the entity that was created or updated.
      * @throws ObjectModelException
      * @throws CannotReplaceDependenciesException
@@ -214,7 +227,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws ConstraintViolationException
      */
     @NotNull
-    private EntityHeader createOrUpdateResource( final EntityContainer entityContainer, @Nullable final Goid id, @NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final Entity existingEntity) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    private EntityHeader createOrUpdateResource( final EntityContainer entityContainer,
+                                                 @Nullable final Goid id,
+                                                 @NotNull final EntityMappingInstructions mapping,
+                                                 @NotNull final Map<EntityHeader, EntityHeader> resourceMapping,
+                                                 final Entity existingEntity,
+                                                 final boolean active,
+                                                 final String versionComment) throws ObjectModelException, CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         if (entityContainer == null) {
             throw new IllegalArgumentException("Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
         }
@@ -286,6 +305,41 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 genericEntityManager.update((GenericEntity)baseEntity);
                                 importedID = id;
                             }
+                        }else if (baseEntity instanceof Policy){
+                            boolean newEntity = true;
+                            if (existingEntity == null) {
+                                if (id == null) {
+                                    importedID = policyManager.save((Policy)baseEntity);
+                                } else {
+                                    policyManager.save(id, (Policy)baseEntity);
+                                    importedID = id;
+                                }
+                                policyManager.createRoles((Policy)baseEntity);
+                            } else {
+                                baseEntity.setGoid(id);
+                                baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
+                                policyManager.update((Policy) baseEntity);
+                                newEntity = false;
+                                importedID = id;
+                            }
+                            policyVersionManager.checkpointPolicy((Policy)baseEntity,active,versionComment,newEntity);
+                        }else if (baseEntity instanceof PublishedService){
+                            boolean newEntity = true;
+                            if (existingEntity == null) {
+                                if (id == null) {
+                                    importedID = serviceManager.save((PublishedService)baseEntity);
+                                } else {
+                                    serviceManager.save(id, (PublishedService)baseEntity);
+                                    importedID = id;
+                                }
+                            } else {
+                                baseEntity.setGoid(id);
+                                baseEntity.setVersion(((PersistentEntity) existingEntity).getVersion());
+                                serviceManager.update((PublishedService) baseEntity);
+                                newEntity = false;
+                                importedID = id;
+                            }
+                            policyVersionManager.checkpointPolicy(((PublishedService) baseEntity).getPolicy(),active,versionComment,newEntity);
                         }else{
                             if (existingEntity == null) {
                                 if (id == null) {

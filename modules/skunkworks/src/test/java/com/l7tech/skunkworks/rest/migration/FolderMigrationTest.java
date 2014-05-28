@@ -343,6 +343,85 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
     }
 
     @Test
+    public void testImportNewPolicyActivateWithComment() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + sourceChild1FolderItem.getId() + "?includeRequestFolder=true", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 2 item. A policy, a folder", 2, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
+        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
+
+        Assert.assertEquals("The bundle should have 3 mappings. a policy, 2 folder", 3, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
+        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
+
+        bundleItem.getContent().getMappings().get(0).setTargetId(targetChild1FolderItem.getId());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle?active=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+
+        // verify that new policy is activated
+        response = getTargetEnvironment().processRequest("policies/"+policyItem.getId() + "/versions", "", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<PolicyVersionMO> policyVersionList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(1,policyVersionList.getContent().size());
+        PolicyVersionMO version = policyVersionList.getContent().get(0).getContent();
+        Assert.assertEquals(true,version.isActive());
+        Assert.assertEquals("Comment",version.getComment());
+    }
+
+    @Test
+    public void testImportNewPolicyDefaultSettings() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + sourceChild1FolderItem.getId() + "?includeRequestFolder=true", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 2 item. A policy, a folder", 2, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
+        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
+
+        Assert.assertEquals("The bundle should have 3 mappings. a policy, 2 folder", 3, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
+        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
+        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
+
+        bundleItem.getContent().getMappings().get(0).setTargetId(targetChild1FolderItem.getId());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+
+        // verify that new policy is activated
+        response = getTargetEnvironment().processRequest("policies/"+policyItem.getId() + "/versions", "", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<PolicyVersionMO> policyVersionList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(1,policyVersionList.getContent().size());
+        PolicyVersionMO version = policyVersionList.getContent().get(0).getContent();
+        Assert.assertEquals(false,version.isActive());
+    }
+
+    @Test
     public void testImportNewFolderWith2Folders() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + sourceParentFolderItem.getId(), HttpMethod.GET, null, "");
         assertOkResponse(response);

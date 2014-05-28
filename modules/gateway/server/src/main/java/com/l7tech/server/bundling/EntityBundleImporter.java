@@ -17,8 +17,10 @@ public interface EntityBundleImporter {
      * @param bundle The bundle to import
      * @param test   if true the bundle import will be performed but rolled back afterwards and the results of the
      *               import will be returned. If false the bundle import will be committed it if is successful.
+     * @param active True to activate the updated services and policies.
+     * @param versionComment The comment to set for updated/created services and policies
      * @return The mapping results of the bundle import.
      */
     @NotNull
-    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test);
+    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean active, final String versionComment);
 }

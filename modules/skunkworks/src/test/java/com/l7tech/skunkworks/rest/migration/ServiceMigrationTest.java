@@ -174,6 +174,75 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
     }
 
     @Test
+    public void testImportNewActivateWithComment() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/service/" + serviceItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 1 item. A service", 1, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 2 mappings. A folder, a service", 2, bundleItem.getContent().getMappings().size());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle?active=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+
+        validate(mappings);
+
+        // verify that new policy is activated
+        response = getTargetEnvironment().processRequest("services/"+ serviceItem.getId() + "/versions", "", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<PolicyVersionMO> policyVersionList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(1,policyVersionList.getContent().size());
+        PolicyVersionMO version = policyVersionList.getContent().get(0).getContent();
+        Assert.assertEquals(true,version.isActive());
+        Assert.assertEquals("Comment",version.getComment());
+    }
+
+    @Test
+    public void testImportNewDefaultSettings() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/service/" + serviceItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 1 item. A service", 1, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 2 mappings. A folder, a service", 2, bundleItem.getContent().getMappings().size());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mappings after the import", 2, mappings.getContent().getMappings().size());
+
+        validate(mappings);
+
+        // verify that new policy is activated
+        response = getTargetEnvironment().processRequest("services/"+ serviceItem.getId() + "/versions", "", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        ItemsList<PolicyVersionMO> policyVersionList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(1,policyVersionList.getContent().size());
+        PolicyVersionMO version = policyVersionList.getContent().get(0).getContent();
+        Assert.assertEquals(false,version.isActive());
+    }
+
+    @Test
     public void testImportNewFolder() throws Exception {
         FolderMO folderMO = ManagedObjectFactory.createFolder();
         folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());

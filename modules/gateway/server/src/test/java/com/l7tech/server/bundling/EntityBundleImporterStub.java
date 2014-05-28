@@ -8,7 +8,7 @@ import java.util.List;
 public class EntityBundleImporterStub implements EntityBundleImporter {
     @NotNull
     @Override
-    public List<EntityMappingResult> importBundle(@NotNull EntityBundle bundle, boolean test) {
+    public List<EntityMappingResult> importBundle(@NotNull EntityBundle bundle, boolean test, final boolean active, final String versionComment) {
         throw new NotImplementedException();
     }
 }
