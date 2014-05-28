@@ -1977,21 +1977,6 @@
              </object>
             </void>
             <void method="add">
-             <object class="com.l7tech.policy.assertion.BridgeRoutingAssertion">
-              <void property="protectedServiceUrl">
-               <string>http://hugh/ACMEWarehouseWS/Service1.asmx</string>
-              </void>
-              <void property="requestParamRules">
-               <void property="rules">
-                <object idref="HttpPassthroughRuleArray0"/>
-               </void>
-              </void>
-              <void property="samlAssertionVersion">
-               <int>2</int>
-              </void>
-             </object>
-            </void>
-            <void method="add">
              <object class="com.l7tech.policy.assertion.alert.EmailAlertAssertion">
               <void property="targetEmailAddress">
                <string>test</string>

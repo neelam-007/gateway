@@ -1,4 +1,4 @@
-package com.l7tech.server.policy.assertion.transport;
+package com.l7tech.skunkworks;
 
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.HttpHeader;
@@ -12,6 +12,8 @@ import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpRequestKnobStub;
 import static org.junit.Assert.assertEquals;
+
+import com.l7tech.server.policy.assertion.transport.ServerRemoteDomainIdentityInjection;
 import org.junit.Test;
 
 import java.util.ArrayList;

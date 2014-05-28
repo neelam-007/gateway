@@ -2,7 +2,7 @@
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  */
 
-package com.l7tech.server.policy;
+package com.l7tech.skunkworks;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
@@ -29,6 +29,8 @@ import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyService;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;

@@ -2,7 +2,6 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.security.cert.TrustedCert;
@@ -142,20 +141,7 @@ public class TrustedCertReference extends ExternalReference {
     @Override
     protected boolean localizeAssertion(final @Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
-            if (assertionToLocalize instanceof BridgeRoutingAssertion) {
-                BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;
-                if ( goid != null && Goid.equals(goid, bra.getServerCertificateGoid()) ) {
-                    if (localizeType == LocalizeAction.REPLACE) {
-                        // replace server cert oid
-                        bra.setServerCertificateGoid(localCertId);
-                        logger.info("The server certificate goid of the imported bridge routing assertion has been changed " +
-                                    "from " + goid + " to " + localCertId);
-                    } else if (localizeType == LocalizeAction.DELETE) {
-                        logger.info("Deleted this assertion from the tree.");
-                        return false;
-                    }
-                }
-            } else if ( assertionToLocalize instanceof UsesEntities ) {
+            if ( assertionToLocalize instanceof UsesEntities ) {
                 UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
                 for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
                     if ( entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.equalsId(goid) ) {

@@ -66,12 +66,6 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     @Deprecated 
     public static final String VAR_SERVICE_URL = "service.url";
 
-    // TODO WARNING
-    // TODO WARNING
-    // TODO WARNING : If you add properties, update the copyFrom method
-    // TODO WARNING
-    // TODO WARNING
-
     protected String protectedServiceUrl;
     protected String login;
     protected String password;
@@ -128,12 +122,6 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     private boolean forceIncludeRequestBody = false;
     private String httpMethodAsString;
 
-    // TODO WARNING
-    // TODO WARNING
-    // TODO WARNING : If you add properties, update the copyFrom method
-    // TODO WARNING
-    // TODO WARNING
-
     public HttpRoutingAssertion() {
         this(null, null, null, null);
     }
@@ -145,55 +133,6 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm) {
         this(protectedServiceUrl, login, password, realm, DEFAULT_MAX_CONNECTIONS_PER_HOST);
-    }
-
-    /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
-    protected void copyFrom(HttpRoutingAssertion source) {
-        super.copyFrom(source);
-        this.setCustomIpAddresses(source.getCustomIpAddresses());
-        this.setFailoverStrategyName(source.getFailoverStrategyName());
-        this.setFailOnErrorStatus(source.isFailOnErrorStatus());
-        this.setFollowRedirects(source.isFollowRedirects());
-        this.setLogin(source.getLogin());
-        this.setMaxConnections(source.getMaxConnections());
-        this.setPassword(source.getPassword());
-        this.setProtectedServiceUrl(source.getProtectedServiceUrl());
-        this.setPassthroughHttpAuthentication(source.isPassthroughHttpAuthentication());
-        this.setRealm(source.getRealm());
-        this.setUserAgent(source.getUserAgent());
-        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
-        this.setNtlmHost(source.getNtlmHost());
-        this.setConnectionTimeout(source.getConnectionTimeout());
-        this.setTimeout(source.getTimeout());
-        this.setMaxRetries(source.getMaxRetries());
-        this.setRequestMsgSrc(source.getRequestMsgSrc());
-        this.setRequestHeaderRules(source.getRequestHeaderRules());
-        this.setRequestParamRules(source.getRequestParamRules());
-        this.setResponseMsgDest(source.getResponseMsgDest());
-        this.setResponseSize(source.getResponseSize());
-        this.setResponseHeaderRules(source.getResponseHeaderRules());
-        this.setKrbConfiguredAccount(source.getKrbConfiguredAccount());
-        this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());
-        this.setKrbDelegatedAuthentication(source.isKrbDelegatedAuthentication());
-        this.setKrbUseGatewayKeytab(source.isKrbUseGatewayKeytab());
-        this.setGzipEncodeDownstream(source.isGzipEncodeDownstream());
-        this.setCustomURLs(source.getCustomURLs());
-        this.setKeyAlias(source.getKeyAlias());
-        this.setUsesDefaultKeyStore(source.isUsesDefaultKeyStore());
-        this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
-        this.setHttpMethod(source.getHttpMethod());
-        this.setHttpMethodAsString(source.getHttpMethodAsString());
-        this.setProxyHost(source.getProxyHost());
-        this.setProxyPort(source.getProxyPort());
-        this.setProxyUsername(source.getProxyUsername());
-        this.setProxyPassword(source.getProxyPassword());
-        this.setUseKeepAlives(source.isUseKeepAlives());
-        this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
-        this.setTlsCipherSuites(source.getTlsCipherSuites());
-        this.setTlsVersion(source.getTlsVersion());
-        this.setTlsTrustedCertGoids(source.getTlsTrustedCertGoids());
-        this.setTlsTrustedCertNames(source.getTlsTrustedCertNames());
-        this.setHttpVersion(source.getHttpVersion());
     }
 
     @Override

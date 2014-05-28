@@ -397,19 +397,6 @@ public class WspWriterTest {
     }
 
     @Test
-    public void testBraServerCertOid() throws Exception {
-        BridgeRoutingAssertion bra = new BridgeRoutingAssertion();
-        bra.setServerCertificateGoid(new Goid(0, 232L));
-
-        String xml = WspWriter.getPolicyXml(bra);
-        log.info("Bra with server cert oid: " + xml);
-
-        Assertion got = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
-        assertTrue(got instanceof BridgeRoutingAssertion);
-        assertEquals(((BridgeRoutingAssertion)got).getServerCertificateGoid(), new Goid(0, 232L));
-    }
-
-    @Test
     @BugNumber(4752)
     public void testBug4752SamlVersion() throws Exception {
         RequireWssSaml ass = new RequireWssSaml();

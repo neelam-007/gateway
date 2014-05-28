@@ -287,56 +287,6 @@ public abstract class HttpRoutingIntegrationTest {
         return routeAssertion;
     }
 
-    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders) {
-        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, (HttpPassthroughRule[]) null);
-    }
-
-    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final List<HttpPassthroughRule> responseRules) {
-        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, responseRules.toArray(new HttpPassthroughRule[responseRules.size()]));
-    }
-
-    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean forwardAllResponseHeaders, final HttpPassthroughRule... responseRules) {
-        return createResponseBridgeRouteAssertion(url, false, forwardAllResponseHeaders, responseRules);
-    }
-
-    protected BridgeRoutingAssertion createResponseBridgeRouteAssertion(final String url, final boolean useSsl, final boolean forwardAllResponseHeaders, final HttpPassthroughRule... responseRules) {
-        final BridgeRoutingAssertion bridge = new BridgeRoutingAssertion();
-        bridge.setProtectedServiceUrl(url);
-        bridge.setUseSslByDefault(useSsl);
-        bridge.getResponseHeaderRules().setForwardAll(forwardAllResponseHeaders);
-        if (responseRules != null) {
-            bridge.getResponseHeaderRules().setRules(responseRules);
-        }
-        return bridge;
-    }
-
-    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean useSsl, final boolean forwardAllRequestHeaders, final String responseVar, final HttpPassthroughRule... requestRules) {
-        final BridgeRoutingAssertion bridge = new BridgeRoutingAssertion();
-        bridge.setProtectedServiceUrl(url);
-        bridge.setUseSslByDefault(useSsl);
-        bridge.getRequestHeaderRules().setForwardAll(forwardAllRequestHeaders);
-        if (responseVar != null) {
-            bridge.setResponseMsgDest(responseVar);
-        }
-        if (requestRules != null) {
-            bridge.getRequestHeaderRules().setRules(requestRules);
-        }
-        return bridge;
-    }
-
-    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final HttpPassthroughRule... requestRules) {
-        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, requestRules);
-    }
-
-    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders, final List<HttpPassthroughRule> requestRules) {
-        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, requestRules.toArray(new HttpPassthroughRule[requestRules.size()]));
-    }
-
-
-    protected BridgeRoutingAssertion createBridgeRouteAssertion(final String url, final boolean forwardAllRequestHeaders) {
-        return createBridgeRouteAssertion(url, false, forwardAllRequestHeaders, null, (HttpPassthroughRule[]) null);
-    }
-
     /**
      * Parses headers from the 'all' XML element in the response body.
      */

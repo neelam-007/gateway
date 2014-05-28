@@ -78,7 +78,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private final EventListenerList listenerList = new EventListenerList();
     private final HttpRoutingAssertion assertion;
-    private final boolean bra; // True if this is actually a BridgeRoutingAssertion; some fields are non-functional
     private final HttpRoutingHttpAuthPanel httpAuthPanel;
     private final HttpRoutingSamlAuthPanel samlAuthPanel;
     private final HttpRoutingWindowsIntegratedAuthPanel windowsAuthPanel;
@@ -179,7 +178,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         super(owner, assertion, true);
         inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         this.assertion = assertion;
-        this.bra = this.assertion instanceof BridgeRoutingAssertion;
         this.policy = policy;
         this.wsdl = wsdl;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
@@ -203,8 +201,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         };
 
-        if (!bra)
-            ipListPanel.alsoEnableDiffURLS();
+        ipListPanel.alsoEnableDiffURLS();
 
         urlPanel.setShowManageHttpOptions( false );
         ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
@@ -237,7 +234,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @param listener the PolicyListener
      */
     public void addPolicyListener(PolicyListener listener) {
-        listenerList.add(PolicyListener.class, listener);
+        listenerList.add( PolicyListener.class, listener );
     }
 
     /**
@@ -246,18 +243,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @param listener the PolicyListener
      */
     public void removePolicyListener(PolicyListener listener) {
-        listenerList.remove(PolicyListener.class, listener);
-    }
-
-    /**
-     * Workaround for use by {@link BridgeRoutingAssertionPropertiesDialog}.
-     *
-     * @param a     the surrogate assertion
-     * @since SecureSpan 4.3; because the new request message source needs predecessor context variables
-     */
-    public void setAssertionToUseInSearchForPredecessorVariables(Assertion a) {
-        assertionToUseInSearchForPredecessorVariables = a;
-        populateReqMsgSrcComboBox();
+        listenerList.remove( PolicyListener.class, listener );
     }
 
     /**
@@ -636,49 +622,40 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             requestHttpRulesTableHandler.updateeditState();
         }
 
-        if (bra) {
-            reqParamsAll.setEnabled(false);
-            reqParamsCustomize.setEnabled(false);
-            reqParamsTable.setEnabled(false);
+        requestParamsRulesTableHandler = new HttpParamRuleTableHandler(reqParamsTable, reqParamsAdd,
+                                                                       reqParamsRemove, editReqPmButton,
+                                                                       assertion.getRequestParamRules());
+        tablestate = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (reqParamsCustomize.isSelected()) {
+                    reqParamsTable.setEnabled(true);
+                    requestParamsRulesTableHandler.setEditable(true);
+                    reqParamsAdd.setEnabled(true);
+                    reqParamsRemove.setEnabled(true);
+                    requestParamsRulesTableHandler.updateeditState();
+                } else {
+                    reqParamsTable.setEnabled(false);
+                    requestParamsRulesTableHandler.setEditable(false);
+                    reqParamsAdd.setEnabled(false);
+                    reqParamsRemove.setEnabled(false);
+                    editReqPmButton.setEnabled(false);
+                }
+            }
+        };
+        reqParamsAll.addActionListener(tablestate);
+        reqParamsCustomize.addActionListener(tablestate);
+
+        if (assertion.getRequestParamRules().isForwardAll()) {
+            reqParamsAll.setSelected(true);
             reqParamsAdd.setEnabled(false);
             reqParamsRemove.setEnabled(false);
             editReqPmButton.setEnabled(false);
+            reqParamsTable.setEnabled(false);
+            requestParamsRulesTableHandler.setEditable(false);
         } else {
-            requestParamsRulesTableHandler = new HttpParamRuleTableHandler(reqParamsTable, reqParamsAdd,
-                                                                           reqParamsRemove, editReqPmButton,
-                                                                           assertion.getRequestParamRules());
-            tablestate = new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (reqParamsCustomize.isSelected()) {
-                        reqParamsTable.setEnabled(true);
-                        requestParamsRulesTableHandler.setEditable(true);
-                        reqParamsAdd.setEnabled(true);
-                        reqParamsRemove.setEnabled(true);
-                        requestParamsRulesTableHandler.updateeditState();
-                    } else {
-                        reqParamsTable.setEnabled(false);
-                        requestParamsRulesTableHandler.setEditable(false);
-                        reqParamsAdd.setEnabled(false);
-                        reqParamsRemove.setEnabled(false);
-                        editReqPmButton.setEnabled(false);
-                    }
-                }
-            };
-            reqParamsAll.addActionListener(tablestate);
-            reqParamsCustomize.addActionListener(tablestate);
-
-            if (assertion.getRequestParamRules().isForwardAll()) {
-                reqParamsAll.setSelected(true);
-                reqParamsAdd.setEnabled(false);
-                reqParamsRemove.setEnabled(false);
-                editReqPmButton.setEnabled(false);
-                reqParamsTable.setEnabled(false);
-                requestParamsRulesTableHandler.setEditable(false);
-            } else {
-                reqParamsCustomize.setSelected(true);
-                requestParamsRulesTableHandler.updateeditState();
-            }
+            reqParamsCustomize.setSelected(true);
+            requestParamsRulesTableHandler.updateeditState();
         }
 
         // init the response stuff
@@ -832,7 +809,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
         assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
 
-        if (requestParamsRulesTableHandler != null) { // this will be null in case of BRA
+        if (requestParamsRulesTableHandler != null) {
             assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
             assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
         }
@@ -991,7 +968,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         HttpMethod method = assertion.getHttpMethod();
-        if (method == null || bra) {
+        if ( method == null ) {
             overrideRequestMethodRadioButton.setSelected(false);
             automaticRequestMethodRadioButton.setSelected(true);
             requestMethodComboBox.setSelectedItem(HttpMethod.POST);
@@ -1005,15 +982,11 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 requestMethodComboBox.setSelectedItem(method);
             }
         }
-        if (bra)
-            overrideRequestMethodRadioButton.setEnabled(false);
         updateRequestMethodComboBoxEnableState();
 
         useKeepalivesCheckBox.setSelected(assertion.isUseKeepAlives());
 
         forceIncludeRequestBodyCheckBox.setSelected(assertion.isForceIncludeRequestBody());
-        if (bra)
-            forceIncludeRequestBodyCheckBox.setEnabled(false);
 
         String host = assertion.getProxyHost();
         if (host == null || host.trim().length() < 1) {
@@ -1029,15 +1002,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             proxyUsernameField.setText(assertion.getProxyUsername());
             proxyPasswordField.setText(assertion.getProxyPassword());
         }
-        if (bra)
-            rbProxySpecified.setEnabled(false);
 
         String tlsVersion = assertion.getTlsVersion();
         tlsVersionComboBox.setSelectedItem(null == tlsVersion ? ANY_TLS_VERSION : tlsVersion);
-        tlsVersionComboBox.setEnabled(!bra);
+        tlsVersionComboBox.setEnabled( true );
 
         tlsCipherSuites = assertion.getTlsCipherSuites();
-        cipherSuitesButton.setEnabled(!bra);
+        cipherSuitesButton.setEnabled( true );
 
         if (assertion.getTlsTrustedCertGoids() == null) {
             tlsTrustedCerts = null;
@@ -1056,7 +1027,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 tlsTrustedCerts.add(new EntityHeader(oid, EntityType.TRUSTED_CERT, name, "Trusted SSL/TLS server cert"));
             }
         }
-        trustedServerCertsButton.setEnabled(!bra);
+        trustedServerCertsButton.setEnabled( true );
 
         enableOrDisableProxyFields();
     }

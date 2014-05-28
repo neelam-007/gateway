@@ -940,17 +940,6 @@ public class WspReaderTest {
     }
 
     @Test
-    public void testAutomaticLongToGoidConverstion_wrapped() throws Exception {
-        GoidUpgradeMapperTestUtil.clearAllPrefixes();
-
-        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OID_BRIDGE_ROUTING_POLICY, OMIT_DISABLED);
-        BridgeRoutingAssertion bra = (BridgeRoutingAssertion) ass;
-        Goid goid = bra.getServerCertificateGoid();
-        assertNotNull(goid);
-        assertEquals(GoidUpgradeMapper.mapOid(null, -484L), goid);
-    }
-
-    @Test
     public void testAutomaticLongArrayToGoidArrayConversion_wrapped() throws Exception {
         GoidUpgradeMapperTestUtil.clearAllPrefixes();
 
@@ -962,20 +951,6 @@ public class WspReaderTest {
         assertEquals(GoidUpgradeMapper.mapOid(null, 44L), goids[0]);
         assertEquals(GoidUpgradeMapper.mapOid(null, 22L), goids[1]);
         assertEquals(GoidUpgradeMapper.mapOid(null, -23L), goids[2]);
-    }
-
-    @Test
-    public void testAutomaticLongToGoidConverstion_mapped() throws Exception {
-        GoidUpgradeMapperTestUtil.clearAllPrefixes();
-        GoidUpgradeMapperTestUtil.addPrefix("trusted_cert", 8989L);
-
-        Assertion ass = WspReader.getDefault().parseStrictly(PRE80_CERT_OID_BRIDGE_ROUTING_POLICY, OMIT_DISABLED);
-        BridgeRoutingAssertion bra = (BridgeRoutingAssertion) ass;
-        Goid goid = bra.getServerCertificateGoid();
-        assertNotNull(goid);
-        final Goid expected = GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, -484L);
-        assertEquals(new Goid(8989L, -484L), expected);
-        assertEquals(expected, goid);
     }
 
     @Test
@@ -1137,34 +1112,6 @@ public class WspReaderTest {
             "        </L7p:CommentAssertion>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
-
-    public static final String PRE80_CERT_OID_BRIDGE_ROUTING_POLICY =
-        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-        "    <L7p:BridgeRoutingAssertion>\n" +
-        "        <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
-        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
-        "                <L7p:item httpPassthroughRule=\"included\">\n" +
-        "                    <L7p:Name stringValue=\"Cookie\"/>\n" +
-        "                </L7p:item>\n" +
-        "                <L7p:item httpPassthroughRule=\"included\">\n" +
-        "                    <L7p:Name stringValue=\"SOAPAction\"/>\n" +
-        "                </L7p:item>\n" +
-        "            </L7p:Rules>\n" +
-        "        </L7p:RequestHeaderRules>\n" +
-        "        <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
-        "            <L7p:ForwardAll booleanValue=\"true\"/>\n" +
-        "            <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
-        "        </L7p:RequestParamRules>\n" +
-        "        <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
-        "            <L7p:Rules httpPassthroughRules=\"included\">\n" +
-        "                <L7p:item httpPassthroughRule=\"included\">\n" +
-        "                    <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
-        "                </L7p:item>\n" +
-        "            </L7p:Rules>\n" +
-        "        </L7p:ResponseHeaderRules>\n" +
-        "        <L7p:ServerCertificateOid boxedLongValue=\"-484\"/>\n" +
-        "    </L7p:BridgeRoutingAssertion>\n" +
-        "</wsp:Policy>";
 
     public static final String PRE80_CERT_OIDS_ARRAY_HTTP_ROUTING_POLICY =
         "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +

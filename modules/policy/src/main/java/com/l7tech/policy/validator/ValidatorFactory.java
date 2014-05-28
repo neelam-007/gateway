@@ -36,7 +36,6 @@ class ValidatorFactory {
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionValidator.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionValidator.class);
-        assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionValidator.class);
         // DO NOT ADD NEW VALIDATORS HERE, USE ASSERTION METADATA
     }
 

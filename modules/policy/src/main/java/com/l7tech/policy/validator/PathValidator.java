@@ -604,9 +604,6 @@ public class PathValidator {
     private void processRouting(RoutingAssertion a) {
         if (a instanceof HttpRoutingAssertion) {
             processHttpRouting((HttpRoutingAssertion)a);
-            if (a instanceof BridgeRoutingAssertion) {
-                processBridgeRouting((BridgeRoutingAssertion)a);
-            }
         } else if (a instanceof JmsRoutingAssertion) {
             processJmsRouting((JmsRoutingAssertion)a);
         }
@@ -621,30 +618,6 @@ public class PathValidator {
 
         if (PolicyType.INTERNAL.equals(pvc.getPolicyType()) && ("debug-trace".equals(pvc.getPolicyInternalTag()) || "audit-sink".equals(pvc.getPolicyInternalTag()))) {
             result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("routing.metapolicy.loop"), null));
-        }
-    }
-
-    private void processBridgeRouting(BridgeRoutingAssertion a) {
-        String policyXml = a.getPolicyXml();
-        if (policyXml == null)
-            return;
-        Object cachedResult = policyParseCache.get(policyXml);
-        if (cachedResult instanceof Boolean)
-            return;
-        if (cachedResult instanceof Throwable) {
-            result.addError(new PolicyValidatorResult.Error(a,
-                    bundle.getString("assertion.policyxml.invalid"),
-                                                            (Throwable)cachedResult));
-            return;
-        }
-        try {
-            WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
-            policyParseCache.put(policyXml, Boolean.TRUE);
-        } catch (IOException e) {
-            policyParseCache.put(policyXml, e);
-            result.addError(new PolicyValidatorResult.Error(a,
-                    bundle.getString("assertion.policyxml.invalid"),
-                                                            e));
         }
     }
 

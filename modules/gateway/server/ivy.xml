@@ -32,7 +32,6 @@
         <dependency name="layer7-utility" rev="latest.integration" conf="core; test->default,test"/>
         <dependency name="layer7-common" rev="latest.integration" conf="core; test->default,test"/>
         <dependency name="layer7-policy" rev="latest.integration" conf="core; test->default,test"/>
-        <dependency name="layer7-proxy" rev="latest.integration" conf="core; test->default,test"/>
         <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-reporting" rev="latest.integration" conf="core"/>

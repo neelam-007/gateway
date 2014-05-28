@@ -518,7 +518,6 @@ public class GatewayFeatureSets {
             fs(rawTcpFront),
             fs(rawTcpBack),
             fs(uiEmailListenersDialog),
-            ass(BridgeRoutingAssertion.class),
             mass("assertion:FtpRouting"),
             mass("assertion:SshRoute"));
 

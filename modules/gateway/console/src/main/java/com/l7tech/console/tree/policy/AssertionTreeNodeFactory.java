@@ -40,7 +40,6 @@ public class AssertionTreeNodeFactory {
 
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
-        assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionTreeNode.class);
         assertionMap.put(JmsRoutingAssertion.class, JmsRoutingAssertionTreeNode.class);
 
         assertionMap.put(RequestXpathAssertion.class, RequestXpathPolicyTreeNode.class);
