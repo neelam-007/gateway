@@ -1,4 +1,541 @@
 <div>
     <h1>Migration</h1>
-    <p>Some info on migration!!</p>
+    <p>The migration API's allow you to move folders, services and policies from one gateway to another. This will include all their dependent resources.</p>
+    <p>The migration workflow generally involves exporting a bundle from a source gateway. Mapping any entities that need to be mapped. Importing the bundle into the target gateway.</p>
+    <h2>How to export a bundle</h2>
+    <p>To export a bundle send the following request.</p>
+    <table border="1" cellpadding="0" cellspacing="0" width="100%">
+        <caption>Bundle Export Example</caption>
+        <tbody>
+        <tr><td colspan="2"><p><strong>Request</strong></p></td>
+        </tr>
+        <tr>
+            <td><p>Uri</p></td>
+            <td><p>https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?[folder|service|policy]={id}</p></td>
+        </tr>
+        <tr><td><p>Http Method</p></td>
+            <td><p>GET</p></td>
+        </tr>
+        <tr><td colspan="2"><p><strong>Response</strong></p></td></tr>
+        <tr>
+            <td><p>Http Status</p></td>
+            <td><p>200</p></td>
+        </tr>
+        <tr>
+            <td><p>Message Body</p></td>
+            <td class="code">
+				<pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+&lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+    &lt;l7:Name&gt;Bundle&lt;/l7:Name&gt;
+    &lt;l7:Type&gt;BUNDLE&lt;/l7:Type&gt;
+    &lt;l7:TimeStamp&gt;2014-01-13T11:43:01.482-08:00&lt;/l7:TimeStamp&gt;
+    &lt;l7:Link/&gt; &lt;!-- This will contain the link used to generate this bundle. --&gt;
+    ...
+    &lt;l7:Resource&gt;
+        &lt;l7:Bundle&gt; &lt;!-- The bundle object --&gt;
+            &lt;l7:References&gt; &lt;!-- This is the list of entities that are in the bundle.
+                &lt;l7:Item /&gt;
+                ...
+            &lt;/l7:References&gt;
+            &lt;l7:Mappings&gt;
+                    &lt;!-- This is the list of mappings. It describes how to create the entity on import. The must be
+                    one mapping for every entity. A mapping may not reference a resource in the bundle if it will not be
+                    migrated. They are in the order they should be created in so to avoid any dependency issues.--&gt;
+                &lt;l7:Mapping /&gt;
+                ...
+            &lt;/l7:Mappings&gt;
+        &lt;/l7:Bundle&gt;
+    &lt;/l7:Resource&gt;
+&lt;/l7:Item&gt;
+				</pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p>In the request URI contains query parameters of the folders, services or policies to export specified by their ids.</p>
+    <p>For example:</p>
+    <p class="code">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=888&service=123&service=567</p>
+    <p>The above URI will bundle folder with id 888, and services with id 123 and 456.</p>
+    <h2>How to import a bundle</h2>
+    <p>To import a bundle PUT the same bundle XML to https://$#{host}:$#{port}/$#{service-url}/1.0/bundle url</p>
+    <table border="1" cellpadding="0" cellspacing="0" width="100%">
+        <caption>Import Bundle Example</caption>
+        <tbody>
+        <tr><td colspan="2"><p><strong>Request</strong></p></td>
+        </tr>
+        <tr>
+            <td><p>Uri</p></td>
+            <td><p>https://${host}:${port}/${service-url}/1.0/bundle</p></td>
+        </tr>
+        <tr>
+            <td><p>Http Method</p></td>
+            <td><p>PUT</p></td>
+        </tr>
+        <tr>
+            <td><p>Content-Type</p></td>
+            <td><p>application/xml</p></td>
+        </tr>
+        <tr>
+            <td><p>Message Body</p></td>
+            <td class="code">
+				<pre>
+&lt;l7:Bundle xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt; &lt;!-- The bundle object --&gt;
+    &lt;l7:References&gt; &lt;!-- This is the list of entities that are in the bundle.
+        &lt;l7:Item /&gt;
+        ...
+    &lt;/l7:References&gt;
+    &lt;l7:Mappings&gt;
+                    &lt;!-- This is the list of mappings. It describes how to create the entity on import. The must be
+                    one mapping for every entity. A mapping may not reference a resource in the bundle if it will not be
+                    migrated. They are in the order they should be created in so to avoid any dependency issues.--&gt;
+        &lt;l7:Mapping /&gt;
+        ...
+    &lt;/l7:Mappings&gt;
+&lt;/l7:Bundle&gt;
+				</pre>
+            </td>
+        </tr>
+        <tr><td colspan="2"><p><strong>Response</strong></p></td></tr>
+        <tr>
+            <td><p>Http Status</p></td>
+            <td><p>200</p></td>
+        </tr>
+        <tr>
+            <td><p>Message Body</p></td>
+            <td class="code">
+				<pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+&lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+    &lt;l7:Name&gt;Bundle mappings&lt;/l7:Name&gt;
+    &lt;l7:Type&gt;BUNDLE MAPPINGS&lt;/l7:Type&gt;
+    &lt;l7:TimeStamp&gt;2014-04-01T15:20:04.222-07:00&lt;/l7:TimeStamp&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://${host}:${port}/${service-url}/1.0/bundle&quot;/&gt;
+    &lt;l7:Resource&gt;
+        &lt;l7:Mappings&gt;
+            &lt;l7:Mapping /&gt;
+            ...
+        &lt;/l7:Mappings&gt;
+    &lt;/l7:Resource&gt;
+&lt;/l7:Item&gt;
+				</pre>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p>The response will be a list of mappings describing the actions that were performed during the bundle import. If bundle import failed for any reason then the mappings will describe what the errors were.</p>
+    <h2>Mapping</h2>
+    <h3>Mapping Attributes</h3>
+    <p>The mapping section in the bundle tells the bundle imported how to import the entities listed in the resource section. When a bundle is exported default mappings are created. A mapping have the following attributes:</p>
+    <table>
+        <tr><td>type</td><td>This is the type of entity being mapped</td></tr>
+        <tr><td>scrId</td><td>This is the source ID of the service being mapping. It will reference an entity in the bundle resources section (in most cases)</td></tr>
+        <tr><td>srcUri</td><td>This is the source URI to retrieve the entity from the gateway.</td></tr>
+        <tr><td>referencePath</td><td>This is an xPath to the entity item in the bundle.</td></tr>
+        <tr><td>targetId</td><td>This is the target id to map this entity to. When importing a bundle specifying this id will tell the bundle importer to map this entity to one with the given target ID. When the bundle importer returns a list of mappings with will specify the id of the entity that was mapped or created on the target gateway during import.</td></tr>
+        <tr><td>targetUri</td><td>This is the target uri of the entity that was mapped or created.</td></tr>
+        <tr><td>action</td>
+            <td>The possible mapping actions are: NewOrExisting, NewOrUpdate, AlwaysCreateNew, Ignore
+                <table>
+                    <tr><td>NewOrExisting</td><td>If an existing entity on the target gateway is found to map this entity to then the existing entity is used. It is not updated. If an existing entity cannot be found, a new one is created on the target gateway.</td></tr>
+                    <tr><td>NewOrUpdate</td><td>If an existing entity on the target gateway is found to map this entity to then the existing entity is used and updated using the info provided in the bundle. If an existing entity cannot be found, a new one is created on the target gateway.</td></tr>
+                    <tr><td>AlwaysCreateNew</td><td>If an existing entity on the target gateway is found then a new entity is created with a different id. If an existing entity is not found then a new entity is created with the source id.</td></tr>
+                    <tr><td>Ignore</td><td>Ignores this entity, it will not be imported.</td></tr>
+                </table>
+            </td>
+        </tr>
+        <tr><td>actionTaken</td>
+            <td>This is the action that was taken during the import. This attribute is only returned by the bundle import results. The action is one of: UsedExisting, CreatedNew, UpdatedExisting, Ignored.
+                <table>
+                    <tr><td>UsedExisting</td><td>This means that this entity was mapped to an existing entity on the target gateway. The entity on the target gateway is not updated.</td></tr>
+                    <tr><td>UpdatedExisting</td><td>This means that this entity was mapped to an existing entity on the target gateway and the entity on the target gateway was updated.</td></tr>
+                    <tr><td>CreatedNew</td><td>This means that a new entity was created on the target gateway.</td></tr>
+                    <tr><td>Ignored</td><td>This entity was ignored and not imported.</td></tr>
+                </table>
+            </td>
+        </tr>
+        <tr><td>errorType</td>
+            <td>This is set if there was an error attempting to import the entity. The possible errors are: TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, InvalidResource
+                <table>
+                    <tr><td>TargetExists</td><td>This gets returned if a new entity was supposed to be created but an entity already exists on the target gateway. See the FailOnExisting property</td></tr>
+                    <tr><td>TargetNotFound</td><td>This gets returned if an existing entity is supposed to exist on the target gateway but it cannot be found. See the FailOnNew property</td></tr>
+                    <tr><td>UniqueKeyConflict</td><td>This gets returned if there is an entity on the target gateway with a conflicting unique key (usually name) as the one that is being created or updated.</td></tr>
+                    <tr><td>CannotReplaceDependency</td><td>This gets returned if there was some sort of error replacing an entities dependencies.</td></tr>
+                    <tr><td>InvalidResource</td><td>This gets return if there is another problem attempting to create of update an entity.</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <h3>Simple Mapping Examples</h3>
+    <h4>NewOrExisting</h4>
+    <p>This will create a new entity or reuse an existing one.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot; /&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same ID exists on the target gateway this will not do anything and use the existing entity.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;UsedExisting&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway but one with a conflicting unique key does this will return an 409 error response. Here the targetUri is the entity on the target that has the unique key conflicts</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <h4>NewOrUpdate</h4>
+    <p>This will create a new entity or update an existing one.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot; /&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same ID exists on the target gateway this will update the entity using the entity in the import bundle.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;UpdatedExisting&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway but one with a conflicting unique key does OR an entity with the same ID exists but updating it causes unique key errors this will return an 409 error response. Here the targetUri is the entity on the target that has the unique key conflicts</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <h4>AlwaysCreateNew</h4>
+    <p>This will create a new entity.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;AlwaysCreateNew&quot; /&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same ID exists on the target gateway this will create a new entity on the target gateway with a new id.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If the entity created has unique key conflicts with an entity on the gateway this will return an 409 error response. Here the targetUri is the entity on the target that has the unique key conflicts</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <h4>Ignore</h4>
+    <p>This will ignore the entity. No attempt will be made to import the entity.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;Ignore&quot; /&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>There is only one possible response</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;Ignored&quot; /&gt;
+        </pre>
+    </div>
+    <h3>Mapping Properties</h3>
+    <p>A mapping can also have properties specified. Properties are specified as a key value map. The currently supported properties are:</p>
+    <table>
+        <tr><td>FailOnExisting</td><td>This is a boolean property that can be applied to any mapping type. If true it will fail with a 409 if an entity with the same id exists on the target. The possible values are 'true' or 'false'. If this is not specified false is assumed. Example Failure response:
+            <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;TargetExists&quot; /&gt;
+            </pre>
+        </td></tr>
+        <tr><td>FailOnNew</td><td>This is a boolean property that can be applied to any mapping type. If true it will fail with a 409 if an entity with the same id DOES NOT EXIST on the target. The possible values are 'true' or 'false'. If this is not specified false is assumed. Example Failure response:
+            <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;TargetNotFound&quot; /&gt;
+            </pre>
+        </td></tr>
+        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name'. If this is not specified mapping is done by the id.</td></tr>
+        <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapTo property.</td></tr>
+    </table>
+    <h3>Complex Mapping Examples</h3>
+    <h4>Mapping by Name</h4>
+    <p>Map a service to a service on the target gateway with the same name.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     action=&quot;NewOrUpdate&quot; &gt;
+    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same Name DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name exist on the target gateway this will update the entity.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;UpdatedExisting&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name DOES NOT exist on the target gateway but one with the same id does, this will fail.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <h4>Mapping by Name to a Specific Entity</h4>
+    <p>Map a service to a service on the target gateway with a specific name.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     action=&quot;NewOrExisting&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the target name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the target name exist on the target gateway this will do nothing, used the existing service.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;UsedExisting&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the target name DOES NOT exist on the target gateway but one with the same id does, this will fail.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <h4>Mapping by ID where Entity Must Exist on the Target</h4>
+    <p>Map a service to a service on the target gateway. The service must exist on the target gateway.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     action=&quot;NewOrExisting&quot; &gt;
+    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will fail).</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;TargetNotFound&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same ID exist on the target gateway this will do nothing, used the existing service.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;UsedExisting&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+
+    <h4>Mapping by Name to Specific Entity Do Not Fail on ID Clash </h4>
+    <p>Map a service to a service on the target gateway with a specific name. Do not fail if a service with the same id exists on the target gateway.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     action=&quot;AlwaysCreateNew&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <h5>Possible Responses</h5>
+    <p>If an entity with the same Name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name exist on the target gateway this will fail with unique key conflict.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    errorType=&quot;UniqueKeyConflict&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name DOES NOT exist on the target gateway but one with the same id does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;SERVICE&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    actionTaken=&quot;CreatedNew&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+        </pre>
+    </div>
+    <h2>Example Bundle Migration</h2>
+    <p>TODO!!!</p>
 </div>
