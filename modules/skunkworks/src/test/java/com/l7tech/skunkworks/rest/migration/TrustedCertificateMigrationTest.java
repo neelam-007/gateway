@@ -16,6 +16,7 @@ import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
@@ -924,6 +925,8 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
         }
     }
 
+    @Deprecated
+    @Ignore //The BridgeRoutingAssertion in no longer part of the gateway. See changeset #40390
     @Test
     public void testMapCertForBridgeRoutingAssertion() throws Exception {
 

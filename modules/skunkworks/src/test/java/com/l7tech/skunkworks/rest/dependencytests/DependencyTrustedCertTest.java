@@ -1,8 +1,9 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.DependencyListMO;
+import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
@@ -16,10 +17,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -407,6 +405,8 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
         });
     }
 
+    @Deprecated
+    @Ignore //The BridgeRoutingAssertion in no longer part of the gateway. See changeset #40390
     @Test
     public void BridgeRoutingAssertionTest() throws Exception {
 

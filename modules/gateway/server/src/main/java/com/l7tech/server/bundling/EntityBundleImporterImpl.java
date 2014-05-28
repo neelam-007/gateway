@@ -30,11 +30,8 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.UnexpectedRollbackException;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.*;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -496,7 +493,23 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     @Nullable
     private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, final Entity entity,final Map<EntityHeader, EntityHeader> resourceMapping ) {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
-        final TransactionTemplate tt = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        //Wrap the transaction manager so that we can ignore rollback.
+        final TransactionTemplate tt = new TransactionTemplate(new PlatformTransactionManager() {
+            @Override
+            public TransactionStatus getTransaction(TransactionDefinition definition) throws TransactionException {
+                return transactionManager.getTransaction(definition);
+            }
+
+            @Override
+            public void commit(TransactionStatus status) throws TransactionException {
+                transactionManager.commit(status);
+            }
+
+            @Override
+            public void rollback(TransactionStatus status) throws TransactionException {
+                //do nothing here. We don't want to rollback when an existing entity cannot be found.
+            }
+        });
         tt.setReadOnly(true);
         try {
             return tt.execute(new TransactionCallback<Entity>() {

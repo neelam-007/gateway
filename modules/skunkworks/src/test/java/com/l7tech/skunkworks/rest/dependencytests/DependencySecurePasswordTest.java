@@ -13,10 +13,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
@@ -296,6 +293,8 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
         });
     }
 
+    @Deprecated
+    @Ignore //The BridgeRoutingAssertion in no longer part of the gateway. See changeset #40390
     @Test
     public void bridgeRoutingAssertionTest() throws Exception {
 
