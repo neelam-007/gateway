@@ -184,14 +184,14 @@ public class BundleResource {
      *
      * @param test   If true the bundle import will be tested no changes will be made to the gateway.,
      * @param bundle The bundle to import
-     * @param active True to activate the updated services and policies.
+     * @param activate True to activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
-                                 @QueryParam("active") @DefaultValue("false") final boolean active,
+                                 @QueryParam("activate") @DefaultValue("false") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
                                  final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
@@ -200,7 +200,7 @@ public class BundleResource {
         List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<List<Mapping>>() {
             @Override
             public List<Mapping> call() throws Exception {
-                return bundleImporter.importBundle(bundle, test, active, versionComment);
+                return bundleImporter.importBundle(bundle, test, activate, versionComment);
             }
         });
         AuditContextUtils.setSystem(false);

@@ -185,7 +185,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         Assert.assertEquals("The bundle should have 2 mappings. A folder, a service", 2, bundleItem.getContent().getMappings().size());
 
         //import the bundle
-        response = getTargetEnvironment().processRequest("bundle?active=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        response = getTargetEnvironment().processRequest("bundle?activate=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
         assertOkResponse(response);
 

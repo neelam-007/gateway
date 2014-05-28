@@ -361,7 +361,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         bundleItem.getContent().getMappings().get(0).setTargetId(targetChild1FolderItem.getId());
 
         //import the bundle
-        response = getTargetEnvironment().processRequest("bundle?active=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        response = getTargetEnvironment().processRequest("bundle?activate=true&versionComment=Comment", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
         assertOkResponse(response);
 
