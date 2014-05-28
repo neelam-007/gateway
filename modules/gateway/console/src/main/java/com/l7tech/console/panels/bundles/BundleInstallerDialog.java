@@ -54,7 +54,7 @@ public abstract class BundleInstallerDialog extends JDialog {
     private JButton buttonCancel;
     private JLabel versionLabel;
     private JLabel installToLabel;
-    private JPanel componentsToInstallPanel;
+    private JScrollPane componentsToInstallScrollPane;
     private JCheckBox prefixResolutionURIsAndCheckBox;
     private SquigglyTextField installationPrefixTextField;
     private JLabel exampleRoutingUrlLabel;
@@ -114,7 +114,9 @@ public abstract class BundleInstallerDialog extends JDialog {
 
             final List<BundleInfo> allAvailableBundles = admin.getAllComponents();
 
+            JPanel componentsToInstallPanel = new JPanel();
             componentsToInstallPanel.setLayout(new BoxLayout(componentsToInstallPanel, BoxLayout.Y_AXIS));
+            componentsToInstallScrollPane.getViewport().add(componentsToInstallPanel);
 
             for (BundleInfo bundleInfo : allAvailableBundles) {
                 // create panel
