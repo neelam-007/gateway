@@ -331,12 +331,16 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         final HeadersKnob responseMessageHeadersKnob = context.getResponse().getKnob(HeadersKnob.class);
 
                         if (responseMessageHeadersKnob != null) {
-                            String[] propertyNames = responseMessageHeadersKnob.getHeaderNames(HEADER_TYPE_JMS_PROPERTY);
+                            Collection<Header> headers = responseMessageHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
 
-                            for (String propertyName : propertyNames) {
-                                String[] propertyValues = responseMessageHeadersKnob.getHeaderValues(propertyName, HEADER_TYPE_JMS_PROPERTY);
-                                String propertyValue = propertyValues[propertyValues.length - 1]; // use the last (most recent) value
-                                jmsResponse.setObjectProperty(propertyName, propertyValue);
+                            HashMap<String, Object> propertyMap = new HashMap<>();
+
+                            for (Header header : headers) {
+                                propertyMap.put(header.getKey(), header.getValue());
+                            }
+
+                            for (String key : propertyMap.keySet()) {
+                                jmsResponse.setObjectProperty(key, propertyMap.get(key));
                             }
                         }
 

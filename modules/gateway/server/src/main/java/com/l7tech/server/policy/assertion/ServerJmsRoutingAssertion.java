@@ -40,6 +40,7 @@ import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.lang.IllegalStateException;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -335,12 +336,16 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 Map<String, Object> inboundRequestProps = new HashMap<>();
 
                 if (jmsInboundHeadersKnob != null) {
-                    String[] propertyNames = jmsInboundHeadersKnob.getHeaderNames(HEADER_TYPE_JMS_PROPERTY);
+                    Collection<Header> headers = jmsInboundHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
 
-                    for (String propertyName : propertyNames) {
-                        String[] propertyValues = jmsInboundHeadersKnob.getHeaderValues(propertyName, HEADER_TYPE_JMS_PROPERTY);
-                        String propertyValue = propertyValues[propertyValues.length - 1]; // use the last (most recent) value
-                        inboundRequestProps.put(propertyName, propertyValue);
+                    HashMap<String, Object> propertyMap = new HashMap<>();
+
+                    for (Header header : headers) {
+                        propertyMap.put(header.getKey(), header.getValue());
+                    }
+
+                    for (String key : propertyMap.keySet()) {
+                        inboundRequestProps.put(key, propertyMap.get(key));
                     }
                 }
 
