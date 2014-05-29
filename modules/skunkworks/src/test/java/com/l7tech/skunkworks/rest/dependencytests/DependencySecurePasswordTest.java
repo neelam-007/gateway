@@ -504,6 +504,39 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
         });
     }
 
+    @Test
+    public void radiusAuthenticateAssertionTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:RadiusAuthenticate>\n" +
+                        "            <L7p:AcctPort stringValue=\"1813\"/>\n" +
+                        "            <L7p:AuthPort stringValue=\"1812\"/>\n" +
+                        "            <L7p:Authenticator stringValue=\"pap\"/>\n" +
+                        "            <L7p:Host stringValue=\"asdf\"/>\n" +
+                        "            <L7p:Prefix stringValue=\"radius\"/>\n" +
+                        "            <L7p:SecretGoid goidValue=\""+securePassword.getId()+"\"/>\n" +
+                        "            <L7p:Timeout stringValue=\"5\"/>\n" +
+                        "        </L7p:RadiusAuthenticate>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                verifyItem(dep,securePassword);
+            }
+        });
+    }
+
     protected void verifyItem(DependencyMO item, SecurePassword secPassword ){
         assertEquals(secPassword.getId(), item.getId());
         assertEquals(secPassword.getName(), item.getName());

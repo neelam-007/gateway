@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.radius;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
@@ -17,7 +19,7 @@ import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 /**
  *
  */
-public class RadiusAuthenticateAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables {
+public class RadiusAuthenticateAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables, UsesEntities {
     private final static String baseName = "Authenticate Against Radius Server";
     protected static final Logger logger = Logger.getLogger(RadiusAuthenticateAssertion.class.getName());
 
@@ -115,6 +117,26 @@ public class RadiusAuthenticateAssertion extends Assertion implements MessageTar
         expressions.add(timeout);
 
         return expressions(expressions.toArray(new String[expressions.size()])).asArray();
+
+    }
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        if(secretGoid!=null){
+            return new EntityHeader[]{new EntityHeader(secretGoid, EntityType.SECURE_PASSWORD,null,null)};
+        }
+        return new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(secretGoid!=null &&
+            oldEntityHeader.getType().equals(EntityType.SECURE_PASSWORD) &&
+            oldEntityHeader.getGoid().equals(secretGoid) &&
+            newEntityHeader.getType().equals(EntityType.SECURE_PASSWORD))
+        {
+            secretGoid = newEntityHeader.getGoid();
+        }
 
     }
 
