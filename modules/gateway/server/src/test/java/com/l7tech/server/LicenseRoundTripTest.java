@@ -89,7 +89,6 @@ public class LicenseRoundTripTest {
             assertTrue(license.isFeatureEnabled("assertion:OversizedText"));
 
             // Must not enable any other features
-            assertFalse(license.isFeatureEnabled("assertion:BridgeRouting"));
             assertFalse(license.isFeatureEnabled("service:Bridge"));
             assertFalse(license.isFeatureEnabled("blarf:" + new Random().nextInt()));
         }

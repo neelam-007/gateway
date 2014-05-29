@@ -293,64 +293,6 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
         });
     }
 
-    @Deprecated
-    @Ignore //The BridgeRoutingAssertion in no longer part of the gateway. See changeset #40390
-    @Test
-    public void bridgeRoutingAssertionTest() throws Exception {
-
-        final String assXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        <L7p:BridgeRoutingAssertion>\n" +
-                        "            <L7p:Login stringValue=\"a\"/>\n" +
-                        "            <L7p:NtlmHost stringValue=\"aweg\"/>\n" +
-                        "            <L7p:Password stringValue=\"${secpass.MyPassword.plaintext}\"/>\n" +
-                        "            <L7p:ProtectedServiceUrl stringValue=\"http://blah\"/>\n" +
-                        "            <L7p:ProxyPassword stringValueNull=\"null\"/>\n" +
-                        "            <L7p:ProxyUsername stringValueNull=\"null\"/>\n" +
-                        "            <L7p:Realm stringValue=\"gag\"/>\n" +
-                        "            <L7p:RequestHeaderRules httpPassthroughRuleSet=\"included\">\n" +
-                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
-                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
-                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
-                        "                        <L7p:Name stringValue=\"Cookie\"/>\n" +
-                        "                    </L7p:item>\n" +
-                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
-                        "                        <L7p:Name stringValue=\"SOAPAction\"/>\n" +
-                        "                    </L7p:item>\n" +
-                        "                </L7p:Rules>\n" +
-                        "            </L7p:RequestHeaderRules>\n" +
-                        "            <L7p:RequestParamRules httpPassthroughRuleSet=\"included\">\n" +
-                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
-                        "                <L7p:Rules httpPassthroughRules=\"included\"/>\n" +
-                        "            </L7p:RequestParamRules>\n" +
-                        "            <L7p:ResponseHeaderRules httpPassthroughRuleSet=\"included\">\n" +
-                        "                <L7p:ForwardAll booleanValue=\"true\"/>\n" +
-                        "                <L7p:Rules httpPassthroughRules=\"included\">\n" +
-                        "                    <L7p:item httpPassthroughRule=\"included\">\n" +
-                        "                        <L7p:Name stringValue=\"Set-Cookie\"/>\n" +
-                        "                    </L7p:item>\n" +
-                        "                </L7p:Rules>\n" +
-                        "            </L7p:ResponseHeaderRules>\n" +
-                        "            <L7p:SamlAssertionVersion intValue=\"2\"/>\n" +
-                        "        </L7p:BridgeRoutingAssertion>" +
-                        "    </wsp:All>\n" +
-                        "</wsp:Policy>";
-
-        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
-
-            @Override
-            public void call(Item<DependencyListMO> dependencyItem) {
-                assertNotNull(dependencyItem.getContent().getDependencies());
-                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
-                assertEquals(1,dependencyAnalysisMO.getDependencies().size());
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
-                verifyItem(dep,securePassword);
-            }
-        });
-    }
-
     @Test
     public void sshRoutingAssertionTest() throws Exception {
 

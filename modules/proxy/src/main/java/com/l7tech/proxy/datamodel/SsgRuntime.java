@@ -146,8 +146,7 @@ public class SsgRuntime {
     /**
      * Replace the root policy manager.
      * This is not called in the stand-alone SSB, but is used by
-     * the {@link com.l7tech.policy.assertion.BridgeRoutingAssertion},
-     * and the {@link com.l7tech.proxy.SecureSpanBridge} implementation, when a hardcoded policy is selected.
+     * the {@link com.l7tech.proxy.SecureSpanBridge} implementation when a hardcoded policy is selected.
      */
     public void setPolicyManager(PolicyManager p) {
         ssgNotifyPolicyManager = new SsgNotifyPolicyManager(ssg, p);
