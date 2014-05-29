@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.policydiff.PolicyDiffWindow.*;
 import static com.l7tech.console.panels.policydiff.PolicyDiffWindow.DiffType.IDENTICAL;
+import static com.l7tech.console.panels.policydiff.PolicyDiffWindow.DiffType.MATCHED_WITH_DIFFERENCES;
 
 /**
  * Compare two chunks of policy XML and generate diff results.
@@ -149,6 +150,8 @@ public class XmlDiff {
 
     /**
      * Extract diff results from the results to displaying text areas
+     *
+     * @return an integer list containing XML line number associated with next differences.
      */
     public List<Integer> setTextAreas(final JTextArea leftXmlTextArea, final JTextArea leftLineNumTextArea,
                                       final JTextArea rightXmlTextArea, final JTextArea rightLineNumTextArea) throws BadLocationException {
@@ -187,7 +190,7 @@ public class XmlDiff {
             prevDiffType = currDiffType;
             currDiffType = leftLineDiffResult == null? null : leftLineDiffResult.getDiffType();
 
-            if (currDiffType != prevDiffType && currDiffType != IDENTICAL) {
+            if (currDiffType == MATCHED_WITH_DIFFERENCES || (currDiffType != prevDiffType && currDiffType != IDENTICAL)) {
                 nextDiffIndexList.add(i);
             }
         }
