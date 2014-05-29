@@ -24,4 +24,9 @@ public class SimplePolicyBundleInstallerDialog extends BundleInstallerDialog {
         });
         customizableButtonPanel.add(button);
     }
+
+    @Override
+    protected Dimension getSizingPanelPreferredSize() {
+        return null;
+    }
 }

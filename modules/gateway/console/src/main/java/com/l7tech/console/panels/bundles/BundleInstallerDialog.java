@@ -50,6 +50,7 @@ public abstract class BundleInstallerDialog extends JDialog {
     protected final Map<String, Pair<BundleComponent, BundleInfo>> availableBundles = new HashMap<>();
 
     private JPanel contentPane;
+    private JPanel sizingPanel;
     private JButton buttonOK;
     private JButton buttonCancel;
     private JLabel versionLabel;
@@ -103,6 +104,11 @@ public abstract class BundleInstallerDialog extends JDialog {
     }
 
     private void initialize() {
+        final Dimension sizingPanelPreferredSize = getSizingPanelPreferredSize();
+        if (sizingPanelPreferredSize != null) {
+          sizingPanel.setPreferredSize(sizingPanelPreferredSize);
+        }
+
         final Pair<String, Goid> selectedFolderAndGoid = getSelectedFolderAndGoid();
         folderPath = selectedFolderAndGoid.left;
         selectedFolderGoid = selectedFolderAndGoid.right;
@@ -240,6 +246,10 @@ public abstract class BundleInstallerDialog extends JDialog {
                                             @NotNull Map<String, BundleMapping> bundleMappings,
                                             @Nullable String installationPrefix) throws PolicyBundleInstallerException {
         return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix);
+    }
+
+    protected Dimension getSizingPanelPreferredSize() {
+        return new Dimension(540, 560);
     }
 
     private void setExamplePrefixLabelText(){
