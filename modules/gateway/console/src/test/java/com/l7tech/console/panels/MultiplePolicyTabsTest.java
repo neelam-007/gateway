@@ -83,12 +83,12 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         assertEquals("Two policies opened, so there are two policy tabs in the workspace", 2, tabbedPane.getTabCount());
     }
@@ -105,12 +105,12 @@ public class MultiplePolicyTabsTest {
 
         // Add the policy at the first time
         PolicyEditorPanel.PolicyEditorSubject subject = createPolicyEditorSubject(newGoid(), "Policy", 0);
-        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false));
 
         // Add the policy at the second time
         final EntityWithPolicyNode policyNode = subject.getPolicyNode();
         Goid policyGoid = policyNode.getPolicy().getGoid();
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(policyGoid, "Policy", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(policyGoid, "Policy", 0), policyTree, false));
 
         assertEquals("Same policy added, so only one policy in the workspace", 1, tabbedPane.getTabCount());
     }
@@ -128,12 +128,12 @@ public class MultiplePolicyTabsTest {
 
         // Add the first policy version
         PolicyEditorPanel.PolicyEditorSubject subject = createPolicyEditorSubject(newGoid(), "Policy", 0);
-        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false));
 
         // Add the second policy version
         final EntityWithPolicyNode policyNode = subject.getPolicyNode();
         final Goid policyGoid = policyNode.getPolicy().getGoid();  // Use the Same Policy GOID
-        final PolicyEditorPanel secondPanel = new PolicyEditorPanel(createPolicyEditorSubject(policyGoid, "Policy", 0), policyTree, false, false);
+        final PolicyEditorPanel secondPanel = new PolicyEditorPanel(createPolicyEditorSubject(policyGoid, "Policy", 0), policyTree, false);
         secondPanel.setOverrideVersionNumber(1);                  // But different version ordinals
         workSpacePanel.setComponent(secondPanel);
 
@@ -151,7 +151,7 @@ public class MultiplePolicyTabsTest {
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
         PolicyEditorPanel.PolicyEditorSubject subject = createPolicyEditorSubject(newGoid(), "Policy", 0);
-        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(subject, policyTree, false));
 
         // Add a HomePage
         workSpacePanel.setComponent(new HomePagePanelStub());
@@ -187,12 +187,12 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         assertEquals("There are two tabs added so far.", 2, tabbedPane.getTabCount());
 
@@ -200,7 +200,7 @@ public class MultiplePolicyTabsTest {
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false));
 
         assertEquals("The number of added tabs is still 2, since the last one is not successfully added.", 2, tabbedPane.getTabCount());
 
@@ -220,7 +220,7 @@ public class MultiplePolicyTabsTest {
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
         PolicyEditorPanel.PolicyEditorSubject subject = createPolicyEditorSubject(newGoid(), "Policy", 0);
-        final PolicyEditorPanel policyEditorPanel = new PolicyEditorPanel(subject, policyTree, false, false);
+        final PolicyEditorPanel policyEditorPanel = new PolicyEditorPanel(subject, policyTree, false);
         workSpacePanel.setComponent(policyEditorPanel);
 
         assertEquals("One tab added", 1, tabbedPane.getTabCount());
@@ -239,17 +239,17 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false));
 
         assertEquals("Before closing others, there are three tabs in workspace.", 3, tabbedPane.getTabCount());
 
@@ -269,17 +269,17 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false));
 
         assertEquals("Before closing all tabs, there are three tabs in workspace.", 3, tabbedPane.getTabCount());
 
@@ -297,18 +297,18 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        final PolicyEditorPanel firstPolicyEditorPanel = new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false);
+        final PolicyEditorPanel firstPolicyEditorPanel = new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false);
         workSpacePanel.setComponent(firstPolicyEditorPanel);
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false));
 
         assertEquals("Currently there are three tabs in workspace now", 3, tabbedPane.getTabCount());
 
@@ -331,17 +331,17 @@ public class MultiplePolicyTabsTest {
         PolicyTree policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 1", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 2", 0), policyTree, false));
 
         policyTree = new PolicyTree(applicationContext);
         TopComponents.getInstance().unregisterComponent(PolicyTree.NAME);
         TopComponents.getInstance().registerComponent(PolicyTree.NAME, policyTree);
-        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false, false));
+        workSpacePanel.setComponent(new PolicyEditorPanel(createPolicyEditorSubject(newGoid(), "Policy 3", 0), policyTree, false));
 
         assertEquals("Currently there are three tabs in workspace now", 3, tabbedPane.getTabCount());
 

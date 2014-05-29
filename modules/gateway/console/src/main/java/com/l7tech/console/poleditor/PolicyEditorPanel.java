@@ -120,7 +120,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private JSplitPane splitPane;
     private final TopComponents topComponents = TopComponents.getInstance();
     private NumberedPolicyTreePane policyTreePane;
-    private boolean initialValidate = false;
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
@@ -181,7 +180,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * Post Bondo (5.2) enableUddi should only be false when were in untrusted Applet mode
      * @param enableUddi if true, then the 'Import from UDDI' button in the policy window will be shown
      */
-    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen, boolean enableUddi) {
+    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean enableUddi) {
         if (subject == null || pt == null) {
             throw new IllegalArgumentException();
         }
@@ -201,19 +200,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         renderPolicy();
         setEditorListeners();
-        if (validateOnOpen) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        initialValidate = true;
-                        validatePolicy();
-                    } finally {
-                        initialValidate = false;
-                    }
-                }
-            });
-        }
     }
 
     public PolicyTree getPolicyTree() {
@@ -1590,27 +1576,25 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             }
 
-            if (!initialValidate) {
-                updatePolicyEditorPanel();
+            updatePolicyEditorPanel();
 
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (!validating) {
-                                try {
-                                    validating = true;
-                                    validatePolicy();
-                                } finally {
-                                    validating = false;
-                                }
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (!validating) {
+                            try {
+                                validating = true;
+                                validatePolicy();
+                            } finally {
+                                validating = false;
                             }
-                        } catch (Throwable t) {
-                            log.severe(t.getMessage());
                         }
+                    } catch (Throwable t) {
+                        log.severe(t.getMessage());
                     }
-                });
-            }
+                }
+            });
         }
 
         @Override

@@ -210,13 +210,16 @@ public class EditPolicyAction extends NodeAction {
                     }
                 }
             };
-            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, validate, TopComponents.getInstance().isTrusted());
+            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, TopComponents.getInstance().isTrusted());
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
             TopComponents.getInstance().firePolicyEdit(pep);
             if (startsDirty) {
                 TreeModel ptm = TopComponents.getInstance().getPolicyTree().getModel();
                 ((PolicyTreeModel)ptm).assertionTreeNodeChanged((AssertionTreeNode)ptm.getRoot());                
+            }
+            if (validate) {
+                pep.validatePolicy();
             }
         } catch (ActionVetoException e) {
             // action vetoed

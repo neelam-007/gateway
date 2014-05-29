@@ -4087,9 +4087,11 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         // In the property, the last selected policy tab is always saved into the last position of the property value.
         // So when the last tabToken is processed, the corresponding component is the right one and will be selected via setComponent(...) in PolicyEditorPanel.
+        boolean someTabOpened = false;
         for (String tabToken: tabTokens) {
             if (tabToken.equals(HomePagePanel.HOME_PAGE_NAME)) {
                 getHomeAction().actionPerformed(null);
+                someTabOpened = true;
             } else {
                 String[] tabInfo = Pattern.compile("\\s*#\\s*").split(tabToken);
                 if (tabInfo.length < 3) throw new IllegalArgumentException("The format of " + WorkSpacePanel.PROPERTY_LAST_OPENED_POLICY_TABS + " is invalid.");
@@ -4143,8 +4145,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     // Open the policy version into the workspace
                     new EditPolicyAction(entityWithPolicyNode, true, fullPolicyVersion).invoke();
+                    someTabOpened = true;
                 }
             }
+        }
+
+        // If there is no any tab opened yet, then open a Home page
+        if (! someTabOpened) {
+            getHomeAction().actionPerformed(null);
         }
     }
 
