@@ -115,7 +115,7 @@ public class MqNativeModuleLoadListener {
         } else {
             final List<MessageSelector.MessageAttributeSelector> selectors = new ArrayList<>();
 
-            selectors.add(new MessageSelector.HeaderSelector(MqNativeRoutingAssertion.MQ + ".") {
+            selectors.add(new MessageSelector.HeadersKnobSelector(MqNativeRoutingAssertion.MQ + ".") {
                 @Override
                 protected ExpandVariables.Selector.Selection createSelection(String headerName, HeadersKnob headersKnob) {
                     String[] values = headersKnob.getHeaderValues(headerName, HeadersKnob.HEADER_TYPE_HTTP);
@@ -270,7 +270,7 @@ public class MqNativeModuleLoadListener {
      */
     private static void initializeModuleClusterProperties(final ServerConfig config) {
         final Map<String, String> names = config.getClusterPropertyNames();
-        final List<PropertyRegistrationInfo> toAdd = new ArrayList<PropertyRegistrationInfo>();
+        final List<PropertyRegistrationInfo> toAdd = new ArrayList<>();
         for ( final PropertyRegistrationInfo info : MODULE_CLUSTER_PROPERTIES) {
             if (!names.containsKey( info.getName() )) {
                 // create it

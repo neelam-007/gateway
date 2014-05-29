@@ -118,6 +118,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String SOAP_ENVELOPE_URI = "soap.envelopens";
     private static final String SOAP_VERSION = "soap.version";
 
+    private static final String JMS_HEADER_PREFIX = "jms.header.";
+    private static final String JMS_HEADERNAMES = "jms.headernames";
+    private static final String JMS_ALLHEADERVALUES = "jms.allheadervalues";
     private static final String JMS_PROPERTY_PREFIX = "jms.property.";
     private static final String JMS_PROPERTYNAMES = "jms.propertynames";
     private static final String JMS_ALLPROPERTYVALUES = "jms.allpropertyvalues";
@@ -169,9 +172,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         if ( !ArrayUtils.contains(getPrefixes(), prefix) && (selectorMap.get(prefix) == null)) return null; // this check ensures prefixes are added to the list
 
         if (lname.startsWith(HTTP_HEADER_PREFIX))
-            selector = singleHeaderSelector;
+            selector = singleHttpHeaderSelector;
         else if (lname.startsWith(HTTP_HEADERVALUES_PREFIX))
-            selector = multiHeaderSelector;
+            selector = multiHttpHeaderSelector;
         else if (lname.equals(HTTP_HEADERNAMES))
             selector = httpHeaderNamesSelector;
         else if (lname.equals(HTTP_ALLHEADERVALUES))
@@ -233,6 +236,12 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             selector = select(new AuthenticatedUserGetter<>(AUTH_USER_DNS, true, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
         } else if (lname.startsWith(AUTH_USER_DN)) {
             selector = select(new AuthenticatedUserGetter<>(AUTH_USER_DN, false, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
+        } else if (lname.startsWith(JMS_HEADER_PREFIX)) {
+            selector = jmsHeaderSelector;
+        } else if (lname.startsWith(JMS_HEADERNAMES)) {
+            selector = jmsHeaderNamesSelector;
+        } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
+            selector = jmsAllHeaderValuesSelector;
         } else if (lname.startsWith(JMS_PROPERTY_PREFIX)) {
             selector = jmsPropertySelector;
         } else if (lname.startsWith(JMS_PROPERTYNAMES)) {
@@ -628,26 +637,27 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             final String lname = name.toLowerCase();
 
-            if (WSS_CERT_COUNT.equals(lname)) {
-                return new Selection(getCertificateCount(context, false), null);
-            }
-            else if (WSS_SIGN_CERT_COUNT.equals(lname)) {
-                return new Selection(getCertificateCount(context, true), null);
-            } else { // cert value request
-                String prefix = getCertValPrefix(lname);
-                String rname = prefix == null ? null : lname.substring(prefix.length());
-                String[] valueParts = rname == null ? null : rname.split("\\.", 2);
-                if (valueParts != null && valueParts.length > 0 && isInt(valueParts[0]) ) {
-                    X509Certificate cert = getCertificate(context, Integer.parseInt(valueParts[0]), WSS_SIGN_CERT_VALUES_PREFIX.equals(prefix));
-                    return cert == null ?
-                            null :
-                            new Selection(cert , valueParts.length > 1 ? valueParts[1] : null);
-                } else if (strict) {
-                    String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                    throw new IllegalArgumentException(msg);
-                } else {
-                    return null;
-                }
+            switch (lname) {
+                case WSS_CERT_COUNT:
+                    return new Selection(getCertificateCount(context, false), null);
+                case WSS_SIGN_CERT_COUNT:
+                    return new Selection(getCertificateCount(context, true), null);
+                default:  // cert value request
+                    String prefix = getCertValPrefix(lname);
+                    String rname = prefix == null ? null : lname.substring(prefix.length());
+                    String[] valueParts = rname == null ? null : rname.split("\\.", 2);
+                    if (valueParts != null && valueParts.length > 0 && isInt(valueParts[0])) {
+                        X509Certificate cert = getCertificate(context, Integer.parseInt(valueParts[0]),
+                                WSS_SIGN_CERT_VALUES_PREFIX.equals(prefix));
+                        return cert == null ?
+                                null :
+                                new Selection(cert, valueParts.length > 1 ? valueParts[1] : null);
+                    } else if (strict) {
+                        String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                        throw new IllegalArgumentException(msg);
+                    } else {
+                        return null;
+                    }
             }
         }
     };
@@ -692,13 +702,86 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         return index < 1 || index > candidates.size() ? null : candidates.get(index - 1).getCertificate();
     }
 
-    private static final MessageAttributeSelector httpHeaderNamesSelector = new HeaderNamesSelector(HeadersKnob.HEADER_TYPE_HTTP);
-    private static final MessageAttributeSelector jmsPropertyNamesSelector = new HeaderNamesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+    private static final MessageAttributeSelector jmsHeaderNamesSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            HasHeaders headersKnob = context.getKnob(JmsKnob.class);
 
-    private static class HeaderNamesSelector implements MessageAttributeSelector {
+            if (headersKnob != null) {
+                String[] headers = headersKnob.getHeaderNames();
+                return new Selection(headers);
+            }
+
+            final String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
+        }
+    };
+
+    private static final MessageAttributeSelector jmsAllHeaderValuesSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            HasHeaders headersKnob = context.getKnob(JmsKnob.class);
+
+            if (headersKnob != null) {
+                String[] headers = headersKnob.getHeaderNames();
+                ArrayList <String> values = new ArrayList<>();
+                final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                final char delimiter = ':';
+
+                for(String header : headers) {
+                    String[] vals = headersKnob.getHeaderValues(header);
+                    String valStr = vals.length > 0
+                            ? syntax.format(vals, Syntax.getFormatter(vals[0]), handler, strict)
+                            : "";
+                    values.add(header + delimiter + valStr);
+                }
+
+                return new Selection(values.toArray());
+            }
+
+            final String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
+        }
+    };
+
+    private static final MessageAttributeSelector jmsHeaderSelector = new MessageAttributeSelector() {
+        @Override
+        public Selection select(Message message, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            boolean sawHeaderHaver = false;
+            final String hname = name.substring(JMS_HEADER_PREFIX.length());
+
+            HasHeaders headersKnob = message.getKnob(JmsKnob.class);
+
+            if (headersKnob != null) {
+                sawHeaderHaver = true;
+                String[] vals = headersKnob.getHeaderValues(hname);
+
+                if (vals != null && vals.length > 0) {
+                    return new Selection(vals[0]);
+                }
+            }
+
+            if (sawHeaderHaver) {
+                String msg = handler.handleBadVariable(hname + " header was empty");
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            } else {
+                String msg = handler.handleBadVariable(name + " in " + message.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            }
+        }
+    };
+
+    private static final MessageAttributeSelector httpHeaderNamesSelector = new HeadersKnobNamesSelector(HeadersKnob.HEADER_TYPE_HTTP);
+    private static final MessageAttributeSelector jmsPropertyNamesSelector = new HeadersKnobNamesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+    private static class HeadersKnobNamesSelector implements MessageAttributeSelector {
         final String headerType;
 
-        private HeaderNamesSelector(final String headerType) {
+        private HeadersKnobNamesSelector(final String headerType) {
             this.headerType = headerType;
         }
 
@@ -718,7 +801,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     }
 
     private static final MessageAttributeSelector httpAllHeaderValuesSelector =
-            new AllHeaderValuesSelector(HeadersKnob.HEADER_TYPE_HTTP) {
+            new HeadersKnobAllValuesSelector(HeadersKnob.HEADER_TYPE_HTTP) {
         @Override
         protected String getFormattedValueString(final String[] headerValues, final Syntax syntax,
                                                  final Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -732,7 +815,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     };
 
     private static final MessageAttributeSelector jmsAllPropertyValuesSelector =
-            new AllHeaderValuesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY) {
+            new HeadersKnobAllValuesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY) {
         @Override
         protected String getFormattedValueString(final String[] headerValues, final Syntax syntax,
                                                  final Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -746,10 +829,10 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
-    private static abstract class AllHeaderValuesSelector implements MessageAttributeSelector {
+    private static abstract class HeadersKnobAllValuesSelector implements MessageAttributeSelector {
         final String headerType;
 
-        private AllHeaderValuesSelector(final String headerType) {
+        private HeadersKnobAllValuesSelector(final String headerType) {
             this.headerType = headerType;
         }
 
@@ -783,7 +866,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                                                           final Syntax.SyntaxErrorHandler handler, boolean strict);
     }
 
-    private static final HeaderSelector singleHeaderSelector = new HeaderSelector(HTTP_HEADER_PREFIX) {
+    private static final HeadersKnobSelector singleHttpHeaderSelector = new HeadersKnobSelector(HTTP_HEADER_PREFIX) {
         @Override
         protected Selection createSelection(final String headerName, final HeadersKnob headersKnob) {
             String[] values = headersKnob.getHeaderValues(headerName, HeadersKnob.HEADER_TYPE_HTTP);
@@ -792,7 +875,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
-    private static final HeaderSelector multiHeaderSelector = new HeaderSelector(HTTP_HEADERVALUES_PREFIX) {
+    private static final HeadersKnobSelector multiHttpHeaderSelector = new HeadersKnobSelector(HTTP_HEADERVALUES_PREFIX) {
         @Override
         protected Selection createSelection(final String headerName, final HeadersKnob headersKnob) {
             String[] values = headersKnob.getHeaderValues(headerName, HeadersKnob.HEADER_TYPE_HTTP);
@@ -801,7 +884,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     };
 
-    private static final HeaderSelector jmsPropertySelector = new HeaderSelector(JMS_PROPERTY_PREFIX) {
+    private static final HeadersKnobSelector jmsPropertySelector = new HeadersKnobSelector(JMS_PROPERTY_PREFIX) {
         @Override
         protected Selection createSelection(final String headerName, final HeadersKnob headersKnob) {
             String[] values = headersKnob.getHeaderValues(headerName, JmsKnob.HEADER_TYPE_JMS_PROPERTY);
@@ -830,10 +913,10 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         }
     }
 
-    public static abstract class HeaderSelector implements MessageAttributeSelector {
+    public static abstract class HeadersKnobSelector implements MessageAttributeSelector {
         final String prefix;
 
-        public HeaderSelector(final String prefix) {
+        public HeadersKnobSelector(final String prefix) {
             this.prefix = prefix;
         }
 

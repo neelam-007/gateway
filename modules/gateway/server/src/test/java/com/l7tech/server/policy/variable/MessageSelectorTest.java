@@ -126,9 +126,9 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderNames() {
-        addJmsProperties();
+        addJmsHeaders();
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.propertynames", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
 
         final String[] selectedValue = (String[]) selection.getSelectedValue();
         final List<String> asList = Arrays.asList(selectedValue);
@@ -140,6 +140,73 @@ public class MessageSelectorTest {
 
     @Test
     public void selectJmsHeaderNamesNone() {
+        message.attachJmsKnob(new JmsKnobStub(new Goid(0, 1234L), false, null));
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames", handler, false);
+
+        final String[] selectedValue = (String[]) selection.getSelectedValue();
+        assertEquals(0, selectedValue.length);
+    }
+
+    @Test
+    public void selectJmsHeader() {
+        addJmsHeaders();
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.h2", handler, false);
+
+        final String selectedValue = (String) selection.getSelectedValue();
+        assertEquals("h2value", selectedValue);
+    }
+
+    @Test
+    public void selectJmsHeaderNotFound() {
+        message.attachJmsKnob(new JmsKnobStub(new Goid(0, 1234L), false, null));
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.header.h4", handler, false);
+
+        assertNull(selection);
+    }
+
+    @Test
+    public void selectJmsHeaderValues() {
+        addJmsHeaders();
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
+
+        final Object[] selectedValue = (Object[]) selection.getSelectedValue();
+        final List<Object> asList = Arrays.asList(selectedValue);
+        assertEquals(3, asList.size());
+        assertTrue(asList.contains("h1:h1value"));
+        assertTrue(asList.contains("h2:h2value"));
+        assertTrue(asList.contains("h3:h3value"));
+    }
+
+    @Test
+    public void selectJmsHeaderValuesNone() {
+        message.attachJmsKnob(new JmsKnobStub(new Goid(0, 1234L), false, null));
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues", handler, false);
+
+        final Object[] selectedValue = (Object[]) selection.getSelectedValue();
+        assertEquals(0, selectedValue.length);
+    }
+
+    @Test
+    public void selectJmsPropertyNames() {
+        addJmsProperties();
+
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.propertynames", handler, false);
+
+        final String[] selectedValue = (String[]) selection.getSelectedValue();
+        final List<String> asList = Arrays.asList(selectedValue);
+        assertEquals(3, asList.size());
+        assertTrue(asList.contains("p1"));
+        assertTrue(asList.contains("p2"));
+        assertTrue(asList.contains("p3"));
+    }
+
+    @Test
+    public void selectJmsPropertyNamesNone() {
         message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.propertynames", handler, false);
 
@@ -148,24 +215,24 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectJmsHeader() {
+    public void selectJmsProperty() {
         addJmsProperties();
 
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.h2", handler, false);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.p2", handler, false);
 
         final String selectedValue = (String) selection.getSelectedValue();
-        assertEquals("h2value", selectedValue);
+        assertEquals("p2value", selectedValue);
     }
 
     @Test
-    public void selectJmsHeaderNotFound() {
-        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.h4", handler, false);
+    public void selectJmsPropertyNotFound() {
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.property.p4", handler, false);
 
         assertNull(selection);
     }
 
     @Test
-    public void selectJmsHeaderValues() {
+    public void selectJmsPropertyValues() {
         HeadersKnob headersKnob = message.getHeadersKnob();
         headersKnob.addHeader("propertyName", "originalValue", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("propertyName", "secondValue", HEADER_TYPE_JMS_PROPERTY);
@@ -182,7 +249,7 @@ public class MessageSelectorTest {
     }
 
     @Test
-    public void selectJmsHeaderValuesNone() {
+    public void selectJmsPropertyValuesNone() {
         message.attachKnob(HeadersKnob.class, new HeadersKnobSupport());
         final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allpropertyvalues", handler, false);
 
@@ -863,10 +930,21 @@ public class MessageSelectorTest {
         assertNull(selector.select(null, message, "ftp.replytext", handler, false));
     }
 
+    private void addJmsHeaders() {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("h1", "h1value");
+        headers.put("h2", "h2value");
+        headers.put("h3", "h3value");
+
+        JmsKnobStub jmsKnob = new JmsKnobStub(new Goid(0, 1234L), false, null);
+        jmsKnob.setHeaders(headers);
+        message.attachJmsKnob(jmsKnob);
+    }
+
     private void addJmsProperties() {
         HeadersKnob headersKnob = message.getHeadersKnob();
-        headersKnob.addHeader("h1", "h1value", HEADER_TYPE_JMS_PROPERTY);
-        headersKnob.addHeader("h2", "h2value", HEADER_TYPE_JMS_PROPERTY);
-        headersKnob.addHeader("h3", "h3value", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("p1", "p1value", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("p2", "p2value", HEADER_TYPE_JMS_PROPERTY);
+        headersKnob.addHeader("p3", "p3value", HEADER_TYPE_JMS_PROPERTY);
     }
 }
