@@ -1223,7 +1223,10 @@ public class WorkSpacePanel extends JPanel {
                 return null;
             }
 
-            final String policyFullName = ((PolicyEditorPanel) currentComponent).getDisplayName();
+            final PolicyEditorPanel pep = (PolicyEditorPanel) currentComponent;
+            String policyFullName = pep.getDisplayName();
+            if (pep.isUnsavedChanges()) policyFullName = "* " + policyFullName;
+
             // Get a fresh policy xml, since the policy might be changed and unsaved.
             final String policyXml = WspWriter.getPolicyXml(((PolicyEditorPanel) currentComponent).getCurrentRoot().asAssertion());
 
