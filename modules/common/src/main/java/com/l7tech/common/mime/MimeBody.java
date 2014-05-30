@@ -39,7 +39,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
     private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
-    private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", false );
+    private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
 
     /**
      * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage
@@ -48,7 +48,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
     }
     static void loadLaxEmptyMutipart(){
-        ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", false );
+        ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
     }
 
 

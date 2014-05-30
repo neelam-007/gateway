@@ -38,14 +38,22 @@ public class MimeBodyTest {
     }
 
     @Test
-    public void testEmptyMultiPartMessage() throws Exception {
-        try{
+    public void testEmptyMultiPartMessageNonLaxEmptyMultipart() throws Exception {
+        System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "false");
+        ConfigFactory.clearCachedConfig();
+        MimeBody.loadLaxEmptyMutipart();
+        try {
             MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
             mm.getEntireMessageBodyLength(); // force entire body to be read
-        }catch (IOException e){
+        } catch (IOException e){
             // exception expected
             assertEquals("Message MIME type is multipart/related, but no initial boundary found", e.getMessage());
             return ;
+        } finally {
+            // full clean up of internal state of MimeBody
+            System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
+            ConfigFactory.clearCachedConfig();
+            MimeBody.loadLaxEmptyMutipart();
         }
         fail("Did not receive expected IOException");
     }
@@ -98,7 +106,18 @@ public class MimeBodyTest {
         }
     }
 
-
+    @Test
+    public void testEmptyMultiPartMessageLaxParsingByDefault() throws Exception {
+        // com.l7tech.common.mime.allowLaxEmptyMultipart is true by default
+        MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
+        assertEquals( -1L, mm.getFirstPart().getContentLength()); // size of part not yet known
+        long len = mm.getEntireMessageBodyLength(); // force entire body to be read
+        assertEquals( 0L, len);
+        assertEquals( 0L, mm.getFirstPart().getContentLength()); // size now known
+        assertEquals( "multipart", mm.getFirstPart().getContentType().getType());
+        assertEquals( "related", mm.getFirstPart().getContentType().getSubtype());
+        assertEquals( 1L, mm.getNumPartsKnown()); // no other parts
+    }
 
     /**
      * We strictly match the start parameter to the Content-ID by default. This can be turned off but only via a system
