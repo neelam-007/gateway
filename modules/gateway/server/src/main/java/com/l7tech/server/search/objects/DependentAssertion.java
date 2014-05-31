@@ -1,27 +1,57 @@
 package com.l7tech.server.search.objects;
 
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.search.Dependency;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a dependent assertion.
  *
  * @author Victor Kazakov
  */
-public class DependentAssertion extends DependentObject {
+public class DependentAssertion<A extends Assertion> extends DependentObject {
 
-    private String descriptiveName;
+    @NotNull
+    private final Class<A> assertionClass;
 
-    public DependentAssertion(String name, String descriptiveName) {
+    /**
+     * Creates a new DependentAssertion
+     *
+     * @param name           The name of the assertion
+     * @param assertionClass The assertion class
+     */
+    public DependentAssertion(@NotNull final String name, @NotNull final Class<A> assertionClass) {
         super(name, Dependency.DependencyType.ASSERTION);
-        this.descriptiveName = descriptiveName;
+        this.assertionClass = assertionClass;
     }
 
-    public DependentAssertion(DependentAssertion object) {
-        super(object);
-        this.descriptiveName = object.descriptiveName;
+    /**
+     * Returns the assertion class
+     *
+     * @return the assertion class
+     */
+    @NotNull
+    public Class<A> getAssertionClass() {
+        return assertionClass;
     }
 
-    public String getDescriptiveName() {
-        return descriptiveName;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        DependentAssertion that = (DependentAssertion) o;
+
+        if (!assertionClass.equals(that.assertionClass)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + assertionClass.hashCode();
+        return result;
     }
 }

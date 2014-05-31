@@ -6,7 +6,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
-import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -34,7 +33,7 @@ import java.util.Map;
  */
 @SuppressWarnings({"unchecked", "UnusedDeclaration"})
 @RunWith(MockitoJUnitRunner.class)
-public class GenericDependencyProcessorTest {
+public class DefaultDependencyProcessorTest {
     private static final Goid GOID = new Goid(123,456);
     private static final String GOID_STR = Goid.toString(GOID);
 
@@ -45,10 +44,10 @@ public class GenericDependencyProcessorTest {
     private IdentityProviderConfigManager identityProviderConfigManager;
 
     @InjectMocks
-    GenericDependencyProcessor processor = new GenericDependencyProcessor();
+    DefaultDependencyProcessor processor = new DefaultDependencyProcessor();
 
     @Spy
-    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.GENERIC, processor).map()));
+    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.ANY, processor).map()));
 
     @Test
     public void testCreateDependentObjectFromPolicy() {
@@ -250,7 +249,7 @@ public class GenericDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesWithAnnotations() throws FindException, DependencyAnalyzerException {
+    public void testFindDependenciesWithAnnotations() throws FindException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -284,7 +283,7 @@ public class GenericDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesWithSubObjects() throws FindException, DependencyAnalyzerException {
+    public void testFindDependenciesWithSubObjects() throws FindException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");

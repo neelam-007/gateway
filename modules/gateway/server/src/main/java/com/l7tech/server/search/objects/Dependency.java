@@ -13,32 +13,28 @@ import java.util.List;
  */
 public class Dependency {
 
+    @NotNull
     private final DependentObject dependent;
     private List<Dependency> dependencies;
-    private boolean dependenciesSet = false;
 
     /**
-     * Creates a new dependency object for the given dependent. The objects dependencies will be marked as undiscovered
-     * ({@link #areDependenciesSet()} will return false )
+     * Creates a new dependency object for the given dependent. The objects dependencies will be set to null.
      *
      * @param dependent The dependent object for this dependency.
      */
-    public Dependency(@NotNull DependentObject dependent) {
+    public Dependency(@NotNull final DependentObject dependent) {
         this.dependent = dependent;
     }
 
     /**
-     * Creates a new dependency object for the given dependent. The dependent will also have the given dependencies. The
-     * dependencies for this dependency will be marked are being discovered. {@link #areDependenciesSet()} will return
-     * true.
+     * Creates a new dependency object for the given dependent. The dependent will also have the given dependencies.
      *
      * @param dependent    The dependent for this dependency object.
      * @param dependencies The set of dependencies that this dependency has.
      */
-    protected Dependency(@NotNull DependentEntity dependent, @NotNull List<Dependency> dependencies) {
+    protected Dependency(@NotNull final DependentEntity dependent, @NotNull final List<Dependency> dependencies) {
         this.dependent = dependent;
         this.dependencies = Collections.unmodifiableList(dependencies);
-        dependenciesSet = true;
     }
 
     /**
@@ -46,6 +42,7 @@ public class Dependency {
      *
      * @return The dependent for this dependency
      */
+    @NotNull
     public DependentObject getDependent() {
         return dependent;
     }
@@ -67,17 +64,7 @@ public class Dependency {
      *
      * @param dependencies The dependencies that this dependent has.
      */
-    public void setDependencies(@NotNull List<Dependency> dependencies) {
+    public void setDependencies(@NotNull final List<Dependency> dependencies) {
         this.dependencies = dependencies;
-        dependenciesSet = true;
-    }
-
-    /**
-     * Checks if the dependencies for this dependent have been discovered.
-     *
-     * @return returns true if the dependencies have been discovered. false otherwise.
-     */
-    public boolean areDependenciesSet() {
-        return dependenciesSet;
     }
 }

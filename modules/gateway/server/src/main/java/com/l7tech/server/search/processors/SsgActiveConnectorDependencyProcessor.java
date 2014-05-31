@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public class SsgActiveConnectorDependencyProcessor extends GenericDependencyProcessor<SsgActiveConnector> {
+public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProcessor<SsgActiveConnector> {
 
     @Inject
     @Named("ssgActiveConnectorDependencyProcessorRegistry")
@@ -30,7 +30,7 @@ public class SsgActiveConnectorDependencyProcessor extends GenericDependencyProc
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(SsgActiveConnector activeConnector, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
         //find the default dependencies
         List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
@@ -46,7 +46,7 @@ public class SsgActiveConnectorDependencyProcessor extends GenericDependencyProc
     }
 
     @Override
-    public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         //delegate to the custom dependency processor for the SsgActiveConnector type.
 
         DependencyProcessor processor = processorRegistry.get(activeConnector.getType());

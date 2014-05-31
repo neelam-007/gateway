@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder> implements DependencyProcessor<Folder> {
+public class FolderDependencyProcessor extends DefaultDependencyProcessor<Folder> implements DependencyProcessor<Folder> {
 
     @Inject
     private FolderManager folderManager;
@@ -54,7 +54,7 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
      * @throws FindException
      */
     @NotNull
-    public List<Dependency> findDependencies(Folder folder, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull Folder folder, @NotNull DependencyFinder finder) throws FindException {
         Collection<Folder> folders = folderManager.findAll();
         Collection<Policy> policies = policyManager.findAll();
         Collection<PublishedService> services = serviceManager.findAll();
@@ -108,12 +108,10 @@ public class FolderDependencyProcessor extends GenericDependencyProcessor<Folder
         }
 
         SecurityZone securityZone = folder.getSecurityZone();
-        if (securityZone != null) {
             Dependency securityZoneDependency = finder.getDependency(securityZone);
             if(securityZoneDependency != null) {
                 dependencies.add(securityZoneDependency);
             }
-        }
 
         return dependencies;
     }

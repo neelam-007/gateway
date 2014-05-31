@@ -90,8 +90,6 @@ public class BundleResource {
      * Returns the bundle for the given resources.
      *
      * @param defaultAction                      The default bundling action. By default this is NewOrExisting
-     * @param includeRequestFolder               For a folder export, specifies whether to include the folder in the
-     *                                           bundle or just its contents.
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
      *                                           default.
      * @param folderIds                          The folders to export
@@ -104,7 +102,6 @@ public class BundleResource {
      */
     @GET
     public Item<Bundle> exportBundle(@QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
-                                     @QueryParam("includeRequestFolder") @DefaultValue("true") Boolean includeRequestFolder,
                                      @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
                                      @QueryParam("folder") List<String> folderIds,
                                      @QueryParam("service") List<String> serviceIds,
@@ -128,7 +125,7 @@ public class BundleResource {
             entityHeaders.add(new EntityHeader(policyId, EntityType.POLICY, null, null));
         }
 
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }

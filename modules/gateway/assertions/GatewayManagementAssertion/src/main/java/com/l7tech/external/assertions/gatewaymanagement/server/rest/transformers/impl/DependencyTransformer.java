@@ -37,38 +37,36 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
     @Override
     public DependencyListMO convertToMO(DependencySearchResults dependencySearchResults) {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    @Override
-    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO DependencyListMO) throws ResourceFactory.InvalidResourceException {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    @Override
-    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO DependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    @Override
-    public Item<DependencyListMO> convertToItem(DependencyListMO DependencyListMO) {
-        throw new UnsupportedOperationException("TODO?");
-    }
-
-    public DependencyListMO toDependencyListObject(DependencySearchResults dependencySearchResults) {
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
         dependencyAnalysisMO.setSearchObjectItem( toDependencyManagedObject(dependencySearchResults.getDependent(), dependencySearchResults.getDependencies()));
-        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults, false), new Functions.Unary<DependencyMO, DependentObject>() {
+        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, false), new Functions.Unary<DependencyMO, Dependency>() {
             @Override
-            public DependencyMO call(DependentObject dependentObject) {
-                return toManagedObject(dependentObject);
+            public DependencyMO call(Dependency dependency) {
+                return toManagedObject(dependency);
             }
         }));
         return dependencyAnalysisMO;
     }
 
-    private DependencyMO toDependencyManagedObject(DependentObject depObject , List<Dependency> dependencies) {
+    @Override
+    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(dependencyListMO, true);
+    }
+
+    @Override
+    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO dependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+        throw new UnsupportedOperationException("Converting DependencyListMO to an internal DependencySearchResults is not supported.");
+    }
+
+    @Override
+    public Item<DependencyListMO> convertToItem(DependencyListMO dependencyListMO) {
+        return new ItemBuilder<DependencyListMO>(dependencyListMO.getSearchObjectItem().getName() + " dependencies", getResourceType())
+                .setContent(dependencyListMO)
+                .build();
+    }
+
+    private DependencyMO toDependencyManagedObject(DependentObject depObject, List<Dependency> dependencies) {
         List<DependencyMO> dependencyMOs = new ArrayList<>();
         for (Dependency dependency : dependencies) {
             DependencyMO dependencyMO = ManagedObjectFactory.createDependencyMO();
@@ -88,19 +86,24 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return dependency;
     }
 
-    private List<DependencyMO> toManagedObject(List<DependentObject> dependencies) {
-        ArrayList<DependencyMO> dependencyMOs = new ArrayList<>();
-        for (DependentObject dependency : dependencies) {
-            dependencyMOs.add(toManagedObject(dependency));
+    private List<DependencyMO> toManagedObject(List<Dependency> dependencies) {
+        if(dependencies == null || dependencies.isEmpty()){
+            return null;
+        } else {
+            ArrayList<DependencyMO> dependencyMOs = new ArrayList<>();
+            for (Dependency dependency : dependencies) {
+                dependencyMOs.add(toManagedObject(dependency));
+            }
+            return dependencyMOs.isEmpty() ? null : dependencyMOs;
         }
-        return dependencyMOs.isEmpty() ? null : dependencyMOs;
     }
 
-    private DependencyMO toManagedObject(DependentObject dependency) {
+    private DependencyMO toManagedObject(Dependency dependency) {
         DependencyMO dependencyMO = ManagedObjectFactory.createDependencyMO();
-        dependencyMO.setName(toReference(dependency).getName());
-        dependencyMO.setId(toReference(dependency).getId());
-        dependencyMO.setType(toReference(dependency).getType());
+        Item dependencyItem = toReference(dependency.getDependent());
+        dependencyMO.setName(dependencyItem.getName());
+        dependencyMO.setId(dependencyItem.getId());
+        dependencyMO.setType(dependencyItem.getType());
         dependencyMO.setDependencies(toManagedObject(dependency.getDependencies()));
         return dependencyMO;
     }

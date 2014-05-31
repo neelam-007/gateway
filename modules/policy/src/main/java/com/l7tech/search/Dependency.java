@@ -1,6 +1,7 @@
 package com.l7tech.search;
 
 import com.l7tech.objectmodel.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -62,9 +63,7 @@ public @interface Dependency {
         GROUP(EntityType.GROUP),
         RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
-        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
-        ASSERTION_LOOKUP_TRUSTED_CERTIFICATE(null),
-        ASSERTION_WS_SECURITY(null);
+        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE);
 
         private EntityType entityType;
 
@@ -74,6 +73,16 @@ public @interface Dependency {
 
         public EntityType getEntityType() {
             return entityType;
+        }
+
+        @NotNull
+        public static DependencyType fromEntityType(@NotNull final EntityType entityType) {
+            for(final DependencyType dependencyType : DependencyType.values()){
+                if(entityType.equals(dependencyType.getEntityType())){
+                    return dependencyType;
+                }
+            }
+            throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
         }
     }
 
@@ -85,7 +94,7 @@ public @interface Dependency {
     /**
      * @return The Entity type for the entity that is returned or referenced by this method.
      */
-    DependencyType type() default DependencyType.GENERIC;
+    DependencyType type() default DependencyType.ANY;
 
     /**
      * @return The type of object that this method returned. This is either the entity itself or an identifier that can

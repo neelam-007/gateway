@@ -16,20 +16,20 @@ import java.util.List;
  *
  * @author Victor Kazakov
  */
-public class SsgConnectorDependencyProcessor extends GenericDependencyProcessor<SsgConnector> {
+public class SsgConnectorDependencyProcessor extends DefaultDependencyProcessor<SsgConnector> {
 
     @Inject
     @Named("ssgConnectorDependencyProcessorRegistry")
-    private DependencyProcessorRegistry processorRegistry;
+    private DependencyProcessorRegistry ssgConnectorDependencyProcessorRegistry;
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(SsgConnector activeConnector, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull SsgConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
         //finds the default SsgConnector dependencies
         List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //Gets the dependencies from the dependency processor for the connector scheme
-        DependencyProcessor processor = processorRegistry.get(activeConnector.getScheme());
+        DependencyProcessor processor = ssgConnectorDependencyProcessorRegistry.get(activeConnector.getScheme());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(processor.findDependencies(activeConnector, finder));

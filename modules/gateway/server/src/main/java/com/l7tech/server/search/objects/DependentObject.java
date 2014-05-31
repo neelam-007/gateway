@@ -4,33 +4,32 @@ import com.l7tech.search.Dependency;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * This was created: 6/10/13 as 11:29 AM
+ * This is the dependent object base class
  *
  * @author Victor Kazakov
  */
 public abstract class DependentObject {
+    @Nullable
     private final String name;
-    private Dependency.DependencyType dependencyType;
-    private List<DependentObject> dependencies = new ArrayList<>();
+    @NotNull
+    private final Dependency.DependencyType dependencyType;
 
-    public DependentObject(@Nullable String name, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType) {
+    /**
+     * Creates a new Dependency Object with the given name and type
+     *
+     * @param name           The name of this dependency object. This is generally a nice human readable name.
+     * @param dependencyType The dependency type
+     */
+    public DependentObject(@Nullable final String name, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType) {
         this.name = name;
         this.dependencyType = dependencyType;
-    }
-
-    public DependentObject(final DependentObject object) {
-        this.name = object.name;
-        this.dependencyType = object.dependencyType;
-        this.dependencies.addAll(object.dependencies);
     }
 
     /**
      * @return The name of the entity. Not all entities have names so this may be null.
      */
+    @Nullable
     public String getName() {
         return name;
     }
@@ -43,37 +42,23 @@ public abstract class DependentObject {
         return dependencyType;
     }
 
-    @NotNull
-    public List<DependentObject> getDependencies() {
-        return dependencies;
-    }
-
-    public void setDependencies(List<DependentObject> dependencies) {
-        this.dependencies = dependencies;
-    }
-
-    public void addDependency(DependentObject dependency){
-        dependencies.add(dependency);
-    }
-
-
+    /*
+    Don't check dependent object names when checking equality.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DependentObject)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
         DependentObject that = (DependentObject) o;
 
         if (dependencyType != that.dependencyType) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (dependencyType != null ? dependencyType.hashCode() : 0);
-        return result;
+        return dependencyType.hashCode();
     }
 }

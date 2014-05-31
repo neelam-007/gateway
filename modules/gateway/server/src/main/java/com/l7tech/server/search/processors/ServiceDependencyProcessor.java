@@ -22,14 +22,14 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public class ServiceDependencyProcessor extends GenericDependencyProcessor<PublishedService> implements DependencyProcessor<PublishedService> {
+public class ServiceDependencyProcessor extends DefaultDependencyProcessor<PublishedService> implements DependencyProcessor<PublishedService> {
 
     @Inject
     private FolderManager folderManager;
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(PublishedService object, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull PublishedService object, @NotNull DependencyFinder finder) throws FindException {
         List<Dependency> dependencies;
         if (!finder.getOption(DependencyAnalyzer.ReturnServicePoliciesAsDependencies, Boolean.class, false)) {
             List<Dependency> dependenciesFound = super.findDependencies(object, finder);
@@ -50,7 +50,7 @@ public class ServiceDependencyProcessor extends GenericDependencyProcessor<Publi
     }
 
     @Override
-    public void replaceDependencies(@NotNull PublishedService object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull PublishedService object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(object, replacementMap, finder);
 
         //This will replace dependencies in the assertions that this service contains

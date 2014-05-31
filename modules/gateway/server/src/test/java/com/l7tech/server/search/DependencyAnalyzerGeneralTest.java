@@ -7,8 +7,8 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.processors.DefaultDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyProcessor;
-import com.l7tech.server.search.processors.GenericDependencyProcessor;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,10 +36,10 @@ public class DependencyAnalyzerGeneralTest {
     private EntityCrud entityCrud;
 
     @InjectMocks
-    GenericDependencyProcessor genericDependencyProcessor = new GenericDependencyProcessor();
+    DefaultDependencyProcessor defaultDependencyProcessor = new DefaultDependencyProcessor();
 
     @Spy
-    DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder().put(Dependency.DependencyType.GENERIC, genericDependencyProcessor).map());
+    DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder().put(Dependency.DependencyType.ANY, defaultDependencyProcessor).map());
 
     @InjectMocks
     DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzerImpl();
@@ -109,7 +109,7 @@ public class DependencyAnalyzerGeneralTest {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency), depth1SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
-        Assert.assertFalse(dependencies.getDependencies().iterator().next().areDependenciesSet());
+        Assert.assertTrue(dependencies.getDependencies().iterator().next().getDependencies() == null);
     }
 
     @Test
@@ -117,7 +117,7 @@ public class DependencyAnalyzerGeneralTest {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(cycleRoot), depth1SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
-        Assert.assertFalse(dependencies.getDependencies().iterator().next().areDependenciesSet());
+        Assert.assertTrue(dependencies.getDependencies().iterator().next().getDependencies() == null);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class DependencyAnalyzerGeneralTest {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency), depth2SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
-        Assert.assertTrue(dependencies.getDependencies().iterator().next().areDependenciesSet());
+        Assert.assertTrue(dependencies.getDependencies().iterator().next().getDependencies() != null);
     }
 
     @Test

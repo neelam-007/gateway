@@ -14,12 +14,12 @@ import java.util.List;
 * This is used to find dependencies in the jms endpoint and the related jms connection object
 *
 */
-public class JmsEndpointDependencyProcessor extends GenericDependencyProcessor<JmsEndpoint> implements DependencyProcessor<JmsEndpoint> {
+public class JmsEndpointDependencyProcessor extends DefaultDependencyProcessor<JmsEndpoint> implements DependencyProcessor<JmsEndpoint> {
 
     @Inject
     private JmsConnectionManager jmsConnectionManager;
 
-    private GenericDependencyProcessor<JmsConnection> jmsConnectionGenericDependencyProcessor = new GenericDependencyProcessor<JmsConnection>();
+    private DefaultDependencyProcessor<JmsConnection> jmsConnectionDefaultDependencyProcessor = new DefaultDependencyProcessor<JmsConnection>();
 
     /**
      * Finds the dependencies that the jms endpoint has and the associated jms connection has.
@@ -31,12 +31,12 @@ public class JmsEndpointDependencyProcessor extends GenericDependencyProcessor<J
      */
     @NotNull
     @Override
-    public List<Dependency> findDependencies(JmsEndpoint endpoint, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull JmsEndpoint endpoint, @NotNull DependencyFinder finder) throws FindException {
         //dependencies for the jms endpoint
         List<Dependency> dependencies = super.findDependencies(endpoint, finder);
 
         //dependencies for the associated jms connection
-        dependencies.addAll(jmsConnectionGenericDependencyProcessor.findDependencies(jmsConnectionManager.findByPrimaryKey(endpoint.getConnectionGoid()), finder));
+        dependencies.addAll(jmsConnectionDefaultDependencyProcessor.findDependencies(jmsConnectionManager.findByPrimaryKey(endpoint.getConnectionGoid()), finder));
 
         return dependencies;
     }

@@ -28,16 +28,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SsgConnectorTest extends DependencyTestBaseClass {
 
     AtomicLong idCount = new AtomicLong(1);
-    private String myCustomConnectorScheme = "MyCustomConnectory";
+    private String myCustomConnectorScheme = "MyCustomConnector";
 
-    private Dependency myDependency = new Dependency(new DependentEntity("dependentName", EntityType.ANY, new EntityHeader(new Goid(0,1),EntityType.ANY, idCount.getAndIncrement()+"",null)));
+    private Dependency myDependency = new Dependency(new DependentEntity("dependentName", new EntityHeader(new Goid(0,1),EntityType.ANY, idCount.getAndIncrement()+"",null)));
 
     @Before
     public void before() {
         //add the custom connector dependency processor
-        dependencyProcessorRegistry.register(myCustomConnectorScheme, new BaseDependencyProcessor<SsgConnector>() {
+        ssgConnectorDependencyProcessorRegistry.register(myCustomConnectorScheme, new BaseDependencyProcessor<SsgConnector>() {
             @NotNull
-            public List<Dependency> findDependencies(SsgConnector object, DependencyFinder finder) throws FindException {
+            public List<Dependency> findDependencies(@NotNull SsgConnector object, @NotNull DependencyFinder finder) throws FindException {
                 return Arrays.asList(myDependency);
             }
         });
@@ -46,7 +46,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
     @After
     public void after() {
         //remove all custom connector dependency processors.
-        dependencyProcessorRegistry.remove(myCustomConnectorScheme);
+        ssgConnectorDependencyProcessorRegistry.remove(myCustomConnectorScheme);
     }
 
 

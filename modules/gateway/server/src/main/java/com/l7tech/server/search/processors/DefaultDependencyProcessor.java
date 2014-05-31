@@ -12,7 +12,6 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
-import com.l7tech.server.search.DependencyAnalyzerException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
@@ -33,23 +32,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.KeyStoreException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This is used to find dependencies for a generic object. Dependencies are found by looking at the methods that the
- * object defines. If the methods return an Entity object then this is considered to be a dependency. Methods can also
- * be annotated with  {@link com.l7tech.search.Dependency} in order to find dependencies in other ways or to exclude
- * methods
- *
- * @author Victor Kazakov
+ * This is used to find dependencies for an object in the gateway. Dependencies are found by looking at the methods that
+ * the object defines. If the methods return an Entity object then this is considered to be a dependency. Methods can
+ * also be annotated with  {@link com.l7tech.search.Dependency} or {@link com.l7tech.search.Dependencies} in order to
+ * find dependencies in other ways or to exclude methods.
  */
-public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
-    protected static final Logger logger = Logger.getLogger(GenericDependencyProcessor.class.getName());
+public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
+    protected static final Logger logger = Logger.getLogger(DefaultDependencyProcessor.class.getName());
 
     @Inject
     private EntityCrud entityCrud;
@@ -67,18 +61,18 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     private TrustedCertManager trustedCertManager;
 
     @Inject
-    DefaultKey defaultKey;
+    private DefaultKey defaultKey;
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(O object, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull final O object, @NotNull final DependencyFinder finder) throws FindException {
         ArrayList<Dependency> dependencies = new ArrayList<>();
         //Get all the methods that this entity declares
         List<Method> entityMethods = getAllMethods(object.getClass());
         for (Method method : entityMethods) {
             //process each method that return an Entity or is annotated with @Dependency.
-            if (isEntityMethod(method)) {
-                List<Entity> dependentEntities = null;
+            if (isDependencyGetterMethod(method)) {
+                final List<Object> dependentEntities = new ArrayList<>();
                 try {
                     Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
                     if (dependenciesAnnotation == null) {
@@ -89,17 +83,13 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                             dependencies.addAll(finder.getDependencies(getterMethodReturn));
                         } else {
                             Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                            dependentEntities = getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                            dependentEntities.addAll(getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder));
                         }
                     } else {
-                        dependentEntities = new ArrayList<>();
                         for (com.l7tech.search.Dependency annotation : dependenciesAnnotation.value()) {
                             //calls the getter method and retrieves the dependency.
                             Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                            final List<Entity> dependenciesFromMethodReturnValue = getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder);
-                            if (dependenciesFromMethodReturnValue != null) {
-                                dependentEntities.addAll(dependenciesFromMethodReturnValue);
-                            }
+                            dependentEntities.addAll(getDependenciesFromMethodReturnValue(annotation, getterMethodReturn, finder));
                         }
                     }
                 } catch (Exception e) {
@@ -107,7 +97,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                     logger.log(Level.FINE, "WARNING finding dependencies - error getting dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass(), e);
                     throw new FindException("WARNING finding dependencies - error getting dependent entity from method " + (method != null ? "using method " + method.getName() : "") + " for entity " + object.getClass());
                 }
-                dependencies.addAll(finder.getDependenciesFromEntities(object, finder, dependentEntities));
+                dependencies.addAll(finder.getDependenciesFromObjects(object, finder, dependentEntities));
             }
         }
 
@@ -115,11 +105,9 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         if (object instanceof UsesPrivateKeys && ((UsesPrivateKeys) object).getPrivateKeysUsed() != null) {
             for (SsgKeyHeader keyHeader : ((UsesPrivateKeys) object).getPrivateKeysUsed()) {
                 final Entity keyEntry = loadEntity(keyHeader);
-                if (keyEntry != null) {
                     Dependency dependency = finder.getDependency(keyEntry);
                     if (dependency != null && !dependencies.contains(dependency))
                         dependencies.add(dependency);
-                }
             }
         }
         return dependencies;
@@ -142,8 +130,8 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         }
     }
 
-    private List<Entity> getDependenciesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) throws DependencyAnalyzerException, FindException {
-        List<Entity> dependentEntities;
+    @NotNull
+    private List<?> getDependenciesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) throws FindException {
         if (annotation != null) {
             if (methodReturnValue instanceof Map) {
                 if (annotation.key().isEmpty())
@@ -151,11 +139,11 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                 methodReturnValue = ((Map) methodReturnValue).get(annotation.key());
             }
             //If the dependency annotation is specified us the finder to retrieve the entity.
-            dependentEntities = methodReturnValue == null ? null : finder.retrieveEntities(methodReturnValue, annotation.type(), annotation.methodReturnType());
-        } else {
-            dependentEntities = methodReturnValue == null ? null : Arrays.asList((Entity) methodReturnValue);
+            return methodReturnValue == null ? Collections.emptyList() : finder.retrieveObjects(methodReturnValue, annotation.type(), annotation.methodReturnType());
+        } else if (methodReturnValue != null) {
+            return Arrays.asList((Entity) methodReturnValue);
         }
-        return dependentEntities;
+        return Collections.emptyList();
     }
 
     /**
@@ -166,8 +154,8 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
      * @param finder            The dependency finder to use to create the entity
      * @return The list of dependent entities created from the method return value.
      */
-    private List<DependentEntity> getDependentEntitiesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) {
-        List<DependentEntity> dependentEntities;
+    private List<DependentObject> getDependentEntitiesFromMethodReturnValue(com.l7tech.search.Dependency annotation, Object methodReturnValue, DependencyFinder finder) {
+        List<DependentObject> dependentEntities;
         if (annotation != null) {
             if (methodReturnValue instanceof Map) {
                 if (annotation.key().isEmpty())
@@ -178,7 +166,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             dependentEntities = methodReturnValue == null ? null : finder.createDependentObject(methodReturnValue, annotation.type(), annotation.methodReturnType());
         } else {
             // in this case the methodReturnValue will be the dependent object
-            dependentEntities = methodReturnValue == null ? null : Arrays.asList((DependentEntity) finder.createDependentObject(methodReturnValue));
+            dependentEntities = methodReturnValue == null ? null : Arrays.asList(finder.createDependentObject(methodReturnValue));
         }
         return dependentEntities;
     }
@@ -192,9 +180,10 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
      * @return The entity found
      * @throws FindException This is thrown if the entity could not be found.
      */
+    @NotNull
     @SuppressWarnings("unchecked")
     @Override
-    public List<? extends Entity> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<O> find(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
             case GOID: {
                 //used the entity crud to find the entity using its GOID
@@ -212,27 +201,33 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                 } else
                     throw new IllegalArgumentException("Unsupported GOID value type: " + searchValue.getClass());
                 //noinspection ConstantConditions
-                return Functions.map(headers, new Functions.UnaryThrows<Entity, EntityHeader, FindException>() {
+                return Functions.map(headers, new Functions.UnaryThrows<O, EntityHeader, FindException>() {
                     @Override
-                    public Entity call(EntityHeader entityHeader) throws FindException {
-                        return loadEntity(entityHeader);
+                    public O call(EntityHeader entityHeader) throws FindException {
+                        return (O)loadEntity(entityHeader);
                     }
                 });
             }
             case ENTITY:
-                if (searchValue instanceof Entity)
-                    return Arrays.asList((Entity) searchValue);
-                else
+                if (searchValue instanceof Entity) {
+                    try {
+                        return Arrays.asList((O) searchValue);
+                    } catch (ClassCastException e) {
+                        throw new IllegalStateException("Method return type cannot be cast to correct type: " + searchValue.getClass(), e);
+                    }
+                } else {
                     throw new IllegalStateException("Method return type is Entity but the returned object is not an entity: " + searchValue.getClass());
+                }
             case ENTITY_HEADER:
-                return Arrays.asList(loadEntity((EntityHeader) searchValue));
+                return Arrays.asList((O)loadEntity((EntityHeader) searchValue));
             default:
                 throw new IllegalArgumentException("Unsupported search method: " + searchValueType);
         }
     }
 
+    @NotNull
     @Override
-    public DependentObject createDependentObject(O dependent) {
+    public DependentObject createDependentObject(@NotNull O dependent) {
         EntityHeader entityHeader = EntityHeaderUtils.fromEntity((Entity) dependent);
         //Fix LDAP and Federated identity providers not being found properly
         if (dependent instanceof IdentityProviderConfig) {
@@ -242,12 +237,12 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     }
 
     private DependentObject createDependentObject(EntityHeader entityHeader) {
-        return new DependentEntity(entityHeader.getName(), entityHeader.getType(), entityHeader);
+        return new DependentEntity(entityHeader.getName(), entityHeader);
     }
 
-    @Nullable
+    @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         switch (searchValueType) {
             case GOID: {
                 //create an entity header using the giod
@@ -286,30 +281,35 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     }
 
     @Override
-    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         //Get all the methods that this entity declares
         List<Method> entityMethods = getAllMethods(object.getClass());
         for (Method method : entityMethods) {
             //process each method that return an Entity or is annotated with @Dependency.
-            if (isEntityMethod(method)) {
+            if (isDependencyGetterMethod(method)) {
                 Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
                 if (dependenciesAnnotation == null) {
                     //gets the Dependency annotation on the method if one is specified.
                     com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
                     if (annotation != null && annotation.searchObject()) {
                         Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                        //replace the dependencies in the search object
-                        finder.replaceDependencies(getterMethodReturn, replacementMap);
+                        if(getterMethodReturn != null) {
+                            //replace the dependencies in the search object
+                            finder.replaceDependencies(getterMethodReturn, replacementMap);
+                        }
                     } else {
                         //get the dependent entity referenced
                         Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                        List<DependentEntity> dependentEntities = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                        List<DependentObject> dependentEntities = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
                         if (dependentEntities != null) {
-                            for (DependentEntity dependentEntity : dependentEntities) {
-                                //replace the dependent entity with one that is in the replacement map
-                                EntityHeader header = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
-                                if (header != null) {
-                                    setDependencyForMethod(object, method, annotation, header, dependentEntity.getEntityHeader());
+                            for (DependentObject dependentObject : dependentEntities) {
+                                if(dependentObject instanceof DependentEntity) {
+                                    DependentEntity dependentEntity = (DependentEntity)dependentObject;
+                                    //replace the dependent entity with one that is in the replacement map
+                                    EntityHeader header = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
+                                    if (header != null) {
+                                        setDependencyForMethod(object, method, annotation, header, dependentEntity.getEntityHeader());
+                                    }
                                 }
                             }
                         }
@@ -318,13 +318,16 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                     for (com.l7tech.search.Dependency annotation : dependenciesAnnotation.value()) {
                         //calls the getter method and retrieves the dependency referenced
                         Object getterMethodReturn = retrieveDependencyFromMethod(object, method, annotation);
-                        final List<DependentEntity> dependenciesFromMethodReturnValue = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                        final List<DependentObject> dependenciesFromMethodReturnValue = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
                         if (dependenciesFromMethodReturnValue != null) {
-                            for (DependentEntity dependentEntity : dependenciesFromMethodReturnValue) {
-                                //replace the dependent entity with one that is in the replacement map
-                                EntityHeader mappedHeader = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
-                                if (mappedHeader != null) {
-                                    setDependencyForMethod(object, method, annotation, mappedHeader, dependentEntity.getEntityHeader());
+                            for (DependentObject dependentObject : dependenciesFromMethodReturnValue) {
+                                if(dependentObject instanceof DependentEntity) {
+                                    DependentEntity dependentEntity = (DependentEntity)dependentObject;
+                                    //replace the dependent entity with one that is in the replacement map
+                                    EntityHeader mappedHeader = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
+                                    if (mappedHeader != null) {
+                                        setDependencyForMethod(object, method, annotation, mappedHeader, dependentEntity.getEntityHeader());
+                                    }
                                 }
                             }
                         }
@@ -358,7 +361,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         EntityHeader header = replacementMap.get(dependentHeader);
 
         // check by ID
-        if (header == null ) {
+        if (header == null) {
             EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
                 @Override
                 public Boolean call(EntityHeader entityHeader) {
@@ -386,7 +389,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         }
 
         //check by name
-        if (header == null && dependentHeader.getName()!=null) {
+        if (header == null && dependentHeader.getName() != null) {
             EntityHeader headerKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
                 @Override
                 public Boolean call(EntityHeader entityHeader) {
@@ -504,7 +507,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
      * @param method The field to check.
      * @return True if the field should be used to to find a dependency. False otherwise.
      */
-    private static boolean isEntityMethod(Method method) {
+    private static boolean isDependencyGetterMethod(Method method) {
         com.l7tech.search.Dependency annotation = method.getAnnotation(com.l7tech.search.Dependency.class);
         Dependencies dependenciesAnnotation = method.getAnnotation(Dependencies.class);
         if (annotation != null) {
@@ -556,7 +559,7 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         } else if (EntityType.CUSTOM_KEY_VALUE_STORE.equals(entityHeader.getType())) {
             String entityId;
             CustomKeyValueStore customKeyValueStore;
-            if (entityHeader.getGoid() == null || Goid.DEFAULT_GOID.equals(entityHeader.getGoid())){
+            if (entityHeader.getGoid() == null || Goid.DEFAULT_GOID.equals(entityHeader.getGoid())) {
                 entityId = entityHeader.getName();
                 customKeyValueStore = customKeyValueStoreManager.findByUniqueName(entityId);
             } else {
@@ -568,10 +571,9 @@ public class GenericDependencyProcessor<O> extends BaseDependencyProcessor<O> {
             return customKeyValueStore;
         } else if (EntityType.TRUSTED_CERT.equals(entityHeader.getType())) {
             // may be referenced by name only
-            if(Goid.isDefault(entityHeader.getGoid())) {
+            if (Goid.isDefault(entityHeader.getGoid())) {
                 return trustedCertManager.findByUniqueName(entityHeader.getName());
-            }
-            else {
+            } else {
                 return trustedCertManager.findByPrimaryKey(entityHeader.getGoid());
             }
         } else {

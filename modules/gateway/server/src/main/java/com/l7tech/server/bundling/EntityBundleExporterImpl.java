@@ -11,9 +11,9 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -55,21 +55,20 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         //find the dependencies for the headers
         final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
         //create a flat dependency list
-        final List<DependentObject> dependentObjects = dependencyAnalyzer.buildFlatDependencyList(dependencySearchResults, true);
+        final List<Dependency> dependentObjects = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, true);
 
-        final ArrayList<Entity> entities = new ArrayList<>();
         final ArrayList<EntityContainer> entityContainers = new ArrayList<>();
         final ArrayList<EntityMappingInstructions> mappings = new ArrayList<>();
 
-        for (final DependentObject dependentObject : dependentObjects) {
+        for (final Dependency dependentObject : dependentObjects) {
             //for each dependent object add a reference and mapping entry to the bundle.
-            if (dependentObject instanceof DependentEntity) {
+            if (dependentObject.getDependent() instanceof DependentEntity) {
                 if (!Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeRequestFolderOption, IncludeRequestFolder))
-                        && EntityType.FOLDER.equals(((DependentEntity) dependentObject).getEntityHeader().getType())
+                        && EntityType.FOLDER.equals(((DependentEntity) dependentObject.getDependent()).getEntityHeader().getType())
                         && Functions.exists(Arrays.asList(headers), new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
                     public Boolean call(EntityHeader entityHeader) {
-                        return Goid.equals(((DependentEntity) dependentObject).getEntityHeader().getGoid(), entityHeader.getGoid());
+                        return Goid.equals(((DependentEntity) dependentObject.getDependent()).getEntityHeader().getGoid(), entityHeader.getGoid());
                     }
                 })) {
                     //remove any request folders from the returned export.
@@ -78,10 +77,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 }
 
                 //find the entity
-                final Entity entity = entityCrud.find(((DependentEntity) dependentObject).getEntityHeader());
-                entities.add(entity);
+                final Entity entity = entityCrud.find(((DependentEntity) dependentObject.getDependent()).getEntityHeader());
 
-                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject, entity);
+                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity);
                 addEntities(entity, entityContainers);
             }
         }
@@ -90,75 +88,54 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     }
 
     private void addEntities(Entity entity, List<EntityContainer> entityContainers) throws FindException {
-        if(entity instanceof JmsEndpoint){
-            final JmsEndpoint endpoint = (JmsEndpoint)entity;
-            Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(),EntityType.JMS_CONNECTION, null, null));
-            if(connection == null)
-                throw new FindException("Cannot find associated jms connection for jms endpoint: "+ endpoint.getName());
-            entityContainers.add(new JmsContainer(endpoint,(JmsConnection)connection));
-        }else if (entity instanceof Identity){
-            entityContainers.add(new IdentityEntityContainer((Identity)entity));
-        }else if(entity instanceof SsgKeyEntry){
+        if (entity instanceof JmsEndpoint) {
+            final JmsEndpoint endpoint = (JmsEndpoint) entity;
+            Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(), EntityType.JMS_CONNECTION, null, null));
+            if (connection == null)
+                throw new FindException("Cannot find associated jms connection for jms endpoint: " + endpoint.getName());
+            entityContainers.add(new JmsContainer(endpoint, (JmsConnection) connection));
+        } else if (entity instanceof Identity) {
+            entityContainers.add(new IdentityEntityContainer((Identity) entity));
+        } else if (entity instanceof SsgKeyEntry) {
             // not include private key entity info in bundle
             return;
-        }else if(entity instanceof PersistentEntity){
-            entityContainers.add( new PersistentEntityContainer((PersistentEntity)entity));
-        }else{
-            entityContainers.add( new EntityContainer(entity));
+        } else if (entity instanceof PersistentEntity) {
+            entityContainers.add(new PersistentEntityContainer((PersistentEntity) entity));
+        } else {
+            entityContainers.add(new EntityContainer(entity));
         }
     }
 
     private void addMapping(Properties bundleExportProperties, ArrayList<EntityMappingInstructions> mappings, DependentEntity dependentObject, Entity entity) {
-        if(entity instanceof HasFolder){
+        if (entity instanceof HasFolder) {
             // include parent folder mapping if not already in mapping.
-            final Entity parentFolder = ((HasFolder)entity).getFolder();
+            final Entity parentFolder = ((HasFolder) entity).getFolder();
             EntityMappingInstructions folderMapping = new EntityMappingInstructions(
                     EntityHeaderUtils.fromEntity(parentFolder),
                     null,
                     EntityMappingInstructions.MappingAction.NewOrExisting,
                     true,
                     false);
-            if(!mappings.contains(folderMapping)) mappings.add(folderMapping);
+            if (!mappings.contains(folderMapping)) mappings.add(folderMapping);
         }
 
         final EntityMappingInstructions mapping;
-        if(entity instanceof SsgKeyEntry){
-            // map only for private keys
+        if (    entity instanceof SsgKeyEntry ||
+                entity instanceof RevocationCheckPolicy ||
+                entity instanceof IdentityProviderConfig ||
+                entity instanceof Identity) {
+            // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
-                    ((DependentEntity) dependentObject).getEntityHeader(),
+                    dependentObject.getEntityHeader(),
                     null,
                     EntityMappingInstructions.MappingAction.NewOrExisting,
                     true,
                     false);
-        }else if(entity instanceof RevocationCheckPolicy){
-            // map only for revocation check policy
-            mapping = new EntityMappingInstructions(
-                    ((DependentEntity) dependentObject).getEntityHeader(),
-                    null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
-                    true,
-                    false);
-        }else if(entity instanceof IdentityProviderConfig){
-            // map only for identity providers
-            mapping = new EntityMappingInstructions(
-                    ((DependentEntity) dependentObject).getEntityHeader(),
-                    null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
-                    true,
-                    false);
-        }else if(entity instanceof Identity){
-            // map only for identities
-            mapping = new EntityMappingInstructions(
-                    ((DependentEntity) dependentObject).getEntityHeader(),
-                    null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
-                    true,
-                    false);
-        }else{
+        } else {
             //create the default mapping instructions
-            mapping = mappingInstructionsBuilder.createDefaultMapping(((DependentEntity) dependentObject).getEntityHeader(),
-                EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
-                EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
+            mapping = mappingInstructionsBuilder.createDefaultMapping(dependentObject.getEntityHeader(),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
         }
 
         //add the mapping

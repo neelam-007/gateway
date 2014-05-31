@@ -6,6 +6,9 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -19,6 +22,7 @@ import com.l7tech.server.search.processors.*;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.CollectionUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.*;
@@ -48,8 +52,14 @@ public abstract class DependencyTestBaseClass {
     @Spy
     DependencyProcessorRegistry dependencyProcessorRegistry;
 
+    @Spy
+    DependencyProcessorRegistry ssgConnectorDependencyProcessorRegistry;
+
+    @Spy
+    DependencyProcessorRegistry assertionDependencyProcessorRegistry;
+
     @InjectMocks
-    GenericDependencyProcessor genericDependencyProcessor = new GenericDependencyProcessor();
+    DefaultDependencyProcessor defaultDependencyProcessor = new DefaultDependencyProcessor();
     @InjectMocks
     PolicyDependencyProcessor policyDependencyProcessor = new PolicyDependencyProcessor();
     @InjectMocks
@@ -59,7 +69,9 @@ public abstract class DependencyTestBaseClass {
     @InjectMocks
     SecurePasswordDependencyProcessor securePasswordDependencyProcessor = new SecurePasswordDependencyProcessor();
     @InjectMocks
-    AssertionDependencyProcessor assertionDependencyProcessor = new AssertionDependencyProcessor();
+    DefaultAssertionDependencyProcessor<Assertion> defaultAssertionDependencyProcessor = new DefaultAssertionDependencyProcessor<>();
+    @InjectMocks
+    AssertionDependencyProcessor assertionDependencyProcessor = new AssertionDependencyProcessor(defaultAssertionDependencyProcessor);
     @InjectMocks
     AssertionLookupTrustedCertificateProcessor assertionLookupTrustedCertificate = new AssertionLookupTrustedCertificateProcessor();
     @InjectMocks
@@ -70,20 +82,17 @@ public abstract class DependencyTestBaseClass {
     ClusterPropertyDependencyProcessor clusterPropertyDependencyProcessor = new ClusterPropertyDependencyProcessor();
     @InjectMocks
     IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
-
     @InjectMocks
     SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder()
-            .put(Dependency.DependencyType.GENERIC, genericDependencyProcessor)
+            .put(Dependency.DependencyType.ANY, defaultDependencyProcessor)
             .put(Dependency.DependencyType.POLICY, policyDependencyProcessor)
             .put(Dependency.DependencyType.FOLDER, folderDependencyProcessor)
             .put(Dependency.DependencyType.JDBC_CONNECTION, jdbcConnectionDependencyProcessor)
             .put(Dependency.DependencyType.SECURE_PASSWORD, securePasswordDependencyProcessor)
             .put(Dependency.DependencyType.ASSERTION, assertionDependencyProcessor)
-            .put(Dependency.DependencyType.ASSERTION_LOOKUP_TRUSTED_CERTIFICATE, assertionLookupTrustedCertificate)
-            .put(Dependency.DependencyType.ASSERTION_WS_SECURITY, assertionWsSecurityProcessor)
             .put(Dependency.DependencyType.CLUSTER_PROPERTY, clusterPropertyDependencyProcessor)
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
@@ -97,7 +106,17 @@ public abstract class DependencyTestBaseClass {
     }
 
     @Before
-    public void beforeTests(){
+    public void before() {
+        //add the custom connector dependency processor
+        assertionDependencyProcessorRegistry.register(LookupTrustedCertificateAssertion.class.getName(), assertionLookupTrustedCertificate);
+        assertionDependencyProcessorRegistry.register(WsSecurity.class.getName(), assertionWsSecurityProcessor);
+    }
+
+    @After
+    public void after() {
+        //remove all custom connector dependency processors.
+        dependencyProcessorRegistry.remove(LookupTrustedCertificateAssertion.class.getName());
+        dependencyProcessorRegistry.remove(WsSecurity.class.getName());
     }
 
     protected void mockEntity(Entity entity, EntityHeader entityHeader) throws FindException {

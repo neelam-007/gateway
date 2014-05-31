@@ -15,11 +15,11 @@ import java.util.List;
 public class SslSsgConnectorDependencyProcessor extends BaseDependencyProcessor<SsgConnector> {
     @Override
     @NotNull
-    public List<Dependency> findDependencies(SsgConnector connector, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull SsgConnector connector, @NotNull DependencyFinder finder) throws FindException {
         String keyAlias = connector.getKeyAlias();
         Goid keyStoreId = connector.getKeystoreGoid();
         //add the ssg private key as a dependency
-        List<Entity> dependentEntities = finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, keyStoreId == null ? PersistentEntity.DEFAULT_GOID : keyStoreId, keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
-        return finder.getDependenciesFromEntities(connector, finder, dependentEntities);
+        List<Object> dependentEntities = finder.retrieveObjects(new SsgKeyHeader(keyStoreId + ":" + keyAlias, keyStoreId == null ? PersistentEntity.DEFAULT_GOID : keyStoreId, keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
+        return finder.getDependenciesFromObjects(connector, finder, dependentEntities);
     }
 }

@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public class IdentityProviderProcessor extends GenericDependencyProcessor<IdentityProviderConfig> {
+public class IdentityProviderProcessor extends DefaultDependencyProcessor<IdentityProviderConfig> {
 
     @Inject
     private SecurePasswordManager securePasswordManager;
@@ -28,7 +28,7 @@ public class IdentityProviderProcessor extends GenericDependencyProcessor<Identi
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(IdentityProviderConfig identityProviderConfig, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull IdentityProviderConfig identityProviderConfig, @NotNull DependencyFinder finder) throws FindException {
         List<Dependency> dependencies = super.findDependencies(identityProviderConfig, finder);
 
         //Special handling for NTLM Configuration passwords. The password should only be a dependency if NTLM is enabled.

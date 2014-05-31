@@ -1,6 +1,5 @@
 package com.l7tech.server.search.processors;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -8,7 +7,6 @@ import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -30,20 +28,20 @@ public interface DependencyProcessor<O> {
      * @throws FindException This is thrown if an entity cannot be found.
      */
     @NotNull
-    public List<Dependency> findDependencies(O object, DependencyFinder finder) throws FindException;
+    public List<Dependency> findDependencies(@NotNull O object, @NotNull DependencyFinder finder) throws FindException;
 
     /**
      * Returns an entity given a search value and the dependency info.
      *
-     * @param searchValue The search value that should uniquely identify the entity.
-     * @param dependencyType The type of dependency that is object is.
+     * @param searchValue     The search value that should uniquely identify the entity.
+     * @param dependencyType  The type of dependency that is object is.
      * @param searchValueType The type of value the search value is.
-     * @param <E>         The Entity
-     * @return The Entity specified by the given search value
+     * @return The Entity specified by the given search value. This can return null if the search value references a
+     * null entity
      * @throws FindException This is thrown if the entity cannot be found
      */
-    @Nullable
-    public <E extends Entity> List<E> find(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException;
+    @NotNull
+    public List<O> find(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException;
 
     /**
      * Creates a DependentObject given an instance of the dependent.
@@ -51,7 +49,8 @@ public interface DependencyProcessor<O> {
      * @param dependent The dependent to create the DependentObject from
      * @return The dependent object for the given dependent
      */
-    public DependentObject createDependentObject(O dependent);
+    @NotNull
+    public DependentObject createDependentObject(@NotNull O dependent);
 
     /**
      * Creates a list of dependent objects with the given info
@@ -61,8 +60,8 @@ public interface DependencyProcessor<O> {
      * @param searchValueType The search value type
      * @return The list of dependent objects
      */
-    @Nullable
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, com.l7tech.search.Dependency.DependencyType dependencyType, com.l7tech.search.Dependency.MethodReturnType searchValueType);
+    @NotNull
+    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType);
 
 
     /**
@@ -71,6 +70,7 @@ public interface DependencyProcessor<O> {
      *
      * @param object         the object who's dependencies to replace.
      * @param replacementMap The replacement map is a map of dependentEntity objects to replace.
+     * @param finder         The dependency finder replacing the dependencies.
      */
-    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException;
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException;
 }

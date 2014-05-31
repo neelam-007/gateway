@@ -29,7 +29,7 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy> implements DependencyProcessor<Policy> {
+public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy> implements DependencyProcessor<Policy> {
 
     @Inject
     private SecurityZoneManager securityZoneManager;
@@ -42,7 +42,7 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
      */
     @NotNull
     @Override
-    public List<Dependency> findDependencies(Policy policy, DependencyFinder processor) throws FindException {
+    public List<Dependency> findDependencies(@NotNull Policy policy, @NotNull DependencyFinder processor) throws FindException {
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
@@ -77,17 +77,15 @@ public class PolicyDependencyProcessor extends GenericDependencyProcessor<Policy
         }
 
         SecurityZone securityZone = policy.getSecurityZone();
-        if (securityZone != null) {
             final Dependency securityZoneDependency = processor.getDependency(securityZone);
             if (securityZoneDependency != null && !dependencies.contains(securityZoneDependency))
                 dependencies.add(securityZoneDependency);
-        }
 
         return dependencies;
     }
 
     @Override
-    public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(policy,replacementMap,finder);
         replacePolicyAssertionDependencies(policy, replacementMap, finder);
 

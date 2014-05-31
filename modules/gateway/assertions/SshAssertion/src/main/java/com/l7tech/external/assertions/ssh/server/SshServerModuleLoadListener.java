@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.ssh.server;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
@@ -16,6 +15,7 @@ import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,13 +45,13 @@ public class SshServerModuleLoadListener {
             processorRegistry.register(SshServerModule.SCHEME_SSH, new BaseDependencyProcessor<SsgConnector>() {
                 @Override
                 @NotNull
-                public List<Dependency> findDependencies(SsgConnector connector, DependencyFinder finder) throws FindException {
-                    List<Entity> dependentEntities = null;
+                public List<Dependency> findDependencies(@NotNull SsgConnector connector, @NotNull DependencyFinder finder) throws FindException {
+                    List<Object> dependentEntities = new ArrayList<>();
                     //adds the ssh password as a dependency if one is defined.
                     if (connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY) != null) {
-                        dependentEntities = finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);
+                        dependentEntities.addAll(finder.retrieveObjects(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID));
                     }
-                    return finder.getDependenciesFromEntities(connector, finder, dependentEntities);
+                    return finder.getDependenciesFromObjects(connector, finder, dependentEntities);
                 }
             });
         }

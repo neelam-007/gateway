@@ -1,10 +1,8 @@
 package com.l7tech.server.search.processors;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -27,19 +25,19 @@ import java.util.Map;
 /**
  * Dependency processor for LookupTrustedCertificateAssertion
  */
-public class AssertionLookupTrustedCertificateProcessor extends GenericDependencyProcessor<LookupTrustedCertificateAssertion> implements DependencyProcessor<LookupTrustedCertificateAssertion> {
+public class AssertionLookupTrustedCertificateProcessor extends DefaultDependencyProcessor<LookupTrustedCertificateAssertion> implements DependencyProcessor<LookupTrustedCertificateAssertion> {
 
     @Inject
     private TrustedCertManager trustedCertManager;
 
     @NotNull
     @Override
-    public List<Dependency> findDependencies(LookupTrustedCertificateAssertion assertion, DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull LookupTrustedCertificateAssertion assertion, @NotNull DependencyFinder finder) throws FindException {
         Collection<TrustedCert> certificates = getCertificatesUsed(assertion);
 
         ArrayList<Dependency> dependencies = new ArrayList<>();
         if(!certificates.isEmpty()){
-            dependencies.addAll(finder.getDependenciesFromEntities(assertion, finder, CollectionUtils.<Entity>toList(certificates)));
+            dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.<Object>toList(certificates)));
         }
         return dependencies;
     }
@@ -77,15 +75,14 @@ public class AssertionLookupTrustedCertificateProcessor extends GenericDependenc
         return new ArrayList<>();
     }
 
+    @NotNull
     @Override
-    public DependentObject createDependentObject(LookupTrustedCertificateAssertion assertion) {
-        final AssertionNodeNameFactory assertionNodeNameFactory = assertion.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
-        //noinspection unchecked
-        return new DependentAssertion((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertionNodeNameFactory != null ? assertionNodeNameFactory.getAssertionName(assertion, true) : null);
+    public DependentObject createDependentObject(@NotNull LookupTrustedCertificateAssertion assertion) {
+        return new DependentAssertion<>((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertion.getClass());
     }
 
     @Override
-    public void replaceDependencies(@NotNull LookupTrustedCertificateAssertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull LookupTrustedCertificateAssertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         // todo ???
 //        try {
 //            Collection<TrustedCert> certificates = // what is it dependent on from the original gateway?????

@@ -1,6 +1,8 @@
 package com.l7tech.server.search;
 
 import com.l7tech.server.search.processors.DependencyProcessor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,13 +14,14 @@ import java.util.Map;
  */
 public class DependencyProcessorRegistry {
 
-    private Map<String, DependencyProcessor> processors;
+    @NotNull
+    private final Map<String, DependencyProcessor> processors;
 
     public DependencyProcessorRegistry() {
         processors = new HashMap<>();
     }
 
-    public DependencyProcessorRegistry(Map<String, DependencyProcessor> processors) {
+    public DependencyProcessorRegistry(@NotNull final Map<String, DependencyProcessor> processors) {
         this.processors = new HashMap<>(processors);
     }
 
@@ -28,7 +31,8 @@ public class DependencyProcessorRegistry {
      * @param key The key of the dependency processor to get.
      * @return The associated dependency processor or null if there is not dependency processor for this key
      */
-    public DependencyProcessor get(String key) {
+    @Nullable
+    public DependencyProcessor get(@NotNull final String key) {
         return processors.get(key);
     }
 
@@ -39,7 +43,7 @@ public class DependencyProcessorRegistry {
      * @param key                 the key for this dependency processor
      * @param dependencyProcessor The dependency processor
      */
-    public void register(String key, DependencyProcessor dependencyProcessor) {
+    public void register(@NotNull final String key, @NotNull final DependencyProcessor dependencyProcessor) {
         if (processors.containsKey(key))
             throw new IllegalArgumentException("There is already a dependency processor registered for key: " + key);
         processors.put(key, dependencyProcessor);
@@ -51,7 +55,8 @@ public class DependencyProcessorRegistry {
      * @param key the key of the dependency processor to remove.
      * @return The dependency processor that was removed. Or null if there is no such dependency processor.
      */
-    public DependencyProcessor remove(String key) {
+    @Nullable
+    public DependencyProcessor remove(@NotNull final String key) {
         return processors.remove(key);
     }
 }

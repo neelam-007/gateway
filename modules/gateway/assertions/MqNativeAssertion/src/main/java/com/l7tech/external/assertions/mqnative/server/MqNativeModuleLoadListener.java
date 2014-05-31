@@ -174,23 +174,23 @@ public class MqNativeModuleLoadListener {
             processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, new BaseDependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
-                public List<Dependency> findDependencies(SsgActiveConnector activeConnector, DependencyFinder finder) throws FindException {
-                    List<Entity> dependentEntities = new ArrayList<>();
+                public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
+                    List<Object> dependentEntities = new ArrayList<>();
                     //add the mq password as a dependency if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
-                        dependentEntities.addAll(finder.retrieveEntities(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD,activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID));
+                        dependentEntities.addAll(finder.retrieveObjects(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID));
                     }
                     //add the ssl key used if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED) && activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED)) {
                         String keyAlias = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
                         String keyStoreId = activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
-                        dependentEntities.addAll(finder.retrieveEntities(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEY_ENTRY, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
+                        dependentEntities.addAll(finder.retrieveObjects(new SsgKeyHeader(keyStoreId + ":" + keyAlias, GoidUpgradeMapper.mapId(EntityType.SSG_KEY_ENTRY, keyStoreId), keyAlias, keyAlias), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER));
                     }
-                    return finder.getDependenciesFromEntities(activeConnector, finder, dependentEntities);
+                    return finder.getDependenciesFromObjects(activeConnector, finder, dependentEntities);
                 }
 
                 @Override
-                public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+                public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
                         // replace password dependency
                         activeConnector.setProperty(

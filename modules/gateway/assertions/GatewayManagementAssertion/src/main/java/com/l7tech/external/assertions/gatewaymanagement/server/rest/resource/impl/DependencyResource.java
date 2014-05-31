@@ -3,7 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.DependencyTransformer;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.DependencyListMO;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -11,16 +14,12 @@ import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.util.CollectionUtils;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.Provider;
 
 /**
  * This is a provider for dependencies. It finds the dependencies of entities that can have dependencies.
  */
-@Provider
-@Path(DependencyResource.Version_URI + "dependencies")
 public class DependencyResource {
 
     protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
@@ -37,15 +36,7 @@ public class DependencyResource {
     @Context
     private UriInfo uriInfo;
 
-    private EntityHeader entityHeader;
-
-    public static enum ReturnType {
-        List, Tree
-    }
-
-    public DependencyResource() {
-        //TODO: need a way to specify all gateway dependencies.
-    }
+    private final EntityHeader entityHeader;
 
     public DependencyResource(EntityHeader entityHeader) {
         this.entityHeader = entityHeader;
@@ -65,10 +56,9 @@ public class DependencyResource {
         if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");
         }
-        DependencyListMO dependencyListMO = transformer.toDependencyListObject( dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map()));
-        return new ItemBuilder<DependencyListMO>(dependencyListMO.getSearchObjectItem().getName() + " dependencies", "Dependency")
+        DependencyListMO dependencyListMO = transformer.convertToMO( dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map()));
+        return new ItemBuilder<>(transformer.convertToItem(dependencyListMO))
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .setContent(dependencyListMO)
                 .build();
     }
 }
