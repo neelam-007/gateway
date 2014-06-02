@@ -65,16 +65,16 @@ public class JsonDocumentStructurePropertiesDialog extends AssertionPropertiesOk
                 containerDepthTextField, 0L, 30L);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("objectEntryCountLabel"),
-                objectEntryCountTextField, 0L, Long.MAX_VALUE);
+                objectEntryCountTextField, 0L, Integer.MAX_VALUE);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("arrayEntryCountLabel"),
-                arrayEntryCountTextField, 0L, Long.MAX_VALUE);
+                arrayEntryCountTextField, 0L, Integer.MAX_VALUE);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("entryNameLengthLabel"),
                 entryNameLengthTextField, 0L, 256L);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("stringValueLengthLabel"),
-                stringValueLengthTextField, 0L, Long.MAX_VALUE);
+                stringValueLengthTextField, 0L, Integer.MAX_VALUE);
     }
 
     @Override
@@ -106,11 +106,17 @@ public class JsonDocumentStructurePropertiesDialog extends AssertionPropertiesOk
         assertion.setCheckEntryNameLength(entryNameLengthCheckBox.isSelected());
         assertion.setCheckStringValueLength(stringValueLengthCheckBox.isSelected());
 
-        assertion.setMaxContainerDepth(Long.parseLong(containerDepthTextField.getText()));
-        assertion.setMaxObjectEntryCount(Long.parseLong(objectEntryCountTextField.getText()));
-        assertion.setMaxArrayEntryCount(Long.parseLong(arrayEntryCountTextField.getText()));
-        assertion.setMaxEntryNameLength(Long.parseLong(entryNameLengthTextField.getText()));
-        assertion.setMaxStringValueLength(Long.parseLong(stringValueLengthTextField.getText()));
+        // if constraints are disabled they will not be updated - this avoids setting invalid values
+        if (containerDepthCheckBox.isSelected())
+            assertion.setMaxContainerDepth(Integer.parseInt(containerDepthTextField.getText()));
+        if (objectEntryCheckBox.isSelected())
+            assertion.setMaxObjectEntryCount(Integer.parseInt(objectEntryCountTextField.getText()));
+        if (arrayEntryCountCheckBox.isSelected())
+            assertion.setMaxArrayEntryCount(Integer.parseInt(arrayEntryCountTextField.getText()));
+        if (entryNameLengthCheckBox.isSelected())
+            assertion.setMaxEntryNameLength(Integer.parseInt(entryNameLengthTextField.getText()));
+        if (stringValueLengthCheckBox.isSelected())
+            assertion.setMaxStringValueLength(Integer.parseInt(stringValueLengthTextField.getText()));
 
         return assertion;
     }

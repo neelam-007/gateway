@@ -14,17 +14,17 @@ public class JsonDocumentStructureAssertion extends MessageTargetableAssertion {
     private static final String META_INITIALIZED =
             JsonDocumentStructureAssertion.class.getName() + ".metadataInitialized";
 
-    private static final long DEFAULT_MAX_CONTAINER_DEPTH = 4;
-    private static final long DEFAULT_MAX_OBJECT_ENTRY_COUNT = 2048;
-    private static final long DEFAULT_MAX_ARRAY_ENTRY_COUNT = 2048;
-    private static final long DEFAULT_MAX_ENTRY_NAME_LENGTH = 128;
-    private static final long DEFAULT_MAX_STRING_VALUE_LENGTH = 16384;
+    private static final int DEFAULT_MAX_CONTAINER_DEPTH = 4;
+    private static final int DEFAULT_MAX_OBJECT_ENTRY_COUNT = 2048;
+    private static final int DEFAULT_MAX_ARRAY_ENTRY_COUNT = 2048;
+    private static final int DEFAULT_MAX_ENTRY_NAME_LENGTH = 128;
+    private static final int DEFAULT_MAX_STRING_VALUE_LENGTH = 16384;
 
-    private long maxContainerDepth = DEFAULT_MAX_CONTAINER_DEPTH;
-    private long maxObjectEntryCount = DEFAULT_MAX_OBJECT_ENTRY_COUNT;
-    private long maxArrayEntryCount = DEFAULT_MAX_ARRAY_ENTRY_COUNT;
-    private long maxEntryNameLength = DEFAULT_MAX_ENTRY_NAME_LENGTH;
-    private long maxStringValueLength = DEFAULT_MAX_STRING_VALUE_LENGTH;
+    private int maxContainerDepth = DEFAULT_MAX_CONTAINER_DEPTH;
+    private int maxObjectEntryCount = DEFAULT_MAX_OBJECT_ENTRY_COUNT;
+    private int maxArrayEntryCount = DEFAULT_MAX_ARRAY_ENTRY_COUNT;
+    private int maxEntryNameLength = DEFAULT_MAX_ENTRY_NAME_LENGTH;
+    private int maxStringValueLength = DEFAULT_MAX_STRING_VALUE_LENGTH;
 
     private boolean checkContainerDepth = true;
     private boolean checkObjectEntryCount = false;
@@ -32,43 +32,43 @@ public class JsonDocumentStructureAssertion extends MessageTargetableAssertion {
     private boolean checkEntryNameLength = false;
     private boolean checkStringValueLength = false;
 
-    public long getMaxContainerDepth() {
+    public int getMaxContainerDepth() {
         return maxContainerDepth;
     }
 
-    public void setMaxContainerDepth(long maxContainerDepth) {
+    public void setMaxContainerDepth(int maxContainerDepth) {
         this.maxContainerDepth = maxContainerDepth;
     }
 
-    public long getMaxObjectEntryCount() {
+    public int getMaxObjectEntryCount() {
         return maxObjectEntryCount;
     }
 
-    public void setMaxObjectEntryCount(long maxObjectEntryCount) {
+    public void setMaxObjectEntryCount(int maxObjectEntryCount) {
         this.maxObjectEntryCount = maxObjectEntryCount;
     }
 
-    public long getMaxArrayEntryCount() {
+    public int getMaxArrayEntryCount() {
         return maxArrayEntryCount;
     }
 
-    public void setMaxArrayEntryCount(long maxArrayEntryCount) {
+    public void setMaxArrayEntryCount(int maxArrayEntryCount) {
         this.maxArrayEntryCount = maxArrayEntryCount;
     }
 
-    public long getMaxEntryNameLength() {
+    public int getMaxEntryNameLength() {
         return maxEntryNameLength;
     }
 
-    public void setMaxEntryNameLength(long maxEntryNameLength) {
+    public void setMaxEntryNameLength(int maxEntryNameLength) {
         this.maxEntryNameLength = maxEntryNameLength;
     }
 
-    public long getMaxStringValueLength() {
+    public int getMaxStringValueLength() {
         return maxStringValueLength;
     }
 
-    public void setMaxStringValueLength(long maxStringValueLength) {
+    public void setMaxStringValueLength(int maxStringValueLength) {
         this.maxStringValueLength = maxStringValueLength;
     }
 
