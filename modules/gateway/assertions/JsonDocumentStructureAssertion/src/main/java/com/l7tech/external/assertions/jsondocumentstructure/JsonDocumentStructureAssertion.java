@@ -14,7 +14,7 @@ public class JsonDocumentStructureAssertion extends MessageTargetableAssertion {
     private static final String META_INITIALIZED =
             JsonDocumentStructureAssertion.class.getName() + ".metadataInitialized";
 
-    private static final long DEFAULT_MAX_CONTAINER_DEPTH = 3;
+    private static final long DEFAULT_MAX_CONTAINER_DEPTH = 4;
     private static final long DEFAULT_MAX_OBJECT_ENTRY_COUNT = 2048;
     private static final long DEFAULT_MAX_ARRAY_ENTRY_COUNT = 2048;
     private static final long DEFAULT_MAX_ENTRY_NAME_LENGTH = 128;

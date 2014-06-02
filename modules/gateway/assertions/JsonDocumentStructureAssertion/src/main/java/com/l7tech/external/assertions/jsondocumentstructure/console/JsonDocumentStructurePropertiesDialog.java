@@ -62,7 +62,7 @@ public class JsonDocumentStructurePropertiesDialog extends AssertionPropertiesOk
         inputValidator = new InputValidator(this, getTitle());
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("containerDepthLabel"),
-                containerDepthTextField, 0L, Long.MAX_VALUE);
+                containerDepthTextField, 0L, 30L);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("objectEntryCountLabel"),
                 objectEntryCountTextField, 0L, Long.MAX_VALUE);
@@ -71,7 +71,7 @@ public class JsonDocumentStructurePropertiesDialog extends AssertionPropertiesOk
                 arrayEntryCountTextField, 0L, Long.MAX_VALUE);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("entryNameLengthLabel"),
-                entryNameLengthTextField, 0L, Long.MAX_VALUE);
+                entryNameLengthTextField, 0L, 256L);
 
         inputValidator.constrainTextFieldToNumberRange(getResourceString("stringValueLengthLabel"),
                 stringValueLengthTextField, 0L, Long.MAX_VALUE);
