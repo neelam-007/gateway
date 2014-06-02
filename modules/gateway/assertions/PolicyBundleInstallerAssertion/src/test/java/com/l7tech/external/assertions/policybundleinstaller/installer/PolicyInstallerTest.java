@@ -148,7 +148,7 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
         final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds, oldToNewPolicyGuids);
 
@@ -176,7 +176,7 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, serviceManager, getCancelledCallback(installEvent));
 
         // install from prerequisite folders
         for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {

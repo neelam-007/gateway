@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.policybundleinstaller.installer;
 
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.identity.User;
@@ -18,6 +17,7 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -28,7 +28,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.isAccessDeniedResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
 
 /**
  * Common code useful for all policy bundle installers.
@@ -131,12 +133,12 @@ public abstract class BaseInstaller {
     }
 
     protected Pair<AssertionStatus, Document> callManagementCheckInterrupted(String requestXml) throws InterruptedException,
-            AccessDeniedManagementResponse, GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+            AccessDeniedManagementResponse, UnexpectedManagementResponse {
 
         final Pair<AssertionStatus, Document> documentPair;
         try {
             documentPair = callManagementAssertion(gatewayManagementInvoker, requestXml);
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+        } catch (UnexpectedManagementResponse e) {
             if (e.isCausedByMgmtAssertionInternalError() && cancelledCallback.call()) {
                 throw new InterruptedException("Possible interruption detected due to internal error");
             } else {
@@ -157,13 +159,13 @@ public abstract class BaseInstaller {
      * @param gatewayManagementInvoker invoker which can invoke an actual gateway management server assertion
      * @param requestXml request XML to sent to server assertion
      * @return Pair of assertion status and response document
-     * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse if the response from the management assertion
+     * @throws UnexpectedManagementResponse if the response from the management assertion
      * is an Internal Error.
      */
     @NotNull
     static protected Pair<AssertionStatus, Document> callManagementAssertion(final GatewayManagementInvoker gatewayManagementInvoker,
                                                                    final String requestXml)
-            throws AccessDeniedManagementResponse, GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
+            throws AccessDeniedManagementResponse, UnexpectedManagementResponse {
 
         final PolicyEnforcementContext context = getContext(requestXml);
 
@@ -180,7 +182,7 @@ public abstract class BaseInstaller {
             // validate that an Internal Error was not received. If so this is most likely due to Wiseman being interrupted
             // via user cancellation.
             if (GatewayManagementDocumentUtilities.isInternalErrorResponse(document)) {
-                throw new GatewayManagementDocumentUtilities.UnexpectedManagementResponse(true);
+                throw new UnexpectedManagementResponse(true);
             } else if (isAccessDeniedResponse(document)) {
                 throw new AccessDeniedManagementResponse("Access Denied", requestXml);
             }
@@ -252,5 +254,16 @@ public abstract class BaseInstaller {
         } else {
             return policyName;
         }
+    }
+
+    /**
+     * Check if a soap response has fault with InvalidSelector sub code.
+     *
+     * @param response this may be the soap response from a get selector request.
+     * @return true if found
+     * @throws UnexpectedManagementResponse parsing or xpath
+     */
+    protected static boolean hasFaultSubCodeInvalidSelectors(final Document response) throws UnexpectedManagementResponse {
+        return XpathUtil.findElements(response.getDocumentElement(), "//env:Fault/env:Code/env:Subcode/env:Value[text()=\"wsman:InvalidSelectors\"]", getNamespaceMap()).size() > 0;
     }
 }

@@ -10,15 +10,20 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.BundleResolverImpl;
 import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.text.MessageFormat;
 import java.util.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public abstract class PolicyBundleInstallerTestBase {
     protected final static String TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles";
     protected final static String OAUTH_TEST_BUNDLE_BASE_NAME = "/com/l7tech/external/assertions/policybundleinstaller/bundles/oauthtest";
@@ -158,7 +163,33 @@ public abstract class PolicyBundleInstallerTestBase {
             "    </env:Body>\n" +
             "</env:Envelope>\n";
 
+    protected static final String FAULT_RESPONSE_INVALID_SELECTOR = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\" xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\" xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"+
+            "   <env:Header>\n"+
+            "      <wsa:Action env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>\n"+
+            "      <wsa:MessageID env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:8809cd77-4709-4099-bad4-592dda58de22</wsa:MessageID>\n"+
+            "      <wsa:RelatesTo xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</wsa:RelatesTo>\n"+
+            "      <wsa:To env:mustUnderstand=\"true\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n"+
+            "   </env:Header>\n"+
+            "   <env:Body>\n"+
+            "      <env:Fault xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n"+
+            "         <env:Code>\n"+
+            "            <env:Value>env:Sender</env:Value>\n"+
+            "            <env:Subcode>\n"+
+            "               <env:Value>wsman:InvalidSelectors</env:Value>\n"+
+            "            </env:Subcode>\n"+
+            "         </env:Code>\n"+
+            "         <env:Reason>\n"+
+            "            <env:Text xml:lang=\"en-US\">The Selectors for the resource were not valid.</env:Text>\n"+
+            "         </env:Reason>\n"+
+            "         <env:Detail>\n"+
+            "            <wsman:FaultDetail>http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidValue</wsman:FaultDetail>\n"+
+            "         </env:Detail>\n"+
+            "      </env:Fault>\n"+
+            "   </env:Body>\n"+
+            "</env:Envelope>";
+
     protected int nextOid = 1000000;
+    @Mock protected ServiceManager serviceManager;
 
     private static List<Pair<BundleInfo, String>> allTestBundleInfoPairList;
     private List<Pair<BundleInfo, String>> getAllTestBundleInfoPairList() throws BundleResolver.InvalidBundleException {

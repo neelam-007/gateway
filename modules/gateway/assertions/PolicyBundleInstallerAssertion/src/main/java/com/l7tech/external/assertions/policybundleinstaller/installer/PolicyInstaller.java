@@ -100,8 +100,7 @@ public class PolicyInstaller extends BaseInstaller {
                 String policyId = ((Element)policyNamesElm.getParentNode()).getAttribute("id");
                 policyIdsNames.put(policyId, policyName);
                 try {
-                    final List<Goid> matchingPolicies = findMatchingPolicy(policyName);
-                    if (!matchingPolicies.isEmpty()) {
+                    if (hasMatchingPolicy(policyName)) {
                         dryRunEvent.addPolicyNameWithConflict(policyName);
                         conflictingPolicyIdsNames.put(policyId, policyName);
                     }
@@ -175,14 +174,12 @@ public class PolicyInstaller extends BaseInstaller {
         return XpathUtil.findElements(policyEnumeration.getDocumentElement(), ".//l7:Name", getNamespaceMap());
     }
 
-    @NotNull
-    private List<Goid> findMatchingPolicy(String policyName) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
+      private boolean hasMatchingPolicy(String policyName) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         logger.finest("Finding policy name '" + policyName + "'.");
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(),
-                POLICIES_MGMT_NS, 10, "/l7:Policy/l7:PolicyDetail/l7:Name[text()='" + policyName + "']");
+        final String policyGetSelector = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(policyGetSelector);
+        return !hasFaultSubCodeInvalidSelectors(documentPair.right);
     }
 
     /**

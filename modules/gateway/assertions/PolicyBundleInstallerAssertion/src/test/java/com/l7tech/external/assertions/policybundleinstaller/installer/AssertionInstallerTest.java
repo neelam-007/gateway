@@ -50,6 +50,8 @@ public class AssertionInstallerTest extends PolicyBundleInstallerTestBase {
                             // results
                             setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0, 123345678))));
                         }
+                    } else if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get")) {
+                        setResponse(context, XmlUtil.parse(FAULT_RESPONSE_INVALID_SELECTOR));
                     }
                 } catch (Exception e) {
                     fail("Unexpected exception: " + e.getMessage());
@@ -57,7 +59,7 @@ public class AssertionInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, getCancelledCallback(dryRunEvent));
+        }, context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
         final List<String> missingAssertions = dryRunEvent.getMissingAssertions();

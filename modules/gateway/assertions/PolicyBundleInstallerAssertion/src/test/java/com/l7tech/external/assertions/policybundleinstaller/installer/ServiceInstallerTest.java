@@ -58,7 +58,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         // OAuth_1_0
         bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
@@ -122,7 +122,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
 

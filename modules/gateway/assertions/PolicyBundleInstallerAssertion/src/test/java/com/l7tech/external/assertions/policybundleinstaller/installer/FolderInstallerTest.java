@@ -51,7 +51,7 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, cancelledCallback);
+        }, context, serviceManager, cancelledCallback);
 
         final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);
@@ -115,7 +115,7 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);

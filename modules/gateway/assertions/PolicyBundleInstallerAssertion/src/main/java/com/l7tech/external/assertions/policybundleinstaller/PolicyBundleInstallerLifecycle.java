@@ -22,6 +22,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -104,7 +105,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
 
                 final PolicyBundleInstallerContext context = dryRunEvent.getContext();
 
-                final PolicyBundleInstaller installer = new PolicyBundleInstaller(getGatewayMgmtInvoker(), context, new Functions.Nullary<Boolean>() {
+                final PolicyBundleInstaller installer = new PolicyBundleInstaller(getGatewayMgmtInvoker(), context, serviceManager.get(), new Functions.Nullary<Boolean>() {
                     @Override
                     public Boolean call() {
                         return dryRunEvent.isCancelled();
@@ -150,6 +151,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
     private final ApplicationContext spring;
     private final AtomicReference<ServerAssertion> serverMgmtAssertion = new AtomicReference<>();
     private final AtomicBoolean isLicensed = new AtomicBoolean(false);
+    private final AtomicReference<ServiceManager> serviceManager = new AtomicReference<>();
 
     private static final String GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -172,25 +174,31 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             isLicensed.set(false);
             logger.warning("Bundle Installer module is not licensed and will not be available.");
             serverMgmtAssertion.set(null);
+            serviceManager.set(null);
         } else {
             if (isLicensed.compareAndSet(false, true)) {
                 logger.info("Bundle Installer module is now licensed.");
             }
-            if (serverMgmtAssertion.get() == null) {
+            if (serverMgmtAssertion.get() == null || serviceManager.get() == null) {
                 logger.info("Initializing Bundle Installer.");
 
-                final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
-                final ServerPolicyFactory serverPolicyFactory = spring.getBean("policyFactory", ServerPolicyFactory.class);
+                if (serverMgmtAssertion.get() == null) {
+                    final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
+                    final ServerPolicyFactory serverPolicyFactory = spring.getBean("policyFactory", ServerPolicyFactory.class);
+                    try {
+                        final Assertion assertion = wspReader.parseStrictly(GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
+                        serverMgmtAssertion.compareAndSet(null, serverPolicyFactory.compilePolicy(assertion, false));
+                    } catch (ServerPolicyException e) {
+                        handleInitException(e, "Could not create Gateway Management assertion");
+                    } catch (LicenseException e) {
+                        handleInitException(e, "Gateway Management assertion is not licensed");
+                    } catch (IOException e) {
+                        handleInitException(e, "Gateway Management assertion is not available");
+                    }
+                }
 
-                try {
-                    final Assertion assertion = wspReader.parseStrictly(GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
-                    serverMgmtAssertion.compareAndSet(null, serverPolicyFactory.compilePolicy(assertion, false));
-                } catch (ServerPolicyException e) {
-                    handleInitException(e, "Could not create Gateway Management assertion");
-                } catch (LicenseException e) {
-                    handleInitException(e, "Gateway Management assertion is not licensed");
-                } catch (IOException e) {
-                    handleInitException(e, "Gateway Management assertion is not available");
+                if (serviceManager.get() == null) {
+                    serviceManager.set(spring.getBean("serviceManager", ServiceManager.class));
                 }
             }
         }
@@ -212,7 +220,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
     private void processInstallEvent(final InstallPolicyBundleEvent installEvent) {
         final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
         final PolicyBundleInstallerContext context = installEvent.getContext();
-        final PolicyBundleInstaller installer = new PolicyBundleInstaller(getGatewayMgmtInvoker(), context, new Nullary<Boolean>() {
+        final PolicyBundleInstaller installer = new PolicyBundleInstaller(getGatewayMgmtInvoker(), context, serviceManager.get(), new Nullary<Boolean>() {
             @Override
             public Boolean call() {
                 return installEvent.isCancelled();

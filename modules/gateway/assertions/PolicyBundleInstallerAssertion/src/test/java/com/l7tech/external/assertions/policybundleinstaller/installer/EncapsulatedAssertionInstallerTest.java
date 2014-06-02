@@ -61,7 +61,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
                     throw new RuntimeException(e);
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getEncapsulatedAssertionInstaller().install( getPolicyGuids());
     }
@@ -74,7 +74,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, serviceManager, getCancelledCallback(installEvent));
 
         // install from prerequisite folders
         for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
@@ -103,7 +103,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getEncapsulatedAssertionInstaller().install(getPolicyGuids());
 

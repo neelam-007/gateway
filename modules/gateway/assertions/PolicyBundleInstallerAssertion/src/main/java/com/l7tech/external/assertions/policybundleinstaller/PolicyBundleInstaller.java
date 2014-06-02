@@ -6,6 +6,7 @@ import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.server.service.ServiceManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,13 +50,14 @@ public class PolicyBundleInstaller {
 
     public PolicyBundleInstaller(@NotNull final GatewayManagementInvoker gatewayManagementInvoker,
                                  @NotNull final PolicyBundleInstallerContext context,
+                                 @NotNull final ServiceManager serviceManager,
                                  @NotNull final Nullary<Boolean> cancelledCallback) {
         this.context = context;
 
         folderInstaller = new FolderInstaller(context, cancelledCallback, gatewayManagementInvoker);
         policyInstaller = new PolicyInstaller(context, cancelledCallback, gatewayManagementInvoker);
         encapsulatedAssertionInstaller = new EncapsulatedAssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        serviceInstaller = new ServiceInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        serviceInstaller = new ServiceInstaller(context, cancelledCallback, gatewayManagementInvoker, serviceManager);
         trustedCertificateInstaller = new TrustedCertificateInstaller(context, cancelledCallback, gatewayManagementInvoker);
         jdbcConnectionInstaller = new JdbcConnectionInstaller(context, cancelledCallback, gatewayManagementInvoker);
         assertionInstaller = new AssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);

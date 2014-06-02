@@ -2,11 +2,13 @@ package com.l7tech.external.assertions.policybundleinstaller.installer;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -16,10 +18,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
@@ -31,11 +30,14 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
  */
 public class ServiceInstaller extends BaseInstaller {
     public static final String SERVICES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/services";
+    private final ServiceManager serviceManager;
 
     public ServiceInstaller(@NotNull final PolicyBundleInstallerContext context,
                             @NotNull final Functions.Nullary<Boolean> cancelledCallback,
-                            @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {
+                            @NotNull final GatewayManagementInvoker gatewayManagementInvoker,
+                            @NotNull final ServiceManager serviceManager) {
         super(context, cancelledCallback, gatewayManagementInvoker);
+        this.serviceManager = serviceManager;
     }
 
     public void dryRunInstall(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
@@ -54,16 +56,16 @@ public class ServiceInstaller extends BaseInstaller {
 
             String conflictObject = null;
             try {
-                final List<Goid> matchingServices;
                 if (urlPatternElmt != null) {
                     conflictObject = getPrefixedUrl(DomUtils.getTextValue(urlPatternElmt));
-                    matchingServices = findMatchingServiceByUrl(conflictObject);
+                    if (hasMatchingServiceByUrl(serviceManager, conflictObject)) {
+                        dryRunEvent.addServiceConflict(conflictObject);
+                    }
                 } else {
                     conflictObject = XmlUtil.getTextValue(nameElmt);
-                    matchingServices = findMatchingServiceByNameWithoutResolutionUrl(conflictObject);
-                }
-                if (!matchingServices.isEmpty()) {
-                    dryRunEvent.addServiceConflict(conflictObject);
+                    if (!findMatchingServiceByNameWithoutResolutionUrl(conflictObject).isEmpty()) {
+                        dryRunEvent.addServiceConflict(conflictObject);
+                    }
                 }
             } catch (UnexpectedManagementResponse e) {
                 throw new BundleResolver.InvalidBundleException("Could not check for conflict for url pattern or service name'" + conflictObject + "'", e);
@@ -150,8 +152,7 @@ public class ServiceInstaller extends BaseInstaller {
                     DomUtils.setTextContent(urlPatternWriteableEl, maybePrefixedUrl);
                 }
 
-                final List<Goid> matchingService = findMatchingServiceByUrl(maybePrefixedUrl);
-                if (!matchingService.isEmpty()) {
+                if (hasMatchingServiceByUrl(serviceManager, maybePrefixedUrl)) {
                     // Service already exists
                     logger.info("Not installing service with id #{" + id + "} and routing URI '" + maybePrefixedUrl + "' " +
                             "due to existing service with conflicting resolution URI");
@@ -222,17 +223,19 @@ public class ServiceInstaller extends BaseInstaller {
     /**
      * See if any existing service contains a service with the same urlMapping e.g. resolution URI
      *
+     * @param serviceManager find by routing uri logic
      * @param urlMapping URI Resolution value for the search
-     * @return list of ids of any existing service which have this routing uri
+     * @return true if any existing service has this routing uri
      */
-    @NotNull
-    private List<Goid> findMatchingServiceByUrl(String urlMapping) throws UnexpectedManagementResponse, InterruptedException, AccessDeniedManagementResponse {
-        logger.finest("Finding service URL '" + urlMapping + "'.");
-        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), SERVICES_MGMT_NS, 10,
-                "/l7:Service/l7:ServiceDetail/l7:ServiceMappings/l7:HttpMapping/l7:UrlPattern[text()='" + urlMapping + "']");
-
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
-        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
+    private boolean hasMatchingServiceByUrl(final ServiceManager serviceManager, String urlMapping) throws InvalidBundleException {
+        try {
+            if (!serviceManager.findByRoutingUri(urlMapping).isEmpty()) {
+                return true;
+            }
+        } catch (FindException e) {
+            throw new InvalidBundleException(e);
+        }
+        return false;
     }
 
     /**
@@ -248,7 +251,7 @@ public class ServiceInstaller extends BaseInstaller {
                 "/l7:Service/l7:ServiceDetail/l7:Name[text()='" + nameMapping + "']");
         final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
 
-        // Remove ids associated with some services having resolution url, since service conflict with resolution url has been done by findMatchingServiceByUrl.
+        // Remove ids associated with some services having resolution url, since service conflict with resolution url has been done by hasMatchingServiceByUrl.
         final List<Goid> nameMatchedServices = GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
         final List<Goid> foundIds = new ArrayList<>(nameMatchedServices.size());
         for (Goid id: nameMatchedServices) {

@@ -116,7 +116,7 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
                     return documentPair.left;
                 }
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.installBundle();
 

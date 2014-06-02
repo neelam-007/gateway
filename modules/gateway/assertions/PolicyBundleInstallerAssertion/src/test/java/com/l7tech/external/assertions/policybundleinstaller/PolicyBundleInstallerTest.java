@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.installer.JdbcConnectionInstaller;
+import com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstaller;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -23,10 +25,14 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
 
 public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
@@ -62,6 +68,63 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
             "    </env:Body>\n" +
             "</env:Envelope>\n";
 
+
+    private final static String GET_SELECTOR_POLICY_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\" xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\" xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"+
+            "   <env:Header>\n"+
+            "      <wsa:Action env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse</wsa:Action>\n"+
+            "      <wsa:MessageID env:mustUnderstand=\"true\">uuid:c05a7ef0-b655-4451-bc0a-3e460671dd0d</wsa:MessageID>\n"+
+            "      <wsa:RelatesTo>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</wsa:RelatesTo>\n"+
+            "      <wsa:To env:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>\n"+
+            "   </env:Header>\n"+
+            "   <env:Body>\n"+
+            "      <l7:Policy guid=\"fcd28e47-9fd9-47a7-9a32-0fdd7b2e4271\" id=\"a9bd6e276ab81f4f28693fd33245cc2c\" version=\"0\">\n"+
+            "         <l7:PolicyDetail folderId=\"a9bd6e276ab81f4f28693fd33245ca6c\" guid=\"fcd28e47-9fd9-47a7-9a32-0fdd7b2e4271\" id=\"a9bd6e276ab81f4f28693fd33245cc2c\" version=\"0\">\n"+
+            "            <l7:Name>OAuth 1.0 Context Variables</l7:Name>\n"+
+            "            <l7:PolicyType>Include</l7:PolicyType>\n"+
+            "            <l7:Properties>\n"+
+            "               <l7:Property key=\"revision\">\n"+
+            "                  <l7:LongValue>0</l7:LongValue>\n"+
+            "               </l7:Property>\n"+
+            "               <l7:Property key=\"soap\">\n"+
+            "                  <l7:BooleanValue>false</l7:BooleanValue>\n"+
+            "               </l7:Property>\n"+
+            "            </l7:Properties>\n"+
+            "         </l7:PolicyDetail>\n"+
+            "         <l7:Resources>\n"+
+            "            <l7:ResourceSet tag=\"policy\">\n"+
+            "               <l7:Resource type=\"policy\"><![CDATA[<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n"+
+            "                    <wsp:All wsp:Usage=\"Required\">\n"+
+            "                    <L7p:CommentAssertion><L7p:Comment stringValue=\"Component version 2.1.1 installed by OAuth installer version otk2.1.1\"/></L7p:CommentAssertion><L7p:SetVariable>\n"+
+            "                    <L7p:Base64Expression stringValue=\"aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==\"/>\n"+
+            "                    <L7p:VariableToSet stringValue=\"host_oauth_ovp_server\"/>\n"+
+            "                    </L7p:SetVariable>\n"+
+            "                    <L7p:SetVariable>\n"+
+            "                    <L7p:Base64Expression stringValue=\"L2F1dGgvb2F1dGgvdjEvYXV0aG9yaXplL3dlYnNpdGU=\"/>\n"+
+            "                    <L7p:VariableToSet stringValue=\"oauth_v1_website_path\"/>\n"+
+            "                    </L7p:SetVariable>\n"+
+            "                    <L7p:SetVariable>\n"+
+            "                    <L7p:Base64Expression stringValue=\"aHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mw==\"/>\n"+
+            "                    <L7p:VariableToSet stringValue=\"host_oauth_v1_server_website_baseuri\"/>\n"+
+            "                    </L7p:SetVariable>\n"+
+            "                    <L7p:SetVariable>\n"+
+            "                    <L7p:Base64Expression stringValue=\"MS4wIChSRkMgNTg0OSk=\"/>\n"+
+            "                    <L7p:VariableToSet stringValue=\"oauth1_version\"/>\n"+
+            "                    </L7p:SetVariable>\n"+
+            "                    <L7p:ExportVariables>\n"+
+            "                    <L7p:ExportedVars stringArrayValue=\"included\">\n"+
+            "                    <L7p:item stringValue=\"host_oauth_ovp_server\"/>\n"+
+            "                    <L7p:item stringValue=\"oauth_v1_website_path\"/>\n"+
+            "                    <L7p:item stringValue=\"host_oauth_v1_server_website_baseuri\"/>\n"+
+            "                    </L7p:ExportedVars>\n"+
+            "                    </L7p:ExportVariables>\n"+
+            "                    </wsp:All>\n"+
+            "                    </wsp:Policy>]]></l7:Resource>\n"+
+            "            </l7:ResourceSet>\n"+
+            "         </l7:Resources>\n"+
+            "      </l7:Policy>\n"+
+            "   </env:Body>\n"+
+            "</env:Envelope>";
+
     @Test
     public void testServiceXpathExpression() throws Exception {
         final BundleResolver resolver = getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME);
@@ -89,6 +152,11 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
         final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(this, context);
 
+        // mock service found
+        final Collection<PublishedService> aServiceFound = new ArrayList<>();
+        aServiceFound.add(new PublishedService());
+        when(serviceManager.findByRoutingUri(anyString())).thenReturn(aServiceFound);
+
         PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
@@ -109,6 +177,12 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
                             // results
                             setResponse(context, XmlUtil.parse(MessageFormat.format(CANNED_ENUMERATE_WITH_FILTER_AND_EPR_RESPONSE, new Goid(0, 123345678))));
                         }
+                    } else if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get")) {
+                        if (requestXml.contains(PolicyInstaller.POLICIES_MGMT_NS)) {
+                            setResponse(context, XmlUtil.parse(GET_SELECTOR_POLICY_RESPONSE));
+                        } else {
+                            setResponse(context, XmlUtil.parse(FAULT_RESPONSE_INVALID_SELECTOR));
+                        }
                     }
                 } catch (Exception e) {
                     fail("Unexpected exception: " + e.getMessage());
@@ -116,7 +190,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, getCancelledCallback(dryRunEvent));
+        }, context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
 
@@ -192,6 +266,8 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         }
+                    } else if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get")) {
+                        setResponse(context, XmlUtil.parse(FAULT_RESPONSE_INVALID_SELECTOR));
                     }
                 } catch (Exception e) {
                     fail("Unexpected exception: " + e.getMessage());
@@ -199,7 +275,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, getCancelledCallback(dryRunEvent));
+        }, context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
 
@@ -244,7 +320,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, getCancelledCallback(installEvent));
+        }, context, serviceManager, getCancelledCallback(installEvent));
 
         try {
             installer.installBundle();

@@ -2,9 +2,9 @@ package com.l7tech.console.panels.bundles;
 
 import com.l7tech.console.action.ManageJdbcConnectionsAction;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.bundle.BundleInfo;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -62,7 +62,6 @@ public class BundleComponent extends JPanel{
         } else {
             jdbcPanel.setVisible(false);
         }
-
     }
 
     public JPanel getBundlePanel() {
