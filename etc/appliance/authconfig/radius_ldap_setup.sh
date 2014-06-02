@@ -369,6 +369,7 @@ doUpdateSudoers () {
 %$SUDOERS_COMP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh\n\
 %$SUDOERS_COMP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/patchcli_launch\n\
 %$SUDOERS_COMP_GROUP_NAME ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off\n\
+%$SUDOERS_COMP_GROUP_NAME ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/viewlog\n\
 %$SUDOERS_COMP_GROUP_NAME ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status\n|" /etc/sudoers
         if [ $? -ne 0 ] || [ $(grep "^%$SUDOERS_COMP_GROUP_NAME" /etc/sudoers | wc -l) -eq 0 ]; then
             toLog "    ERROR - Updating the /etc/sudoers file failed. Restoring the previous version of the /etc/sudoers file."
