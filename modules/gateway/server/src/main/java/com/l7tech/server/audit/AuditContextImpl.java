@@ -84,11 +84,15 @@ public class AuditContextImpl implements AuditContext {
      */
     void setCurrentRecord(AuditRecord record) {
         checkFlushed("setCurrentRecord");
-        if (record == null) throw new NullPointerException();
+        if (record == null) {
+            throw new NullPointerException( "no audit record provided" );
+        }
         if (currentRecord != null) {
             throw new IllegalStateException("Only one audit record can be active at one time (existing is '"+currentRecord.getMessage()+"', new is '"+record.getMessage()+"')");
         }
-        if (record.getLevel().intValue() > highestLevelYetSeen.intValue()) highestLevelYetSeen = record.getLevel();
+        if (record.getLevel().intValue() > highestLevelYetSeen.intValue()) {
+            highestLevelYetSeen = record.getLevel();
+        }
         currentRecord = record;
     }
 
@@ -100,11 +104,15 @@ public class AuditContextImpl implements AuditContext {
     @Override
     public void addDetail( final AuditDetailWithInfo detailWithInfo ) {
         checkFlushed("addDetail");
-        if (detailWithInfo == null) throw new NullPointerException();
+        if (detailWithInfo == null) {
+            throw new NullPointerException( "no detailWithInfo provided" );
+        }
         final AuditDetail detail = detailWithInfo.getDetail();
 
         AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detail.getMessageId());
-        if(message == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+        if(message == null) {
+            throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+        }
         Level severity = getUseAssociatedLogsThreshold() ? MessagesUtil.getAuditLevelByIdWithFilter(detail.getMessageId()) : message.getLevel();
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
