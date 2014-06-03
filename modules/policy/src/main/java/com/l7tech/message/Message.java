@@ -9,6 +9,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -844,6 +845,7 @@ public final class Message implements Closeable {
      * @return the requested MessageKnob, if its facet is installed on this Message, or null.
      */
     @SuppressWarnings({"unchecked"})
+    @Nullable
     public <T> T getKnob(Class<T> c) {
         if (c == null) throw new NullPointerException();
         if (rootFacet == null) return null;
