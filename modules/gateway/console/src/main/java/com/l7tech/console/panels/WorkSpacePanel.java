@@ -1296,9 +1296,9 @@ public class WorkSpacePanel extends JPanel {
                 // Keep other tabs' version unchanged
                 ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
 
-                // Redraw tab title
-                ((PolicyEditorPanel) component).updateHeadings();
             }
+            // Redraw tab title
+            ((PolicyEditorPanel) component).updateHeadings();
         }
     }
 
