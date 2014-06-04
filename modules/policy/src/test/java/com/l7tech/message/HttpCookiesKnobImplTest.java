@@ -105,6 +105,21 @@ public class HttpCookiesKnobImplTest {
     }
 
     @Test
+    public void addSetCookieSameNameDomainAndPathWhenMultipleHeadersExists() {
+        headersKnob.addHeader("Set-Cookie", "foo=existing; Version=1; Domain=localhost; Path=/; Comment=none; Max-Age=60; Secure", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure", HEADER_TYPE_HTTP);
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
+        setCookieKnob.addCookie(cookie);
+        final Set<HttpCookie> cookies = setCookieKnob.getCookies();
+        assertEquals(1, cookies.size());
+        assertEquals(cookie, cookies.iterator().next());
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
+        assertEquals(1, headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP).length);
+        assertEquals("foo=bar; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure",
+                headersKnob.getHeaderValues("Set-Cookie", HEADER_TYPE_HTTP)[0]);
+    }
+
+    @Test
     public void addCookie() {
         cookieKnob.addCookie(new HttpCookie("foo", "bar", 1, "/", "localhost", 60, false, "test", false));
         final Set<HttpCookie> cookies = cookieKnob.getCookies();

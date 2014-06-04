@@ -609,7 +609,7 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         final String[] cookieValues = responseHeadersKnob.getHeaderValues("Set-Cookie");
         assertEquals(2, cookieValues.length);
-        assertEquals("foo=bar; Version=0; Domain=localhost; Path=/test", cookieValues[0]);
+        assertEquals("foo=bar; Domain=localhost; Path=/test", cookieValues[0]);
         assertEquals("invalid", cookieValues[1]);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
         assertEquals(1, cookiesMap.size());

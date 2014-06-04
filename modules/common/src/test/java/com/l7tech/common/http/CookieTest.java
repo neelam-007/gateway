@@ -7,7 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
@@ -28,7 +27,7 @@ public class CookieTest {
     public void testSetCookieProperties() {
         String name = "test";
         String value = "avalue";
-        int version = 0;
+        int version = 1;
         String path = "/test/path";
         String domain = ".testdomain.com";
         int maxAge = 300;
@@ -46,7 +45,7 @@ public class CookieTest {
         assertEquals("Checking max-age property", maxAge, cookie.getMaxAge());
         assertEquals("Should not be secure", false, cookie.isSecure());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertNull("Checking comment property", cookie.getComment()); // should be null since version 0 cookies don't have comments
+        assertEquals("Checking comment property",comment, cookie.getComment());
         assertEquals("Should not be http only", httpOnly, cookie.isHttpOnly());
     }
 
@@ -106,7 +105,9 @@ public class CookieTest {
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking expires property", expires, cookie.getExpires());
+//        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking version property", 0, cookie.getVersion());
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -204,6 +205,7 @@ public class CookieTest {
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
         assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking expires property", expires, cookie.getExpires());
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
@@ -233,6 +235,7 @@ public class CookieTest {
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
         assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking expires property", expires, cookie.getExpires());
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());

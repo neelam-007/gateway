@@ -4,6 +4,7 @@ import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -129,33 +130,9 @@ public class HttpCookie {
             }
         }
 
+        this.expires = parsedExpires;
         if(parsedVersion==0 && parsedExpires!=null) {
-            List<Pattern> datePatternToFormat = CookieUtils.getDatePatterns();
-            boolean match = false;
-            for(Pattern p: datePatternToFormat){
-                Matcher m = p.matcher(parsedExpires);
-                if(m.matches()){
-                    try{
-                        String pattern = p.pattern();
-                        parsedExpires = CookieUtils.expandYear(pattern, parsedExpires);
-                        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.getDateFormat(p), Locale.US);
-                        long calculatedMaxAge = expiryFormat.parse(parsedExpires).getTime() - System.currentTimeMillis();
-                        if(calculatedMaxAge>1000){
-                            parsedMaxAge = (int)(calculatedMaxAge/1000L);
-                        }
-                        else{
-                            parsedMaxAge = 0;
-                        }
-                        match = true;
-                        break;
-                     }catch (ParseException e){
-                        throw new HttpCookie.IllegalFormatException("Invalid expires attribute: " + e.getMessage());
-                     }
-                }
-            }
-            if(STRICT_COOKIE_EXPIRY_FORMAT && !match){
-                throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");
-            }
+            parsedMaxAge = convertExpires2MaxAge(parsedExpires);
         }
 
 
@@ -168,6 +145,37 @@ public class HttpCookie {
 
         createdTime = System.currentTimeMillis();
         id = buildId();
+    }
+
+    private int convertExpires2MaxAge(String parsedExpires) throws IllegalFormatException {
+        List<Pattern> datePatternToFormat = CookieUtils.getDatePatterns();
+        int maxAge = -1;
+        boolean match = false;
+        for(Pattern p: datePatternToFormat){
+            Matcher m = p.matcher(parsedExpires);
+            if(m.matches()){
+                try{
+                    String pattern = p.pattern();
+                    parsedExpires = CookieUtils.expandYear(pattern, parsedExpires);
+                    SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.getDateFormat(p), Locale.US);
+                    long calculatedMaxAge = expiryFormat.parse(parsedExpires).getTime() - System.currentTimeMillis();
+                    if(calculatedMaxAge>1000){
+                        maxAge = (int)(calculatedMaxAge/1000L);
+                    }
+                    else{
+                        maxAge = 0;
+                    }
+                    match = true;
+                    break;
+                 }catch (ParseException e){
+                    throw new IllegalFormatException("Invalid expires attribute: " + e.getMessage());
+                 }
+            }
+        }
+        if(STRICT_COOKIE_EXPIRY_FORMAT && !match){
+            throw new IllegalFormatException("Unknown expires format in Cookie");
+        }
+        return maxAge;
     }
 
     /**
@@ -184,7 +192,25 @@ public class HttpCookie {
      * @param comment the comment, may be null
      * @param httpOnly if this cookie should only be used for http
      */
-    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly) {
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly) throws IllegalArgumentException{
+        this(name, value, version, path, domain, maxAge, secure, comment, httpOnly, null);
+    }
+    /**
+     * Create a cookie as though from a "Set-Cookie" header, this will be passed
+     * back to the client (outgoing cookie).
+     *
+     * @param name the name of the cookie
+     * @param value the value of the cookie
+     * @param version the cookie version (0 - Netscape, 1 - RFC 2109)
+     * @param path the explictly set path (version 1+ only), may be null
+     * @param domain the explictly set domain (version 1+ only), may be null
+     * @param maxAge the maximum age in seconds (-1 for not specified)
+     * @param expires for Netscape cookie sets the Expires attribute
+     * @param secure is this a secure cookie
+     * @param comment the comment, may be null
+     * @param httpOnly if this cookie should only be used for http
+     */
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly, String expires) throws  IllegalArgumentException {
         this.cookieName = name;
         this.cookieValue = value;
         this.version = version;
@@ -192,12 +218,28 @@ public class HttpCookie {
         this.domain = domain;
         this.explicitDomain = domain!=null;
         this.fullValue = null;
-        this.maxAge = maxAge;
         if(version==0) {
             this.comment = null;
+            this.expires = expires;
+            int convertedMaxAge = -1;
+            try {
+                if(this.expires != null) {
+                    convertedMaxAge = convertExpires2MaxAge(this.expires);
+                }
+                else {
+                    convertedMaxAge = maxAge;
+                }
+
+            } catch (IllegalFormatException e) {
+                throw new IllegalArgumentException(e);
+            } finally {
+                this.maxAge = convertedMaxAge;
+            }
         }
         else {
+            this.maxAge = maxAge;
             this.comment = comment;
+            this.expires = null;
         }
         this.secure = secure;
         this.httpOnly = httpOnly;
@@ -232,6 +274,7 @@ public class HttpCookie {
 
         this.fullValue = null;
         this.maxAge = -1;
+        this.expires = null;
         this.secure = false;
         this.httpOnly = false;
         this.comment = null;
@@ -253,6 +296,7 @@ public class HttpCookie {
         this.cookieValue = cookie.cookieValue;
         this.version = cookie.version;
         this.maxAge = cookie.maxAge;
+        this.expires = cookie.expires;
         this.secure = cookie.secure;
         this.httpOnly = cookie.httpOnly;
         this.comment = cookie.comment;
@@ -311,6 +355,10 @@ public class HttpCookie {
 
     public int getMaxAge() {
         return maxAge;
+    }
+
+    public String getExpires() {
+        return expires;
     }
 
     /**
@@ -435,8 +483,14 @@ public class HttpCookie {
 
     //- PRIVATE
 
-    private static final Pattern WHITESPACE = Pattern.compile("(;\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // semi-colon followed by an even number of double quotes (it is not inside double quotes)
+    public static final Pattern WHITESPACE = Pattern.compile("(;\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // semi-colon followed by an even number of double quotes (it is not inside double quotes)
     private static final Pattern EQUALS = Pattern.compile("=");
+    private static final String EXPIRES_DATE_FORMAT = "EEE, dd-MMM-yyyy HH:mm:ss z";
+    private static final DateFormat df;
+    static {
+        df = new SimpleDateFormat(EXPIRES_DATE_FORMAT, Locale.US);
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
 
     //store the full initial value of the cookie so that it can be regenerated later with ease
     private final String id;
@@ -452,6 +506,7 @@ public class HttpCookie {
     private final int version;
     private final boolean secure;
     private final boolean httpOnly;
+    private final String expires;
 
     /**
      * Called when all properties have been set to generate the cookies ID

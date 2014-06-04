@@ -288,12 +288,14 @@ public class HttpForwardingRuleEnforcer {
                                              @Nullable final String[] varNames) {
         if (targetMessage != null && targetMessage.getHeadersKnob() != null) {
             final HeadersKnob targetForResponseHeaders = targetMessage.getHeadersKnob();
-            boolean passIncomingCookies = false;
+            final URL requestUrl = routedRequestParams.getTargetUrl();
             if (rules.isForwardAll()) {
                 final boolean logFine = logger.isLoggable(Level.FINE);
                 for (final HttpHeader headerFromResponse : sourceOfResponseHeaders.getHeadersArray()) {
-                    if (HttpConstants.HEADER_SET_COOKIE.equals(headerFromResponse.getName())) {
-                        // special cookie handling happens outside this loop (see below)
+                    if (HttpConstants.HEADER_SET_COOKIE.equalsIgnoreCase(headerFromResponse.getName())) {
+                        // special cookie handling
+                        String setCookieValue = headerFromResponse.getFullValue();
+                        addCookie2HeadersKnob(context, targetForResponseHeaders, requestUrl, setCookieValue);
                     } else {
                         final boolean passThrough = !headerShouldBeIgnored(headerFromResponse.getName());
                         if (!passThrough && logFine) {
@@ -302,7 +304,6 @@ public class HttpForwardingRuleEnforcer {
                         targetForResponseHeaders.addHeader(headerFromResponse.getName(), headerFromResponse.getFullValue(), HEADER_TYPE_HTTP, passThrough);
                     }
                 }
-                passIncomingCookies = true;
             } else {
                 for (final HttpPassthroughRule rule : rules.getRules()) {
                     if (rule.isUsesCustomizedValue()) {
@@ -316,43 +317,40 @@ public class HttpForwardingRuleEnforcer {
                         }
                         targetForResponseHeaders.addHeader(rule.getName(), headerValue, HEADER_TYPE_HTTP);
                     } else {
-                        if (HttpConstants.HEADER_SET_COOKIE.equals(rule.getName())) {
-                            // special cookie handling outside this loop (see below)
-                            passIncomingCookies = true;
-                        } else {
-                            final String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
-                            if (values != null && values.length > 0) {
-                                for (final String val : values) {
+                        final String[] values = sourceOfResponseHeaders.getHeaderValues(rule.getName());
+                        if (values != null && values.length > 0) {
+                            for (final String val : values) {
+                                if (HttpConstants.HEADER_SET_COOKIE.equalsIgnoreCase(rule.getName())) {
+                                    // special cookie handling
+                                    addCookie2HeadersKnob(context,targetForResponseHeaders,requestUrl, val);
+                                }
+                                else {
                                     targetForResponseHeaders.addHeader(rule.getName(), val, HEADER_TYPE_HTTP);
                                 }
-                            } else {
-                                logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
-                                        "incoming value but this header is not present.");
                             }
+                        } else {
+                            logger.fine("there is a custom rule for forwarding header " + rule.getName() + " with " +
+                                    "incoming value but this header is not present.");
                         }
-                    }
-                }
-            }
-
-            // handle cookies separately
-            if (passIncomingCookies) {
-                final String[] setCookieValues = sourceOfResponseHeaders.getHeaderValues(HttpConstants.HEADER_SET_COOKIE);
-                for (String setCookieValue : setCookieValues) {
-                    try {
-                        final HttpCookiesKnob cookiesKnob = targetMessage.getHttpCookiesKnob();
-                        final URL requestUrl = routedRequestParams.getTargetUrl();
-                        final HttpCookie cookie = new HttpCookie(context.isOverwriteResponseCookieDomain() ? requestUrl.getHost() : null,
-                                context.isOverwriteResponseCookiePath() ? requestUrl.getPath() : null, setCookieValue);
-                        cookiesKnob.addCookie(cookie);
-                    } catch (final HttpCookie.IllegalFormatException e) {
-                        logger.log(Level.WARNING, "Could not parse set-cookie header: " + setCookieValue);
-                        targetForResponseHeaders.addHeader(HttpConstants.HEADER_SET_COOKIE, setCookieValue, HeadersKnob.HEADER_TYPE_HTTP);
                     }
                 }
             }
         } else {
             logger.log(Level.WARNING, "Unable to forward response headers because headers knob is null.");
         }
+    }
+
+    private static void addCookie2HeadersKnob(PolicyEnforcementContext context, HeadersKnob targetForResponseHeaders, URL requestUrl, String setCookieValue) {
+        StringBuffer sb = new StringBuffer();
+        String domain =  context.isOverwriteResponseCookieDomain() ? CookieUtils.DOMAIN + CookieUtils.EQUALS + requestUrl.getHost() : null;
+        String path = context.isOverwriteResponseCookiePath() ? CookieUtils.PATH + CookieUtils.EQUALS + requestUrl.getPath() : null;
+        List<String> cookies = CookieUtils.splitCookieHeader(setCookieValue);
+        for(int i = 0; i < cookies.size(); i++ ) {
+            if(i > 0) sb.append(CookieUtils.ATTRIBUTE_DELIMITER);
+            sb.append(CookieUtils.addCookieDomainAndPath(cookies.get(i), domain, path));
+        }
+        String modifiedCookie = sb.toString();
+        targetForResponseHeaders.addHeader(HttpConstants.HEADER_SET_COOKIE,modifiedCookie, HeadersKnob.HEADER_TYPE_HTTP);
     }
 
     private static boolean isItAForm( final HttpRequestKnob knob ) {

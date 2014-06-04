@@ -276,25 +276,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // Send response headers
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
-            final Collection<Pair<String, Object>> passThroughHeaders = getPassThroughHeaders(responseHeaders);
-            final Set<HttpCookie> cookies = getCookiesToPropagate(context, reqKnob);
+            final Collection<Pair<String, Object>> passThroughHeaders = getPassThroughHeaders(context, reqKnob, responseHeaders);
 
-            // SSG-8486 - send cookies with special characters as regular headers
-            final Set<HttpCookie> cookiesWithSpecialCharacters = new HashSet<>();
-            for (final HttpCookie cookie : cookies) {
-                if (!CookieUtils.isToken(cookie.getCookieValue())) {
-                    cookiesWithSpecialCharacters.add(cookie);
-                }
-            }
-            if (!cookiesWithSpecialCharacters.isEmpty()) {
-                cookies.removeAll(cookiesWithSpecialCharacters);
-                for (final HttpCookie specialCharCookie : cookiesWithSpecialCharacters) {
-                    final String extraSetCookieHeader = CookieUtils.getSetCookieHeader(specialCharCookie);
-                    passThroughHeaders.add(new Pair<String, Object>(HttpConstants.HEADER_SET_COOKIE, extraSetCookieHeader));
-                }
-            }
-
-            respKnob.beginResponse(passThroughHeaders, cookies);
+            respKnob.beginResponse(passThroughHeaders, Collections.<HttpCookie>emptyList());
 
             int routeStat = respKnob.getStatus();
             if (routeStat < 1) {
@@ -437,21 +421,41 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     /**
      * @return a collection of headers which should be passed through to the response.
      */
-    private Collection<Pair<String, Object>> getPassThroughHeaders(final HeadersKnob headersKnob) {
+    private Collection<Pair<String, Object>> getPassThroughHeaders(PolicyEnforcementContext context, final HttpRequestKnob reqKnob, final HeadersKnob headersKnob) {
         final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
+        URI url = URI.create(reqKnob.getRequestUrl());
+        //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
+        String domain = context.isOverwriteResponseCookieDomain() ? url.getHost() : null;
+        String path = context.isOverwriteResponseCookiePath() ? url.getPath() : null;
+        List<HttpCookie> cookieValues = new ArrayList<>();
         for (final Header header : headersKnob.getHeaders(HeadersKnob.HEADER_TYPE_HTTP, false)) {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
                 passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
             } else if (header.getValue() instanceof String) {
-                try {
-                    new HttpCookie((String)header.getValue());
-                } catch (final HttpCookie.IllegalFormatException e) {
-                    // it's an invalid set-cookie header, so treat it as a regular header.
-                    passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
+                String setCookieValue = CookieUtils.replaceCookieDomainAndPath((String) header.getValue(), domain, path, true);
+                //check if the Set-Cookie header with the same value exists
+                Pair<String,Object> setCookieHeader = new Pair(header.getKey(), setCookieValue);
+                HttpCookie cookie = getHttpCookieFromHeader(setCookieValue);
+                if(cookie == null || !cookieValues.contains(cookie)) {
+                    passThroughHeaders.add(setCookieHeader);
+                    if(cookie != null) {
+                        cookieValues.add(cookie);//keep track of the same cookies
+                    }
                 }
             }
         }
+
         return passThroughHeaders;
+    }
+
+    private HttpCookie getHttpCookieFromHeader(String setCookieValue) {
+        HttpCookie cookie = null;
+        try {
+            cookie = new HttpCookie(setCookieValue);
+        } catch (HttpCookie.IllegalFormatException e) {
+            logger.log(Level.FINE, "Unable to parse cookie " , ExceptionUtils.getDebugException(e));
+        }
+        return cookie;
     }
 
     /**

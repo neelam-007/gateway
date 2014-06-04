@@ -3,9 +3,7 @@ package com.l7tech.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
-import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,22 +19,9 @@ import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
  */
 public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     private static final Logger logger = Logger.getLogger(HttpCookiesKnobImpl.class.getName());
-    private static final Comparator<String> COOKIE_ATTRIBUTE_COMPARATOR = ComparatorUtils.nullHighComparator(new CookieTokenComparator());
-    private static final String DOLLAR_SIGN = "$";
-    private static final Set<String> COOKIE_ATTRIBUTES;
+
     private final HeadersKnob delegate;
     private final String cookieHeaderName;
-
-    static {
-        COOKIE_ATTRIBUTES = new HashSet<>();
-        COOKIE_ATTRIBUTES.add(DOMAIN.toLowerCase());
-        COOKIE_ATTRIBUTES.add(PATH.toLowerCase());
-        COOKIE_ATTRIBUTES.add(COMMENT.toLowerCase());
-        COOKIE_ATTRIBUTES.add(VERSION.toLowerCase());
-        COOKIE_ATTRIBUTES.add(MAX_AGE.toLowerCase());
-        COOKIE_ATTRIBUTES.add(SECURE.toLowerCase());
-        COOKIE_ATTRIBUTES.add(HTTP_ONLY.toLowerCase());
-    }
 
     /**
      * Create a HeadersKnob-backed HttpCookiesKnob.
@@ -121,9 +106,8 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
      */
     @Override
     public void addCookie(@NotNull final HttpCookie cookie) {
-        for (final HttpCookie conflictingCookie : getConflictingCookies(cookie)) {
-            deleteCookie(conflictingCookie);
-            logger.log(Level.WARNING, "Removed conflicting cookie: " + conflictingCookie);
+        if(getCookies().contains(cookie)){
+            deleteCookie(cookie);
         }
         delegate.addHeader(cookieHeaderName, CookieUtils.getSetCookieHeader(cookie), HEADER_TYPE_HTTP);
     }
@@ -133,108 +117,17 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
         removeMatchingCookieHeaders(cookieHeaderName, cookie);
     }
 
-    private List<String> splitCookieHeader(final String cookieValue) {
-        // it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
-        // ex) Cookie: 1=one; 2=two                         ---> Netscape format
-        // ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
-        // ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
-        final String[] tokens = StringUtils.split(cookieValue, ATTRIBUTE_DELIMITER.trim());
-        final List<String> singleCookieValues = new ArrayList<>();
-        if (tokens.length > 0) {
-            final List<String> group = new ArrayList<>();
-            final String firstToken = tokens[0].trim();
-            group.add(firstToken);
-            boolean hasVersion = isVersion(firstToken);
-            boolean hasName = !isCookieAttribute(firstToken);
-            for (int i = 1; i < tokens.length; i++) {
-                final String token = tokens[i].trim();
-                if ((hasVersion && isVersion(token)) || (hasName && !isCookieAttribute(token))) {
-                    // current token is the start of a new cookie, so process the existing token group
-                    Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-                    singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
-                    group.clear();
-                    hasVersion = false;
-                    hasName = false;
-                }
-                group.add(token);
-                if (isVersion(token)) {
-                    hasVersion = true;
-                } else if (!isCookieAttribute(token)) {
-                    hasName = true;
-                }
-            }
-            // process last group
-            Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-            singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
-        }
-        return singleCookieValues;
-    }
-
-    /**
-     * @return true if the given token identifies the cookie version.
-     */
-    private boolean isVersion(final String token) {
-        boolean isVersion = false;
-        final String[] split = token.split(EQUALS);
-        if (split.length > 0) {
-            String candidate = split[0];
-            if (candidate.startsWith(DOLLAR_SIGN)) {
-                candidate = StringUtils.substring(candidate, 1);
-            }
-            if (candidate.equalsIgnoreCase(VERSION)) {
-                isVersion = true;
-            }
-        }
-        return isVersion;
-    }
-
-    /**
-     * @return true if the given token is a recognized cookie attribute (or attribute=value pair).
-     */
-    private static boolean isCookieAttribute(final String token) {
-        boolean isAttribute = false;
-        final String[] split = token.split(EQUALS);
-        if (split.length > 0) {
-            String candidate = split[0];
-            if (candidate.startsWith(DOLLAR_SIGN)) {
-                candidate = StringUtils.substring(candidate, 1);
-            }
-            isAttribute = COOKIE_ATTRIBUTES.contains(candidate.toLowerCase());
-        }
-        return isAttribute;
-    }
-
     private void removeMatchingCookieHeaders(final String cookieHeaderName, final HttpCookie cookie) {
         for (final String cookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
             try {
                 final HttpCookie fromHeader = new HttpCookie(cookieValue);
                 if (cookie.getId().equals(fromHeader.getId())) {
                     delegate.removeHeader(cookieHeaderName, cookieValue, HEADER_TYPE_HTTP);
+                    logger.log(Level.WARNING, "Removed conflicting cookie: " + fromHeader);
                 }
             } catch (final HttpCookie.IllegalFormatException e) {
                 logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
             }
-        }
-    }
-
-    private Set<HttpCookie> getConflictingCookies(final HttpCookie cookie) {
-        final Set<HttpCookie> conflictingCookies = new HashSet<>();
-        for (HttpCookie currentCookie : getCookies()) {
-            if (currentCookie.getId().equals(cookie.getId())) {
-                conflictingCookies.add(currentCookie);
-            }
-            return conflictingCookies;
-        }
-        return conflictingCookies;
-    }
-
-    /**
-     * Comparator which evaluates name=value strings as lower than other known cookie attribute pairs.
-     */
-    private static class CookieTokenComparator implements Comparator<String> {
-        @Override
-        public int compare(final String token1, final String token2) {
-            return ComparatorUtils.booleanComparator(true).compare(!isCookieAttribute(token1), !isCookieAttribute(token2));
         }
     }
 }

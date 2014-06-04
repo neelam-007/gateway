@@ -30,7 +30,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -239,17 +238,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Map<String, String> cookiesMap = new HashMap<>();
-        final Cookie[] cookies = response.getCookies();
-        for (final Cookie cookie : cookies) {
-            cookiesMap.put(cookie.getName(), cookie.getValue());
-            // by default the gateway will overwrite the cookie domain and path before sending the response
-            assertEquals("test.l7tech.com", cookie.getDomain());
-            assertEquals("/test", cookie.getPath());
-        }
-        assertEquals(2, cookiesMap.size());
-        assertEquals("a", cookiesMap.get("1"));
-        assertEquals("b", cookiesMap.get("2"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=/test; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=/test; Comment=test; Max-Age=60"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @BugId("SSG-8033")
@@ -271,16 +264,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Map<String, String> cookiesMap = new HashMap<>();
-        final Cookie[] cookies = response.getCookies();
-        for (final Cookie cookie : cookies) {
-            cookiesMap.put(cookie.getName(), cookie.getValue());
-            assertEquals("original", cookie.getDomain());
-            assertEquals("/test", cookie.getPath());
-        }
-        assertEquals(2, cookiesMap.size());
-        assertEquals("a", cookiesMap.get("1"));
-        assertEquals("b", cookiesMap.get("2"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=original; Path=/test; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=original; Path=/test; Comment=test; Max-Age=60"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @BugId("SSG-8033")
@@ -302,16 +290,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Map<String, String> cookiesMap = new HashMap<>();
-        final Cookie[] cookies = response.getCookies();
-        for (final Cookie cookie : cookies) {
-            cookiesMap.put(cookie.getName(), cookie.getValue());
-            assertEquals("test.l7tech.com", cookie.getDomain());
-            assertEquals("/original", cookie.getPath());
-        }
-        assertEquals(2, cookiesMap.size());
-        assertEquals("a", cookiesMap.get("1"));
-        assertEquals("b", cookiesMap.get("2"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=/original; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=/original; Comment=test; Max-Age=60"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @BugId("SSG-8033")
@@ -334,16 +317,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Map<String, String> cookiesMap = new HashMap<>();
-        final Cookie[] cookies = response.getCookies();
-        for (final Cookie cookie : cookies) {
-            cookiesMap.put(cookie.getName(), cookie.getValue());
-            assertEquals("original", cookie.getDomain());
-            assertEquals("/original", cookie.getPath());
-        }
-        assertEquals(2, cookiesMap.size());
-        assertEquals("a", cookiesMap.get("1"));
-        assertEquals("b", cookiesMap.get("2"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=original; Path=/original; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=original; Path=/original; Comment=test; Max-Age=60"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @Test
@@ -363,11 +341,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Cookie[] cookies = response.getCookies();
-        assertEquals(1, cookies.length);
-        assertEquals("foo", cookies[0].getName());
-        assertEquals("bar", cookies[0].getValue());
-        assertEquals("invalidSetCookieHeaderValue", response.getHeader("Set-Cookie"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar; Version=0"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("invalidSetCookieHeaderValue"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @BugId("SSG-8486")
@@ -388,11 +366,11 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Cookie[] cookies = response.getCookies();
-        assertEquals(1, cookies.length);
-        assertEquals("foo", cookies[0].getName());
-        assertEquals("bar", cookies[0].getValue());
-        assertEquals("LSID=DQAAAK…Eaem_vYg; Version=0; Domain=test.l7tech.com; Path=/test", response.getHeader("Set-Cookie"));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar; Version=0"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("LSID=DQAAAK…Eaem_vYg; domain=test.l7tech.com; path=/test"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @Test
@@ -412,11 +390,10 @@ public class SoapMessageProcessingServletTest {
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
-        final Cookie[] cookies = response.getCookies();
-        assertEquals(1, cookies.length);
-        final Cookie cookie = cookies[0];
-        assertEquals("test", cookie.getName());
-        assertEquals("value1", cookie.getValue());
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(1, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("test=value1; domain=test.l7tech.com; path=/test"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
     @Test
