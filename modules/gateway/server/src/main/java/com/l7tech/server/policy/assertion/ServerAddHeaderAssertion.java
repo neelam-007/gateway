@@ -107,7 +107,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             }
             for (final String headerName : headerNames) {
                 if ((!assertion.isEvaluateNameAsExpression() && assertionHeaderName.equalsIgnoreCase(headerName)) ||
-                        Pattern.compile(assertionHeaderName).matcher(headerName).matches()) {
+                        (assertion.isEvaluateNameAsExpression() && Pattern.compile(assertionHeaderName).matcher(headerName).matches())) {
                     // name matches
                     for (final String headerValue : headersKnob.getHeaderValues(headerName, assertion.getMetadataType())) {
                         if (headerValue.contains(HeadersKnobSupport.VALUE_SEPARATOR)) {
