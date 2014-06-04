@@ -5,6 +5,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.GoidUpgradeMapper;
@@ -28,17 +29,17 @@ public class IdentityProviderProcessor extends DefaultDependencyProcessor<Identi
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(@NotNull IdentityProviderConfig identityProviderConfig, @NotNull DependencyFinder finder) throws FindException {
-        List<Dependency> dependencies = super.findDependencies(identityProviderConfig, finder);
+    public List<Dependency> findDependencies(@NotNull final IdentityProviderConfig identityProviderConfig, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+        final List<Dependency> dependencies = super.findDependencies(identityProviderConfig, finder);
 
         //Special handling for NTLM Configuration passwords. The password should only be a dependency if NTLM is enabled.
         if (identityProviderConfig instanceof LdapIdentityProviderConfig) {
-            Map<String, String> ntlmProperties = ((LdapIdentityProviderConfig) identityProviderConfig).getNtlmAuthenticationProviderProperties();
+            final Map<String, String> ntlmProperties = ((LdapIdentityProviderConfig) identityProviderConfig).getNtlmAuthenticationProviderProperties();
             if (Boolean.parseBoolean(ntlmProperties.get("enabled"))) {
-                String passwordGOID = ntlmProperties.get("service.passwordOid");
-                SecurePassword securePassword = securePasswordManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, passwordGOID));
-                Dependency dependency = finder.getDependency(securePassword);
-                if(dependency != null)
+                final String passwordGOID = ntlmProperties.get("service.passwordOid");
+                final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, passwordGOID));
+                final Dependency dependency = finder.getDependency(securePassword);
+                if (dependency != null)
                     dependencies.add(dependency);
             }
         }

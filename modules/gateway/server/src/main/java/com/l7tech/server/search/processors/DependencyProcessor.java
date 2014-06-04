@@ -28,7 +28,7 @@ public interface DependencyProcessor<O> {
      * @throws FindException This is thrown if an entity cannot be found.
      */
     @NotNull
-    public List<Dependency> findDependencies(@NotNull O object, @NotNull DependencyFinder finder) throws FindException;
+    public List<Dependency> findDependencies(@NotNull O object, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException;
 
     /**
      * Returns an entity given a search value and the dependency info.
@@ -61,7 +61,7 @@ public interface DependencyProcessor<O> {
      * @return The list of dependent objects
      */
     @NotNull
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType);
+    public List<DependentObject> createDependentObjects(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException;
 
 
     /**

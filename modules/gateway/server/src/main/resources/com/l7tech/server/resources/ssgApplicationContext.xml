@@ -2627,17 +2627,15 @@
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP"/></key>
                     <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
                 </entry>
-                <entry>
+                <entry value-ref="sslSsgConnectorDependencyProcessor">
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/></key>
-                    <ref bean="sslSsgConnectorDependencyProcessor"/>
                 </entry>
                 <entry>
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTP"/></key>
                     <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
                 </entry>
-                <entry>
+                <entry value-ref="sslSsgConnectorDependencyProcessor">
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/></key>
-                    <ref bean="sslSsgConnectorDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>

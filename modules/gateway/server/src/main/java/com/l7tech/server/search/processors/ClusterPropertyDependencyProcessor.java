@@ -7,14 +7,14 @@ import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This is used to create cluster properties depentent objects using the cluster property name as the public id.
+ * This is used to create cluster properties dependent objects using the cluster property name as the public id.
  *
  * @author Victor Kazakov
  */
 public class ClusterPropertyDependencyProcessor extends DefaultDependencyProcessor<ClusterProperty> {
     @NotNull
     @Override
-    public DependentObject createDependentObject(@NotNull ClusterProperty clusterProperty) {
+    public DependentObject createDependentObject(@NotNull final ClusterProperty clusterProperty) {
         return new DependentEntity(clusterProperty.getName(), EntityHeaderUtils.fromEntity(clusterProperty));
     }
 }

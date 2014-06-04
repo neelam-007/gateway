@@ -7,6 +7,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyProcessorStore;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -205,7 +206,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependencies() throws FindException {
+    public void testFindDependencies() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -249,7 +250,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesWithAnnotations() throws FindException {
+    public void testFindDependenciesWithAnnotations() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -283,7 +284,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesWithSubObjects() throws FindException {
+    public void testFindDependenciesWithSubObjects() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -323,7 +324,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesFromPropertyGetter() throws FindException {
+    public void testFindDependenciesFromPropertyGetter() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -356,7 +357,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindDependenciesFromMap() throws FindException {
+    public void testFindDependenciesFromMap() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
@@ -387,7 +388,7 @@ public class DefaultDependencyProcessorTest {
     }
 
     @Test
-    public void testFindMultipleDependenciesFromMap() throws FindException {
+    public void testFindMultipleDependenciesFromMap() throws FindException, CannotRetrieveDependenciesException {
         final String oid = "123";
 
         List<String> names = Arrays.asList("MyEntity", "MyEntity2");

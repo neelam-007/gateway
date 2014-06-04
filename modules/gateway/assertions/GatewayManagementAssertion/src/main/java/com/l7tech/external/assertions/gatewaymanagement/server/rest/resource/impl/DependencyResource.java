@@ -11,6 +11,7 @@ import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.CollectionUtils;
 
 import javax.ws.rs.GET;
@@ -51,7 +52,7 @@ public class DependencyResource {
      * @title Get Dependencies
      */
     @GET
-    public Item get() throws FindException {
+    public Item get() throws FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         if (entityHeader == null) {
             throw new IllegalStateException("Cannot find dependencies, no entity set.");

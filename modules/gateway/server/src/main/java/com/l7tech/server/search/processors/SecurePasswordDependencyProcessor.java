@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import org.jetbrains.annotations.NotNull;
@@ -26,20 +27,19 @@ public class SecurePasswordDependencyProcessor extends DefaultDependencyProcesso
     private SecurePasswordManager securePasswordManager;
 
     @NotNull
-    @SuppressWarnings("unchecked")
-    public List<SecurePassword> find(@NotNull Object searchValue, @NotNull Dependency.DependencyType dependencyType, @NotNull Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<SecurePassword> find(@NotNull final Object searchValue, @NotNull final Dependency.DependencyType dependencyType, @NotNull final Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
             case NAME: {
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName((String) searchValue);
                 return securePassword != null ? Arrays.asList(securePassword) : Collections.<SecurePassword>emptyList();
             }
             case VARIABLE: {
-                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
+                final Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
                 if (!matcher.matches()) {
                     // Assume it is a literal password
                     return Collections.emptyList();
                 }
-                String alias = matcher.group(1);
+                final String alias = matcher.group(1);
                 assert alias != null; // enforced by regex
                 assert alias.length() > 0; // enforced by regex
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
@@ -52,25 +52,25 @@ public class SecurePasswordDependencyProcessor extends DefaultDependencyProcesso
 
     @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependentObject> createDependentObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException {
         switch (searchValueType) {
             case NAME: {
                 return Arrays.asList(createDependentObject(new SecurePassword((String) searchValue)));
             }
             case VARIABLE: {
-                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
+                final Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
                 if (!matcher.matches()) {
                     // Assume it is a literal password
-                    return null;
+                    return Collections.emptyList();
                 }
-                String alias = matcher.group(1);
+                final String alias = matcher.group(1);
                 assert alias != null; // enforced by regex
                 assert alias.length() > 0; // enforced by regex
                 return Arrays.asList(createDependentObject(new SecurePassword(alias)));
             }
             default:
-                //if a different search method is specified then create the secure password using the GenericDependency processor
-                return super.createDependentObject(searchValue, dependencyType, searchValueType);
+                //if a different search method is specified then create the secure password using the DefaultDependency processor
+                return super.createDependentObjects(searchValue, dependencyType, searchValueType);
         }
     }
 }

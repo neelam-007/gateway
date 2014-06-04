@@ -3,6 +3,7 @@ package com.l7tech.server.search.processors;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyProcessorRegistry;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,17 +25,17 @@ public class SsgConnectorDependencyProcessor extends DefaultDependencyProcessor<
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(@NotNull SsgConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull final SsgConnector activeConnector, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         //finds the default SsgConnector dependencies
-        List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
+        final List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //Gets the dependencies from the dependency processor for the connector scheme
-        DependencyProcessor processor = ssgConnectorDependencyProcessorRegistry.get(activeConnector.getScheme());
+        final DependencyProcessor processor = ssgConnectorDependencyProcessorRegistry.get(activeConnector.getScheme());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(processor.findDependencies(activeConnector, finder));
         } else {
-            throw new FindException("Unknown connector type: " + activeConnector.getScheme());
+            throw new CannotRetrieveDependenciesException(activeConnector.getName(), SsgConnector.class, activeConnector.getClass(), "Unknown connector type: " + activeConnector.getScheme());
         }
         return dependencies;
     }

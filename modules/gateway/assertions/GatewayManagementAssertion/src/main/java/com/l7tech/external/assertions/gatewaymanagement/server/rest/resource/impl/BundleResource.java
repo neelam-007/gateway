@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.glassfish.jersey.process.internal.RequestScoped;
@@ -105,7 +106,7 @@ public class BundleResource {
                                      @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
                                      @QueryParam("folder") List<String> folderIds,
                                      @QueryParam("service") List<String> serviceIds,
-                                     @QueryParam("policy") List<String> policyIds) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+                                     @QueryParam("policy") List<String> policyIds) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
 
         //validate that something is being exported
@@ -150,10 +151,10 @@ public class BundleResource {
     @Path("{resourceType}/{id}")
     public Item<Bundle> exportFolderServicePolicyBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
                                      @PathParam("id") Goid id,
-                                     @QueryParam("defaultAction") @DefaultValue("NewOrExisting") Mapping.Action defaultAction,
+                                     @QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
                                      @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
                                      @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
-                                     @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException {
+                                     @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
@@ -171,7 +172,7 @@ public class BundleResource {
         }
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, defaultAction, defaultMapBy, exportGatewayRestManagementService, header)))
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy, exportGatewayRestManagementService, header)))
                 .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
                 .build();
     }
@@ -236,7 +237,7 @@ public class BundleResource {
      */
     @SuppressWarnings("unchecked")
     @NotNull
-    private Bundle createBundle(boolean includeRequestFolder, @NotNull final Mapping.Action defaultAction, @NotNull final String defaultMapBy, boolean exportGatewayRestManagementService, @NotNull final EntityHeader... headers) throws FindException {
+    private Bundle createBundle(boolean includeRequestFolder, @NotNull final Mapping.Action defaultAction, @NotNull final String defaultMapBy, boolean exportGatewayRestManagementService, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeRequestFolderOption, String.valueOf(includeRequestFolder));

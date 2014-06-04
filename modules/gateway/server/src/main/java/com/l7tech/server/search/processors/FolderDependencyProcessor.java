@@ -1,25 +1,24 @@
 package com.l7tech.server.search.processors;
 
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -54,64 +53,43 @@ public class FolderDependencyProcessor extends DefaultDependencyProcessor<Folder
      * @throws FindException
      */
     @NotNull
-    public List<Dependency> findDependencies(@NotNull Folder folder, @NotNull DependencyFinder finder) throws FindException {
-        Collection<Folder> folders = folderManager.findAll();
-        Collection<Policy> policies = policyManager.findAll();
-        Collection<PublishedService> services = serviceManager.findAll();
-        Collection<PolicyAlias> policyAliases = policyAliasManager.findAll();
-        Collection<PublishedServiceAlias> serviceAliases = serviceAliasManager.findAll();
+    @Override
+    public List<Dependency> findDependencies(@NotNull final Folder folder, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+        //the super.findDependencies does not need to be called here. All folder dependencies will be explicitly handled.
+
+        //find all entities that a folder can contain
+        final ArrayList<HasFolder> hasFolders = new ArrayList<>();
+        hasFolders.addAll(folderManager.findByFolder(folder.getGoid()));
+        hasFolders.addAll(Functions.reduce(policyManager.findByFolder(folder.getGoid()), new ArrayList<Policy>(), new Functions.Binary<ArrayList<Policy>, ArrayList<Policy>, Policy>() {
+            @Override
+            public ArrayList<Policy> call(ArrayList<Policy> policies, Policy policy) {
+                //Do not include policies that are used for services.
+                if (!PolicyType.PRIVATE_SERVICE.equals(policy.getType())) {
+                    policies.add(policy);
+                }
+                return policies;
+            }
+        }));
+        hasFolders.addAll(serviceManager.findByFolder(folder.getGoid()));
+        hasFolders.addAll(policyAliasManager.findByFolder(folder.getGoid()));
+        hasFolders.addAll(serviceAliasManager.findByFolder(folder.getGoid()));
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
-        //sub-folder dependencies
-        for (Folder currentFolder : folders) {
-            if (currentFolder.getFolder() != null && Goid.equals(folder.getGoid(), currentFolder.getFolder().getGoid())) {
-                Dependency dependency = finder.getDependency(currentFolder);
-                if(dependency != null)
+        //finds children of this folder
+        for (final HasFolder child : hasFolders) {
+            if (child.getFolder() != null && Goid.equals(folder.getGoid(), child.getFolder().getGoid())) {
+                final Dependency dependency = finder.getDependency(child);
+                if (dependency != null)
                     dependencies.add(dependency);
-            }
-        }
-        //service dependencies
-        for (PublishedService service : services) {
-            if (service.getFolder() != null && Goid.equals(folder.getGoid(), service.getFolder().getGoid())) {
-                Dependency dependency = finder.getDependency(service);
-                if(dependency != null) {
-                    dependencies.add(dependency);
-                }
-            }
-        }
-        //policy dependencies
-        for (Policy policy : policies) {
-            if (policy.getFolder() != null && Goid.equals(folder.getGoid(), policy.getFolder().getGoid()) && !PolicyType.PRIVATE_SERVICE.equals(policy.getType())) {
-                Dependency dependency = finder.getDependency(policy);
-                if(dependency != null) {
-                    dependencies.add(dependency);
-                }
-            }
-        }
-        //policy alias dependencies
-        for (PolicyAlias policyAlias : policyAliases) {
-            if (policyAlias.getFolder() != null && Goid.equals(folder.getGoid(), policyAlias.getFolder().getGoid())) {
-                Dependency dependency = finder.getDependency(policyAlias);
-                if(dependency != null) {
-                    dependencies.add(dependency);
-                }
-            }
-        }
-        //service alias dependencies
-        for (PublishedServiceAlias serviceAlias : serviceAliases) {
-            if (serviceAlias.getFolder() != null && Goid.equals(folder.getGoid(), serviceAlias.getFolder().getGoid())) {
-                Dependency dependency = finder.getDependency(serviceAlias);
-                if(dependency != null) {
-                    dependencies.add(dependency);
-                }
             }
         }
 
-        SecurityZone securityZone = folder.getSecurityZone();
-            Dependency securityZoneDependency = finder.getDependency(securityZone);
-            if(securityZoneDependency != null) {
-                dependencies.add(securityZoneDependency);
-            }
+        //Get the security zone dependency
+        final SecurityZone securityZone = folder.getSecurityZone();
+        final Dependency securityZoneDependency = finder.getDependency(securityZone);
+        if (securityZoneDependency != null) {
+            dependencies.add(securityZoneDependency);
+        }
 
         return dependencies;
     }

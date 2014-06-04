@@ -34,13 +34,13 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
 
     private final DefaultAssertionDependencyProcessor<Assertion> defaultAssertionDependencyProcessor;
 
-    public AssertionDependencyProcessor(@NotNull final DefaultAssertionDependencyProcessor<Assertion> defaultAssertionDependencyProcessor){
+    public AssertionDependencyProcessor(@NotNull final DefaultAssertionDependencyProcessor<Assertion> defaultAssertionDependencyProcessor) {
         this.defaultAssertionDependencyProcessor = defaultAssertionDependencyProcessor;
     }
 
     @NotNull
     @Override
-    public List<Dependency> findDependencies(@NotNull final A assertion, @NotNull final DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull final A assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         final DependencyProcessor assertionProcessor = assertionProcessorRegistry.get(assertion.getClass().getName());
         if (assertionProcessor != null) {
             //noinspection unchecked
@@ -70,7 +70,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
 
     @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependentObject> createDependentObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         throw new UnsupportedOperationException("AssertionDependent Objects cannot be created from a search value.");
     }
 

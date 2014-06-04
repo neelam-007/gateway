@@ -36,12 +36,13 @@ public class DoNothingDependencyProcessor<O> implements DependencyProcessor<O> {
     @NotNull
     @Override
     public DependentObject createDependentObject(@NotNull O dependent) {
-        return new DependentObject(null, com.l7tech.search.Dependency.DependencyType.ANY){};
+        return new DependentObject(null, com.l7tech.search.Dependency.DependencyType.ANY) {
+        };
     }
 
     @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependentObject> createDependentObjects(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         return Collections.emptyList();
     }
 

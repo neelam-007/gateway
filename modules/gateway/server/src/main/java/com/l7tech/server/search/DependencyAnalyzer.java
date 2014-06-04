@@ -67,7 +67,7 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     @NotNull
-    public DependencySearchResults getDependencies(@NotNull EntityHeader entity) throws FindException;
+    public DependencySearchResults getDependencies(@NotNull EntityHeader entity) throws FindException, CannotRetrieveDependenciesException;
 
     /**
      * Returns the DependencySearchResults for the given entity.
@@ -81,7 +81,7 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     @Nullable
-    public DependencySearchResults getDependencies(@NotNull EntityHeader entity, @NotNull Map<String, Object> searchOptions) throws FindException;
+    public DependencySearchResults getDependencies(@NotNull EntityHeader entity, @NotNull Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException;
 
     /**
      * Returns the list of dependencies for the given entities. This is the same as calling {@link
@@ -92,7 +92,7 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     @NotNull
-    public List<DependencySearchResults> getDependencies(@NotNull List<EntityHeader> entityHeaders) throws FindException;
+    public List<DependencySearchResults> getDependencies(@NotNull List<EntityHeader> entityHeaders) throws FindException, CannotRetrieveDependenciesException;
 
     /**
      * Returns the list of dependencies for the given entities.
@@ -105,7 +105,7 @@ public interface DependencyAnalyzer {
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
     @NotNull
-    public List<DependencySearchResults> getDependencies(@NotNull List<EntityHeader> entityHeaders, @NotNull Map<String, Object> searchOptions) throws FindException;
+    public List<DependencySearchResults> getDependencies(@NotNull List<EntityHeader> entityHeaders, @NotNull Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException;
 
     /**
      * This will replace the dependencies referenced in the given entity by the ones available in the replacement map.

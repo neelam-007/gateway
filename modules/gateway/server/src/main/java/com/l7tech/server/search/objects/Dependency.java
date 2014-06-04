@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The dependency object contains the dependencies of a dependent object.
+ * The dependency object contains the dependencies of a dependent object. Two dependency objects are considered equal if their dependents are equal.
  *
  * @author Victor Kazakov
  */
@@ -66,5 +66,22 @@ public class Dependency {
      */
     public void setDependencies(@NotNull final List<Dependency> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Dependency that = (Dependency) o;
+
+        if (!dependent.equals(that.dependent)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return dependent.hashCode();
     }
 }

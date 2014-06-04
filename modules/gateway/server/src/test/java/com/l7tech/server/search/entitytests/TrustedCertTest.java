@@ -2,6 +2,7 @@ package com.l7tech.server.search.entitytests;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
 import org.junit.Assert;
@@ -19,7 +20,7 @@ public class TrustedCertTest extends DependencyTestBaseClass {
     AtomicLong idCount = new AtomicLong(1);
 
     @Test
-    public void test() throws FindException {
+    public void test() throws FindException, CannotRetrieveDependenciesException {
 
         SecurityZone securityZone = new SecurityZone();
         Goid securityZoneGoid = new Goid(0,idCount.getAndIncrement());

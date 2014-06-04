@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.search.DependencyProcessorRegistry;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
@@ -45,7 +46,7 @@ public class SshServerModuleLoadListener {
             processorRegistry.register(SshServerModule.SCHEME_SSH, new BaseDependencyProcessor<SsgConnector>() {
                 @Override
                 @NotNull
-                public List<Dependency> findDependencies(@NotNull SsgConnector connector, @NotNull DependencyFinder finder) throws FindException {
+                public List<Dependency> findDependencies(@NotNull SsgConnector connector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
                     List<Object> dependentEntities = new ArrayList<>();
                     //adds the ssh password as a dependency if one is defined.
                     if (connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY) != null) {

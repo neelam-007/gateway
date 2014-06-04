@@ -78,12 +78,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param bundle The bundle to import
      * @param test   if true the bundle import will be performed but rolled back afterwards and the results of the
      *               import will be returned. If false the bundle import will be committed it if is successful.
-     * @param active True to activate the updated services and policies.
+     * @param activate True to activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
      * @return The mapping results of the bundle import.
      */
     @NotNull
-    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean active, final String versionComment) {
+    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean activate, final String versionComment) {
         if (!test) {
             logger.log(Level.INFO, "Importing bundle!");
         } else {
@@ -96,8 +96,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return tt.execute(new TransactionCallback<List<EntityMappingResult>>() {
             @Override
             public List<EntityMappingResult> doInTransaction(final TransactionStatus transactionStatus) {
-                List<EntityMappingResult> mappingsRtn = new ArrayList<>(bundle.getMappingInstructions().size());
-                Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
+                //This is the list of mappings to return.
+                final List<EntityMappingResult> mappingsRtn = new ArrayList<>(bundle.getMappingInstructions().size());
+                //This is a map of entities in the entity bundle to entities that are updated or created on the gateway.
+                final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 for (EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     //Get the entity that this mapping is for
                     EntityContainer entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId());
@@ -128,12 +130,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, active,versionComment);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, activate,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, active,versionComment);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -155,7 +157,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity.
-                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, null, active,versionComment);
+                                        EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(entity.getId()), mapping, resourceMapping, null, activate,versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }

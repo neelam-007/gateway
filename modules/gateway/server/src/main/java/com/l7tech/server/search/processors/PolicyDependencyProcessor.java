@@ -38,29 +38,30 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
      * Finds the dependencies in a policy by looking at the assertions contained in the policy
      *
      * @throws com.l7tech.objectmodel.FindException
-     *
      */
     @NotNull
     @Override
-    public List<Dependency> findDependencies(@NotNull Policy policy, @NotNull DependencyFinder processor) throws FindException {
+    public List<Dependency> findDependencies(@NotNull final Policy policy, @NotNull final DependencyFinder processor) throws FindException, CannotRetrieveDependenciesException {
+        //the super.findDependencies does not need to be called here. All policy dependencies will be explicitly handled.
+
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
         } catch (IOException e) {
-            throw new RuntimeException("Invalid policy with id " + policy.getGuid() + ": " + ExceptionUtils.getMessage(e), e);
+            throw new CannotRetrieveDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
         }
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();
 
-        boolean assertionsAsDependencies = processor.getOption(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, Boolean.class, true);
+        final boolean assertionsAsDependencies = processor.getOption(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, Boolean.class, true);
 
         //iterate for each assertion.
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
             if (assertionsAsDependencies) {
-                Dependency dependency = processor.getDependency(currentAssertion);
-                if(dependency != null) {
+                final Dependency dependency = processor.getDependency(currentAssertion);
+                if (dependency != null) {
                     dependencies.add(dependency);
                 }
             } else {
@@ -76,30 +77,30 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
             }
         }
 
-        SecurityZone securityZone = policy.getSecurityZone();
-            final Dependency securityZoneDependency = processor.getDependency(securityZone);
-            if (securityZoneDependency != null && !dependencies.contains(securityZoneDependency))
-                dependencies.add(securityZoneDependency);
+        final SecurityZone securityZone = policy.getSecurityZone();
+        final Dependency securityZoneDependency = processor.getDependency(securityZone);
+        if (securityZoneDependency != null && !dependencies.contains(securityZoneDependency))
+            dependencies.add(securityZoneDependency);
 
         return dependencies;
     }
 
     @Override
-    public void replaceDependencies(@NotNull Policy policy, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
-        super.replaceDependencies(policy,replacementMap,finder);
+    public void replaceDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+        super.replaceDependencies(policy, replacementMap, finder);
         replacePolicyAssertionDependencies(policy, replacementMap, finder);
 
+        //TODO: does this need to be here or will the super.replaceDependencies already have done this?
         //replace the security zone
-        SecurityZone securityZone = policy.getSecurityZone();
+        final SecurityZone securityZone = policy.getSecurityZone();
         if (securityZone != null) {
-            EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
-            if(securityZoneHeaderToUse != null) {
+            final EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
+            if (securityZoneHeaderToUse != null) {
                 try {
-                    securityZone = securityZoneManager.findByHeader(securityZoneHeaderToUse);
+                    policy.setSecurityZone(securityZoneManager.findByHeader(securityZoneHeaderToUse));
                 } catch (FindException e) {
                     throw new CannotRetrieveDependenciesException(securityZoneHeaderToUse.getName(), SecurityZone.class, policy.getClass(), "Cannot find security zone", e);
                 }
-                policy.setSecurityZone(securityZone);
             }
         }
     }
@@ -107,18 +108,18 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
     /**
      * Replaces dependencies in the policy assertions.
      *
-     * @param policy The policy to replace dependencies for
+     * @param policy         The policy to replace dependencies for
      * @param replacementMap The replacements map.
-     * @param finder The dependency finder.
+     * @param finder         The dependency finder.
      * @throws CannotReplaceDependenciesException
      * @throws CannotRetrieveDependenciesException
      */
-    static void replacePolicyAssertionDependencies(Policy policy, Map<EntityHeader, EntityHeader> replacementMap, DependencyFinder finder) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    static void replacePolicyAssertionDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
         } catch (IOException e) {
-            throw new RuntimeException("Invalid policy with id " + policy.getGuid() + ": " + ExceptionUtils.getMessage(e), e);
+            throw new CannotRetrieveDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
         }
 
         final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();
@@ -133,7 +134,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
             //This will recreate the policy xml if any of the assertions were updated.
             policy.flush();
         } catch (IOException e) {
-            throw new RuntimeException("Invalid policy with id " + policy.getGuid() + ": " + ExceptionUtils.getMessage(e), e);
+            throw new CannotReplaceDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 }

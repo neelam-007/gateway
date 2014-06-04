@@ -2,15 +2,12 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependentAssertion;
-import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,64 +22,49 @@ import java.util.Map;
 /**
  * Dependency processor for LookupTrustedCertificateAssertion
  */
-public class AssertionLookupTrustedCertificateProcessor extends DefaultDependencyProcessor<LookupTrustedCertificateAssertion> implements DependencyProcessor<LookupTrustedCertificateAssertion> {
+public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertionDependencyProcessor<LookupTrustedCertificateAssertion> implements DependencyProcessor<LookupTrustedCertificateAssertion> {
 
     @Inject
     private TrustedCertManager trustedCertManager;
 
     @NotNull
     @Override
-    public List<Dependency> findDependencies(@NotNull LookupTrustedCertificateAssertion assertion, @NotNull DependencyFinder finder) throws FindException {
-        Collection<TrustedCert> certificates = getCertificatesUsed(assertion);
+    public List<Dependency> findDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+        //TODO should the super.findDependencies be called here?
 
-        ArrayList<Dependency> dependencies = new ArrayList<>();
-        if(!certificates.isEmpty()){
+        final Collection<TrustedCert> certificates = getCertificatesUsed(assertion);
+
+        final ArrayList<Dependency> dependencies = new ArrayList<>();
+        if (!certificates.isEmpty()) {
             dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.<Object>toList(certificates)));
         }
         return dependencies;
     }
 
-    private Collection<TrustedCert> getCertificatesUsed(LookupTrustedCertificateAssertion assertion) throws FindException {
-        final Collection<TrustedCert> certificates;
+    @NotNull
+    private Collection<TrustedCert> getCertificatesUsed(@NotNull final LookupTrustedCertificateAssertion assertion) throws FindException, CannotRetrieveDependenciesException {
         try {
             switch (assertion.getLookupType()) {
                 case CERT_ISSUER_SERIAL:
-                    certificates = trustedCertManager.findByIssuerAndSerial(new X500Principal(assertion.getCertIssuerDn()), new BigInteger(assertion.getCertSerialNumber()));
-                    break;
-
+                    return trustedCertManager.findByIssuerAndSerial(new X500Principal(assertion.getCertIssuerDn()), new BigInteger(assertion.getCertSerialNumber()));
                 case CERT_SKI:
-                    certificates = trustedCertManager.findBySki(assertion.getCertSubjectKeyIdentifier());
-                    break;
-
+                    return trustedCertManager.findBySki(assertion.getCertSubjectKeyIdentifier());
                 case CERT_SUBJECT_DN:
-                    certificates = trustedCertManager.findBySubjectDn(assertion.getCertSubjectDn());
-                    break;
-
+                    return trustedCertManager.findBySubjectDn(assertion.getCertSubjectDn());
                 case CERT_THUMBPRINT_SHA1:
-                    certificates = trustedCertManager.findByThumbprint(assertion.getCertThumbprintSha1());
-                    break;
-
+                    return trustedCertManager.findByThumbprint(assertion.getCertThumbprintSha1());
                 case TRUSTED_CERT_NAME:
                 default:
-                    certificates = trustedCertManager.findByName(assertion.getTrustedCertificateName());
-                    break;
+                    return trustedCertManager.findByName(assertion.getTrustedCertificateName());
             }
-
-            return certificates;
-        }catch(IllegalArgumentException e){
-            // do nothing
+        } catch (IllegalArgumentException e) {
+            //TODO: does this need to be done?
+            throw new CannotRetrieveDependenciesException(TrustedCert.class, assertion.getClass(), "", e);
         }
-        return new ArrayList<>();
-    }
-
-    @NotNull
-    @Override
-    public DependentObject createDependentObject(@NotNull LookupTrustedCertificateAssertion assertion) {
-        return new DependentAssertion<>((String) assertion.meta().get(AssertionMetadata.SHORT_NAME), assertion.getClass());
     }
 
     @Override
-    public void replaceDependencies(@NotNull LookupTrustedCertificateAssertion assertion, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         // todo ???
 //        try {
 //            Collection<TrustedCert> certificates = // what is it dependent on from the original gateway?????

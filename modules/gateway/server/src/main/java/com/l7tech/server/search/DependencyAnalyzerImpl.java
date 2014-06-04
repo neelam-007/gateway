@@ -36,7 +36,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @NotNull
     @Override
-    public DependencySearchResults getDependencies(@NotNull final EntityHeader entityHeader) throws FindException {
+    public DependencySearchResults getDependencies(@NotNull final EntityHeader entityHeader) throws FindException, CannotRetrieveDependenciesException {
         final DependencySearchResults dependencySearchResults = getDependencies(entityHeader, Collections.<String, Object>emptyMap());
         if (dependencySearchResults == null) {
             // This should never happen. The only time the dependencyFinder.process(entities) method can return null DependencySearchResults
@@ -51,7 +51,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @Nullable
     @Override
-    public DependencySearchResults getDependencies(@NotNull final EntityHeader entityHeader, @NotNull final Map<String, Object> searchOptions) throws FindException {
+    public DependencySearchResults getDependencies(@NotNull final EntityHeader entityHeader, @NotNull final Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException {
         return getDependencies(Arrays.asList(entityHeader), searchOptions).get(0);
     }
 
@@ -60,7 +60,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @NotNull
     @Override
-    public List<DependencySearchResults> getDependencies(@NotNull final List<EntityHeader> entityHeaders) throws FindException {
+    public List<DependencySearchResults> getDependencies(@NotNull final List<EntityHeader> entityHeaders) throws FindException, CannotRetrieveDependenciesException {
         return getDependencies(entityHeaders, Collections.<String, Object>emptyMap());
     }
 
@@ -69,7 +69,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     @NotNull
     @Override
-    public List<DependencySearchResults> getDependencies(@NotNull final List<EntityHeader> entityHeaders, @NotNull final Map<String, Object> searchOptions) throws FindException {
+    public List<DependencySearchResults> getDependencies(@NotNull final List<EntityHeader> entityHeaders, @NotNull final Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException {
         logger.log(Level.FINE, "Finding dependencies for {0}", entityHeaders);
 
         //Load the entities from the given entity headers.

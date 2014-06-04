@@ -2,6 +2,7 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Properties;
@@ -21,5 +22,5 @@ public interface EntityBundleExporter {
      * @throws FindException
      */
     @NotNull
-    public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException;
+    public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException;
 }

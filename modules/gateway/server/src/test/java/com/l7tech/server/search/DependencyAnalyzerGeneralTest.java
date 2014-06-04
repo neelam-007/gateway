@@ -63,49 +63,49 @@ public class DependencyAnalyzerGeneralTest {
     }
 
     @Test
-    public void testFindEntities() throws FindException {
+    public void testFindEntities() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithNoDependencies));
 
         Assert.assertEquals(0, dependencies.getDependencies().size());
     }
 
     @Test
-    public void testFindEntitiesWithDependencies() throws FindException {
+    public void testFindEntitiesWithDependencies() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency));
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
     }
 
     @Test
-    public void testFindEntitiesWithDifferentGetter() throws FindException {
+    public void testFindEntitiesWithDifferentGetter() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithDifferentGetter));
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
     }
 
     @Test
-    public void testFindEntitiesWithCycle() throws FindException {
+    public void testFindEntitiesWithCycle() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(cycleRoot));
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
     }
 
     @Test
-    public void testFindEntitiesWithInheritedDependencies() throws FindException {
+    public void testFindEntitiesWithInheritedDependencies() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithInheritedDependency));
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
     }
 
     @Test
-    public void testFindEntitiesWithDepth0() throws FindException {
+    public void testFindEntitiesWithDepth0() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency), depth0SearchOptions);
 
         Assert.assertNull(dependencies.getDependencies());
     }
 
     @Test
-    public void testFindEntitiesWithDepth1() throws FindException {
+    public void testFindEntitiesWithDepth1() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency), depth1SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
@@ -113,7 +113,7 @@ public class DependencyAnalyzerGeneralTest {
     }
 
     @Test
-    public void testFindEntitiesWithDepth1WithCycle() throws FindException {
+    public void testFindEntitiesWithDepth1WithCycle() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(cycleRoot), depth1SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());
@@ -121,7 +121,7 @@ public class DependencyAnalyzerGeneralTest {
     }
 
     @Test
-    public void testFindEntitiesWithDepth2() throws FindException {
+    public void testFindEntitiesWithDepth2() throws FindException, CannotRetrieveDependenciesException {
         DependencySearchResults dependencies = dependencyAnalyzer.getDependencies(EntityHeaderUtils.fromEntity(myEntityWithOneDependency), depth2SearchOptions);
 
         Assert.assertEquals(1, dependencies.getDependencies().size());

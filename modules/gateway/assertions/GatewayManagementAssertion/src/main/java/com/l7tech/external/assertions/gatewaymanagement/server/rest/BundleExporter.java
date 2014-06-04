@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +38,7 @@ public class BundleExporter {
      * @throws FindException
      */
     @NotNull
-    public Bundle exportBundle(@Nullable Properties bundleExportOptions, @NotNull EntityHeader... headers) throws FindException {
+    public Bundle exportBundle(@Nullable Properties bundleExportOptions, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         return bundleTransformer.convertToMO(entityBundle);
     }

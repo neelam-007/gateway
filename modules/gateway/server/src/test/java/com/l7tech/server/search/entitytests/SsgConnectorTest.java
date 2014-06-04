@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -51,7 +52,7 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
 
 
     @Test
-    public void test() throws FindException {
+    public void test() throws FindException, CannotRetrieveDependenciesException {
 
         SsgConnector connector = new SsgConnector();
         long ssgConnectorOid = idCount.getAndIncrement();

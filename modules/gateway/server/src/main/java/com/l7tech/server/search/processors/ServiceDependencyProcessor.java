@@ -29,14 +29,17 @@ public class ServiceDependencyProcessor extends DefaultDependencyProcessor<Publi
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(@NotNull PublishedService object, @NotNull DependencyFinder finder) throws FindException {
-        List<Dependency> dependencies;
+    public List<Dependency> findDependencies(@NotNull final PublishedService object, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+        final List<Dependency> dependencies;
         if (!finder.getOption(DependencyAnalyzer.ReturnServicePoliciesAsDependencies, Boolean.class, false)) {
-            List<Dependency> dependenciesFound = super.findDependencies(object, finder);
+            //make the service policy dependents dependents of the service.
+            //this list on dependencies will have the policy as a dependency
+            final List<Dependency> dependenciesFound = super.findDependencies(object, finder);
             dependencies = new ArrayList<>();
-            for (Dependency dependency : dependenciesFound) {
+            for (final Dependency dependency : dependenciesFound) {
                 if (com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType()) && dependency.getDependencies() != null) {
-                    for (Dependency policyDependency : dependency.getDependencies()) {
+                    //move the policy dependencies to the service.
+                    for (final Dependency policyDependency : dependency.getDependencies()) {
                         dependencies.add(policyDependency);
                     }
                 } else {
@@ -50,24 +53,23 @@ public class ServiceDependencyProcessor extends DefaultDependencyProcessor<Publi
     }
 
     @Override
-    public void replaceDependencies(@NotNull PublishedService object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final PublishedService object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
         super.replaceDependencies(object, replacementMap, finder);
 
         //This will replace dependencies in the assertions that this service contains
-        if(object.getPolicy() != null) {
+        if (object.getPolicy() != null) {
             PolicyDependencyProcessor.replacePolicyAssertionDependencies(object.getPolicy(), replacementMap, finder);
         }
 
         // replace parent folder
-
         final EntityHeader srcFolderHeader = EntityHeaderUtils.fromEntity(object.getFolder());
-        EntityHeader folderHeaderToUse = replacementMap.get(srcFolderHeader);
-        if(folderHeaderToUse != null) {
+        final EntityHeader folderHeaderToUse = replacementMap.get(srcFolderHeader);
+        if (folderHeaderToUse != null) {
             try {
-                Folder folder = folderManager.findByHeader(folderHeaderToUse);
+                final Folder folder = folderManager.findByHeader(folderHeaderToUse);
                 object.setFolder(folder);
             } catch (FindException e) {
-                throw new CannotRetrieveDependenciesException(folderHeaderToUse.getName(), Folder.class, object.getClass(), "Cannot find folder", e);
+                throw new CannotReplaceDependenciesException(folderHeaderToUse.getName(), folderHeaderToUse.getStrId(), Folder.class, object.getClass(), "Cannot find folder", e);
             }
         }
     }

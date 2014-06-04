@@ -30,31 +30,33 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
 
     @Override
     @NotNull
-    public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull final SsgActiveConnector activeConnector, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         //find the default dependencies
-        List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
+        final List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
+        final DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             dependencies.addAll(processor.findDependencies(activeConnector, finder));
         } else {
-            throw new FindException("Unknown active connector type: " + activeConnector.getType());
+            throw new CannotRetrieveDependenciesException(activeConnector.getName(), SsgActiveConnector.class, activeConnector.getClass(), "Unknown active connector type: " + activeConnector.getType());
         }
         return dependencies;
     }
 
     @Override
-    public void replaceDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
-        //delegate to the custom dependency processor for the SsgActiveConnector type.
+    public void replaceDependencies(@NotNull final SsgActiveConnector activeConnector, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+        // replace the dependencies using the super.
+        super.replaceDependencies(activeConnector, replacementMap, finder);
 
-        DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
+        //delegate to the custom dependency processor for the SsgActiveConnector type.
+        final DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             processor.replaceDependencies(activeConnector, replacementMap, finder);
         } else {
-            throw new CannotRetrieveDependenciesException(activeConnector.getName(), EntityType.SSG_ACTIVE_CONNECTOR.getEntityClass() , activeConnector.getClass(),"Unknown active connector type: " + activeConnector.getType());
+            throw new CannotRetrieveDependenciesException(activeConnector.getName(), EntityType.SSG_ACTIVE_CONNECTOR.getEntityClass(), activeConnector.getClass(), "Unknown active connector type: " + activeConnector.getType());
         }
     }
 }

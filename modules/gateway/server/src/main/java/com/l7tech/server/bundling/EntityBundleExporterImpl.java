@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -51,7 +52,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
      * @throws FindException
      */
     @NotNull
-    public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException {
+    public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         //find the dependencies for the headers
         final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
         //create a flat dependency list

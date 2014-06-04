@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,8 +23,8 @@ public class JdbcConnectionDependencyProcessor extends DefaultDependencyProcesso
     private JdbcConnectionManager jdbcConnectionManager;
 
     @NotNull
-    @SuppressWarnings("unchecked")
-    public List<JdbcConnection> find(@NotNull Object searchValue, @NotNull Dependency.DependencyType dependencyType, @NotNull Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<JdbcConnection> find(@NotNull final Object searchValue, @NotNull final Dependency.DependencyType dependencyType, @NotNull final Dependency.MethodReturnType searchValueType) throws FindException {
+        //handles finding jdbc connections by name
         switch (searchValueType) {
             case NAME:
                 return Arrays.asList(jdbcConnectionManager.getJdbcConnection((String) searchValue));
@@ -35,7 +36,8 @@ public class JdbcConnectionDependencyProcessor extends DefaultDependencyProcesso
 
     @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependentObject> createDependentObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException {
+        //handles creating a dependent jdbc connection from the name only.
         switch (searchValueType) {
             case NAME:
                 JdbcConnection jdbcConnection = new JdbcConnection();
@@ -43,7 +45,7 @@ public class JdbcConnectionDependencyProcessor extends DefaultDependencyProcesso
                 return Arrays.asList(createDependentObject(jdbcConnection));
             default:
                 //if a different search method is specified then create the jdbc connection using the GenericDependency processor
-                return super.createDependentObject(searchValue, dependencyType, searchValueType);
+                return super.createDependentObjects(searchValue, dependencyType, searchValueType);
         }
     }
 }

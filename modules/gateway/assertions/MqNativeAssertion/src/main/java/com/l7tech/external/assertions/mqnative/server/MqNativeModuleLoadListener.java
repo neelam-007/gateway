@@ -174,7 +174,7 @@ public class MqNativeModuleLoadListener {
             processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, new BaseDependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
-                public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
+                public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
                     List<Object> dependentEntities = new ArrayList<>();
                     //add the mq password as a dependency if it is set
                     if (activeConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {

@@ -59,7 +59,7 @@ public class DependencyFinder {
      * @throws FindException This is thrown if there was an error retrieving an entity.
      */
     @NotNull
-    public synchronized List<DependencySearchResults> process(@NotNull final List<Entity> entities) throws FindException {
+    public synchronized List<DependencySearchResults> process(@NotNull final List<Entity> entities) throws FindException, CannotRetrieveDependenciesException {
         //get the search depth from the options
         final int originalSearchDepth = getOption(DependencyAnalyzer.SearchDepthOptionKey, Integer.class, -1);
         final ArrayList<DependencySearchResults> results = new ArrayList<>(entities.size());
@@ -102,7 +102,7 @@ public class DependencyFinder {
      * to be ignored, or if the given dependent is null.
      */
     @Nullable
-    Dependency getDependency(@Nullable final Object dependent) throws FindException {
+    Dependency getDependency(@Nullable final Object dependent) throws FindException, CannotRetrieveDependenciesException {
         //return null if the dependent is null.
         if (dependent == null) {
             return null;
@@ -143,7 +143,7 @@ public class DependencyFinder {
      * @return The set of dependencies that this entity has.
      */
     @NotNull
-    List<Dependency> getDependencies(@Nullable final Object dependent) throws FindException {
+    List<Dependency> getDependencies(@Nullable final Object dependent) throws FindException, CannotRetrieveDependenciesException {
         if (dependent == null) {
             return Collections.emptyList();
         }
@@ -246,7 +246,7 @@ public class DependencyFinder {
      * @throws FindException This is thrown if there was an error finding a dependent object.
      */
     @NotNull
-    public List<Dependency> getDependenciesFromObjects(@NotNull final Object object, @NotNull final DependencyFinder finder, @NotNull final List<Object> dependentObjects) throws FindException {
+    public List<Dependency> getDependenciesFromObjects(@NotNull final Object object, @NotNull final DependencyFinder finder, @NotNull final List<Object> dependentObjects) throws FindException, CannotRetrieveDependenciesException {
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         //if a dependency if found then search for its dependencies and add it to the set of dependencies found
         for (final Object obj : dependentObjects) {
@@ -270,7 +270,7 @@ public class DependencyFinder {
      * @return The list of created dependent objects
      */
     @NotNull
-    List<DependentObject> createDependentObject(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    List<DependentObject> createDependentObject(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException {
         final DependencyProcessor processor;
         //Finds the correct processor to use to retrieve the entity
         if (com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType)) {
@@ -280,6 +280,6 @@ public class DependencyFinder {
             processor = processorStore.getProcessor(dependencyType);
         }
         // use the processor to retrieve the entity using the search value.
-        return processor.createDependentObject(searchValue, dependencyType, searchValueType);
+        return processor.createDependentObjects(searchValue, dependencyType, searchValueType);
     }
 }

@@ -21,7 +21,7 @@ import java.util.Map;
 public abstract class BaseDependencyProcessor<O> implements DependencyProcessor<O> {
     @NotNull
     @Override
-    public List<Dependency> findDependencies(@NotNull O object, @NotNull DependencyFinder finder) throws FindException {
+    public List<Dependency> findDependencies(@NotNull O object, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         throw new NotImplementedException("The findDependencies method is not yet implemented for this dependency processor: " + this.getClass());
     }
 
@@ -39,8 +39,8 @@ public abstract class BaseDependencyProcessor<O> implements DependencyProcessor<
 
     @NotNull
     @Override
-    public List<DependentObject> createDependentObject(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) {
-        throw new NotImplementedException("The createDependentObject method is not yet implemented for this dependency processor: " + this.getClass());
+    public List<DependentObject> createDependentObjects(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException {
+        throw new NotImplementedException("The createDependentObjects method is not yet implemented for this dependency processor: " + this.getClass());
     }
 
     @Override

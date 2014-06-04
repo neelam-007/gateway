@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.search.DependencyProcessorRegistry;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
@@ -68,7 +69,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
             processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new BaseDependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
-                public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException {
+                public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
                     final List<Object> dependentEntities;
                     //add the password as a dependency
                     if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {

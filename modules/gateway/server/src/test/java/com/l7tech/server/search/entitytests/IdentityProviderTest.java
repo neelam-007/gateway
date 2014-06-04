@@ -7,6 +7,7 @@ import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
 import com.l7tech.util.CollectionUtils;
@@ -26,7 +27,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     AtomicLong idCount = new AtomicLong(1);
 
     @Test
-    public void test() throws FindException {
+    public void test() throws FindException, CannotRetrieveDependenciesException {
 
         SecurityZone securityZone = new SecurityZone();
         Goid securityZoneGoid = nextGoid();
@@ -53,7 +54,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     }
 
     @Test
-    public void testFederated0TrustedCert() throws FindException {
+    public void testFederated0TrustedCert() throws FindException, CannotRetrieveDependenciesException {
 
         FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
         final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
@@ -74,7 +75,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
 
 
     @Test
-    public void testFederated1TrustedCert() throws FindException {
+    public void testFederated1TrustedCert() throws FindException, CannotRetrieveDependenciesException {
 
         TrustedCert trustedCert = new TrustedCert();
         Goid trustedCertOid = nextGoid();
@@ -105,7 +106,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     }
 
     @Test
-    public void testFederated3TrustedCert() throws FindException {
+    public void testFederated3TrustedCert() throws FindException, CannotRetrieveDependenciesException {
 
         TrustedCert trustedCert = new TrustedCert();
         Goid trustedCertOid = nextGoid();
@@ -141,7 +142,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     }
 
     @Test
-    public void simpleLDAP() throws FindException {
+    public void simpleLDAP() throws FindException, CannotRetrieveDependenciesException {
         BindOnlyLdapIdentityProviderConfig bindOnlyLdapIdentityProviderConfig = new BindOnlyLdapIdentityProviderConfig();
         final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
         bindOnlyLdapIdentityProviderConfig.setGoid(identityProviderOid);
@@ -159,7 +160,7 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
     }
 
     @Test
-    public void lDAPtest() throws FindException {
+    public void lDAPtest() throws FindException, CannotRetrieveDependenciesException {
         SecurePassword securePassword = new SecurePassword();
         Goid securePasswordGoid = new Goid(0,idCount.getAndIncrement());
         securePassword.setGoid(securePasswordGoid);
