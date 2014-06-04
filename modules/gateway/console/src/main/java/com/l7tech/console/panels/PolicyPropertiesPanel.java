@@ -216,6 +216,13 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         zoneControl.setEnabled(type != null && type.isSecurityZoneable());
         zoneControl.setToolTipText(zoneControl.isEnabled() ? null : "Policy type not zoneable");
         enableTagChooser();
+
+        // If policy has already been created, its type and tag may no longer be changed.  (SSM-4318)
+        // This is to prevent eg. changing the backing policy of an encapsulated assertion into a global policy.
+        if ( !policy.isUnsaved() ) {
+            typeCombo.setEnabled( false );
+            tagCombo.setEnabled( false );
+        }
     }
 
     private void enableTagChooser() {
