@@ -211,11 +211,8 @@ public class PolicyBuilder {
                                final boolean enable, @Nullable final String comment) {
         validateTarget(targetMessage, otherTargetMessageName);
         final Regex regex = new Regex();
-        if (targetMessage != TargetMessageType.REQUEST) {
-            regex.setTarget(targetMessage);
-        }
+        setTarget(targetMessage, otherTargetMessageName, regex);
         regex.setAutoTarget(false);
-        regex.setOtherTargetMessageVariable(otherTargetMessageName);
         regex.setRegex(regexPattern);
         regex.setPatternContainsVariables(Syntax.isAnyVariableReferenced(regexPattern));
         regex.setReplace(replacement != null);
@@ -324,8 +321,7 @@ public class PolicyBuilder {
         regex.setReplace(true);
         regex.setReplacement(toReplace);
         regex.setAutoTarget(false);
-        regex.setTarget(TargetMessageType.OTHER);
-        regex.setOtherTargetMessageVariable(TEMP_COOKIE_NAME_VAR);
+        setTarget(TargetMessageType.OTHER, TEMP_COOKIE_NAME_VAR, regex);
         final Document regexDoc = WspWriter.getPolicyDocument(regex);
         allElement.appendChild(forEachDoc.importNode(regexDoc.getDocumentElement().getFirstChild(), true));
 
@@ -393,18 +389,14 @@ public class PolicyBuilder {
         regexAssertion.setRegex(patternToMatch);
         regexAssertion.setReplace(true);
         regexAssertion.setReplacement(replacement);
-        regexAssertion.setOtherTargetMessageVariable(TEMP_HEADER_VAR);
-        regexAssertion.setTarget(TargetMessageType.OTHER);
+        setTarget(TargetMessageType.OTHER, TEMP_HEADER_VAR, regexAssertion);
         regexAssertion.setAutoTarget(false);
 
         final AddHeaderAssertion headerAssertion = new AddHeaderAssertion();
         headerAssertion.setHeaderName(headerName);
         headerAssertion.setRemoveExisting(true);
         headerAssertion.setHeaderValue("${" + TEMP_HEADER_VAR + "}");
-        headerAssertion.setTarget(targetMessage);
-        if (targetMessage == TargetMessageType.OTHER) {
-            headerAssertion.setOtherTargetMessageVariable(otherTargetMessageName);
-        }
+        setTarget(targetMessage, otherTargetMessageName, headerAssertion);
 
         final AllAssertion all = new AllAssertion();
         all.addChild(setVarAssertion);
@@ -427,6 +419,33 @@ public class PolicyBuilder {
         allElement.insertBefore(oneOrMoreDoc.importNode(compareDoc.getDocumentElement(), true), allElement.getFirstChild());
         addNode(oneOrMoreDoc.getDocumentElement().getFirstChild());
 
+        return this;
+    }
+
+    /**
+     * Appends an AddHeaderAssertion to the Document for header addition/replacement.
+     *
+     * @param targetMessage          the {@link TargetMessageType} to target.
+     * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
+     * @param headerName             the header name to add/replace.
+     * @param headerValue            the header value to set.
+     * @param replace                true if the header to add should replace any existing headers with the given name.
+     * @param enable                 false if the appended assertion should be disabled.
+     * @param comment                an optional comment to add to the assertion.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder addOrReplaceHeader(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                            @NotNull final String headerName, @NotNull final String headerValue, final boolean replace,
+                                            final boolean enable, @Nullable final String comment) {
+        validateTarget(targetMessage, otherTargetMessageName);
+        final AddHeaderAssertion header = new AddHeaderAssertion();
+        header.setHeaderName(headerName);
+        header.setHeaderValue(headerValue);
+        setTarget(targetMessage, otherTargetMessageName, header);
+        header.setRemoveExisting(replace);
+        header.setEnabled(enable);
+        addRightComment(comment, header);
+        appendAssertion(header);
         return this;
     }
 
@@ -580,6 +599,15 @@ public class PolicyBuilder {
             final Assertion.Comment com = new Assertion.Comment();
             com.setComment(comment, Assertion.Comment.RIGHT_COMMENT);
             assertion.setAssertionComment(com);
+        }
+    }
+
+    private void setTarget(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull MessageTargetableAssertion assertion) {
+        if (targetMessage != TargetMessageType.REQUEST) {
+            assertion.setTarget(targetMessage);
+        }
+        if (targetMessage == TargetMessageType.OTHER) {
+            assertion.setOtherTargetMessageVariable(otherTargetMessageName);
         }
     }
 }

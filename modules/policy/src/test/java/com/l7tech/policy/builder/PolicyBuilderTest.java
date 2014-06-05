@@ -997,4 +997,105 @@ public class PolicyBuilderTest {
         builder.rewriteHtml(TargetMessageType.REQUEST, null, new HashSet<>(Arrays.asList("foo", "foo2")), "bar", "a,p,script", null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
     }
+
+    @Test
+    public void addHeader() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AddHeader>\n" +
+                "            <L7p:AssertionComment assertionComment=\"included\">\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:AssertionComment>\n" +
+                "            <L7p:HeaderName stringValue=\"Host\"/>\n" +
+                "            <L7p:HeaderValue stringValue=\"localhost\"/>\n" +
+                "        </L7p:AddHeader>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.addOrReplaceHeader(TargetMessageType.REQUEST, null, "Host", "localhost", false, true, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void replaceHeader() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AddHeader>\n" +
+                "            <L7p:AssertionComment assertionComment=\"included\">\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:AssertionComment>\n" +
+                "            <L7p:HeaderName stringValue=\"Host\"/>\n" +
+                "            <L7p:HeaderValue stringValue=\"localhost\"/>\n" +
+                "            <L7p:RemoveExisting booleanValue=\"true\"/>\n" +
+                "        </L7p:AddHeader>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.addOrReplaceHeader(TargetMessageType.REQUEST, null, "Host", "localhost", true, true, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void addHeaderDisabled() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AddHeader>\n" +
+                "            <L7p:AssertionComment assertionComment=\"included\">\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:AssertionComment>\n" +
+                "            <L7p:Enabled booleanValue=\"false\"/>\n" +
+                "            <L7p:HeaderName stringValue=\"Host\"/>\n" +
+                "            <L7p:HeaderValue stringValue=\"localhost\"/>\n" +
+                "        </L7p:AddHeader>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.addOrReplaceHeader(TargetMessageType.REQUEST, null, "Host", "localhost", false, false, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test
+    public void addHeaderOtherTarget() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AddHeader>\n" +
+                "            <L7p:AssertionComment assertionComment=\"included\">\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:AssertionComment>\n" +
+                "            <L7p:HeaderName stringValue=\"Host\"/>\n" +
+                "            <L7p:HeaderValue stringValue=\"localhost\"/>\n" +
+                "            <L7p:OtherTargetMessageVariable stringValue=\"myMsg\"/>\n" +
+                "            <L7p:Target target=\"OTHER\"/>\n" +
+                "        </L7p:AddHeader>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n";
+        builder.addOrReplaceHeader(TargetMessageType.OTHER, "myMsg", "Host", "localhost", false, true, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addHeaderOtherTargetNullOtherTargetName() throws Exception {
+        builder.addOrReplaceHeader(TargetMessageType.OTHER, null, "Host", "localhost", false, true, "test");
+    }
 }

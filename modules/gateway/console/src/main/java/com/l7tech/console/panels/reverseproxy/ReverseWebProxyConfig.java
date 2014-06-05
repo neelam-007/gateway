@@ -14,10 +14,12 @@ public class ReverseWebProxyConfig {
     private String routingUri = "*";
     private WebApplicationType webAppType = WebApplicationType.SHAREPOINT;
     private boolean rewriteLocationHeader = true;
+    private boolean rewriteHostHeader;
     private boolean rewriteCookies = true;
     private boolean rewriteRequestContent = true;
     private boolean rewriteResponseContent = true;
     private boolean useHttps;
+    private boolean includeRequestPort = true;
     private String htmlTagsToRewrite;
 
     @Nullable
@@ -64,6 +66,14 @@ public class ReverseWebProxyConfig {
         this.rewriteLocationHeader = rewriteLocationHeader;
     }
 
+    public boolean isRewriteHostHeader() {
+        return rewriteHostHeader;
+    }
+
+    public void setRewriteHostHeader(final boolean rewriteHostHeader) {
+        this.rewriteHostHeader = rewriteHostHeader;
+    }
+
     public boolean isRewriteCookies() {
         return rewriteCookies;
     }
@@ -96,6 +106,14 @@ public class ReverseWebProxyConfig {
         this.useHttps = useHttps;
     }
 
+    public boolean isIncludeRequestPort() {
+        return includeRequestPort;
+    }
+
+    public void setIncludeRequestPort(final boolean includeRequestPort) {
+        this.includeRequestPort = includeRequestPort;
+    }
+
     @Nullable
     public String getHtmlTagsToRewrite() {
         return htmlTagsToRewrite;
@@ -117,10 +135,5 @@ public class ReverseWebProxyConfig {
         public String getName() {
             return name;
         }
-    }
-
-    @NotNull
-    protected Folder getDefaultFolder() {
-        return TopComponents.getInstance().getRootNode().getFolder();
     }
 }

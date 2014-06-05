@@ -56,6 +56,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static final String REWRITE_REQ_COOKIE_DOMAINS_COMMENT = "// REWRITE REQUEST COOKIE DOMAINS";
     private static final String REWRITE_RESP_COOKIE_DOMAINS_COMMENT = "// REWRITE RESPONSE COOKIE DOMAINS";
     private static final String REWRITE_LOCATION_COMMENT = "// REWRITE LOCATION HEADER";
+    private static final String REWRITE_HOST_COMMENT = "// REWRITE HOST HEADER";
     private static final String REWRITE_REQUEST_COMMENT = "// REWRITE REQUEST BODY";
     private static final String REWRITE_ENCODED_REQUEST_COMMENT = "// REWRITE ENCODED REQUEST BODY";
     private static final String REWRITE_RESPONSE_COMMENT = "// REWRITE RESPONSE BODY";
@@ -111,6 +112,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         final PublishedService service = new PublishedService();
         service.setName(config.getName());
         service.setSoap(false);
+        service.setWssProcessingEnabled(false);
         service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
         service.setHttpMethods(new HashSet<>(Arrays.asList(HttpMethod.values())));
         String routingUri = config.getRoutingUri();
@@ -150,12 +152,13 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         rewriteQuery(config, builder);
         rewriteRequestBody(config, builder);
         handleRequestCookies(config, builder);
+        builder.addOrReplaceHeader(REQUEST, null, "Host", $_REQUEST_HOST, true, config.isRewriteHostHeader(), REWRITE_HOST_COMMENT);
         // route to web app
         final String protocol = config.isUseHttps() ? "https" : "http";
         builder.routeForwardAll(protocol + "://" + $_WEB_APP_HOST + $_REQUEST_URL_PATH + $_QUERY, false);
         handleResponseCookies(config, builder);
         // handle redirects
-        builder.rewriteHeader(RESPONSE, null, LOCATION, $_WEB_APP_HOST, $_HOST_AND_PORT, config.isRewriteLocationHeader(), REWRITE_LOCATION_COMMENT);
+        builder.rewriteHeader(RESPONSE, null, LOCATION, $_WEB_APP_HOST, $_REQUEST_HOST, config.isRewriteLocationHeader(), REWRITE_LOCATION_COMMENT);
         rewriteResponseBody(config, builder);
     }
 
@@ -186,7 +189,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
                 search.add($_WEB_APP_HOST + ":80");
             }
             search.add($_WEB_APP_HOST);
-            builder.rewriteHtml(RESPONSE, null, search, $_HOST_AND_PORT, config.getHtmlTagsToRewrite(),
+            builder.rewriteHtml(RESPONSE, null, search, $_REQUEST_HOST, config.getHtmlTagsToRewrite(),
                     REWRITE_RESPONSE_COMMENT);
         } else {
             // blanket rewrite
@@ -194,7 +197,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
             if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT && !mayContainPort(config)) {
                 regex = regex + OPTIONAL_PORT_80;
             }
-            builder.regex(RESPONSE, null, regex, $_HOST_AND_PORT, true, config.isRewriteResponseContent(),
+            builder.regex(RESPONSE, null, regex, $_REQUEST_HOST, true, config.isRewriteResponseContent(),
                     REWRITE_RESPONSE_COMMENT);
         }
     }
@@ -206,7 +209,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static void handleResponseCookies(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
             // sharepoint cookie names may contain the encoded webb app host
-            builder.replaceHttpCookieNames(RESPONSE, null, $_WEB_APP_HOST_ENCODED, $_REQUEST_URL_HOST + "%3A" + $_REQUEST_URL_PORT,
+            builder.replaceHttpCookieNames(RESPONSE, null, $_WEB_APP_HOST_ENCODED, $_REQUEST_HOST_ENCODED,
                     config.isRewriteCookies(), REWRITE_RESP_COOKIE_NAMES_COMMENT);
         }
         builder.replaceHttpCookieDomains(RESPONSE, null, $_WEB_APP_HOST, $_REQUEST_URL_HOST, config.isRewriteCookies(),
@@ -216,7 +219,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static void handleRequestCookies(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
             // sharepoint cookie names may contain the encoded webb app host
-            builder.replaceHttpCookieNames(REQUEST, null, $_REQUEST_URL_HOST + "%3A" + $_REQUEST_URL_PORT,
+            builder.replaceHttpCookieNames(REQUEST, null, $_REQUEST_HOST_ENCODED,
                     $_WEB_APP_HOST_ENCODED, config.isRewriteCookies(), REWRITE_REQ_COOKIE_NAMES_COMMENT);
         }
         builder.replaceHttpCookieDomains(REQUEST, null, $_REQUEST_URL_HOST, $_WEB_APP_HOST, config.isRewriteCookies(),
@@ -240,7 +243,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
     private static void setConstants(final ReverseWebProxyConfig config, final PolicyBuilder builder) throws IOException {
         final Map<String, String> constants = new HashMap<>();
         constants.put(WEB_APP_HOST, config.getWebAppHost());
-        constants.put(REQUEST_HOST, $_HOST_AND_PORT);
+        constants.put(REQUEST_HOST, config.isIncludeRequestPort() ? $_HOST_AND_PORT : $_REQUEST_URL_HOST);
         constants.put(RESPONSE_COOKIE_OVERWRITE_PATH, "false");
         constants.put(RESPONSE_COOKIE_OVERWRITE_DOMAIN, "false");
         constants.put(QUERY, $_REQUEST_URL_QUERY);

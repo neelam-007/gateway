@@ -29,6 +29,8 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
     private JCheckBox httpsCheckBox;
     private JRadioButton allReqRadioButton;
     private JRadioButton noneReqRadioButton1;
+    private JCheckBox hostCheckBox;
+    private JCheckBox requestPortCheckBox;
 
     public ReverseWebProxyConfigurationPanel() {
         super(null);
@@ -94,12 +96,14 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             gatewayUrlLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/");
             httpsCheckBox.setSelected(config.isUseHttps());
             locationCheckBox.setSelected(config.isRewriteLocationHeader());
+            hostCheckBox.setSelected(config.isRewriteHostHeader());
             cookieCheckBox.setSelected(config.isRewriteCookies());
             allReqRadioButton.setSelected(config.isRewriteRequestContent());
             noneReqRadioButton1.setSelected(!config.isRewriteRequestContent());
             allRespContentRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isBlank(config.getHtmlTagsToRewrite()));
             noneRespRadioButton.setSelected(!config.isRewriteResponseContent());
             specifiedTagsRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isNotBlank(config.getHtmlTagsToRewrite()));
+            requestPortCheckBox.setSelected(config.isIncludeRequestPort());
             enableDisable();
         }
     }
@@ -114,10 +118,12 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             config.setWebAppHost(webAppHostTextField.getText().trim());
             config.setUseHttps(httpsCheckBox.isSelected());
             config.setRewriteLocationHeader(locationCheckBox.isSelected());
+            config.setRewriteHostHeader(hostCheckBox.isSelected());
             config.setRewriteCookies(cookieCheckBox.isSelected());
             config.setRewriteRequestContent(allReqRadioButton.isSelected());
             config.setRewriteResponseContent(allRespContentRadio.isSelected() || specifiedTagsRadio.isSelected());
             config.setHtmlTagsToRewrite(specifiedTagsTextField.getText().trim());
+            config.setIncludeRequestPort(requestPortCheckBox.isSelected());
         }
     }
 
