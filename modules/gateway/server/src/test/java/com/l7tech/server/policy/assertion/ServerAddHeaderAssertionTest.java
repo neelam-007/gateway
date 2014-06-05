@@ -22,6 +22,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.List;
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link ServerAddHeaderAssertion}.
@@ -430,6 +432,76 @@ public class ServerAddHeaderAssertionTest {
         final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
         assertEquals(0, headersKnob.getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME));
+    }
+
+    @Test
+    public void removeHeader_UseValueSeparatorInValue_MatchingHeaderRemoved() throws Exception {
+        mess.getHeadersKnob().addHeader("foo", "ba,r", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("ba,r");
+        ass.setEvaluateNameAsExpression(false);
+        ass.setEvaluateValueExpression(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @Test
+    public void removeHeaderByValueWithSeparatorInQuotedSingleValue() throws IOException, PolicyAssertionException {
+        mess.getHeadersKnob().addHeader("foo", "\"val, ue2\"", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("\"val, ue2\"");
+        ass.setEvaluateNameAsExpression(false);
+        ass.setEvaluateValueExpression(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(0, headersKnob.getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @Test
+    public void removeHeaderByValueMultivaluedWithSeparatorInQuotedValue() throws IOException, PolicyAssertionException {
+        mess.getHeadersKnob().addHeader("foo", "\"val\"\"ue1\",\"val, ue2\",value3", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("\"val, ue2\"");
+        ass.setEvaluateNameAsExpression(false);
+        ass.setEvaluateValueExpression(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertEquals("\"val\"\"ue1\",value3", headersKnob.getHeaderValues("foo", HEADER_TYPE_HTTP, false)[0]);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @Test
+    public void removeHeaderByValueContainingEscapedQuotesFromMultivaluedHeader() throws IOException, PolicyAssertionException {
+        mess.getHeadersKnob().addHeader("foo", "\"val\"\"ue1\",\"val, ue2\",value3", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("\"val\"\"ue1\"");
+        ass.setEvaluateNameAsExpression(false);
+        ass.setEvaluateValueExpression(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        assertEquals(1, headersKnob.getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertEquals("\"val, ue2\",value3", headersKnob.getHeaderValues("foo", HEADER_TYPE_HTTP, false)[0]);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
     }
 
     @Test

@@ -558,12 +558,41 @@ public class HeadersKnobSupportTest {
     }
 
     @Test
+    public void removeHeaderByValueWithSeparatorInQuotedSingleValue() {
+        knob.addHeader("foo", "\"val, ue2\"", HEADER_TYPE_HTTP);
+        knob.removeHeader("foo", "\"val, ue2\"", HEADER_TYPE_HTTP, true);
+
+        assertEquals(0, knob.getHeaderValues("foo", HEADER_TYPE_HTTP).length);
+    }
+
+    @Test
     public void removeHeaderByValueMultivalued() {
         knob.addHeader("foo", "value1,value2,value3", HEADER_TYPE_HTTP);
         knob.removeHeader("foo", "value2", HEADER_TYPE_HTTP);
         final String[] fooValues = knob.getHeaderValues("foo", HEADER_TYPE_HTTP);
         assertEquals(1, fooValues.length);
         assertEquals("value1,value3", fooValues[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueMultivaluedWithSeparatorInQuotedValue() {
+        knob.addHeader("foo", "\"val\"\"ue1\",\"val, ue2\",value3", HEADER_TYPE_HTTP);
+        knob.removeHeader("foo", "\"val, ue2\"", HEADER_TYPE_HTTP, true);
+
+        assertEquals(1, knob.getHeaderValues("foo", HEADER_TYPE_HTTP).length);
+
+        // should remove second value, escaped quote in first value should be preserved
+        assertEquals("\"val\"\"ue1\",value3", knob.getHeaderValues("foo", HEADER_TYPE_HTTP)[0]);
+    }
+
+    @Test
+    public void removeHeaderByValueContainingEscapedQuotesFromMultivaluedHeader() {
+        knob.addHeader("foo", "\"val\"\"ue1\",\"val, ue2\",   value3", HEADER_TYPE_HTTP);
+        knob.removeHeader("foo", "\"val\"\"ue1\"", HEADER_TYPE_HTTP, true);
+        assertEquals(1, knob.getHeaderValues("foo", HEADER_TYPE_HTTP).length);
+
+        // should remove first value, whitespace in second value should be preserved
+        assertEquals("\"val, ue2\",value3", knob.getHeaderValues("foo", HEADER_TYPE_HTTP)[0]);
     }
 
     @Test

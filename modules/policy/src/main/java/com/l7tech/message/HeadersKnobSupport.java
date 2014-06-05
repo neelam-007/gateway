@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Supporting implementation of HeadersKnob which stores the headers in a collection.
@@ -15,6 +16,10 @@ import java.util.logging.Logger;
 public class HeadersKnobSupport implements HeadersKnob {
 
     public static final String VALUE_SEPARATOR = ",";
+
+    // comma followed by an even number of double quotes (i.e. exclude quoted commas)
+    private static final Pattern MULTIVALUED_HTTP_HEADER =
+            Pattern.compile("(,\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
     @Override
     public String[] getHeaderValues(@NotNull final String name) {
@@ -56,7 +61,7 @@ public class HeadersKnobSupport implements HeadersKnob {
     public void removeHeader(@NotNull String name, @NotNull final String type, boolean caseSensitive) {
         final Collection<Header> toRemove = new ArrayList<>();
         for (final Header header : headers) {
-            if (nameMatches(name, caseSensitive, header.getKey()) && (null == type || type.equals(header.getType()))) {
+            if (nameMatches(name, caseSensitive, header.getKey()) && type.equals(header.getType())) {
                 toRemove.add(header);
             }
         }
@@ -78,23 +83,28 @@ public class HeadersKnobSupport implements HeadersKnob {
 
         for (final Header header : headers) {
             if ((nameMatches(name, caseSensitive, header.getKey())) && (type.equals(header.getType()))) {
-                if (header.getValue() instanceof String && ((String) header.getValue()).contains(VALUE_SEPARATOR)) {
+                if (ObjectUtils.equals(value, header.getValue())) {
+                    toRemove.add(header);
+                } else if (header.getValue() instanceof String && ((String) header.getValue()).contains(VALUE_SEPARATOR)) {
                     // handle comma-separated multiple values
                     final List<String> subValues = new ArrayList<>();
-                    for (final String token : StringUtils.split((String) header.getValue(), VALUE_SEPARATOR)) {
+
+                    for (final String token : MULTIVALUED_HTTP_HEADER.split((String) header.getValue())) {
                         subValues.add(token.trim());
                     }
+
                     final List<String> subValuesToRemove = new ArrayList<>();
+
                     for (final String subValue : subValues) {
                         if (ObjectUtils.equals(value, subValue)) {
                             subValuesToRemove.add(subValue);
                         }
                     }
+
                     subValues.removeAll(subValuesToRemove);
                     toRemove.add(header);
-                    replacements.add(new Header(header.getKey(), StringUtils.join(subValues, VALUE_SEPARATOR), header.getType()));
-                } else if (ObjectUtils.equals(value, header.getValue())) {
-                    toRemove.add(header);
+                    replacements.add(new Header(header.getKey(),
+                            StringUtils.join(subValues, VALUE_SEPARATOR), header.getType()));
                 }
             }
         }

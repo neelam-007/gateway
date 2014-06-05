@@ -23,6 +23,10 @@ import java.util.regex.Pattern;
 public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAssertion<AddHeaderAssertion> {
     private final String[] variablesUsed;
 
+    // comma followed by an even number of double quotes (i.e. exclude quoted commas)
+    private static final Pattern MULTIVALUED_HTTP_HEADER =
+            Pattern.compile("(,\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
     public ServerAddHeaderAssertion(final AddHeaderAssertion assertion) {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
@@ -80,10 +84,15 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
 
     private void doRemove(final HeadersKnob headersKnob,
                           final String assertionHeaderName, final String assertionHeaderValue) {
+        Pattern namePattern = null;
+
+        if (assertion.isEvaluateNameAsExpression()) {
+            namePattern = Pattern.compile(assertionHeaderName);
+        }
+
         if (StringUtils.isBlank(assertion.getHeaderValue())) {
             // don't care about header value
             if (assertion.isEvaluateNameAsExpression()) {
-                final Pattern namePattern = Pattern.compile(assertionHeaderName);
                 for (final String headerName : headersKnob.getHeaderNames(assertion.getMetadataType())) {
                     if (namePattern.matcher(headerName).matches()) {
                         // when using an expression, we must match case
@@ -99,35 +108,48 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             }
         } else {
             // must match value in order to remove
+            Pattern valuePattern = null;
+
+            if (assertion.isEvaluateValueExpression()) {
+                valuePattern = Pattern.compile(assertionHeaderValue);
+            }
+
             final String[] headerNames;
+
             if (assertion.isEvaluateNameAsExpression()) {
                 headerNames = headersKnob.getHeaderNames(assertion.getMetadataType(), true, false);
             } else {
                 headerNames = headersKnob.getHeaderNames(assertion.getMetadataType(), true, true);
             }
+
             for (final String headerName : headerNames) {
                 if ((!assertion.isEvaluateNameAsExpression() && assertionHeaderName.equalsIgnoreCase(headerName)) ||
-                        (assertion.isEvaluateNameAsExpression() && Pattern.compile(assertionHeaderName).matcher(headerName).matches())) {
+                        (assertion.isEvaluateNameAsExpression() && namePattern.matcher(headerName).matches())) {
                     // name matches
                     for (final String headerValue : headersKnob.getHeaderValues(headerName, assertion.getMetadataType())) {
-                        if (headerValue.contains(HeadersKnobSupport.VALUE_SEPARATOR)) {
+                        if (!headerValue.equalsIgnoreCase(assertionHeaderValue) && // if not an identical match ...
+                                // (avoids false positives when a value separator is part of the actual value, but this
+                                // is still susceptible for multivalued results where values which include separators)
+                                headerValue.contains(HeadersKnobSupport.VALUE_SEPARATOR)) { // and contains a separator
                             // multivalued
-                            final String[] subValues = StringUtils.split(headerValue, HeadersKnobSupport.VALUE_SEPARATOR);
+                            final String[] subValues = MULTIVALUED_HTTP_HEADER.split(headerValue);
+
                             for (final String subValue : subValues) {
-                                removeByValue(headersKnob, assertionHeaderValue, headerName, subValue.trim());
+                                removeByValue(headersKnob, valuePattern, assertionHeaderValue, headerName, subValue.trim());
                             }
                         }
 
-                        removeByValue(headersKnob, assertionHeaderValue, headerName, headerValue);
+                        removeByValue(headersKnob, valuePattern, assertionHeaderValue, headerName, headerValue);
                     }
                 }
             }
         }
     }
 
-    private void removeByValue(final HeadersKnob headersKnob, final String valueToMatch, final String headerName, final String headerValue) {
+    private void removeByValue(final HeadersKnob headersKnob, final Pattern pattern,
+                               final String valueToMatch, final String headerName, final String headerValue) {
         if ((!assertion.isEvaluateValueExpression() && valueToMatch.equalsIgnoreCase(headerValue)) ||
-                (assertion.isEvaluateValueExpression() && Pattern.compile(valueToMatch).matcher(headerValue).matches())) {
+                (assertion.isEvaluateValueExpression() && pattern.matcher(headerValue).matches())) {
             // value matches
             // when using an expression, we must match case
             headersKnob.removeHeader(headerName, headerValue, assertion.getMetadataType(), assertion.isEvaluateNameAsExpression());
