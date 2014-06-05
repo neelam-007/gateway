@@ -187,7 +187,7 @@ public class WorkSpacePanel extends JPanel {
                 if (jc instanceof PolicyEditorPanel) {
                     try {
                         final boolean currentActiveStatus = ((PolicyEditorPanel) jc).getPolicyNode().getPolicy().isVersionActive();
-                        updateTabsVersionNumAndActiveStatus(false, currentActiveStatus);
+                        updateTabs(false, currentActiveStatus);
                     } catch (FindException e) {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                             "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
@@ -1262,15 +1262,19 @@ public class WorkSpacePanel extends JPanel {
      * then all other tabs associated with the service/policy should keep their versions number unchanged and update
      * active status as inactive depending on the previous and new active status of the selected component.
      *
+     * When saving a policy version, if other policy versions are the same as the saved policy versions, then need to
+     * remove these duplicates from the workspace.
+     *
      * @param prevActiveStatus: previous active status of the selected component: true means "active" and false means "inactive"
      * @param newActiveStatus: new active status of the selected component: true means "active" and false means "inactive".
      */
-    public void updateTabsVersionNumAndActiveStatus(boolean prevActiveStatus, boolean newActiveStatus) {
+    public void updateTabs(boolean prevActiveStatus, boolean newActiveStatus) {
         final JComponent selectedComponent = getComponent();
         if (! (selectedComponent instanceof PolicyEditorPanel)) return;
 
         final Goid selectedPolicyGoid = ((PolicyEditorPanel) selectedComponent).getPolicyGoid();
         final long selectedVersion = ((PolicyEditorPanel) selectedComponent).getVersionNumber();
+        final List<Component> duplicates = new ArrayList<>();
 
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             final Component component = tabbedPane.getComponentAt(i);
@@ -1285,20 +1289,28 @@ public class WorkSpacePanel extends JPanel {
                 // just in case its version has been changed.
                 ((PolicyEditorPanel) component).setOverrideVersionActive(isActive);
                 ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
-            } else if  (Goid.equals(selectedPolicyGoid, policyGoid) && selectedVersion != version) {
-                // Update the active status to be inactive, depending on the flags, prevActiveStatus and newActiveStatus
-                if ((prevActiveStatus != newActiveStatus) && newActiveStatus) {
-                    ((PolicyEditorPanel) component).setOverrideVersionActive(false);
+            } else if (Goid.equals(selectedPolicyGoid, policyGoid)) {
+                if (selectedVersion != version) {
+                    // Update the active status to be inactive, depending on the flags, prevActiveStatus and newActiveStatus
+                    if ((prevActiveStatus != newActiveStatus) && newActiveStatus) {
+                        ((PolicyEditorPanel) component).setOverrideVersionActive(false);
+                    } else {
+                        // Otherwise, keep other tabs' active status unchanged (since selectedComponent and component share the same latest PolicyEditorSubject object).
+                        ((PolicyEditorPanel) component).setOverrideVersionActive(isActive);
+                    }
+                    // Keep other tabs' version unchanged
+                    ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
                 } else {
-                    // Otherwise, keep other tabs' active status unchanged (since selectedComponent and component share the same latest PolicyEditorSubject object).
-                    ((PolicyEditorPanel) component).setOverrideVersionActive(isActive);
+                    duplicates.add(component);
                 }
-                // Keep other tabs' version unchanged
-                ((PolicyEditorPanel) component).setOverrideVersionNumber(version);
-
             }
             // Redraw tab title
             ((PolicyEditorPanel) component).updateHeadings();
+        }
+
+        // At last, remove those duplicates tabs
+        for (Component component: duplicates) {
+            tabbedPane.remove(component);
         }
     }
 

@@ -1979,7 +1979,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     }
                 }
                 // Update the titles of other tabs associated to the same service/policy entity node
-                TopComponents.getInstance().getCurrentWorkspace().updateTabsVersionNumAndActiveStatus(prevActiveStatus, activateAsWell);
+                TopComponents.getInstance().getCurrentWorkspace().updateTabs(prevActiveStatus, activateAsWell);
             }
         };
         ret.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_S);
