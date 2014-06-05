@@ -140,13 +140,8 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
             final long now = System.currentTimeMillis();
 
-            // We should get a lock, but this is not any more wrong than it
-            // was before we had support for locking.
-            //
-            // This means that the check is faster but theoretically exposes
-            // us to the possiblity of 100s of simultaneous login attempts
-            // being processed.
-            LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+            // Lock row for update during pre-login check
+            LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), true);
 
             if (logonInfo == null) throw new FindException("No entry for '" + user.getLogin() + "'");
 
@@ -291,6 +286,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     login = pair.right;
                 }
 
+                // Called by periodic task, will avoid getting row lock since it'll just retry next time
                 final LogonInfo logonInfo = logonManager.findByCompositeKey(providerId, login, false);
                 if (logonInfo == null) {
                     final LogonInfo newInfo = new LogonInfo(providerId, login);
@@ -398,7 +394,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                         public Object doInTransaction(TransactionStatus transactionStatus) {
                             boolean newRecord = false;
                             try {
-                                LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+                                // Changed to get a row lock, to prevent failures due to StaleObjectStateException when
+                                // updating LogonInfo for multiple parallel logon attempts. (SSG-7560)
+                                LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), true);
 
                                 //we gotta check if the log info is NULL because older accounts without the upgrade
                                 //wont have this record in place.  If NULL, we'll just instantiate a new one for it
