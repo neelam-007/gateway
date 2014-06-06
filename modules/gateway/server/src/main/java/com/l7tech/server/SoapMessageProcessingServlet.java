@@ -432,8 +432,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
                 passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
             } else if (header.getValue() instanceof String) {
-                String setCookieValue = CookieUtils.replaceCookieDomainAndPath((String) header.getValue(), domain, path, true);
+                //first split Set-Cookie header into individual cookies
+                StringBuffer sb = new StringBuffer();
+                List<String> cookies = CookieUtils.splitCookieHeader((String)header.getValue());
+                for(int i = 0; i < cookies.size(); i++ ) {
+                    if(i > 0) sb.append(CookieUtils.ATTRIBUTE_DELIMITER);//append delimiter if the header contains more then one cookie
+                    sb.append(CookieUtils.replaceCookieDomainAndPath(cookies.get(i), domain, path));// replace cookie domain and path and join cookies together
+                }
                 //check if the Set-Cookie header with the same value exists
+                String setCookieValue = sb.toString();
                 Pair<String,Object> setCookieHeader = new Pair(header.getKey(), setCookieValue);
                 HttpCookie cookie = getHttpCookieFromHeader(setCookieValue);
                 if(cookie == null || !cookieValues.contains(cookie)) {

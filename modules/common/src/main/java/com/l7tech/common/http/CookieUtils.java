@@ -218,31 +218,38 @@ public class CookieUtils {
         return result;
     }
 
-    public static String replaceCookieDomainAndPath(String value, String domain, String path, boolean modify) {
+    /**
+     * adjust cookie domain and path
+     * @param value cookie value with attributes
+     * @param domain gateway domain
+     * @param path   gateway path
+     * @return  cookie with modified domain and/or path
+     */
+    public static String replaceCookieDomainAndPath(String value, String domain, String path) {
         String s = value;
         if(StringUtils.isNotBlank(s)) {
+            //replace cookie domain
             if (domain != null) {
                 String cookieDomain = findMatchingValue(domainPattern.matcher(s));
                 if(cookieDomain != null && !domain.endsWith(cookieDomain)) {
-                    s = replaceMatchedValue(domainPattern.matcher(s), s, DOMAIN + EQUALS + domain, modify);
+                    s = replaceMatchedValue(domainPattern.matcher(s), s, DOMAIN + EQUALS + domain);
                 }
             }
-            if (path != null) {
-                String calcPath = path;
-                String cookiePath = findMatchingValue(pathPattern.matcher(s));
-                if(calcPath == null) {
-                    calcPath = cookiePath;
-                }
+            //replace cookie path
+            String calcPath = path;
+            String cookiePath = findMatchingValue(pathPattern.matcher(s));
+            if(calcPath == null) {
+                calcPath = cookiePath;
+            }
 
-                if (calcPath != null) {
-                    int trim = calcPath.lastIndexOf('/');
-                    if (trim > 0) {
-                        calcPath = calcPath.substring(0, trim);
-                    }
+            if (calcPath != null) {
+                int trim = calcPath.lastIndexOf('/');
+                if (trim > 0) {
+                    calcPath = calcPath.substring(0, trim);
                 }
-                if(cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath)) {
-                    s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath, modify);
-                }
+            }
+            if(cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath)) {
+                s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath);
             }
         }
         return s;
@@ -513,7 +520,7 @@ public class CookieUtils {
         return sb.toString();
     }
 
-    public static String[] splitAttributes(String value) {
+    private static String[] splitAttributes(@NotNull String value) {
         List<String> attributes = new ArrayList<>();
         Matcher m = attributePattern.matcher(value);
         int i = 0;
@@ -539,39 +546,45 @@ public class CookieUtils {
         return s;
     }
 
+    /**
+     * it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
+     * ex) Cookie: 1=one; 2=two                         ---> Netscape format
+     * ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
+     * ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
+     * @param cookieValue value of the cookie header
+     * @return  a list of individual cookies with attributes
+     */
     public static List<String> splitCookieHeader(final String cookieValue) {
-        // it is possible for multiple cookies to be stored in a single Cookie header in multiple formats
-        // ex) Cookie: 1=one; 2=two                         ---> Netscape format
-        // ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
-        // ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
-        final String[] tokens = splitAttributes(cookieValue);
         final List<String> singleCookieValues = new ArrayList<>();
-        if (tokens.length > 0) {
-            final List<String> group = new ArrayList<>();
-            final String firstToken = tokens[0].trim();
-            group.add(firstToken);
-            boolean hasVersion = isVersion(firstToken);
-            boolean hasName = !isCookieAttribute(firstToken);
-            for (int i = 1; i < tokens.length; i++) {
-                final String token = tokens[i].trim();
-                if ((hasVersion && isVersion(token)) || (hasName && !isCookieAttribute(token))) {
-                    // current token is the start of a new cookie, so process the existing token group
-                    Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-                    singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
-                    group.clear();
-                    hasVersion = false;
-                    hasName = false;
+        if(cookieValue != null) {
+            final String[] tokens = splitAttributes(cookieValue);
+            if (tokens.length > 0) {
+                final List<String> group = new ArrayList<>();
+                final String firstToken = tokens[0].trim();
+                group.add(firstToken);
+                boolean hasVersion = isVersion(firstToken);
+                boolean hasName = !isCookieAttribute(firstToken);
+                for (int i = 1; i < tokens.length; i++) {
+                    final String token = tokens[i].trim();
+                    if ((hasVersion && isVersion(token)) || (hasName && !isCookieAttribute(token))) {
+                        // current token is the start of a new cookie, so process the existing token group
+                        Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
+                        singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
+                        group.clear();
+                        hasVersion = false;
+                        hasName = false;
+                    }
+                    group.add(token);
+                    if (isVersion(token)) {
+                        hasVersion = true;
+                    } else if (!isCookieAttribute(token)) {
+                        hasName = true;
+                    }
                 }
-                group.add(token);
-                if (isVersion(token)) {
-                    hasVersion = true;
-                } else if (!isCookieAttribute(token)) {
-                    hasName = true;
-                }
+                // process last group
+                Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
+                singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
             }
-            // process last group
-            Collections.sort(group, COOKIE_ATTRIBUTE_COMPARATOR);
-            singleCookieValues.add(StringUtils.join(group.toArray(new String[group.size()]), ATTRIBUTE_DELIMITER));
         }
         return singleCookieValues;
     }
@@ -610,7 +623,7 @@ public class CookieUtils {
         return isAttribute;
     }
 
-    private static String replaceMatchedValue(@NotNull Matcher m, @NotNull String value, @Nullable String replacement, boolean modify) {
+    private static String replaceMatchedValue(@NotNull Matcher m, @NotNull String value, @Nullable String replacement) {
         StringBuffer sb = new StringBuffer();
         int i = 0;
         if(m.find()) {
@@ -619,10 +632,8 @@ public class CookieUtils {
         }
         if(sb.length() == 0) {
             sb.append(value);
-            if(modify) {
-                if(value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1 ) sb.append(ATTRIBUTE_DELIMITER); //check if cookie ends with ;
-                sb.append(replacement);
-            }
+            if(value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1 ) sb.append(ATTRIBUTE_DELIMITER); //check if cookie ends with ;
+            sb.append(replacement);
         }
         else if(i < value.length() - 1){
             sb.append(value.substring(i));
