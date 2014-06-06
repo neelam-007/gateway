@@ -435,6 +435,60 @@ public class ServerAddHeaderAssertionTest {
     }
 
     @Test
+    public void removeHeader_UseInvalidRegexForNameAndEvaluateAsExpression_AssertionFails() throws Exception {
+        String regex = "`~!@#$%^&*()_+-={}|[]\":;'?><,./";
+
+        mess.getHeadersKnob().addHeader("foo", "bar", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName(regex);
+        ass.setHeaderValue("bar");
+        ass.setEvaluateNameAsExpression(true);
+        ass.setEvaluateValueExpression(false);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        try {
+            serverAssertion.checkRequest(pec);
+            fail("Expected a PolicyAssertionException to be thrown.");
+        } catch (PolicyAssertionException e) {
+            assertEquals("Invalid regular expression: Illegal repetition near index 15\n" +
+                    "`~!@#$%^&*()_+-={}|[]\":;'?><,./\n               ^",
+                    e.getMessage());
+        }
+
+        // header should not have been removed
+        assertEquals(1, pec.getRequest().getHeadersKnob().getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @Test
+    public void removeHeader_UseInvalidRegexForValueAndEvaluateAsExpression_AssertionFails() throws Exception {
+        String regex = "`~!@#$%^&*()_+-={}|[]\":;'?><,./";
+
+        mess.getHeadersKnob().addHeader("foo", "bar", HEADER_TYPE_HTTP);
+
+        ass.setMetadataType(HEADER_TYPE_HTTP);
+        ass.setHeaderName("foo");
+        ass.setHeaderValue(regex);
+        ass.setEvaluateNameAsExpression(false);
+        ass.setEvaluateValueExpression(true);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+
+        try {
+            serverAssertion.checkRequest(pec);
+            fail("Expected a PolicyAssertionException to be thrown.");
+        } catch (PolicyAssertionException e) {
+            assertEquals("Invalid regular expression: Illegal repetition near index 15\n" +
+                    "`~!@#$%^&*()_+-={}|[]\":;'?><,./\n               ^",
+                    e.getMessage());
+        }
+
+        // header should not have been removed
+        assertEquals(1, pec.getRequest().getHeadersKnob().getHeaderNames(HEADER_TYPE_HTTP, true, false).length);
+        assertFalse(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @Test
     public void removeHeader_UseValueSeparatorInValue_MatchingHeaderRemoved() throws Exception {
         mess.getHeadersKnob().addHeader("foo", "ba,r", HEADER_TYPE_HTTP);
 

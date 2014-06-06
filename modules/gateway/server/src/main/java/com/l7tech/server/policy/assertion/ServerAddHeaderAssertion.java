@@ -10,12 +10,14 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Add/remove header(s) to/from a message.
@@ -83,11 +85,16 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
     }
 
     private void doRemove(final HeadersKnob headersKnob,
-                          final String assertionHeaderName, final String assertionHeaderValue) {
+                          final String assertionHeaderName, final String assertionHeaderValue) throws PolicyAssertionException {
         Pattern namePattern = null;
 
-        if (assertion.isEvaluateNameAsExpression()) {
-            namePattern = Pattern.compile(assertionHeaderName);
+        try {
+            if (assertion.isEvaluateNameAsExpression()) {
+                namePattern = Pattern.compile(assertionHeaderName);
+            }
+        } catch (PatternSyntaxException e) {
+            throw new PolicyAssertionException(assertion,
+                    "Invalid regular expression: " + ExceptionUtils.getMessage(e));
         }
 
         if (StringUtils.isBlank(assertion.getHeaderValue())) {
@@ -110,8 +117,13 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
             // must match value in order to remove
             Pattern valuePattern = null;
 
-            if (assertion.isEvaluateValueExpression()) {
-                valuePattern = Pattern.compile(assertionHeaderValue);
+            try {
+                if (assertion.isEvaluateValueExpression()) {
+                    valuePattern = Pattern.compile(assertionHeaderValue);
+                }
+            } catch (PatternSyntaxException e) {
+                throw new PolicyAssertionException(assertion,
+                        "Invalid regular expression: " + ExceptionUtils.getMessage(e));
             }
 
             final String[] headerNames;
