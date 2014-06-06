@@ -45,10 +45,10 @@ class CryptoJWrapper {
 
     static final String FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_FIPS_LIB_PATH, null );
     static final String NON_FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_NON_FIPS_LIB_PATH, null );
-    static final String SSLJ_LIB_PATH = ConfigFactory.getProperty( PROP_SSLJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "sslj-6.0.jar" ) );
-    static final String CERTJ_LIB_PATH = ConfigFactory.getProperty( PROP_CERTJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "certj-6.0.jar" ) );
-    static final String CRYPTOJCE_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCE_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojce-6.1.jar" ) );
-    static final String CRYPTOJCOMMON_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCOMMON_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojcommon-6.1.jar" ) );
+    static final String SSLJ_LIB_PATH = ConfigFactory.getProperty( PROP_SSLJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "sslj-6.1.2.jar" ) );
+    static final String CERTJ_LIB_PATH = ConfigFactory.getProperty( PROP_CERTJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "certj-6.1.1.jar" ) );
+    static final String CRYPTOJCE_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCE_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojce-6.1.2.jar" ) );
+    static final String CRYPTOJCOMMON_LIB_PATH = ConfigFactory.getProperty( PROP_CRYPTOJCOMMON_PATH, replaceFilename( NON_FIPS_LIB_PATH, "cryptojcommon-6.1.2.jar" ) );
     static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
 
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";

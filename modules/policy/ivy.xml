@@ -51,9 +51,9 @@
         <!-- Optional security provider -->
         <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
-        <dependency org="com.rsa" name="jcm" rev="6.1" force="true" conf="test"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.1" force="true" conf="test"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.1" force="true" conf="test"/>
+        <dependency org="com.rsa" name="jcm" rev="6.1.2" force="true" conf="test"/>
+        <dependency org="com.rsa" name="cryptojcommon" rev="6.1.2" force="true" conf="test"/>
+        <dependency org="com.rsa" name="cryptojce" rev="6.1.2" force="true" conf="test"/>
         <!-- HttpServletResponseKnobTest needs this dependency-->
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
 
