@@ -1741,9 +1741,6 @@ public class MainWindow extends JFrame implements SheetHolder {
                             @Override
                             public void run() {
                                 PreferencesDialog dialog = new PreferencesDialog(TopComponents.getInstance().getTopParent(), true, isApplet());
-                                dialog.pack();
-                                Utilities.centerOnScreen(dialog);
-                                dialog.setResizable(false);
                                 DialogDisplayer.display(dialog);
                             }
                         });

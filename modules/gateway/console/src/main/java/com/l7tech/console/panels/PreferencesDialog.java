@@ -49,6 +49,7 @@ public class PreferencesDialog extends JDialog {
     private JTextField maxNumTabTextField;
     private JRadioButton wrapTabsRadioButton;
     private JRadioButton scrollTabsRadioButton;
+    private JPanel prefContainerPane;
 
     /** preferences instance */
     private Properties props;
@@ -66,6 +67,8 @@ public class PreferencesDialog extends JDialog {
         initResources();
         initComponents(isApplet);
         loadPreferences();
+        Utilities.centerOnScreen(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         DialogDisplayer.pack(this);
     }
 
@@ -87,8 +90,6 @@ public class PreferencesDialog extends JDialog {
         setContentPane(mainPanel);
         setTitle(resources.getString("window.title"));
         getRootPane().setDefaultButton(okButton);
-        Utilities.centerOnScreen(this);
-        Utilities.setEscKeyStrokeDisposes(this);
 
         // inactivity timeout text field
         inactivityTextField.setDocument(new MaxLengthDocument(2));
@@ -202,6 +203,8 @@ public class PreferencesDialog extends JDialog {
             rememberLastIdCheckBox.setVisible( false );
             numHostsHistoryLabel.setVisible( false );
             numHostsHistoryTextField.setVisible( false );
+
+            setPreferredSize(new Dimension(prefContainerPane.getPreferredSize().width + 40, 220));
         }
     }
 
