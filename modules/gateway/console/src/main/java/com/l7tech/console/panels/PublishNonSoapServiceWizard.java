@@ -57,8 +57,12 @@ public class PublishNonSoapServiceWizard extends AbstractPublishServiceWizard {
                 service.setSecurityZone(panel2.getSelectedSecurityZone());
             }
             AllAssertion policy = new AllAssertion(allAssertions);
-            if (panel1.getDownstreamURL() != null)
-                policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
+            if (panel1.getDownstreamURL() != null) {
+                final HttpRoutingAssertion route = new HttpRoutingAssertion(panel1.getDownstreamURL());
+                route.getRequestHeaderRules().setForwardAll(true);
+                route.getResponseHeaderRules().setForwardAll(true);
+                policy.addChild(route);
+            }
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
             service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));

@@ -108,7 +108,10 @@ public class PublishRestServiceWizard extends AbstractPublishServiceWizard {
             }
             String backendUrl = serviceInfo.getBackendUrl();
             if (backendUrl.endsWith("/")) backendUrl = backendUrl.substring(0, backendUrl.length() - 1);
-            policy.addChild(new HttpRoutingAssertion(backendUrl + remotePath + "${request.url.query}"));
+            final HttpRoutingAssertion route = new HttpRoutingAssertion(backendUrl + remotePath + "${request.url.query}");
+            route.getRequestHeaderRules().setForwardAll(true);
+            route.getResponseHeaderRules().setForwardAll(true);
+            policy.addChild(route);
 
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);

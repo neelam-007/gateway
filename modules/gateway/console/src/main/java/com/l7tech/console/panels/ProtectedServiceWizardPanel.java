@@ -164,21 +164,23 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      */
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        PublishServiceWizard.ServiceAndAssertion
+        final PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
+        final HttpRoutingAssertion routingAssertion;
         if (isAnonymous()) {
             String url = getValidRoutingURL();
-            if (url == null) collect.setRoutingAssertion(new HttpRoutingAssertion());
-            else collect.setRoutingAssertion(new HttpRoutingAssertion(url));
-            return;
+            if (url == null) {
+                routingAssertion = new HttpRoutingAssertion();
+            } else {
+                routingAssertion = new HttpRoutingAssertion(url);
+            }
+        } else {
+            routingAssertion = new HttpRoutingAssertion(getServiceUrlTextField().getText(), getIdentityTextField().getText(), getCredentials(), getRealmTextField().getText());
         }
-
-        RoutingAssertion ra =
-          new HttpRoutingAssertion(
-            getServiceUrlTextField().getText(),
-            getIdentityTextField().getText(),
-            getCredentials(), getRealmTextField().getText());
-        collect.setRoutingAssertion(ra);
+        // SSM-4647 change default configuration to forward all headers
+        routingAssertion.getRequestHeaderRules().setForwardAll(true);
+        routingAssertion.getResponseHeaderRules().setForwardAll(true);
+        collect.setRoutingAssertion(routingAssertion);
     }
 
     private String getValidRoutingURL() {
