@@ -99,10 +99,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         final EntityManager manager = getEntityManager(EntityTypeRegistry.getEntityClass(header.getType()));
         Entity ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
 
-        if (ent instanceof IdentityProviderConfig)
-            return new IdentityProviderConfig((IdentityProviderConfig)ent);
-        else
-            return ent;
+        return ent;
 
         // todo: make entities clonable, so that we can return ent.copyOf();
     }
@@ -115,10 +112,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         }
         ET ent = entityFinder.find(clazz, pk);
 
-        if (ent instanceof IdentityProviderConfig)
-            return (ET) new IdentityProviderConfig((IdentityProviderConfig)ent);
-        else
-            return ent;
+        return ent;
     }
 
     @Override

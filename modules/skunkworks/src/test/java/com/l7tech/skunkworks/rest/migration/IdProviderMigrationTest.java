@@ -1,6 +1,7 @@
 package com.l7tech.skunkworks.rest.migration;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -13,6 +14,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import org.apache.http.entity.ContentType;
@@ -26,6 +28,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -214,6 +217,35 @@ public class IdProviderMigrationTest extends RestEntityTestBase {
         assertEquals(internalProviderId,dependencies.get(0).getId());
     }
 
+    @BugId("SSG-8566")
+    @Test
+    public void getNonInternalIdProviderBundleTest() throws Exception{
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:Authentication>\n" +
+                        "            <L7p:IdentityProviderOid goidValue=\""+ ldap.getId() +"\"/>\n" +
+                        "        </L7p:Authentication>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+
+        // update policy to use LDAP provider
+        policy.setXml(policyXml);
+        policyManager.update(policy);
+
+        RestResponse response =
+                getDatabaseBasedRestManagementEnvironment().processRequest("bundle/policy/" + policy.getId(), HttpMethod.GET,null,"");
+        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        assertEquals(200, response.getStatus());
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        assertEquals("The bundle should have 2 items A policy", 2, bundleItem.getContent().getReferences().size());
+        assertEquals("The bundle should have 3 mapping. Root folder, a policy, an id provider", 3, bundleItem.getContent().getMappings().size());
+
+
+    }
     protected String objectToString(Object object) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         final StreamResult result = new StreamResult(bout);
