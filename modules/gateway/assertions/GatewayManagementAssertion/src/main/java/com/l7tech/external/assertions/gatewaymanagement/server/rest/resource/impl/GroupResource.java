@@ -75,6 +75,9 @@ public class GroupResource implements URLAccessible<GroupMO> {
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
+     * @param sort            the key to sort the list by.
+     * @param order           the order to sort the list. true for ascending, false for descending. null implies
+     *                        ascending
      * @param names The name filter
      * @return A list of entities. If the list is empty then no entities were found.
      */
@@ -84,15 +87,19 @@ public class GroupResource implements URLAccessible<GroupMO> {
     //This xml header allows the list to be explorable when viewed in a browser
     //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<GroupMO> list(
+            @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
+            @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) throws ResourceFactory.ResourceNotFoundException{
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "type", "hardwiredServiceId", "securityZone.id"));
+
+        Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
         }
 
-        List<Item<GroupMO>> items = Functions.map(groupRestResourceFactory.listResources(providerId, filters.map()), new Functions.Unary<Item<GroupMO>, GroupMO>() {
+        List<Item<GroupMO>> items = Functions.map(groupRestResourceFactory.listResources(sort,ascendingSort,providerId, filters.map()), new Functions.Unary<Item<GroupMO>, GroupMO>() {
             @Override
             public Item<GroupMO> call(GroupMO resource) {
                 return new ItemBuilder<>(transformer.convertToItem(resource))
@@ -122,6 +129,22 @@ public class GroupResource implements URLAccessible<GroupMO> {
                 .addLinks(getRelatedLinks(group))
                 .build();
     }
+
+    /**
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
+     *
+     * @return The template entity.
+     */
+    @GET
+    @Path("template")
+    public Item<GroupMO> template() {
+        GroupMO groupMO = ManagedObjectFactory.createGroupMO();
+        groupMO.setProviderId(providerId);
+        groupMO.setName("Name");
+        return createTemplateItem(groupMO);
+    }
+
 
     @NotNull
     @Override
@@ -172,5 +195,13 @@ public class GroupResource implements URLAccessible<GroupMO> {
             uriBuilder.path(groupId);
         }
         return uriBuilder.build().toString();
+    }
+
+    protected Item<GroupMO> createTemplateItem(@NotNull final GroupMO resource) {
+        return new ItemBuilder<GroupMO>(getResourceType() + " Template", getResourceType())
+                .addLink(ManagedObjectFactory.createLink("self", getUrlString(providerId,"template")))
+                .addLinks(getRelatedLinks(resource))
+                .setContent(resource)
+                .build();
     }
 }

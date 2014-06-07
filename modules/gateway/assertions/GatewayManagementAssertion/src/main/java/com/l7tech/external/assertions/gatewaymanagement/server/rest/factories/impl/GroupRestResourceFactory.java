@@ -16,9 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -35,27 +33,45 @@ public class GroupRestResourceFactory {
     @Inject
     private RbacAccessService rbacAccessService;
 
-    public List<GroupMO> listResources(@NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
+    public List<GroupMO> listResources(final String sortKey, final Boolean asc, @NotNull String providerId, @Nullable Map<String, List<Object>> filters) throws ResourceFactory.ResourceNotFoundException {
         try {
             GroupManager groupManager = retrieveGroupManager(providerId);
-            List<IdentityHeader> groups = new ArrayList<>();
-            if(filters.containsKey("name")){
+            List<Group> groups = new ArrayList<>();
+            if(filters!=null && filters.containsKey("name")){
                 for(Object name: filters.get("name")){
-                    groups.addAll(groupManager.search(name.toString()));
+                    Group group = groupManager.findByName(name.toString());
+                    if(group!=null){
+                        groups.add(group);
+                    }
                 }
             }else{
-                groups.addAll(groupManager.findAllHeaders());
+                Collection<IdentityHeader> userHeaders = groupManager.findAllHeaders();
+                for(IdentityHeader idHeader: userHeaders){
+                    groups.add(groupManager.findByPrimaryKey(idHeader.getStrId()));
+                }
             }
             groups = rbacAccessService.accessFilter(groups, EntityType.GROUP, OperationType.READ, null);
 
-            return Functions.map(groups, new Functions.Unary<GroupMO, IdentityHeader>() {
-                @Override
-                public GroupMO call(IdentityHeader idHeader) {
-                    if(idHeader.getType().equals(EntityType.GROUP))
-                    {
-                        return transformer.convertToMO(idHeader);
+            // sort list
+            if (sortKey != null) {
+                Collections.sort(groups, new Comparator<Group>() {
+                    @Override
+                    public int compare(Group o1, Group o2) {
+                        if (sortKey.equals("name")) {
+                            return (asc == null || asc) ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName());
+                        }
+                        if (sortKey.equals("id")) {
+                            return (asc == null || asc) ? o1.getId().compareTo(o2.getId()) : o2.getId().compareTo(o1.getId());
+                        }
+                        return 0;
                     }
-                    return null;
+                });
+            }
+
+            return Functions.map(groups, new Functions.Unary<GroupMO, Group>() {
+                @Override
+                public GroupMO call(Group group) {
+                    return transformer.convertToMO(group);
                 }
             });
         } catch (FindException e) {
@@ -64,9 +80,17 @@ public class GroupRestResourceFactory {
     }
 
     public GroupMO getResource(@NotNull String providerId, @NotNull String id) throws FindException, ResourceFactory.ResourceNotFoundException {
-        Group group = retrieveGroupManager(providerId).findByPrimaryKey(id);
-        if(group== null){
-            throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + id);
+        Group group;
+        try {
+            group = retrieveGroupManager(providerId).findByPrimaryKey(id);
+            if (group == null) {
+                throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+            }
+        }catch(FindException e){
+            if(e.getCause() instanceof IllegalArgumentException){
+                throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+            }
+            throw e;
         }
         rbacAccessService.validatePermitted(group, OperationType.READ);
         return transformer.convertToMO(group);
