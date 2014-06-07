@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.server.policy.PolicyManager;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -26,8 +27,9 @@ public class PolicyAliasTransformer extends APIResourceWsmanBaseTransformer<Poli
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<PolicyAliasMO> convertToItem(PolicyAliasMO m) {
+    public Item<PolicyAliasMO> convertToItem(@NotNull PolicyAliasMO m) {
         return new ItemBuilder<PolicyAliasMO>(findPolicyAliasName(Goid.parseGoid(m.getPolicyReference().getId())), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

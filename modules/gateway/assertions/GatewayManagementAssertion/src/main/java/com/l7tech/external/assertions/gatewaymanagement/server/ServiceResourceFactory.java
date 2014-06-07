@@ -420,7 +420,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         }
     }
 
-    protected static class ServiceEntityBag extends EntityBag<PublishedService> {
+    public static class ServiceEntityBag extends EntityBag<PublishedService> {
         private boolean serviceDocumentsReplaced;
         private Collection<ServiceDocument> serviceDocuments;
 
@@ -440,7 +440,7 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
             return getEntity();
         }
 
-        protected Collection<ServiceDocument> getServiceDocuments() {
+        public Collection<ServiceDocument> getServiceDocuments() {
             return serviceDocuments;
         }
 

@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class FolderTransformer extends APIResourceWsmanBaseTransformer<FolderMO,
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<FolderMO> convertToItem(FolderMO m) {
+    public Item<FolderMO> convertToItem(@NotNull FolderMO m) {
         return new ItemBuilder<FolderMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

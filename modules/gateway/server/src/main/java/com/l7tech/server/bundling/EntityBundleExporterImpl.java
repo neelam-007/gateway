@@ -79,6 +79,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
 
                 //find the entity
                 final Entity entity = entityCrud.find(((DependentEntity) dependentObject.getDependent()).getEntityHeader());
+                if (entity == null) {
+                    throw new FindException("Could not load entity from dependency found: " + ((DependentEntity) dependentObject.getDependent()).getEntityHeader().toStringVerbose());
+                }
 
                 addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity);
                 addEntities(entity, entityContainers);
@@ -88,30 +91,41 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         return new EntityBundle(entityContainers, mappings);
     }
 
-    private void addEntities(Entity entity, List<EntityContainer> entityContainers) throws FindException {
+    /**
+     * This will add an entity to the entity containers list, properly creating the entity container containing the
+     * entity
+     *
+     * @param entity           The entity to add to the list
+     * @param entityContainers The entity containers list
+     * @throws FindException
+     */
+    private void addEntities(@NotNull final Entity entity, @NotNull final List<EntityContainer> entityContainers) throws FindException {
         if (entity instanceof JmsEndpoint) {
             final JmsEndpoint endpoint = (JmsEndpoint) entity;
-            Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(), EntityType.JMS_CONNECTION, null, null));
+            final Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(), EntityType.JMS_CONNECTION, null, null));
             if (connection == null)
                 throw new FindException("Cannot find associated jms connection for jms endpoint: " + endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint, (JmsConnection) connection));
-        } else if (entity instanceof Identity) {
-            entityContainers.add(new IdentityEntityContainer((Identity) entity));
         } else if (entity instanceof SsgKeyEntry) {
             // not include private key entity info in bundle
-            return;
-        } else if (entity instanceof PersistentEntity) {
-            entityContainers.add(new PersistentEntityContainer((PersistentEntity) entity));
         } else {
-            entityContainers.add(new EntityContainer(entity));
+            entityContainers.add(new EntityContainer<>(entity));
         }
     }
 
-    private void addMapping(Properties bundleExportProperties, ArrayList<EntityMappingInstructions> mappings, DependentEntity dependentObject, Entity entity) {
+    /**
+     * This will add a mapping to the mappings list.
+     *
+     * @param bundleExportProperties The bundling properties
+     * @param mappings               The list of mappings to add the mapping to
+     * @param dependentObject        The dependent object to create the mapping for
+     * @param entity                 The entity that this dependent object is for
+     */
+    private void addMapping(@NotNull final Properties bundleExportProperties, @NotNull final ArrayList<EntityMappingInstructions> mappings, @NotNull final DependentEntity dependentObject, @NotNull final Entity entity) {
         if (entity instanceof HasFolder) {
             // include parent folder mapping if not already in mapping.
             final Entity parentFolder = ((HasFolder) entity).getFolder();
-            EntityMappingInstructions folderMapping = new EntityMappingInstructions(
+            final EntityMappingInstructions folderMapping = new EntityMappingInstructions(
                     EntityHeaderUtils.fromEntity(parentFolder),
                     null,
                     EntityMappingInstructions.MappingAction.NewOrExisting,
@@ -121,7 +135,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }
 
         final EntityMappingInstructions mapping;
-        if (    entity instanceof SsgKeyEntry ||
+        if (entity instanceof SsgKeyEntry ||
                 entity instanceof RevocationCheckPolicy ||
                 entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity) {
@@ -140,7 +154,6 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }
 
         //add the mapping
-
         mappings.add(mapping);
     }
 

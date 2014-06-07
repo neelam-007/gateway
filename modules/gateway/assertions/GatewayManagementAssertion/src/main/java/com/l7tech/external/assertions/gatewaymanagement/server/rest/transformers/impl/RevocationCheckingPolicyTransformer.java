@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.RevocationCheckingPolicyMO;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class RevocationCheckingPolicyTransformer extends APIResourceWsmanBaseTra
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<RevocationCheckingPolicyMO> convertToItem(RevocationCheckingPolicyMO m) {
+    public Item<RevocationCheckingPolicyMO> convertToItem(@NotNull RevocationCheckingPolicyMO m) {
         return new ItemBuilder<RevocationCheckingPolicyMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

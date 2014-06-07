@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.*;
@@ -35,8 +34,9 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return "DEPENDENCY";
     }
 
+    @NotNull
     @Override
-    public DependencyListMO convertToMO(DependencySearchResults dependencySearchResults) {
+    public DependencyListMO convertToMO(@NotNull DependencySearchResults dependencySearchResults) {
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
         dependencyAnalysisMO.setSearchObjectItem( toDependencyManagedObject(dependencySearchResults.getDependent(), dependencySearchResults.getDependencies()));
@@ -49,18 +49,21 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return dependencyAnalysisMO;
     }
 
+    @NotNull
     @Override
-    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
         return convertFromMO(dependencyListMO, true);
     }
 
+    @NotNull
     @Override
-    public EntityContainer<DependencySearchResults> convertFromMO(DependencyListMO dependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         throw new UnsupportedOperationException("Converting DependencyListMO to an internal DependencySearchResults is not supported.");
     }
 
+    @NotNull
     @Override
-    public Item<DependencyListMO> convertToItem(DependencyListMO dependencyListMO) {
+    public Item<DependencyListMO> convertToItem(@NotNull DependencyListMO dependencyListMO) {
         return new ItemBuilder<DependencyListMO>(dependencyListMO.getSearchObjectItem().getName() + " dependencies", getResourceType())
                 .setContent(dependencyListMO)
                 .build();

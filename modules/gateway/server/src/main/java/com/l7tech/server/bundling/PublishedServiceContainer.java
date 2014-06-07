@@ -2,41 +2,41 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.objectmodel.PersistentEntity;
-import org.apache.commons.collections.IteratorUtils;
+import com.l7tech.objectmodel.Entity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 
 /**
- * For holding jms entities.
+ * Entity container for holding a published service and its related service documents.
  */
-public class PublishedServiceContainer extends PersistentEntityContainer<PublishedService> {
-    private final List<ServiceDocument> serviceDocuments;
+public class PublishedServiceContainer extends EntityContainer<PublishedService> {
+    // The service documents
+    @NotNull
+    private final Collection<ServiceDocument> serviceDocuments;
 
-    public PublishedServiceContainer(final PublishedService service, final List<ServiceDocument> serviceDocuments) {
+    public PublishedServiceContainer(@NotNull final PublishedService service, @NotNull final Collection<ServiceDocument> serviceDocuments) {
         super(service);
         this.serviceDocuments = serviceDocuments;
     }
 
-    public PublishedServiceContainer(final PublishedService service, final Iterator<PersistentEntity> serviceDocsIterator) {
-        super(service);
-        serviceDocuments = IteratorUtils.toList(serviceDocsIterator);
-    }
-
+    @NotNull
     public PublishedService getPublishedService() {
-        return entity;
+        return getEntity();
     }
 
-    public List<ServiceDocument> getServiceDocuments() {
+    @NotNull
+    public Collection<ServiceDocument> getServiceDocuments() {
         return serviceDocuments;
     }
 
+    @NotNull
     @Override
-    public List getEntities() {
-        ArrayList list = new ArrayList();
-        list.add(entity);
+    public List<Entity> getEntities() {
+        final ArrayList<Entity> list = new ArrayList<>();
+        list.add(getEntity());
         list.addAll(serviceDocuments);
         return list;
     }

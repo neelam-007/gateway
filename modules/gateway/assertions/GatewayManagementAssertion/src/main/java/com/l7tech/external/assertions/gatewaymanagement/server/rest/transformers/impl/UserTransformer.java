@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.server.bundling.IdentityEntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 
 @Component
-public class UserTransformer implements APITransformer<UserMO, User> {
+public class UserTransformer implements EntityAPITransformer<UserMO, User> {
 
     @Inject
     private IdentityProviderFactory identityProviderFactory;
@@ -32,8 +31,15 @@ public class UserTransformer implements APITransformer<UserMO, User> {
         return EntityType.USER.toString();
     }
 
+    @NotNull
     @Override
-    public UserMO convertToMO(User user) {
+    public UserMO convertToMO(@NotNull EntityContainer<User> userEntityContainer) {
+        return convertToMO(userEntityContainer.getEntity());
+    }
+
+    @NotNull
+    @Override
+    public UserMO convertToMO(@NotNull User user) {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setId(user.getId());
         userMO.setLogin(user.getLogin());
@@ -46,13 +52,15 @@ public class UserTransformer implements APITransformer<UserMO, User> {
         return userMO;
     }
 
+    @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(UserMO userMO) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO) throws ResourceFactory.InvalidResourceException {
         return convertFromMO(userMO,true);
     }
 
+    @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());
@@ -72,11 +80,12 @@ public class UserTransformer implements APITransformer<UserMO, User> {
         user.setEmail(userMO.getEmail());
         user.setDepartment(userMO.getDepartment());
         user.setSubjectDn(userMO.getSubjectDn());
-        return new IdentityEntityContainer<User>(user);
+        return new EntityContainer<User>(user);
     }
 
+    @NotNull
     @Override
-    public Item<UserMO> convertToItem(UserMO m) {
+    public Item<UserMO> convertToItem(@NotNull UserMO m) {
         return new ItemBuilder<UserMO>(m.getLogin(), m.getId(), EntityType.USER.name())
                 .setContent(m)
                 .build();

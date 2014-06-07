@@ -135,7 +135,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ErrorType.UniqueKeyConflict, passwordMapping.getErrorType());
+        Assert.assertEquals(Mapping.ErrorType.InvalidResource, passwordMapping.getErrorType());
         Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
 
         Mapping jdbcMapping = mappings.getContent().getMappings().get(1);

@@ -45,7 +45,7 @@ public class EntityMappingInstructions {
      * @see #EntityMappingInstructions(com.l7tech.objectmodel.EntityHeader, com.l7tech.server.bundling.EntityMappingInstructions.TargetMapping,
      * com.l7tech.server.bundling.EntityMappingInstructions.MappingAction, boolean, boolean)
      */
-    public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader) {
+    public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader) {
         this(sourceEntityHeader, null);
     }
 
@@ -61,7 +61,7 @@ public class EntityMappingInstructions {
      * @see #EntityMappingInstructions(com.l7tech.objectmodel.EntityHeader, com.l7tech.server.bundling.EntityMappingInstructions.TargetMapping,
      * com.l7tech.server.bundling.EntityMappingInstructions.MappingAction, boolean, boolean)
      */
-    public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping) {
+    public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader, @Nullable final TargetMapping targetMapping) {
         this(sourceEntityHeader, targetMapping, MappingAction.NewOrExisting);
     }
 
@@ -79,7 +79,7 @@ public class EntityMappingInstructions {
      * @see #EntityMappingInstructions(com.l7tech.objectmodel.EntityHeader, com.l7tech.server.bundling.EntityMappingInstructions.TargetMapping,
      * com.l7tech.server.bundling.EntityMappingInstructions.MappingAction, boolean, boolean)
      */
-    public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping, @NotNull MappingAction mappingAction) {
+    public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader, @Nullable final TargetMapping targetMapping, @NotNull final MappingAction mappingAction) {
         this(sourceEntityHeader, targetMapping, mappingAction, false, false);
     }
 
@@ -97,7 +97,7 @@ public class EntityMappingInstructions {
      *                           entity to.
      * @param failOnExisting     If this is true the import will fail if there is an existing entity.
      */
-    public EntityMappingInstructions(@NotNull EntityHeader sourceEntityHeader, @Nullable TargetMapping targetMapping, @NotNull MappingAction mappingAction, boolean failOnNew, boolean failOnExisting) {
+    public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader, @Nullable final TargetMapping targetMapping, @NotNull final MappingAction mappingAction, final boolean failOnNew, final boolean failOnExisting) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.targetMapping = targetMapping;
         this.mappingAction = mappingAction;
@@ -142,6 +142,11 @@ public class EntityMappingInstructions {
      */
     public boolean shouldFailOnExisting() {
         return failOnExisting;
+    }
+
+    @Override
+    public int hashCode() {
+        return sourceEntityHeader.hashCode();
     }
 
     /**
@@ -190,7 +195,7 @@ public class EntityMappingInstructions {
          *
          * @param type The type of the mapping
          */
-        public TargetMapping(@NotNull Type type) {
+        public TargetMapping(@NotNull final Type type) {
             this(type, null);
         }
 
@@ -200,7 +205,7 @@ public class EntityMappingInstructions {
          * @param type     The type of the mapping
          * @param targetID The target id
          */
-        public TargetMapping(@NotNull Type type, @Nullable String targetID) {
+        public TargetMapping(@NotNull final Type type, @Nullable final String targetID) {
             this.targetID = targetID;
             this.type = type;
         }

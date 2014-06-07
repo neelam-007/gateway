@@ -336,39 +336,43 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     }
 
     @Override
-    public void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
-        processObjectDependencyMethods(object,
-                new ProcessMethodDependencyReturn<CannotReplaceDependenciesException>() {
-                    @Override
-                    public void process(@NotNull final Object getterMethodReturn, @NotNull final Method method, @Nullable final com.l7tech.search.Dependency annotation) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
-                        //replace dependencies returned from the given method.
-                        //get the list of dependencies returned.
-                        final List<DependentObject> dependentEntities = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
-                        for (final DependentObject dependentObject : dependentEntities) {
-                            if (dependentObject instanceof DependentEntity) {
-                                final DependentEntity dependentEntity = (DependentEntity) dependentObject;
-                                //replace the dependent entity with one that is in the replacement map
-                                final EntityHeader header = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
-                                if (header != null) {
-                                    setDependencyForMethod(object, method, annotation, header, dependentEntity.getEntityHeader());
+    public void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
+        try {
+            processObjectDependencyMethods(object,
+                    new ProcessMethodDependencyReturn<CannotReplaceDependenciesException>() {
+                        @Override
+                        public void process(@NotNull final Object getterMethodReturn, @NotNull final Method method, @Nullable final com.l7tech.search.Dependency annotation) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+                            //replace dependencies returned from the given method.
+                            //get the list of dependencies returned.
+                            final List<DependentObject> dependentEntities = getDependentEntitiesFromMethodReturnValue(annotation, getterMethodReturn, finder);
+                            for (final DependentObject dependentObject : dependentEntities) {
+                                if (dependentObject instanceof DependentEntity) {
+                                    final DependentEntity dependentEntity = (DependentEntity) dependentObject;
+                                    //replace the dependent entity with one that is in the replacement map
+                                    final EntityHeader header = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
+                                    if (header != null) {
+                                        setDependencyForMethod(object, method, annotation, header, dependentEntity.getEntityHeader());
+                                    }
+                                } else {
+                                    throw new CannotReplaceDependenciesException(method.getName().substring(3), null, annotation != null ? annotation.type().getEntityType().getEntityClass() : null, object.getClass(), "Cannot replace dependencies that are not DependentEntity.");
                                 }
-                            } else {
-                                throw new CannotReplaceDependenciesException(method.getName().substring(3), null, annotation != null ? annotation.type().getEntityType().getEntityClass() : null, object.getClass(), "Cannot replace dependencies that are not DependentEntity.");
                             }
                         }
-                    }
-                }, new ProcessSsgKeyHeader<CannotReplaceDependenciesException>() {
-                    @Override
-                    public void process(@NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
-                        //replace private key dependencies
-                        final DependentObject dependentObject = finder.createDependentObject(ssgKeyHeader);
-                        final EntityHeader mappedHeader = findMappedHeader(replacementMap, ((DependentEntity) dependentObject).getEntityHeader());
-                        if (mappedHeader != null) {
-                            //TODO: need a way to set the private keys used.
-                            throw new NotImplementedException();
+                    }, new ProcessSsgKeyHeader<CannotReplaceDependenciesException>() {
+                        @Override
+                        public void process(@NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+                            //replace private key dependencies
+                            final DependentObject dependentObject = finder.createDependentObject(ssgKeyHeader);
+                            final EntityHeader mappedHeader = findMappedHeader(replacementMap, ((DependentEntity) dependentObject).getEntityHeader());
+                            if (mappedHeader != null) {
+                                //TODO: need a way to set the private keys used.
+                                throw new NotImplementedException();
+                            }
                         }
-                    }
-                });
+                    });
+        } catch (CannotRetrieveDependenciesException e) {
+            throw new CannotReplaceDependenciesException(object.getClass(), e.getMessage(), e);
+        }
     }
 
     /**

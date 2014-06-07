@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.Item;
-import com.l7tech.server.bundling.EntityContainer;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -29,7 +28,8 @@ public interface APITransformer<M, E> {
      * @param e The gateway object
      * @return The api object representing the gateway object
      */
-    public M convertToMO(E e);
+    @NotNull
+    public M convertToMO(@NotNull E e);
 
     /**
      * Converts the api object to its equivalent gateway object. This is the same as calling {@link
@@ -41,7 +41,8 @@ public interface APITransformer<M, E> {
      * @param m The api object to convert
      * @return Returns the gateway object represented by the given api object.
      */
-    public EntityContainer<E> convertFromMO(M m) throws ResourceFactory.InvalidResourceException;
+    @NotNull
+    public E convertFromMO(@NotNull M m) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to its equivalent gateway object.
@@ -55,7 +56,8 @@ public interface APITransformer<M, E> {
      *               dummy reference object
      * @return Returns the gateway object represented by the given api object.
      */
-    public EntityContainer<E> convertFromMO(M m, boolean strict) throws ResourceFactory.InvalidResourceException;
+    @NotNull
+    public E convertFromMO(@NotNull M m, boolean strict) throws ResourceFactory.InvalidResourceException;
 
     /**
      * Converts the api object to an item properly populating all the item properties except links.
@@ -63,5 +65,6 @@ public interface APITransformer<M, E> {
      * @param m The api object to wrap in an {@link com.l7tech.gateway.api.Item}
      * @return The {@link com.l7tech.gateway.api.Item} wrapping the managed object.
      */
-    public Item<M> convertToItem(M m);
+    @NotNull
+    public Item<M> convertToItem(@NotNull M m);
 }

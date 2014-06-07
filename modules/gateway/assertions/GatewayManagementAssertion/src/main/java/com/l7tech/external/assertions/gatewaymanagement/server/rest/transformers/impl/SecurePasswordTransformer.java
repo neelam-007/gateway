@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class SecurePasswordTransformer extends APIResourceWsmanBaseTransformer<S
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<StoredPasswordMO> convertToItem(StoredPasswordMO m) {
+    public Item<StoredPasswordMO> convertToItem(@NotNull StoredPasswordMO m) {
         return new ItemBuilder<StoredPasswordMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

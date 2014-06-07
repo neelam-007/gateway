@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The APIUtilityLocator is used to find api utilities. These include APIResourceFactory and APITransformer.
@@ -15,13 +16,15 @@ public interface APIUtilityLocator {
      * @param resourceType The resource type to return the factory for.
      * @return The APIResourceFactory for the given resource type, or null if there is no APIResourceFactory for that type.
      */
-    APIResourceFactory findFactoryByResourceType(String resourceType);
+    @Nullable
+    APIResourceFactory findFactoryByResourceType(@NotNull String resourceType);
 
     /**
-     * Returns an APITransformer for the given resource type.
+     * Returns an EntityAPITransformer for the given resource type.
      *
      * @param resourceType The resource type to return the transformer for.
-     * @return The APITransformer for the given resource type, or null if there is no APITransformer for that type.
+     * @return The EntityAPITransformer for the given resource type, or null if there is no EntityAPITransformer for that type.
      */
-    APITransformer findTransformerByResourceType(String resourceType);
+    @Nullable
+    EntityAPITransformer findTransformerByResourceType(@NotNull String resourceType);
 }

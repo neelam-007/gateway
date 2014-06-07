@@ -624,6 +624,7 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="serviceManager" />
                 <ref bean="policyManager" />
+                <ref bean="genericEntityManager"/>
             </list>
         </constructor-arg>
     </bean>

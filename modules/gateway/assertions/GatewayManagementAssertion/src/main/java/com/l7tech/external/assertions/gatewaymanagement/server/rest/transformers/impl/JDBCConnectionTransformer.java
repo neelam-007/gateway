@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.JDBCConnectionMO;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<J
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<JDBCConnectionMO> convertToItem(JDBCConnectionMO m) {
+    public Item<JDBCConnectionMO> convertToItem(@NotNull JDBCConnectionMO m) {
         return new ItemBuilder<JDBCConnectionMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

@@ -632,6 +632,7 @@
                 <ref bean="uddiServiceControlManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="securityZoneManager"/>
+                <ref bean="genericEntityManager"/>
             </list>
         </constructor-arg>
     </bean>

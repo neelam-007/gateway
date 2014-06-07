@@ -91,7 +91,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      * {@inheritDoc}
      */
     @Override
-    public <E extends Entity> void replaceDependencies(@NotNull final E entity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    public <E extends Entity> void replaceDependencies(@NotNull final E entity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException {
         if (replacementMap.isEmpty()) {
             //nothing to replace, just shortcut to returning
             return;

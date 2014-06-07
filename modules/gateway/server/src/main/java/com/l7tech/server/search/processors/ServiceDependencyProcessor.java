@@ -53,7 +53,7 @@ public class ServiceDependencyProcessor extends DefaultDependencyProcessor<Publi
     }
 
     @Override
-    public void replaceDependencies(@NotNull final PublishedService object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final PublishedService object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
         super.replaceDependencies(object, replacementMap, finder);
 
         //This will replace dependencies in the assertions that this service contains

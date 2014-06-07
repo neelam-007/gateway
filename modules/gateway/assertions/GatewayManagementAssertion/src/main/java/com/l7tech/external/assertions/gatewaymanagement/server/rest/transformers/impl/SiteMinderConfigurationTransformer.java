@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.SiteMinderConfigurationMO;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class SiteMinderConfigurationTransformer extends APIResourceWsmanBaseTran
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<SiteMinderConfigurationMO> convertToItem(SiteMinderConfigurationMO m) {
+    public Item<SiteMinderConfigurationMO> convertToItem(@NotNull SiteMinderConfigurationMO m) {
         return new ItemBuilder<SiteMinderConfigurationMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

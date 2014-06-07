@@ -116,7 +116,7 @@ public interface DependencyAnalyzer {
      * @param replacementMap The replacement map is a map of EntityHeaders to replace.
      */
     //TODO: This can be generalized to take in a generic object instead of an entity. Is that something we want to do?
-    public <E extends Entity> void replaceDependencies(@NotNull E entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException;
+    public <E extends Entity> void replaceDependencies(@NotNull E entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException;
 
     /**
      * This will flatten the {@link com.l7tech.server.search.objects.DependencySearchResults} tree (it can actually be a

@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.AliasHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.service.ServiceManager;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -26,8 +27,9 @@ public class ServiceAliasTransformer extends APIResourceWsmanBaseTransformer<Ser
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<ServiceAliasMO> convertToItem(ServiceAliasMO m) {
+    public Item<ServiceAliasMO> convertToItem(@NotNull ServiceAliasMO m) {
         return new ItemBuilder<ServiceAliasMO>(findServiceAliasName(Goid.parseGoid(m.getServiceReference().getId())), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

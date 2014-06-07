@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.security.cert.TrustedCert;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class CertificateTransformer extends APIResourceWsmanBaseTransformer<Trus
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<TrustedCertificateMO> convertToItem(TrustedCertificateMO m) {
+    public Item<TrustedCertificateMO> convertToItem(@NotNull TrustedCertificateMO m) {
         return new ItemBuilder<TrustedCertificateMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

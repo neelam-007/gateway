@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.CustomKeyValueStore;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class CustomKeyValueStoreTransformer extends APIResourceWsmanBaseTransfor
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<CustomKeyValueStoreMO> convertToItem(CustomKeyValueStoreMO m) {
+    public Item<CustomKeyValueStoreMO> convertToItem(@NotNull CustomKeyValueStoreMO m) {
         return new ItemBuilder<CustomKeyValueStoreMO>(m.getKey(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

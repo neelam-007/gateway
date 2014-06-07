@@ -2278,6 +2278,7 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="securityZoneManager"/>
                 <ref bean="customKeyValueStoreManager"/>
+                <ref bean="genericEntityManager"/>
             </list>
         </constructor-arg>
     </bean>

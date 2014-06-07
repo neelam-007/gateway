@@ -239,7 +239,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         ItemsList<PolicyVersionMO> policyVersionList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
         Assert.assertEquals(1,policyVersionList.getContent().size());
         PolicyVersionMO version = policyVersionList.getContent().get(0).getContent();
-        Assert.assertEquals(false,version.isActive());
+        Assert.assertEquals(true,version.isActive());
     }
 
     @Test

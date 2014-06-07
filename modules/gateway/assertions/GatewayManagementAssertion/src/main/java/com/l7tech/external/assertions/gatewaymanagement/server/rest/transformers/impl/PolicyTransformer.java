@@ -8,7 +8,8 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.server.bundling.PersistentEntityContainer;
+import com.l7tech.server.bundling.EntityContainer;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -22,16 +23,18 @@ public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO,
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<PolicyMO> convertToItem(PolicyMO m) {
+    public Item<PolicyMO> convertToItem(@NotNull PolicyMO m) {
         return new ItemBuilder<PolicyMO>(m.getPolicyDetail().getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }
 
+    @NotNull
     @Override
-    public PersistentEntityContainer<Policy> convertFromMO(PolicyMO policyMO,boolean strict) throws ResourceFactory.InvalidResourceException {
-        PersistentEntityContainer<Policy> entityBag = super.convertFromMO(policyMO,strict);
+    public EntityContainer<Policy> convertFromMO(@NotNull PolicyMO policyMO,boolean strict) throws ResourceFactory.InvalidResourceException {
+        EntityContainer<Policy> entityBag = super.convertFromMO(policyMO,strict);
         //preserve the policy guid if it is set.
         if(policyMO.getGuid() != null) {
             entityBag.getEntity().setGuid(policyMO.getGuid());

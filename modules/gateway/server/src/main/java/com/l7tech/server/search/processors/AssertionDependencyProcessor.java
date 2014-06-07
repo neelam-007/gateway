@@ -75,7 +75,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
     }
 
     @Override
-    public void replaceDependencies(@NotNull final A assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final A assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
         final DependencyProcessor assertionProcessor = assertionProcessorRegistry.get(assertion.getClass().getName());
         if (assertionProcessor != null) {
             //noinspection unchecked

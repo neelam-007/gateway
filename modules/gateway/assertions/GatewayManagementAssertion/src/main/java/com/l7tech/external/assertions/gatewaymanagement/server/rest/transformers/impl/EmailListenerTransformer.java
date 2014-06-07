@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class EmailListenerTransformer extends APIResourceWsmanBaseTransformer<Em
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<EmailListenerMO> convertToItem(EmailListenerMO m) {
+    public Item<EmailListenerMO> convertToItem(@NotNull EmailListenerMO m) {
         return new ItemBuilder<EmailListenerMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

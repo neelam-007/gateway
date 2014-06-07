@@ -34,7 +34,7 @@ public class Mapping {
     }
 
     public static enum ErrorType {
-        TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, InvalidResource
+        TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, ImproperMapping, InvalidResource, Unknown
     }
 
     Mapping(){}

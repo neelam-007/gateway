@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class IdentityProviderTransformer extends APIResourceWsmanBaseTransformer
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<IdentityProviderMO> convertToItem(IdentityProviderMO m) {
+    public Item<IdentityProviderMO> convertToItem(@NotNull IdentityProviderMO m) {
         return new ItemBuilder<IdentityProviderMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

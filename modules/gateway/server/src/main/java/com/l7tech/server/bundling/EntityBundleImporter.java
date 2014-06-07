@@ -1,6 +1,7 @@
 package com.l7tech.server.bundling;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -22,5 +23,5 @@ public interface EntityBundleImporter {
      * @return The mapping results of the bundle import.
      */
     @NotNull
-    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean active, final String versionComment);
+    public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean active, @Nullable final String versionComment);
 }

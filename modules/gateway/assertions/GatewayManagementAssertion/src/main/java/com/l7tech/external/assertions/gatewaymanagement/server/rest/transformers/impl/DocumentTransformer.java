@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ResourceDocumentMO;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class DocumentTransformer extends APIResourceWsmanBaseTransformer<Resourc
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<ResourceDocumentMO> convertToItem(ResourceDocumentMO m) {
+    public Item<ResourceDocumentMO> convertToItem(@NotNull ResourceDocumentMO m) {
         return new ItemBuilder<ResourceDocumentMO>(m.getResource().getSourceUrl(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.JmsContainer;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -24,24 +25,26 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<JMSDestinationMO> convertToItem(JMSDestinationMO m) {
+    public Item<JMSDestinationMO> convertToItem(@NotNull JMSDestinationMO m) {
         return new ItemBuilder<JMSDestinationMO>(m.getJmsDestinationDetail().getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }
 
+    @NotNull
     @Override
-    public JmsContainer convertFromMO(JMSDestinationMO jmsDestinationMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public JmsContainer convertFromMO(@NotNull JMSDestinationMO jmsDestinationMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         Iterator<PersistentEntity> entities =  factory.fromResourceAsBag(jmsDestinationMO,strict).iterator();
-        JmsContainer container = new JmsContainer((JmsEndpoint)entities.next(),(JmsConnection)entities.next());
+        JmsEndpoint jmsEndpoint = (JmsEndpoint) entities.next();
+        JmsConnection jmsConnection = (JmsConnection) entities.next();
+        jmsEndpoint.setConnectionGoid(jmsConnection.getGoid());
 
-        container.getJmsEndpoint().setConnectionGoid(container.getJmsConnection().getGoid());
-
-        if(container.getEntity()!=null && jmsDestinationMO.getId() != null){
+        if(jmsDestinationMO.getId() != null){
             //set the entity id as it is not always set
-            container.getJmsEndpoint().setGoid(Goid.parseGoid(jmsDestinationMO.getId()));
+            jmsEndpoint.setGoid(Goid.parseGoid(jmsDestinationMO.getId()));
         }
-        return container;
+        return new JmsContainer(jmsEndpoint, jmsConnection);
     }
 }

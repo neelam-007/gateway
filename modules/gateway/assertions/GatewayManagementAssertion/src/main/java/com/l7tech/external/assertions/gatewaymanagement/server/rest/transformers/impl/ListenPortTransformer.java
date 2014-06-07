@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.ListenPortMO;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class ListenPortTransformer extends APIResourceWsmanBaseTransformer<Liste
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<ListenPortMO> convertToItem(ListenPortMO m) {
+    public Item<ListenPortMO> convertToItem(@NotNull ListenPortMO m) {
         return new ItemBuilder<ListenPortMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

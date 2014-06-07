@@ -29,8 +29,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
-* This will test migration using the rest api from one gateway to another.
-*/
+ * This will test migration using the rest api from one gateway to another.
+ */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(DocumentResourceMigrationTest.class.getName());
@@ -82,7 +82,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
                         "    <wsp:All wsp:Usage=\"Required\">\n" +
                         "        <L7p:SchemaValidation>\n" +
                         "            <L7p:ResourceInfo globalResourceInfo=\"included\">\n" +
-                        "                <L7p:Id stringValue=\""+resourceDocItem.getContent().getResource().getSourceUrl()+"\"/>\n" +
+                        "                <L7p:Id stringValue=\"" + resourceDocItem.getContent().getResource().getSourceUrl() + "\"/>\n" +
                         "            </L7p:ResourceInfo>\n" +
                         "            <L7p:Target target=\"RESPONSE\"/>\n" +
                         "        </L7p:SchemaValidation>" +
@@ -104,7 +104,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Resource resource = ManagedObjectFactory.createResource();
         resourceSet.setResources(Arrays.asList(resource));
         resource.setType("policy");
-        resource.setContent(assXml );
+        resource.setContent(assXml);
 
         response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
@@ -117,7 +117,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
     @After
     public void after() throws Exception {
-        if(mappingsToClean!= null)
+        if (mappingsToClean != null)
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
@@ -187,14 +187,14 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         resourceDocumentMO.setProperties(new HashMap<String, Object>());
         resourceDocumentMO.getProperties().put("description", "target resource");
         resourceDocumentMO.getProperties().put("publicIdentifier", "books2");
-        RestResponse response = getTargetEnvironment().processRequest("resources/"+resourceDocItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = getTargetEnvironment().processRequest("resources/" + resourceDocItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(resourceDocumentMO)));
 
         assertOkCreatedResponse(response);
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -234,7 +234,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -242,7 +242,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -251,15 +251,15 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertNotNull(policyDependencies);
             Assert.assertEquals(1, policyDependencies.size());
 
-            DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
+            DependencyMO docDependency = getDependency(policyDependencies, resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
             Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getName());
             Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getId());
             Assert.assertNull(docDependency.getDependencies());
 
             validate(mappings);
-        }finally{
-            response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE,null,"");
+        } finally {
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
     }
@@ -283,7 +283,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -327,7 +327,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -335,7 +335,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -344,21 +344,21 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertNotNull(policyDependencies);
             Assert.assertEquals(1, policyDependencies.size());
 
-            DependencyMO docDependency = getDependency(policyDependencies,resourceDocumentMO.getId());
+            DependencyMO docDependency = getDependency(policyDependencies, resourceDocumentMO.getId());
             Assert.assertNotNull(docDependency);
             Assert.assertEquals(resourceDocumentMO.getResource().getSourceUrl(), docDependency.getName());
             Assert.assertEquals(resourceDocumentMO.getId(), docDependency.getId());
             Assert.assertNull(docDependency.getDependencies());
 
             validate(mappings);
-        }finally{
-            response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE,null,"");
+        } finally {
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
     }
 
     @Test
-    public void testAlwaysCreateNewWithNameConflict() throws Exception{
+    public void testAlwaysCreateNewWithNameConflict() throws Exception {
 
         //create the resource on the target
         ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
@@ -377,7 +377,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -400,15 +400,15 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertEquals(409, response.getStatus());
             Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             assertEquals(Mapping.ErrorType.UniqueKeyConflict, mappingsReturned.getContent().getMappings().get(1).getErrorType());
-            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
-        }finally{
+            assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
+        } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
     }
 
     @Test
-    public void testAlwaysCreateNew() throws Exception{
+    public void testAlwaysCreateNew() throws Exception {
 
         //get the bundle
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
@@ -454,7 +454,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+        response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
         assertOkResponse(response);
 
         Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -462,7 +462,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
         logger.log(Level.INFO, policyXml);
 
-        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+        response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
         Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -480,7 +480,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
     }
 
     @Test
-    public void testUpdateExistingSameGoid() throws Exception{
+    public void testUpdateExistingSameGoid() throws Exception {
         //create the resource document on the target
         ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
         Resource createResource = ManagedObjectFactory.createResource();
@@ -492,14 +492,14 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         resourceDocumentMO.setProperties(new HashMap<String, Object>());
         resourceDocumentMO.getProperties().put("description", "target resource");
         resourceDocumentMO.getProperties().put("publicIdentifier", "books2");
-        RestResponse response = getTargetEnvironment().processRequest("resources/"+resourceDocItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = getTargetEnvironment().processRequest("resources/" + resourceDocItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(resourceDocumentMO)));
 
         assertOkCreatedResponse(response);
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -544,7 +544,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -552,7 +552,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -568,14 +568,14 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(1, docDependency.getDependencies().size());
 
             validate(mappings);
-        }finally{
+        } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
     }
 
     @Test
-    public void testMapToUpdateExisting() throws Exception{
+    public void testMapToUpdateExisting() throws Exception {
         //create the resource document on the target
         ResourceDocumentMO resourceDocumentMO = ManagedObjectFactory.createResourceDocument();
         Resource createResource = ManagedObjectFactory.createResource();
@@ -593,7 +593,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -639,7 +639,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -647,7 +647,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -663,7 +663,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(1, docDependency.getDependencies().size());
 
             validate(mappings);
-        }finally{
+        } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
@@ -688,7 +688,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<ResourceDocumentMO> docCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         resourceDocumentMO.setId(docCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -712,9 +712,9 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertEquals(409, response.getStatus());
             Item<Mappings> mappingsReturned = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
             assertEquals(Mapping.ErrorType.TargetNotFound, mappingsReturned.getContent().getMappings().get(1).getErrorType());
-            assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").equals("Entity Does Not Exists"));
-        }finally {
-            response = getTargetEnvironment().processRequest("resources/"+docCreated.getId(), HttpMethod.DELETE, null,"");
+            assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("Could not locate entity"));
+        } finally {
+            response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }
     }
@@ -733,7 +733,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
         Item<SecurityZoneMO> securityZoneCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         securityZoneMO.setId(securityZoneCreated.getId());
 
-        try{
+        try {
             //get the bundle
             response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -779,7 +779,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -787,7 +787,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
 
             logger.log(Level.INFO, policyXml);
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
             assertOkResponse(response);
 
             Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
@@ -796,7 +796,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertNotNull(policyDependencies);
             Assert.assertEquals(2, policyDependencies.size());
 
-            DependencyMO docDependency = getDependency(policyDependencies,resourceDocItem.getId());
+            DependencyMO docDependency = getDependency(policyDependencies, resourceDocItem.getId());
             Assert.assertNotNull(docDependency);
 
             DependencyMO zoneDependency = getDependency(policyDependencies, securityZoneMO.getId());
@@ -804,7 +804,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             Assert.assertEquals(securityZoneMO.getId(), zoneDependency.getId());
 
             validate(mappings);
-        }finally{
+        } finally {
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
         }

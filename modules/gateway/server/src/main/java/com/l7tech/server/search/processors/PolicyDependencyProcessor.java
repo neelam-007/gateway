@@ -86,7 +86,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
     }
 
     @Override
-    public void replaceDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
         super.replaceDependencies(policy, replacementMap, finder);
         replacePolicyAssertionDependencies(policy, replacementMap, finder);
 
@@ -99,7 +99,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
                 try {
                     policy.setSecurityZone(securityZoneManager.findByHeader(securityZoneHeaderToUse));
                 } catch (FindException e) {
-                    throw new CannotRetrieveDependenciesException(securityZoneHeaderToUse.getName(), SecurityZone.class, policy.getClass(), "Cannot find security zone", e);
+                    throw new CannotReplaceDependenciesException(securityZoneHeaderToUse.getName(), securityZoneHeaderToUse.getStrId(), SecurityZone.class, policy.getClass(), "Cannot find security zone", e);
                 }
             }
         }
@@ -112,14 +112,13 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
      * @param replacementMap The replacements map.
      * @param finder         The dependency finder.
      * @throws CannotReplaceDependenciesException
-     * @throws CannotRetrieveDependenciesException
      */
-    static void replacePolicyAssertionDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException, CannotRetrieveDependenciesException {
+    static void replacePolicyAssertionDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
         final Assertion assertion;
         try {
             assertion = policy.getAssertion();
         } catch (IOException e) {
-            throw new CannotRetrieveDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
+            throw new CannotReplaceDependenciesException(Assertion.class, "Invalid policy with id " + policy.getId() + ": " + ExceptionUtils.getMessage(e), e);
         }
 
         final Iterator assit = assertion != null ? assertion.preorderIterator() : new EmptyIterator();

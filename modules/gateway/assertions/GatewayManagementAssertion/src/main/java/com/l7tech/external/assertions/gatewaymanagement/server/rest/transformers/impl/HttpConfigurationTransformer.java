@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class HttpConfigurationTransformer extends APIResourceWsmanBaseTransforme
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<HttpConfigurationMO> convertToItem(HttpConfigurationMO m) {
+    public Item<HttpConfigurationMO> convertToItem(@NotNull HttpConfigurationMO m) {
         return new ItemBuilder<HttpConfigurationMO>(m.getHost(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

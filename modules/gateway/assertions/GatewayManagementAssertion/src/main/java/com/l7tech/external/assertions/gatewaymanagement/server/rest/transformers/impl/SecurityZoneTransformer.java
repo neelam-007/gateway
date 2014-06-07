@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SecurityZone;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class SecurityZoneTransformer extends APIResourceWsmanBaseTransformer<Sec
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<SecurityZoneMO> convertToItem(SecurityZoneMO m) {
+    public Item<SecurityZoneMO> convertToItem(@NotNull SecurityZoneMO m) {
         return new ItemBuilder<SecurityZoneMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

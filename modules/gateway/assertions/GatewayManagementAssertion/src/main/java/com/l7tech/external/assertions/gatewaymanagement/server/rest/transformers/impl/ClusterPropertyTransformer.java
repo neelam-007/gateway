@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class ClusterPropertyTransformer extends APIResourceWsmanBaseTransformer<
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<ClusterPropertyMO> convertToItem(ClusterPropertyMO m) {
+    public Item<ClusterPropertyMO> convertToItem(@NotNull ClusterPropertyMO m) {
         return new ItemBuilder<ClusterPropertyMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

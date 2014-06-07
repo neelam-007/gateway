@@ -33,7 +33,7 @@ public class EntityMappingResult {
      * @param mappingAction      The mapping action that was taken.
      */
     @SuppressWarnings("NullableProblems")
-    public EntityMappingResult(@NotNull EntityHeader sourceEntityHeader, @NotNull EntityHeader targetEntityHeader, @NotNull MappingAction mappingAction) {
+    public EntityMappingResult(@NotNull final EntityHeader sourceEntityHeader, @NotNull final EntityHeader targetEntityHeader, @NotNull final MappingAction mappingAction) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.mappingAction = mappingAction;
         this.targetEntityHeader = targetEntityHeader;
@@ -47,7 +47,7 @@ public class EntityMappingResult {
      * @param exception          The throwable exception that occurred attempting to import the source entity
      */
     @SuppressWarnings("NullableProblems")
-    public EntityMappingResult(@NotNull EntityHeader sourceEntityHeader, @NotNull Throwable exception) {
+    public EntityMappingResult(@NotNull final EntityHeader sourceEntityHeader, @NotNull final Throwable exception) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.exception = exception;
         this.mappingAction = null;
@@ -60,8 +60,7 @@ public class EntityMappingResult {
      *
      * @param sourceEntityHeader The source entity header that was ignored in the import.
      */
-    @SuppressWarnings("NullableProblems")
-    public EntityMappingResult(@NotNull EntityHeader sourceEntityHeader) {
+    public EntityMappingResult(@NotNull final EntityHeader sourceEntityHeader) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.exception = null;
         this.mappingAction = MappingAction.Ignored;

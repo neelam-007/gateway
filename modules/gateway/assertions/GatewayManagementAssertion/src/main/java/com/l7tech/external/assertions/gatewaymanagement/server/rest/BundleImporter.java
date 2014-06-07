@@ -33,7 +33,7 @@ public class BundleImporter {
      */
     @NotNull
     public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test, final boolean active, final String versionComment) throws ResourceFactory.InvalidResourceException {
-        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle).getEntity();
+        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle);
         List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
         return bundleTransformer.updateMappings(bundle.getMappings(), mappingsPerformed);
     }

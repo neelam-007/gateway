@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class GenericEntityTransformer extends APIResourceWsmanBaseTransformer<Ge
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<GenericEntityMO> convertToItem(GenericEntityMO m) {
+    public Item<GenericEntityMO> convertToItem(@NotNull GenericEntityMO m) {
         return new ItemBuilder<GenericEntityMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

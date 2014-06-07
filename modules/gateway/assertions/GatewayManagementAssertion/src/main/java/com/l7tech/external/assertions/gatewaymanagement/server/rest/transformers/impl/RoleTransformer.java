@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.RbacRoleMO;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityHeader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -20,8 +21,9 @@ public class RoleTransformer extends APIResourceWsmanBaseTransformer<RbacRoleMO,
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<RbacRoleMO> convertToItem(RbacRoleMO m) {
+    public Item<RbacRoleMO> convertToItem(@NotNull RbacRoleMO m) {
         return new ItemBuilder<RbacRoleMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();

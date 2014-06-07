@@ -5,19 +5,29 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLo
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.bundling.*;
+import com.l7tech.server.bundling.EntityBundle;
+import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.bundling.EntityMappingInstructions;
+import com.l7tech.server.bundling.EntityMappingResult;
+import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
+import com.l7tech.server.bundling.exceptions.TargetExistsException;
+import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
-import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This a the bundle transformer. It will transform a bundle to an internal EntityBundle and back. It is also used to
@@ -50,21 +60,24 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @param entityBundle The entity bundle to convert to a Bundle
      * @return The Bundle
      */
+    @NotNull
     @Override
-    public Bundle convertToMO(@NotNull EntityBundle entityBundle) {
+    public Bundle convertToMO(@NotNull final EntityBundle entityBundle) {
         final ArrayList<Item> items = new ArrayList<>();
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
         for (final EntityMappingInstructions entityMappingInstruction : entityBundle.getMappingInstructions()) {
-            EntityContainer entityResource = entityBundle.getEntity(entityMappingInstruction.getSourceEntityHeader().getStrId());
-            if( entityResource != null){
+            final EntityContainer entityResource = entityBundle.getEntity(entityMappingInstruction.getSourceEntityHeader().getStrId(), entityMappingInstruction.getSourceEntityHeader().getType());
+            if (entityResource != null) {
                 //Get the transformer for the entity so that it can be converted.
-                APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityMappingInstruction.getSourceEntityHeader().getType().toString());
-
+                final EntityAPITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityMappingInstruction.getSourceEntityHeader().getType().toString());
+                if (transformer == null) {
+                    throw new IllegalStateException("Cannot locate a transformer for entity type: " + entityMappingInstruction.getSourceEntityHeader().getType());
+                }
                 //get the MO from the entity
-                Object mo = transformer.convertToMO(entityResource.getEntity());
+                final Object mo = transformer.convertToMO(entityResource.getEntity());
                 //create an item from the mo
-                Item<?> item = transformer.convertToItem(mo);
+                final Item<?> item = transformer.convertToItem(mo);
                 //add the item to the bundle items list
                 items.add(item);
             }
@@ -73,7 +86,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             mappings.add(convertEntityMappingInstructionsToMapping(entityMappingInstruction));
         }
 
-        Bundle bundle = ManagedObjectFactory.createBundle();
+        final Bundle bundle = ManagedObjectFactory.createBundle();
         bundle.setReferences(items);
         bundle.setMappings(mappings);
         return bundle;
@@ -88,7 +101,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      */
     @Override
     @NotNull
-    public EntityContainer<EntityBundle> convertFromMO(@NotNull Bundle bundle) throws ResourceFactory.InvalidResourceException {
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle) throws ResourceFactory.InvalidResourceException {
         return convertFromMO(bundle, true);
     }
 
@@ -102,28 +115,31 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      */
     @Override
     @NotNull
-    public EntityContainer<EntityBundle> convertFromMO(@NotNull Bundle bundle, boolean strict)  throws ResourceFactory.InvalidResourceException {
-         // Convert all the MO's in the bundle to entities
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict) throws ResourceFactory.InvalidResourceException {
+        // Convert all the MO's in the bundle to entities
 
         final List<EntityContainer> entityContainers = Functions.map(bundle.getReferences(), new Functions.UnaryThrows<EntityContainer, Item, ResourceFactory.InvalidResourceException>() {
             @Override
             public EntityContainer call(Item item) throws ResourceFactory.InvalidResourceException {
-                APITransformer transformer = apiUtilityLocator.findTransformerByResourceType(item.getType());
+                final EntityAPITransformer transformer = apiUtilityLocator.findTransformerByResourceType(item.getType());
+                if (transformer == null) {
+                    throw new IllegalStateException("Cannot locate a transformer for entity type: " + item.getType());
+                }
                 //cannot be strict here because there will be many cases where the reference entities in the mo's do not exist on the gateway
-                return transformer.convertFromMO(item.getContent(), false);
+                return (EntityContainer) transformer.convertFromMO(item.getContent(), false);
             }
         });
 
         //Create a map of the entities so that they can quickly be referenced.
-        final Map<String, EntityContainer> entityContainerMap = Functions.toMap(entityContainers, new Functions.Unary<Pair<String, EntityContainer>, EntityContainer>() {
+        final Map<Pair<String, EntityType>, EntityContainer> entityContainerMap = Functions.toMap(entityContainers, new Functions.Unary<Pair<Pair<String, EntityType>, EntityContainer>, EntityContainer>() {
             @Override
-            public Pair<String, EntityContainer> call(EntityContainer item) {
-                return new Pair<>(item.getId(), item);
+            public Pair<Pair<String, EntityType>, EntityContainer> call(EntityContainer item) {
+                return new Pair<Pair<String, EntityType>, EntityContainer>(item.getId(), item);
             }
         });
 
         //Validate entityMap has the same number of elements as there are entityContainers
-        if(entityContainerMap.size() != entityContainers.size()){
+        if (entityContainerMap.size() != entityContainers.size()) {
             throw new IllegalStateException("Could not uniquely map EntityContainers by their id's.");
         }
 
@@ -131,11 +147,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final List<EntityMappingInstructions> mappingInstructions = Functions.map(bundle.getMappings(), new Functions.UnaryThrows<EntityMappingInstructions, Mapping, ResourceFactory.InvalidResourceException>() {
             @Override
             public EntityMappingInstructions call(Mapping mapping) throws ResourceFactory.InvalidResourceException {
-                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap.get(mapping.getSrcId()));
+                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap.get(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType()))));
             }
         });
 
-        return new EntityContainer<EntityBundle>(new EntityBundle(entityContainers, mappingInstructions));
+        return new EntityBundle(entityContainers, mappingInstructions);
     }
 
     @Override
@@ -155,24 +171,24 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The updated mappings list
      */
     @NotNull
-    public List<Mapping> updateMappings(@NotNull List<Mapping> mappings, @NotNull List<EntityMappingResult> mappingsPerformed) {
+    public List<Mapping> updateMappings(@NotNull final List<Mapping> mappings, @NotNull final List<EntityMappingResult> mappingsPerformed) {
         //create a mappings map so that they can be easily retrieved.
-        final Map<String, Mapping> mappingsMap = Functions.toMap(mappings, new Functions.Unary<Pair<String, Mapping>, Mapping>() {
+        final Map<Pair<String, EntityType>, Mapping> mappingsMap = Functions.toMap(mappings, new Functions.Unary<Pair<Pair<String, EntityType>, Mapping>, Mapping>() {
             @Override
-            public Pair<String, Mapping> call(Mapping mapping) {
-                return new Pair<>(mapping.getSrcId(), mapping);
+            public Pair<Pair<String, EntityType>, Mapping> call(Mapping mapping) {
+                return new Pair<>(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType())), mapping);
             }
         });
 
         final List<Mapping> updatedMappings = new ArrayList<>();
-        for(EntityMappingResult entityMappingResult : mappingsPerformed) {
+        for (final EntityMappingResult entityMappingResult : mappingsPerformed) {
             //get the mappings for this EntityMappingResult
-            Mapping mapping = mappingsMap.get(entityMappingResult.getSourceEntityHeader().getStrId());
+            final Mapping mapping = mappingsMap.get(new Pair<>(entityMappingResult.getSourceEntityHeader().getStrId(), entityMappingResult.getSourceEntityHeader().getType()));
             //get the updated mapping
             final Mapping mappingUpdated = convertMappingAndEntityMappingResultToMapping(mapping, entityMappingResult);
             //set the target url
             if (entityMappingResult.getTargetEntityHeader() != null) {
-                URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
+                final URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
                 mappingUpdated.setTargetUri(urlAccessible.getUrl(entityMappingResult.getTargetEntityHeader()));
             }
             updatedMappings.add(mappingUpdated);
@@ -188,7 +204,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The mappings object
      */
     @NotNull
-    private Mapping convertEntityMappingInstructionsToMapping(@NotNull EntityMappingInstructions entityMappingInstructions) {
+    private Mapping convertEntityMappingInstructionsToMapping(@NotNull final EntityMappingInstructions entityMappingInstructions) {
         final Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setType(entityMappingInstructions.getSourceEntityHeader().getType().toString());
         mapping.setSrcId(entityMappingInstructions.getSourceEntityHeader().getStrId());
@@ -230,19 +246,23 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      */
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     @NotNull
-    private Mapping convertMappingAndEntityMappingResultToMapping(@NotNull Mapping originalMapping, @NotNull EntityMappingResult entityMappingResult) {
+    private Mapping convertMappingAndEntityMappingResultToMapping(@NotNull final Mapping originalMapping, @NotNull final EntityMappingResult entityMappingResult) {
         final Mapping mapping = ManagedObjectFactory.createMapping(originalMapping);
 
         if (entityMappingResult.isSuccessful()) {
-            if(entityMappingResult.getMappingAction() != null) {
+            if (entityMappingResult.getMappingAction() != null) {
                 mapping.setActionTaken(convertActionTaken(entityMappingResult.getMappingAction()));
             }
             if (entityMappingResult.getTargetEntityHeader() != null) {
                 mapping.setTargetId(entityMappingResult.getTargetEntityHeader().getStrId());
             }
-        } else if (!entityMappingResult.isSuccessful() && entityMappingResult.getException() != null) {
-            mapping.setErrorType(getErrorTypeFromException(entityMappingResult.getException()));
-            mapping.addProperty("ErrorMessage", entityMappingResult.getException().getMessage());
+        } else {
+            if (entityMappingResult.getException() != null) {
+                mapping.setErrorType(getErrorTypeFromException(entityMappingResult.getException()));
+                mapping.addProperty("ErrorMessage", ExceptionUtils.getMessage(entityMappingResult.getException()));
+            } else {
+                throw new IllegalStateException("This should never happen. If a EntityMappingResult is not successful an exception must exist.");
+            }
         }
         return mapping;
     }
@@ -250,20 +270,19 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     /**
      * Creates entity mapping instructions given the mapping and entity.
      *
-     * @param mapping The mapping
-     * @param entity  The entity
+     * @param mapping         The mapping
+     * @param entityContainer The entity container
      * @return The entity mapping instruction for the given mapping and entity
      */
     @NotNull
-    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull Mapping mapping, EntityContainer entity) {
+    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull final Mapping mapping, @Nullable final EntityContainer entityContainer) {
         //Create the source header from the entity
-        EntityHeader sourceHeader;
-        if (entity == null) {
+        final EntityHeader sourceHeader;
+        if (entityContainer == null) {
             // reference mappings have no referenced entity
             sourceHeader = new EntityHeader(mapping.getSrcId(), EntityType.valueOf(mapping.getType()), null, null);
-        }
-        else {
-            sourceHeader = EntityHeaderUtils.fromEntity((Entity)entity.getEntity());
+        } else {
+            sourceHeader = EntityHeaderUtils.fromEntity(entityContainer.getEntity());
         }
         final EntityMappingInstructions.TargetMapping targetMapping;
         if (mapping.getProperties() != null && "name".equals(mapping.getProperties().get(MapBy))) {
@@ -275,8 +294,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         } else {
             targetMapping = null;
         }
-        Boolean isFailOnExisting = mapping.getProperty(FailOnExisting);
-        Boolean isFailOnNew = mapping.getProperty(FailOnNew);
+        final Boolean isFailOnExisting = mapping.getProperty(FailOnExisting);
+        final Boolean isFailOnNew = mapping.getProperty(FailOnNew);
         return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false);
     }
 
@@ -287,16 +306,22 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The error type of the exception
      */
     @NotNull
-    private Mapping.ErrorType getErrorTypeFromException(@NotNull Throwable exception) {
+    private Mapping.ErrorType getErrorTypeFromException(@NotNull final Throwable exception) {
+        //TODO: improve exception handling
         if (exception instanceof CannotReplaceDependenciesException) {
             return Mapping.ErrorType.CannotReplaceDependency;
-        } else if (exception instanceof CannotRetrieveDependenciesException) {
+        } else if (exception instanceof TargetNotFoundException || exception instanceof ResourceFactory.ResourceNotFoundException || exception instanceof FindException) {
             return Mapping.ErrorType.TargetNotFound;
-        } else if (exception instanceof ResourceFactory.ResourceNotFoundException || exception instanceof FindException) {
-            return Mapping.ErrorType.TargetNotFound;
+        } else if (exception instanceof TargetExistsException) {
+            return Mapping.ErrorType.TargetExists;
+        } else if (exception instanceof IncorrectMappingInstructionsException) {
+            return Mapping.ErrorType.ImproperMapping;
+        } else if (exception instanceof DuplicateObjectException) {
+            return Mapping.ErrorType.UniqueKeyConflict;
+        } else if (exception instanceof ConstraintViolationException || exception instanceof ObjectModelException) {
+            return Mapping.ErrorType.InvalidResource;
         }
-        //TODO: This should not be the default exception!
-        return Mapping.ErrorType.UniqueKeyConflict;
+        return Mapping.ErrorType.Unknown;
     }
 
     /**
@@ -307,7 +332,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The equivalent action taken
      */
     @NotNull
-    private Mapping.ActionTaken convertActionTaken(@NotNull EntityMappingResult.MappingAction mappingAction) {
+    private Mapping.ActionTaken convertActionTaken(@NotNull final EntityMappingResult.MappingAction mappingAction) {
         switch (mappingAction) {
             case CreatedNew:
                 return Mapping.ActionTaken.CreatedNew;
@@ -329,7 +354,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The equivalent action
      */
     @NotNull
-    private EntityMappingInstructions.MappingAction convertMappingAction(@NotNull Mapping.Action action) {
+    private EntityMappingInstructions.MappingAction convertMappingAction(@NotNull final Mapping.Action action) {
         switch (action) {
             case NewOrExisting:
                 return EntityMappingInstructions.MappingAction.NewOrExisting;
@@ -351,7 +376,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * @return The equivalent action
      */
     @NotNull
-    private Mapping.Action convertAction(@NotNull EntityMappingInstructions.MappingAction action) {
+    private Mapping.Action convertAction(@NotNull final EntityMappingInstructions.MappingAction action) {
         switch (action) {
             case NewOrExisting:
                 return Mapping.Action.NewOrExisting;

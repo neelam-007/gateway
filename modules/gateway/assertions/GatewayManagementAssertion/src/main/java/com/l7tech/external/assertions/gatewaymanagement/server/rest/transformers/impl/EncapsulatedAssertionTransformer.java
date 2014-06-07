@@ -10,7 +10,8 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ZoneableGuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
-import com.l7tech.server.bundling.PersistentEntityContainer;
+import com.l7tech.server.bundling.EntityContainer;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -25,19 +26,20 @@ public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransf
         super.factory = factory;
     }
 
+    @NotNull
     @Override
-    public Item<EncapsulatedAssertionMO> convertToItem(EncapsulatedAssertionMO m) {
+    public Item<EncapsulatedAssertionMO> convertToItem(@NotNull EncapsulatedAssertionMO m) {
         return new ItemBuilder<EncapsulatedAssertionMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }
 
+    @NotNull
     @Override
-    public PersistentEntityContainer<EncapsulatedAssertionConfig> convertFromMO(EncapsulatedAssertionMO m ,boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<EncapsulatedAssertionConfig> convertFromMO(@NotNull EncapsulatedAssertionMO m ,boolean strict) throws ResourceFactory.InvalidResourceException {
 
-        PersistentEntityContainer<EncapsulatedAssertionConfig> container  =  super.convertFromMO(m, strict);
+        EntityContainer<EncapsulatedAssertionConfig> container  =  super.convertFromMO(m, strict);
 
-        if(container.getEntity()!=null){
             final Policy policy = container.getEntity().getPolicy();
 
             if (policy != null) {
@@ -51,7 +53,6 @@ public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransf
                 }
 
             }
-        }
         return container;
     }
 }

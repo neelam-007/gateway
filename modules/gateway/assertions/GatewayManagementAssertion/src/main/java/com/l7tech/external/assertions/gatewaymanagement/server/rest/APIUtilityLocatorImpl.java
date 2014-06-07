@@ -1,7 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -22,13 +24,14 @@ public class APIUtilityLocatorImpl implements ApplicationListener<ContextRefresh
     /**
      * The transformer map
      */
-    private final Map<String, APITransformer> transformerMap = new HashMap<>();
+    private final Map<String, EntityAPITransformer> transformerMap = new HashMap<>();
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public APIResourceFactory findFactoryByResourceType(String entityType) {
+    @Nullable
+    public APIResourceFactory findFactoryByResourceType(@NotNull String entityType) {
         return factoryMap.get(entityType);
     }
 
@@ -36,7 +39,8 @@ public class APIUtilityLocatorImpl implements ApplicationListener<ContextRefresh
      * {@inheritDoc}
      */
     @Override
-    public APITransformer findTransformerByResourceType(String entityType) {
+    @Nullable
+    public EntityAPITransformer findTransformerByResourceType(@NotNull String entityType) {
         return transformerMap.get(entityType);
     }
 
@@ -64,8 +68,8 @@ public class APIUtilityLocatorImpl implements ApplicationListener<ContextRefresh
         for (APIResourceFactory factory : factoryBeans.values()) {
             factoryMap.put(factory.getResourceType(), factory);
         }
-        final Map<String, APITransformer> transformerBeans = applicationContext.getBeansOfType(APITransformer.class);
-        for (APITransformer transformer : transformerBeans.values()) {
+        final Map<String, EntityAPITransformer> transformerBeans = applicationContext.getBeansOfType(EntityAPITransformer.class);
+        for (EntityAPITransformer transformer : transformerBeans.values()) {
             transformerMap.put(transformer.getResourceType(), transformer);
         }
     }

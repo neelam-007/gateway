@@ -3,7 +3,6 @@ package com.l7tech.server.search.processors;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
-import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentObject;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +46,6 @@ public class DoNothingDependencyProcessor<O> implements DependencyProcessor<O> {
     }
 
     @Override
-    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotReplaceDependenciesException {
     }
 }

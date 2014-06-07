@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.GroupMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.server.bundling.IdentityEntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 
 @Component
-public class GroupTransformer implements APITransformer<GroupMO, Group> {
+public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
 
     @Inject
     private IdentityProviderFactory identityProviderFactory;
@@ -32,8 +31,15 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
         return EntityType.GROUP.toString();
     }
 
+    @NotNull
     @Override
-    public GroupMO convertToMO(Group group) {
+    public GroupMO convertToMO(@NotNull EntityContainer<Group> groupEntityContainer) {
+        return convertToMO(groupEntityContainer.getEntity());
+    }
+
+    @NotNull
+    @Override
+    public GroupMO convertToMO(@NotNull Group group) {
         GroupMO groupMO = ManagedObjectFactory.createGroupMO();
         groupMO.setId(group.getId());
         groupMO.setProviderId(group.getProviderId().toString());
@@ -42,13 +48,15 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
         return groupMO;
     }
 
+    @NotNull
     @Override
-    public EntityContainer<Group> convertFromMO(GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO) throws ResourceFactory.InvalidResourceException {
         return convertFromMO(groupMO,true);
     }
 
+    @NotNull
     @Override
-    public EntityContainer<Group> convertFromMO(GroupMO groupMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<Group> convertFromMO(@NotNull GroupMO groupMO, boolean strict) throws ResourceFactory.InvalidResourceException {
         GroupBean group = new GroupBean();
         group.setUniqueIdentifier(groupMO.getId());
 
@@ -63,11 +71,12 @@ public class GroupTransformer implements APITransformer<GroupMO, Group> {
         group.setProviderId(identityProviderGoid);
         group.setName(groupMO.getName());
         group.setDescription(groupMO.getDescription());
-        return new IdentityEntityContainer<Group>(group);
+        return new EntityContainer<Group>(group);
     }
 
+    @NotNull
     @Override
-    public Item<GroupMO> convertToItem(GroupMO m) {
+    public Item<GroupMO> convertToItem(@NotNull GroupMO m) {
         return new ItemBuilder<GroupMO>(m.getName(), m.getId(), EntityType.GROUP.name())
                 .setContent(m)
                 .build();

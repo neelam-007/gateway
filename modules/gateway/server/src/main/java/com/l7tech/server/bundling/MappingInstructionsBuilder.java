@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -19,10 +20,11 @@ import java.util.Map;
 public class MappingInstructionsBuilder {
 
     //The map of registered mapping instructions
+    @NotNull
     private final Map<EntityType, Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>> mappingInstructionBuilders;
 
     // The default mapping instructions builder to use if there isnt a custom one registered.
-    protected static final Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type> defaultMappingInstructionsBuilder = new Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>() {
+    private static final Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type> defaultMappingInstructionsBuilder = new Functions.Ternary<EntityMappingInstructions, EntityHeader, EntityMappingInstructions.MappingAction, EntityMappingInstructions.TargetMapping.Type>() {
         @Override
         public EntityMappingInstructions call(EntityHeader sourceEntityHeader, EntityMappingInstructions.MappingAction mappingAction, EntityMappingInstructions.TargetMapping.Type mappingType) {
             return new EntityMappingInstructions(sourceEntityHeader, EntityMappingInstructions.TargetMapping.Type.ID.equals(mappingType) ? null : new EntityMappingInstructions.TargetMapping(mappingType), mappingAction);
