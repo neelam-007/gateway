@@ -139,7 +139,7 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
                     resourceTypes.add(ResourceType.XML_SCHEMA);
                     break;
                 default:
-                    throw new InvalidArgumentException("type", "Type is expected to be either 'dtd' or 'xsd'");
+                    throw new InvalidArgumentException("type", "Type is expected to be either 'dtd' or 'xmlschema'");
             }
         }
         return resourceTypes;
