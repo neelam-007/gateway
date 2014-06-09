@@ -196,30 +196,25 @@ public class AssertionSecurityZoneResourceFactory extends SecurityZoneableEntity
                 }
             }));
 
-            Collections.sort(entities,new Comparator<AssertionAccess>() {
-                @Override
-                public int compare(AssertionAccess o1, AssertionAccess o2) {
-                    if(sortKey == null)
-                        return 0;
-
-                    if(sortKey.equals("name")){
-                        return (ascending == null || ascending) ? o1.getName().compareTo(o2.getName()) :  o2.getName().compareTo(o1.getName());
+            if (sortKey != null) {
+                Collections.sort(entities, new Comparator<AssertionAccess>() {
+                    @Override
+                    public int compare(AssertionAccess o1, AssertionAccess o2) {
+                        switch (sortKey) {
+                            case "name":
+                                return (ascending == null || ascending) ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName());
+                            case "id":
+                                return (ascending == null || ascending) ? o1.getId().compareTo(o2.getId()) : o2.getId().compareTo(o1.getId());
+                            case "securityZone.id":
+                                final String o1Zone = o1.getSecurityZone() == null ? Goid.DEFAULT_GOID.toString() : o1.getSecurityZone().getId();
+                                final String o2Zone = o2.getSecurityZone() == null ? Goid.DEFAULT_GOID.toString() : o2.getSecurityZone().getId();
+                                return (ascending == null || ascending) ? o1Zone.compareTo(o2Zone) : o2Zone.compareTo(o1Zone);
+                            default:
+                                throw new IllegalArgumentException("Cannot sort. Unknown sort key: " + sortKey);
+                        }
                     }
-                    if(sortKey.equals("id")){
-                        return (ascending == null || ascending) ? o1.getId().compareTo(o2.getId()) :  o2.getId().compareTo(o1.getId());
-                    }
-                    if(sortKey.equals("securityZone.id")){
-                        if(o1.getSecurityZone().equals(o2.getSecurityZone()))
-                            return 0;
-                        if(o1.getSecurityZone() == null)
-                            return (ascending == null || ascending) ? 1: -1;
-                        if(o2.getSecurityZone() == null)
-                            return (ascending == null || ascending) ? -1: 1;
-                        return (ascending == null || ascending) ? o1.getSecurityZone().getId().compareTo(o2.getSecurityZone().getId()) :  o2.getSecurityZone().getId().compareTo(o1.getSecurityZone().getId());
-                    }
-                    return 0;
-                }
-            });
+                });
+            }
 
             entities = accessFilter(entities, assertionAccessManager.getEntityType(), OperationType.READ, null);
             entities = filterEntities(entities);
