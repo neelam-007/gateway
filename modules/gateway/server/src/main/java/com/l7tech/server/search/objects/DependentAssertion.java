@@ -37,15 +37,10 @@ public class DependentAssertion<A extends Assertion> extends DependentObject {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        DependentAssertion that = (DependentAssertion) o;
-
-        if (!assertionClass.equals(that.assertionClass)) return false;
-
-        return true;
+        // An assertion dependent object must not equal another.
+        // If they are equal we will assume that their dependencies are the same, but we don't have enough information here to know if this is true so just return false
+        // For example two assertions can be the same type (assertion class) but they can have different dependencies
+        return false;
     }
 
     @Override
