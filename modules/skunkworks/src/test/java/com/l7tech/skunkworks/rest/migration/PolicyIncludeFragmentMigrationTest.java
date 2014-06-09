@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.BugId;
+import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
@@ -22,9 +24,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Created by vkazakov on 6/9/2014.
- */
+@ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class PolicyIncludeFragmentMigrationTest extends MigrationTestBase {
     private static final Logger logger = Logger.getLogger(PolicyIncludeFragmentMigrationTest.class.getName());
 
@@ -225,7 +225,7 @@ public class PolicyIncludeFragmentMigrationTest extends MigrationTestBase {
         Item<ServiceMO> targetService = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         Assert.assertEquals(1, targetService.getContent().getResourceSets().size());
         //service xml is equal ignoring whitespace.
-        Assert.assertEquals(serviceItem.getContent().getResourceSets().get(0).getResources().get(0).getContent().replaceAll("\\s+","").replaceAll("\\n+",""), targetService.getContent().getResourceSets().get(0).getResources().get(0).getContent().replaceAll("\\s+","").replaceAll("\\n+",""));
+        Assert.assertEquals(serviceItem.getContent().getResourceSets().get(0).getResources().get(0).getContent().replaceAll("\\s+", "").replaceAll("\\n+", ""), targetService.getContent().getResourceSets().get(0).getResources().get(0).getContent().replaceAll("\\s+", "").replaceAll("\\n+", ""));
 
         mappingsToClean = mappings;
 
