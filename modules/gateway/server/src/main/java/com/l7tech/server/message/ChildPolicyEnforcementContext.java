@@ -230,11 +230,19 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     @Override
     public void assertionStarting( final ServerAssertion assertion ) {
         context.assertionStarting( assertion );
+
+        if (debugContext != null) {
+            debugContext.onStartAssertion(this, assertion);
+        }
     }
 
     @Override
     public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status ) {
         context.assertionFinished( assertion, status );
+
+        if (debugContext != null) {
+            debugContext.onFinishAssertion(this);
+        }
     }
 
     @Override
@@ -254,12 +262,12 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     @Override
     public DebugContext getDebugContext() {
-        return context.getDebugContext();
+        return debugContext;
     }
 
     @Override
     public void setDebugContext(DebugContext debugContext) {
-        context.setDebugContext( debugContext );
+        this.debugContext = debugContext;
     }
 
     @Override
@@ -400,4 +408,5 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     private final Set<String> passthroughVariables = new HashSet<>();
     private final TreeSet<String> passthroughPrefixes = new TreeSet<>();
     private final TreeSet<String> outputVariables = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    private DebugContext debugContext = null;
 }
