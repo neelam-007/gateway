@@ -60,6 +60,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManagerStub;
 import com.l7tech.server.logon.LogonInfoManagerStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
@@ -1533,6 +1534,46 @@ public class ServerGatewayManagementAssertionTest {
                 "</Resource></ResourceSet></Resources></Policy>";
         String expectedId = new Goid(0,4).toHexString();
         doCreate( resourceUri, payload, expectedId );
+    }
+
+    @BugId("SSG-8575")
+    @Test
+    public void testCreateDebugTracePolicy() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policies";
+        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><PolicyDetail folderId=\""+new Goid(0,1)+"\"><Name>[Internal Debug Trace Policy]</Name><PolicyType>Internal</PolicyType><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property><Property key=\"tag\"><StringValue>debug-trace</StringValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
+                "   &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
+                "        &lt;L7p:CommentAssertion&gt;\n" +
+                "            &lt;L7p:Comment stringValue=&quot;A simple debug trace policy.&quot;/&gt;\n" +
+                "        &lt;/L7p:CommentAssertion&gt;\n" +
+                "        &lt;L7p:CommentAssertion&gt;\n" +
+                "            &lt;L7p:Comment stringValue=&quot;This policy will be invoked after every assertion for any service with debug tracing enabled.&quot;/&gt;\n" +
+                "        &lt;/L7p:CommentAssertion&gt;\n" +
+                "        &lt;L7p:CommentAssertion&gt;\n" +
+                "            &lt;L7p:Comment stringValue=&quot;For example, we can trigger auditing of trace information about the assertion that just finished.&quot;/&gt;\n" +
+                "        &lt;/L7p:CommentAssertion&gt;\n" +
+                "        &lt;L7p:AuditAssertion&gt;\n" +
+                "            &lt;L7p:ChangeSaveRequest booleanValue=&quot;false&quot;/&gt;\n" +
+                "            &lt;L7p:ChangeSaveResponse booleanValue=&quot;false&quot;/&gt;\n" +
+                "        &lt;/L7p:AuditAssertion&gt;\n" +
+                "        &lt;L7p:AuditDetailAssertion&gt;\n" +
+                "            &lt;L7p:Detail stringValue=&quot;TRACE: service.name=${trace.service.name} policy.name=${trace.policy.name} policy.guid=${trace.policy.guid} assertion.number=${trace.assertion.numberstr} assertion.shortname=${trace.assertion.shortname} status=${trace.status}&quot;/&gt;\n" +
+                "            &lt;L7p:Enabled booleanValue=&quot;false&quot;/&gt;\n" +
+                "        &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                "        &lt;L7p:AuditDetailAssertion&gt;\n" +
+                "            &lt;L7p:Detail stringValue=&quot;/${trace.service.name} | ${trace.assertion.numberstr} | ${trace.assertion.shortname} | ${trace.var.service} | ${trace.var.ea1} | ${trace.var.input1} | ${trace.var.output1}&quot;/&gt;\n" +
+                "        &lt;/L7p:AuditDetailAssertion&gt;\n" +
+                "    &lt;/wsp:All&gt;\n" +
+                "&lt;/wsp:Policy&gt;\n" +
+                "</Resource></ResourceSet></Resources></Policy>";
+        String expectedId = new Goid(0,4).toHexString();
+        doCreate( resourceUri, payload, expectedId );
+
+        //verify the cluster property was created correctly
+        PolicyManager policyManager = applicationContext.getBean("policyManager", PolicyManager.class);
+        ClusterPropertyManager clusterPropertyManager = applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        Assert.assertEquals(policyManager.findByPrimaryKey(Goid.parseGoid(expectedId)).getGuid(),clusterPropertyManager.getProperty("trace.policy.guid"));
+
     }
 
     @Test

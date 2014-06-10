@@ -12,6 +12,8 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -28,9 +30,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
 
-import static com.l7tech.util.Eithers.*;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.*;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 
@@ -49,12 +51,14 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                                   final PolicyHelper policyHelper,
                                   final FolderResourceFactory folderResourceFactory,
                                   final SecurityZoneManager securityZoneManager,
-                                  final PolicyVersionManager policyVersionManager) {
+                                  final PolicyVersionManager policyVersionManager,
+                                  final ClusterPropertyManager clusterPropertyManager) {
         super( false, true, true, services, securityFilter, transactionManager, policyManager, securityZoneManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
         this.folderResourceFactory = folderResourceFactory;
         this.policyVersionManager = policyVersionManager;
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
@@ -288,6 +292,14 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     }
 
     @Override
+    protected void afterCreateEntity( final EntityBag<Policy> entityBag, Goid identifier ) throws ObjectModelException {
+        //if this is a debug-trace policy we need to also set the trace.policy.guid cluster property to the newly created guid of this policy (only if one isn't already set.)
+        if(PolicyType.INTERNAL.equals(entityBag.getEntity().getType()) && "debug-trace".equals(entityBag.getEntity().getInternalTag()) && clusterPropertyManager.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID) == null){
+            clusterPropertyManager.putProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID, entityBag.getEntity().getGuid());
+        }
+    }
+
+    @Override
     protected void updateEntity( final Policy oldEntity, final Policy newEntity ) throws InvalidResourceException {
         oldEntity.setFolder( folderResourceFactory.checkMovePermitted( oldEntity.getFolder(), newEntity.getFolder() ) );
         oldEntity.setType( newEntity.getType() );
@@ -338,6 +350,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     private final PolicyHelper policyHelper;
     private final FolderResourceFactory folderResourceFactory;
     private final PolicyVersionManager policyVersionManager;
+    private final ClusterPropertyManager clusterPropertyManager;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
 }

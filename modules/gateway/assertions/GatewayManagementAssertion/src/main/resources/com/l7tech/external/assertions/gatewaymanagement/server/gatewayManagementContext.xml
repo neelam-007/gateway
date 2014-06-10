@@ -125,6 +125,7 @@
         <constructor-arg index="5" ref="folderResourceFactory"/>
         <constructor-arg index="6" ref="securityZoneManager"/>
         <constructor-arg index="7" ref="policyVersionManager"/>
+        <constructor-arg index="8" ref="clusterPropertyManager"/>
     </bean>
 
     <bean id="serviceResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="resourceFactoryParent">
