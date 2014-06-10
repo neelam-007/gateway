@@ -15,7 +15,9 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.util.Functions;
@@ -48,6 +50,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
     private PolicyManager policyManager;
     @Inject
     private PolicyTransformer policyTransformer;
+    @Inject
+    private ClusterPropertyManager clusterPropertyManager;
 
     @NotNull
     @Override
@@ -98,6 +102,11 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                         savedId = id;
                     }
                     policyVersionManager.checkpointPolicy(newPolicy, true, comment, true);
+
+                    //if this is a debug-trace policy we need to also set the trace.policy.guid cluster property to the newly created guid of this policy (only if one isn't already set.)
+                    if(PolicyType.INTERNAL.equals(newPolicy.getType()) && "debug-trace".equals(newPolicy.getInternalTag()) && clusterPropertyManager.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID) == null){
+                        clusterPropertyManager.putProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID, newPolicy.getGuid());
+                    }
 
                     return savedId;
                 } catch (ObjectModelException ome) {
