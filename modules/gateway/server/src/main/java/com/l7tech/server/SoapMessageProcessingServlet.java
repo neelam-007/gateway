@@ -190,18 +190,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     rejectGzipRequest( hrequest, hresponse, STATUS_UNSUPPORTED_MEDIA_TYPE, "Rejecting GZIP compressed request" );
                     return null;
                 }
-
-                gzipEncodedTransaction = true;
-                gzipResponse = allowGzipResponse;
-                logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
-                try {
-                    final InputStream original = hrequest.getInputStream();
-                    gis = new GZIPInputStream(original);
-                } catch (Exception e) {
-                    final String exceptionMessage = ExceptionUtils.getMessage(e);
-                    logger.log(Level.INFO, "Cannot decompress the incoming request: " + exceptionMessage, ExceptionUtils.getDebugException( e ));
-                    rejectGzipRequest( hrequest, hresponse, STATUS_BAD_REQUEST, "Invalid GZIP compressed request" );
-                    return null;
+                if (hrequest.getContentLength() != 0) {
+                    gzipEncodedTransaction = true;
+                    gzipResponse = allowGzipResponse;
+                    logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
+                    try {
+                        final InputStream original = hrequest.getInputStream();
+                        gis = new GZIPInputStream(original);
+                    } catch (Exception e) {
+                        final String exceptionMessage = ExceptionUtils.getMessage(e);
+                        logger.log(Level.INFO, "Cannot decompress the incoming request: " + exceptionMessage, ExceptionUtils.getDebugException( e ));
+                        rejectGzipRequest( hrequest, hresponse, STATUS_BAD_REQUEST, "Invalid GZIP compressed request" );
+                        return null;
+                    }
+                } else {
+                    logger.fine("content-encoding is gzip but content-length is zero");
                 }
             } else {
                 logger.fine("content-encoding not gzip " + maybegzipencoding);

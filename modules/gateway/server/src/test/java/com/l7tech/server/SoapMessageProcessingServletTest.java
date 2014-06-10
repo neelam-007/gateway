@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -18,6 +19,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.test.BugId;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -414,6 +416,44 @@ public class SoapMessageProcessingServletTest {
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         assertEquals(ContentTypeHeader.XML_DEFAULT.getFullValue(), response.getContentType());
+    }
+
+    @BugId("SSG-8528")
+    @Test
+    public void gzipRequestZeroContentLength() throws Exception {
+        request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.addHeader(HttpConstants.HEADER_CONTENT_LENGTH, "0");
+        request.setContent("".getBytes());
+        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                assertFalse(context.isRequestWasCompressed());
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+    }
+
+    @Test
+    public void gzipRequest() throws Exception {
+        request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.setContent(IOUtils.compressGzip("test".getBytes()));
+        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                assertTrue(context.isRequestWasCompressed());
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {

@@ -896,7 +896,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // compression addition
             final String maybegzipencoding = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_ENCODING);
             if (maybegzipencoding != null && maybegzipencoding.contains("gzip")) { // case of value ?
-                if (responseStream != null ){
+                if (responseStream != null && (routedResponse.getContentLength() == null || routedResponse.getContentLength() > 0)){
                     // logger.info("Compression #4");
                     // If decoding is later changed to be optional, ensure the content-encoding header gets passed on when decoding is not performed, ie, remove it from HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITELY_FORWARD
                     logger.fine("detected compression on incoming response");

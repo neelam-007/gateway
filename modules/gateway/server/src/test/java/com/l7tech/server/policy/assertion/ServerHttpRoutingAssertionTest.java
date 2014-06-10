@@ -13,6 +13,7 @@ import com.l7tech.common.io.TestSSLSocketFactory;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.log.TestHandler;
@@ -84,10 +85,16 @@ public class ServerHttpRoutingAssertionTest {
     private GenericHttpRequest mockHttpRequest;
     @Mock
     private GenericHttpResponse mockHttpResponse;
+    @Mock
+    private StashManagerFactory stashManagerFactory;
+    @Mock
+    private StashManager stashManager;
 
     @Before
     public void setup() throws Exception {
         when(mockApplicationContext.getBean("httpRoutingHttpClientFactory2", GenericHttpClientFactory.class)).thenReturn(mockClientFactory);
+        when(mockApplicationContext.getBean("stashManagerFactory", StashManagerFactory.class)).thenReturn(stashManagerFactory);
+        when(stashManagerFactory.createStashManager()).thenReturn(stashManager);
         when(mockClientFactory.createHttpClient(anyInt(), anyInt(), anyInt(), anyInt(), anyObject())).thenReturn(mockClient);
         when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(mockHttpRequest);
         when(mockHttpRequest.getResponse()).thenReturn(mockHttpResponse);
@@ -645,7 +652,7 @@ public class ServerHttpRoutingAssertionTest {
             }
         });
 
-        pec.setVariable( "contextVar", "MethodNameFromVar" );
+        pec.setVariable("contextVar", "MethodNameFromVar");
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
         assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
@@ -1132,5 +1139,44 @@ public class ServerHttpRoutingAssertionTest {
         final String[] contentEncodingValues = responseHeadersKnob.getHeaderValues(HttpConstants.HEADER_CONTENT_ENCODING, HEADER_TYPE_HTTP);
         assertEquals(1, contentEncodingValues.length);
         assertEquals(HttpConstants.ENCODING_UTF8, contentEncodingValues[0]);
+    }
+
+    @BugId("SSG-8528")
+    @Test
+    public void gzipResponseZeroContentLength() throws Exception {
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockApplicationContext);
+        final Message response = new Message();
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), response);
+        final List<HttpHeader> responseHeaders = new ArrayList<>();
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip"));
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain"));
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_LENGTH, "0"));
+        when(mockHttpResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new HttpHeader[responseHeaders.size()])));
+        when(mockHttpResponse.getInputStream()).thenReturn(new ByteArrayInputStream("".getBytes()));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue(response.isInitialized());
+    }
+
+    @Test
+    public void gzipResponseNoContentLength() throws Exception {
+        final HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:8080/test");
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, mockApplicationContext);
+        final Message response = new Message();
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), response);
+        final List<HttpHeader> responseHeaders = new ArrayList<>();
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip"));
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain"));
+
+        when(mockHttpResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new HttpHeader[responseHeaders.size()])));
+        when(mockHttpResponse.getInputStream()).thenReturn(new ByteArrayInputStream(IOUtils.compressGzip("test".getBytes())));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue(response.isInitialized());
     }
 }
