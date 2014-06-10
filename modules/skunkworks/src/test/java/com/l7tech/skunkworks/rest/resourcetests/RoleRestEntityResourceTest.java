@@ -270,6 +270,28 @@ public class RoleRestEntityResourceTest extends RestEntityTests<Role, RbacRoleMO
             }
         });
 
+        //ssg-8555 - creating a role not specifying an entity type
+        roleMO = ManagedObjectFactory.createRbacRoleMO();
+        roleMO.setName("Null entity type");
+        roleMO.setUserCreated(false);
+        rolePermissionMO = ManagedObjectFactory.createRbacRolePermissionMO();
+        rolePermissionMO.setEntityType("FOLDER");
+        rolePermissionMO.setOperation(RbacRolePermissionMO.OperationType.READ);
+        rolePredicateMO = ManagedObjectFactory.createRbacRolePredicateMO();
+        rolePredicateMO.setType(RbacRolePredicateMO.Type.EntityFolderAncestryPredicate);
+        rolePredicateMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put("entityId", rootFolder.toString())
+                .map());
+        rolePermissionMO.setScope(Arrays.asList(rolePredicateMO));
+        roleMO.setPermissions(Arrays.asList(rolePermissionMO));
+
+        builder.put(roleMO, new Functions.BinaryVoid<RbacRoleMO, RestResponse>() {
+            @Override
+            public void call(RbacRoleMO roleMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
     }
 

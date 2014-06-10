@@ -309,6 +309,9 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
      * @throws InvalidArgumentException This is thrown if the entity type string is not a valid entity type
      */
     private EntityType getEntityTypeFromString(String entityTypeString) {
+        if(entityTypeString == null) {
+            throw new InvalidArgumentException("entityType", "Must not be null");
+        }
         try {
             return EntityType.valueOf(entityTypeString);
         } catch (IllegalArgumentException e) {
