@@ -17,6 +17,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.*;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -63,7 +65,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel _mainPanel;
     private JComboBox<DataTypeComboBoxItem> _dataTypeComboBox;
     private JLabel nonExpressionInputStatusLabel;
-    private JTextArea _expressionTextArea;
+    private RSyntaxTextArea _expressionTextArea;
     private JRadioButton _crlfRadioButton;
     private JRadioButton _crRadioButton;
     private JRadioButton _lfRadioButton;
@@ -149,6 +151,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _contentTypeComboBox.addItem( ContentTypeHeader.TEXT_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.APPLICATION_JSON.getFullValue() );
+
+        _contentTypeComboBox.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                enableDisableComponents();
+            }
+        } );
 
         TextComponentPauseListenerManager.registerPauseListener(
                 (JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent(),
@@ -400,6 +409,21 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         datePreviewLabel.setVisible(isDateSelected);
         datePreviewTextField.setVisible(isDateSelected);
         dateOffsetStatusLabel.setVisible(isDateSelected);
+
+        String syntax = SyntaxConstants.SYNTAX_STYLE_NONE;
+        if ( _contentTypeComboBox.isVisible() ) {
+
+            Object ctypeObj = _contentTypeComboBox.getSelectedItem();
+            if ( ctypeObj != null ) {
+                ContentTypeHeader ctype = ContentTypeHeader.create( ctypeObj.toString() );
+                if ( ctype.isXml() ) {
+                    syntax = SyntaxConstants.SYNTAX_STYLE_XML;
+                } else if ( ctype.isJson() ) {
+                    syntax = SyntaxConstants.SYNTAX_STYLE_JSON;
+                }
+            }
+        }
+        _expressionTextArea.setSyntaxEditingStyle( syntax );
     }
 
     /**
