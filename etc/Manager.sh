@@ -26,8 +26,11 @@ extra="
 -Duser.country=US
 "
 
-run="-jar Manager.jar";
+if [ `uname` -eq Darwin ]; then
+  extra="$extra -Xdock:name=\"SecureSpan Manager\" -Dapple.laf.useScreenMenuBar=true "
+fi
 
+run="-jar Manager.jar";
 
 
 if [ -z "$JAVA_HOME" ]; then

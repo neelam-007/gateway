@@ -1,9 +1,9 @@
 package com.l7tech.console;
 
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.JavaVersionChecker;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.swing.*;
@@ -125,16 +125,22 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
 
     /**
      * Automatically pick the best look and feel and enable it.
-     * This method currently uses Windows, then kunststoff, then system LnF on java 1.4.2 or higher;
-     * or kunststoff, windows, then system on earlier javas.
+     * This method currently tries Windows, then Kunststoff, then System; unless
+     * os.name contains "mac os x" in which case it tries System, then Kunststoff.
      */
     protected void setAutoLookAndFeel() {
-        boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast( new int[]{1, 4, 2} );
-        LnfSetter[] order = haveXpLnf ? new LnfSetter[]{windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter}
-                            : new LnfSetter[]{kunststoffLnfSetter, windowsLnfSetter, systemLnfSetter};
-        for (LnfSetter anOrder : order) {
+        LnfSetter[] order;
+
+        boolean isMac = SyspropUtil.getString( "os.name", "" ).toLowerCase().contains( "mac os x" );
+        if ( isMac ) {
+            order = new LnfSetter[] { systemLnfSetter, kunststoffLnfSetter };
+        } else {
+            order = new LnfSetter[] { windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter };
+        }
+
+        for (LnfSetter lnfSetter : order) {
             try {
-                anOrder.setLnf();
+                lnfSetter.setLnf();
             } catch (Exception e) {
                 continue;
             }
@@ -145,7 +151,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
             // incors.org Kunststoff faq says we need the following line if we ever want to use Java Web Start:
             UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
         } catch ( Exception e ) {
-            logger.log(Level.WARNING, "Unable to update look-and-feel classloader", e);
+            logger.log( Level.WARNING, "Unable to update look-and-feel classloader", e );
         }
     }
 
