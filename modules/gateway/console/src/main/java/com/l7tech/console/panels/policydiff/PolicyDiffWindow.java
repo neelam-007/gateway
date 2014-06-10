@@ -65,7 +65,7 @@ public class PolicyDiffWindow extends JFrame {
     private JSplitPane diffSplitPane;
 
     private List<Integer> nextDiffRowList;  // Store the row numbers of all next diffs in the diff result list
-    private int currentDiffRow = -1;        // The index of a current element in nextDiffRowList.  It is not necessary that currentDiffRow is same as the selected row.
+    private int currentDiffRow = -1;        // The current element in nextDiffRowList.  It is not necessary that currentDiffRow is same as the selected row.
 
     private Pair<String, PolicyTreeModel> leftPolicyInfo, rightPolicyInfo;
     private Map<Integer, DiffType> diffResultMapL;
@@ -303,9 +303,7 @@ public class PolicyDiffWindow extends JFrame {
      * @return true if and only if the assertion is matched to one other assertion and both have different properties.  Otherwise, false.
      */
     boolean isAssertionDiffEnabled(int assertionNodeRow) {
-        if (diffResultMapL == null || diffResultMapL.isEmpty()) return false;
-
-        return MATCHED_WITH_DIFFERENCES == diffResultMapL.get(assertionNodeRow);
+        return diffResultMapL != null && (! diffResultMapL.isEmpty()) && MATCHED_WITH_DIFFERENCES == diffResultMapL.get(assertionNodeRow);
     }
 
     /**
@@ -392,7 +390,7 @@ public class PolicyDiffWindow extends JFrame {
 
         if (! nextDiffRowList.isEmpty()) {
             // Case 1: Called from initialization
-            if (selectedRow == -1 || currentDiffRow == -1) {
+            if (selectedRow == -1 && currentDiffRow == -1) {
                 nextEnabled = true;
             }
             // Case 2: Called from the method findPreviousOrNextDiffRow

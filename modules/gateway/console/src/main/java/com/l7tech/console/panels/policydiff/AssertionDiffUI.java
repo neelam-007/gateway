@@ -12,8 +12,7 @@ import com.l7tech.util.Triple;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.event.*;
 import javax.swing.table.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
@@ -61,8 +60,8 @@ public class AssertionDiffUI {
     private JFrame parent;  // Used to access PolicyDiffWindow or AssertionDiffWindow
 
     private List<Triple<String, String, String>> properties = new ArrayList<>();
-    private List<Integer> nextDiffIndexList;          // Store the indies of all next diffs in the diff result list
-    private int currElmtIdxOfNextDiffIndexList = -1;  // The index of a current element in nextDiffIndexList
+    private List<Integer> nextDiffRowList; // Store row numbers of all next diffs in the diff result list
+    private int currentDiffRow = -1;       // The current element in nextDiffRowList. It is not necessary that currentDiffRow is same as the current row.
 
     public AssertionDiffUI(@Nullable final JFrame parent, final AssertionTreeNode nodeL, final AssertionTreeNode nodeR) {
         this.parent = parent;
@@ -116,6 +115,7 @@ public class AssertionDiffUI {
             }
         });
 
+        // Disable diff navigation buttons, since these buttons are used by the tab "Raw XML" and the default tab is "Properties".
         enableOrDisableDiffNavigationButtons();
     }
 
@@ -152,17 +152,35 @@ public class AssertionDiffUI {
     }
 
     private void initializeXmlPanes(AssertionTreeNode nodeL, AssertionTreeNode nodeR) {
+        final CaretListener caretListener = new CaretListener() {
+            @Override
+            public void caretUpdate(CaretEvent e) {
+                JTextArea textArea = (JTextArea) e.getSource();
+                int dot = textArea.getCaretPosition();
+                int lineNum;
+                try {
+                    lineNum = textArea.getLineOfOffset(dot);
+                } catch (BadLocationException e1) {
+                    lineNum = 0;
+                }
+
+                enableOrDisableDiffNavigationButtons(lineNum);
+            }
+        };
+        leftAssertionXmlTextArea.addCaretListener(caretListener);
+        rightAssertionXmlTextArea.addCaretListener(caretListener);
+
         prevDiffButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                navigatePreviousOrNextDiff(true);
+                findPreviousOrNextDiff(true);
             }
         });
 
         nextDiffButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                navigatePreviousOrNextDiff(false);
+                findPreviousOrNextDiff(false);
             }
         });
 
@@ -178,7 +196,7 @@ public class AssertionDiffUI {
         // diff navigation buttons many times and we don't want to see many progress bars floating around there.
         try {
             XmlDiff xmlDiff = new XmlDiff(assertionXmlL, assertionXmlR);
-            nextDiffIndexList = xmlDiff.setTextAreas(leftAssertionXmlTextArea, leftAssertionNumberTextArea, rightAssertionXmlTextArea, rightAssertionNumberTextArea);
+            nextDiffRowList = xmlDiff.setTextAreas(leftAssertionXmlTextArea, leftAssertionNumberTextArea, rightAssertionXmlTextArea, rightAssertionNumberTextArea);
         } catch (BadLocationException e) {
             DialogDisplayer.showMessageDialog(parent, "Error due to an invalid range specification used by Highlighter", "Policy Comparison Error", JOptionPane.ERROR_MESSAGE, null);
             return;
@@ -187,7 +205,9 @@ public class AssertionDiffUI {
             return;
         }
 
-        setFirstDiffDisplayingPosition();
+        // Initially set the cursor to be visible at the cart position 0.
+        leftAssertionXmlTextArea.setCaretPosition(0);
+        leftAssertionXmlTextArea.getCaret().setVisible(true);
     }
 
     private void initializeTable(AssertionTreeNode nodeL, AssertionTreeNode nodeR) {
@@ -439,27 +459,6 @@ public class AssertionDiffUI {
     }
 
     /**
-     * Find the caret position of the first XML diff and set it in the displaying area.
-     */
-    private void setFirstDiffDisplayingPosition() {
-        final int initialCaretPosition;
-
-        if (nextDiffIndexList.isEmpty()) {
-            initialCaretPosition = 0;
-        } else {
-            try {
-                initialCaretPosition = leftAssertionXmlTextArea.getLineStartOffset(nextDiffIndexList.get(0));
-                currElmtIdxOfNextDiffIndexList = 0;
-            } catch (BadLocationException e) {
-                logger.warning(ExceptionUtils.getMessage(e));
-                return;
-            }
-        }
-        leftAssertionXmlTextArea.setCaretPosition(initialCaretPosition);
-        leftAssertionXmlTextArea.getCaret().setVisible(true);
-    }
-
-    /**
      * Enable or disable two diff navigation buttons depending on their availability.
      */
     private void enableOrDisableDiffNavigationButtons() {
@@ -467,9 +466,51 @@ public class AssertionDiffUI {
             prevDiffButton.setEnabled(false);
             nextDiffButton.setEnabled(false);
         } else {
-            prevDiffButton.setEnabled(currElmtIdxOfNextDiffIndexList >= 1);
-            nextDiffButton.setEnabled(currElmtIdxOfNextDiffIndexList >= 0 && currElmtIdxOfNextDiffIndexList < nextDiffIndexList.size() - 1);
+            int cartPosition = leftAssertionXmlTextArea.getCaretPosition();
+            int currentRow = 0;
+            try {
+                currentRow = leftAssertionXmlTextArea.getLineOfOffset(cartPosition);
+            } catch (BadLocationException e) {
+                // selectedRow will be 0.
+                logger.warning(ExceptionUtils.getMessage(e));
+            }
+            enableOrDisableDiffNavigationButtons(currentRow);
         }
+    }
+
+    /**
+     * Enable or disable two navigation buttons depending on the current row selected.
+     * For example, if the current row is between two rows with differences, then two buttons will be enabled.
+     *
+     * @param currentRow: the current row where the cursor's cart locates.
+     */
+    private void enableOrDisableDiffNavigationButtons(int currentRow) {
+        boolean prevEnabled = false; // Define the previous navigation button to be enabled
+        boolean nextEnabled = false; // Define the next navigation button to be enabled
+
+        if (nextDiffRowList != null && !nextDiffRowList.isEmpty()) {
+            if (currentRow == currentDiffRow) {
+                int idx = nextDiffRowList.indexOf(currentDiffRow);
+
+                prevEnabled = idx > 0;
+                nextEnabled = idx < nextDiffRowList.size() - 1;
+            } else {
+                int idx = nextDiffRowList.indexOf(currentRow);
+                if (idx != -1) {
+                    prevEnabled = idx > 0;
+                    nextEnabled = idx < nextDiffRowList.size() - 1;
+                } else {
+                    int firstDiffRow = nextDiffRowList.get(0);
+                    int lastDiffRow = nextDiffRowList.get(nextDiffRowList.size() - 1);
+
+                    prevEnabled = currentRow > firstDiffRow;
+                    nextEnabled = currentRow < lastDiffRow;
+                }
+            }
+        }
+
+        prevDiffButton.setEnabled(prevEnabled);
+        nextDiffButton.setEnabled(nextEnabled);
     }
 
     /**
@@ -478,17 +519,55 @@ public class AssertionDiffUI {
      *
      * @param moveUp: true means Previous Diff button is clicked and false means Next Diff button is clicked.
      */
-    private void navigatePreviousOrNextDiff(boolean moveUp) {
-        if (moveUp) {
-            if (currElmtIdxOfNextDiffIndexList < 1) return;
-            else currElmtIdxOfNextDiffIndexList--;
+    private void findPreviousOrNextDiff(boolean moveUp) {
+        if (nextDiffRowList.isEmpty()) return;
+
+        int cartPosition = leftAssertionXmlTextArea.getCaretPosition();
+        int currentRow = 0;
+        try {
+            currentRow = leftAssertionXmlTextArea.getLineOfOffset(cartPosition);
+        } catch (BadLocationException e) {
+            // selectedRow will be 0.
+            logger.warning(ExceptionUtils.getMessage(e));
+        }
+        if (currentRow == currentDiffRow) {
+            int idx = nextDiffRowList.indexOf(currentDiffRow);
+
+            if (moveUp) {
+                if (idx == 0) return;
+                else idx--;
+            } else {
+                if (idx == nextDiffRowList.size() - 1) return;
+                else idx++;
+            }
+            currentDiffRow = nextDiffRowList.get(idx);
         } else {
-            if (currElmtIdxOfNextDiffIndexList == -1 || currElmtIdxOfNextDiffIndexList >= nextDiffIndexList.size() - 1) return;
-            else currElmtIdxOfNextDiffIndexList++;
+            int row = -1;
+            if (moveUp) {
+                for (int diffRow: nextDiffRowList) {
+                    if (diffRow < currentRow) {
+                        row = diffRow;
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                for (int diffRow: nextDiffRowList) {
+                    if (diffRow > currentRow) {
+                        row = diffRow;
+                        break;
+                    }
+                }
+            }
+            if (row == -1) {
+                currentDiffRow = nextDiffRowList.get(0);
+            } else {
+                currentDiffRow = row;
+            }
         }
 
         try {
-            final int newCaretPosition = leftAssertionXmlTextArea.getLineStartOffset(nextDiffIndexList.get(currElmtIdxOfNextDiffIndexList));
+            final int newCaretPosition = leftAssertionXmlTextArea.getLineStartOffset(currentDiffRow);
             leftAssertionXmlTextArea.setCaretPosition(newCaretPosition);
             leftAssertionXmlTextArea.getCaret().setVisible(true);
 
@@ -498,6 +577,6 @@ public class AssertionDiffUI {
             return;
         }
 
-        enableOrDisableDiffNavigationButtons();
+        enableOrDisableDiffNavigationButtons(currentDiffRow);
     }
 }
