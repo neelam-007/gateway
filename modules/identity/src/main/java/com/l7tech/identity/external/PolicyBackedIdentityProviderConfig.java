@@ -3,6 +3,7 @@ package com.l7tech.identity.external;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.search.Dependency;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.DiscriminatorValue;
@@ -31,6 +32,7 @@ public class PolicyBackedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     @Transient
+    @Dependency(type = Dependency.DependencyType.POLICY, methodReturnType = Dependency.MethodReturnType.GOID)
     public Goid getPolicyId() {
         return (Goid) getProperty(PROP_POLICY_ID);
     }
@@ -40,6 +42,7 @@ public class PolicyBackedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     @Transient
+    @Dependency(type = Dependency.DependencyType.RBAC_ROLE, methodReturnType = Dependency.MethodReturnType.GOID)
     public Goid getDefaultRoleId() {
         return (Goid) getProperty(PROP_ROLE_ID);
     }

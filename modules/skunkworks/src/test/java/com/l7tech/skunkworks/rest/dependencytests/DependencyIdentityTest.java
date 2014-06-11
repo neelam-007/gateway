@@ -4,16 +4,22 @@ import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
+import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
@@ -46,6 +52,10 @@ public class DependencyIdentityTest extends DependencyTestBase {
     private UserManager internalUserManager;
     private IdentityProviderFactory identityProviderFactory;
     private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
+    private PolicyBackedIdentityProviderConfig policyBackedIdentityProviderConfig;
+    private RoleManager roleManager;
+    private Policy policyBackedIdentityProviderPolicy;
+    private Role defaultPolicyBackedIdentityProviderRole;
 
     @Before
     public void before() throws Exception {
@@ -54,6 +64,17 @@ public class DependencyIdentityTest extends DependencyTestBase {
         securePasswordManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
         identityProviderConfigManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
+        policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
+        roleManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("roleManager", RoleManager.class);
+
+        //create a policy for policyBack id provider.
+        policyBackedIdentityProviderPolicy = new Policy(PolicyType.IDENTITY_PROVIDER_POLICY, "PolicyBackedIdProviderPolicy", "", false);
+        policyManager.save(policyBackedIdentityProviderPolicy);
+
+        //create role
+        defaultPolicyBackedIdentityProviderRole = new Role();
+        defaultPolicyBackedIdentityProviderRole.setName("IdProviderDefaultRole");
+        roleManager.save(defaultPolicyBackedIdentityProviderRole);
 
         //create secure password
         securePassword.setName("MyPassword");
@@ -101,6 +122,13 @@ public class DependencyIdentityTest extends DependencyTestBase {
         internalUserManager = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID).getUserManager();
         internalGroupManager.saveGroup(internalGroup);
         internalGroupManager.addUser(internalUserManager.findByLogin("admin"),internalGroup);
+
+        policyBackedIdentityProviderConfig = new PolicyBackedIdentityProviderConfig();
+        policyBackedIdentityProviderConfig.setName("PolicyBackedIdentityProvider");
+        policyBackedIdentityProviderConfig.setDefaultRoleId(defaultPolicyBackedIdentityProviderRole.getGoid());
+        policyBackedIdentityProviderConfig.setPolicyId(policyBackedIdentityProviderPolicy.getGoid());
+
+        identityProviderConfigManager.save(policyBackedIdentityProviderConfig);
     }
 
     @BeforeClass
@@ -115,7 +143,10 @@ public class DependencyIdentityTest extends DependencyTestBase {
         securePasswordManager.delete(securePassword);
         identityProviderConfigManager.delete(ldap);
         identityProviderConfigManager.delete(ldapNtlmPassword);
+        identityProviderConfigManager.delete(policyBackedIdentityProviderConfig);
         internalGroupManager.delete(internalGroup.getId());
+        roleManager.delete(defaultPolicyBackedIdentityProviderRole);
+        policyManager.delete(policyBackedIdentityProviderPolicy);
     }
 
     @Test
@@ -548,6 +579,55 @@ public class DependencyIdentityTest extends DependencyTestBase {
                 assertEquals(securePassword.getId(), passwordDep.getId());
                 assertEquals(securePassword.getName(), passwordDep.getName());
                 assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDep.getType());
+            }
+        });
+    }
+
+    @Test
+    public void IdentityAssertionPolicyBackedTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:Authentication>\n" +
+                        "            <L7p:IdentityProviderOid goidValue=\""+ policyBackedIdentityProviderConfig.getId()+"\"/>\n" +
+                        "        </L7p:Authentication>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(0);
+                //policy or role may come first
+                if(EntityType.POLICY.toString().equals(dep.getType())){
+                    assertEquals(policyBackedIdentityProviderConfig.getPolicyId().toString(), dep.getId());
+                    dep  = dependencyAnalysisMO.getDependencies().get(1);
+                    assertEquals(EntityType.RBAC_ROLE.toString(), dep.getType());
+                    assertEquals(policyBackedIdentityProviderConfig.getDefaultRoleId().toString(), dep.getId());
+                } else {
+                    assertEquals(EntityType.RBAC_ROLE.toString(), dep.getType());
+                    assertEquals(policyBackedIdentityProviderConfig.getDefaultRoleId().toString(), dep.getId());
+                    dep  = dependencyAnalysisMO.getDependencies().get(1);
+                    assertEquals(EntityType.POLICY.toString(), dep.getType());
+                    assertEquals(policyBackedIdentityProviderConfig.getPolicyId().toString(), dep.getId());
+                }
+
+                dep  = dependencyAnalysisMO.getDependencies().get(2);
+                assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), dep.getType());
+                assertEquals(policyBackedIdentityProviderConfig.getId(), dep.getId());
+                assertEquals(policyBackedIdentityProviderConfig.getName(), dep.getName());
+                if(policyBackedIdentityProviderConfig.getDefaultRoleId().toString().equals(dep.getDependencies().get(0).getId())){
+                    assertEquals(policyBackedIdentityProviderConfig.getPolicyId().toString(), dep.getDependencies().get(1).getId());
+                } else {
+                    assertEquals(policyBackedIdentityProviderConfig.getPolicyId().toString(), dep.getDependencies().get(0).getId());
+                    assertEquals(policyBackedIdentityProviderConfig.getDefaultRoleId().toString(), dep.getDependencies().get(1).getId());
+                }
             }
         });
     }

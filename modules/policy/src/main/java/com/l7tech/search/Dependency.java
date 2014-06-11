@@ -63,7 +63,8 @@ public @interface Dependency {
         GROUP(EntityType.GROUP),
         RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
-        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE);
+        CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
+        RBAC_ROLE(EntityType.RBAC_ROLE);
 
         private EntityType entityType;
 

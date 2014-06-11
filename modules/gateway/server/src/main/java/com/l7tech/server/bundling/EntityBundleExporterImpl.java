@@ -2,6 +2,7 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Identity;
@@ -138,7 +139,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         if (entity instanceof SsgKeyEntry ||
                 entity instanceof RevocationCheckPolicy ||
                 entity instanceof IdentityProviderConfig ||
-                entity instanceof Identity) {
+                entity instanceof Identity ||
+                entity instanceof Role) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
