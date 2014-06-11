@@ -86,9 +86,11 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
     }
 
     @Override
-    public void replaceDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
-        super.replaceDependencies(policy, replacementMap, finder);
-        replacePolicyAssertionDependencies(policy, replacementMap, finder);
+    public void replaceDependencies(@NotNull final Policy policy, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies ) throws CannotReplaceDependenciesException {
+        super.replaceDependencies(policy, replacementMap, finder, replaceAssertionsDependencies);
+        if(replaceAssertionsDependencies){
+            replacePolicyAssertionDependencies(policy, replacementMap, finder);
+        }
 
         //TODO: does this need to be here or will the super.replaceDependencies already have done this?
         //replace the security zone
@@ -127,7 +129,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
             //replace dependencies in each assertion
-            finder.replaceDependencies(currentAssertion, replacementMap);
+            finder.replaceDependencies(currentAssertion, replacementMap, true);
         }
         try {
             //This will recreate the policy xml if any of the assertions were updated.

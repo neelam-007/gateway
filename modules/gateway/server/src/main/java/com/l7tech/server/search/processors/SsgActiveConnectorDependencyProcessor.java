@@ -46,15 +46,15 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
     }
 
     @Override
-    public void replaceDependencies(@NotNull final SsgActiveConnector activeConnector, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final SsgActiveConnector activeConnector, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         // replace the dependencies using the super.
-        super.replaceDependencies(activeConnector, replacementMap, finder);
+        super.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
         final DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
-            processor.replaceDependencies(activeConnector, replacementMap, finder);
+            processor.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
         } else {
             throw new CannotReplaceDependenciesException(activeConnector.getName(), activeConnector.getId(), EntityType.SSG_ACTIVE_CONNECTOR.getEntityClass(), activeConnector.getClass(), "Unknown active connector type: " + activeConnector.getType());
         }

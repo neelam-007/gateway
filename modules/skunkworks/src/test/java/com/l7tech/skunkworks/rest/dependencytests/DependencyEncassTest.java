@@ -105,7 +105,7 @@ public class DependencyEncassTest extends DependencyTestBase{
                 "        <L7p:Encapsulated>\n" +
                 "            <L7p:EncapsulatedAssertionConfigGuid stringValue=\""+ encassConfig.getGuid() +"\"/>\n" +
                 "            <L7p:EncapsulatedAssertionConfigName stringValue=\""+ encassConfig.getName() +"\"/>\n" +
-                "        </L7p:Encapsulated>>" +
+                "        </L7p:Encapsulated>" +
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
 
@@ -146,7 +146,7 @@ public class DependencyEncassTest extends DependencyTestBase{
                         "        <L7p:Encapsulated>\n" +
                         "            <L7p:EncapsulatedAssertionConfigGuid stringValue=\""+ encassConfig.getGuid() +"\"/>\n" +
                         "            <L7p:EncapsulatedAssertionConfigName stringValue=\""+ encassConfig.getName() +"\"/>\n" +
-                        "        </L7p:Encapsulated>>" +
+                        "        </L7p:Encapsulated>" +
                         "    </wsp:All>\n" +
                         "</wsp:Policy>";
 

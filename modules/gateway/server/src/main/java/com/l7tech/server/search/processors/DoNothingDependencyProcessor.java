@@ -46,6 +46,6 @@ public class DoNothingDependencyProcessor<O> implements DependencyProcessor<O> {
     }
 
     @Override
-    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
     }
 }

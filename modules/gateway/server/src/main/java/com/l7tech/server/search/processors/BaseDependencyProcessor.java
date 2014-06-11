@@ -44,7 +44,7 @@ public abstract class BaseDependencyProcessor<O> implements DependencyProcessor<
     }
 
     @Override
-    public void replaceDependencies(@NotNull O entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull O entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         throw new NotImplementedException("The replaceDependencies method is not yet implemented for this dependency processor: " + this.getClass());
     }
 }

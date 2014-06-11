@@ -182,14 +182,14 @@ public class BundleResource {
      *
      * @param test   If true the bundle import will be tested no changes will be made to the gateway.,
      * @param bundle The bundle to import
-     * @param activate True to activate the updated services and policies.
+     * @param activate False to not activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
-                                 @QueryParam("activate") @DefaultValue("false") final boolean activate,
+                                 @QueryParam("activate") @DefaultValue("true") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
                                  final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();

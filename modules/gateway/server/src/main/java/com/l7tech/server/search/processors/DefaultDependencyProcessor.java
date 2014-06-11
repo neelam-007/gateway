@@ -336,7 +336,7 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     }
 
     @Override
-    public void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         try {
             processObjectDependencyMethods(object,
                     new ProcessMethodDependencyReturn<CannotReplaceDependenciesException>() {

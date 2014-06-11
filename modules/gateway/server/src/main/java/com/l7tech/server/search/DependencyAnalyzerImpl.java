@@ -91,7 +91,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      * {@inheritDoc}
      */
     @Override
-    public <E extends Entity> void replaceDependencies(@NotNull final E entity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException {
+    public <E extends Entity> void replaceDependencies(@NotNull final E entity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         if (replacementMap.isEmpty()) {
             //nothing to replace, just shortcut to returning
             return;
@@ -99,7 +99,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
         //create a new dependency finder to perform the replacement
         final DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String, Object>emptyMap(), processorStore);
-        dependencyFinder.replaceDependencies(entity, replacementMap);
+        dependencyFinder.replaceDependencies(entity, replacementMap, replaceAssertionsDependencies);
     }
 
     /**

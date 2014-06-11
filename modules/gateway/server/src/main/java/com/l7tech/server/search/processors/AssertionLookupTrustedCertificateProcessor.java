@@ -64,7 +64,9 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
     }
 
     @Override
-    public void replaceDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+        if(!replaceAssertionsDependencies) return;
+
         // todo ???
 //        try {
 //            Collection<TrustedCert> certificates = // what is it dependent on from the original gateway?????

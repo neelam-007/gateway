@@ -86,12 +86,13 @@ public class DependencyFinder {
      *
      * @param object         the object who's dependencies to replace.
      * @param replacementMap The replacement map is a map of entity headers to replace.
+     * @param replaceAssertionsDependencies True to replace the assertion dependencies
      */
-    public synchronized <O> void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws CannotReplaceDependenciesException {
+    public synchronized <O> void replaceDependencies(@NotNull final O object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         //find the dependency processor to use.
         final DependencyProcessor processor = processorStore.getProcessor(object);
         //noinspection unchecked
-        processor.replaceDependencies(object, replacementMap, this);
+        processor.replaceDependencies(object, replacementMap, this, replaceAssertionsDependencies);
     }
 
     /**

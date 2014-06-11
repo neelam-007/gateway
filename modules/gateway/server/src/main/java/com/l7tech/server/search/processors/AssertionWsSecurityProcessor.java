@@ -59,7 +59,9 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
     }
 
     @Override
-    public void replaceDependencies(@NotNull final WsSecurity assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
+    public void replaceDependencies(@NotNull final WsSecurity assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+        if(!replaceAssertionsDependencies) return;
+
         // todo for reference by name?
         //todo: should super.replaceDependencies be called?
         // only replace referencing by goid for now.

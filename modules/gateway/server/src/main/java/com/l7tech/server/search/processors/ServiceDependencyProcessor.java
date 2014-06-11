@@ -53,11 +53,11 @@ public class ServiceDependencyProcessor extends DefaultDependencyProcessor<Publi
     }
 
     @Override
-    public void replaceDependencies(@NotNull final PublishedService object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
-        super.replaceDependencies(object, replacementMap, finder);
+    public void replaceDependencies(@NotNull final PublishedService object, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+        super.replaceDependencies(object, replacementMap, finder, replaceAssertionsDependencies);
 
         //This will replace dependencies in the assertions that this service contains
-        if (object.getPolicy() != null) {
+        if (replaceAssertionsDependencies && object.getPolicy() != null) {
             PolicyDependencyProcessor.replacePolicyAssertionDependencies(object.getPolicy(), replacementMap, finder);
         }
 

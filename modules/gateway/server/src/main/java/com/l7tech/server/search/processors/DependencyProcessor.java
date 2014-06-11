@@ -71,6 +71,7 @@ public interface DependencyProcessor<O> {
      * @param object         the object who's dependencies to replace.
      * @param replacementMap The replacement map is a map of dependentEntity objects to replace.
      * @param finder         The dependency finder replacing the dependencies.
+     * @param replaceAssertionsDependencies True to replace the assertion dependencies
      */
-    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder) throws CannotReplaceDependenciesException;
+    public void replaceDependencies(@NotNull O object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException;
 }

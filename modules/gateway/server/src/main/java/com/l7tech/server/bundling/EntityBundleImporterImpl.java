@@ -24,10 +24,12 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
+import com.saxonica.functions.extfn.Find;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +69,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private IdentityProviderFactory identityProviderFactory;
     @Inject
     private PolicyManager policyManager;
+    @Inject
+    private ServiceManager serviceManager;
     @Inject
     private PolicyVersionManager policyVersionManager;
 
@@ -173,16 +177,70 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         mappingsRtn.add(mappingResult);
                     } catch (Exception e) {
                         mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
+                        e.printStackTrace();
                         transactionStatus.setRollbackOnly();
                     }
                 }
-                //TODO: handle any recursive dependencies (Encapsulated assertions?)
+
+                // replace dependencies in policy xml
+                replacePolicyDependencies(mappingsRtn, resourceMapping);
+
                 if (test) {
                     transactionStatus.setRollbackOnly();
                 }
                 return mappingsRtn;
             }
         });
+    }
+
+    private void replacePolicyDependencies(List<EntityMappingResult> mappingsRtn, final Map<EntityHeader, EntityHeader> resourceMapping) {
+        // map dependencies for policies and services
+        for(final EntityMappingResult results: mappingsRtn){
+            if(results.getTargetEntityHeader()!=null &&
+                results.isSuccessful() &&
+                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))){
+                final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                tt.setReadOnly(false);
+                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                    @Override
+                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                        try {
+                            final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
+                            dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, true);
+                            Policy policy;
+                            if(existingEntity instanceof Policy){
+                                policy = (Policy)existingEntity;
+                                policyManager.update(policy);
+                            }else if(existingEntity instanceof PublishedService){
+                                serviceManager.update((PublishedService)existingEntity);
+                                policy = ((PublishedService)existingEntity).getPolicy();
+                            }else{
+                                return null;
+                            }
+
+                            // save and update policy version
+                            PolicyVersion policyVersion = policyVersionManager.findLatestRevisionForPolicy(policy.getGoid());
+                            policyVersion.setXml(policy.getXml());
+                            policyVersionManager.update(policyVersion);
+
+                        } catch (Exception e) {
+                            return e;
+                        }
+
+                        //flush the newly created object so that it can be found by the entity managers later.
+                        transactionStatus.flush();
+                        return null;
+                    }
+                });
+                if(exception!=null){
+                    EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
+                    mappingsRtn.remove(results);
+                    mappingsRtn.add(newResult);
+                }
+
+            }
+        }
     }
 
     /**
@@ -269,8 +327,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             }
         }
 
-        //replace dependencies in the entity
-        dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping);
+        //not replace dependencies for assertions
+        dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping, false);
 
         //create/save dependent entities
         beforeCreateOrUpdateEntities(entityContainer, existingEntity);

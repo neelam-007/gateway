@@ -133,7 +133,7 @@ public class DependencyAnalyzerGeneralTest {
         dependencyAnalyzer.replaceDependencies(myEntityWithOneDependency, CollectionUtils.MapBuilder.<EntityHeader, EntityHeader>builder()
                 .put(
                         EntityHeaderUtils.fromEntity(myEntityWithNoDependencies),
-                        EntityHeaderUtils.fromEntity(myEntityWithDifferentGetter)).map());
+                        EntityHeaderUtils.fromEntity(myEntityWithDifferentGetter)).map(), true);
         Assert.assertEquals(myEntityWithOneDependency.getDependency(), myEntityWithDifferentGetter);
 
     }

@@ -187,8 +187,10 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
     }
 
     @Override
-    public void replaceDependencies(@NotNull final A assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder) throws CannotReplaceDependenciesException {
-        super.replaceDependencies(assertion, replacementMap, finder);
+    public void replaceDependencies(@NotNull final A assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+        if(!replaceAssertionsDependencies) return;
+
+        super.replaceDependencies(assertion, replacementMap, finder, replaceAssertionsDependencies);
 
         //use the entity resolver to find the entities used.
         final EntitiesResolver entitiesResolver = EntitiesResolver
