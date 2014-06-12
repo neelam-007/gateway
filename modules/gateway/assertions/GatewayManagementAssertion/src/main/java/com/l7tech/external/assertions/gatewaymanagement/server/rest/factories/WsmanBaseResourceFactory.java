@@ -124,14 +124,9 @@ public abstract class WsmanBaseResourceFactory<R extends ManagedObject, F extend
         mapping.setType(getResourceType());
         mapping.setAction(defaultAction);
         mapping.setSrcId(resource.getId());
-        mapping.setReferencePath(getReferencePath(resource.getId()));
         if (!"id".equals(defaultMapBy)) {
             mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("MapBy", defaultMapBy).map());
         }
         return mapping;
-    }
-
-    protected String getReferencePath(String id) {
-        return "//l7:Item[l7:id='" + id + "']";
     }
 }

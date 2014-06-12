@@ -16,7 +16,6 @@ import java.util.Map;
 public class Mapping {
     private String type;
     private String srcId;
-    private String referencePath;
     private String srcUri;
     private String targetUri;
     private String targetId;
@@ -42,7 +41,6 @@ public class Mapping {
     Mapping(Mapping mapping) {
         this.type = mapping.getType();
         this.srcId = mapping.getSrcId();
-        this.referencePath = mapping.getReferencePath();
         this.srcUri = mapping.getSrcUri();
         this.targetUri = mapping.getTargetUri();
         this.targetId = mapping.getTargetId();
@@ -70,15 +68,6 @@ public class Mapping {
 
     public void setSrcId(String srcId) {
         this.srcId = srcId;
-    }
-
-    @XmlAttribute(name = "referencePath")
-    public String getReferencePath() {
-        return referencePath;
-    }
-
-    public void setReferencePath(String referencePath) {
-        this.referencePath = referencePath;
     }
 
     @XmlAttribute(name = "srcUri")
