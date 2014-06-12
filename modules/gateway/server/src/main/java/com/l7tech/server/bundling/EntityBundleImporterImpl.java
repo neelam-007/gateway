@@ -674,9 +674,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 }
                                 case NAME: {
                                     //Find the entity by its name
-                                    final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Arrays.<Object>asList(mappingTarget)).map(), 0, 1, null, null);
+                                    final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Arrays.<Object>asList(mappingTarget)).map(), 0, -1, null, null);
                                     if (list.isEmpty()) {
                                         resource = null;
+                                    } else if(list.size() > 1) {
+                                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with name: " + mappingTarget));
                                     } else {
                                         resource = list.get(0);
                                     }
@@ -684,9 +686,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 }
                                 case GUID: {
                                     //Find the entity by its guid
-                                    final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("guid", Arrays.<Object>asList(mappingTarget)).map(), 0, 1, null, null);
+                                    final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("guid", Arrays.<Object>asList(mappingTarget)).map(), 0, -1, null, null);
                                     if (list.isEmpty()) {
                                         resource = null;
+                                    } else if(list.size() > 1) {
+                                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with guid: " + mappingTarget));
                                     } else {
                                         resource = list.get(0);
                                     }

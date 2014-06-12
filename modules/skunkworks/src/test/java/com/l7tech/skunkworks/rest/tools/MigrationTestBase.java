@@ -103,6 +103,11 @@ public abstract class MigrationTestBase {
         Assert.assertEquals(204, response.getStatus());
     }
 
+    protected void assertConflictResponse(RestResponse response) {
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(409, response.getStatus());
+    }
+
     protected void cleanupAll(Item<Mappings> mappings) throws Exception {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
