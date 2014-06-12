@@ -164,6 +164,7 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
         jmsDetail.setTemplate(false);
         jmsConnection = ManagedObjectFactory.createJMSConnection();
         jmsConnection.setId(getGoid().toString());
+        jmsConnection.setVersion(23);
         jmsConnection.setTemplate(false);
         jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
         jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
@@ -195,7 +196,8 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
         jmsDetail.setInbound(jmsEndpoint.isMessageSource());
         jmsDetail.setId(jmsEndpoint.getId());
         JMSConnection connection = ManagedObjectFactory.createJMSConnection();
-        connection.setId(jmsConnection.getId());
+        connection.setId(getGoid().toString());
+        connection.setVersion(1234);
         connection.setTemplate(jmsConnection.isTemplate());
         connection.setProviderType(JMSConnection.JMSProviderType.Weblogic);
         connection.setProperties(CollectionUtils.<String, Object>mapBuilder()

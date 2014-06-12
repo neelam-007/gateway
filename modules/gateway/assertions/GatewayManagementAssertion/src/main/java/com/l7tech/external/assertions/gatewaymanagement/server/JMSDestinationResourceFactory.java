@@ -135,7 +135,7 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         }
 
         // ignore connection ID, uses existing on update and delete
-        setVersion( jmsConnection, jmsConnectionMO.getVersion() );
+//        setVersion( jmsConnection, jmsDestination.getVersion() );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
         setProperties( jmsConnection, jmsConnectionMO.getProperties(), JmsConnection.class );
 
@@ -165,9 +165,8 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         final JmsEndpoint newJmsEndpoint = newJmsEntityBag.getJmsEndpoint();
         final JmsConnection newJmsConnection = newJmsEntityBag.getJmsConnection();
 
-        // Validate identity and version (the endpoint is validated as the main entity)
+        // Validate identity (the endpoint is validated as the main entity)
         verifyIdentifier( oldJmsConnection.getGoid(), newJmsConnection.getGoid() );
-        verifyVersion( oldJmsConnection.getVersion(), newJmsConnection.getVersion() );
 
         // Copy endpoint properties that allow update
         oldJmsEndpoint.setName( newJmsEndpoint.getName() );
