@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
@@ -236,7 +237,7 @@ public class DebugManagerImpl implements DebugManager {
     }
 
     @Override
-    public void onMessageFinished(@NotNull PolicyEnforcementContext pec) {
+    public void onMessageFinished(@NotNull PolicyEnforcementContext pec, @Nullable AssertionStatus status) {
         lock.lock();
         try {
             DebugContext debugContext = pec.getDebugContext();
@@ -244,7 +245,7 @@ public class DebugManagerImpl implements DebugManager {
                 // Call DebugContext#onMessageFinished() prior to calling stopDebug().
                 // stopDebug() will reset the current line member variable of debug context.
                 //
-                debugContext.onMessageFinished(pec);
+                debugContext.onMessageFinished(pec, status);
                 this.stopDebug(debugContext.getTaskId());
             }
         } finally {

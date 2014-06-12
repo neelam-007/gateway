@@ -326,12 +326,10 @@ public class DebugPecDataTest {
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
-        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
-        pec.setPolicyResult(AssertionStatus.NONE);
 
         List<Integer> currentLine = new ArrayList<>(1);
         currentLine.add(2);
-        debugPecData.setPolicyResult(pec, currentLine);
+        debugPecData.setPolicyResult(AssertionStatus.NONE, currentLine);
 
         // Verify policy result.
         //
@@ -347,12 +345,10 @@ public class DebugPecDataTest {
         Message request = new Message(sm, MESSAGE_BODY_CONTENT_TYPE, new ByteArrayInputStream(MESSAGE_BODY.getBytes("UTF-8")));
         MockHttpServletRequest hRequest = new MockHttpServletRequest("POST", "test_url");
         request.attachHttpRequestKnob( new HttpServletRequestKnob(hRequest));
-        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
-        pec.setPolicyResult(AssertionStatus.AUTH_REQUIRED);
 
         List<Integer> currentLine = new ArrayList<>(1);
         currentLine.add(2);
-        debugPecData.setPolicyResult(pec, currentLine);
+        debugPecData.setPolicyResult(AssertionStatus.AUTH_REQUIRED, currentLine);
 
         // Verify policy result.
         //
@@ -373,7 +369,6 @@ public class DebugPecDataTest {
             request.getHeadersKnob().addHeader(HEADER_NAMES[ix], HEADER_VALUES[ix], HeadersKnob.HEADER_TYPE_HTTP);
         }
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null);
-        pec.setPolicyResult(AssertionStatus.NONE);
 
         // Add user context variable
         //
@@ -384,7 +379,7 @@ public class DebugPecDataTest {
         debugPecData.update(pec, userContextVariables);
         List<Integer> currentLine = new ArrayList<>(1);
         currentLine.add(2);
-        debugPecData.setPolicyResult(pec, currentLine);
+        debugPecData.setPolicyResult(AssertionStatus.NONE, currentLine);
 
         // Verify result.
         //

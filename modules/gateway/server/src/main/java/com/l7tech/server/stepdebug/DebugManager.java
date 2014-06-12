@@ -1,6 +1,7 @@
 package com.l7tech.server.stepdebug;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -132,6 +133,7 @@ public interface DebugManager {
      * debugging can finish if debugging is enabled.
      *
      * @param pec the PEC
+     * @param status the policy result
      */
-    void onMessageFinished(@NotNull PolicyEnforcementContext pec);
+    void onMessageFinished(@NotNull PolicyEnforcementContext pec, @Nullable AssertionStatus status);
 }

@@ -83,11 +83,10 @@ public class DebugPecData {
     /**
      * Sets the policy result.
      *
-     * @param pec The PEC
+     * @param status the policy result
      * @param currentLine the current line (equivalent to last assertion line executed)
      */
-    public void setPolicyResult(@NotNull PolicyEnforcementContext pec, @Nullable Collection<Integer> currentLine) {
-        AssertionStatus status = pec.getPolicyResult();
+    public void setPolicyResult(@Nullable AssertionStatus status, @Nullable Collection<Integer> currentLine) {
         if (status != null) {
             if (AssertionStatus.NONE.equals(status)) {
                 // Successful.

@@ -587,6 +587,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
                 completed = true;
             } finally {
+                debugManager.onMessageFinished(context, context.getPolicyResult());
+
                 // Process message completed
                 if ( status == AssertionStatus.NONE && completed ) {
                     status = processMessageCompletedPolicy( false );
@@ -596,8 +598,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // used
                     processMessageCompletedPolicy( true );
                 }
-
-                debugManager.onMessageFinished(context);
             }
 
             return status;
@@ -1104,7 +1104,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         private AssertionStatus processGlobalPolicy( final PolicyCache policyCache,
                                                      final PolicyEnforcementContext context,
                                                      final String guid ) throws PolicyAssertionException, IOException {
-            AssertionStatus result;
+            AssertionStatus result = null;
 
             ServerPolicyHandle handle = null;
             PolicyEnforcementContext pec = null;
@@ -1118,8 +1118,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     result = AssertionStatus.NONE;
                 }
             } finally {
-                if (pec != null) {
-                    debugManager.onMessageFinished(pec);
+                if (handle != null && pec != null) {
+                    debugManager.onMessageFinished(pec, result);
                 }
                 ResourceUtils.closeQuietly( pec );
                 ResourceUtils.closeQuietly( handle );

@@ -3,6 +3,7 @@ package com.l7tech.server.stepdebug;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jetbrains.annotations.NotNull;
@@ -295,13 +296,14 @@ public class DebugContext {
      * This method must be called when a message finishes processing.
      *
      * @param pec the PEC
+     * @param status the policy result
      */
-    public void onMessageFinished(@NotNull PolicyEnforcementContext pec) {
+    public void onMessageFinished(@NotNull PolicyEnforcementContext pec, @Nullable AssertionStatus status) {
         lock.lock();
         try {
             if (!DebugState.STOPPED.equals(this.debugState)) {
                 this.debugPecData.update(pec, userContextVariables);
-                this.debugPecData.setPolicyResult(pec, currentLine);
+                this.debugPecData.setPolicyResult(status, currentLine);
             }
         }  finally {
             this.markAsDirty();

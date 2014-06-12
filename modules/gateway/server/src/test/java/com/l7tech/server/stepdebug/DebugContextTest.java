@@ -187,8 +187,7 @@ public class DebugContextTest {
     @BugId("SSM-4578")
     @Test
     public void testOnMessageFinishedSuccessfully() throws Exception {
-        when(pec.getPolicyResult()).thenReturn(AssertionStatus.NONE);
-        debugContext.onMessageFinished(pec);
+        debugContext.onMessageFinished(pec, AssertionStatus.NONE);
 
         // Verify policy result.
         //
@@ -200,8 +199,7 @@ public class DebugContextTest {
     @BugId("SSM-4578,SSM-4622")
     @Test
     public void testOnMessageFinishedUnsuccessfully() throws Exception {
-        when(pec.getPolicyResult()).thenReturn(AssertionStatus.AUTH_REQUIRED);
-        debugContext.onMessageFinished(pec);
+        debugContext.onMessageFinished(pec, AssertionStatus.AUTH_REQUIRED);
 
         // Verify policy result.
         //
