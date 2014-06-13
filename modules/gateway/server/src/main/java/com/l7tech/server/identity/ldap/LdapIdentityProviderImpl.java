@@ -671,7 +671,9 @@ public class LdapIdentityProviderImpl
                 }
                 env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, dn);
-                env.put(Context.SECURITY_CREDENTIALS, pass);
+                if(pass!=null) {
+                    env.put(Context.SECURITY_CREDENTIALS, pass);
+                }
             }
 
             try {
