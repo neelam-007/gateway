@@ -49,7 +49,8 @@ public class PreferencesDialog extends JDialog {
     private JTextField maxNumTabTextField;
     private JRadioButton wrapTabsRadioButton;
     private JRadioButton scrollTabsRadioButton;
-    private JPanel prefContainerPane;
+    private JPanel settingsPane;
+    private JPanel buttonsPane;
 
     /** preferences instance */
     private Properties props;
@@ -67,9 +68,9 @@ public class PreferencesDialog extends JDialog {
         initResources();
         initComponents(isApplet);
         loadPreferences();
-        Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
         DialogDisplayer.pack(this);
+        Utilities.centerOnScreen(this);
     }
 
     /**
@@ -202,10 +203,16 @@ public class PreferencesDialog extends JDialog {
             rememberLastIdLabel.setVisible( false );
             rememberLastIdCheckBox.setVisible( false );
             numHostsHistoryLabel.setVisible( false );
-            numHostsHistoryTextField.setVisible( false );
-
-            setPreferredSize(new Dimension(prefContainerPane.getPreferredSize().width + 40, 220));
+            numHostsHistoryTextField.setVisible(false);
         }
+
+        final Dimension settingsPaneDim = settingsPane.getPreferredSize();
+        final Dimension buttonsPaneDim = buttonsPane.getPreferredSize();
+        setPreferredSize(new Dimension(
+            settingsPaneDim.width + 40,
+            // The height in applet is less than the height in non-applet, since some fields are not available in applet.
+            isApplet? (settingsPaneDim.height + buttonsPaneDim.height + 60) : getPreferredSize().height
+        ));
     }
 
     /**
