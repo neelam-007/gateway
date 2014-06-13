@@ -6,10 +6,13 @@ import com.l7tech.gateway.common.stepdebug.DebugContextVariableData;
 import com.l7tech.gateway.common.stepdebug.DebugResult;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.event.admin.PolicyDebuggerAdminEvent;
 import com.l7tech.util.Option;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.*;
 
@@ -28,7 +31,12 @@ public class DebugAdminImplTest {
 
     @Before
     public void setup() {
-        DebugManager manager = new DebugManagerImpl(auditFactory);
+        DebugManagerImpl manager = new DebugManagerImpl(auditFactory);
+        manager.setApplicationEventPublisher(new ApplicationEventPublisher() {
+            @Override
+            public void publishEvent(ApplicationEvent applicationEvent) {
+                Assert.assertTrue(applicationEvent instanceof PolicyDebuggerAdminEvent);
+            }});
         admin = new DebugAdminImpl();
         admin.setDebugManager(manager);
 

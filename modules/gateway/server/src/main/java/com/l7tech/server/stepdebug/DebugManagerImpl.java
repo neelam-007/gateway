@@ -2,16 +2,18 @@ package com.l7tech.server.stepdebug;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.stepdebug.DebugState;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.event.admin.PolicyDebuggerAdminEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class DebugManagerImpl implements DebugManager {
+public class DebugManagerImpl implements ApplicationEventPublisherAware, DebugManager {
     private static final Logger logger = Logger.getLogger(DebugManagerImpl.class.getName());
 
     private static final String PROP_INACTIVE_SESSION_CLEAN_INTERVAL_MILLIS = "com.l7tech.server.stepdebug.inactiveSessionCleanIntervalMillis";
@@ -33,6 +35,7 @@ public class DebugManagerImpl implements DebugManager {
     private static final long DEFAULT_INACTIVE_SESSION_TIMEOUT_MILLIS = 86400000L; // 1 Day
 
     private final Audit audit;
+    private ApplicationEventPublisher applicationEventPublisher;
     private final Map<String, DebugContext> debugTasks = new ConcurrentHashMap<>();
     private final Map<Goid, DebugContext> waitingForMsg = new ConcurrentHashMap<>(); // Debugger started and waiting for message to arrive.
     private final Lock lock = new ReentrantLock(true);
@@ -70,6 +73,11 @@ public class DebugManagerImpl implements DebugManager {
     }
 
     @Override
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
+    }
+
+    @Override
     @NotNull
     public DebugContext createDebugContext(@NotNull Goid policyGoid) {
         String taskId = UUID.randomUUID().toString();
@@ -101,10 +109,7 @@ public class DebugManagerImpl implements DebugManager {
                 return Option.some("Cannot start Service Debugger. There is a Service Debugger already running for the service/policy.");
             }
 
-            audit.logAndAudit(
-                SystemMessages.SERVICE_DEBUGGER_START,
-                policyGoid.toString());
-
+            applicationEventPublisher.publishEvent(new PolicyDebuggerAdminEvent(this, true, policyGoid));
             debugContext.startDebugging();
             waitingForMsg.put(policyGoid, debugContext);
         } finally {
@@ -123,9 +128,7 @@ public class DebugManagerImpl implements DebugManager {
                 Goid policyGoid = debugContext.getPolicyGoid();
                 waitingForMsg.remove(policyGoid);
                 if (!debugContext.getDebugState().equals(DebugState.STOPPED)) {
-                    audit.logAndAudit(
-                        SystemMessages.SERVICE_DEBUGGER_STOP,
-                        policyGoid.toString());
+                    applicationEventPublisher.publishEvent(new PolicyDebuggerAdminEvent(this, false, policyGoid));
                     debugContext.stopDebugging();
                 }
             }

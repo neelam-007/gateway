@@ -127,6 +127,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             return level;
         } else if (genericEvent instanceof AuditRevokeAllUserCertificates) {
             return Level.SEVERE;
+        } else if (genericEvent instanceof PolicyDebuggerAdminEvent) {
+            return ((PolicyDebuggerAdminEvent) genericEvent).getMinimumLevel();
         } else if (genericEvent instanceof AdminEvent) {
             return Level.INFO;
         } else {
