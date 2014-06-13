@@ -1,11 +1,14 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -15,18 +18,21 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
+import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URLEncoder;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
@@ -49,7 +55,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
 
         //Create the users
 
-        InternalUser user = new InternalUser("User 1");
+        InternalUser user = new InternalUser("User1");
         user.setFirstName("First1");
         user.setLastName("Last1");
         user.setHashedPassword(passwordHasher.hashPassword("password".getBytes(Charsets.UTF8)));
@@ -58,7 +64,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         internalUserManager.save(user,null);
         users.add(user);
 
-        user = new InternalUser("User 2");
+        user = new InternalUser("User2");
         user.setFirstName("First2");
         user.setLastName("Last2");
         user.setHashedPassword(passwordHasher.hashPassword("password".getBytes(Charsets.UTF8)));
@@ -67,7 +73,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         internalUserManager.save(user,null);
         users.add(user);
 
-        user = new InternalUser("User 3");
+        user = new InternalUser("User3");
         user.setFirstName("First3");
         user.setLastName("Last3");
         user.setEmail("me@here.test");
@@ -202,7 +208,24 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
 
     @Override
     public Map<UserMO, Functions.BinaryVoid<UserMO, RestResponse>> getUnUpdateableManagedObjects() {
-        return Collections.emptyMap();
+        CollectionUtils.MapBuilder<UserMO, Functions.BinaryVoid<UserMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
+
+        User user = this.users.get(0);
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setId(getGoid().toString());
+        userMO.setProviderId(user.getProviderId().toString());
+        userMO.setLogin(user.getLogin() + " Updated");
+        userMO.setFirstName(user.getFirstName());
+        userMO.setLastName(user.getLastName());
+
+        builder.put(userMO, new Functions.BinaryVoid<UserMO, RestResponse>() {
+            @Override
+            public void call(UserMO userMO, RestResponse restResponse) {
+                Assert.assertEquals(404, restResponse.getStatus());
+            }
+        });
+
+        return builder.map();
     }
 
     @Override
@@ -312,5 +335,83 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         }
         // never reach
         return null;
+    }
+
+    @Test
+    public void testUserSetCertificateUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+
+        String userId = users.get(0).getId();
+        try {
+            // create certificate
+            X509Certificate certificate = new TestCertificateGenerator().subject("cn=user1").generate();
+            CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData), user);
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals(401, response.getStatus());
+
+        }finally {
+            userManager.delete(user);
+        }
+    }
+
+    @Test
+    public void testUserRevokeCertificateUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+
+        String userId = users.get(0).getId();
+        String userLogin = users.get(0).getLogin();
+        try {
+            // create certificate
+            X509Certificate certificate = new TestCertificateGenerator().subject("cn="+userLogin).generate();
+            CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+            RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+            assertEquals(200, response.getStatus());
+
+            // revoke certificate
+            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "",user);
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals(401, response.getStatus());
+
+        }finally {
+            userManager.delete(user);
+
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    public void testUserGetCertificateUnprivileged() throws Exception {
+        InternalUser user = createUnprivilegedUser();
+
+        String userId = users.get(0).getId();
+        String userLogin = users.get(0).getLogin();
+        try {
+            // create certificate
+            X509Certificate certificate = new TestCertificateGenerator().subject("cn="+userLogin).generate();
+            CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+            RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+            assertEquals(200, response.getStatus());
+
+            // get certificate
+            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "",user);
+            Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+            Assert.assertEquals(401, response.getStatus());
+
+        }finally {
+            userManager.delete(user);
+
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertEquals(204, response.getStatus());
+        }
+    }
+
+
+    protected String writeMOToString(Object  mo) throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        final StreamResult result = new StreamResult( bout );
+        MarshallingUtils.marshal( mo, result, false );
+        return bout.toString();
     }
 }

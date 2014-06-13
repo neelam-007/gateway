@@ -394,6 +394,7 @@ public class UserRestResourceFactory {
 
     public X509Certificate setCertificate(String providerId, String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
         User user = getUser(providerId, id, true);
+        rbacAccessService.validatePermitted(user, OperationType.UPDATE);
         try {
             final Certificate certificate = CertUtils.getFactory().generateCertificate(
                     new ByteArrayInputStream( getEncoded(certificateData) ) );
@@ -423,11 +424,13 @@ public class UserRestResourceFactory {
 
     public void revokeCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
         User user = getUser(providerId, id, true);
+        rbacAccessService.validatePermitted(user, OperationType.UPDATE);
         clientCertManager.revokeUserCert(user);
     }
 
     public X509Certificate getCertificate(String providerId, String id) throws ResourceFactory.ResourceNotFoundException, ObjectModelException, ResourceFactory.InvalidResourceException {
         User user = getUser(providerId, id, true);
+        rbacAccessService.validatePermitted(user, OperationType.READ);
         Certificate userCert = clientCertManager.getUserCert(user);
         if(userCert == null){
             throw new ResourceFactory.ResourceNotFoundException("User certificate not found: " + id);
