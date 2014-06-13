@@ -177,12 +177,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         mappingsRtn.add(mappingResult);
                     } catch (Exception e) {
                         mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
-                        e.printStackTrace();
                         transactionStatus.setRollbackOnly();
                     }
                 }
 
-                // replace dependencies in policy xml
+                // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
                 replacePolicyDependencies(mappingsRtn, resourceMapping);
 
                 if (test) {
@@ -206,25 +205,42 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     @Override
                     public Exception doInTransaction(final TransactionStatus transactionStatus) {
                         try {
+
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
-                            dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, true);
                             Policy policy;
                             if(existingEntity instanceof Policy){
                                 policy = (Policy)existingEntity;
-                                policyManager.update(policy);
                             }else if(existingEntity instanceof PublishedService){
-                                serviceManager.update((PublishedService)existingEntity);
                                 policy = ((PublishedService)existingEntity).getPolicy();
                             }else{
                                 return null;
                             }
 
-                            // save and update policy version
+                            // do replace entity on the latest policy revision.
+                            final String oldPolicyXml =  policy.getXml();
                             PolicyVersion policyVersion = policyVersionManager.findLatestRevisionForPolicy(policy.getGoid());
+                            policy.setXml(policyVersion.getXml());
+
+                            dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, true);
+                            // save and update policy version's policy xml
                             policyVersion.setXml(policy.getXml());
                             policyVersionManager.update(policyVersion);
 
+                            // save the update policy, or revert back the policy xml for no active version
+                            if( policyVersion.isActive()) {
+                                if (existingEntity instanceof Policy) {
+                                    policyManager.update(policy);
+                                } else {
+                                    serviceManager.update((PublishedService) existingEntity);
+                                }
+                            }else{
+                                // revert the policy xml for non active version
+                                policy.setXml(oldPolicyXml);
+                            }
+
+
                         } catch (Exception e) {
+                            transactionStatus.setRollbackOnly();
                             return e;
                         }
 
@@ -235,8 +251,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 });
                 if(exception!=null){
                     EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
-                    mappingsRtn.remove(results);
-                    mappingsRtn.add(newResult);
+                    int index = mappingsRtn.indexOf(results);
+                    mappingsRtn.remove(index);
+                    mappingsRtn.add(index,newResult);
                 }
 
             }
