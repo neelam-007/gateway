@@ -45,7 +45,7 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
                     disableAssertion(node);
 
                     // Notify the assertion is disabled, then Save buttons will be activated.
-                    notifyAssertionTreeNodeChanged(node);
+                    policyTreeModel.assertionTreeNodeChanged(node);
                 }
                 break;
             case ENABLE_ASSERTION_ACTION_IDX:
@@ -54,7 +54,7 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
                     enableAssertion(node);
 
                     // Notify the assertion is enabled, then Save buttons will be activated.
-                    notifyAssertionTreeNodeChanged(node);
+                    policyTreeModel.assertionTreeNodeChanged(node);
                 }
                 break;
             default:
@@ -110,35 +110,5 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
 
         // Enable its disabled ancestors
         node.enableAncestors();
-    }
-
-    /**
-     * Notify that there are changes on the properties of the assertion associated with node in
-     * the policy tree.  It turns out that Save buttons will be re-activated.
-     *
-     * There are three places where we add treeModelListeners (two from {@link com.l7tech.console.poleditor.PolicyEditorPanel
-     * and one from {@link com.l7tech.console.tree.policy.PolicyToolBar }.)
-     */
-    private void notifyAssertionTreeNodeChanged(AssertionTreeNode node) {
-        switch (actionIdx) {
-            case DISABLE_ASSERTION_ACTION_IDX:
-                // Notify all child nodes.
-                if (node.asAssertion() instanceof CompositeAssertion) {
-                    for (Enumeration e = node.children(); e.hasMoreElements(); )
-                        notifyAssertionTreeNodeChanged((AssertionTreeNode) e.nextElement());
-                }
-                // Notify itself.
-                policyTreeModel.assertionTreeNodeChanged(node);
-                break;
-            case ENABLE_ASSERTION_ACTION_IDX:
-                // Notify all parent nodes and itself..
-                for (TreeNode tn: node.getPath()) {
-                    if (tn.getParent() == null) continue;
-                    policyTreeModel.assertionTreeNodeChanged((AssertionTreeNode)tn);
-                }
-                break;
-            default:
-                logger.warning("Invalid action index: " + actionIdx);
-        }
     }
 }
