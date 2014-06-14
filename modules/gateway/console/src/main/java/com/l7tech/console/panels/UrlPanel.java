@@ -102,6 +102,14 @@ public class UrlPanel extends ValidatedPanel<String> {
         urlEntryPanel.focusFirstComponent();
     }
 
+    public String getSemanticError( String url ) {
+        return urlEntryPanel.getSemanticError( url );
+    }
+
+    public String getSyntaxError( String url ) {
+        return urlEntryPanel.getSyntaxError( url );
+    }
+
     public static class UrlEntryPanel extends TextEntryPanel {
         private boolean emptyUrlAllowed;
 

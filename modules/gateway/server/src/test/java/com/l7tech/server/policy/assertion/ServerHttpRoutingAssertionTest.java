@@ -633,6 +633,102 @@ public class ServerHttpRoutingAssertionTest {
     }
 
     @Test
+    public void testOauth10AuthorizationHeader() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/testOauth10AuthHeader" );
+        hra.setAuthOauthVersion( "1.0" );
+        hra.setAuthOauthTokenVar( "mytoken" );
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final String[] authHeaderValue = { null };
+        PolicyEnforcementContext pec = createAuthHeaderSnaggingTestPec( hra, appContext, authHeaderValue );
+
+        pec.setVariable( "mytoken", "myspecialtoken" );
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals( "OAuth myspecialtoken", authHeaderValue[0]);
+    }
+
+    @Test
+    public void testOauth20AuthorizationHeader() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/testOauth10AuthHeader" );
+        hra.setAuthOauthVersion( "2.0" );
+        hra.setAuthOauthTokenVar( "mytoken" );
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final String[] authHeaderValue = { null };
+        PolicyEnforcementContext pec = createAuthHeaderSnaggingTestPec( hra, appContext, authHeaderValue );
+
+        pec.setVariable( "mytoken", "myspecialtoken" );
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals( "Bearer myspecialtoken", authHeaderValue[0]);
+    }
+
+    @Test
+    public void testOauthInvalidVersionAuthorizationHeader() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/testOauthInvalidVersionAuthorizationHeader" );
+        hra.setAuthOauthVersion( "ewrgwerg" );
+        hra.setAuthOauthTokenVar( "mytoken" );
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final String[] authHeaderValue = { null };
+        PolicyEnforcementContext pec = createAuthHeaderSnaggingTestPec( hra, appContext, authHeaderValue );
+
+        pec.setVariable( "mytoken", "myspecialtoken" );
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals( "Bearer myspecialtoken", authHeaderValue[0]);
+    }
+
+    @Test
+    public void testOauthDefaultVersionAuthorizationHeader() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/testOauthDefaultVersionAuthorizationHeader" );
+        hra.setAuthOauthTokenVar( "mytoken" );
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final String[] authHeaderValue = { null };
+        PolicyEnforcementContext pec = createAuthHeaderSnaggingTestPec( hra, appContext, authHeaderValue );
+
+        pec.setVariable( "mytoken", "myspecialtoken" );
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+
+        assertEquals( "Bearer myspecialtoken", authHeaderValue[0]);
+    }
+
+    private PolicyEnforcementContext createAuthHeaderSnaggingTestPec( HttpRoutingAssertion hra, ApplicationContext appContext, final String[] authHeaderValueCollector ) {
+        return createTestPolicyEnforcementContext(200, hra, appContext, new MockGenericHttpClient.CreateRequestListener() {
+                @Override
+                public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                    for ( HttpHeader head : params.getExtraHeaders() ) {
+                        if ( "Authorization".equalsIgnoreCase( head.getName() ) ) {
+                            if ( authHeaderValueCollector[0] != null )
+                                fail( "More than one authorization header present" );
+                            authHeaderValueCollector[0] = head.getFullValue();
+                        }
+                    }
+                    return null;
+                }
+            });
+    }
+
+
+    @Test
     @BugId("SSG-8361")
     public void testCustomRequestMethodContextVariable() throws Exception {
         HttpRoutingAssertion hra = new HttpRoutingAssertion();

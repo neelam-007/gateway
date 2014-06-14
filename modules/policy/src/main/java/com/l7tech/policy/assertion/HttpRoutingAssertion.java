@@ -63,9 +63,6 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     
     private static final String META_INITIALIZED = HttpRoutingAssertion.class.getName() + ".metadataInitialized";
 
-    @Deprecated 
-    public static final String VAR_SERVICE_URL = "service.url";
-
     protected String protectedServiceUrl;
     protected String login;
     protected String password;
@@ -101,6 +98,9 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     protected boolean krbUseGatewayKeytab;
     protected String krbConfiguredAccount;
     protected String krbConfiguredPassword;
+
+    private String authOauthVersion;
+    private String authOauthTokenVar;
 
     protected boolean usesDefaultKeyStore = true;
     protected boolean usesNoKey = false;
@@ -152,7 +152,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
      * @param protectedServiceUrl the service url
      * @param login               protected service login
      * @param password            protected service password
-     * @param realm               protected servcie realm
+     * @param realm               protected service realm
      */
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
         this.protectedServiceUrl = protectedServiceUrl;
@@ -555,6 +555,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
         expressions.add(timeout);
         expressions.add(connectionTimeout);
         expressions.add(httpMethodAsString);
+        expressions.add( Syntax.getVariableExpression( authOauthTokenVar ) );
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
         expressions.add(Syntax.getVariableExpression(requestMsgSrc));
@@ -692,6 +693,55 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public void setKrbUseGatewayKeytab(boolean krbUseGatewayKeytab) {
         this.krbUseGatewayKeytab = krbUseGatewayKeytab;
+    }
+
+    /**
+     * Get the OAuth version to use for creating an OAuth 1.0 or 2.0 Authorization header.
+     * <p/>
+     * Ignored unless {@link #getAuthOauthTokenVar()} is non-null.
+     *
+     * @return OAuth version (usually "1.0" or "2.0") or null to default to 2.0.
+     */
+    public String getAuthOauthVersion() {
+        return authOauthVersion;
+    }
+
+    /**
+     * Set the OAuth version to use when creating an OAuth token Authorization header.
+     * <p/>
+     * Ignored unless {@link #getAuthOauthTokenVar()} is non-null.
+     *
+     * @param authOauthVersion OAuth version ("1.0" or "2.0") or null to default to 2.0.
+     */
+    public void setAuthOauthVersion( String authOauthVersion ) {
+        this.authOauthVersion = authOauthVersion;
+    }
+
+    /**
+     * Get the name of the context variable that contains the OAuth token to add to an OAuth Authorization header.
+     * Other ways of sending the token (ie as query string or as form post parameter) are not currently supported by this mechanism,
+     * though they can still be configured manually (by setting the URL query string or the request body).
+     *
+     * @return the name of a context variable that will be expected to contain a complete OAuth token ready to add to
+     * an Authorization header (but not including the "Bearer " or "OAuth " prefix for the header value), or null if this mechanism is disabled.
+     */
+    public String getAuthOauthTokenVar() {
+        return authOauthTokenVar;
+    }
+
+    /**
+     * Set the name of a context variable that will contain the OAuth token to add to an OAuth Authorization header, or null to disable this mechanism.
+     * Other ways of sending the token (ie as query string or as form post parameter) are not currently supported by this mechanism,
+     * though they can still be configured manually (by setting the URL query string or the request body).
+     * <p/>
+     * A prefix will be prepended to the Authorization header value to complete it.  If the OAuth version is set to "1.0", the prefix
+     * "OAuth " will be used.  Otherwise, the prefix "Bearer " will be used.
+     *
+     * @param authOauthTokenVar  the name of a context variable that will be expected to contain a complete OAuth token ready to add to
+     * an Authorization header (but not including the "Bearer " or "OAuth " prefix for the header value), or null to disable this mechanism.
+     */
+    public void setAuthOauthTokenVar( String authOauthTokenVar ) {
+        this.authOauthTokenVar = authOauthTokenVar;
     }
 
     /**

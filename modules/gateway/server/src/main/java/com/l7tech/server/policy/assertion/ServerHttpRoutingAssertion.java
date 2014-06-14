@@ -439,6 +439,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 context.setVariable(HttpRoutingAssertion.KERBEROS_DATA, kerberosAuthorizationInfo);
             }
 
+            // OAuth Authorization header support
+            String oauthVar = assertion.getAuthOauthTokenVar();
+            if ( oauthVar != null && oauthVar.trim().length() > 0 ) {
+                String prefix = "1.0".equals( assertion.getAuthOauthVersion() )
+                        ? "OAuth "
+                        : "Bearer ";
+                String headerValue = ExpandVariables.process( prefix + "${" + oauthVar + "}", vars, getAudit() );
+                routedRequestParams.addExtraHeader( new GenericHttpHeader( "Authorization", headerValue ) );
+            }
+
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;

@@ -317,6 +317,23 @@ public abstract class Syntax {
     }
 
     /**
+     * Remove "${}" syntax surrounding a variable name.
+     *
+     * @param var variable name, possibly surrounded by dollar-brace and close-brace
+     * @return the variable name, possibly with surrounding dollar-brace and close-brace removed
+     */
+    public static String stripSyntax( String var ) {
+        String ret = var;
+
+        Matcher m = oneVarPattern.matcher( ret.trim() );
+        if (m.matches()) {
+            ret = m.group(1);
+        }
+
+        return ret;
+    }
+
+    /**
      * Get should-be-processed variables referenced from the string s.  Any variable being able to be processed depends on
      * the flag "omitted", which indicates whether indexed variables will be omitted or not.
      * @param s: A string to find out what variables are referenced from it

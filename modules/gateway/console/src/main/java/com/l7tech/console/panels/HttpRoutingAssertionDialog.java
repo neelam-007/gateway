@@ -5,9 +5,10 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.panels.resources.HttpRoutingOauthPanel;
+import com.l7tech.console.panels.resources.HttpRoutingParamsDialog;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
-import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
@@ -38,10 +39,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -74,17 +72,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private static final String ANY_TLS_VERSION = "any";
     private HttpRuleTableHandler responseHttpRulesTableHandler;
     private HttpRuleTableHandler requestHttpRulesTableHandler;
-    private HttpRuleTableHandler requestParamsRulesTableHandler;
 
     private final EventListenerList listenerList = new EventListenerList();
     private final HttpRoutingAssertion assertion;
     private final HttpRoutingHttpAuthPanel httpAuthPanel;
     private final HttpRoutingSamlAuthPanel samlAuthPanel;
     private final HttpRoutingWindowsIntegratedAuthPanel windowsAuthPanel;
+    private final HttpRoutingOauthPanel oauthPanel;
+
+    private final HttpRoutingParamsDialog formParamsDialog;
 
     private JPanel mainPanel;
 
-    private UrlPanel urlPanel;
     private JButton defaultUrlButton;
     private IpListPanel ipListPanel;
     //private JCheckBox cookiePropagationCheckBox;
@@ -95,6 +94,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JRadioButton authSamlRadio;
     private JRadioButton authTaiRadio;
     private JRadioButton authWindowsIntegratedRadio;
+    private JRadioButton authOauthRadioButton;
     private JPanel authDetailsPanel;
 
     private JRadioButton wssIgnoreRadio;
@@ -111,37 +111,21 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField readTimeoutTextField;
     private JSpinner maxRetriesSpinner;
     private JCheckBox maxRetriesDefaultCheckBox;
-    private JRadioButton resHeadersAll;
-    private JRadioButton resHeadersCustomize;
     private JTable resHeadersTable;
     private JButton resHeadersAdd;
     private JButton resHeadersDelete;
     private JComboBox reqMsgSrcComboBox;
-    private JRadioButton reqHeadersAll;
-    private JRadioButton reqHeadersCustomize;
     private JTable reqHeadersTable;
-    private JRadioButton reqParamsAll;
-    private JRadioButton reqParamsCustomize;
-    private JTable reqParamsTable;
     private JButton reqHeadersAdd;
     private JButton reqHeadersRemove;
-    private JButton reqParamsAdd;
-    private JButton reqParamsRemove;
     private JCheckBox followRedirectCheck;
     private JButton editReqHrButton;
-    private JButton editReqPmButton;
     private JButton editResHrButton;
     private JRadioButton failOnErrorRadio;
     private JCheckBox passThroughCheckBox;
     private JRadioButton neverFailRadio;
-    private JRadioButton resMsgDestDefaultRadioButton;
-    private JRadioButton resMsgDestVariableRadioButton;
-    private TargetVariablePanel resMsgDestVariableTextField;
-    private JPanel resMsgDestVariableTextFieldPanel;
     private JCheckBox gzipCheckBox;
-    private JComboBox<String> requestMethodComboBox;
-    private JRadioButton automaticRequestMethodRadioButton;
-    private JRadioButton overrideRequestMethodRadioButton;
+    private JComboBox<Object> requestMethodComboBox;
     private JRadioButton rbProxyNone;
     private JRadioButton rbProxySpecified;
     private JTextField proxyHostField;
@@ -156,6 +140,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private ByteLimitPanel byteLimitPanel;
     private JCheckBox forceIncludeRequestBodyCheckBox;
     private JComboBox httpVersionComboBox;
+    private JComboBox<Object> responseDestComboBox;
+    private JTextField urlField;
+    private JButton customizeFormPostParamsButton;
+    private JCheckBox requestHeadersCustomCheckBox;
+    private JCheckBox responseHeadersCustomCheckBox;
+    private JLabel urlErrorLabel;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -166,10 +156,16 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private final Policy policy;
     private final Wsdl wsdl;
-    private Assertion assertionToUseInSearchForPredecessorVariables;
+
     private InputValidator inputValidator;
+    private TargetVariablePanel variableValidator = new TargetVariablePanel();
+    private UrlPanel urlValidator = new UrlPanel( "dummy", "", false );
     private String tlsCipherSuites;
     private Set<EntityHeader> tlsTrustedCerts;
+    private final Object REQ_METHOD_AUTO = "Automatic";
+    private final Object RESP_DEFAULT = "Default Respose";
+    private String responseUniqueContextVariableName = "httpResponse1";
+    private Object RESP_UNIQUE_CONTEXT_VAR = "New Context Variable: ${" + responseUniqueContextVariableName + "}";
 
     /**
      * Creates new form ServicePanel
@@ -183,6 +179,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion, inputValidator);
         this.windowsAuthPanel = new HttpRoutingWindowsIntegratedAuthPanel(assertion);
+        this.oauthPanel = new HttpRoutingOauthPanel( assertion );
+
+        this.formParamsDialog = new HttpRoutingParamsDialog( this, assertion );
 
         okButtonAction = new BaseAction() {
             @Override
@@ -203,14 +202,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         ipListPanel.alsoEnableDiffURLS();
 
-        urlPanel.setShowManageHttpOptions( false );
         ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
             @Override
             public void stateChanged(int newState) {
                 if (newState == IpListPanel.CUSTOM_URLS) {
-                    urlPanel.setEnabled(false);
+                    urlField.setEnabled( false );
                 } else {
-                    urlPanel.setEnabled(true);
+                    urlField.setEnabled( true );
                 }
             }
         });
@@ -339,6 +337,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         methodGroup.add(this.authSamlRadio);
         methodGroup.add(this.authTaiRadio);
         methodGroup.add(this.authWindowsIntegratedRadio);
+        methodGroup.add( this.authOauthRadioButton );
 
         final ChangeListener radioChangeListener = new ChangeListener() {
             @Override
@@ -347,11 +346,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         };
 
-        authDetailsPanel.setMinimumSize(new Dimension(Math.max(httpAuthPanel.getMinimumSize().width, samlAuthPanel.getMinimumSize().width), -1));
-        authDetailsPanel.setLayout(new GridBagLayout());
+        authDetailsPanel.setMinimumSize( new Dimension( Math.max( httpAuthPanel.getMinimumSize().width, samlAuthPanel.getMinimumSize().width ), -1 ) );
+        authDetailsPanel.setLayout( new GridBagLayout() );
         authDetailsPanel.add(httpAuthPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
         authDetailsPanel.add(samlAuthPanel, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-        authDetailsPanel.add(windowsAuthPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+        authDetailsPanel.add(windowsAuthPanel, new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+        authDetailsPanel.add(oauthPanel, new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
 
         authNoneRadio.addChangeListener(radioChangeListener);
         authPasswordRadio.addChangeListener(radioChangeListener);
@@ -359,6 +359,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         authSamlRadio.addChangeListener(radioChangeListener);
         authTaiRadio.addChangeListener(radioChangeListener);
         authWindowsIntegratedRadio.addChangeListener(radioChangeListener);
+        authOauthRadioButton.addChangeListener( radioChangeListener );
 
         if (!policy.isSoap()) {
             authSamlRadio.setEnabled(false);
@@ -383,71 +384,108 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 String serviceURI;
                 if (wsdl != null) {
                     serviceURI = wsdl.getServiceURI();
-                    urlPanel.setText(serviceURI);
+                    urlField.setText(serviceURI);
+                    validateUrl( true );
                 } else {
                     log.log(Level.INFO, "Can't retrieve WSDL from the published service");
                 }
             }
         });
+        urlField.getDocument().addDocumentListener( new RunOnChangeListener( new Runnable() {
+            @Override
+            public void run() {
+                validateUrl( false );
+            }
+        } ) );
+        urlField.addFocusListener( new FocusListener() {
+            @Override
+            public void focusGained( FocusEvent e ) {}
+
+            @Override
+            public void focusLost( FocusEvent e ) {
+                validateUrl( true );
+            }
+        } );
 
         populateReqMsgSrcComboBox();
         populateHttpVersionComboBox();
 
-        resMsgDestVariableRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                validateResMsgDest();
-            }
-        });
-        resMsgDestDefaultRadioButton.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                validateResMsgDest();
-            }
-        });
-        resMsgDestVariableTextField = new TargetVariablePanel();
-        resMsgDestVariableTextFieldPanel.setLayout(new BorderLayout());
-        resMsgDestVariableTextFieldPanel.add(resMsgDestVariableTextField, BorderLayout.CENTER);
-        resMsgDestVariableTextField.addChangeListener(new ChangeListener(){
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                validateResMsgDest();
-                okButton.setEnabled(resMsgDestVariableTextField.isEntryValid());
-            }
-        });
-
-        byteLimitPanel.addChangeListener(new RunOnChangeListener(){
-            @Override
-            protected void run(){
-                validateResMsgDest();
-            }
-        });
         byteLimitPanel.setAllowContextVars(true);
+        inputValidator.addRule( new InputValidator.ComponentValidationRule( byteLimitPanel ) {
+            @Override
+            public String getValidationError() {
+                return byteLimitPanel.validateFields();
+            }
+        } );
 
         final String resMsgDest = assertion.getResponseMsgDest();
-        resMsgDestVariableTextField.setAssertion(assertion,getPreviousAssertion());
-        if (resMsgDest == null) {
-            resMsgDestDefaultRadioButton.doClick();
+        variableValidator.setAssertion( assertion, getPreviousAssertion() );
+        responseUniqueContextVariableName = findUniqueResponseContextVariableName();
+        RESP_UNIQUE_CONTEXT_VAR = "New Context Variable: ${" + responseUniqueContextVariableName + "}";
+        if ( resMsgDest == null ) {
+            responseDestComboBox.setModel( new DefaultComboBoxModel<>( new Object[] { RESP_DEFAULT, RESP_UNIQUE_CONTEXT_VAR } ) );
+            responseDestComboBox.setSelectedIndex( 0 );
         } else {
-            resMsgDestVariableTextField.setVariable(resMsgDest);
-            resMsgDestVariableRadioButton.doClick();
+            responseDestComboBox.setModel( new DefaultComboBoxModel<>( new Object[] { RESP_DEFAULT, resMsgDest } ) );
+            responseDestComboBox.setSelectedIndex( 1 );
         }
-
-        byteLimitPanel.setValue(assertion.getResponseSize(),Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
-        validateResMsgDest();
-
-        Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
-        methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
-        requestMethodComboBox.setModel(new DefaultComboBoxModel(methods.toArray()));
-        Utilities.enableGrayOnDisabled(requestMethodComboBox);
-        final ActionListener requestMethodListener = new ActionListener() {
+        inputValidator.addRule( new InputValidator.ComponentValidationRule( responseDestComboBox ) {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                updateRequestMethodComboBoxEnableState();
+            public String getValidationError() {
+                Object respObj = responseDestComboBox.getSelectedItem();
+
+                if ( respObj == null ) {
+                    return "Response Destination must be specified";
+                }
+
+                if ( respObj == RESP_DEFAULT || respObj == RESP_UNIQUE_CONTEXT_VAR ) {
+                    // Ok
+                    return null;
+                }
+
+                if ( !(respObj instanceof String) ) {
+                    // Can't happen
+                    return "Response Destination must be a variable name";
+                }
+
+                String respVar = (String) respObj;
+                if ( respVar.trim().length() < 1 ) {
+                    return "Response Destination may not be empty";
+                }
+
+                String err = validateVariableName( respVar, false, true );
+
+                if ( err != null ) {
+                    return "Response Destination: " + err;
+                }
+
+                // Ok
+                return null;
             }
-        };
-        overrideRequestMethodRadioButton.addActionListener(requestMethodListener);
-        automaticRequestMethodRadioButton.addActionListener(requestMethodListener);
+        } );
+        inputValidator.addRule( new InputValidator.ComponentValidationRule( oauthPanel ) {
+            @Override
+            public String getValidationError() {
+                if ( !authOauthRadioButton.isSelected() ) {
+                    return null;
+                }
+
+                String var = oauthPanel.getTokenVariable();
+                if ( var.trim().length() < 1 ) {
+                    return "OAuth Token Variable is required";
+                }
+
+                String err = validateVariableName( var, true, false );
+
+                if ( err != null ) {
+                    return "OAuth Token Variable: " + err;
+                }
+
+                return null;
+            }
+        });
+
+        byteLimitPanel.setValue( assertion.getResponseSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes() );
 
         tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[] {ANY_TLS_VERSION, "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" } ) );
         tlsVersionComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
@@ -466,6 +504,15 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";
             }
         });
+
+        customizeFormPostParamsButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                formParamsDialog.pack();
+                Utilities.centerOnParentWindow( formParamsDialog );
+                formParamsDialog.setVisible( true );
+            }
+        } );
 
         cipherSuitesButton.addActionListener(new ActionListener() {
             @Override
@@ -509,9 +556,26 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         getRootPane().setDefaultButton(okButton);
     }
 
+    private String findUniqueResponseContextVariableName() {
+        String uniqueVar;
+
+        Set<String> setVars = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
+        setVars.addAll( getVariablesSetByPredecessors().keySet() );
+
+        int count = 0;
+        do {
+            count++;
+            // TODO strengthen the uniqueness of this -- make it include the current policy name, or part of policy Goid or something,
+            // to avoid policy includes all colliding on httpResponse1 (since includes can't tell what vars are used by the policies that include them)
+            uniqueVar = "httpResponse" + count;
+        } while ( setVars.contains( uniqueVar ) );
+
+        return uniqueVar;
+    }
+
     private void initializeProxyTab() {
         Utilities.enableGrayOnDisabled(proxyHostField);
-        Utilities.enableGrayOnDisabled(proxyPortField);
+        Utilities.enableGrayOnDisabled( proxyPortField );
         Utilities.enableGrayOnDisabled(proxyUsernameField);
         Utilities.enableGrayOnDisabled(proxyPasswordField);
         Utilities.configureShowPasswordButton(showProxyPasswordCheckBox, proxyPasswordField);
@@ -522,8 +586,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 enableOrDisableProxyFields();
             }
         };
-        rbProxyNone.addActionListener(enabler);
-        rbProxySpecified.addActionListener(enabler);
+        rbProxyNone.addActionListener( enabler );
+        rbProxySpecified.addActionListener( enabler );
         enableOrDisableProxyFields();
     }
 
@@ -535,16 +599,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         proxyPasswordField.setEnabled(proxy);
     }
 
-    private void updateRequestMethodComboBoxEnableState() {
-        requestMethodComboBox.setEnabled(overrideRequestMethodRadioButton.isSelected());
-    }
-
     private Map<String, VariableMetadata> getVariablesSetByPredecessors() {
-        if (assertionToUseInSearchForPredecessorVariables == null) {
-            return SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
-        } else {
-            return SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertionToUseInSearchForPredecessorVariables);
-        }
+        return SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
     }
 
     /**
@@ -592,7 +648,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         ActionListener tablestate = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (reqHeadersCustomize.isSelected()) {
+                if (requestHeadersCustomCheckBox.isSelected()) {
                     reqHeadersTable.setEnabled(true);
                     requestHttpRulesTableHandler.setEditable(true);
                     reqHeadersAdd.setEnabled(true);
@@ -607,55 +663,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
             }
         };
-        reqHeadersAll.addActionListener(tablestate);
-        reqHeadersCustomize.addActionListener(tablestate);
+        requestHeadersCustomCheckBox.addActionListener( tablestate );
 
         if (assertion.getRequestHeaderRules().isForwardAll()) {
-            reqHeadersAll.setSelected(true);
+            requestHeadersCustomCheckBox.setSelected( false );
             reqHeadersAdd.setEnabled(false);
             reqHeadersRemove.setEnabled(false);
             editReqHrButton.setEnabled(false);
             reqHeadersTable.setEnabled(false);
             requestHttpRulesTableHandler.setEditable(false);
         } else {
-            reqHeadersCustomize.setSelected(true);
+            requestHeadersCustomCheckBox.setSelected( true );
             requestHttpRulesTableHandler.updateeditState();
-        }
-
-        requestParamsRulesTableHandler = new HttpParamRuleTableHandler(reqParamsTable, reqParamsAdd,
-                                                                       reqParamsRemove, editReqPmButton,
-                                                                       assertion.getRequestParamRules());
-        tablestate = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (reqParamsCustomize.isSelected()) {
-                    reqParamsTable.setEnabled(true);
-                    requestParamsRulesTableHandler.setEditable(true);
-                    reqParamsAdd.setEnabled(true);
-                    reqParamsRemove.setEnabled(true);
-                    requestParamsRulesTableHandler.updateeditState();
-                } else {
-                    reqParamsTable.setEnabled(false);
-                    requestParamsRulesTableHandler.setEditable(false);
-                    reqParamsAdd.setEnabled(false);
-                    reqParamsRemove.setEnabled(false);
-                    editReqPmButton.setEnabled(false);
-                }
-            }
-        };
-        reqParamsAll.addActionListener(tablestate);
-        reqParamsCustomize.addActionListener(tablestate);
-
-        if (assertion.getRequestParamRules().isForwardAll()) {
-            reqParamsAll.setSelected(true);
-            reqParamsAdd.setEnabled(false);
-            reqParamsRemove.setEnabled(false);
-            editReqPmButton.setEnabled(false);
-            reqParamsTable.setEnabled(false);
-            requestParamsRulesTableHandler.setEditable(false);
-        } else {
-            reqParamsCustomize.setSelected(true);
-            requestParamsRulesTableHandler.updateeditState();
         }
 
         // init the response stuff
@@ -664,7 +683,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         tablestate = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (resHeadersCustomize.isSelected()) {
+                if ( responseHeadersCustomCheckBox.isSelected() ) {
                     resHeadersTable.setEnabled(true);
                     responseHttpRulesTableHandler.setEditable(true);
                     resHeadersAdd.setEnabled(true);
@@ -679,18 +698,17 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 }
             }
         };
-        resHeadersAll.addActionListener(tablestate);
-        resHeadersCustomize.addActionListener(tablestate);
+        responseHeadersCustomCheckBox.addActionListener( tablestate );
 
         if (assertion.getResponseHeaderRules().isForwardAll()) {
-            resHeadersAll.setSelected(true);
+            responseHeadersCustomCheckBox.setSelected( false );
             resHeadersAdd.setEnabled(false);
             resHeadersDelete.setEnabled(false);
             editResHrButton.setEnabled(false);
             resHeadersTable.setEnabled(false);
             responseHttpRulesTableHandler.setEditable(false);
         } else {
-            resHeadersCustomize.setSelected(true);
+            responseHeadersCustomCheckBox.setSelected( true );
             responseHttpRulesTableHandler.updateeditState();
         }
     }
@@ -703,7 +721,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         // check url before accepting
-        String url = urlPanel.getText();
+        String url = urlField.getText();
         boolean bad = false;
         // If the option "Use multiple URLs" is chosen, then we don't care what the main URL.is.
         if (! ipListPanel.isURLsEnabled()) {
@@ -757,6 +775,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setKrbDelegatedAuthentication(false);
         }
 
+        if ( authOauthRadioButton.isSelected() ) {
+            oauthPanel.updateModel();
+        } else {
+            assertion.setAuthOauthTokenVar( null );
+            assertion.setAuthOauthVersion( null );
+        }
+
         assertion.setProtectedServiceUrl(url);
         assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
         assertion.setTaiCredentialChaining(authTaiRadio.isSelected());
@@ -796,41 +821,47 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         assertion.setRequestMsgSrc((String)((ComboBoxItem) reqMsgSrcComboBox.getSelectedItem()).getValue());
         assertion.setHttpVersion((GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue());
 
-        if (resMsgDestDefaultRadioButton.isSelected()) {
-            assertion.setResponseMsgDest(null);
-        } else if (resMsgDestVariableRadioButton.isSelected()) {
-            assertion.setResponseMsgDest(resMsgDestVariableTextField.getVariable());
-        }
         assertion.setResponseSize(byteLimitPanel.getValue());
 
         assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
-        assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
+        assertion.getResponseHeaderRules().setForwardAll( !responseHeadersCustomCheckBox.isSelected() );
 
         assertion.getRequestHeaderRules().setRules(requestHttpRulesTableHandler.getData());
-        assertion.getRequestHeaderRules().setForwardAll(reqHeadersAll.isSelected());
+        assertion.getRequestHeaderRules().setForwardAll( !requestHeadersCustomCheckBox.isSelected() );
 
-        if (requestParamsRulesTableHandler != null) {
-            assertion.getRequestParamRules().setRules(requestParamsRulesTableHandler.getData());
-            assertion.getRequestParamRules().setForwardAll(reqParamsAll.isSelected());
-        }
+        formParamsDialog.updateAssertion();
+
         assertion.setFollowRedirects(followRedirectCheck.isSelected());
         assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
         assertion.setPassThroughSoapFaults(passThroughCheckBox.isSelected());
 
         assertion.setGzipEncodeDownstream(gzipCheckBox.isSelected());
 
-        if (overrideRequestMethodRadioButton.isSelected()) {
-            final Object selectedItem = requestMethodComboBox.getSelectedItem();
-            if (selectedItem instanceof HttpMethod) {
-                assertion.setHttpMethod((HttpMethod) selectedItem);
-                assertion.setHttpMethodAsString(null);
-            } else {
-                assertion.setHttpMethod(HttpMethod.OTHER);
-                assertion.setHttpMethodAsString(((String) selectedItem).trim());
-            }
+        Object responseDestObj = responseDestComboBox.getSelectedItem();
+        if ( RESP_DEFAULT == responseDestObj ) {
+            assertion.setResponseMsgDest( null );
+        } else if ( RESP_UNIQUE_CONTEXT_VAR == responseDestObj ) {
+            assertion.setResponseMsgDest( responseUniqueContextVariableName );
+        } else if ( responseDestObj != null ) {
+            assertion.setResponseMsgDest( Syntax.stripSyntax( responseDestObj.toString() ) );
         } else {
-            assertion.setHttpMethod(null);
-            assertion.setHttpMethodAsString(null);
+            assertion.setResponseMsgDest( null );
+        }
+
+        Object methodObj = requestMethodComboBox.getSelectedItem();
+        if ( REQ_METHOD_AUTO == methodObj ) {
+            assertion.setHttpMethod( null );
+            assertion.setHttpMethodAsString( null );
+        } else if ( methodObj instanceof HttpMethod ) {
+            HttpMethod method = (HttpMethod) methodObj;
+            assertion.setHttpMethod( method );
+            assertion.setHttpMethodAsString( null );
+        } else if ( methodObj instanceof String ) {
+            assertion.setHttpMethod( HttpMethod.OTHER );
+            assertion.setHttpMethodAsString( (String)methodObj );
+        } else {
+            assertion.setHttpMethod( null );
+            assertion.setHttpMethodAsString( null );
         }
 
         assertion.setUseKeepAlives(useKeepalivesCheckBox.isSelected());
@@ -879,23 +910,28 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         final boolean password = authPasswordRadio.isSelected();
         final boolean saml = authSamlRadio.isSelected();
         final boolean win = authWindowsIntegratedRadio.isSelected();
+        final boolean oauth = authOauthRadioButton.isSelected();
 
         httpAuthPanel.setVisible(password);
         samlAuthPanel.setVisible(saml);
         samlAuthPanel.setEnabled(saml);
         windowsAuthPanel.setVisible(win);
+        oauthPanel.setVisible(oauth);
         authDetailsPanel.revalidate();
     }
 
 
     private void initFormData() {
-        urlPanel.setText(assertion.getProtectedServiceUrl());
+        urlField.setText(assertion.getProtectedServiceUrl());
         JRadioButton which = authNoneRadio;
         if (assertion.isTaiCredentialChaining()) which = authTaiRadio;
         if (assertion.isPassthroughHttpAuthentication()) which = authPassthroughRadio;
         if (assertion.getLogin() != null || assertion.getPassword() != null || assertion.getNtlmHost() != null || assertion.getRealm() != null) which = authPasswordRadio;
         if (assertion.isAttachSamlSenderVouches()) which = authSamlRadio;
         if (assertion.isKrbDelegatedAuthentication() || assertion.isKrbUseGatewayKeytab() || assertion.getKrbConfiguredAccount() != null) which = authWindowsIntegratedRadio;
+        if ( assertion.getAuthOauthTokenVar() != null && assertion.getAuthOauthTokenVar().trim().length() > 0 ) {
+            which = authOauthRadioButton;
+        }
         which.setSelected(true);
 
         //we need to apply updateAuthMethod() if none of the JRadioButton from above was selected other than the "None"
@@ -967,22 +1003,28 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             gzipCheckBox.setSelected(false);
         }
 
+        // Populate HTTP method combo box
+        Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
+        methods.removeAll(Arrays.asList(HttpMethod.OTHER));
+        Collection<Object> methodsList = new ArrayList<>();
+        methodsList.add( REQ_METHOD_AUTO );
+        methodsList.addAll( methods );
+
+        String methodString = assertion.getHttpMethodAsString();
+        if ( methodString != null ) {
+            methodsList.add( methodString );
+        }
+        requestMethodComboBox.setModel( new DefaultComboBoxModel<>( methodsList.toArray() ) );
+
+        // Set selection of HTTP method combo box
         HttpMethod method = assertion.getHttpMethod();
         if ( method == null ) {
-            overrideRequestMethodRadioButton.setSelected(false);
-            automaticRequestMethodRadioButton.setSelected(true);
-            requestMethodComboBox.setSelectedItem(HttpMethod.POST);
+            requestMethodComboBox.setSelectedItem( REQ_METHOD_AUTO );
+        } else if ( HttpMethod.OTHER.equals( method ) ) {
+            requestMethodComboBox.setSelectedItem( methodString );
         } else {
-            automaticRequestMethodRadioButton.setSelected(false);
-            overrideRequestMethodRadioButton.setSelected(true);
-            String methodString = assertion.getHttpMethodAsString();
-            if (HttpMethod.OTHER.equals(method) && methodString != null && methodString.trim().length() > 0) {
-                requestMethodComboBox.setSelectedItem(methodString);
-            } else {
-                requestMethodComboBox.setSelectedItem(method);
-            }
+            requestMethodComboBox.setSelectedItem( method );
         }
-        updateRequestMethodComboBoxEnableState();
 
         useKeepalivesCheckBox.setSelected(assertion.isUseKeepAlives());
 
@@ -1030,6 +1072,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         trustedServerCertsButton.setEnabled( true );
 
         enableOrDisableProxyFields();
+        validateUrl( true );
     }
 
     private String lookUpTrustedCertName(Goid oid) {
@@ -1075,17 +1118,16 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
     }
 
-    /**
-     * Validates the response message destination; with the side effect of setting the status icon and text.
-     *
-     * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
-     */
-    private void validateResMsgDest() {
-        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());          
-        boolean ok =  resMsgDestDefaultRadioButton.isSelected() || resMsgDestVariableTextField.isEntryValid();
-        ok = ok && byteLimitPanel.validateFields()== null;
-        okButton.setEnabled(ok);
-        refreshDialog();
+    private void validateUrl(boolean full) {
+        String url = urlField.getText();
+        String message = urlValidator.getSyntaxError( url );
+        if ( full && message == null ) {
+            (new BackgroundUrlValidator( url )).execute();
+        }
+        if ( message == null ) {
+            message = " ";
+        }
+        urlErrorLabel.setText( message );
     }
 
     /**
@@ -1099,5 +1141,48 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    /**
+     * Validate a variable name using the variable validator, which must already have been initialized
+     * with a policy position.
+     *
+     * @param var name of variable, possibly including dollar-brace and close-brace.
+     * @param willBeRead true if variable will be read from at runtime.
+     * @param willBeWritten true if variable will be written to or created at runtime.
+     * @return a validation error message, or null if everything looks good.
+     */
+    String validateVariableName( String var, boolean willBeRead, boolean willBeWritten ) {
+        variableValidator.setValueWillBeRead( willBeRead );
+        variableValidator.setValueWillBeWritten( willBeWritten );
+        variableValidator.setAcceptEmpty( false );
+        variableValidator.setAlwaysPermitSyntax( false );
+
+        variableValidator.setVariable( Syntax.stripSyntax( var ) );
+        return variableValidator.getErrorMessage();
+    }
+
+    private class BackgroundUrlValidator extends SwingWorker<String, Object> {
+        final String url;
+
+        private BackgroundUrlValidator( String url ) {
+            this.url = url;
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+            return urlValidator.getSemanticError( url );
+        }
+
+        @Override
+        protected void done() {
+            try {
+                String error = get();
+                if ( error != null )
+                    urlErrorLabel.setText( error );
+            } catch ( Exception e ) {
+                log.log( Level.INFO, "Unable to validate URL: " + ExceptionUtils.getMessage( e ), e );
+            }
+        }
     }
 }
