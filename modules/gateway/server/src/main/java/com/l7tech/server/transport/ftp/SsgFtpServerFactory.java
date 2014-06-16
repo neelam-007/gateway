@@ -103,6 +103,14 @@ public class SsgFtpServerFactory {
 
         int maxThreads = getIntegerConfigurationProperty(connector, PROPERTY_MAX_REQUEST_PROCESSING_THREADS);
 
+        if(maxThreads < 1) {
+            if(maxLogins > 0) {
+                maxThreads = maxLogins;
+            } else {
+                maxThreads = 10;
+            }
+        }
+
         ConnectionConfigFactory factory = new ConnectionConfigFactory();
 
         factory.setAnonymousLoginEnabled(anonymousLoginsEnabled);

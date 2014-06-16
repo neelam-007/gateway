@@ -62,11 +62,8 @@ public class FtpRequestProcessorFactory {
                     overrideContentTypeStr + "'.");
         }
 
-        // this executor handles upload tasks, with a maximum pool size equal to the maximum number of connections
-        ExecutorService transferTaskExecutor = new ThreadPoolExecutor(1, connectionConfig.getMaxThreads(),
-                5L * 60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(connectionConfig.getMaxThreads()),
-                new ThreadPoolExecutor.AbortPolicy());
+        // this executor handles upload and download tasks
+        ExecutorService transferTaskExecutor = createExecutorService(connectionConfig);
 
         long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L);
 
@@ -93,5 +90,18 @@ public class FtpRequestProcessorFactory {
                     connector.getGoid(),
                     maxRequestSize);
         }
+    }
+
+    /**
+     * Creates an ExecutorService with a maximum pool size equal to the maximum number of
+     * client request processing threads
+     */
+    private ExecutorService createExecutorService(ConnectionConfig connectionConfig) {
+        int maxThreads = connectionConfig.getMaxThreads();
+
+        return new ThreadPoolExecutor(1, maxThreads,
+                5L * 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(maxThreads),
+                new ThreadPoolExecutor.AbortPolicy());
     }
 }

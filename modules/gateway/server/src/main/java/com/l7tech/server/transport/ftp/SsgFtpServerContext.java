@@ -138,19 +138,7 @@ public class SsgFtpServerContext implements FtpServerContext {
     @Override
     public synchronized ThreadPoolExecutor getThreadPoolExecutor() {
         if (threadPoolExecutor == null) {
-            int maxThreads = connectionConfig.getMaxThreads();
-
-            if (maxThreads < 1) {
-                int maxLogins = connectionConfig.getMaxLogins();
-
-                if(maxLogins > 0) {
-                    maxThreads = maxLogins;
-                } else {
-                    maxThreads = 10;
-                }
-            }
-
-            threadPoolExecutor = new OrderedThreadPoolExecutor(maxThreads);
+            threadPoolExecutor = new OrderedThreadPoolExecutor(connectionConfig.getMaxThreads());
         }
 
         return threadPoolExecutor;
