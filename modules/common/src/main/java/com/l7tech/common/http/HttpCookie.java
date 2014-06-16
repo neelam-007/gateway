@@ -192,7 +192,7 @@ public class HttpCookie {
      * @param comment the comment, may be null
      * @param httpOnly if this cookie should only be used for http
      */
-    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly) throws IllegalArgumentException{
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly) {
         this(name, value, version, path, domain, maxAge, secure, comment, httpOnly, null);
     }
     /**
@@ -210,7 +210,7 @@ public class HttpCookie {
      * @param comment the comment, may be null
      * @param httpOnly if this cookie should only be used for http
      */
-    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly, String expires) throws  IllegalArgumentException {
+    public HttpCookie(String name, String value, int version, String path, String domain, int maxAge, boolean secure, String comment, boolean httpOnly, String expires) {
         this.cookieName = name;
         this.cookieValue = value;
         this.version = version;
@@ -218,28 +218,13 @@ public class HttpCookie {
         this.domain = domain;
         this.explicitDomain = domain!=null;
         this.fullValue = null;
+        this.maxAge = maxAge;
+        this.expires = expires;
         if(version==0) {
             this.comment = null;
-            this.expires = expires;
-            int convertedMaxAge = -1;
-            try {
-                if(this.expires != null) {
-                    convertedMaxAge = convertExpires2MaxAge(this.expires);
-                }
-                else {
-                    convertedMaxAge = maxAge;
-                }
-
-            } catch (IllegalFormatException e) {
-                throw new IllegalArgumentException(e);
-            } finally {
-                this.maxAge = convertedMaxAge;
-            }
         }
         else {
-            this.maxAge = maxAge;
             this.comment = comment;
-            this.expires = null;
         }
         this.secure = secure;
         this.httpOnly = httpOnly;

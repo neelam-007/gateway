@@ -152,6 +152,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             final String path = getAttributeValue(PATH, existingCookie, variableMap);
             final String domain = getAttributeValue(DOMAIN, existingCookie, variableMap);
             final String maxAgeStr = getAttributeValue(MAX_AGE, existingCookie, variableMap);
+            final String expires = getAttributeValue(EXPIRES, existingCookie, variableMap);
             final String comment = getAttributeValue(COMMENT, existingCookie, variableMap);
             final String secure = getAttributeValue(SECURE, existingCookie, variableMap);
             final String httpOnly = getAttributeValue(HTTP_ONLY, existingCookie, variableMap);
@@ -160,12 +161,13 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             final Integer maxAge = resolveMaxAge(maxAgeStr);
             if (version != null && maxAge != null) {
                 cookie = new HttpCookie(name, value, version, StringUtils.isBlank(path) ? null : path,
-                        StringUtils.isBlank(domain) ? null : domain, maxAge, Boolean.parseBoolean(secure),
-                        StringUtils.isBlank(comment) ? null : comment, Boolean.parseBoolean(httpOnly));
+                    StringUtils.isBlank(domain) ? null : domain, maxAge, Boolean.parseBoolean(secure),
+                    StringUtils.isBlank(comment) ? null : comment, Boolean.parseBoolean(httpOnly), StringUtils.isBlank(expires) ? null : expires);
             }
         } else {
             logAndAudit(AssertionMessages.EMPTY_COOKIE_NAME);
         }
+
         return cookie;
     }
 
@@ -222,6 +224,8 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
                 attributeValue = String.valueOf(existingCookie.isSecure());
             } else if (attributeName.equals(HTTP_ONLY)) {
                 attributeValue = String.valueOf(existingCookie.isHttpOnly());
+            } else if (attributeName.equals(EXPIRES)) {
+                attributeValue = String.valueOf(existingCookie.getExpires());
             } else {
                 logger.log(Level.WARNING, "Unknown cookie attribute: " + attributeName);
             }

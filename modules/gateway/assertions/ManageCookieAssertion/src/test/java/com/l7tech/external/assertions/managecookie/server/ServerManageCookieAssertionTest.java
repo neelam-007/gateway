@@ -57,10 +57,35 @@ public class ServerManageCookieAssertionTest {
         assertNull(cookie.getPath());
         assertNull(cookie.getDomain());
         assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getExpires());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
         assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
     }
+
+    @Test
+    public void addCookieWithExpires () throws Exception {
+        assertion.getCookieAttributes().put(NAME, new NameValuePair(NAME, "foo"));
+        assertion.getCookieAttributes().put(VALUE, new NameValuePair(VALUE, "bar"));
+        final String expected = "Wed, 06-Jun-2021 10:01:01 GMT";
+        assertion.getCookieAttributes().put(EXPIRES, new NameValuePair(EXPIRES, expected));
+
+        assertEquals(AssertionStatus.NONE, configureServerAssertion(new ServerManageCookieAssertion(assertion)).checkRequest(context));
+        final HttpCookie cookie = request.getHttpCookiesKnob().getCookies().iterator().next();
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
+        assertEquals(expected, cookie.getExpires());
+        assertTrue(cookie.getMaxAge() > 0);
+        assertNull(cookie.getPath());
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.COOKIE_ADDED));
+    }
+
+
 
     @Test
     public void addCookie() throws Exception {
@@ -128,6 +153,7 @@ public class ServerManageCookieAssertionTest {
         assertion.getCookieAttributes().put(PATH, new NameValuePair(PATH, ""));
         assertion.getCookieAttributes().put(DOMAIN, new NameValuePair(DOMAIN, ""));
         assertion.getCookieAttributes().put(MAX_AGE, new NameValuePair(MAX_AGE, ""));
+        assertion.getCookieAttributes().put(EXPIRES, new NameValuePair(EXPIRES, ""));
         assertion.getCookieAttributes().put(COMMENT, new NameValuePair(COMMENT, ""));
 
         assertEquals(AssertionStatus.NONE, new ServerManageCookieAssertion(assertion).checkRequest(context));
@@ -138,6 +164,7 @@ public class ServerManageCookieAssertionTest {
         assertEquals("", cookie.getCookieValue());
         assertEquals(1, cookie.getVersion());
         assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getExpires());
         assertNull(cookie.getPath());
         assertNull(cookie.getDomain());
         assertNull(cookie.getComment());
@@ -481,6 +508,7 @@ public class ServerManageCookieAssertionTest {
         assertNull(cookie.getPath());
         assertNull(cookie.getDomain());
         assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getExpires());
         assertNull(cookie.getComment());
         assertFalse(cookie.isSecure());
         assertFalse(cookie.isHttpOnly());

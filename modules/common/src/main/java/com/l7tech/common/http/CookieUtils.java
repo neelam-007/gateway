@@ -508,7 +508,7 @@ public class CookieUtils {
         appendIfNotBlank(sb, PATH, cookie.getPath());
         appendIfNotBlank(sb, EXPIRES, cookie.getExpires());
         appendIfNotBlank(sb, COMMENT, cookie.getComment());
-        if (cookie.getExpires() == null && cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
+        if (cookie.getMaxAge() != UNSPECIFIED_MAX_AGE) {
             sb.append(ATTRIBUTE_DELIMITER).append(MAX_AGE).append(EQUALS).append(cookie.getMaxAge());
         }
         if (cookie.isSecure()) {
