@@ -179,7 +179,7 @@ public class DebugContextVariableData implements Serializable, Comparable<DebugC
         int result;
 
         if (str1 != null && str2 != null) {
-            result = str1.compareTo(str2);
+            result = str1.compareToIgnoreCase(str2);
         } else if (str1 != null) {
             result = 1;
         } else if (str2 != null) {

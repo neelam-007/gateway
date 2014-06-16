@@ -216,7 +216,28 @@ public class DebugContextVariableTreePanel extends JPanel {
         // Validate name.
         //
         if (VariableMetadata.isNameValid(name, true)) {
-            policyStepDebugDialog.addUserContextVariable(name);
+            // Check for duplicates.
+            //
+            boolean isDuplicateFound = false;
+
+            DefaultTreeModel model = (DefaultTreeModel) this.contextVariablesTree.getModel();
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+            for (int ix = 0; ix < root.getChildCount(); ix++) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) model.getChild(root, ix);
+                DebugContextVariableData contextVariable = (DebugContextVariableData) node.getUserObject();
+                if (contextVariable.getIsUserAdded() && name.compareToIgnoreCase(contextVariable.getName()) == 0) {
+                    isDuplicateFound = true;
+                    JOptionPane.showMessageDialog(this.policyStepDebugDialog,
+                        "Cannot add context variable. The context variable is already added.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    break;
+                }
+            }
+
+            if (!isDuplicateFound) {
+                policyStepDebugDialog.addUserContextVariable(name);
+            }
         } else {
             JOptionPane.showMessageDialog(this.policyStepDebugDialog,
                 "Invalid variable name syntax.",
