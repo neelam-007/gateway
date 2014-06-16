@@ -85,13 +85,27 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         }
     }
 
-    static void generatePermissions(@NotNull final PermissionsConfig config, @NotNull final FolderAdmin folderAdmin, @NotNull final JmsAdmin jmsAdmin) {
+    /**
+     * Generate permissions based on the PermissionsConfig.
+     *
+     * @throws IllegalArgumentException if the given PermissionsConfig is not valid.
+     */
+    static void generatePermissions(@NotNull final PermissionsConfig config,
+                                    @NotNull final FolderAdmin folderAdmin,
+                                    @NotNull final JmsAdmin jmsAdmin) throws IllegalArgumentException {
         // start fresh
+        validateConfig(config);
         config.getGeneratedPermissions().clear();
         if (config.hasScope()) {
             generateScopedPermissions(config, folderAdmin, jmsAdmin);
         } else {
             generateUnrestrictedPermissions(config);
+        }
+    }
+
+    private static void validateConfig(final PermissionsConfig config) {
+        if (config.getOperations().contains(OperationType.OTHER) && config.getOtherOpName() == null) {
+            throw new IllegalArgumentException("Missing other operation name for other operation type.");
         }
     }
 
@@ -149,7 +163,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 config.isGrantAccessToUddiService() && header instanceof ReferencesZoneAndServiceHeader) {
             final ReferencesZoneAndServiceHeader referencesServiceHeader = (ReferencesZoneAndServiceHeader) header;
             if (referencesServiceHeader.getPublishedServiceGoid() != null) {
-                final Permission uddiServicePermission = new Permission(config.getRole(), op, EntityType.SERVICE);
+                final Permission uddiServicePermission = createBasePermission(config.getRole(), EntityType.SERVICE, op, config.getOtherOpName());
                 final ObjectIdentityPredicate uddiServicePredicate = new ObjectIdentityPredicate(uddiServicePermission, referencesServiceHeader.getPublishedServiceGoid().toHexString());
                 uddiServicePredicate.setHeader(new EntityHeader(referencesServiceHeader.getPublishedServiceGoid().toHexString(), EntityType.SERVICE, null, null));
                 uddiServicePermission.getScope().add(uddiServicePredicate);
@@ -161,7 +175,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     }
 
     private static void generatePermission(final PermissionsConfig config, final FolderAdmin folderAdmin, final EntityType entityType, final Map<Goid, Folder> retrievedFolders, final OperationType op, final SecurityZone zone, final FolderHeader folderHeader) throws FindException {
-        final Permission permission = new Permission(config.getRole(), op, entityType);
+        final Permission permission = createBasePermission(config.getRole(), entityType, op, config.getOtherOpName());
         if (zone != null) {
             permission.getScope().add(new SecurityZonePredicate(permission, zone.equals(SecurityZoneUtil.getNullZone()) ? null : zone));
         }
@@ -199,13 +213,13 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                         retrievedFolders.put(folderHeader.getGoid(), folder);
                         config.getGeneratedPermissions().add(createReadFolderAncestryPermission(config, folderHeader));
 
-                        final Permission readFolderPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        final Permission readFolderPermission = createBasePermission(config.getRole(), EntityType.FOLDER, OperationType.READ, null);
                         final ObjectIdentityPredicate specificFolderPredicate = new ObjectIdentityPredicate(readFolderPermission, folderHeader.getStrId());
                         specificFolderPredicate.setHeader(folderHeader);
                         readFolderPermission.getScope().add(specificFolderPredicate);
                         config.getGeneratedPermissions().add(readFolderPermission);
 
-                        final Permission readSubfoldersPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+                        final Permission readSubfoldersPermission = createBasePermission(config.getRole(), EntityType.FOLDER, OperationType.READ, null);
                         readSubfoldersPermission.getScope().add(new FolderPredicate(readSubfoldersPermission, folder, true));
                         config.getGeneratedPermissions().add(readSubfoldersPermission);
                     }
@@ -227,7 +241,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
         if (header instanceof AliasHeader && config.isGrantReadAliasOwningEntities()) {
             final AliasHeader aliasHeader = (AliasHeader) header;
             if (aliasHeader.getAliasedEntityId() != null && aliasHeader.getAliasedEntityType() != null) {
-                final Permission readOwningEntityPermission = new Permission(config.getRole(), OperationType.READ, aliasHeader.getAliasedEntityType());
+                final Permission readOwningEntityPermission = createBasePermission(config.getRole(), aliasHeader.getAliasedEntityType(), OperationType.READ, null);
                 final String owningEntityId = aliasHeader.getAliasedEntityId().toHexString();
                 final ObjectIdentityPredicate identityPredicate = new ObjectIdentityPredicate(readOwningEntityPermission, owningEntityId);
                 identityPredicate.setHeader(new EntityHeader(owningEntityId, aliasHeader.getAliasedEntityType(), null, null));
@@ -244,7 +258,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
             // grant additional access to the connections associated with the selected endpoint
             final JmsEndpointHeader endpointHeader = (JmsEndpointHeader) header;
             if (endpointHeader.getConnectionGoid() != null) {
-                final Permission jmsConnectionPermission = new Permission(config.getRole(), op, EntityType.JMS_CONNECTION);
+                final Permission jmsConnectionPermission = createBasePermission(config.getRole(), EntityType.JMS_CONNECTION, op, config.getOtherOpName());
                 final ObjectIdentityPredicate jmsConnectionPredicate = new ObjectIdentityPredicate(jmsConnectionPermission, endpointHeader.getConnectionGoid().toHexString());
                 // header is just for display purposes
                 jmsConnectionPredicate.setHeader(new EntityHeader(endpointHeader.getConnectionGoid().toHexString(), EntityType.JMS_CONNECTION, "connection for endpoint " + endpointHeader.getName(), null));
@@ -261,7 +275,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
                 final JmsEndpoint[] endpoints = jmsAdmin.getEndpointsForConnection(header.getGoid());
                 if (endpoints != null) {
                     for (final JmsEndpoint endpoint : endpoints) {
-                        final Permission jmsEndpointPermission = new Permission(config.getRole(), op, EntityType.JMS_ENDPOINT);
+                        final Permission jmsEndpointPermission = createBasePermission(config.getRole(), EntityType.JMS_ENDPOINT, op, config.getOtherOpName());
                         final ObjectIdentityPredicate jmsEndpointPredicate = new ObjectIdentityPredicate(jmsEndpointPermission, endpoint.getGoid().toHexString());
                         jmsEndpointPredicate.setHeader(new EntityHeader(endpoint.getGoid(), EntityType.JMS_ENDPOINT, endpoint.getName(), null));
                         jmsEndpointPermission.getScope().add(jmsEndpointPredicate);
@@ -275,7 +289,7 @@ public class PermissionSummaryPanel extends WizardStepPanel {
     }
 
     private static void generateSpecificObjectPermission(final PermissionsConfig config, final EntityType entityType, final EntityHeader header, final OperationType op) {
-        final Permission specificEntityPermission = new Permission(config.getRole(), op, entityType);
+        final Permission specificEntityPermission = createBasePermission(config.getRole(), entityType, op, config.getOtherOpName());
         final Set<ScopePredicate> scope = new HashSet<>();
         if (entityType == EntityType.ASSERTION_ACCESS ||
                 entityType == EntityType.CLUSTER_PROPERTY ||
@@ -302,16 +316,25 @@ public class PermissionSummaryPanel extends WizardStepPanel {
      * @return a Permission which allows user to read all parent folders of the given entity.
      */
     private static Permission createReadFolderAncestryPermission(final PermissionsConfig config, final EntityHeader header) {
-        final Permission ancestryPermission = new Permission(config.getRole(), OperationType.READ, EntityType.FOLDER);
+        final Permission ancestryPermission = createBasePermission(config.getRole(), EntityType.FOLDER, OperationType.READ, null);
         ancestryPermission.getScope().add(new EntityFolderAncestryPredicate(ancestryPermission, header.getType(), header.getGoid()));
         return ancestryPermission;
     }
 
     private static void generateUnrestrictedPermissions(final PermissionsConfig config) {
         for (final OperationType operationType : config.getOperations()) {
-            final Permission unrestricted = new Permission(config.getRole(), operationType, config.getType());
+            final Permission unrestricted = createBasePermission(config.getRole(), config.getType(), operationType, config.getOtherOpName());
             unrestricted.setScope(Collections.<ScopePredicate>emptySet());
             config.getGeneratedPermissions().add(unrestricted);
         }
+    }
+
+    private static Permission createBasePermission(final Role role, final EntityType entityType, final OperationType op,
+                                                   final OtherOperationName otherOpName) {
+        final Permission permission = new Permission(role, op, entityType);
+        if (op == OperationType.OTHER) {
+            permission.setOtherOperationName(otherOpName.getOperationName());
+        }
+        return permission;
     }
 }

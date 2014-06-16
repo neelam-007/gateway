@@ -2,9 +2,11 @@ package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
 import org.apache.commons.collections.ComparatorUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +24,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private static final Map<EntityType, Set<OperationType>> ENTITY_TYPES;
     private static final Set<EntityType> SINGULAR_ENTITY_TYPES;
     private static final Set<EntityType> LARGE_ENTITY_TYPES;
+    private static final Map<EntityType, OtherOperationName> ENTITY_TYPES_WITH_OTHER_OPS;
     private JPanel contentPanel;
     private JPanel applyToPanel;
     private JPanel restrictScopePanel;
@@ -36,6 +39,8 @@ public class PermissionOptionsPanel extends WizardStepPanel {
     private JRadioButton specificTypeRadio;
     private JComboBox typeComboBox;
     private JRadioButton specificObjectsRadio;
+    private JCheckBox otherCheckBox;
+    private JTextField otherTextField;
     private PermissionsConfig config;
 
     static {
@@ -47,6 +52,11 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         LARGE_ENTITY_TYPES = new HashSet<>();
         LARGE_ENTITY_TYPES.add(EntityType.METRICS_BIN);
         LARGE_ENTITY_TYPES.add(EntityType.AUDIT_RECORD);
+
+        ENTITY_TYPES_WITH_OTHER_OPS = new HashMap<>();
+        ENTITY_TYPES_WITH_OTHER_OPS.put(EntityType.AUDIT_RECORD, OtherOperationName.AUDIT_VIEWER_POLICY);
+        ENTITY_TYPES_WITH_OTHER_OPS.put(EntityType.LOG_SINK, OtherOperationName.LOG_VIEWER);
+        ENTITY_TYPES_WITH_OTHER_OPS.put(EntityType.POLICY, OtherOperationName.DEBUGGER);
 
         ENTITY_TYPES = new TreeMap(ComparatorUtils.nullLowComparator(EntityType.NAME_COMPARATOR));
         ENTITY_TYPES.put(null, null);
@@ -75,7 +85,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         setShowDescriptionPanel(false);
         add(contentPanel);
         initComboBox();
-        initCheckBoxes();
+        initOperationInputs();
         initRadioButtons();
         enableDisable();
     }
@@ -88,7 +98,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        final boolean atLeastOneOpSelected = createCheckBox.isSelected() || readCheckBox.isSelected() || updateCheckBox.isSelected() || deleteCheckBox.isSelected();
+        final boolean atLeastOneOpSelected = createCheckBox.isSelected() || readCheckBox.isSelected() ||
+                updateCheckBox.isSelected() || deleteCheckBox.isSelected() ||
+                (otherCheckBox.isSelected() && !otherTextField.getText().isEmpty());
         final boolean typeOk = allTypesRadio.isSelected() || (specificTypeRadio.isSelected() && typeComboBox.getSelectedItem() != null);
         final boolean scopeOk = (allObjectsRadio.isSelected() && allObjectsRadio.isEnabled()) ||
                 (conditionRadio.isSelected() && conditionRadio.isEnabled()) ||
@@ -161,6 +173,15 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         if (deleteCheckBox.isEnabled() && deleteCheckBox.isSelected()) {
             ops.add(OperationType.DELETE);
         }
+        if (otherCheckBox.isEnabled() && otherCheckBox.isSelected() && StringUtils.isNotBlank(otherTextField.getText())) {
+            final OtherOperationName otherOp = OtherOperationName.getByName(otherTextField.getText());
+            if (otherOp != null) {
+                config.setOtherOpName(otherOp);
+                ops.add(OperationType.OTHER);
+            } else {
+                logger.log(Level.WARNING, "Invalid otherOperationName: " + otherTextField.getText());
+            }
+        }
         config.setOperations(ops);
     }
 
@@ -182,17 +203,25 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         specificObjectsRadio.addItemListener(radioListener);
     }
 
-    private void initCheckBoxes() {
-        final RunOnChangeListener checkBoxListener = new RunOnChangeListener(new Runnable() {
+    private void initOperationInputs() {
+        final RunOnChangeListener operationsListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 notifyListeners();
             }
         });
-        createCheckBox.addChangeListener(checkBoxListener);
-        readCheckBox.addChangeListener(checkBoxListener);
-        updateCheckBox.addChangeListener(checkBoxListener);
-        deleteCheckBox.addChangeListener(checkBoxListener);
+        createCheckBox.addChangeListener(operationsListener);
+        readCheckBox.addChangeListener(operationsListener);
+        updateCheckBox.addChangeListener(operationsListener);
+        deleteCheckBox.addChangeListener(operationsListener);
+        otherCheckBox.addChangeListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                otherTextField.setEnabled(otherCheckBox.isSelected());
+                notifyListeners();
+            }
+        }));
+        otherTextField.addActionListener(operationsListener);
     }
 
     private void initComboBox() {
@@ -213,9 +242,17 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             @Override
             public void run() {
                 enableDisable();
+                updateOtherOps();
                 notifyListeners();
             }
         }));
+        otherTextField.setText(StringUtils.EMPTY);
+    }
+
+    private void updateOtherOps() {
+        final Object selectedItem = typeComboBox.getSelectedItem();
+        final OtherOperationName otherOp = selectedItem == null ? null : ENTITY_TYPES_WITH_OTHER_OPS.get(selectedItem);
+        otherTextField.setText(otherOp == null ? StringUtils.EMPTY : otherOp.getOperationName());
     }
 
     private void enableDisable() {
@@ -235,6 +272,9 @@ public class PermissionOptionsPanel extends WizardStepPanel {
         readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
         updateCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.UPDATE, invalidOps));
         deleteCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.DELETE, invalidOps));
+        final boolean enableOther = enableRadiosAndBoxes && selectedType != null && ENTITY_TYPES_WITH_OTHER_OPS.containsKey(selectedType);
+        otherCheckBox.setEnabled(enableOther);
+        otherTextField.setEnabled(enableOther && otherCheckBox.isSelected());
     }
 
     private boolean operationEnabled(final OperationType operation, final Set<OperationType> invalidOps) {

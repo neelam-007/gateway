@@ -1,9 +1,6 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.AttributePredicate;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
@@ -24,6 +21,7 @@ public class PermissionsConfig {
     private final Role role;
     private EntityType type = EntityType.ANY;
     private Set<OperationType> operations = new HashSet<>();
+    private OtherOperationName otherOpName;
     private ScopeType scopeType;
     private Set<SecurityZone> selectedZones = new HashSet<>();
     private Set<FolderHeader> selectedFolders = new HashSet<>();
@@ -71,6 +69,18 @@ public class PermissionsConfig {
 
     public void setOperations(@NotNull final Set<OperationType> operations) {
         this.operations = operations;
+    }
+
+    /**
+     * @return the OtherOperationName to use if {@link OperationType#OTHER} is included in the operations.
+     */
+    @Nullable
+    public OtherOperationName getOtherOpName() {
+        return otherOpName;
+    }
+
+    public void setOtherOpName(@Nullable final OtherOperationName otherOpName) {
+        this.otherOpName = otherOpName;
     }
 
     /**

@@ -1002,6 +1002,70 @@ public class PermissionSummaryPanelTest {
         assertEquals(1, permission.getScope().size());
     }
 
+    @Test
+    public void generatePermissionsOtherOperationNoScope() {
+        // can debug all policies
+        config.setScopeType(null);
+        config.setType(EntityType.POLICY);
+        config.setOtherOpName(OtherOperationName.DEBUGGER);
+        operations.add(OperationType.OTHER);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission generatedPermission = config.getGeneratedPermissions().iterator().next();
+        assertTrue(generatedPermission.getScope().isEmpty());
+        assertEquals(EntityType.POLICY, generatedPermission.getEntityType());
+        assertEquals(OperationType.OTHER, generatedPermission.getOperation());
+        assertEquals(OtherOperationName.DEBUGGER.getOperationName(), generatedPermission.getOtherOperationName());
+    }
+
+    @Test
+    public void generatePermissionsOtherOperationWithScope() {
+        // can debug only a specific policy
+        config.setScopeType(PermissionsConfig.ScopeType.SPECIFIC_OBJECTS);
+        config.setType(EntityType.POLICY);
+        config.setOtherOpName(OtherOperationName.DEBUGGER);
+        entities.add(new EntityHeader("1", EntityType.POLICY, "Policy for service abc123", "Policy for service abc123"));
+        operations.add(OperationType.OTHER);
+
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        final Set<Permission> generatedPermissions = config.getGeneratedPermissions();
+        assertEquals(1, generatedPermissions.size());
+        final Permission generatedPermission = generatedPermissions.iterator().next();
+        assertEquals(EntityType.POLICY, generatedPermission.getEntityType());
+        assertEquals(OperationType.OTHER, generatedPermission.getOperation());
+        assertEquals(OtherOperationName.DEBUGGER.getOperationName(), generatedPermission.getOtherOperationName());
+        final Map<Class, Integer> predTypes = countPredicateTypes(generatedPermissions);
+        assertEquals(ONE, predTypes.get(ObjectIdentityPredicate.class));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void generatePermissionsOtherOperationNullOpName() {
+        config.setScopeType(null);
+        config.setType(EntityType.POLICY);
+        config.setOtherOpName(null);
+        operations.add(OperationType.OTHER);
+        try {
+            PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        } catch (final IllegalArgumentException e) {
+            assertEquals("Missing other operation name for other operation type.", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void generatePermissionsOtherOpNameIgnored() {
+        config.setScopeType(null);
+        config.setType(EntityType.POLICY);
+        // other op name should be ignored if OperationType.OTHER is not selected
+        config.setOtherOpName(OtherOperationName.DEBUGGER);
+        operations.add(OperationType.CREATE);
+        PermissionSummaryPanel.generatePermissions(config, folderAdmin, jmsAdmin);
+        assertEquals(1, config.getGeneratedPermissions().size());
+        final Permission generatedPermission = config.getGeneratedPermissions().iterator().next();
+        assertEquals(OperationType.CREATE, generatedPermission.getOperation());
+        assertNull(generatedPermission.getOtherOperationName());
+    }
+
     private Map<EntityType, Set<Permission>> sortPermissionsByType(final Set<Permission> permissions) {
         final Map<EntityType, Set<Permission>> permissionMap = new HashMap<>();
         for (final Permission permission : permissions) {
