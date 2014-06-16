@@ -294,7 +294,7 @@ public class DebugContextVariableTreePanel extends JPanel {
                 String filterText = this.getFilterText().toLowerCase();
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) obj;
                 DebugContextVariableData data = (DebugContextVariableData) node.getUserObject();
-                return data.getName().toLowerCase().startsWith(filterText);
+                return data.toString().toLowerCase().contains(filterText);
             }
         };
 
