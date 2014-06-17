@@ -10,8 +10,6 @@ import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.Map;
 import java.util.logging.Level;
@@ -198,23 +196,6 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         originalSecure.addActionListener(listener);
         originalHttpOnly.addActionListener(listener);
         validators = new InputValidator(this, getTitle());
-
-        versionTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-               enableDisable();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                enableDisable();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                enableDisable();
-            }
-        });
         buildValidationRules();
     }
 
