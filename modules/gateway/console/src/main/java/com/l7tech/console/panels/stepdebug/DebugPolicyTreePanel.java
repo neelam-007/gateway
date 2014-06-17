@@ -47,11 +47,13 @@ public class DebugPolicyTreePanel extends JPanel {
                 int row = policyTree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
                 policyTree.setSelectionRow(row);
                 AssertionTreeNode node = (AssertionTreeNode) policyTree.getLastSelectedPathComponent();
-                toggleBreakpointMenuAction.setEnabled(PolicyStepDebugDialog.isBreakpointAllowed(node.asAssertion()));
-                JPopupMenu menu = new JPopupMenu();
-                menu.add(toggleBreakpointMenuAction);
-                menu.add(removeAllBreakpointsMenuAction);
-                menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                if (node != null) {
+                    toggleBreakpointMenuAction.setEnabled(PolicyStepDebugDialog.isBreakpointAllowed(node.asAssertion()));
+                    JPopupMenu menu = new JPopupMenu();
+                    menu.add(toggleBreakpointMenuAction);
+                    menu.add(removeAllBreakpointsMenuAction);
+                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                }
             }
         }
     };
