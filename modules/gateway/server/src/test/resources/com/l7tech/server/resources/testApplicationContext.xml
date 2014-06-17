@@ -682,6 +682,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.JMS_ENDPOINT"/></key>
                     <bean class="com.l7tech.server.search.processors.JmsEndpointDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/></key>
+                    <bean class="com.l7tech.server.search.processors.GenericEntityDependencyProcessor"/>
+                </entry>
             </map>
         </constructor-arg>
     </bean>
@@ -700,6 +704,8 @@
     </bean>
 
     <bean id="ssgActiveConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry" />
+
+    <bean id="genericEntityDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry" />
 
     <bean id="ssgConnectorDependencyProcessorRegistry" class="com.l7tech.server.search.DependencyProcessorRegistry">
         <constructor-arg>

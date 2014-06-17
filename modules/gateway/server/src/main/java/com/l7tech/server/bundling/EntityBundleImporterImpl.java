@@ -10,6 +10,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
@@ -29,7 +30,6 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Option;
-import com.saxonica.functions.extfn.Find;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -181,6 +181,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 }
 
+                //need to process generic entities at the end so that cyclical dependencies can be properly replaced
+                replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
+
                 // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
                 replacePolicyDependencies(mappingsRtn, resourceMapping);
 
@@ -192,48 +195,103 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         });
     }
 
-    private void replacePolicyDependencies(List<EntityMappingResult> mappingsRtn, final Map<EntityHeader, EntityHeader> resourceMapping) {
-        // map dependencies for policies and services
-        for(final EntityMappingResult results: mappingsRtn){
-            if(results.getTargetEntityHeader()!=null &&
-                results.isSuccessful() &&
+    /**
+     * Replace generic entity dependencies
+     *
+     * @param mappingsRtn     The mappings to find generic entities in to replace dependencies for
+     * @param resourceMapping The resource map of dependencies to map to.
+     */
+    private void replaceGenericEntityDependencies(@NotNull final List<EntityMappingResult> mappingsRtn, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) {
+        for (final EntityMappingResult results : mappingsRtn) {
+            //only process the mapping if the action taken was updated or created and the entity is a generic entity.
+            if (results.getTargetEntityHeader() != null &&
+                    results.isSuccessful() &&
                     (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
-                    (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))){
+                    (results.getTargetEntityHeader().getType().equals(EntityType.GENERIC))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
                 final Exception exception = tt.execute(new TransactionCallback<Exception>() {
                     @Override
                     public Exception doInTransaction(final TransactionStatus transactionStatus) {
                         try {
-
+                            //get the existing generic entity.
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
-                            Policy policy;
-                            if(existingEntity instanceof Policy){
-                                policy = (Policy)existingEntity;
-                            }else if(existingEntity instanceof PublishedService){
-                                policy = ((PublishedService)existingEntity).getPolicy();
-                            }else{
-                                return null;
+
+                            if(existingEntity == null) {
+                                // this should not happen. The entity should exist
+                                transactionStatus.setRollbackOnly();
+                                return new FindException("Cannot find updated or created Generic entity with header: " + results.getTargetEntityHeader().toStringVerbose());
+                            }
+
+                            //replace the dependencies on the generic entity.
+                            dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, false);
+                            //update the generic entity.
+                            entityCrud.update(existingEntity);
+                        } catch (Exception e) {
+                            transactionStatus.setRollbackOnly();
+                            return e;
+                        }
+
+                        //flush the newly created object so that it can be found by the entity managers later.
+                        transactionStatus.flush();
+                        return null;
+                    }
+                });
+                if (exception != null) {
+                    //update the mapping to contain the exception.
+                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
+                    int index = mappingsRtn.indexOf(results);
+                    mappingsRtn.remove(index);
+                    mappingsRtn.add(index, newResult);
+                }
+            }
+        }
+    }
+
+    private void replacePolicyDependencies(List<EntityMappingResult> mappingsRtn, final Map<EntityHeader, EntityHeader> resourceMapping) {
+        // map dependencies for policies and services
+        for (final EntityMappingResult results : mappingsRtn) {
+            if (results.getTargetEntityHeader() != null &&
+                    results.isSuccessful() &&
+                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))) {
+                final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                tt.setReadOnly(false);
+                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                    @Override
+                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                        try {
+                            final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
+                            if(existingEntity == null) {
+                                // this should not happen. The entity should exist
+                                transactionStatus.setRollbackOnly();
+                                return new FindException("Cannot find updated or created policy or service entity with header: " + results.getTargetEntityHeader().toStringVerbose());
+                            }
+                            final Policy policy;
+                            if (existingEntity instanceof Policy) {
+                                policy = (Policy) existingEntity;
+                            } else {
+                                policy = ((PublishedService) existingEntity).getPolicy();
                             }
 
                             // do replace entity on the latest policy revision.
-                            final String oldPolicyXml =  policy.getXml();
-                            PolicyVersion policyVersion = policyVersionManager.findLatestRevisionForPolicy(policy.getGoid());
+                            final String oldPolicyXml = policy.getXml();
+                            final PolicyVersion policyVersion = policyVersionManager.findLatestRevisionForPolicy(policy.getGoid());
                             policy.setXml(policyVersion.getXml());
 
-                            dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, true);
+                            dependencyAnalyzer.replaceDependencies(policy, resourceMapping, true);
                             // save and update policy version's policy xml
                             policyVersion.setXml(policy.getXml());
                             policyVersionManager.update(policyVersion);
 
                             // save the update policy, or revert back the policy xml for no active version
-                            if( policyVersion.isActive()) {
+                            if (policyVersion.isActive()) {
                                 if (existingEntity instanceof Policy) {
                                     policyManager.update(policy);
                                 } else {
                                     serviceManager.update((PublishedService) existingEntity);
                                 }
-                            }else{
+                            } else {
                                 // revert the policy xml for non active version
                                 policy.setXml(oldPolicyXml);
                             }
@@ -249,11 +307,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         return null;
                     }
                 });
-                if(exception!=null){
-                    EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
+                if (exception != null) {
+                    //update the mapping to contain the exception.
+                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
                     int index = mappingsRtn.indexOf(results);
                     mappingsRtn.remove(index);
-                    mappingsRtn.add(index,newResult);
+                    mappingsRtn.add(index, newResult);
                 }
 
             }
@@ -344,8 +403,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             }
         }
 
-        //not replace dependencies for assertions
-        dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping, false);
+        //don't replace dependencies on generic entities. This will happen after all other dependencies are replaced in order to allow for circular dependencies
+        if (!(entityContainer.getEntity() instanceof GenericEntity)) {
+            //not replace dependencies for assertions
+            dependencyAnalyzer.replaceDependencies(entityContainer.getEntity(), resourceMapping, false);
+        }
 
         //create/save dependent entities
         beforeCreateOrUpdateEntities(entityContainer, existingEntity);
@@ -694,7 +756,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Arrays.<Object>asList(mappingTarget)).map(), 0, -1, null, null);
                                     if (list.isEmpty()) {
                                         resource = null;
-                                    } else if(list.size() > 1) {
+                                    } else if (list.size() > 1) {
                                         return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with name: " + mappingTarget));
                                     } else {
                                         resource = list.get(0);
@@ -706,7 +768,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("guid", Arrays.<Object>asList(mappingTarget)).map(), 0, -1, null, null);
                                     if (list.isEmpty()) {
                                         resource = null;
-                                    } else if(list.size() > 1) {
+                                    } else if (list.size() > 1) {
                                         return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with guid: " + mappingTarget));
                                     } else {
                                         resource = list.get(0);

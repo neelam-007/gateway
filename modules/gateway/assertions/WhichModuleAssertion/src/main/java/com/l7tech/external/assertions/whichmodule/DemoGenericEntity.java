@@ -11,6 +11,7 @@ public class DemoGenericEntity extends GenericEntity {
     private int age;
     private boolean playsTrombone;
     private Goid serviceId;
+    private Goid demoGenericEntityId;
 
     public int getAge() {
         return age;
@@ -35,5 +36,14 @@ public class DemoGenericEntity extends GenericEntity {
 
     public void setServiceId(Goid serviceId) {
         this.serviceId = serviceId;
+    }
+
+    @Dependency(methodReturnType = Dependency.MethodReturnType.GOID, type = Dependency.DependencyType.GENERIC)
+    public Goid getDemoGenericEntityId() {
+        return demoGenericEntityId;
+    }
+
+    public void setDemoGenericEntityId(Goid demoGenericEntityId) {
+        this.demoGenericEntityId = demoGenericEntityId;
     }
 }

@@ -1,6 +1,5 @@
 package com.l7tech.server.entity;
 
-import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
@@ -19,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -335,7 +333,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             throw new SaveException(regmsg(entityClass));
         if (!entityClass.getName().equals(entity.getEntityClassName()))
             throw new SaveException("Generic entity class cannot be saved with class other than " + entityClass.getName() + ": actual class name is " + entity.getEntityClassName());
-        regenerateValueXml(entity);
+        GenericEntityUtils.regenerateValueXml(entity);
 
         GenericEntity pers = new GenericEntity();
         GenericEntity.copyBaseFields(entity, pers);
@@ -509,7 +507,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             throw new UpdateException("Unable to update generic entity: " + ExceptionUtils.getMessage(e), e);
         }
 
-        regenerateValueXml(entity);
+        GenericEntityUtils.regenerateValueXml(entity);
 
         GenericEntity pers = new GenericEntity();
         GenericEntity.copyBaseFields(entity, pers);
@@ -619,6 +617,21 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         return new GenericEntityHeader(entity);
     }
 
+    @Override
+    public <ET extends GenericEntity>
+    ET asConcreteEntity(@NotNull final GenericEntity genericEntity) throws InvalidGenericEntityException {
+        final ClassInfo classInfo = registeredClasses.get(genericEntity.getEntityClassName());
+        if (classInfo == null) {
+            throw new InvalidGenericEntityException("Can not find generic entity manager for class: " + genericEntity.getEntityClassName());
+        }
+        try {
+            //noinspection unchecked
+            return (ET)asConcreteEntity(genericEntity, classInfo);
+        } catch (ClassCastException e) {
+            throw new InvalidGenericEntityException("Found concrete generic but class type is incorrect", e);
+        }
+    }
+
     <ET extends GenericEntity>
     ET asConcreteEntity(GenericEntity that, ClassInfo<ET> classInfo) throws InvalidGenericEntityException {
         Class<ET> entityClass = classInfo.getEntityClass();
@@ -724,26 +737,6 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         }
 
         return builder;
-    }
-
-    static void regenerateValueXml(GenericEntity that) {
-        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(1024);
-        String xml = that.getValueXml();
-        ClassLoader oldContext = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(that.getClass().getClassLoader());
-        try {
-            that.setValueXml(""); // set to empty while serializing to prevent including the XML in the XML
-            XMLEncoder encoder = new XMLEncoder(new NonCloseableOutputStream(baos));
-            //allowing Goid's to be serialization by default
-            encoder.setPersistenceDelegate( Goid.class, Goid.getPersistenceDelegate() );
-            encoder.writeObject(that);
-            encoder.close();
-            xml = baos.toString(Charsets.UTF8);
-        } finally {
-            ResourceUtils.closeQuietly(baos);
-            that.setValueXml(xml);
-            Thread.currentThread().setContextClassLoader(oldContext);
-        }
     }
 
     @Override

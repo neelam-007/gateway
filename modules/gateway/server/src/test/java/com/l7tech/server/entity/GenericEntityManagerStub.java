@@ -3,6 +3,7 @@ package com.l7tech.server.entity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.policy.InvalidGenericEntityException;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -153,6 +154,11 @@ public class GenericEntityManagerStub extends EntityManagerStub<GenericEntity, G
 
     @Override
     public <ET extends GenericEntity> List<ET> findPagedMatching(@NotNull Class<ET> entityClass, int offset, int count, String sortProperty, Boolean ascending, Map<String, List<Object>> matchProperties) throws FindException {
+        throw new UnsupportedOperationException("Not yet implemented for stub");
+    }
+
+    @Override
+    public <ET extends GenericEntity> ET asConcreteEntity(GenericEntity genericEntity) throws InvalidGenericEntityException {
         throw new UnsupportedOperationException("Not yet implemented for stub");
     }
 }

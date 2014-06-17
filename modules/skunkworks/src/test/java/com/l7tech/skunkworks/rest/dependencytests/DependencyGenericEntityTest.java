@@ -40,7 +40,7 @@ public class DependencyGenericEntityTest extends DependencyTestBase {
         genericEntity = new GenericEntity();
         genericEntity.setName("MyEntity");
         genericEntity.setEntityClassName("com.l7tech.external.assertions.whichmodule.DemoGenericEntity");
-        genericEntity.setValueXml("<xml>xml value</xml>");
+        genericEntity.setValueXml("<?xml version=\"1.0\" encoding=\"UTF-8\"?> <java version=\"1.7.0_60\" class=\"java.beans.XMLDecoder\"> <object class=\"com.l7tech.external.assertions.whichmodule.DemoGenericEntity\"> <void property=\"age\"> <int>24</int> </void> <void property=\"name\"> <string>Source Entity</string> </void> <void property=\"playsTrombone\"> <boolean>true</boolean> </void> <void property=\"valueXml\"> <string></string> </void> </object> </java>");
         genericEntityManager.save(genericEntity);
 
     }

@@ -3,6 +3,7 @@ package com.l7tech.server.entity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
+import com.l7tech.policy.InvalidGenericEntityException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -118,4 +119,15 @@ public interface GenericEntityManager extends EntityManager<GenericEntity, Gener
 
     <ET extends GenericEntity>
     List<ET> findPagedMatching(@NotNull Class<ET> entityClass, int offset, int count, @Nullable String sortProperty, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> matchProperties) throws FindException;
+
+    /**
+     * This will return a concrete generic entity object given a generic entity
+     *
+     * @param genericEntity The generic entity to convert to a concrete version
+     * @param <ET>          The Concrete version type
+     * @return The concrete version of the generic entity
+     * @throws InvalidGenericEntityException This is thrown if there was a problem converting to the concrete version
+     */
+    <ET extends GenericEntity>
+    ET asConcreteEntity(GenericEntity genericEntity) throws InvalidGenericEntityException;
 }
