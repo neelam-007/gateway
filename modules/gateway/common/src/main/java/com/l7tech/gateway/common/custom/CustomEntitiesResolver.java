@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.ext.entity.*;
 import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
-import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,24 +36,21 @@ public class CustomEntitiesResolver {
     private final KeyValueStore keyValueStore;
 
     /**
-     * {@link CustomReferenceEntitiesSupport} holds entity serializer class name, therefore this unary function should
+     * {@link CustomReferenceEntitiesSupport} holds entity serializer class name, therefore this interface impl should
      * locate and instantiate {@link CustomEntitySerializer} registered with the specified class name.
      */
     @NotNull
-    private final Functions.Unary<
-            CustomEntitySerializer, // output: CustomEntitySerializer reference corresponding to the input entity serializer class name
-            String                  // input: entity serializer class name
-            > classNameToSerializerFunction;
+    private final ClassNameToEntitySerializer classNameToSerializer;
 
     /**
      * Default constructor.
      */
     public CustomEntitiesResolver(
             @NotNull final KeyValueStore keyValueStore,
-            @NotNull final Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction
+            @NotNull final ClassNameToEntitySerializer classNameToSerializer
     ) {
         this.keyValueStore = keyValueStore;
-        this.classNameToSerializerFunction = classNameToSerializerFunction;
+        this.classNameToSerializer = classNameToSerializer;
     }
 
     /**
@@ -68,58 +64,57 @@ public class CustomEntitiesResolver {
             throw new IllegalStateException("CustomAssertion missing from assertionHolder");
         }
 
-        final Collection<EntityHeader> entityHeaders = createSortedEntitiesList();
+        final Collection<EntityHeader> entityHeaders = new LinkedHashSet<>();
         if (customAssertion instanceof CustomReferenceEntities) {
             processEntityReference(entityHeaders, (CustomReferenceEntities)customAssertion);
         }
 
-        return (entityHeaders.toArray(new EntityHeader[entityHeaders.size()]));
+        return (sortEntities(entityHeaders));
     }
 
     /**
-     * Utility function for creating an ordered list of {@link EntityHeader}'s based on {@link EntityType}.
+     * Utility function for sorting specified {@link EntityHeader}'s collection based on the order they need to be
+     * processed during import.
+     * <p/>
+     * In the resulting array first will be entities of type {@link EntityType#CUSTOM_KEY_VALUE_STORE}, then entities
+     * of type {@link EntityType#SSG_KEY_ENTRY}, then {@link EntityType#SECURE_PASSWORD} and at the end any other entity type.
+     * <p/>
+     * Modify {@code entityTypeToOrdinal(...)} function below to add additional entity types.
+     *
+     * @param collection    collection
+     * @return sorted {@link EntityHeader}'s array.  Never {@code null}.
      */
-    @NotNull
-    private Collection<EntityHeader> createSortedEntitiesList() {
-        //noinspection serial
-        class TmpSortedArrayList extends ArrayList<EntityHeader> {
-            private final Comparator<EntityHeader> comparator;
-
-            public TmpSortedArrayList(@NotNull final Comparator<EntityHeader> comparator) {
-                super();
-                this.comparator = comparator;
-            }
-
+    private EntityHeader[] sortEntities(@NotNull final Collection<EntityHeader> collection) {
+        final List<EntityHeader> list = new ArrayList<>(collection);
+        Collections.sort(list, new Comparator<EntityHeader>() {
             @Override
-            public boolean add(final EntityHeader value) {
-                int insertionPoint = Collections.binarySearch(this, value, comparator);
-                super.add((insertionPoint > -1) ? insertionPoint : (-insertionPoint) - 1, value);
-                return true;
+            public int compare(@NotNull final EntityHeader o1, @NotNull final EntityHeader o2) {
+                final int ordinal1 = entityTypeToOrdinal(o1.getType()),
+                        ordinal2 = entityTypeToOrdinal(o2.getType());
+                return (ordinal1 < ordinal2 ? -1 : (ordinal1 == ordinal2 ? 0 : 1));
             }
-        }
 
-        return new TmpSortedArrayList(
-                new Comparator<EntityHeader>() {
-                    @Override
-                    public int compare(final EntityHeader o1, final EntityHeader o2) {
-                        final int ordinal1 = entityTypeToOrdinal(o1.getType()),
-                                ordinal2 = entityTypeToOrdinal(o2.getType());
-                        return (ordinal1 < ordinal2 ? -1 : (ordinal1 == ordinal2 ? 0 : 1));
-                    }
-
-                    private int entityTypeToOrdinal(@NotNull final EntityType type) {
-                        switch (type) {
-                            case SECURE_PASSWORD:
-                                return 2;
-                            case SSG_KEY_ENTRY:
-                                return 1;
-                            case CUSTOM_KEY_VALUE_STORE:
-                                return 0;
-                        }
-                        return 3;
-                    }
+            /**
+             * Order entities in the correct order.<br/>
+             * First should be entities which doesn't depend on other entities, like PrivateKey's and SecurePassword's,
+             * finally should be entities with other entity dependencies, like CustomKeyValueStore's.
+             *
+             * @param type    specified entity type
+             * @return number corresponding the order (smallest number goes first) of the specified entity type.
+             */
+            private int entityTypeToOrdinal(@NotNull final EntityType type) {
+                switch (type) {
+                    case SSG_KEY_ENTRY:
+                        return 0;
+                    case SECURE_PASSWORD:
+                        return 1;
+                    case CUSTOM_KEY_VALUE_STORE:
+                        return 2;
                 }
-        );
+                return 3; // unsupported type will go last, assumed to have dependencies
+            }
+        });
+        return (list.toArray(new EntityHeader[list.size()]));
     }
 
     /**
@@ -130,16 +125,16 @@ public class CustomEntitiesResolver {
      * *** add logic for future entity types here ***
      *
      * @param entityHeaders     self sorted list of entities found so far.
-     * @param externalEntity    starting entity reference object.
+     * @param parentEntity      starting entity reference object.
      */
-    private void processEntityReference(
+    protected void processEntityReference(
             @NotNull final Collection<EntityHeader> entityHeaders,
-            @NotNull final CustomReferenceEntities externalEntity
+            @NotNull final CustomReferenceEntities parentEntity
     ) {
-        final CustomReferenceEntitiesSupport entityReferenceSupport = externalEntity.getReferenceEntitiesSupport();
+        final CustomReferenceEntitiesSupport entityReferenceSupport = parentEntity.getReferenceEntitiesSupport();
         if (entityReferenceSupport != null) {
             // do getReferenceEntitiesSupport sanity-check, there should always be same instance
-            if (entityReferenceSupport != externalEntity.getReferenceEntitiesSupport()) {
+            if (entityReferenceSupport != parentEntity.getReferenceEntitiesSupport()) {
                 throw new IllegalArgumentException("CustomReferenceEntities method getReferenceEntitiesSupport() returning non-singleton instance!");
             }
             // loop through all references
@@ -147,26 +142,46 @@ public class CustomEntitiesResolver {
                 // gather entity id and type
                 final String entityId = CustomEntityReferenceSupportAccessor.getEntityId(referenceObject);
                 // extract entity type
-                final CustomEntityType entityType = CustomEntityReferenceSupportAccessor.getEntityType(referenceObject);
-                if (entityType == null) {
-                    // this entity contains unknown type, skip it
-                    continue;
-                }
-                // check whether we've processed this reference already
-                // should also guard against circular references
-                if (findDuplicateReference(entityHeaders, entityType, entityId)) {
-                    continue; // skip entity if this is duplicate i.e. already processed
-                }
+                final CustomEntityType entityType = extractEntityType(referenceObject);
                 // check entity type
                 switch (entityType) {
                     case SecurePassword:
                         // add reference entity, will throw with RuntimeException when the password-id is not a valid GOID.
-                        addPasswordEntity(entityHeaders, entityId);
+                        final EntityHeader entityHeader = new SecurePasswordEntityHeader(
+                                Goid.parseGoid(entityId),
+                                EntityType.SECURE_PASSWORD,
+                                null,
+                                null,
+                                "Password" // this is ignored
+                                           // StoredPasswordReference will extract the correct type from the goid
+                        );
+                        // make sure this entity wasn't referenced before
+                        if (!entityHeaders.contains(entityHeader)) {
+                            entityHeaders.add(entityHeader);
+                        } else {
+                            logger.finer("Ignoring already referenced Secure Password: \"" + entityId + "\"");
+                        }
                         break;
 
                     case PrivateKey:
                         // add reference entity, will throw with RuntimeException when the key-id is invalid.
-                        addPrivateKeyEntity(entityHeaders, entityId);
+                        if (!SignerServices.KEY_ID_SSL.equals(entityId)) {
+                            // Add none default key only.
+                            final String[] keyIdSplit = entityId.split(":");
+                            if (keyIdSplit.length != 2) {
+                                throw new IllegalArgumentException("Invalid key ID format.");
+                            }
+                            final Goid keyStoreId = Goid.parseGoid(keyIdSplit[0]);
+                            final String keyAlias = keyIdSplit[1];
+                            // create entity header
+                            final SsgKeyHeader keyHeader = new SsgKeyHeader(entityId, keyStoreId, keyAlias, null);
+                            // make sure this entity wasn't referenced before
+                            if (!entityHeaders.contains(keyHeader)) {
+                                entityHeaders.add(keyHeader);
+                            } else {
+                                logger.finer("Ignoring already referenced Private Key: \"" + entityId + "\"");
+                            }
+                        }
                         break;
 
                     case KeyValueStore:
@@ -174,15 +189,45 @@ public class CustomEntitiesResolver {
                         final CustomEntitySerializer entitySerializer = findEntitySerializerFromClassName(
                                 CustomEntityReferenceSupportAccessor.getSerializerClassName(referenceObject)
                         );
-                        // get entity prefix, cannot be null so it will throw
+                        // get entity prefix, mandatory for KeyValueStore
                         final String entityKeyPrefix = CustomEntityReferenceSupportAccessor.getEntityKeyPrefix(referenceObject);
-                        // first add the reference entity, never throws
-                        final Object entityObject = addCustomKeyValuedEntity(entityHeaders, entityId, entityKeyPrefix, entitySerializer);
-                        // next process any potential child entity dependencies
-                        if (entityObject instanceof CustomReferenceEntities) {
-                            processEntityReference(entityHeaders, (CustomReferenceEntities)entityObject);
+                        if (entityKeyPrefix == null) {
+                            throw new IllegalArgumentException(
+                                    "Referenced entity with id: \"" + CustomEntityReferenceSupportAccessor.getEntityId(referenceObject) +
+                                            "\" type: \"" + CustomEntityReferenceSupportAccessor.getEntityType(referenceObject) +
+                                            "\" doesn't provide any prefix!"
+                            );
+                        }
+                        // extract entity bytes
+                        // afterwards deserialize the entity object from the bytes
+                        Object entityObject = null;
+                        byte[] entityBytes = null;
+                        try {
+                            entityBytes = extractEntityBytes(entityId, CustomEntityType.KeyValueStore);
+                            entityObject = (entityBytes != null && entitySerializer != null) ? entitySerializer.deserialize(entityBytes) : null;
+                        } catch (final Exception  e) {
+                            logger.log(Level.WARNING, "Failed to extract key-val-store bytes for id: \"" + entityId + "\"", e);
+                        }
+                        // create entity header
+                        final CustomKeyStoreEntityHeader keyStoreEntityHeader = new CustomKeyStoreEntityHeader(
+                                entityId, // mandatory
+                                entityKeyPrefix, // mandatory
+                                entityBytes, // optional
+                                // optionally add serializer only if the external reference entity implements CustomEntityDescriptor
+                                entityObject instanceof CustomEntityDescriptor ? entitySerializer.getClass().getName() : null
+                        );
+                        // make sure this entity wasn't referenced before
+                        if (!entityHeaders.contains(keyStoreEntityHeader)) {
+                            entityHeaders.add(keyStoreEntityHeader);
+                            // next process any potential child entity dependencies
+                            if (entityObject instanceof CustomReferenceEntities) {
+                                processEntityReference(entityHeaders, (CustomReferenceEntities)entityObject);
+                            }
+                        } else {
+                            logger.finer("Ignoring already referenced CustomKeyValueStore: \"" + entityId + "\"");
                         }
                         break;
+
                     default:
                         logger.warning("Unsupported custom reference EntityType: " + entityType);
                         break;
@@ -192,130 +237,24 @@ public class CustomEntitiesResolver {
     }
 
     /**
-     * Check whether the specified <tt>referenceElement</tt> has already been processed, i.e. has been added to our entity headers list.<br/>
-     * This function should also guard against circular references.
-     * <p/>
+     * Convert specified referenced entity type, as string, into {@link CustomEntityType} enum.
      *
-     * *** add logic for future entity types here ***
-     *
-     * @param entityHeaders    self sorted list of entities found so far.
-     * @param entityType       entity type
-     * @param entityId         entity id
-     * @return {@code true} if the specified
+     * @param referenceObject    referenced entity object.
+     * @return corresponding {@code CustomEntityType}.
+     * @throws IllegalArgumentException if specified entity contains unrecognized type
+     * @see CustomEntityReferenceSupportAccessor#getEntityType(Object)
+     * @see CustomEntityType
      */
-    private boolean findDuplicateReference(
-            @NotNull final Collection<EntityHeader> entityHeaders,
-            @NotNull final CustomEntityType entityType,
-            @NotNull final String entityId
-    ) {
-        for (final EntityHeader entityHeader : entityHeaders) {
-            // check for supported types only
-            switch (entityHeader.getType()) {
-                case SECURE_PASSWORD:
-                    if (CustomEntityType.SecurePassword.equals(entityType) && entityId.equals(entityHeader.getStrId())) {
-                        return true;
-                    }
-                    break;
-                case SSG_KEY_ENTRY:
-                    if (CustomEntityType.PrivateKey.equals(entityType) && entityId.equals(entityHeader.getStrId())) {
-                        return true;
-                    }
-                    break;
-                case CUSTOM_KEY_VALUE_STORE:
-                    if (CustomEntityType.KeyValueStore.equals(entityType) && entityId.equals(entityHeader.getName())) {
-                        return true;
-                    }
-                    break;
-                default:
-                    // Should never happen, so throw for now
-                    throw new RuntimeException("Unsupported Header Type: \"" + entityHeader.getType() + "\"");
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Utility function for creating a {@link CustomKeyStoreEntityHeader}, from the specified <tt>entityKey</tt>,
-     * <tt>entityKeyPrefix</tt> and optional <tt>entitySerializer</tt>, adding the header to our <tt>entityHeaders</tt>
-     * collection and finally returning the entity object associated with the specified <tt>entityKey</tt>,
-     * in case when <tt>entitySerializer</tt> is specified.
-     *
-     * @param entityHeaders     self sorted list of entities found so far. Mandatory.
-     * @param entityKey         the custom-key-value-store name. Mandatory.
-     * @param entityKeyPrefix   the custom-key-value-store name prefix. Mandatory.
-     * @param entitySerializer  entity serializer object. Optional.
-     * @return the entity object, if we can serialize the reference id, or {@code null} otherwise.
-     */
-    @Nullable
-    private Object addCustomKeyValuedEntity(
-            @NotNull final Collection<EntityHeader> entityHeaders,
-            @NotNull final String entityKey,
-            @NotNull final String entityKeyPrefix,
-            @Nullable final CustomEntitySerializer entitySerializer
-    ) {
-        Object entityObject = null;
-        byte[] entityBytes = null;
+    @NotNull
+    private CustomEntityType extractEntityType(final Object referenceObject) throws IllegalArgumentException {
+        final String entityType = CustomEntityReferenceSupportAccessor.getEntityType(referenceObject);
         try {
-            entityBytes = extractEntityBytes(entityKey, CustomEntityType.KeyValueStore);
-            entityObject = (entityBytes != null && entitySerializer != null) ? entitySerializer.deserialize(entityBytes) : null;
-        } catch (final Exception  e) {
-            logger.log(Level.WARNING, "Failed to extract key-val-store bytes for id: \"" + entityKey + "\"", e);
-        }
-        entityHeaders.add(
-                new CustomKeyStoreEntityHeader(
-                        entityKey, // mandatory
-                        entityKeyPrefix, // mandatory
-                        entityBytes, // optional
-                        // optionally add sterilizer only if the external reference entity implements CustomEntityDescriptor
-                        entityObject instanceof CustomEntityDescriptor ? entitySerializer.getClass().getName() : null
-                )
-        );
-        return entityObject;
-    }
-
-    /**
-     * Utility function for creating a {@link SecurePasswordEntityHeader}, from the specified <tt>passwordId</tt> and
-     * adding the header to our <tt>entityHeaders</tt> collection.
-     *
-     * @param entityHeaders    self sorted list of entities found so far. Mandatory.
-     * @param passwordId       password goid.
-     * @throws IllegalArgumentException if the password-id cannot be converted to a goid.
-     */
-    private void addPasswordEntity(
-            @NotNull final Collection<EntityHeader> entityHeaders,
-            @NotNull final String passwordId
-    ) {
-        entityHeaders.add(
-                new SecurePasswordEntityHeader(
-                        Goid.parseGoid(passwordId),
-                        EntityType.SECURE_PASSWORD,
-                        null,
-                        null,
-                        "Password"
-                )
-        );
-    }
-
-    /**
-     * Utility function for creating a {@link SsgKeyHeader}, from the specified <tt>keyId</tt> and
-     * adding the header to our <tt>entityHeaders</tt> collection.
-     *
-     * @param entityHeaders  self sorted list of entities found so far. Mandatory.
-     * @param keyId          the key ID
-     * @throws IllegalArgumentException if the key ID is invalid
-     */
-    private void addPrivateKeyEntity(@NotNull Collection<EntityHeader> entityHeaders, @NotNull String keyId) {
-        if (!SignerServices.KEY_ID_SSL.equals(keyId)) {
-            // Add none default key only.
-            //
-            String[] keyIdSplit = keyId.split(":");
-            if (keyIdSplit.length != 2) {
-                throw new IllegalArgumentException("Invalid key ID format.");
-            }
-            Goid keystoreId = Goid.parseGoid(keyIdSplit[0]);
-            String keyAlias = keyIdSplit[1];
-            entityHeaders.add(new SsgKeyHeader(keyId, keystoreId, keyAlias, null));
+            return CustomEntityType.valueOf(entityType);
+        } catch (final IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Referenced entity with id: \"" + CustomEntityReferenceSupportAccessor.getEntityId(referenceObject) +
+                            "\" having unrecognized type \"" + entityType + "\"!"
+            );
         }
     }
 
@@ -339,18 +278,19 @@ public class CustomEntitiesResolver {
                     oldEntityHeader.getType() + "\" differs from new entity type \"" +
                     newEntityHeader.getType() + "\"");
         }
-
-        // *** add logic for future entity types here ***
+        // cache for processed entities
         final Set<Pair<CustomEntityType, String>> processedEntities = new HashSet<>();
+        // extract custom assertion from the holder
         final CustomAssertion customAssertion = assertionHolder.getCustomAssertion();
         if (customAssertion instanceof CustomReferenceEntities) {
             final EntityType entityType = newEntityHeader.getType();
+            // *** add logic for future entity types here ***
             if (EntityType.SECURE_PASSWORD.equals(entityType)) {
                 replaceEntityReference(
                         oldEntityHeader.getStrId(),
                         newEntityHeader.getStrId(),
                         CustomEntityType.SecurePassword,
-                        (CustomReferenceEntities) customAssertion,
+                        (CustomReferenceEntities)customAssertion,
                         processedEntities
                 ); // no need to save custom assertion
             } else if (EntityType.SSG_KEY_ENTRY.equals(entityType)) {
@@ -388,7 +328,7 @@ public class CustomEntitiesResolver {
      * @param processedEntities    a hash-set of all processed entities so far, safeguard against circular references
      * @return {@code true} if the specified <tt>externalEntity</tt> was modified with the new id, {@code false} otherwise.
      */
-    private boolean replaceEntityReference(
+    protected boolean replaceEntityReference(
             @NotNull final String oldId,
             @NotNull final String newId,
             @NotNull final CustomEntityType typeForReplace,
@@ -409,21 +349,24 @@ public class CustomEntitiesResolver {
                 // gather entity id and type
                 final String entityId = CustomEntityReferenceSupportAccessor.getEntityId(referenceObject);
                 // extract entity type
-                final CustomEntityType entityType = CustomEntityReferenceSupportAccessor.getEntityType(referenceObject);
-                if (entityType == null) {
+                final CustomEntityType entityType;
+                try {
+                    entityType = extractEntityType(referenceObject);
+                } catch (final IllegalArgumentException e) {
+                    logger.warning(e.getMessage());
                     // this entity contains unknown type, skip it
                     continue;
                 }
-                // check for circular references
-                if (processedEntities.contains(Pair.pair(entityType, entityId))) {
-                    continue;  // skip entity if this is duplicate i.e. already processed
-                }
-                processedEntities.add(Pair.pair(entityType, entityId));
                 // if the type and old value match, then change entity id/key
                 if (typeForReplace.equals(entityType) && oldId.equals(entityId)) {
                     CustomEntityReferenceSupportAccessor.setEntityId(referenceObject, newId);
                     ret = true; // we've modify externalEntity object, continue further
                 } else {
+                    // check for circular references
+                    if (processedEntities.contains(Pair.pair(entityType, entityId))) {
+                        continue;  // skip entity if this is duplicate i.e. already processed
+                    }
+                    processedEntities.add(Pair.pair(entityType, entityId));
                     // this is not the entity we need to change, so process its child entities
                     final CustomEntitySerializer entitySerializer = findEntitySerializerFromClassName(
                             CustomEntityReferenceSupportAccessor.getSerializerClassName(referenceObject)
@@ -513,7 +456,7 @@ public class CustomEntitiesResolver {
     }
 
     /**
-     * Utility method for locating specified <tt>entitySerializerClassName</tt> through our entity serializers registry.
+     * Helper method for locating specified <tt>entitySerializerClassName</tt> through our entity serializers registry.
      *
      * @param entitySerializerClassName    entity serializer classname
      * @return entity serializer object registered with the specified <tt>entitySerializerClassName</tt> or {@code null}
@@ -523,6 +466,6 @@ public class CustomEntitiesResolver {
     private CustomEntitySerializer findEntitySerializerFromClassName(
             @Nullable final String entitySerializerClassName
     ) {
-        return (entitySerializerClassName != null) ? classNameToSerializerFunction.call(entitySerializerClassName) : null;
+        return (entitySerializerClassName != null) ? classNameToSerializer.getSerializer(entitySerializerClassName) : null;
     }
 }

@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * being imported contains custom assertion external references.
  */
 public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
+    private static final long serialVersionUID = -6607927690831826715L;
     private static final Logger logger = Logger.getLogger(ResolveCustomKeyValuePanel.class.getName());
     protected static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.ResolveCustomKeyValuePanel");
     protected static final String EMPTY_STRING = resources.getString("empty.string");
@@ -294,6 +295,7 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
      * Utility function for populating the available entities for this external reference
      */
     protected void populateExternalReferenceEntitySelectorComboBox() {
+        final String currentSelectedItem = (customKeyValueComboBox.getSelectedIndex() < 0) ? null : (String)customKeyValueComboBox.getSelectedItem();
         final DefaultComboBoxModel<Object> agentComboBoxModel = new DefaultComboBoxModel<>();
         final KeyValueStore keyValueStore = externalReference.getKeyValueStore();
         final Map<String, byte[]> keyValuePairs = keyValueStore.findAllWithKeyPrefix(externalReference.getEntityKeyPrefix());
@@ -301,6 +303,16 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
             agentComboBoxModel.addElement(key);
         }
         customKeyValueComboBox.setModel(agentComboBoxModel);
+        if (currentSelectedItem != null) {
+            for (int i = 0; i < agentComboBoxModel.getSize(); ++i) {
+                // extract the entity descriptor from element-id
+                final String entityKey = (String)agentComboBoxModel.getElementAt(i);
+                if (currentSelectedItem.equals(entityKey)) {
+                    agentComboBoxModel.setSelectedItem(entityKey);
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -362,6 +374,7 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
         externalReferencePanel.setLayout(new GridBagLayout());
 
         // add key-id
+        //noinspection serial
         externalReferencePanel.add(
                 new JLabel(safeString(resources.getString("label.id"))),
                 new GridBagConstraints() {{
@@ -372,6 +385,7 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
                     insets = new Insets(0, 1, 2, 0);
                 }}
         );
+        //noinspection serial
         externalReferencePanel.add(
                 new JTextField(safeString(extractEntityNameFromKey(externalReference.getEntityKey(), externalReference.getEntityKeyPrefix()))) {{
                     setEditable(false);
@@ -386,6 +400,7 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
         );
 
         // add key-prefix
+        //noinspection serial
         externalReferencePanel.add(
                 new JLabel(safeString(resources.getString("label.prefix"))),
                 new GridBagConstraints() {{
@@ -396,6 +411,7 @@ public class ResolveCustomKeyValuePanel extends WizardStepPanel<Object> {
                     insets = new Insets(0, 1, 2, 0);
                 }}
         );
+        //noinspection serial
         externalReferencePanel.add(
                 new JTextField(safeString(externalReference.getEntityKeyPrefix())) {{
                     setEditable(false);

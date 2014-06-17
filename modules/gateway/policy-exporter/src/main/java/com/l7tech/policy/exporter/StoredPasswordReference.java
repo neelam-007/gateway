@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
@@ -7,7 +8,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -146,34 +146,39 @@ public class StoredPasswordReference extends ExternalReference  {
 
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
-        if (localizeType != LocalizeAction.IGNORE){
-            final EntitiesResolver entitiesResolver = EntitiesResolver
-                    .builder()
-                    .keyValueStore(getFinder().getCustomKeyValueStore())
-                    .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
-                        @Override
-                        public CustomEntitySerializer call(final String entitySerializerClassName) {
-                            return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
-                        }
-                    })
-                    .build();
-            for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
-                if ( EntityType.SECURE_PASSWORD.equals(entityHeader.getType()) && entityHeader.equalsId(id) ) {
-                    if(localizeType == LocalizeAction.REPLACE) {
-                        if ( !localSecurePasswordId.equals(id)) {
-                            EntityHeader newEntityHeader = new EntityHeader(localSecurePasswordId, EntityType.SECURE_PASSWORD, null, null);
-                            entitiesResolver.replaceEntity(assertionToLocalize, entityHeader, newEntityHeader);
-                            logger.info("The server stored password goid of the imported assertion has been changed " +
-                                    "from " + id + " to " + localSecurePasswordId);
-                            break;
-                        }
-                    } else if(localizeType == LocalizeAction.DELETE) {
-                        logger.info("Deleted this assertion from the tree.");
-                        return false;
+        // Optimization
+        // Do not call getEntitiesUsed if this reference is set to be ignored or not set at all, which is the same thing
+        if (localizeType == null || localizeType == LocalizeAction.IGNORE) {
+            return true;
+        }
+
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(getFinder().getCustomKeyValueStore())
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
+                    @Override
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return getFinder().getCustomKeyValueEntitySerializer(className);
                     }
+                })
+                .build();
+        for(EntityHeader entityHeader : entitiesResolver.getEntitiesUsed(assertionToLocalize)) {
+            if ( EntityType.SECURE_PASSWORD.equals(entityHeader.getType()) && entityHeader.equalsId(id) ) {
+                if(localizeType == LocalizeAction.REPLACE) {
+                    if ( !localSecurePasswordId.equals(id)) {
+                        final EntityHeader newEntityHeader = new EntityHeader(localSecurePasswordId, EntityType.SECURE_PASSWORD, null, null);
+                        entitiesResolver.replaceEntity(assertionToLocalize, entityHeader, newEntityHeader);
+                        logger.info("The server stored password goid of the imported assertion has been changed " +
+                                "from " + id + " to " + localSecurePasswordId);
+                        break;
+                    }
+                } else if(localizeType == LocalizeAction.DELETE) {
+                    logger.info("Deleted this assertion from the tree.");
+                    return false;
                 }
             }
         }
+
         return true;
     }
 

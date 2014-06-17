@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -84,10 +85,10 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
                 .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
-                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
                     @Override
-                    public CustomEntitySerializer call(final String entitySerializerClassName) {
-                        return customAssertionRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return customAssertionRegistrar.getExternalEntitySerializer(className);
                     }
                 })
                 .build();
@@ -196,10 +197,10 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
                 .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
-                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
                     @Override
-                    public CustomEntitySerializer call(final String entitySerializerClassName) {
-                        return customAssertionRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return customAssertionRegistrar.getExternalEntitySerializer(className);
                     }
                 })
                 .build();

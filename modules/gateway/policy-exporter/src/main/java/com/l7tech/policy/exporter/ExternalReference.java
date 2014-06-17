@@ -313,7 +313,7 @@ public abstract class ExternalReference {
                 } else if (refType.equals(getReferenceType(CustomKeyValueReference.class))) {
                     references.add(CustomKeyValueReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType( GlobalResourceReference.class))) {
-                    references.add( GlobalResourceReference.parseFromElement(finder, entityResolver, refEl));
+                    references.add(GlobalResourceReference.parseFromElement(finder, entityResolver, refEl));
                 }
             }
         }

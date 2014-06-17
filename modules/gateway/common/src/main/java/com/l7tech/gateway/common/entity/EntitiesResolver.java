@@ -1,12 +1,12 @@
 package com.l7tech.gateway.common.entity;
 
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.custom.CustomEntitiesResolver;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.UsesEntities;
-import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,14 @@ public class EntitiesResolver {
      * Construct the EntitiesResolver using the {@link Builder} object
      */
     private EntitiesResolver(@NotNull final Builder builder) {
-        this.entitiesResolver = (builder.keyValueStore != null) ? new CustomEntitiesResolver(builder.keyValueStore, builder.classNameToSerializerFunction) : null;
+        this.entitiesResolver = (builder.keyValueStore != null)
+                ? new CustomEntitiesResolver(
+                        builder.keyValueStore,
+                        builder.classNameToSerializer   // let it throw
+                                                        // if keyValueStore is not null,
+                                                        // then classNameToSerializer mustn't be null
+                    )
+                : null;
     }
 
     /**
@@ -122,7 +129,7 @@ public class EntitiesResolver {
         private KeyValueStore keyValueStore;
 
         @Nullable
-        private Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction;
+        private ClassNameToEntitySerializer classNameToSerializer;
 
         private Builder() {
         }
@@ -132,8 +139,8 @@ public class EntitiesResolver {
             return this;
         }
 
-        public Builder classNameToSerializerFunction(@Nullable final Functions.Unary<CustomEntitySerializer, String> classNameToSerializerFunction) {
-            this.classNameToSerializerFunction = classNameToSerializerFunction;
+        public Builder classNameToSerializer(@Nullable final ClassNameToEntitySerializer classNameToSerializer) {
+            this.classNameToSerializer = classNameToSerializer;
             return this;
         }
 

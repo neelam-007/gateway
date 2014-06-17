@@ -3,6 +3,7 @@ package com.l7tech.server.policy.validator;
 import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -416,10 +417,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             final EntitiesResolver entitiesResolver = EntitiesResolver
                     .builder()
                     .keyValueStore(keyValueStore)
-                    .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                    .classNameToSerializer(new ClassNameToEntitySerializer() {
                         @Override
-                        public CustomEntitySerializer call(final String entitySerializerClassName) {
-                            return customAssertionsRegistrar.getExternalEntitySerializer(entitySerializerClassName);
+                        public CustomEntitySerializer getSerializer(final String className) {
+                            return customAssertionsRegistrar.getExternalEntitySerializer(className);
                         }
                     })
                     .build();

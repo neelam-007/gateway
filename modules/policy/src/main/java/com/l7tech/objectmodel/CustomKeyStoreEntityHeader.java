@@ -104,26 +104,17 @@ public class CustomKeyStoreEntityHeader extends EntityHeader {
 
     @Override
     public boolean equals(final Object obj) {
-        if (!(obj instanceof EntityHeader)) return false;
+        if (this == obj) return true;
+        if (!super.equals(obj)) return false;
         final EntityHeader theOtherOne = (EntityHeader)obj;
-        if (theOtherOne.type != this.type) return false;
-        if (getStrId() == null) {
-            return theOtherOne.getStrId() == null &&
-                    ( getName() != null ?
-                            getName().equals(theOtherOne.getName()) :
-                            theOtherOne.getName() == null );
-        }
-        return getStrId().equals(theOtherOne.getStrId()) &&
-                ( getName() != null ?
-                        getName().equals(theOtherOne.getName()) :
-                        theOtherOne.getName() == null );
+        return (getName() != null
+                        ? getName().equals(theOtherOne.getName())
+                        : theOtherOne.getName() == null);
     }
 
     @Override
     public int hashCode() {
-        int result;
-        result = (type != null ? type.hashCode() : 0);
-        result = 31 * result + (strId != null ? strId.hashCode() : 0);
+        int result = super.hashCode();
         result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         return result;
     }

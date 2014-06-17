@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.*;
@@ -9,7 +10,6 @@ import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
@@ -262,10 +262,10 @@ public class PrivateKeyReference extends ExternalReference {
                 final EntitiesResolver entitiesResolver =
                     EntitiesResolver.builder()
                         .keyValueStore(getFinder().getCustomKeyValueStore())
-                        .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                        .classNameToSerializer(new ClassNameToEntitySerializer() {
                             @Override
-                            public CustomEntitySerializer call(String entitySerializerClassName) {
-                                return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                            public CustomEntitySerializer getSerializer(final String className) {
+                                return getFinder().getCustomKeyValueEntitySerializer(className);
                             }
                         })
                         .build();

@@ -145,15 +145,22 @@ public class EntityHeader extends EntityHeaderRef {
     Integer version;
 
     @Override
-    public int compareTo(Object o) {
-        if (o == null) throw new NullPointerException();
-        EntityHeader other = (EntityHeader)o;
-        if (strId != null && other.strId != null) {
-            if (strId.equals(other.strId)) return 0;
+    public int compareTo(@Nullable final Object o) {
+        if (o == null) { throw new NullPointerException(); }
+        final EntityHeader other = (EntityHeader)o;
+        if (this == other || (strId != null && strId.equals(other.strId))) {
+            return 0;
         }
-        if ( name.equals(((EntityHeader)o).name) ) {
-            return type.compareTo(((EntityHeader)o).type);
+        if ( (name == null && other.name == null) || (name != null && name.equals(other.name)) || (other.name != null && other.name.equals(name)) ) {
+            // if names are not set or they are equals, then compare with type
+            // nulls are high
+            // if they need to be low, then replace "1" with "-1" and wise versa
+            return (type == other.type ? 0 : (type == null ? 1 : (other.type == null ? -1 : type.compareTo(other.type))));
+        } else {
+            // names are set and different
+            // nulls are high
+            // if they need to be low, then replace "1" with "-1" and wise versa
+            return (name == null ? 1 : (other.name == null ? -1 : name.compareTo(other.name)));
         }
-        return name.compareTo(((EntityHeader)o).name);
     }
 }

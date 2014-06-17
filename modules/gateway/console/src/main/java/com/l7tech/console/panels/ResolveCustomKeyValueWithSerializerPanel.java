@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  * This panel is used when the Custom Assertion developer decides to modify the missing entity before creating it.
  */
 public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyValuePanel {
+    private static final long serialVersionUID = 2466226866548531086L;
     private static final Logger logger = Logger.getLogger(ResolveCustomKeyValueWithSerializerPanel.class.getName());
 
     /**
@@ -149,6 +150,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
             createDefaultExternalReferenceSummeryPanel();
 
             // add entity name
+            //noinspection serial
             externalReferencePanel.add(
                     new JLabel(safeString(resources.getString("label.name"))),
                     new GridBagConstraints() {{
@@ -159,6 +161,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                         insets = new Insets(0, 1, 2, 0);
                     }}
             );
+            //noinspection serial
             externalReferencePanel.add(
                     new JTextField(safeString(externalEntity.getProperty(CustomEntityDescriptor.NAME, String.class))) {{
                         setEditable(false);
@@ -172,6 +175,30 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
                     }}
             );
         }
+
+        // default is delete
+        removeRadioButton.setSelected(true);
+        customKeyValueComboBox.setEnabled(false);
+
+        // enable/disable provider selector as per action type selected
+        changeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                customKeyValueComboBox.setEnabled(true);
+            }
+        });
+        removeRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                customKeyValueComboBox.setEnabled(false);
+            }
+        });
+        ignoreRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                customKeyValueComboBox.setEnabled(false);
+            }
+        });
 
         // set the missing panel title accordingly
         final Border border = externalReferencePanel.getBorder();
@@ -271,6 +298,7 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
     protected void populateExternalReferenceEntitySelectorComboBox() {
         entityNameToKeyMap.clear();
 
+        final CustomEntityDescriptor currentSelectedItem = (customKeyValueComboBox.getSelectedIndex() < 0) ? null : (CustomEntityDescriptor)customKeyValueComboBox.getSelectedItem();
         final DefaultComboBoxModel<Object> agentComboBoxModel = new DefaultComboBoxModel<>();
         final KeyValueStore keyValueStore = externalReference.getKeyValueStore();
         final Map<String, byte[]> keyValuePairs = keyValueStore.findAllWithKeyPrefix(externalReference.getEntityKeyPrefix());
@@ -296,6 +324,19 @@ public class ResolveCustomKeyValueWithSerializerPanel extends ResolveCustomKeyVa
         }
 
         customKeyValueComboBox.setModel(agentComboBoxModel);
+        if (currentSelectedItem != null) {
+            final String selectedEntityName = currentSelectedItem.getProperty(CustomEntityDescriptor.NAME, String.class);
+            if (selectedEntityName != null) {
+                for (int i = 0; i < agentComboBoxModel.getSize(); ++i) {
+                    // extract the entity descriptor from element-id
+                    final CustomEntityDescriptor entity = (CustomEntityDescriptor)agentComboBoxModel.getElementAt(i);
+                    if (selectedEntityName.equals(entity.getProperty(CustomEntityDescriptor.NAME, String.class))) {
+                        agentComboBoxModel.setSelectedItem(entity);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.Policy;
@@ -10,7 +11,6 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
@@ -408,10 +408,10 @@ class ExternalReferenceResolver {
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
                 .keyValueStore(finder.getCustomKeyValueStore())
-                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
                     @Override
-                    public CustomEntitySerializer call(final String entitySerializerClassName) {
-                        return finder.getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return finder.getCustomKeyValueEntitySerializer(className);
                     }
                 })
                 .build();

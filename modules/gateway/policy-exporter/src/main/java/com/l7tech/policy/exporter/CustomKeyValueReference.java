@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.objectmodel.CustomKeyStoreEntityHeader;
 import com.l7tech.objectmodel.EntityHeader;
@@ -17,7 +18,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.logging.Logger;
-
 
 /**
  * The custom key value store external reference element.
@@ -45,7 +45,7 @@ public class CustomKeyValueReference extends ExternalReference {
     /**
      * Root XML node for an custom-key-value-store entity
      */
-    private static final String REFERENCE_ROOT_NODE = "CustomKeyValueReference";
+    protected static final String REFERENCE_ROOT_NODE = "CustomKeyValueReference";
 
     /**
      * Represents name of the class that implements CustomEntitySerializer.
@@ -56,12 +56,12 @@ public class CustomKeyValueReference extends ExternalReference {
      * String, String, String, com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer)
      * CustomReferenceEntitiesSupport#setReference(...)})
      */
-    private static final String REFERENCE_SERIALIZER_NODE = "Serializer";
+    protected static final String REFERENCE_SERIALIZER_NODE = "Serializer";
 
     /**
      * Represents the parent node holding entity specific config
      */
-    private static final String REFERENCE_CONFIG_NODE = "Config";
+    protected static final String REFERENCE_CONFIG_NODE = "Config";
 
     /**
      * Represents the custom-key-value-store store name.
@@ -69,26 +69,26 @@ public class CustomKeyValueReference extends ExternalReference {
      * Currently only {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreServices#INTERNAL_TRANSACTIONAL_KEY_VALUE_STORE_NAME internalTransactional}
      * is exposed to the developer.
      */
-    private static final String REFERENCE_CONFIG_KEY_VALUE_STORE_NAME_NODE = "KeyValueStoreName";
+    protected static final String REFERENCE_CONFIG_KEY_VALUE_STORE_NAME_NODE = "KeyValueStoreName";
 
     /**
      * Represents a unique identifier for the entity in the custom-key-value-store.<br/>
      * This is a key that includes a prefix and identifier chosen by the developer.
      * For example: <i>com.l7tech.custom.salesforce.partner.v26.assertion.SalesForceConnection.sf-prod-connection</i>
      */
-    private static final String REFERENCE_CONFIG_KEY_NODE = "Key";
+    protected static final String REFERENCE_CONFIG_KEY_NODE = "Key";
 
     /**
      * Represents the prefix portion of the key in the custom-key-value-store.<br/>
      * The prefix is used by the developer to identify all entities belonging to the Assertion.
      * For example: <i>com.l7tech.custom.salesforce.partner.v26.assertion.SalesForceConnection.</i>
      */
-    private static final String REFERENCE_CONFIG_PREFIX_NODE = "KeyPrefix";
+    protected static final String REFERENCE_CONFIG_PREFIX_NODE = "KeyPrefix";
 
     /**
      * Represents the base64 encoded entity bytes. This is the custom-key-value-store value.
      */
-    private static final String REFERENCE_CONFIG_VALUE_NODE = "Base64Value";
+    protected static final String REFERENCE_CONFIG_VALUE_NODE = "Base64Value";
 
     /**
      * Mandatory.  Represents the unique identifier of the custom-key-value-store entity key, <i>prefix+keyId</i>
@@ -172,7 +172,8 @@ public class CustomKeyValueReference extends ExternalReference {
                 finder,
                 entityHeader.getName(), 
                 entityHeader.getEntityKeyPrefix(),
-                entityHeader.getEntityBase64Value(), // shouldn't be null since check is done before calling constructor
+                entityHeader.getEntityBase64Value(), // throws if null
+                                                     // we are not allowing export of null/empty key-value-store entities
                 entityHeader.getEntitySerializer()
         );
     }
@@ -268,11 +269,11 @@ public class CustomKeyValueReference extends ExternalReference {
 
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
-                .keyValueStore(getFinder().getCustomKeyValueStore())
-                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                .keyValueStore(getKeyValueStore())
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
                     @Override
-                    public CustomEntitySerializer call(final String entitySerializerClassName) {
-                        return getFinder().getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return getFinder().getCustomKeyValueEntitySerializer(className);
                     }
                 })
                 .build();
@@ -336,7 +337,7 @@ public class CustomKeyValueReference extends ExternalReference {
      * @return The value of the first matching child {@link Element}.
      * @throws TooManyChildElementsException if multiple matching child nodes are found
      */
-    private static String getExactlyOneParamFromEl (
+    protected static String getExactlyOneParamFromEl (
             @NotNull final Element parent, 
             @NotNull final String param
     ) throws TooManyChildElementsException {
@@ -360,7 +361,7 @@ public class CustomKeyValueReference extends ExternalReference {
      * @throws MissingRequiredElementException if no matching child node is found
      * @throws InvalidDocumentFormatException if child node value cannot be extracted
      */
-    private static String getExactlyOneRequiredParamFromEl (
+    protected static String getExactlyOneRequiredParamFromEl (
             @NotNull final Element parent,
             @NotNull final String param
     ) throws InvalidDocumentFormatException {

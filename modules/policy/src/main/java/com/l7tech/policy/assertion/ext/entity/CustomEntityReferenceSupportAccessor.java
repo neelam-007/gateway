@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Utility class for accessing {@link CustomReferenceEntitiesSupport} fields and methods.
@@ -14,13 +15,23 @@ import java.util.Collections;
 public final class CustomEntityReferenceSupportAccessor {
 
     /**
-     * Get a read-only collection of all referenced entities in the specified support object.
+     * Get a read-only collection of all referenced entities for the specified support object.
      */
     @NotNull
     public static Collection<CustomReferenceEntitiesSupport.ReferenceElement> getAllReferencedEntities(
             @NotNull final CustomReferenceEntitiesSupport referenceSupport
     ) {
         return Collections.unmodifiableCollection(referenceSupport.references.values());
+    }
+
+    /**
+     * For the specified support object, get a read-only map of all referenced entities and their corresponding attribute names.
+     */
+    @NotNull
+    public static Map<String, CustomReferenceEntitiesSupport.ReferenceElement> getAllReferencedEntitiesMap(
+            @NotNull final CustomReferenceEntitiesSupport referenceSupport
+    ) {
+        return Collections.unmodifiableMap(referenceSupport.references);
     }
 
     /**
@@ -40,6 +51,8 @@ public final class CustomEntityReferenceSupportAccessor {
 
     /**
      * Extract specified referenced entity Id.
+     *
+     * @see com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport.ReferenceElement#getId()
      */
     @NotNull
     public static String getEntityId(final Object entityRef) {
@@ -48,45 +61,38 @@ public final class CustomEntityReferenceSupportAccessor {
 
     /**
      * Sets specified referenced entity Id.
+     *
+     * @see com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport.ReferenceElement#setId(String)
      */
     public static void setEntityId(final Object entityRef, @NotNull final String newId) {
         extractEntityObject(entityRef).setId(newId);
     }
 
     /**
-     * Extract specified referenced entity custom-key-value-store entity key-prefix.
+     * Extract specified referenced custom-key-value-store entity key-prefix.
+     *
+     * @see com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport.ReferenceElement#getKeyPrefix()
      */
-    @NotNull
+    @Nullable
     public static String getEntityKeyPrefix(final Object entityRef) {
-        final String entityIdPrefix = extractEntityObject(entityRef).getKeyPrefix();
-        if (entityIdPrefix == null) {
-            throw new IllegalArgumentException(
-                    "Referenced entity with id: \"" + getEntityId(entityRef) +
-                            "\" type: \"" + getEntityType(entityRef) +
-                            "\" doesn't provide any prefix!"
-            );
-        }
-        return entityIdPrefix;
+        return extractEntityObject(entityRef).getKeyPrefix();
     }
 
     /**
-     * Convert specified referenced entity type, as string, into {@link CustomEntityType} enum.
+     * Extract specified referenced entity type.
      *
-     * @return corresponding {@code CustomEntityType} or {@code null} if specified entity contains unrecognized type.
+     * @see com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport.ReferenceElement#getType()
      * @see CustomEntityType
      */
-    @Nullable
-    public static CustomEntityType getEntityType(final Object entityRef) {
-        final String entityTypeString = extractEntityObject(entityRef).getType();
-        try {
-            return entityTypeString != null ? CustomEntityType.valueOf(entityTypeString) : null;
-        } catch (final IllegalArgumentException e) {
-            return null;
-        }
+    @NotNull
+    public static String getEntityType(final Object entityRef) {
+        return extractEntityObject(entityRef).getType();
     }
 
     /**
      * Extract specified referenced entity serializer object.
+     *
+     * @see com.l7tech.policy.assertion.ext.entity.CustomReferenceEntitiesSupport.ReferenceElement#getSerializerClassName()
      * @see CustomEntitySerializer
      */
     @Nullable

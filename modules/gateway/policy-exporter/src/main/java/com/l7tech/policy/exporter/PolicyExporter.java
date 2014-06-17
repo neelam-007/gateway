@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.custom.ClassNameToEntitySerializer;
 import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.identity.IdentityProviderType;
@@ -13,7 +14,6 @@ import com.l7tech.policy.assertion.ext.security.SignerServices;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -176,6 +176,7 @@ public class PolicyExporter {
 
     /**
      * Process used entities from both modular and custom assertions.
+     * Used during export only.
      */
     private void processAssertionEntityHeaders(
             final Collection<ExternalReference> refs,
@@ -184,10 +185,10 @@ public class PolicyExporter {
         final EntitiesResolver entitiesResolver = EntitiesResolver
                 .builder()
                 .keyValueStore(finder.getCustomKeyValueStore())
-                .classNameToSerializerFunction(new Functions.Unary<CustomEntitySerializer, String>() {
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
                     @Override
-                    public CustomEntitySerializer call(final String entitySerializerClassName) {
-                        return finder.getCustomKeyValueEntitySerializer(entitySerializerClassName);
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return finder.getCustomKeyValueEntitySerializer(className);
                     }
                 })
                 .build();
