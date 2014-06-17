@@ -3,6 +3,7 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
+import com.l7tech.gateway.common.security.rbac.RbacAttributeCollector;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.EntityType;
 import org.apache.commons.collections.ComparatorUtils;
@@ -266,7 +267,7 @@ public class PermissionOptionsPanel extends WizardStepPanel {
             invalidOps = ENTITY_TYPES.get(selectedType);
         }
         allObjectsRadio.setEnabled(enableRadiosAndBoxes);
-        conditionRadio.setEnabled(allTypesRadio.isSelected() || (selectedItem != null && !SINGULAR_ENTITY_TYPES.contains(selectedItem)));
+        conditionRadio.setEnabled(allTypesRadio.isSelected() || canHaveConditions(selectedType));
         specificObjectsRadio.setEnabled(specificTypeRadio.isSelected() && selectedType != null && !SINGULAR_ENTITY_TYPES.contains(selectedType) && !LARGE_ENTITY_TYPES.contains(selectedType) && selectedType.isAllowSpecificScope());
         createCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.CREATE, invalidOps));
         readCheckBox.setEnabled(enableRadiosAndBoxes && operationEnabled(OperationType.READ, invalidOps));
@@ -279,5 +280,14 @@ public class PermissionOptionsPanel extends WizardStepPanel {
 
     private boolean operationEnabled(final OperationType operation, final Set<OperationType> invalidOps) {
         return invalidOps == null || !invalidOps.contains(operation);
+    }
+
+    private boolean canHaveConditions(final EntityType type) {
+        boolean canHaveConditions = false;
+        if (type != null && !SINGULAR_ENTITY_TYPES.contains(type) &&
+                (type.isFolderable() || type.isSecurityZoneable() || !RbacAttributeCollector.collectAttributes(type).isEmpty())) {
+            canHaveConditions = true;
+        }
+        return canHaveConditions;
     }
 }
