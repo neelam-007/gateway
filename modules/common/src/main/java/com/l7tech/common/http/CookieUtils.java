@@ -220,25 +220,28 @@ public class CookieUtils {
 
     /**
      * adjust cookie domain and path
-     * @param value cookie value with attributes
+     *
+     * @param value  cookie value with attributes
      * @param domain gateway domain
      * @param path   gateway path
-     * @return  cookie with modified domain and/or path
+     * @return cookie with modified domain and/or path
      */
     public static String replaceCookieDomainAndPath(String value, String domain, String path) {
         String s = value;
-        if(StringUtils.isNotBlank(s)) {
+        if (StringUtils.isNotBlank(s)) {
             //replace cookie domain
+            boolean domainChanged = false;
             if (domain != null) {
                 String cookieDomain = findMatchingValue(domainPattern.matcher(s));
-                if(cookieDomain != null && !domain.endsWith(cookieDomain)) {
+                if (cookieDomain != null && !domain.endsWith(cookieDomain)) {
                     s = replaceMatchedValue(domainPattern.matcher(s), s, DOMAIN + EQUALS + domain);
+                    domainChanged = true;
                 }
             }
             //replace cookie path
             String calcPath = path;
             String cookiePath = findMatchingValue(pathPattern.matcher(s));
-            if(calcPath == null) {
+            if (calcPath == null) {
                 calcPath = cookiePath;
             }
 
@@ -248,7 +251,7 @@ public class CookieUtils {
                     calcPath = calcPath.substring(0, trim);
                 }
             }
-            if(cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath)) {
+            if (domainChanged || (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
                 s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath);
             }
         }
@@ -258,7 +261,7 @@ public class CookieUtils {
     private static String findMatchingValue(@NotNull Matcher matcher) {
         String value = null;
 
-        if(matcher.find()){
+        if (matcher.find()) {
             value = matcher.group(2);
         }
 
@@ -459,7 +462,7 @@ public class CookieUtils {
      * proxying it seems safest to drop this from the header (see RFC 2109
      * section 4.3.4)
      *
-     * @param cookies                The collection of HttpCookie's to add
+     * @param cookies The collection of HttpCookie's to add
      * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
      */
     public static String getCookieHeader(final Collection<HttpCookie> cookies) {
@@ -524,9 +527,9 @@ public class CookieUtils {
         List<String> attributes = new ArrayList<>();
         Matcher m = attributePattern.matcher(value);
         int i = 0;
-        while(m.find()) {
+        while (m.find()) {
             final int pos = m.start();
-            attributes.add(value.substring(i,pos).trim());
+            attributes.add(value.substring(i, pos).trim());
             i = pos + 1;
         }
         attributes.add(value.substring(i).trim());
@@ -535,7 +538,7 @@ public class CookieUtils {
 
     public static String addCookieDomainAndPath(String value, String domain, String path) {
         String s = value;
-        if(StringUtils.isNotBlank(s) && firstAttributePattern.matcher(value).find()) {
+        if (StringUtils.isNotBlank(s) && firstAttributePattern.matcher(value).find()) {
             if (domain != null) {
                 s = findOrAppend(domainPattern.matcher(s), s, domain);
             }
@@ -551,12 +554,13 @@ public class CookieUtils {
      * ex) Cookie: 1=one; 2=two                         ---> Netscape format
      * ex) Cookie: $Version=1; 1=one; $Version=1; 2=two ---> RFC2109
      * ex) Cookie: 1=one; $Version=1; 2=two; $Version=1 ---> RFC2109 except Version is after name=value
+     *
      * @param cookieValue value of the cookie header
-     * @return  a list of individual cookies with attributes
+     * @return a list of individual cookies with attributes
      */
     public static List<String> splitCookieHeader(final String cookieValue) {
         final List<String> singleCookieValues = new ArrayList<>();
-        if(cookieValue != null) {
+        if (cookieValue != null) {
             final String[] tokens = splitAttributes(cookieValue);
             if (tokens.length > 0) {
                 final List<String> group = new ArrayList<>();
@@ -626,16 +630,16 @@ public class CookieUtils {
     private static String replaceMatchedValue(@NotNull Matcher m, @NotNull String value, @Nullable String replacement) {
         StringBuffer sb = new StringBuffer();
         int i = 0;
-        if(m.find()) {
-            sb.append(value.substring(i,m.start(1))).append(replacement);
+        if (m.find()) {
+            sb.append(value.substring(i, m.start(1))).append(replacement);
             i = m.end(1);
         }
-        if(sb.length() == 0) {
+        if (sb.length() == 0) {
             sb.append(value);
-            if(value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1 ) sb.append(ATTRIBUTE_DELIMITER); //check if cookie ends with ;
+            if (value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1)
+                sb.append(ATTRIBUTE_DELIMITER); //check if cookie ends with ;
             sb.append(replacement);
-        }
-        else if(i < value.length() - 1){
+        } else if (i < value.length() - 1) {
             sb.append(value.substring(i));
         }
         return sb.toString();
@@ -644,8 +648,8 @@ public class CookieUtils {
     private static String findOrAppend(@NotNull Matcher m, @NotNull String value, @Nullable String replacement) {
         StringBuffer sb = new StringBuffer();
         sb.append(value);
-        if(!m.find()) {
-            if(value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1 )
+        if (!m.find()) {
+            if (value.lastIndexOf(ATTRIBUTE_DELIMITER.trim()) < value.trim().length() - 1)
                 sb.append(ATTRIBUTE_DELIMITER); //check if cookie ends with ;
             sb.append(replacement);
         }
@@ -665,7 +669,7 @@ public class CookieUtils {
     private static final String FIRST_ATTRIBUTE_PATTERN = "^[\\w\\$-]*\\s*=\\s*(?:[\\w[^;]]+)";
     private static final String COOKIE_ATTRIBUTE_PATTERN = "(?:;\\s*)(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)([\\w\\$-,]*)(\\s*=\\s*\"{0,1}([\\w[^;\\s\"]]+)\"{0,1})*";
     private static final Pattern domainPattern = Pattern.compile(DOMAIN_PATTERN, Pattern.CASE_INSENSITIVE);
-    private static final Pattern pathPattern = Pattern.compile(PATH_PATTERN,Pattern.CASE_INSENSITIVE);
+    private static final Pattern pathPattern = Pattern.compile(PATH_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern attributePattern = Pattern.compile(COOKIE_ATTRIBUTE_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern firstAttributePattern = Pattern.compile(FIRST_ATTRIBUTE_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Comparator<String> COOKIE_ATTRIBUTE_COMPARATOR = ComparatorUtils.nullHighComparator(new CookieTokenComparator());

@@ -1,16 +1,24 @@
 package com.l7tech.external.assertions.managecookie.console;
 
+import com.l7tech.common.http.CookieUtils;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
+import com.l7tech.console.util.jcalendar.JDateTimeChooser;
+import com.l7tech.console.util.jcalendar.JTextFieldDateTimeEditor;
 import com.l7tech.external.assertions.managecookie.ManageCookieAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,9 +66,9 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JCheckBox originalSecure;
     private JCheckBox httpOnlyCheckBox;
     private JCheckBox originalHttpOnly;
-    private JTextField expiresTextField;
     private JCheckBox originalExpires;
     private JLabel expiresLabel;
+    private JDateTimeChooser expiresChooser;
     private InputValidator validators;
 
     public ManageCookiePropertiesDialog(final Frame parent, final ManageCookieAssertion assertion) {
@@ -78,7 +86,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         pathTextField.setText(cookieAttributes.containsKey(PATH) ? cookieAttributes.get(PATH).getValue() : StringUtils.EMPTY);
         commentTextField.setText(cookieAttributes.containsKey(COMMENT) ? cookieAttributes.get(COMMENT).getValue() : StringUtils.EMPTY);
         maxAgeTextField.setText(cookieAttributes.containsKey(MAX_AGE) ? cookieAttributes.get(MAX_AGE).getValue() : StringUtils.EMPTY);
-        expiresTextField.setText(cookieAttributes.containsKey(EXPIRES) ? cookieAttributes.get(EXPIRES).getValue() : StringUtils.EMPTY);
+        ((JTextFieldDateTimeEditor) expiresChooser.getDateEditor()).setText(cookieAttributes.containsKey(EXPIRES) ? cookieAttributes.get(EXPIRES).getValue() : StringUtils.EMPTY);
         versionTextField.setText(cookieAttributes.containsKey(VERSION) ? cookieAttributes.get(VERSION).getValue() : StringUtils.EMPTY);
         secureCheckBox.setSelected(cookieAttributes.containsKey(SECURE) ? Boolean.parseBoolean(cookieAttributes.get(SECURE).getValue()) : false);
         httpOnlyCheckBox.setSelected(cookieAttributes.containsKey(HTTP_ONLY) ? Boolean.parseBoolean(cookieAttributes.get(HTTP_ONLY).getValue()) : false);
@@ -125,7 +133,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         maybeSetAttribute(assertion, DOMAIN, domainTextField, originalDomain);
         maybeSetAttribute(assertion, PATH, pathTextField, originalPath);
         maybeSetAttribute(assertion, MAX_AGE, maxAgeTextField, originalMaxAge);
-        maybeSetAttribute(assertion, EXPIRES, expiresTextField, originalExpires);
+        maybeSetAttribute(assertion, EXPIRES, (JTextFieldDateTimeEditor) expiresChooser.getDateEditor(), originalExpires);
         maybeSetAttribute(assertion, VERSION, versionTextField, originalVersion);
         maybeSetAttribute(assertion, COMMENT, commentTextField, originalComment);
         maybeSetAttribute(assertion, SECURE, secureCheckBox.isSelected() ? "true" : null, originalSecure);
@@ -228,7 +236,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
                                 ensureCheckboxOrTextFieldHasInput(DOMAIN, domainTextField, originalDomain);
                                 ensureCheckboxOrTextFieldHasInput(PATH, pathTextField, originalPath);
                                 ensureCheckboxOrTextFieldHasInput(MAX_AGE, maxAgeTextField, originalMaxAge);
-                                ensureCheckboxOrTextFieldHasInput(EXPIRES, expiresTextField, originalExpires);
+                                ensureCheckboxOrTextFieldHasInput(EXPIRES, (JTextFieldDateTimeEditor) expiresChooser.getDateEditor(), originalExpires);
                                 ensureCheckboxOrTextFieldHasInput(COMMENT, commentTextField, originalComment);
                             } catch (final ValidationException e) {
                                 error = e.getMessage();
@@ -292,7 +300,7 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         versionLabel.setEnabled(op != REMOVE);
         versionTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalVersion.isSelected()));
         expiresLabel.setEnabled(op != REMOVE);
-        expiresTextField.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalExpires.isSelected()));
+        expiresChooser.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalExpires.isSelected()));
         secureCheckBox.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalSecure.isSelected()));
         httpOnlyCheckBox.setEnabled(addOrAddOrReplace || (op == UPDATE && !originalHttpOnly.isSelected()));
 
@@ -307,5 +315,21 @@ public class ManageCookiePropertiesDialog extends AssertionPropertiesOkCancelSup
         pathMatchLabel.setEnabled(updateOrRemove);
         pathMatchTextField.setEnabled(updateOrRemove);
         pathRegexCheckBox.setEnabled(updateOrRemove);
+    }
+
+    private void createUIComponents() {
+        final JTextFieldDateTimeEditor dateEditor = new JTextFieldDateTimeEditor() {
+            @Override
+            public void caretUpdate(CaretEvent event) {
+                super.caretUpdate(event);
+                final String[] referencedNames = Syntax.getReferencedNames(getText(), false);
+                if (referencedNames.length > 0) {
+                    // it's a context variable and therefore valid
+                    setForeground(darkGreen);
+                }
+            }
+        };
+        dateEditor.setMinSelectableDate(new Date());
+        expiresChooser = new JDateTimeChooser(null, null, CookieUtils.NETSCAPE_RFC850_DATEFORMAT, dateEditor);
     }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.common.http;
 
+import com.l7tech.test.BugId;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.junit.Test;
 
@@ -46,7 +47,7 @@ public class CookieUtilsTest {
     }
 
     @Test
-    public void ensureValidForDomainAndPathNullTargetDomain() throws Exception{
+    public void ensureValidForDomainAndPathNullTargetDomain() throws Exception {
         HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain");
         final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, null, "/gatewayPath");
         assertEquals("originalDomain", cookie.getDomain());
@@ -82,6 +83,23 @@ public class CookieUtilsTest {
         HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, null, null));
         assertEquals("originalDomain", modifiedCookie.getDomain());
         assertEquals("/originalPath", modifiedCookie.getPath());
+    }
+
+    /**
+     * This behaviour has existed since changeset 11919.
+     */
+    @BugId("SSG-8733")
+    @Test
+    public void ensureValidForDomainAndPathAlwaysReplacePathIfDomainIsReplaced() throws Exception {
+        HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/", "galactica.l7tech.com");
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, "gatewayDomain", "/gatewayPath");
+        assertEquals("gatewayDomain", cookie.getDomain());
+        assertEquals("/gatewayPath", cookie.getPath());
+
+        String cookieOneValue = CookieUtils.getSetCookieHeader(cookie1);
+        HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, "gatewayDomain", "/gatewayPath"));
+        assertEquals("gatewayDomain", modifiedCookie.getDomain());
+        assertEquals("/gatewayPath", modifiedCookie.getPath());
     }
 
     /**
@@ -238,7 +256,7 @@ public class CookieUtilsTest {
         String testValue = "foo=\"abc\" ;domain=\".com\";path=\\; secure; Expires=Wed 01-01-01";
         String newDomain = "domain=.mydomain.com";
         String newPath = "Path=\"/path\"";
-        String expected =  "foo=\"abc\" ;domain=.mydomain.com;Path=\"/path\"; secure; Expires=Wed 01-01-01";
+        String expected = "foo=\"abc\" ;domain=.mydomain.com;Path=\"/path\"; secure; Expires=Wed 01-01-01";
         assertEquals("Compare replaced cookie", testValue, CookieUtils.addCookieDomainAndPath(testValue, newDomain, newPath));
     }
 
@@ -255,7 +273,7 @@ public class CookieUtilsTest {
     public void shouldAddDomainOnly() throws Exception {
         String testValue = "foo=\"abc\" ;path=\\; secure; Expires=Wed 01-01-01";
         String newDomain = "Domain=.mydomain.com";
-        String expected =  "foo=\"abc\" ;path=\\; secure; Expires=Wed 01-01-01; Domain=.mydomain.com";
+        String expected = "foo=\"abc\" ;path=\\; secure; Expires=Wed 01-01-01; Domain=.mydomain.com";
         assertEquals("Compare replaced cookie", expected, CookieUtils.addCookieDomainAndPath(testValue, newDomain, null));
     }
 
@@ -263,7 +281,7 @@ public class CookieUtilsTest {
     public void shouldAddCookiePathOnly() throws Exception {
         String newPath = "Path=\"/path\"";
         String testValue = "foo=\"%5%X412345456767\"; Domain=\".domain\";Secure";
-        String expected =  "foo=\"%5%X412345456767\"; Domain=\".domain\";Secure; Path=\"/path\"";
+        String expected = "foo=\"%5%X412345456767\"; Domain=\".domain\";Secure; Path=\"/path\"";
         assertEquals("Compare replaced cookie", expected, CookieUtils.addCookieDomainAndPath(testValue, null, newPath));
     }
 
@@ -285,13 +303,13 @@ public class CookieUtilsTest {
     @Test
     public void addCookieDomainIfNotExists() throws Exception {
         String testValue = "foo=\"abc;Domain=.something;  \"    ; Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT; bar=cdfe; Domain=\"blah....\"; Path=/; Max-Age=something; httpOnly; Secure";
-        String expected =  "foo=\"abc;Domain=.something;  \"; Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT; Domain=.mydomain.com; bar=cdfe; Domain=\"blah....\"; Path=/; Max-Age=something; httpOnly; Secure";
+        String expected = "foo=\"abc;Domain=.something;  \"; Path=\"\\\"; Secure; Expires=Wed, 28-May-2014 01:58:59 GMT; Domain=.mydomain.com; bar=cdfe; Domain=\"blah....\"; Path=/; Max-Age=something; httpOnly; Secure";
         String newDomain = CookieUtils.DOMAIN + CookieUtils.EQUALS + ".mydomain.com";
         String newPath = CookieUtils.PATH + CookieUtils.EQUALS + "/path";
         StringBuffer modifiedCookie = new StringBuffer();
         List<String> cookies = CookieUtils.splitCookieHeader(testValue);
-        for(int i = 0; i < cookies.size(); i++ ) {
-            if(i > 0) modifiedCookie.append(CookieUtils.ATTRIBUTE_DELIMITER);
+        for (int i = 0; i < cookies.size(); i++) {
+            if (i > 0) modifiedCookie.append(CookieUtils.ATTRIBUTE_DELIMITER);
             modifiedCookie.append(CookieUtils.addCookieDomainAndPath(cookies.get(i), newDomain, newPath));
         }
         String actual = modifiedCookie.toString();
