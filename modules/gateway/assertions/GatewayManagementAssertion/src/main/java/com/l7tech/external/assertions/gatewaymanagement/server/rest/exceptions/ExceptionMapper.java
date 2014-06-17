@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
@@ -128,6 +129,9 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
             logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
             final WebApplicationException ex = (WebApplicationException)e;
             status = ex.getResponse().getStatusInfo();
+        } else if ( e instanceof ObjectNotFoundException) {
+            logger.log( Level.WARNING, "Resource not found: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
+            status = Response.Status.NOT_FOUND;
         } else {
             logger.log( Level.WARNING, "Error processing management request: "+ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e) );
         }

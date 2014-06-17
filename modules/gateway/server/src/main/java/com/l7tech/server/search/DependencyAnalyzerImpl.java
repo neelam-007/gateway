@@ -3,6 +3,7 @@ package com.l7tech.server.search;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -77,7 +78,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         for (final EntityHeader entityHeader : entityHeaders) {
             final Entity entity = entityCrud.find(entityHeader);
             if (entity == null) {
-                throw new FindException("Could not find Entity with header: " + entityHeader.toStringVerbose());
+                throw new ObjectNotFoundException("Could not find Entity with header: " + entityHeader.toStringVerbose());
             }
             entities.add(entity);
         }

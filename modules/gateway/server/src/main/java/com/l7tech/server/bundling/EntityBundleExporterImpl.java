@@ -155,8 +155,15 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     EntityMappingInstructions.TargetMapping.Type.valueOf(bundleExportProperties.getProperty(DefaultMapByOption, DefaultMapBy).toUpperCase()));
         }
 
-        //add the mapping
-        mappings.add(mapping);
+        // add the mapping
+        // ensure there's only one mapping instruction for that entity
+        int index = mappings.indexOf(mapping);
+        if( index > 0 ) {
+            mappings.remove(index);
+            mappings.add(index,mapping);
+        }else{
+            mappings.add(mapping);
+        }
     }
 
     /**

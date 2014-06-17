@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -835,5 +836,206 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
             mappingsToClean = null;
         }
+    }
+
+    @Test
+    public void testFolderBundle() throws Exception{
+        //create parent folder
+        FolderMO parentFolderMO = ManagedObjectFactory.createFolder();
+        parentFolderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        parentFolderMO.setName("asdf");
+        RestResponse response = getSourceEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(parentFolderMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<FolderMO> parent = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        parent.setContent(parentFolderMO);
+
+        //create child 1 folder
+        FolderMO child1FolderMO = ManagedObjectFactory.createFolder();
+        child1FolderMO.setFolderId(parent.getId());
+        child1FolderMO.setName("zxcv");
+        response = getSourceEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(child1FolderMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<FolderMO> child1 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        child1.setContent(child1FolderMO);
+
+        //create child 2 folder
+        FolderMO child2FolderMO = ManagedObjectFactory.createFolder();
+        child2FolderMO.setFolderId(parent.getId());
+        child2FolderMO.setName("aegaeg");
+        response = getSourceEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(child2FolderMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<FolderMO>  child2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        child2.setContent(child2FolderMO);
+
+        //create policy
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("aggeagewage");
+        policyDetail.setFolderId(child2.getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AuditDetailAssertion>\n" +
+                "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
+                "        </L7p:AuditDetailAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>");
+
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyCreated.setContent(policyMO);
+
+        // create policy alias
+        PolicyAliasMO policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setFolderId(child1.getId());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class,policyCreated.getId()));
+        response = getSourceEnvironment().processRequest("policyAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyAliasMO)));
+        assertOkCreatedResponse(response);
+        Item<PolicyAliasMO> policyAliasCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyAliasCreated.setContent(policyAliasMO);
+
+        //create service
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AuditDetailAssertion>\n" +
+                        "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
+                        "        </L7p:AuditDetailAssertion>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        ServiceMO serviceMO = ManagedObjectFactory.createService();
+        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceDetail.setName("geaega");
+        serviceDetail.setFolderId(parent.getId());
+        ServiceDetail.HttpMapping serviceMapping = ManagedObjectFactory.createHttpMapping();
+        serviceMapping.setUrlPattern("/geaega");
+        serviceMapping.setVerbs(Arrays.asList("POST"));
+        ServiceDetail.SoapMapping soapMapping = ManagedObjectFactory.createSoapMapping();
+        soapMapping.setLax(false);
+        serviceDetail.setServiceMappings(Arrays.asList(serviceMapping,soapMapping));
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", true)
+                .put("soapVersion", "1.2")
+                .map());
+        ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResourceSet.setTag("policy");
+        Resource policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        policyResource.setType("policy");
+        policyResource.setContent(assXml );
+        ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
+        wsdlResourceSet.setTag("wsdl");
+        wsdlResourceSet.setRootUrl("http://localhost:8080/test.wsdl");
+        Resource wsdlResource = ManagedObjectFactory.createResource();
+        wsdlResourceSet.setResources(Arrays.asList(wsdlResource));
+        wsdlResource.setType("wsdl");
+        wsdlResource.setSourceUrl("http://localhost:8080/test.wsdl");
+        wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet,wsdlResourceSet));
+
+        response = getSourceEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<ServiceMO> service = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        service.setContent(serviceMO);
+
+        // create policy alias
+        ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
+        serviceAliasMO.setFolderId(child1.getId());
+        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, service.getId()));
+        response = getSourceEnvironment().processRequest("serviceAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceAliasMO)));
+        assertOkCreatedResponse(response);
+        Item<ServiceAliasMO> serviceAlias = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceAlias.setContent(serviceAliasMO);
+
+        try {
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/folder/" + parent.getId(), "", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 6 item. A policy, a policy alias, a service, a service alias, 2 folders", 6, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 7 mappings. a policy, a policy alias, a service, a service alias, 3 folders", 7, bundleItem.getContent().getMappings().size());
+
+            // map parent folder
+            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle?activate=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 7 mappings after the import", 7, mappings.getContent().getMappings().size());
+
+        }finally{
+
+            response = getSourceEnvironment().processRequest("policyAliases/"+policyAliasCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("policies/"+policyCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("serviceAliases/"+serviceAlias.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("services/"+service.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("folders/"+child2.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("folders/"+child1.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("folders/"+parent.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+    }
+
+    @BugId("SSG-8573")
+    @Test
+    public void testExportInvalidFolder() throws Exception {
+        //get the bundle
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + policyAliasItem.getId(), "", HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+
+        response = getSourceEnvironment().processRequest("bundle/service/" + policyAliasItem.getId(), "", HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+
+        response = getSourceEnvironment().processRequest("bundle/policy/" + policyAliasItem.getId(), "", HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }
