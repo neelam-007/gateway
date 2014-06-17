@@ -555,9 +555,6 @@ public class AssertionMessages extends Messages {
     // ServerFtpRoutingAssertion
     @Deprecated
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
-    public static final M FTP_ROUTING_ERROR = m(6051, Level.WARNING, "FTP routing error: {0}");
-    public static final M FTP_ROUTING_CONNECTION_ERROR = m(6052, Level.WARNING, "FTP routing failed; connection error: {0}");
-    public static final M FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD = m(6053, Level.WARNING, "Unable to find stored gateway account password: {0}");
     public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
     public static final M FTP_ROUTING_NO_COMMAND = m(6055, Level.WARNING, "No FTP command specified");
     public static final M FTP_ROUTING_UNSUPPORTED_COMMAND = m(6056, Level.WARNING, "FTP command ''{0}'' is not supported");
@@ -568,6 +565,9 @@ public class AssertionMessages extends Messages {
     public static final M FTP_ROUTING_FAILED_NO_REPLY = m(6061, Level.WARNING, "FTP routing failed; no reply returned for command ''{0}'': {1}");
     public static final M FTP_ROUTING_FAILED_INVALID_REPLY = m(6062, Level.WARNING, "FTP routing failed; invalid or unsupported reply code returned for command ''{0}'': {1}");
     public static final M FTP_ROUTING_SUCCEEDED = m(6063, Level.FINE, "FTP routing succeeded");
+    public static final M FTP_ROUTING_ERROR = m(6064, Level.WARNING, "FTP routing error: {0}");
+    public static final M FTP_ROUTING_CONNECTION_ERROR = m(6065, Level.WARNING, "FTP routing failed; connection error: {0}");
+    public static final M FTP_ROUTING_UNABLE_TO_FIND_STORED_PASSWORD = m(6066, Level.WARNING, "Unable to find stored gateway account password: {0}");
 
     // ServerRequestWssSaml
     @Deprecated
