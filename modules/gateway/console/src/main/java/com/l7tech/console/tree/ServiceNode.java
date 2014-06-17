@@ -12,6 +12,7 @@ import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
@@ -119,7 +120,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new CreateEntityLogSinkAction(this.getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
-        actions.add(new PolicyStepDebugAction(this));
+        try {
+            actions.add(new PolicyStepDebugAction(this, this.getPolicy()));
+        } catch (final FindException e) {
+            logger.log(Level.WARNING, "Cannot add PolicyStepDebug action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
+        }
         actions.add(new DiffPolicyAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);

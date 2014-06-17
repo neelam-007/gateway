@@ -66,6 +66,13 @@ public abstract class Authorizer {
                 }
             }
 
+            if (attempted instanceof AttemptedOtherSpecific) {
+                AttemptedOtherSpecific attemptedOtherSpecific = (AttemptedOtherSpecific) attempted;
+                if (perm.getOtherOperationName() == null || !perm.getOtherOperationName().equals(attemptedOtherSpecific.getOtherOperationName())) {
+                    continue;
+                }
+            }
+
             if (attempted instanceof AttemptedEntityOperation) {
                 // Permission grants read access to anything with matching type
                 if (perm.getScope() == null || perm.getScope().size() == 0) return true;

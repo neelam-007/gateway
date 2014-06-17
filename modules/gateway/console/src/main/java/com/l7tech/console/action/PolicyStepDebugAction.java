@@ -6,7 +6,7 @@ import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedOther;
+import com.l7tech.gateway.common.security.rbac.AttemptedOtherSpecific;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -24,9 +24,10 @@ public class PolicyStepDebugAction extends NodeAction {
      * Creates <code>PolicyStepDebugAction</code>.
      *
      * @param policyNode the policy node
+     * @param policy the policy
      */
-    public PolicyStepDebugAction(EntityWithPolicyNode<? extends Entity, ? extends EntityHeader> policyNode) {
-        super(policyNode, (Class) null, new AttemptedOther(EntityType.POLICY, OtherOperationName.DEBUGGER.getOperationName()));
+    public PolicyStepDebugAction(EntityWithPolicyNode policyNode, Policy policy) {
+        super(policyNode, (Class) null, new AttemptedOtherSpecific(EntityType.POLICY, policy, OtherOperationName.DEBUGGER.getOperationName()));
     }
 
     @Override

@@ -103,7 +103,11 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
         if (getEntityHeader().getPolicyType().equals(PolicyType.GLOBAL_FRAGMENT)) {
-            actions.add(new PolicyStepDebugAction(this));
+            try {
+                actions.add(new PolicyStepDebugAction(this, this.getPolicy()));
+            } catch (final FindException e) {
+                logger.log(Level.WARNING, "Cannot add PolicyStepDebug action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
+            }
         }
         actions.add(new DiffPolicyAction(this));
         if (getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT)) {
