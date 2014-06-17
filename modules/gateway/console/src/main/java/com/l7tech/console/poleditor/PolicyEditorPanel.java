@@ -8,10 +8,7 @@ import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.console.panels.InformationDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
@@ -1178,14 +1175,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public Action[] getActions (){
+        Action[] actions;
         if(policyTree.getSelectionCount() == 0){
-            return new Action[0];
+            actions = new Action[0];
         }            
         else if(policyTree.getSelectionCount() == 1){
-            return ((AssertionTreeNode)policyTree.getLastSelectedPathComponent()).getActions();    
+            actions = ((AssertionTreeNode)policyTree.getLastSelectedPathComponent()).getActions();
         }
         else{
-            return getActionsMultipleNodes();
+            actions = getActionsMultipleNodes();
+        }
+
+        PolicyStepDebugAction policyStepDebugAction = this.createPolicyStepDebugAction();
+        if (policyStepDebugAction != null) {
+            // Add PolicyStepDebugAction at the end.
+            //
+            Action[] newActions = Arrays.copyOf(actions, actions.length+1);
+            newActions[actions.length] = policyStepDebugAction;
+            return newActions;
+        } else {
+            return actions;
         }
     }
 
@@ -2612,5 +2621,31 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         } catch ( IOException e ) {
             log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
         }
+    }
+
+    /**
+     * Creates PolicyStepDebugAction. Returns null if the current policy version is not the
+     * active version.
+     *
+     * @return PolicyStepDebugAction or null if the current policy version is not the active version.
+     */
+    private PolicyStepDebugAction createPolicyStepDebugAction() {
+        if (this.isVersionActive()) {
+            EntityWithPolicyNode policyNode = this.getPolicyNode();
+            try {
+                Policy policy = policyNode.getPolicy();
+                if (policyNode instanceof ServiceNode) {
+                    return new PolicyStepDebugAction(policyNode, policy);
+                } else if (policyNode instanceof PolicyEntityNode) {
+                    PolicyEntityNode policyEntityNode = (PolicyEntityNode) policyNode;
+                    if (PolicyType.GLOBAL_FRAGMENT.equals(policyEntityNode.getEntityHeader().getPolicyType())) {
+                        return new PolicyStepDebugAction(policyNode, policy);
+                    }
+                }
+            } catch (FindException e) {
+                log.log(Level.WARNING, "Cannot add PolicyStepDebug action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
+            }
+        }
+        return null;
     }
 }
