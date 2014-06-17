@@ -1038,4 +1038,139 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         response = getSourceEnvironment().processRequest("bundle/policy/" + policyAliasItem.getId(), "", HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
+
+    @Test
+    public void testImport2FoldersWithPolicyToExistingFolderAndPreviouslyMigratedFolder() throws Exception {
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setFolderId(targetParentFolderItem.getId());
+        folderMO.setName("New Target Folder");
+        RestResponse response = getTargetEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        folderCreated.setContent(folderMO);
+
+        folderMO.setName("New Target Folder 2 Clone");
+        response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCopied = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/folder/" + sourceParentFolderItem.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
+            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
+            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
+
+            Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
+            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
+            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
+            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
+            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
+
+            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
+            bundleItem.getContent().getMappings().get(1).setTargetId(sourceChild2FolderItem.getId());
+            bundleItem.getContent().getMappings().get(3).setTargetId(folderCreated.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
+            Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
+            Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
+            Assert.assertEquals(targetParentFolderItem.getId(), parentFolderMapping.getTargetId());
+
+            Mapping folderMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folderMapping.getActionTaken());
+            Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
+            Assert.assertEquals(sourceChild2FolderItem.getId(), folderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, folder2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folder2Mapping.getActionTaken());
+            Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
+            Assert.assertEquals( folderCreated.getId(), folder2Mapping.getTargetId());
+
+            Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
+            Assert.assertEquals(policyAliasItem.getId(), policyAliasMapping.getSrcId());
+            Assert.assertEquals(policyAliasMapping.getSrcId(), policyAliasMapping.getTargetId());
+
+            // verify dependencies
+
+            response = getTargetEnvironment().processRequest("folders/"+targetParentFolderItem.getId() + "/dependencies?returnType=List", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> folderDependencies = dependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(folderDependencies);
+            Assert.assertEquals(6, folderDependencies.size());
+
+            DependencyMO folderCreatedDependency = getDependency(folderDependencies, folderCreated.getId());
+            Assert.assertNotNull(folderCreatedDependency);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folderCreatedDependency.getType());
+            Assert.assertEquals(folderCreated.getName(), folderCreatedDependency.getName());
+            Assert.assertEquals(folderCreated.getId(), folderCreatedDependency.getId());
+            Assert.assertNotNull(folderCreatedDependency.getDependencies());
+            Assert.assertEquals(1, folderCreatedDependency.getDependencies().size());
+            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), folderCreatedDependency.getDependencies().get(0).getType());
+            Assert.assertEquals(policyAliasItem.getId(), folderCreatedDependency.getDependencies().get(0).getId());
+
+            DependencyMO folderCopiedDependency = getDependency(folderDependencies, folderCopied.getId());
+            Assert.assertNotNull(folderCopiedDependency);
+            Assert.assertEquals(EntityType.FOLDER.toString(), folderCopiedDependency.getType());
+            Assert.assertEquals(folderCopied.getName(), folderCopiedDependency.getName());
+            Assert.assertEquals(folderCopied.getId(), folderCopiedDependency.getId());
+            Assert.assertNotNull(folderCopiedDependency.getDependencies());
+            Assert.assertEquals(1, folderCopiedDependency.getDependencies().size());
+            Assert.assertEquals(EntityType.POLICY.toString(), folderCopiedDependency.getDependencies().get(0).getType());
+            Assert.assertEquals(policyItem.getId(), folderCopiedDependency.getDependencies().get(0).getId());
+
+            validate(mappings);
+
+        }finally{
+
+            response = getTargetEnvironment().processRequest("policyAliases/"+policyAliasItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("folders/"+folderCopied.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            mappingsToClean = null;
+        }
+    }
 }

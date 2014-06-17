@@ -279,7 +279,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             final PolicyVersion policyVersion = policyVersionManager.findLatestRevisionForPolicy(policy.getGoid());
                             policy.setXml(policyVersion.getXml());
 
-                            dependencyAnalyzer.replaceDependencies(policy, resourceMapping, true);
+                            //replace on temp cloned policy and use only the replaced xml, other dependencies will have already been replace from the previous processing
+                            final Policy tempPolicy = new Policy(policy);
+                            dependencyAnalyzer.replaceDependencies(tempPolicy, resourceMapping, true);
+                            policy.setXml(tempPolicy.getXml());
+
                             // save and update policy version's policy xml
                             policyVersion.setXml(policy.getXml());
                             policyVersionManager.update(policyVersion);

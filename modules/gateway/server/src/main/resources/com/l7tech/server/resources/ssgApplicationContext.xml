@@ -2606,6 +2606,14 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.GENERIC"/></key>
                     <bean class="com.l7tech.server.search.processors.GenericEntityDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_ALIAS"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyServiceAliasDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SERVICE_ALIAS"/></key>
+                    <bean class="com.l7tech.server.search.processors.PolicyServiceAliasDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
