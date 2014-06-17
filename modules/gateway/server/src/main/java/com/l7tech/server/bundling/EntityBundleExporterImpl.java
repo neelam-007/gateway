@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
@@ -126,13 +127,15 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         if (entity instanceof HasFolder) {
             // include parent folder mapping if not already in mapping.
             final Entity parentFolder = ((HasFolder) entity).getFolder();
-            final EntityMappingInstructions folderMapping = new EntityMappingInstructions(
-                    EntityHeaderUtils.fromEntity(parentFolder),
-                    null,
-                    EntityMappingInstructions.MappingAction.NewOrExisting,
-                    true,
-                    false);
-            if (!mappings.contains(folderMapping)) mappings.add(folderMapping);
+            if(parentFolder != null) {
+                final EntityMappingInstructions folderMapping = new EntityMappingInstructions(
+                        EntityHeaderUtils.fromEntity(parentFolder),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+                if (!mappings.contains(folderMapping)) mappings.add(folderMapping);
+            }
         }
 
         final EntityMappingInstructions mapping;
@@ -140,7 +143,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 entity instanceof RevocationCheckPolicy ||
                 entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity ||
-                entity instanceof Role) {
+                entity instanceof Role ||
+                (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID))) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
