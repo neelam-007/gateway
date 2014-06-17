@@ -72,7 +72,7 @@ public class ServerJsonDocumentStructureAssertion extends AbstractMessageTargeta
             logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_TARGET_INVALID_JSON, assertion.getTargetName());
             return getBadMessageStatus();
         } catch (JsonDocumentStructureValidationException e) { // structure constraints violated
-            logConstraintViolation(e.getViolation(), Integer.toString(e.getLine()), Integer.toString(e.getColumn()));
+            logConstraintViolation(e.getViolation(), Integer.toString(e.getLine()));
             return AssertionStatus.FALSIFIED;
         } catch (IOException e) {
             logAndAudit(Messages.EXCEPTION_SEVERE_WITH_MORE_INFO, e.getMessage());
@@ -86,22 +86,22 @@ public class ServerJsonDocumentStructureAssertion extends AbstractMessageTargeta
         return AssertionStatus.NONE;
     }
 
-    private void logConstraintViolation(ConstraintViolation violation, String line, String column) {
+    private void logConstraintViolation(ConstraintViolation violation, String line) {
         switch (violation) {
             case CONTAINER_DEPTH:
-                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_CONTAINER_DEPTH_EXCEEDED, line, column);
+                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_CONTAINER_DEPTH_EXCEEDED, line);
                 break;
             case OBJECT_ENTRY_COUNT:
-                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_OBJECT_ENTRY_COUNT_EXCEEDED, line, column);
+                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_OBJECT_ENTRY_COUNT_EXCEEDED, line);
                 break;
             case ARRAY_ENTRY_COUNT:
-                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_ARRAY_ENTRY_COUNT_EXCEEDED, line, column);
+                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_ARRAY_ENTRY_COUNT_EXCEEDED, line);
                 break;
             case ENTRY_NAME_LENGTH:
-                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_ENTRY_NAME_LENGTH_EXCEEDED, line, column);
+                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_ENTRY_NAME_LENGTH_EXCEEDED, line);
                 break;
             case STRING_VALUE_LENGTH:
-                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_STRING_VALUE_LENGTH_EXCEEDED, line, column);
+                logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_STRING_VALUE_LENGTH_EXCEEDED, line);
                 break;
         }
     }

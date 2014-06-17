@@ -1278,11 +1278,11 @@ public class AssertionMessages extends Messages {
     // Protect Against JSON Document Structure Threats Assertion
     public static final M JSON_THREAT_PROTECTION_TARGET_NOT_JSON = m(10500, Level.WARNING, "{0} is not JSON.");
     public static final M JSON_THREAT_PROTECTION_TARGET_INVALID_JSON = m(10501, Level.WARNING, "{0} is not well-formed JSON.");
-    public static final M JSON_THREAT_PROTECTION_CONTAINER_DEPTH_EXCEEDED = m(10502, Level.WARNING, "Container depth constraint violated at line {0}, column {1}.");
-    public static final M JSON_THREAT_PROTECTION_OBJECT_ENTRY_COUNT_EXCEEDED = m(10503, Level.WARNING, "Object entry count constraint violated at line {0}, column {1}.");
-    public static final M JSON_THREAT_PROTECTION_ARRAY_ENTRY_COUNT_EXCEEDED = m(10504, Level.WARNING, "Array entry count constraint violated at line {0}, column {1}.");
-    public static final M JSON_THREAT_PROTECTION_ENTRY_NAME_LENGTH_EXCEEDED = m(10505, Level.WARNING, "Entry name length constraint violated at line {0}, column {1}.");
-    public static final M JSON_THREAT_PROTECTION_STRING_VALUE_LENGTH_EXCEEDED = m(10506, Level.WARNING, "String value length constraint violated at line {0}, column {1}.");
+    public static final M JSON_THREAT_PROTECTION_CONTAINER_DEPTH_EXCEEDED = m(10502, Level.WARNING, "Container depth constraint violated at line {0}.");
+    public static final M JSON_THREAT_PROTECTION_OBJECT_ENTRY_COUNT_EXCEEDED = m(10503, Level.WARNING, "Object entry count constraint violated at line {0}.");
+    public static final M JSON_THREAT_PROTECTION_ARRAY_ENTRY_COUNT_EXCEEDED = m(10504, Level.WARNING, "Array entry count constraint violated at line {0}.");
+    public static final M JSON_THREAT_PROTECTION_ENTRY_NAME_LENGTH_EXCEEDED = m(10505, Level.WARNING, "Entry name length constraint violated at line {0}.");
+    public static final M JSON_THREAT_PROTECTION_STRING_VALUE_LENGTH_EXCEEDED = m(10506, Level.WARNING, "String value length constraint violated at line {0}.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
