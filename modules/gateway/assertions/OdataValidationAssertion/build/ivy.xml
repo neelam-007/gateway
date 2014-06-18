@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech" module="OdataValidationAssertion" revision="8.2.00" status="release" publication="20140618131055">
+	</info>
+	<configurations>
+        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
+		<conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
+		<conf name="runtime" description="The dependency is required at runtime." extends="core"/>
+		
+		<conf name="optional" description="Contains all optional dependencies"/>
+		<conf name="client" description="Client assertion"/>
+	</configurations>
+	<publications>
+		<artifact name="OdataValidationAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies defaultconfmapping="             compile->default;             core->default;             runtime->default;             optional->default">
+        <dependency name="layer7-modular-assertions" rev="8.2.00" revConstraint="latest.integration" conf="compile->compile;runtime->runtime"/>
+        <dependency org="org.apache.olingo" name="org.apache.olingo-olingo-odata2-api" rev="1.2.0" force="true" conf="core"/>
+        <dependency org="org.apache.olingo" name="org.apache.olingo-olingo-odata2-core" rev="1.2.0" force="true" conf="core"/>
+	</dependencies>
+</ivy-module>
