@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -192,6 +193,7 @@ public class PublishServiceWizard extends Wizard {
                 completeTask();
             }
         });
+        Utilities.setEscKeyStrokeDisposes(this);
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

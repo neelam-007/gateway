@@ -12,6 +12,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
@@ -59,6 +60,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                 }
             }
         });
+        Utilities.setEscKeyStrokeDisposes(this);
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

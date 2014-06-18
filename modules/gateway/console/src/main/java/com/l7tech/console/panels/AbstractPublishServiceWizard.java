@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
@@ -57,6 +58,7 @@ public abstract class AbstractPublishServiceWizard extends Wizard {
     protected AbstractPublishServiceWizard(@NotNull final Frame parent, @NotNull final WizardStepPanel firstPanel, @NotNull final String title) {
         super(parent, firstPanel);
         setTitle(title);
+        Utilities.setEscKeyStrokeDisposes(this);
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

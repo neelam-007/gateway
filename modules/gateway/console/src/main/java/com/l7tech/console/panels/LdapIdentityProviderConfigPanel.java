@@ -43,7 +43,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JTextField ldapBindDNTextField;
     private JTextField ldapSearchBaseTextField;
     private JComboBox providerTypesCombo;
-    private JPanel configPanel;
     private JCheckBox showPasswordCheckBox;
     private JLabel plaintextPasswordWarningLabel;
     private JCheckBox adminEnabledCheckbox;
@@ -113,10 +112,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 Object o = providerTypesCombo.getSelectedItem();
 
                 if (o instanceof LdapIdentityProviderConfig) {
-                    configPanel.setVisible(true);
                     updateControlButtonState();
                 } else {
-                    configPanel.setVisible(false);
                     advanceAllowed = false;
                     finishAllowed = false;
                 }
@@ -125,8 +122,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 notifyListeners();
             }
         });
-
-        configPanel.setVisible(false);
     }
 
     /**
@@ -179,9 +174,10 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private void updateControlButtonState() {
         if (providerNameTextField.getText().length() > 0 &&
                 //getLdapHostTextField().getText().length() > 0 &&
+                providerTypesCombo.getSelectedItem() instanceof LdapIdentityProviderConfig &&
                 !ldapUrlListPanel.isUrlListEmpty() &&
                 ldapSearchBaseTextField.getText().length() > 0) {
-            // can advance to next panel only when the above three fields are not empty
+            // can advance to next panel only when the above 4 fields are not empty
             advanceAllowed = true;
             finishAllowed = true;
         } else {
