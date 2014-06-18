@@ -770,6 +770,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to protect against JSON document structure threats functionality",
                 mass("assertion:JsonDocumentStructure"));
 
+        GatewayFeatureSet oDataValidationAssertion = fsr("set:OdataValidation:Assertions",
+                "The necessary assertions to validate and protect OData messages",
+                mass("assertion:OdataValidation"));
+
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
                 mass("assertion:UpgradePortal"),
@@ -963,6 +967,7 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1029,6 +1034,7 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1096,6 +1102,7 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1145,6 +1152,7 @@ public class GatewayFeatureSets {
                 fs(oAuthValidationAssertions),
                 fs(jsonSchemaAssertion),
                 fs(jsonDocumentStructureAssertion),
+                fs(oDataValidationAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),

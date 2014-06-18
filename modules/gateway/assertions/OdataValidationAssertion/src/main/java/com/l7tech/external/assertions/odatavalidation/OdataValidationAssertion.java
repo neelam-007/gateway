@@ -4,10 +4,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import org.apache.commons.collections.set.UnmodifiableSet;
 import org.apache.commons.lang.StringUtils;
-import org.apache.olingo.odata2.core.rest.app.ODataApplication;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -15,25 +12,27 @@ import java.util.logging.Logger;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY;
 
 /**
- * 
+ * Validates OData messages against a Service Metadata Document.
+ *
+ * @author ymoiseyenko
  */
 public class OdataValidationAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
-    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH };
+    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
 
-    protected static final Logger logger = Logger.getLogger(OdataValidationAssertion.class.getName());
     public static final String DEFAULT_PREFIX = "odata";
 
     private String odataMetadataSource;
+    private String variablePrefix;
+
     private Map<String, Object> actionsMap = new HashMap<>();
+
     private boolean readOperation;
     private boolean createOperation;
     private boolean updateOperation;
     private boolean partialUpdateOperation;
     private boolean mergeOperation;
     private boolean deleteOperation;
-
-    private String variablePrefix;
 
     public boolean isReadOperation() {
         return readOperation;
@@ -137,7 +136,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT

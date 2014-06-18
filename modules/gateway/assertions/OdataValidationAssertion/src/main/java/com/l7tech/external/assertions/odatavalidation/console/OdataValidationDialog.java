@@ -13,9 +13,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Copyright: Layer 7 Technologies, 2014
- * User: ymoiseyenko
+ * Copyright: CA Technologies, 2014
  * Date: 6/18/14
+ *
+ * @author ymoiseyenko
  */
 public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<OdataValidationAssertion> {
     public enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE, ALLOW_OPEN_TYPE_ENTITY }
@@ -48,7 +49,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      * Configure the view with the data from the specified assertion bean.
      * This call should immediately configure all the editor widgets, before returning.
      *
-     * @param assertion the assertion bean that provides that data that should be copied into the view.  Must not be null.
+     * @param assertion the assertion bean that provides that data that should be copied into the view. Must not be null.
      */
     @Override
     public void setData(OdataValidationAssertion assertion) {
@@ -69,12 +70,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
     /**
      * Copy the data out of the view into an assertion bean instance.
-     * The provided bean should be filled and returned, if possible, but implementors may create and return
-     * a new bean instead, if they must.
      *
-     * @param assertion a bean to which the data from the view can be copied, if possible.  Must not be null.
-     * @return a possibly-new assertion bean populated with data from the view.  Not necessarily the same bean that was passed in.
-     * Never null.
+     * @param assertion a bean to which the data from the view can be copied, if possible. Must not be null.
+     * @return a possibly-new assertion bean populated with data from the view.  Not necessarily the same bean that was passed in. Never null.
      * @throws com.l7tech.console.panels.AssertionPropertiesOkCancelSupport.ValidationException if the data cannot be collected because of a validation error.
      */
     @Override
@@ -94,7 +92,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      * Create a panel to edit the properties of the assertion bean.  This panel does not include any
      * Ok or Cancel buttons.
      *
-     * @return a panel that can be used to edit the assertion properties.  Never null.
+     * @return a panel that can be used to edit the assertion properties. Never null.
      */
     @Override
     protected JPanel createPropertyPanel() {
