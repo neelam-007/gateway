@@ -40,8 +40,8 @@ class EntityPropertiesHelper {
         return properties;
     }
 
-    public Collection<String> getWriteOnlyProperties( final Class<? extends Entity> entityClass )  {
-        Collection<String> properties = WRITE_ONLY_PROPERTIES.get( entityClass );
+    public Collection<String> getPasswordProperties(final Class<? extends Entity> entityClass)  {
+        Collection<String> properties = PASSWORD_PROPERTIES.get( entityClass );
         if ( properties == null ) {
             properties = Collections.emptyList();
         }
@@ -289,7 +289,7 @@ class EntityPropertiesHelper {
         )
         .unmodifiableMap();
 
-    private static final Map<Class<? extends Entity>,Collection<String>> WRITE_ONLY_PROPERTIES = MapBuilder.<Class<? extends Entity>,Collection<String>>builder()
+    private static final Map<Class<? extends Entity>,Collection<String>> PASSWORD_PROPERTIES = MapBuilder.<Class<? extends Entity>,Collection<String>>builder()
         .put( JmsConnection.class, Collections.unmodifiableCollection( Arrays.asList(
             "password"
         ) ) )

@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
@@ -30,6 +31,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.regex.Matcher;
 
 import static com.l7tech.util.Eithers.isSuccess;
 import static com.l7tech.util.Option.*;
@@ -145,22 +147,27 @@ abstract class ResourceFactorySupport<R,E> implements ResourceFactory<R,E> {
 
         try {
             final Collection<String> ignoredProperties = propertiesHelper.getIgnoredProperties(beanClass);
-            final Collection<String> writeOnlyProperties = propertiesHelper.getWriteOnlyProperties(beanClass);
+            final Collection<String> passwordProperties = propertiesHelper.getPasswordProperties(beanClass);
             final Map<String,String> propertyMapping = propertiesHelper.getPropertiesMap(beanClass);
             final Set<PropertyDescriptor> properties = BeanUtils.omitProperties(
                     BeanUtils.getProperties( beanClass ),
                     ignoredProperties.toArray(new String[ignoredProperties.size()]));
 
             for ( final PropertyDescriptor prop : properties ) {
-                if ( writeOnlyProperties.contains( prop.getName() ) ) {
-                    continue;
-                }
                 if ( !propertyMapping.containsKey(prop.getName()) ) {
                     throw new ResourceAccessException( "Unknown entity property '"+prop.getName()+"'." );
                 }
 
                 final String mappedName = propertyMapping.get(prop.getName()) != null ? propertyMapping.get(prop.getName()) : prop.getName();
                 final Object value = prop.getReadMethod().invoke(bean);
+                if ( passwordProperties.contains( prop.getName() ) && value != null ) {
+                    //check if this is a secure password reference or a hardcoded password
+                    Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher(value.toString());
+                    if (!matcher.matches()) {
+                        //this is a hard coded password so don't export it.
+                        continue;
+                    }
+                }
                 if ( value == null ) {
                     // skip null property
                 } else if ( value instanceof Boolean ||

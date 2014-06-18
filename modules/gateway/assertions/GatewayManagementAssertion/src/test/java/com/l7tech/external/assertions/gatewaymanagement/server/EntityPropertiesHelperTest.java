@@ -42,11 +42,11 @@ public class EntityPropertiesHelperTest {
                 if ( entityClass != null && (!helper.getPropertiesMap( entityClass ).isEmpty() || !helper.getIgnoredProperties( entityClass ).isEmpty()) ) {
                     System.out.println("Testing properties for : " + entityClass.getName());
                     final Collection<String> ignoredProperties = helper.getIgnoredProperties(entityClass);
-                    final Collection<String> writeOnlyProperties = helper.getWriteOnlyProperties(entityClass);
+                    final Collection<String> passwordProperties = helper.getPasswordProperties(entityClass);
                     final Collection<String> defaultProperties = helper.getPropertyDefaultsMap(entityClass).keySet();
                     final Map<String,String> propertyMapping = helper.getPropertiesMap(entityClass);
 
-                    assertTrue( "Invalid write only property for " + entityClass.getName(), propertyMapping.keySet().containsAll( writeOnlyProperties ));
+                    assertTrue( "Invalid write only property for " + entityClass.getName(), propertyMapping.keySet().containsAll( passwordProperties ));
                     assertTrue( "Invalid default property for " + entityClass.getName(), propertyMapping.keySet().containsAll( defaultProperties ));
 
                     final Set<PropertyDescriptor> properties = BeanUtils.omitProperties(

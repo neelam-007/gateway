@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -19,6 +20,7 @@ import com.l7tech.util.Option;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
+import java.util.regex.Matcher;
 
 import static com.l7tech.util.TextUtils.trim;
 
@@ -332,9 +334,15 @@ public class JMSDestinationResourceFactory extends SecurityZoneableEntityManager
         final Map<String,Object> propMap = new HashMap<String,Object>();
 
         for ( final String property : properties.stringPropertyNames() ) {
-            // not include JNDI connection password
-            if(!property.equals("java.naming.security.credentials"))
-                propMap.put( property, properties.getProperty( property ));
+            // not include JNDI connection password, unless it is a secure password reference.
+            if(property.equals("java.naming.security.credentials")) {
+                Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher(properties.getProperty(property));
+                if (matcher.matches()) {
+                    propMap.put(property, properties.getProperty(property));
+                }
+            } else {
+                propMap.put(property, properties.getProperty(property));
+            }
         }
 
         return propMap;

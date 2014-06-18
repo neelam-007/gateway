@@ -32,12 +32,80 @@ import java.util.logging.Logger;
 public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.MigrationTestBase {
     private static final Logger logger = Logger.getLogger(JMSMigrationTest.class.getName());
 
+    private Item<ServiceMO> serviceItem;
+    private Item<StoredPasswordMO> storedPasswordItem;
     private Item<PolicyMO> policyItem;
     private Item<JMSDestinationMO> jmsItem;
     private Item<Mappings> mappingsToClean;
+    private Item<StoredPasswordMO> storedPasswordItem2;
 
     @Before
     public void before() throws Exception {
+        //create service
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        ServiceMO serviceMO = ManagedObjectFactory.createService();
+        ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceMO.setServiceDetail(serviceDetail);
+        serviceDetail.setName("Source Service");
+        serviceDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        ServiceDetail.HttpMapping serviceMapping = ManagedObjectFactory.createHttpMapping();
+        serviceMapping.setUrlPattern("/srcService");
+        serviceMapping.setVerbs(Arrays.asList("POST"));
+        serviceDetail.setServiceMappings(Arrays.asList(serviceMapping));
+        serviceDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResourceSet.setTag("policy");
+        Resource policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        policyResource.setType("policy");
+        policyResource.setContent(assXml );
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
+        RestResponse response = getSourceEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+
+        assertOkCreatedResponse(response);
+
+        serviceItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceItem.setContent(serviceMO);
+
+        //create secure password
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("SourcePassword");
+        storedPasswordMO.setPassword("password");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", true)
+                .put("type", "Password")
+                .map());
+        response = getSourceEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+
+        assertOkCreatedResponse(response);
+
+        storedPasswordItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        storedPasswordItem.setContent(storedPasswordMO);
+
+        storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("SourcePassword2");
+        storedPasswordMO.setPassword("password2");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", true)
+                .put("type", "Password")
+                .map());
+        response = getSourceEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+
+        assertOkCreatedResponse(response);
+
+        storedPasswordItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        storedPasswordItem2.setContent(storedPasswordMO);
+
         //create jms
         JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetail.setName("Source JMS");
@@ -49,14 +117,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         jmsConnection.setTemplate(false);
         jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
         jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
-                .put("jndi.initialContextFactoryClassname","om.context.Classname")
-                .put("jndi.providerUrl","ldap://jndi")
-                .put("queue.connectionFactoryName","qcf").map());
+                .put("jndi.initialContextFactoryClassname", "om.context.Classname")
+                .put("jndi.providerUrl", "ldap://jndi")
+                .put("queue.connectionFactoryName", "qcf")
+                .put("password", "${secpass." + storedPasswordItem.getName() + ".plaintext}")
+                .map());
+        jmsConnection.setContextPropertiesTemplate(CollectionUtils.<String, Object>mapBuilder()
+                .put("com.l7tech.server.jms.prop.hardwired.service.id", serviceItem.getId())
+                .put("java.naming.security.credentials", "${secpass." + storedPasswordItem2.getName() + ".plaintext}")
+                .map());
         JMSDestinationMO jmsMO = ManagedObjectFactory.createJMSDestination();
         jmsMO.setJmsDestinationDetail(jmsDetail);
         jmsMO.setJmsConnection(jmsConnection);
 
-        RestResponse response = getSourceEnvironment().processRequest("jmsDestinations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(jmsMO)));
+        response = getSourceEnvironment().processRequest("jmsDestinations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(jmsMO)));
 
         assertOkCreatedResponse(response);
 
@@ -115,6 +189,15 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         response = getSourceEnvironment().processRequest("jmsDestinations/" + jmsItem.getId(), HttpMethod.DELETE, null, "");
         assertOkDeleteResponse(response);
+
+        response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
+
+        response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
+
+        response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem2.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
     }
 
     @Test
@@ -125,7 +208,10 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy, and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 5 items. A policy, and jms endpoint", 5, bundleItem.getContent().getReferences().size());
+
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -136,15 +222,36 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+        Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+        Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
+        Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+        Assert.assertEquals(securePass1Mapping.getSrcId(), securePass1Mapping.getTargetId());
+
+        Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
+        Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+        Assert.assertEquals(securePass2Mapping.getSrcId(), securePass2Mapping.getTargetId());
+
+        Mapping jmsMapping = mappings.getContent().getMappings().get(4);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jmsMapping.getActionTaken());
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
         Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(5);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -159,21 +266,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(4, policyDependencies.size());
 
-        DependencyMO certDependency = getDependency(policyDependencies,jmsItem.getId());
-        Assert.assertNotNull(certDependency);
-        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), certDependency.getType());
-        Assert.assertEquals(jmsItem.getName(), certDependency.getName());
-        Assert.assertEquals(jmsItem.getId(), certDependency.getId());
-
+        DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
+        Assert.assertNotNull(jmsDependency);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
+        Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
+        Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
+        Assert.assertEquals(3, jmsDependency.getDependencies().size());
 
         validate(mappings);
-
     }
 
     @Test
-    public void testMapToExistingDifferentCert() throws Exception {
+    public void testMapToExistingJMSCert() throws Exception {
         //create the jms on the target
         JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetail.setName("Target JMS");
@@ -205,10 +311,12 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
+            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.Ignore);
+            bundleItem.getContent().getMappings().get(3).setAction(Mapping.Action.Ignore);
+            bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -220,16 +328,34 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+            Assert.assertEquals(Mapping.Action.Ignore, securePass1Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.Ignored, securePass1Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+
+            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.Ignore, securePass2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.Ignored, securePass2Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-            Assert.assertNotSame(jmsMapping.getSrcId(), jmsMapping.getTargetId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = mappings.getContent().getMappings().get(5);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -275,11 +401,13 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
-        //update the bundle mapping to map the cert to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.AlwaysCreateNew);
-        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
+        //update the bundle mapping to map the jms to the existing one
+        bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.AlwaysCreateNew);
+        bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
 
         //import the bundle
         logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -291,16 +419,34 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-        Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+        Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+        Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+        Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+        Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
+        Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+
+        Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
+        Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+        Mapping jmsMapping = mappings.getContent().getMappings().get(4);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.AlwaysCreateNew, jmsMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jmsMapping.getActionTaken());
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
-        Assert.assertNotSame(jmsMapping.getSrcId(), jmsMapping.getTargetId());
-        Assert.assertEquals(jmsItem.getId(), jmsMapping.getTargetId());
+        Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = mappings.getContent().getMappings().get(5);
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -322,12 +468,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(1, policyDependencies.size());
+        Assert.assertEquals(4, policyDependencies.size());
 
         DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(jmsDependency);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
         Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
         Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
+        Assert.assertEquals(3, jmsDependency.getDependencies().size());
 
         validate(mappings);
     }
@@ -367,10 +515,12 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrUpdate);
+            bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrUpdate);
+            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
+            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -382,15 +532,34 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+
+            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = mappings.getContent().getMappings().get(5);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -412,13 +581,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(4, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
             Assert.assertNotNull(jmsDependency);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
             Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
             Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
+            Assert.assertEquals(3, jmsDependency.getDependencies().size());
 
             validate(mappings);
         }finally{
@@ -459,12 +629,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
         //update the bundle mapping to map the jms to the existing one
-        bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrUpdate);
-        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
-        bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
+        bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrUpdate);
+        bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+        bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
+        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
 
         try{
             //import the bundle
@@ -477,15 +649,34 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+
+            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = mappings.getContent().getMappings().get(5);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -507,12 +698,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(1, policyDependencies.size());
+            Assert.assertEquals(4, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(jmsDependency);
+            Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
             Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
             Assert.assertEquals(jmsMO.getId(), jmsDependency.getId());
+            Assert.assertEquals(3, jmsDependency.getDependencies().size());
 
             // check jms object, associated jms connection is updated and not creating a new one.
             response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsMO.getId(), HttpMethod.GET, null, "");
@@ -561,12 +754,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-            Assert.assertEquals("The bundle should have 2 items. A policy and jms endpoint", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(0).setAction(Mapping.Action.NewOrExisting);
-            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
-            bundleItem.getContent().getMappings().get(0).setTargetId(jmsMO.getId());
+            bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrExisting);
+            bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
+            bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
+            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
+            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -578,15 +773,34 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
-            Mapping jmsMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
+
+            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
+
+            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
+            Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = mappings.getContent().getMappings().get(5);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());

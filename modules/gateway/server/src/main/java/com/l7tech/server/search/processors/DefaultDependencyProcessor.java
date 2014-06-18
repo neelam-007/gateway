@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.security.KeyStoreException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -544,8 +545,36 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
     private void setDependencyForMethod(@NotNull final O object, @NotNull final Method getterMethod, @Nullable final com.l7tech.search.Dependency annotation, @NotNull final EntityHeader header, @NotNull final EntityHeader currentEntityHeader) throws CannotReplaceDependenciesException {
         if (annotation != null) {
             //finds the setter method
-            //TODO need to handle methods that use maps
-            final Method setterMethod = findMethod(object.getClass(), "set" + getterMethod.getName().substring(3), getterMethod.getReturnType());
+            final Method setterMethod;
+            //this is the object that the setter method belongs to.
+            final Object setterMethodObject;
+            //Checks if the getter method returns a map and that the annotation key is not empty
+            if (getterMethod.getParameterTypes().length == 0 &&
+                    //the return type is either a Map
+                    ((getterMethod.getGenericReturnType() instanceof Class && Map.class.isAssignableFrom((Class) getterMethod.getGenericReturnType())) ||
+                            //Or it is a parameterized Map<>
+                            (getterMethod.getGenericReturnType() instanceof ParameterizedType && ((ParameterizedType) getterMethod.getGenericReturnType()).getRawType() instanceof Class && Map.class.isAssignableFrom((Class) ((ParameterizedType) getterMethod.getGenericReturnType()).getRawType())))
+                    && !annotation.key().isEmpty()) {
+                //This is used to set the property on the map
+                class MapSetter {
+                    public void set(Object value) throws InvocationTargetException, IllegalAccessException {
+                        final Map map = (Map) getterMethod.invoke(object);
+                        //noinspection unchecked
+                        map.put(annotation.key(), value);
+                    }
+                }
+                setterMethodObject = new MapSetter();
+                try {
+                    //get the setter method from above
+                    setterMethod = MapSetter.class.getMethod("set", Object.class);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("This should never be possible");
+                }
+            } else {
+                //get the corresponding setter method from the getter method.
+                setterMethod = findMethod(object.getClass(), "set" + getterMethod.getName().substring(3), getterMethod.getReturnType());
+                setterMethodObject = object;
+            }
             if (setterMethod == null) {
                 throw new CannotReplaceDependenciesException(getterMethod.getName().substring(3), header.getStrId(), annotation.type().getEntityType().getEntityClass(), object.getClass(), "Cannot find setter method.");
             }
@@ -554,13 +583,13 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                     case GOID:
                         //Check if the goids are different. There is no point in replacing if the goids are the same
                         if (!Goid.equals(header.getGoid(), currentEntityHeader.getGoid())) {
-                            setterMethod.invoke(object, header.getGoid());
+                            setterMethod.invoke(setterMethodObject, header.getGoid());
                         }
                         break;
                     case NAME:
                         //Check if the names are different. There is no point in replacing if the names are the same
                         if (!StringUtils.equals(header.getName(), currentEntityHeader.getName())) {
-                            setterMethod.invoke(object, header.getName());
+                            setterMethod.invoke(setterMethodObject, header.getName());
                         }
                         break;
                     case VARIABLE:

@@ -89,13 +89,17 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
 
         //Create the Jms, inbound, disabled
         jmsConnection = new JmsConnection();
-        jmsConnection.setName( "JMS Connection 3" );
+        jmsConnection.setName("JMS Connection 3");
         jmsConnection.setQueueFactoryUrl("queueFactory");
         jmsConnection.setInitialContextFactoryClassname("contextClassname");
         jmsConnection.setJndiUrl("jndiUrl");
         jmsConnection.setProviderType(JmsProviderType.Tibco);
         jmsConnection.setUsername("user");
-        jmsConnection.setPassword("password");
+        jmsConnection.setPassword("${secpass.password.plaintext}");
+        Properties properties = new Properties();
+        properties.setProperty("com.l7tech.server.jms.prop.hardwired.service.id",new Goid(3,123).toString());
+        properties.setProperty("java.naming.security.credentials", "${secpass.mypass.plaintext}");
+        jmsConnection.properties(properties);
         jmsConnectionManager.save(jmsConnection);
         connections.add(jmsConnection);
 
@@ -104,7 +108,7 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
         jmsEndpoint.setName( "queueName3," );
         jmsEndpoint.setDestinationName( "queueName3" );
         jmsEndpoint.setUsername("user");
-        jmsEndpoint.setPassword("password");
+        jmsEndpoint.setPassword("${secpass.password.plaintext}");
         jmsEndpoint.setMessageSource(true);
         jmsEndpoint.setTemplate(false);
         jmsEndpoint.setDisabled(true);
@@ -169,8 +173,11 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
         jmsConnection.setProviderType(JMSConnection.JMSProviderType.TIBCO_EMS);
         jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
                 .put("jndi.initialContextFactoryClassname","om.context.Classname")
-                .put("jndi.providerUrl","ldap://jndi")
-                .put("queue.connectionFactoryName","qcf").map());
+                .put("jndi.providerUrl", "ldap://jndi")
+                .put("queue.connectionFactoryName","qcf")
+                .put("com.l7tech.server.jms.prop.hardwired.service.id", new Goid(3, 456).toString())
+                .put("java.naming.security.credentials","${secpass.MyPass.plaintext}")
+                .map());
         jmsMO = ManagedObjectFactory.createJMSDestination();
         jmsMO.setId(getGoid().toString());
         jmsMO.setJmsDestinationDetail(jmsDetail);
@@ -286,6 +293,36 @@ public class JmsDestinationRestEntityResourceTest extends RestEntityTests<JmsEnd
             Assert.assertEquals(entity.getId(), managedObject.getId());
             JmsConnection connection = jmsConnectionManager.findByPrimaryKey(entity.getConnectionGoid());
             Assert.assertNotNull(connection);
+
+            Assert.assertEquals(connection.isTemplate(), managedObject.getJmsConnection().isTemplate().booleanValue());
+            switch (connection.getProviderType()) {
+                case MQ:
+                    Assert.assertEquals(JMSConnection.JMSProviderType.WebSphere_MQ, managedObject.getJmsConnection().getProviderType());
+                    break;
+                case Tibco:
+                    Assert.assertEquals(JMSConnection.JMSProviderType.TIBCO_EMS, managedObject.getJmsConnection().getProviderType());
+                    break;
+                case Weblogic:
+                    Assert.assertEquals(JMSConnection.JMSProviderType.Weblogic, managedObject.getJmsConnection().getProviderType());
+                    break;
+            }
+            Assert.assertEquals(connection.getUsername(), managedObject.getJmsConnection().getProperties().get("username"));
+            Assert.assertEquals(connection.getInitialContextFactoryClassname(), managedObject.getJmsConnection().getProperties().get("jndi.initialContextFactoryClassname"));
+            Assert.assertEquals(connection.getJndiUrl(), managedObject.getJmsConnection().getProperties().get("jndi.providerUrl"));
+            Assert.assertEquals(connection.getQueueFactoryUrl(), managedObject.getJmsConnection().getProperties().get("queue.connectionFactoryName"));
+            if(connection.getPassword() != null && connection.getPassword().startsWith("${secpass.")) {
+                Assert.assertEquals(connection.getPassword(), managedObject.getJmsConnection().getProperties().get("password"));
+            }
+
+            if(connection.properties() == null || connection.properties().isEmpty()){
+                Assert.assertTrue(managedObject.getJmsConnection().getContextPropertiesTemplate() == null || managedObject.getJmsConnection().getContextPropertiesTemplate().isEmpty());
+            } else {
+                Assert.assertNotNull(managedObject.getJmsConnection().getContextPropertiesTemplate());
+                Assert.assertEquals(connection.properties().size(), managedObject.getJmsConnection().getContextPropertiesTemplate().size());
+                for (Object key : connection.properties().keySet()) {
+                    Assert.assertEquals(connection.properties().get(key), managedObject.getJmsConnection().getContextPropertiesTemplate().get(key));
+                }
+            }
         }
     }
 
