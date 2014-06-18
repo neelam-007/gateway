@@ -3,7 +3,7 @@ package com.l7tech.objectmodel;
 /**
  * An entity manager that can look up entities based on a GUID, rather than a name or OID.
  */
-public interface GuidBasedEntityManager <ET> {
+public interface GuidBasedEntityManager <ET extends GuidEntity> {
     /**
      * Returns the the entity that matches the provided GUID
      * @param guid The GUID to search with

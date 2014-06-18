@@ -1,14 +1,13 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.NameableEntity;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.ZoneableEntity;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.util.Functions;
-import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +35,7 @@ import java.util.Set;
 @Entity
 @Proxy(lazy=false)
 @Table(name="trusted_cert")
-public class TrustedCert extends X509Entity implements NamedEntity, Cloneable, ZoneableEntity {
+public class TrustedCert extends X509Entity implements NameableEntity, Cloneable, ZoneableEntity {
     public void copyFrom(TrustedCert cert) {
         mutate();
         super.copyFrom(cert);

@@ -1,16 +1,11 @@
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.objectmodel.NamedEntity;
-
-import javax.persistence.Column;
-import javax.persistence.Transient;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Id;
-import java.io.Serializable;
-
+import com.l7tech.objectmodel.NameableEntity;
 import com.l7tech.security.rbac.RbacAttribute;
 import org.hibernate.annotations.Proxy;
+
+import javax.persistence.*;
+import java.io.Serializable;
 
 /**
  * Bean representation of a row in the cluster_info table.
@@ -27,7 +22,7 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="cluster_info")
-public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity, Serializable {
+public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEntity, Serializable {
 
     /**
      * Identifier for the node.

@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.imp;
 
-import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.NameableEntity;
 import com.l7tech.security.rbac.RbacAttribute;
 
 import javax.persistence.Column;
@@ -10,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
-public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
+public abstract class NamedEntityImp extends PersistentEntityImp implements NameableEntity {
 
     public NamedEntityImp() {
         super();

@@ -3,7 +3,8 @@
  */
 package com.l7tech.server.management.config;
 
-import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.GuidEntity;
+import com.l7tech.objectmodel.NameableEntity;
 
 import java.util.Calendar;
 
@@ -11,7 +12,7 @@ import java.util.Calendar;
  * Entities in the Process Controller all have a GUID and timestamp (for optimistic locking); most have a name as well.
  * @author alex 
  */
-public abstract class PCEntity implements NamedEntity {
+public abstract class PCEntity implements NameableEntity, GuidEntity {
     protected String guid;
     protected String name;
     protected Calendar timestamp;

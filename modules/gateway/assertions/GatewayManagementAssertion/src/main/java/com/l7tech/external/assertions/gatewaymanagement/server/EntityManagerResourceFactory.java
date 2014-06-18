@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static com.l7tech.util.Either.left;
@@ -487,10 +486,10 @@ public abstract class EntityManagerResourceFactory<R, E extends PersistentEntity
         }
 
         if ( entity == null && guid != null && manager instanceof GuidBasedEntityManager) {
-            @SuppressWarnings("unchecked")
-            GuidBasedEntityManager<E> guidManager = (GuidBasedEntityManager<E>) manager;
+            GuidBasedEntityManager guidManager = (GuidBasedEntityManager) manager;
             try {
-                entity = guidManager.findByGuid(guid);
+                //noinspection unchecked
+                entity = (E) guidManager.findByGuid(guid);
             } catch (FindException e) {
                 handleObjectModelException(e);
             }
@@ -508,17 +507,8 @@ public abstract class EntityManagerResourceFactory<R, E extends PersistentEntity
                 entity = null;
             } else if (version != null && !version.equals(Integer.toString(entity.getVersion())) ) {
                 entity = null;
-            } else if (guid != null) {
-                try {
-                    //TODO replace reflection when entity level interface for GUID support is added
-                    final Method getGuidMethod = entity.getClass().getDeclaredMethod("getGuid");
-                    final Object guidObj = getGuidMethod.invoke(entity);
-                    if ( !guid.equals( guidObj.toString()) ) {
-                        entity = null;
-                    }
-                } catch (ReflectiveOperationException e) {
-                    throw new ResourceAccessException(ExceptionUtils.getMessage(e), e);
-                }
+            } else if (guid != null && entity instanceof GuidEntity && !guid.equals(((GuidEntity)entity).getGuid())) {
+                entity = null;
             }
         }
 

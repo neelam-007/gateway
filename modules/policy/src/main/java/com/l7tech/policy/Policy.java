@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GuidEntity;
 import com.l7tech.objectmodel.PartiallyZoneableEntity;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.folder.Folder;
@@ -40,7 +41,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFolder, PartiallyZoneableEntity {
+public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFolder, PartiallyZoneableEntity, GuidEntity {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private static WspReader.Visibility defaultVisibility = WspReader.INCLUDE_DISABLED;
@@ -174,7 +175,6 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         this.assertion = null;
     }
 
-    //TODO: move guid property into an interface identifies entities with GUIDS as is done for the entity managers
     @RbacAttribute
     @NotNull
     @Size(min=36,max=36)

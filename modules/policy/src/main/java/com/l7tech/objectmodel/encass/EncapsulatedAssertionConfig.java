@@ -1,5 +1,6 @@
 package com.l7tech.objectmodel.encass;
 
+import com.l7tech.objectmodel.GuidEntity;
 import com.l7tech.objectmodel.JaxbMapType;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
@@ -36,7 +37,7 @@ import java.util.*;
 @Proxy(lazy=false)
 @Inheritance(strategy= InheritanceType.SINGLE_TABLE)
 @Table(name="encapsulated_assertion")
-public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp {
+public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp implements GuidEntity {
     /** ID of palette folder in which to offer the encapsulated assertion. */
     public static final String PROP_PALETTE_FOLDER = "paletteFolder";
 

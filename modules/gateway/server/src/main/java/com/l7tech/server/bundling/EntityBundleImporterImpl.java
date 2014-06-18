@@ -9,7 +9,6 @@ import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -392,18 +391,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {
             switch (mapping.getTargetMapping().getType()) {
                 case NAME:
-                    if (entityContainer.getEntity() instanceof NamedEntityImp) {
-                        //TODO: consider moving setName into NameEntity interface
-                        ((NamedEntityImp) entityContainer.getEntity()).setName(mapping.getTargetMapping().getTargetID());
+                    if (entityContainer.getEntity() instanceof NameableEntity) {
+                        ((NameableEntity) entityContainer.getEntity()).setName(mapping.getTargetMapping().getTargetID());
                     } else {
                         throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by name that cannot be mapped by name.");
                     }
                     break;
                 case GUID:
-                    //TODO: need to add a Guid entity interface
-                    //((GuidEntity) entity).setGuid(mapping.getTargetMapping().getTargetID());
-                    //break;
-                    throw new IncorrectMappingInstructionsException(mapping, "Mapping by Guid is not fully implemented yet. Cannot map to a new or existing entity with a specific guid");
+                    if (entityContainer.getEntity() instanceof GuidEntity) {
+                        ((GuidEntity) entityContainer.getEntity()).setGuid(mapping.getTargetMapping().getTargetID());
+                    } else {
+                        throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by guid that cannot be mapped by guid.");
+                    }
+                    break;
             }
         }
 
