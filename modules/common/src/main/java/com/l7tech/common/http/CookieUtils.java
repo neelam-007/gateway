@@ -506,7 +506,9 @@ public class CookieUtils {
     public static String getSetCookieHeader(@NotNull final HttpCookie cookie) {
         final StringBuilder sb = new StringBuilder();
         sb.append(cookie.getCookieName()).append(EQUALS).append(cookie.getCookieValue());
-        sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
+        if (cookie.getVersion() != 0) {
+            sb.append(ATTRIBUTE_DELIMITER).append(VERSION).append(EQUALS).append(cookie.getVersion());
+        }
         appendIfNotBlank(sb, DOMAIN, cookie.getDomain());
         appendIfNotBlank(sb, PATH, cookie.getPath());
         appendIfNotBlank(sb, EXPIRES, cookie.getExpires());

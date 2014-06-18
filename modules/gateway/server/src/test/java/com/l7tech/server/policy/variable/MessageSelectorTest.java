@@ -763,15 +763,56 @@ public class MessageSelectorTest {
         final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
         assertEquals(2, cookies.size());
         assertTrue(cookies.contains("1=a; Version=1; Domain=localhost; Path=/; Comment=test; Max-Age=60; Secure"));
-        assertTrue(cookies.contains("2=b; Version=0"));
+        assertTrue(cookies.contains("2=b"));
+    }
+
+    @Test
+    public void selectAllCookiesInvalidCookie() {
+        message.getHeadersKnob().addHeader("Cookie", "invalid", HEADER_TYPE_HTTP);
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertEquals("invalid", cookies.get(0));
     }
 
     @Test
     public void selectCookiesNullCookiesKnob() {
+        message.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
         assertNull(message.getKnob(HttpCookiesKnob.class));
-        assertNull(selector.select(null, message, "http.cookies", handler, false));
-        assertNull(selector.select(null, message, "http.cookienames", handler, false));
-        assertNull(selector.select(null, message, "http.cookies.test", handler, false));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertEquals("foo=bar", cookies.get(0));
+    }
+
+    @Test
+    public void selectCookieNamesNullCookiesKnob() {
+        message.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        assertNull(message.getKnob(HttpCookiesKnob.class));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookienames", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertEquals("foo", cookies.get(0));
+    }
+
+    @Test
+    public void selectCookiesByNameNullCookiesKnob() {
+        message.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        assertNull(message.getKnob(HttpCookiesKnob.class));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.foo", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertEquals("foo=bar", cookies.get(0));
+    }
+
+    @Test
+    public void selectCookieValuesByNameNullCookiesKnob() {
+        message.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        assertNull(message.getKnob(HttpCookiesKnob.class));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.foo", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertEquals("bar", cookies.get(0));
     }
 
     @Test

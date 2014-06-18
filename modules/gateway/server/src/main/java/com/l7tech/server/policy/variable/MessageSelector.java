@@ -1030,15 +1030,16 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         public Selection select(final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
             Selection selection = null;
             final String prefixedName = getPrefixedName(name);
-            final HttpCookiesKnob cookiesKnob = context.getKnob(HttpCookiesKnob.class);
-            if (cookiesKnob != null) {
-                final List<String> cookies = new ArrayList<>();
+            final HttpCookiesKnob cookiesKnob = context.getHttpCookiesKnob();
+            final List<String> cookies = new ArrayList<>();
+            if (name.equals(HTTP_COOKIES)) {
+                // don't need to parse the cookies
+                cookies.addAll(cookiesKnob.getCookiesAsHeaders());
+            } else {
+                // need to parse the cookies
                 for (final HttpCookie cookie : cookiesKnob.getCookies()) {
                     String cookieStr = null;
-                    if (name.equals(HTTP_COOKIES)) {
-                        // all attributes
-                        cookieStr = CookieUtils.getSetCookieHeader(cookie);
-                    } else if (name.equals(HTTP_COOKIENAMES)) {
+                    if (name.equals(HTTP_COOKIENAMES)) {
                         // only names
                         cookieStr = cookie.getCookieName();
                     } else if (name.startsWith(HTTP_COOKIES_PREFIX)) {
@@ -1056,9 +1057,9 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                         cookies.add(cookieStr);
                     }
                 }
-                if (!cookies.isEmpty()) {
-                    selection = new Selection(cookies.toArray(new String[cookies.size()]));
-                }
+            }
+            if (!cookies.isEmpty()) {
+                selection = new Selection(cookies.toArray(new String[cookies.size()]));
             }
             if (selection == null && prefixedName != null) {
                 // could not find any cookies matching the prefixed name

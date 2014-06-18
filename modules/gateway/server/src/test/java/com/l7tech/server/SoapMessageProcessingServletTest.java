@@ -345,7 +345,7 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         List cookieHeaders = response.getHeaders("Set-Cookie");
         assertEquals(2, cookieHeaders.size());
-        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar; Version=0"));
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar"));
         assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("invalidSetCookieHeaderValue"));
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
@@ -370,7 +370,7 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         List cookieHeaders = response.getHeaders("Set-Cookie");
         assertEquals(2, cookieHeaders.size());
-        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar; Version=0"));
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("foo=bar"));
         assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("LSID=DQAAAK…Eaem_vYg; domain=test.l7tech.com; path=/test"));
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
