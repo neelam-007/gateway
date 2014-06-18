@@ -16,7 +16,7 @@
         <dependency name="layer7-common" rev="latest.integration" conf="core"/>
         <dependency name="layer7-identity" rev="latest.integration" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" conf="core"/>
-        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core;test"/>
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
