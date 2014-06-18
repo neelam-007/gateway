@@ -208,6 +208,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setType(entityMappingInstructions.getSourceEntityHeader().getType().toString());
         mapping.setSrcId(entityMappingInstructions.getSourceEntityHeader().getStrId());
+        final URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
+        mapping.setSrcUri(urlAccessible.getUrl(entityMappingInstructions.getSourceEntityHeader()));
         mapping.setAction(convertAction(entityMappingInstructions.getMappingAction()));
         if (entityMappingInstructions.shouldFailOnNew()) {
             mapping.addProperty(FailOnNew, Boolean.TRUE);

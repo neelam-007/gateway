@@ -32,6 +32,7 @@ public interface URLAccessible<M> {
      * @param entityHeader The entity header to return the full url string for
      * @return The full url string that can be used to access the object referenced by the entity header
      */
+    //TODO: find a different way to to this that does not depend on entity header
     @NotNull
     public String getUrl(@NotNull EntityHeader entityHeader);
 

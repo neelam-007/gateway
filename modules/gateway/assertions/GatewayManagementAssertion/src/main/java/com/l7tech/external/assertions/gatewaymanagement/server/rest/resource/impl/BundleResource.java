@@ -8,7 +8,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
@@ -20,7 +19,6 @@ import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +30,6 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
@@ -249,26 +246,6 @@ public class BundleResource {
             bundleOptionsBuilder.setProperty(BundleExporter.IgnoredEntityIdsOption, containerRequest.getProperty("ServiceId").toString());
         }
         //create the bundle export
-        final Bundle bundle = bundleExporter.exportBundle(bundleOptionsBuilder, headers);
-        //create a map of the items in the bundle so they are easy to reference and add the links to the items.
-        final Map<String, Item> itemMap = Functions.toMap(bundle.getReferences(), new Functions.Unary<Pair<String, Item>, Item>() {
-            @Override
-            public Pair<String, Item> call(Item item) {
-                URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(item.getType());
-                List<Link> links = new ArrayList<>();
-                links.add(urlAccessible.getLink(item.getContent()));
-                links.addAll(urlAccessible.getRelatedLinks(item.getContent()));
-                item.setLinks(links);
-                return new Pair<>(item.getId(), item);
-            }
-        });
-        //Add all the source uri's to the mappings
-        for (Mapping mapping : bundle.getMappings()) {
-            URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
-            if (itemMap.containsKey(mapping.getSrcId())) {
-                mapping.setSrcUri(urlAccessible.getUrl(itemMap.get(mapping.getSrcId()).getContent()));
-            }
-        }
-        return bundle;
+        return bundleExporter.exportBundle(bundleOptionsBuilder, headers);
     }
 }
