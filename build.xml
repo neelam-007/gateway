@@ -1541,6 +1541,23 @@
         <echo level="info">Finished copying gateway configuration files</echo>
     </target>
 
+    <target name="bootstrap" description="Deploy configuration files for a boostraped SSG" depends="init,init-install-macros">
+        <property name="dev.deploy.ssg.dir" value="${dev.deploy.dir}/Gateway"/>
+        <echo level="info">Creating bootstrap directories</echo>
+        <mkdir dir="${dev.deploy.ssg.dir}/node/default/etc/bootstrap"/>
+
+        <echo level="info">Creating license files</echo>
+        <mkdir dir="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/license"/>
+        <copy file="DEVLICENSE.xml" todir="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/license"/>
+
+        <echo level="info">Creating service files</echo>
+        <mkdir dir="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services"/>
+        <touch file="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services/restman"/>
+        <touch file="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services/wsman"/>
+
+        <echo level="info">Finished copying gateway bootstrap files</echo>
+    </target>
+
     <!--
       Deploy all server applications for development
     -->
