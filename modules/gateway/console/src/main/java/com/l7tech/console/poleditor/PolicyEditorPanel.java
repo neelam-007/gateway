@@ -2630,22 +2630,27 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @return PolicyStepDebugAction or null if the current policy version is not the active version.
      */
     private PolicyStepDebugAction createPolicyStepDebugAction() {
+        PolicyStepDebugAction action = null;
         if (this.isVersionActive()) {
             EntityWithPolicyNode policyNode = this.getPolicyNode();
             try {
                 Policy policy = policyNode.getPolicy();
                 if (policyNode instanceof ServiceNode) {
-                    return new PolicyStepDebugAction(policyNode, policy);
+                    action = new PolicyStepDebugAction(policyNode, policy);
                 } else if (policyNode instanceof PolicyEntityNode) {
                     PolicyEntityNode policyEntityNode = (PolicyEntityNode) policyNode;
                     if (PolicyType.GLOBAL_FRAGMENT.equals(policyEntityNode.getEntityHeader().getPolicyType())) {
-                        return new PolicyStepDebugAction(policyNode, policy);
+                        action = new PolicyStepDebugAction(policyNode, policy);
                     }
                 }
             } catch (FindException e) {
                 log.log(Level.WARNING, "Cannot add PolicyStepDebug action because unable to retrieve policy", ExceptionUtils.getDebugException(e));
             }
         }
-        return null;
+
+        if (action != null) {
+            action.setEnabled(!this.isUnsavedChanges());
+        }
+        return action;
     }
 }
