@@ -1,47 +1,60 @@
 package com.l7tech.external.assertions.odatavalidation.server;
 
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import org.apache.olingo.odata2.api.ep.EntityProvider;
+import org.apache.olingo.odata2.api.ep.EntityProviderException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-
-import javax.inject.Inject;
-import javax.inject.Named;
+import java.io.InputStream;
 
 /**
  * Server side implementation of the OdataValidationAssertion.
  *
  * @see com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion
  */
-public class ServerOdataValidationAssertion extends AbstractServerAssertion<OdataValidationAssertion> {
+public class ServerOdataValidationAssertion extends AbstractMessageTargetableServerAssertion<OdataValidationAssertion> {
     private final String[] variablesUsed;
 
-// DELETEME example for dependency injection
-//    @Inject
-//    @Named("foo") -- The name is not usually required and should be left out if possible
-//    private Foo foo;
-
-    public ServerOdataValidationAssertion( final OdataValidationAssertion assertion ) throws PolicyAssertionException {
+    public ServerOdataValidationAssertion(final OdataValidationAssertion assertion) {
         super(assertion);
 
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-        return AssertionStatus.FAILED;
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                          final Message msg,
+                                          final String targetName,
+                                          final AuthenticationContext authContext) throws IOException {
+        InputStream metadataStream = getMetadataDocumentStream(context);
+
+        try {
+            EntityProvider.readMetadata(metadataStream, false);
+        } catch (EntityProviderException e) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SERVICE_METADATA_DOCUMENT, e.getMessage());
+            return AssertionStatus.FAILED;
+        }
+
+        return AssertionStatus.NONE;
     }
 
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     *
-     * DELETEME if not required.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
+    private ByteArrayInputStream getMetadataDocumentStream(PolicyEnforcementContext context) { // TODO: clean up, audit
+        String variable;
+
+        try {
+            variable = (String) context.getVariable(assertion.getOdataMetadataSource());
+        } catch (NoSuchVariableException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return new ByteArrayInputStream(variable.getBytes());
     }
 }

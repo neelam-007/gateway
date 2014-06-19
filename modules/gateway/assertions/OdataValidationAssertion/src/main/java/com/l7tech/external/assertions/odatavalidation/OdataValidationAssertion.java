@@ -5,9 +5,9 @@ import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY;
 
@@ -95,7 +95,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         return Collections.unmodifiableMap(actionsMap);
     }
 
-    public void addAction(String name, Object value) {
+    public void addAction(@NotNull String name, Object value) {
         if(StringUtils.isEmpty(name)) {
             throw new IllegalArgumentException("Action name cannot be null!");
         }
@@ -145,7 +145,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "OData Validation");
-        meta.put(AssertionMetadata.LONG_NAME, "Validate OData request against OData service metadata and scan for threats");
+        meta.put(AssertionMetadata.LONG_NAME, "Validate OData request against Service Metadata Document and scan for threats");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
