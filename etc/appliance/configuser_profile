@@ -7,6 +7,9 @@ set -u
 
 trap doLogout INT
 
+RESTRICTED_SHELL="/opt/SecureSpan/Platform/bin/client"
+PLATFORM_HOME="/opt/SecureSpan/Platform"
+FST_WIZARD="/opt/SecureSpan/JDK/bin/java -cp deploy/com.l7tech.platform.os.configuration.config.wizard-1.0.00.jar:deploy/*:system/*:system/jline/jline/2.11/*:system/org/slf4j/slf4j-api/1.7.5/*"
 SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/config/systemconfig.sh"
 CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ssgconfig_launch"
 HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
@@ -103,6 +106,12 @@ confirmAction() {
 }
 
 doSystemConfiguration() {
+    FST_PRESENT=""
+    if [ -d "$PLATFORM_HOME" ]; then
+        cd $PLATFORM_HOME
+        FST_PRESENT="true"
+    fi
+
     isMenuValid="n"
     while [ "$isMenuValid" != "y" ]
     do
@@ -116,24 +125,48 @@ doSystemConfiguration() {
             if [ "${AUTHMETHODS_CONFIG}" == "true" ] ; then
                 echo " 4) Configure authentication method"
             fi
+            if [ "${FST_PRESENT}" == "true" ] ; then
+                echo " 5) Use Restricted shell"
+            fi
             echo " A) About system (versions)"
             echo " X) Exit menu"
             echo ""
             echo -n "Please make a selection: "
             read choice
             case $choice in
-                1) clear                                                      ;
-                   (${SYSWIZARD} -systemConfig)
-                   confirmedMessage ""
+                1) clear
+                   if [ "${FST_PRESENT}" == "true" ] ; then
+                        (${FST_WIZARD} com.l7tech.platform.wizard.BaseSystemConfigurationWizard 2>"/tmp/network-wizard.err");
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Foundation Services is currently unavailable."
+                        else
+                          confirmedMessage ""
+                        fi
+                   else
+                        (${SYSWIZARD} -systemConfig)
+                        confirmedMessage ""
+                   fi
                    clear;;
                 2) clear
                    (${SYSWIZARD} -printConfig)
                    confirmedMessage ""
                    clear;;
                 3) clear
-                   (${SYSWIZARD} -keyboardConfig)
-                   confirmedMessage ""
-                   clear;;
+                   if [ "${FST_PRESENT}" == "true" ] ; then
+                        (${FST_WIZARD} com.l7tech.platform.wizard.system.KeyboardConfigurationWizard 2>"/tmp/keyboard-wizard.err");
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Foundation Services is currently unavailable."
+                        else
+                          confirmedMessage ""
+                        fi
+                        clear;
+                   else
+                        (${SYSWIZARD} -keyboardConfig)
+                        confirmedMessage ""
+                        clear;
+                   fi;;
                 a|A) clear
                    echo "Layer 7 Software Versions"
                    echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
@@ -146,9 +179,31 @@ doSystemConfiguration() {
                     clear;;
                 *) if [ "$choice" == "4" ] && [ "${AUTHMETHODS_CONFIG}" == "true" ]; then
                        clear
-                       (${SYSWIZARD} -authConfig)
-                       confirmedMessage ""
-                       clear;
+                       if [ "${FST_PRESENT}" == "true" ] ; then
+                            (${FST_WIZARD} com.l7tech.platform.wizard.authentication.AuthenticationConfigurationWizard 2>"/tmp/authentication-wizard.err");
+                            STATUS=$?
+                            if [ $STATUS -eq 2 ] ; then
+                              confirmedMessage "Foundation Services is currently unavailable."
+                            else
+                              confirmedMessage ""
+                            fi
+                            clear;
+                       else
+                            (${SYSWIZARD} -authConfig)
+                            confirmedMessage ""
+                            clear;
+                       fi
+                   elif [ "$choice" == "5" ] && [ "${FST_PRESENT}" == "true" ] ; then
+                        clear
+                        export JAVA_HOME=/opt/SecureSpan/JDK
+                        (${RESTRICTED_SHELL} -h 127.0.0.1 2>"/tmp/restricted-shell.err")
+                        STATUS=$?
+                        if [ $STATUS -gt 0 ] ; then
+                          confirmedMessage "Foundation Services is currently unavailable."
+                        else
+                          confirmedMessage ""
+                        fi
+                        clear;
                    else
                         isMenuValid="n"
                         confirmedMessage "That is not a valid selection";
