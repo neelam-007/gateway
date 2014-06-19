@@ -41,6 +41,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.plaf.TabbedPaneUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -64,7 +65,10 @@ public class WorkSpacePanel extends JPanel {
     public static final String NAME = "workspace.panel";
     public static final String PROPERTY_LAST_OPENED_POLICY_TABS = "last.opened.policy.tabs";
 
-    private static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
+    private final static Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
+    private final static Icon closeTabIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/tabClose16.png"));
+    private final static int CLOSE_TAB_ICON_RIGHT_GAP_WIDTH = 7;
+
     private final List<TabTitleComponentPanel> closedTabs = new ArrayList<>();  // Track all closed policy tabs in their closing order
     private final List<TabTitleComponentPanel> openedTabs = new ArrayList<>();  // Track all opened policy tabs in their opening order
     private final TabbedPane tabbedPane = new TabbedPane();
@@ -267,12 +271,13 @@ public class WorkSpacePanel extends JPanel {
      * This class is a Tab Title Renderer class.
      */
     private class TabTitleComponentPanel extends JPanel {
-        private JLabel tabTitleLabel;   // tab display name
-        private JButton tabCloseButton; // button to close the tab
+        private final static String EXTRA_SPACES = "    ";  // the spaces for drawing the close-tab icon
+        private JLabel tabTitleLabel;   // holds the tab title
         private JComponent component;   // a PolicyEditorPanel or HomePanel object
+        private String title;           // the tab title
 
         TabTitleComponentPanel(final JComponent component) {
-            super(new FlowLayout(FlowLayout.LEFT, 0, 2));
+            super(new FlowLayout(FlowLayout.CENTER));
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
 
@@ -280,18 +285,20 @@ public class WorkSpacePanel extends JPanel {
                 throw new IllegalArgumentException("The component must be specified.");
             }
             this.component = component;
+            title = component.getName();
             initializeComponents();
         }
 
         String getTabTitle() {
-            return tabTitleLabel.getText();
+            return title;
         }
 
         void setTabTitle(String title) {
-            tabTitleLabel.setText(title);
+            this.title = title;
+            tabTitleLabel.setText(title + EXTRA_SPACES);
 
             // Check if the new title has a valid width for displaying
-            validateTabTitleLength(title);
+            validateTabTitleLength(title + EXTRA_SPACES);
         }
 
         JComponent getComponent() {
@@ -300,27 +307,14 @@ public class WorkSpacePanel extends JPanel {
 
         private void initializeComponents() {
             // Add a tab label to display tab title
-            tabTitleLabel = new JLabel(component.getName());
+            tabTitleLabel = new JLabel(title + EXTRA_SPACES);
             final Font font = tabTitleLabel.getFont();
             tabTitleLabel.setFont(new Font(font.getName(), Font.BOLD, 12));
             tabTitleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
             add(tabTitleLabel);
 
-            // Add a close tab button
-            final Icon closeIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/tabClose16.png"));
-            tabCloseButton = new JButton(closeIcon);
-            tabCloseButton.setToolTipText("Close this tab");
-            tabCloseButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    tabbedPane.remove(component);
-                }
-            });
-            tabCloseButton.setBorder(BorderFactory.createEmptyBorder());
-            add(tabCloseButton);
-
             // This method should be called after tabTitleLabel and tabCloseButton are initialized.
-            validateTabTitleLength(component.getName());
+            validateTabTitleLength(title + EXTRA_SPACES);
         }
 
         /**
@@ -331,33 +325,18 @@ public class WorkSpacePanel extends JPanel {
          */
         private void validateTabTitleLength(String title) {
             final int workspaceWidth = getWorkspaceWidth();
-            int labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
-            int versionIdx;
-            int middleIdx;
-            String policyName;
-            String versionAndRest;
+            final FontMetrics metrics = tabTitleLabel.getFontMetrics(tabTitleLabel.getFont());
+            int titleWidth = SwingUtilities.computeStringWidth(metrics, title);
+            boolean changed = false;
 
-            while (labelAndButtonWidth > workspaceWidth && workspaceWidth > 0 && title.length() > 4) {
-                versionIdx = title.lastIndexOf(" (v");
-                policyName = versionIdx == -1? title : title.substring(0, versionIdx);
-                versionAndRest = versionIdx == -1? "": title.substring(versionIdx);
+            while (titleWidth > workspaceWidth && workspaceWidth > 0 && title.length() >= 12) {
+                title = TextUtils.truncStringMiddle(title, title.length() - 6); // Truncate 6 characters every time
+                titleWidth = SwingUtilities.computeStringWidth(metrics, title);
+                changed = true;
+            }
 
-                if (policyName.length() > 13)  {
-                    // Every time truncate 10 characters in the middle of the policy name.  Note: version and active status remain the same.
-                    middleIdx = policyName.length() / 2;
-                    title = policyName.substring(0, middleIdx - 5) + "..." + policyName.substring(middleIdx + 5) + versionAndRest;
-                } else if (title.length() > 13) {
-                    if (title.contains("...")) {
-                        int dotsIdx = title.indexOf("...");
-                        title = title.substring(0, dotsIdx + 3) + title.substring(dotsIdx + 10);
-                    } else {
-                        middleIdx = title.length() / 2;
-                        title = title.substring(0, middleIdx - 5) + "..." + title.substring(middleIdx + 5);
-                    }
-                }
-
+            if (changed) {
                 tabTitleLabel.setText(title);
-                labelAndButtonWidth = tabTitleLabel.getPreferredSize().width + tabCloseButton.getPreferredSize().width;
             }
         }
     }
@@ -900,6 +879,19 @@ public class WorkSpacePanel extends JPanel {
                 protected MouseListener createMouseListener() {
                     return mouseTabListener;
                 }
+
+                // Paint the close icon (similar to a close button) used to close a policy tab
+                @Override
+                protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect, Rectangle textRect) {
+                    super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
+
+                    final Rectangle tabRect = rects[tabIndex];
+                    closeTabIcon.paintIcon(
+                        tabPane, g,
+                        (tabRect.x + tabRect.width - closeTabIcon.getIconWidth() - CLOSE_TAB_ICON_RIGHT_GAP_WIDTH), // X coordinate
+                        (tabRect.y + (tabRect.height - closeTabIcon.getIconHeight()) / 2)                           // Y coordinate
+                    );
+                }
             });
 
             final int tabLayout = getPolicyTabsLayoutFromPreferences();
@@ -1069,7 +1061,9 @@ public class WorkSpacePanel extends JPanel {
         }
 
         private void mouseActionHandler(MouseEvent e) {
-            final int index = tabPane.getUI().tabForCoordinate(tabPane, e.getX(), e.getY());
+            final TabbedPaneUI tabbedPaneUI = tabPane.getUI();
+            final int index = tabbedPaneUI.tabForCoordinate(tabPane, e.getX(), e.getY());
+
             if (index != -1) {
                 // Handel Mouse Left Click
                 if (SwingUtilities.isLeftMouseButton(e)) {
@@ -1077,6 +1071,15 @@ public class WorkSpacePanel extends JPanel {
                         tabPane.setSelectedIndex(index);
                     } else if (tabPane.isRequestFocusEnabled()) {
                         tabPane.requestFocusInWindow();
+                    }
+
+                    // If the mouse clicks on the area where the close-tab icon is nearby, then close the tab.
+                    final Rectangle tabRectangle = tabbedPaneUI.getTabBounds(tabPane, index);
+                    if (tabRectangle != null) {
+                        final int mouseX = e.getX();
+                        if (mouseX >= (tabRectangle.x + tabRectangle.width - closeTabIcon.getIconWidth() - CLOSE_TAB_ICON_RIGHT_GAP_WIDTH)) {
+                            doCloseTab(index);
+                        }
                     }
                 }
                 // Handel Mouse Right Click
