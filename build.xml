@@ -2292,6 +2292,8 @@
     <target name="package.installgateway.work.rpm.appliance.x86_64" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.x86_64.appliance.required">
         <echo level="info">Using source JDK: ${install.jdk64.tar.gz}</echo>
         <copy file="${install.jdk64.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
+        <copy file="etc/appliance/custom-find-requires.sh" todir="${build.rpm}/SOURCES" overwrite="true"/>
+        <chmod file="${build.rpm}/SOURCES/custom-find-requires.sh" perm="755"/>
         <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target x86_64" failOnError="true"/>
     </target>
 
@@ -2301,7 +2303,9 @@
     <target name="package.installgateway.work.rpm.appliance.i386" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.i386.appliance.required">
         <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
         <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
-        <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
+        <copy file="etc/appliance/custom-find-requires.sh" todir="${build.rpm}/SOURCES" overwrite="true"/>
+        <chmod file="${build.rpm}/SOURCES/custom-find-requires.sh" perm="755"/>
+<rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
     </target>
 
     <!--
