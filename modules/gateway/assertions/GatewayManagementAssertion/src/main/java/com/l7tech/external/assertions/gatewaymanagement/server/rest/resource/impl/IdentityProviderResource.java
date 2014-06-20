@@ -138,7 +138,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
             @QueryParam("type") @ChoiceParam({"LDAP", "Internal", "Federated", "Simple LDAP"}) List<String> types,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "type", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "type", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
@@ -159,7 +159,6 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
                     } else if (s.equalsIgnoreCase("Policy-Backed")) {
                         return IdentityProviderType.POLICY_BACKED.toVal();
                     }
-                    // TODO POLICY_BACKED
                     throw new IllegalArgumentException("Invalid parameter for identity provider type:" + s);
                 }
             }));

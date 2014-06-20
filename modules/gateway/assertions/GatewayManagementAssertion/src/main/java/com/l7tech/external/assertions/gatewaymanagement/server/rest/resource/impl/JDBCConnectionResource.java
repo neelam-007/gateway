@@ -114,7 +114,7 @@ public class JDBCConnectionResource extends RestEntityResource<JDBCConnectionMO,
             @QueryParam("userName") List<String> userNames,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "jdbcUrl", "driverClass", "userName", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "jdbcUrl", "driverClass", "userName", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {

@@ -104,7 +104,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
             @QueryParam("enabled") Boolean enabled,
             @QueryParam("entityClassName") List<String> entityClassNames) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "entityClassName"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "entityClassName"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {

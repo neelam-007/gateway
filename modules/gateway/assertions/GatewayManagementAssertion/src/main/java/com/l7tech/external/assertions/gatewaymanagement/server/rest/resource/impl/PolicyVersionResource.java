@@ -87,7 +87,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
             @QueryParam("active") final Boolean active,
             @QueryParam("comment") final List<String> comments) throws ResourceFactory.ResourceNotFoundException {
         final Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("id", "active", "comment"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("id", "active", "comment"));
 
         final CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (ids != null && !ids.isEmpty()) {

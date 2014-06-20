@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -90,20 +89,6 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
         super.replaceDependencies(policy, replacementMap, finder, replaceAssertionsDependencies);
         if(replaceAssertionsDependencies){
             replacePolicyAssertionDependencies(policy, replacementMap, finder);
-        }
-
-        //TODO: does this need to be here or will the super.replaceDependencies already have done this?
-        //replace the security zone
-        final SecurityZone securityZone = policy.getSecurityZone();
-        if (securityZone != null) {
-            final EntityHeader securityZoneHeaderToUse = replacementMap.get(EntityHeaderUtils.fromEntity(securityZone));
-            if (securityZoneHeaderToUse != null) {
-                try {
-                    policy.setSecurityZone(securityZoneManager.findByHeader(securityZoneHeaderToUse));
-                } catch (FindException e) {
-                    throw new CannotReplaceDependenciesException(securityZoneHeaderToUse.getName(), securityZoneHeaderToUse.getStrId(), SecurityZone.class, policy.getClass(), "Cannot find security zone", e);
-                }
-            }
         }
     }
 

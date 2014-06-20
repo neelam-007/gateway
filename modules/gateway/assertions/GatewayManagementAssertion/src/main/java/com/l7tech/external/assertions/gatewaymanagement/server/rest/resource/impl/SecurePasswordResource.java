@@ -105,7 +105,7 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
             @QueryParam("name") List<String> names,
             @QueryParam("type") @ChoiceParam({"Password", "PEM Private Key"}) List<String> types) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "type"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "type"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {

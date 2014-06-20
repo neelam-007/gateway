@@ -104,7 +104,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
             @QueryParam("folder.id") List<Goid> folderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("service.id", "folder.id", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("service.id", "folder.id", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (serviceIds != null && !serviceIds.isEmpty()) {

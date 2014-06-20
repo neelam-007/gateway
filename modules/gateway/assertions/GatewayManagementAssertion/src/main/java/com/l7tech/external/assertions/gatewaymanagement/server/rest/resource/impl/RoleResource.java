@@ -112,7 +112,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
             @QueryParam("name") List<String> names,
             @QueryParam("userCreated") Boolean userCreated) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("name", "userCreated"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "userCreated"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {

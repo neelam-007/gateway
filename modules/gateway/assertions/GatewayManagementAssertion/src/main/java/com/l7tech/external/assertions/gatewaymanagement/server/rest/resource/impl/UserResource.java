@@ -97,7 +97,7 @@ public class UserResource implements URLAccessible<UserMO> {
             @QueryParam("login") List<String> logins) throws ResourceFactory.ResourceNotFoundException {
 
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("login"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("login"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (logins != null && !logins.isEmpty()) {

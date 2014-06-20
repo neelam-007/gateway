@@ -109,7 +109,7 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
             @QueryParam("type") @ChoiceParam({"dtd", "xmlschema"}) List<String> types,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("uri", "description", "type", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("uri", "description", "type", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (uris != null && !uris.isEmpty()) {

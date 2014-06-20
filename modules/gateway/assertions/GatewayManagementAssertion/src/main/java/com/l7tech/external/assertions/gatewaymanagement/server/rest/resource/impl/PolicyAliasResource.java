@@ -107,7 +107,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
             @QueryParam("folder.id") List<Goid> folderIds,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("policy.id", "folder.id", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("policy.id", "folder.id", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (policyIds != null && !policyIds.isEmpty()) {

@@ -66,6 +66,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         for (final Dependency dependentObject : dependentObjects) {
             //for each dependent object add a reference and mapping entry to the bundle.
             if (dependentObject.getDependent() instanceof DependentEntity) {
+                //checks if this dependent is a folder and is a folder that was requested for export (in the list of entity headers)
                 if (!Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeRequestFolderOption, IncludeRequestFolder))
                         && EntityType.FOLDER.equals(((DependentEntity) dependentObject.getDependent()).getEntityHeader().getType())
                         && Functions.exists(Arrays.asList(headers), new Functions.Unary<Boolean, EntityHeader>() {
@@ -75,7 +76,6 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     }
                 })) {
                     //remove any request folders from the returned export.
-                    //TODO: does a mapping still need to be added for the folder?
                     continue;
                 }
 

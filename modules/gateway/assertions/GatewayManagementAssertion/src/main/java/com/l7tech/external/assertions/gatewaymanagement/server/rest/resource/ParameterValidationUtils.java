@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -17,8 +18,14 @@ public class ParameterValidationUtils {
     //These are the query parameters that a list request can always have
     public static final Collection<String> defaultListQueryParams = Arrays.asList("sort", "order");
 
-    //TODO: refactor this and merge with below method
-    public static void validateNoOtherQueryParamsNoDefaults(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
+    /**
+     * This will validate that the the given query params only contain items that are in the list of given valid query
+     * params.
+     *
+     * @param queryParameters The query params to check
+     * @param validParams     The list of valid query params
+     */
+    public static void validateNoOtherQueryParams(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
         for (final String param : queryParameters.keySet()) {
             if (!validParams.contains(param)) {
                 throw new InvalidArgumentException("Unknown filter parameter '" + param + "'. Expected one of: " + validParams.toString());
@@ -26,13 +33,17 @@ public class ParameterValidationUtils {
         }
     }
 
-    //TODO: refactor this and merge with above method
-    public static void validateNoOtherQueryParams(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
-        for (final String param : queryParameters.keySet()) {
-            if (!defaultListQueryParams.contains(param) && !validParams.contains(param)) {
-                throw new InvalidArgumentException("Unknown filter parameter '" + param + "'. Expected one of: " + validParams.toString());
-            }
-        }
+    /**
+     * This will validate that the the given query params only contain items that are in the list of given valid query
+     * params or one of the default query params ("sort", "order").
+     *
+     * @param queryParameters The query params to check
+     * @param validParams     The list of valid query params
+     */
+    public static void validateNoOtherQueryParamsIncludeDefaults(@NotNull final MultivaluedMap<String, String> queryParameters, @NotNull final List<String> validParams) {
+        final ArrayList<String> params = new ArrayList<>(validParams);
+        params.addAll(defaultListQueryParams);
+        validateNoOtherQueryParams(queryParameters, params);
     }
 
     /**

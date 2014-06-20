@@ -101,7 +101,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("key") List<String> keys) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("key"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("key"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (keys != null && !keys.isEmpty()) {

@@ -111,7 +111,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
             @QueryParam("ntlmDomain") List<String> ntlmDomains,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("host", "protocol", "ntlmHost", "ntlmDomain", "securityZone.id"));
+        ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("host", "protocol", "ntlmHost", "ntlmDomain", "securityZone.id"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
