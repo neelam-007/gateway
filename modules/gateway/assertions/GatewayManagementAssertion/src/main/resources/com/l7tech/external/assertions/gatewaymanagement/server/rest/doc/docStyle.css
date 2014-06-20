@@ -157,3 +157,32 @@ body {
     padding: 0px;
     margin: 0px;
 }
+
+/* The print style. Remove the menu and header. */
+@media print {
+    #top-container {
+        padding: 0;
+    }
+
+    #content-menu, #header-container {
+        display: none;
+    }
+
+    #content-container {
+        margin: 0;
+        width: 100%;
+    }
+
+    #content-container #content {
+        padding-right: 0;
+    }
+
+    #content {
+        padding: 0;
+    }
+
+    #content-body {
+        margin: 0;
+        float: none;
+    }
+}
