@@ -612,8 +612,9 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals("foo=bar; Domain=localhost; Path=/test", cookieValues[0]);
         assertEquals("invalid", cookieValues[1]);
         final Map<String, HttpCookie> cookiesMap = createCookiesMap(context.getResponse());
-        assertEquals(1, cookiesMap.size());
+        assertEquals(2, cookiesMap.size());
         assertEquals("bar", cookiesMap.get("foo").getCookieValue());
+        assertEquals("", cookiesMap.get("invalid").getCookieValue());
     }
 
     @Test
@@ -707,7 +708,11 @@ public class HttpForwardingRuleEnforcerJavaTest {
         assertEquals(1, responseHeadersKnob.getHeaderNames().length);
         assertEquals("Set-Cookie", responseHeadersKnob.getHeaderNames()[0]);
         assertEquals("invalid", responseHeadersKnob.getHeaderValues("Set-Cookie")[0]);
-        assertEquals(0, context.getResponse().getHttpCookiesKnob().getCookies().size());
+        final Set<HttpCookie> cookies = context.getResponse().getHttpCookiesKnob().getCookies();
+        assertEquals(1, cookies.size());
+        final HttpCookie cookie = cookies.iterator().next();
+        assertEquals("invalid", cookie.getCookieName());
+        assertEquals("", cookie.getCookieValue());
     }
 
     @BugId("SSG-8561")

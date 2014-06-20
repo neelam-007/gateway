@@ -368,36 +368,30 @@ public class HttpForwardingRuleEnforcer {
     }
 
     /**
-     * @return a pair where key = a list of valid HttpCookie and value = a set of string of cookie headers that could not be parsed.
+     * Filters gateway-specific cookies and strips out all cookie attributes except name=value.
      */
-    private static Pair<List<HttpCookie>, Set<String>> passableCookies(HttpCookiesKnob cookiesKnob, String targetDomain, Audit auditor) {
-        final List<HttpCookie> validCookies = new ArrayList<>();
-        final Set<String> invalidCookies = new HashSet<>();
+    private static Collection<String> passableCookieHeaders(HttpCookiesKnob cookiesKnob, Audit auditor) {
+        final List<String> passableCookies = new ArrayList<>();
         for (final String cookieHeader : cookiesKnob.getCookiesAsHeaders()) {
-            final HttpCookie httpCookie;
             try {
-                httpCookie = new HttpCookie(cookieHeader);
+                final HttpCookie httpCookie = new HttpCookie(cookieHeader);
                 if (CookieUtils.isPassThroughCookie(httpCookie)) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, httpCookie.getCookieName(), String.valueOf(httpCookie.getVersion()));
-                    HttpCookie newCookie = new HttpCookie(
-                            httpCookie.getCookieName(),
-                            httpCookie.getCookieValue(),
-                            httpCookie.getVersion(),
-                            "/",
-                            targetDomain,
-                            httpCookie.getMaxAge(),
-                            httpCookie.isSecure(),
-                            httpCookie.getComment(),
-                            httpCookie.isHttpOnly()
-                    );
-                    // attach and record
-                    validCookies.add(newCookie);
+                    // currently only passes the name and value cookie attributes
+                    final String nameAndValue = CookieUtils.getNameAndValue(cookieHeader);
+                    if (nameAndValue != null) {
+                        passableCookies.add(nameAndValue);
+                    } else {
+                        // cannot extract name and value - pass it through anyways
+                        passableCookies.add(cookieHeader);
+                    }
                 }
-            } catch (HttpCookie.IllegalFormatException e) {
-                invalidCookies.add(cookieHeader);
+            } catch (final HttpCookie.IllegalFormatException e) {
+                // cannot parse - pass it through anyways
+                passableCookies.add(cookieHeader);
             }
         }
-        return new Pair<>(validCookies, invalidCookies);
+        return passableCookies;
     }
 
     /**
@@ -417,7 +411,8 @@ public class HttpForwardingRuleEnforcer {
                     // special cookie handling
                     // all cookies are processed in one go (unlike other headers)
                     if (!cookieAlreadyHandled) {
-                        cookieAlreadyHandled = setCookiesHeader(requestParams, cookiesKnob, targetDomain, auditor);
+                        setCookiesHeader(requestParams, cookiesKnob, auditor);
+                        cookieAlreadyHandled = true;
                     }
                 } else {
                     for (final String value : headersKnob.getHeaderValues(name, HEADER_TYPE_HTTP)) {
@@ -435,28 +430,16 @@ public class HttpForwardingRuleEnforcer {
             }
         }
         if (retrieveCookiesFromContext && !cookieAlreadyHandled) {
-            setCookiesHeader(requestParams, cookiesKnob, targetDomain, auditor);
+            setCookiesHeader(requestParams, cookiesKnob, auditor);
         }
 
     }
 
-    private static boolean setCookiesHeader(GenericHttpRequestParams requestParams, HttpCookiesKnob cookiesKnob, String targetDomain, Audit auditor) {
-        boolean cookieAlreadyHandled;
-        final Pair<List<HttpCookie>, Set<String>> result = passableCookies(cookiesKnob, targetDomain, auditor);
-        if (!result.getKey().isEmpty() || !result.getValue().isEmpty()) {
-            // currently only passes the name and value cookie attributes
-            final List<String> allCookies = new ArrayList<>();
-            if (!result.getKey().isEmpty()) {
-                final String validCookies = CookieUtils.getCookieHeader(result.getKey());
-                allCookies.add(validCookies);
-            }
-            if (!result.getValue().isEmpty()) {
-                allCookies.addAll(result.getValue());
-            }
-            final String joined = StringUtils.join(allCookies, "; ");
+    private static void setCookiesHeader(final GenericHttpRequestParams requestParams, final HttpCookiesKnob cookiesKnob, final Audit auditor) {
+        final Collection<String> result = passableCookieHeaders(cookiesKnob, auditor);
+        if (!result.isEmpty()) {
+            final String joined = StringUtils.join(result, "; ");
             requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, joined));
         }
-        cookieAlreadyHandled = true;
-        return cookieAlreadyHandled;
     }
 }

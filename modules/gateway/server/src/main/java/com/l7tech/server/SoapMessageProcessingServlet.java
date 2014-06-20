@@ -531,22 +531,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         return faultLevelInfo;
     }
 
-    private Set<HttpCookie> getCookiesToPropagate(PolicyEnforcementContext context, HttpRequestKnob reqKnob) {
-        final Set<HttpCookie> cookies = new HashSet<>();
-        Set<HttpCookie> knobCookies = context.getResponse().getHttpCookiesKnob().getCookies();
-        for (HttpCookie cookie : knobCookies) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Adding new cookie to response; name='" + cookie.getCookieName() + "'.");
-            }
-            URI url = URI.create(reqKnob.getRequestUrl());
-            //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
-            cookies.add(CookieUtils.ensureValidForDomainAndPath(cookie,
-                context.isOverwriteResponseCookieDomain() ? url.getHost() : null,
-                context.isOverwriteResponseCookiePath() ? url.getPath() : null));
-        }
-        return cookies;
-    }
-
     private String makePolicyUrl(HttpServletRequest hreq, Goid goid) {
         StringBuilder policyUrl = new StringBuilder( hreq.getScheme() );
         policyUrl.append("://");

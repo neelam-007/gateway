@@ -179,7 +179,11 @@ public class HttpCookiesKnobImplTest {
     @Test
     public void getCookiesFromInvalidSetCookieHeader() {
         headersKnob.addHeader("Set-Cookie", "invalid", HEADER_TYPE_HTTP);
-        assertTrue(setCookieKnob.getCookies().isEmpty());
+        final Set<HttpCookie> cookies = setCookieKnob.getCookies();
+        assertEquals(1, cookies.size());
+        final HttpCookie cookie = cookies.iterator().next();
+        assertEquals("invalid", cookie.getCookieName());
+        assertEquals("", cookie.getCookieValue());
     }
 
     @Test
@@ -213,7 +217,11 @@ public class HttpCookiesKnobImplTest {
     @Test
     public void getCookiesFromInvalidCookieHeader() {
         headersKnob.addHeader("Cookie", "invalid", HEADER_TYPE_HTTP);
-        assertTrue(cookieKnob.getCookies().isEmpty());
+        final Set<HttpCookie> cookies = cookieKnob.getCookies();
+        assertEquals(1, cookies.size());
+        final HttpCookie cookie = cookies.iterator().next();
+        assertEquals("invalid", cookie.getCookieName());
+        assertEquals("", cookie.getCookieValue());
     }
 
     @Test
@@ -324,9 +332,9 @@ public class HttpCookiesKnobImplTest {
         setCookieKnob.addCookie(cookie);
         // having an invalid cookie header should not affect the result
         headersKnob.addHeader("Set-Cookie", "invalidCookieHeader", HEADER_TYPE_HTTP);
-        assertEquals(1, setCookieKnob.getCookies().size());
+        assertEquals(2, setCookieKnob.getCookies().size());
         setCookieKnob.deleteCookie(cookie);
-        assertTrue(setCookieKnob.getCookies().isEmpty());
+        assertEquals(1, setCookieKnob.getCookies().size());
     }
 
     @Test

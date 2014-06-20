@@ -1,5 +1,6 @@
 package com.l7tech.common.http;
 
+import com.l7tech.test.BugId;
 import org.junit.Test;
 
 import java.net.URL;
@@ -45,7 +46,7 @@ public class CookieTest {
         assertEquals("Checking max-age property", maxAge, cookie.getMaxAge());
         assertEquals("Should not be secure", false, cookie.isSecure());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertEquals("Checking comment property",comment, cookie.getComment());
+        assertEquals("Checking comment property", comment, cookie.getComment());
         assertEquals("Should not be http only", httpOnly, cookie.isHttpOnly());
     }
 
@@ -426,5 +427,54 @@ public class CookieTest {
         assertEquals("SCALAEYE_SESSION", cookie.getCookieName());
         assertEquals("\"()<>@,;:\\\\\\”[]?={} \\t\"", cookie.getCookieValue());
         assertEquals("/", cookie.getPath());
+    }
+
+    @BugId("SSG-8746")
+    @Test
+    public void parseCookieNoValueAndNoAttributes() throws Exception {
+        final HttpCookie cookie = new HttpCookie("foo");
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
+        assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
+    }
+
+    @BugId("SSG-8746")
+    @Test
+    public void parseCookieNoValue() throws Exception {
+        final HttpCookie cookie = new HttpCookie("foo; domain=localhost; path=/");
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
+        assertEquals(-1, cookie.getMaxAge());
+        assertEquals("localhost", cookie.getDomain());
+        assertEquals("/", cookie.getPath());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
+    }
+
+    @Test
+    public void parseCookieMultipleEquals() throws Exception {
+        final HttpCookie cookie = new HttpCookie("foo=bar=bar");
+        assertEquals("foo", cookie.getCookieName());
+        assertEquals("bar=bar", cookie.getCookieValue());
+        assertEquals(0, cookie.getVersion());
+        assertEquals(-1, cookie.getMaxAge());
+        assertNull(cookie.getDomain());
+        assertNull(cookie.getPath());
+        assertNull(cookie.getComment());
+        assertFalse(cookie.isSecure());
+        assertFalse(cookie.isHttpOnly());
+    }
+
+    @Test(expected = HttpCookie.IllegalFormatException.class)
+    public void parseCookieEmpty() throws Exception {
+        new HttpCookie("");
     }
 }

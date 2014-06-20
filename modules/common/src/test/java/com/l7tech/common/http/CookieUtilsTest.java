@@ -99,6 +99,16 @@ public class CookieUtilsTest {
         assertEquals("/gatewayPath", modifiedCookie.getPath());
     }
 
+    @Test
+    public void ensureValidForDomainAndPathDomainIsReplacedButPathIsNull() {
+        HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, null, "localhost");
+        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, "gatewayDomain", null);
+        assertEquals("gatewayDomain", cookie.getDomain());
+        assertNull(cookie.getPath());
+
+        assertEquals("foo=bar; Domain=gatewayDomain", CookieUtils.replaceCookieDomainAndPath("foo=bar; Domain=localhost", "gatewayDomain", null));
+    }
+
     /**
      * httpclient 4.2.5 doesn't support httpOnly.
      */
@@ -313,4 +323,22 @@ public class CookieUtilsTest {
         assertEquals("Compare Set-Cookie header value", expected, actual);
     }
 
+    @Test
+    public void getNameAndValue() {
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("foo=bar; domain=localhost; path=/; version=1; comment=test; max-age=60; secure; httpOnly"));
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("foo=bar;domain=localhost;path=/;version=1;comment=test;max-age=60;secure;httpOnly"));
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("foo=bar; secure; httpOnly; domain=localhost; path=/; version=1; comment=test; max-age=60"));
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("foo=bar"));
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("foo=bar; $Domain=localhost; $Path=/; $Version=1"));
+    }
+
+    @Test
+    public void getNameAndValueVersionFirst() {
+        assertEquals("foo=bar", CookieUtils.getNameAndValue("$Version=1; foo=bar; $Domain=localhost; $Path=/"));
+    }
+
+    @Test
+    public void getNameAndValueNoValue() {
+        assertNull(CookieUtils.getNameAndValue("foo"));
+    }
 }

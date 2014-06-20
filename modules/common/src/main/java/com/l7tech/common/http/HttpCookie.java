@@ -72,11 +72,11 @@ public class HttpCookie {
 
         //need to split the name=value pair in fields[0]
         String[] nameValue = EQUALS.split(fields[0], 2);
-        if(nameValue.length!=2) {
+        if(nameValue.length < 1 || nameValue.length > 2) {
             throw new HttpCookie.IllegalFormatException("Cookie value is an invalid format: '" + headerFullValue + "'");
         }
         cookieName = nameValue[0];
-        cookieValue = nameValue[1];
+        cookieValue = nameValue.length == 1 ? "" : nameValue[1];
 
         // now parse each field from the rest of the cookie, if present
         boolean parsedSecure = false;

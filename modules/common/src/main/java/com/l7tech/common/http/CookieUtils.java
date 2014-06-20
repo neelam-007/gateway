@@ -251,7 +251,8 @@ public class CookieUtils {
                     calcPath = calcPath.substring(0, trim);
                 }
             }
-            if (domainChanged || (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
+            if ((domainChanged && calcPath != null) ||
+                    (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
                 s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath);
             }
         }
@@ -627,6 +628,29 @@ public class CookieUtils {
             isAttribute = COOKIE_ATTRIBUTES.contains(candidate.toLowerCase());
         }
         return isAttribute;
+    }
+
+    /**
+     * @return the name=value token from the given Cookie/Set-Cookie header value or null if none could be found.
+     */
+    @Nullable
+    public static String getNameAndValue(final String cookieHeaderValue) {
+        final String first = getFirstAttribute(cookieHeaderValue);
+        if (first != null && isVersion(first)) {
+            final String noVersion = cookieHeaderValue.substring(first.length() + 1, cookieHeaderValue.length()).trim();
+            return getFirstAttribute(noVersion);
+        } else {
+            return first;
+        }
+    }
+
+    @Nullable
+    private static String getFirstAttribute(final String cookieHeaderValue) {
+        final Matcher first = firstAttributePattern.matcher(cookieHeaderValue);
+        if (first.find()) {
+            return first.group();
+        }
+        return null;
     }
 
     private static String replaceMatchedValue(@NotNull Matcher m, @NotNull String value, @Nullable String replacement) {
