@@ -137,21 +137,27 @@ public class RevocationCheckPolicyItem implements Serializable {
     }
 
     /**
-     * Set the trusted signers for this item.
+     * Set the trusted signers for this item. This should be a list of Goids.
+     * <p/>
+     * This list is not typed because this will be called when deserializer it can actually be a list of Longs (oid's
+     * from pre 8.0)
      *
      * @param trustedSigners The list of signers
      */
     @XmlSafe
-    public void setTrustedSigners(List<Goid> trustedSigners) {
+    public void setTrustedSigners(final List trustedSigners) {
         if (trustedSigners == null) {
-            this.trustedSigners = new ArrayList<Goid>();
+            this.trustedSigners = new ArrayList<>();
         } else {
-            this.trustedSigners = new ArrayList<Goid>();
-            for(Object signer: trustedSigners){
-                if(signer instanceof Long){
-                    this.trustedSigners.add(GoidUpgradeMapper.mapOid(EntityType.REVOCATION_CHECK_POLICY, (Long) signer));
-                }else{
-                    this.trustedSigners.add((Goid)signer);
+            this.trustedSigners = new ArrayList<>();
+            for (Object signer : trustedSigners) {
+                //Checks if it is an old oid, if it is maps it to the upgraded goid.
+                if (signer instanceof Long) {
+                    this.trustedSigners.add(GoidUpgradeMapper.mapOid(EntityType.TRUSTED_CERT, (Long) signer));
+                } else if (signer instanceof Goid) {
+                    this.trustedSigners.add((Goid) signer);
+                } else {
+                    throw new IllegalArgumentException("The list of trusted signers contains an item that is not a goid (or a long). Given: " + signer.getClass());
                 }
             }
         }
