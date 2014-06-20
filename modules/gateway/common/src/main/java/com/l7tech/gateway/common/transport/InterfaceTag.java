@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.TextUtils;
 
@@ -14,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * Represents zero or more named sets of IP address patterns.
  */
-public class InterfaceTag {
+public class InterfaceTag implements Entity {
     /** Conventional name of a property that might contain an interface tag set in string format. */
     public static final String PROPERTY_NAME = "interfaceTags";
 
@@ -75,6 +76,16 @@ public class InterfaceTag {
         for (String tagString : tagStrings)
             ret.add(parseSingle(tagString));
         return ret;
+    }
+
+    /**
+     * returns the interface tags name as its id
+     *
+     * @return The name of the interface tag
+     */
+    @Override
+    public String getId() {
+        return getName();
     }
 
     public String getName() {
