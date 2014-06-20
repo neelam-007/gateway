@@ -135,7 +135,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
             @QueryParam("sort") @ChoiceParam({"id", "name", "type"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names,
-            @QueryParam("type") @ChoiceParam({"LDAP", "Internal", "Federated", "Simple LDAP"}) List<String> types,
+            @QueryParam("type") @ChoiceParam({"LDAP", "Internal", "Federated", "Simple LDAP", "Policy-Backed"}) List<String> types,
             @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "type", "securityZone.id"));
