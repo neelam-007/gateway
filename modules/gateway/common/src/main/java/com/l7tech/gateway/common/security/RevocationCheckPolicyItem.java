@@ -1,6 +1,8 @@
 package com.l7tech.gateway.common.security;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.XmlSafe;
 
 import java.io.Serializable;
@@ -144,7 +146,14 @@ public class RevocationCheckPolicyItem implements Serializable {
         if (trustedSigners == null) {
             this.trustedSigners = new ArrayList<Goid>();
         } else {
-            this.trustedSigners = new ArrayList<Goid>(trustedSigners);
+            this.trustedSigners = new ArrayList<Goid>();
+            for(Object signer: trustedSigners){
+                if(signer instanceof Long){
+                    this.trustedSigners.add(GoidUpgradeMapper.mapOid(EntityType.REVOCATION_CHECK_POLICY, (Long) signer));
+                }else{
+                    this.trustedSigners.add((Goid)signer);
+                }
+            }
         }
     }
 

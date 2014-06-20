@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
@@ -210,8 +211,8 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         Assert.assertEquals("The bundle should have 5 items. A policy, and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -223,35 +224,35 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         //verify the mappings
         Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-        Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+        Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
         Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
         Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
         Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-        Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+        Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
         Assert.assertEquals(securePass1Mapping.getSrcId(), securePass1Mapping.getTargetId());
 
-        Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+        Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
         Assert.assertEquals(securePass2Mapping.getSrcId(), securePass2Mapping.getTargetId());
 
-        Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+        Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jmsMapping.getActionTaken());
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
         Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(5);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -314,9 +315,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.Ignore);
-            bundleItem.getContent().getMappings().get(3).setAction(Mapping.Action.Ignore);
-            bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setAction(Mapping.Action.Ignore);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setAction(Mapping.Action.Ignore);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -329,33 +330,33 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             //verify the mappings
             Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
             Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
             Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
             Assert.assertEquals(Mapping.Action.Ignore, securePass1Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.Ignored, securePass1Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
 
-            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
             Assert.assertEquals(Mapping.Action.Ignore, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.Ignored, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
 
-            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+            Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(5);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -404,10 +405,10 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
         //update the bundle mapping to map the jms to the existing one
-        bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.AlwaysCreateNew);
-        bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.AlwaysCreateNew);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
 
         //import the bundle
         logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -420,33 +421,33 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         //verify the mappings
         Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-        Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+        Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
         Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
         Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
         Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-        Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+        Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
 
-        Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+        Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
 
-        Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+        Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
         Assert.assertEquals(Mapping.Action.AlwaysCreateNew, jmsMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jmsMapping.getActionTaken());
         Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
         Assert.assertEquals(jmsMapping.getSrcId(), jmsMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(5);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -518,9 +519,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrUpdate);
-            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
-            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+            MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+            MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -533,33 +534,33 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             //verify the mappings
             Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
             Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
             Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
 
-            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
 
-            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+            Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(5);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -632,11 +633,11 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
         //update the bundle mapping to map the jms to the existing one
-        bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrUpdate);
-        bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
-        bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
-        ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
 
         try{
             //import the bundle
@@ -650,33 +651,33 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             //verify the mappings
             Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
             Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
             Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
 
-            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
 
-            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+            Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(5);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -757,11 +758,11 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals("The bundle should have 5 items. A policy and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
             //update the bundle mapping to map the cert to the existing one
-            bundleItem.getContent().getMappings().get(4).setAction(Mapping.Action.NewOrExisting);
-            bundleItem.getContent().getMappings().get(4).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
-            bundleItem.getContent().getMappings().get(4).setTargetId(jmsMO.getId());
-            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(1).getContent()).setPassword("myPassword");
-            ((StoredPasswordMO)bundleItem.getContent().getReferences().get(2).getContent()).setPassword("myPassword");
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.NewOrExisting);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
+            MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+            MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -774,33 +775,33 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             //verify the mappings
             Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
-            Mapping serviceMapping = mappings.getContent().getMappings().get(1);
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceMapping.getActionTaken());
             Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
             Assert.assertEquals(serviceMapping.getSrcId(), serviceMapping.getTargetId());
 
-            Mapping securePass1Mapping = mappings.getContent().getMappings().get(2);
+            Mapping securePass1Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem2.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass1Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass1Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass1Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem2.getId(), securePass1Mapping.getSrcId());
 
-            Mapping securePass2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping securePass2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), storedPasswordItem.getId());
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), securePass2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
 
-            Mapping jmsMapping = mappings.getContent().getMappings().get(4);
+            Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, jmsMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jmsMapping.getActionTaken());
             Assert.assertEquals(jmsItem.getId(), jmsMapping.getSrcId());
             Assert.assertEquals(jmsMO.getId(), jmsMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(5);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());

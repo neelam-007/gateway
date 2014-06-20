@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 
 /**
  *
@@ -87,7 +88,13 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         createObject.setName("New rev checking policy");
         Document request = ManagedObjectFactory.write(createObject);
         RestResponse response = processRequest(revocationCheckPolicyBasePath, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(request));
-        Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
+
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+        RevocationCheckPolicy createdEntity = revocationCheckPolicyManager.findByPrimaryKey(new Goid(getFirstReferencedGoid(response)));
+        assertEquals("Rev Check policy name:", createObject.getName(), createdEntity.getName());
     }
 
 
@@ -103,14 +110,24 @@ public class RevocationCheckingPolicyRestServerGatewayManagementAssertionTest ex
         // update
         entityGot.setName(entityGot.getName() + "_mod");
         RestResponse response = processRequest(revocationCheckPolicyBasePath + entityGot.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(entityGot)));
-        Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
+        logger.info(response.toString());
+
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+        RevocationCheckPolicy updatedEntity = revocationCheckPolicyManager.findByPrimaryKey(new Goid(revocationCheckPolicy.getId()));
+        assertEquals("Rev Check policy name:", entityGot.getName(), updatedEntity.getName());
     }
 
     @Test
     public void deleteEntityTest() throws Exception {
 
         RestResponse response = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.DELETE, null, "");
-        Assert.assertEquals(HttpStatus.SC_METHOD_NOT_ALLOWED, response.getStatus());
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+
+        // check entity
+        RestResponse responseGet = processRequest(revocationCheckPolicyBasePath + revocationCheckPolicy.getId(), HttpMethod.GET, null, "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Status resource not found:", responseGet.getStatus(), HttpStatus.SC_NOT_FOUND);
     }
 
     @Test

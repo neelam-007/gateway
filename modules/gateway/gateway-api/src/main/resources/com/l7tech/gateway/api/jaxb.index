@@ -27,6 +27,7 @@ Resource
 ResourceDocumentMO
 ResourceSet
 RevocationCheckingPolicyMO
+RevocationCheckingPolicyItemMO
 ServiceDetail
 ServiceMO
 ServiceAliasMO

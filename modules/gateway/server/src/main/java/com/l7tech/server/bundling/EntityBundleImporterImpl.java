@@ -1,6 +1,7 @@
 package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -183,6 +184,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //need to process generic entities at the end so that cyclical dependencies can be properly replaced
                 replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
 
+                //need to process revocation check policies again at the end so that cyclical dependencies can be properly replaced
+                replaceRevocationCheckingPolicyDependencies(mappingsRtn, resourceMapping);
+
                 // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
                 replacePolicyDependencies(mappingsRtn, resourceMapping);
 
@@ -226,6 +230,64 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, false);
                             //update the generic entity.
                             entityCrud.update(existingEntity);
+                        } catch (Exception e) {
+                            transactionStatus.setRollbackOnly();
+                            return e;
+                        }
+
+                        //flush the newly created object so that it can be found by the entity managers later.
+                        transactionStatus.flush();
+                        return null;
+                    }
+                });
+                if (exception != null) {
+                    //update the mapping to contain the exception.
+                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
+                    int index = mappingsRtn.indexOf(results);
+                    mappingsRtn.remove(index);
+                    mappingsRtn.add(index, newResult);
+                }
+            }
+        }
+    }
+    /**
+     * Replace revocation check policy dependencies
+     *
+     * @param mappingsRtn     The mappings to find revocation check policies in to replace dependencies for
+     * @param resourceMapping The resource map of dependencies to map to.
+     */
+    private void replaceRevocationCheckingPolicyDependencies(@NotNull final List<EntityMappingResult> mappingsRtn, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) {
+        for (final EntityMappingResult results : mappingsRtn) {
+            //only process the mapping if the action taken was updated or created and the entity is a generic entity.
+            if (results.getTargetEntityHeader() != null &&
+                    results.isSuccessful() &&
+                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (results.getTargetEntityHeader().getType().equals(EntityType.REVOCATION_CHECK_POLICY))) {
+                final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                tt.setReadOnly(false);
+                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                    @Override
+                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                        try {
+                            //get the existing generic entity.
+                            final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
+
+                            if(existingEntity == null) {
+                                // this should not happen. The entity should exist
+                                transactionStatus.setRollbackOnly();
+                                return new FindException("Cannot find updated or created Revocation Check Policy entity with header: " + results.getTargetEntityHeader().toStringVerbose());
+                            }
+
+                            final RevocationCheckPolicy existingPolicy = ((RevocationCheckPolicy)existingEntity);
+
+                            // do replace on cloned entity
+                            final RevocationCheckPolicy tempPolicy = existingPolicy.clone();
+                            dependencyAnalyzer.replaceDependencies(tempPolicy, resourceMapping, false);
+
+                            //update the generic entity.
+                            existingPolicy.setRevocationCheckItems(tempPolicy.getRevocationCheckItems());
+                            entityCrud.update(existingPolicy);
+
                         } catch (Exception e) {
                             transactionStatus.setRollbackOnly();
                             return e;

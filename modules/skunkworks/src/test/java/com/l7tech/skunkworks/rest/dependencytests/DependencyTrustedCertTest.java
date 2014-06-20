@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -34,7 +35,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
 
     private TrustedCert trustedCert = new TrustedCert();
     private TrustedCert trustedCertWithRevocationPolicy = new TrustedCert();
+    private TrustedCert trustedCertRevCheckSigner = new TrustedCert();
+    private TrustedCert trustedCertWithRevocationPolicySigner = new TrustedCert();
     private RevocationCheckPolicy revocationCheckPolicy = new RevocationCheckPolicy();
+    private RevocationCheckPolicy revocationCheckPolicyWithSigner = new RevocationCheckPolicy();
     private final SecurityZone securityZone =  new SecurityZone();
     private TrustedCertManager trustedCertManager;
     private RevocationCheckPolicyManager revocationCheckPolicyManager;
@@ -75,6 +79,32 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
         trustedCertWithRevocationPolicy.setRevocationCheckPolicyOid(revocationCheckPolicy.getGoid());
         trustedCertManager.save(trustedCertWithRevocationPolicy);
 
+        // create trusted cert used by revocation check policy
+        newCertificate = new TestCertificateGenerator().subject("cn=usedbyrevcheck").generate();
+        trustedCertRevCheckSigner.setName(CertUtils.extractFirstCommonNameFromCertificate(newCertificate));
+        trustedCertRevCheckSigner.setCertificate(newCertificate);
+        trustedCertRevCheckSigner.setTrustAnchor(false);
+        trustedCertRevCheckSigner.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.USE_DEFAULT);
+        trustedCertManager.save(trustedCertRevCheckSigner);
+
+        // create revocation check policy
+        revocationCheckPolicyWithSigner.setName("Test Revocation check policy with trusted cert signer");
+        RevocationCheckPolicyItem item = new RevocationCheckPolicyItem();
+        item.setType(RevocationCheckPolicyItem.Type.CRL_FROM_CERTIFICATE);
+        item.setUrl(".*");
+        item.setTrustedSigners(CollectionUtils.list(trustedCertRevCheckSigner.getGoid()));
+        revocationCheckPolicyWithSigner.setRevocationCheckItems(CollectionUtils.list(item));
+        revocationCheckPolicyManager.save(revocationCheckPolicyWithSigner);
+
+        // create trusted cert using revocation check policy
+        newCertificate = new TestCertificateGenerator().subject("cn=revchecksigner").generate();
+        trustedCertWithRevocationPolicySigner.setName(CertUtils.extractFirstCommonNameFromCertificate(newCertificate));
+        trustedCertWithRevocationPolicySigner.setCertificate(newCertificate);
+        trustedCertWithRevocationPolicySigner.setTrustAnchor(false);
+        trustedCertWithRevocationPolicySigner.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
+        trustedCertWithRevocationPolicySigner.setRevocationCheckPolicyOid(revocationCheckPolicyWithSigner.getGoid());
+        trustedCertManager.save(trustedCertWithRevocationPolicySigner);
+
     }
 
     @BeforeClass
@@ -87,7 +117,10 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
         super.after();
         trustedCertManager.delete(trustedCert);
         trustedCertManager.delete(trustedCertWithRevocationPolicy);
+        trustedCertManager.delete(trustedCertWithRevocationPolicySigner);
+        trustedCertManager.delete(trustedCertRevCheckSigner);
         revocationCheckPolicyManager.delete(revocationCheckPolicy);
+        revocationCheckPolicyManager.delete(revocationCheckPolicyWithSigner);
         securityZoneManager.delete(securityZone);
     }
 
@@ -450,6 +483,45 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
                 assertEquals(securityZone.getId(), zoneDep.getId());
                 assertEquals(securityZone.getName(), zoneDep.getName());
+
+            }
+        });
+    }
+
+    @Test
+    public void revocationCheckPolicyWithSignerTest() throws Exception {
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:WsSecurity>\n" +
+                        "            <L7p:RecipientTrustedCertificateGoid goidValue=\""+trustedCertWithRevocationPolicySigner.getId()+"\"/>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:WsSecurity>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(3,dependencyAnalysisMO.getDependencies().size());
+
+                DependencyMO signer  = dependencyAnalysisMO.getDependencies().get(0);
+                assertEquals(EntityType.TRUSTED_CERT.toString(), signer.getType());
+                verifyItem(signer, trustedCertRevCheckSigner);
+
+                DependencyMO revDep  = dependencyAnalysisMO.getDependencies().get(1);
+                assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), revDep.getType());
+                assertEquals(revocationCheckPolicyWithSigner.getId(), revDep.getId());
+                assertEquals(revocationCheckPolicyWithSigner.getName(), revDep.getName());
+
+                DependencyMO cert  = dependencyAnalysisMO.getDependencies().get(2);
+                assertEquals(EntityType.TRUSTED_CERT.toString(), cert.getType());
+                verifyItem(cert, trustedCertWithRevocationPolicySigner);
 
             }
         });

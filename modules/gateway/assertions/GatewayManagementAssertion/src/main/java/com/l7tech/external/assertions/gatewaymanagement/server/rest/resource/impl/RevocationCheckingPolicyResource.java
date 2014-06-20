@@ -6,19 +6,14 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RevocationCheckingPolicyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
@@ -29,20 +24,22 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
 @Singleton
-public class RevocationCheckingPolicyResource implements URLAccessible<RevocationCheckingPolicyMO> {
+public class RevocationCheckingPolicyResource extends RestEntityResource<RevocationCheckingPolicyMO,RevocationCheckingPolicyAPIResourceFactory,RevocationCheckingPolicyTransformer> {
 
     protected static final String revocationCheckingPolicies_URI = "revocationCheckingPolicies";
-    private RevocationCheckingPolicyAPIResourceFactory factory;
-    @Context
-    protected UriInfo uriInfo;
 
+    @Override
     @SpringBean
     public void setFactory(RevocationCheckingPolicyAPIResourceFactory factory) {
-        this.factory = factory;
+        super.factory = factory;
     }
 
+    @Override
     @SpringBean
-    private RevocationCheckingPolicyTransformer transformer;
+    public void setTransformer(RevocationCheckingPolicyTransformer transformer) {
+        super.transformer = transformer;
+    }
+
 
     /**
      * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
@@ -116,87 +113,61 @@ public class RevocationCheckingPolicyResource implements URLAccessible<Revocatio
                 .build();
     }
 
-//    /**
-//     * Updates an existing entity
-//     *
-//     * @param resource The updated entity
-//     * @param id       The id of the entity to update
-//     * @return a reference to the newly updated entity.
-//     * @throws ResourceFactory.ResourceNotFoundException
-//     *
-//     * @throws ResourceFactory.InvalidResourceException
-//     *
-//     */
-//    @PUT
-//    @Path("{id}")
-//    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-//    public Response updateResource(RevocationCheckingPolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-//        boolean resourceExists = factory.resourceExists(id);
-//        final Response.ResponseBuilder responseBuilder;
-//        if (resourceExists) {
-//            factory.updateResource(id, resource);
-//            responseBuilder = Response.ok();
-//        } else {
-//            factory.createResource(id, resource);
-//            responseBuilder = Response.created(uriInfo.getAbsolutePath());
-//        }
-//        return responseBuilder.entity(new ItemBuilder<>(
-//                transformer.convertToItem(resource))
-//                .setContent(null)
-//                .addLink(getLink(resource))
-//                .addLinks(getRelatedLinks(resource))
-//                .build()).build();
-//    }
-//
-//    /**
-//     * Deletes an existing active connector.
-//     *
-//     * @param id The id of the active connector to delete.
-//     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
-//     */
-//    @DELETE
-//    @Path("{id}")
-//    public void deleteResource(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-//        factory.deleteResource(id);
-//    }
 
-    @NotNull
-    @Override
-    public String getResourceType() {
-        return factory.getResourceType();
+    /**
+     * Creates a new entity
+     *
+     * @param resource The entity to create
+     * @return a reference to the newly created entity
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @POST
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public Response create(RevocationCheckingPolicyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        return super.create(resource);
     }
 
-    @NotNull
-    @Override
-    public String getUrl(@NotNull RevocationCheckingPolicyMO resource) {
-        return getUrlString(resource.getId());
+    /**
+     * Updates an existing entity
+     *
+     * @param resource The updated entity
+     * @param id       The id of the entity to update
+     * @return a reference to the newly updated entity.
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @PUT
+    @Path("{id}")
+    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
+    public Response update(RevocationCheckingPolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+        return super.update(resource, id);
     }
 
-    @NotNull
+    /**
+     * Deletes an existing active connector.
+     *
+     * @param id The id of the active connector to delete.
+     * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
+     */
+    @DELETE
+    @Path("{id}")
     @Override
-    public String getUrl(@NotNull EntityHeader header) {
-        return getUrlString(header.getStrId());
+    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        super.delete(id);
     }
 
-    @NotNull
-    @Override
-    public Link getLink(@NotNull RevocationCheckingPolicyMO resource) {
-        return ManagedObjectFactory.createLink("self", getUrl(resource));
-    }
-
-    @NotNull
-    @Override
-    public List<Link> getRelatedLinks(@Nullable RevocationCheckingPolicyMO resource) {
-        return Arrays.asList(
-                ManagedObjectFactory.createLink("template", getUrlString("template")),
-                ManagedObjectFactory.createLink("list", getUrlString(null)));
-    }
-
-    public String getUrlString(@Nullable String id) {
-        UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(this.getClass());
-        if (id != null) {
-            uriBuilder.path(id);
-        }
-        return uriBuilder.build().toString();
+    /**
+     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * like.
+     *
+     * @return The template entity.
+     */
+    @GET
+    @Path("template")
+    public Item<RevocationCheckingPolicyMO> template() {
+        RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
+        checkPolicyMO.setName("TemplateRevocationCheckingPolicy");
+        return super.createTemplateItem(checkPolicyMO);
     }
 }

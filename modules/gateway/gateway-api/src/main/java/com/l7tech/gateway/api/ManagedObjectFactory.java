@@ -340,6 +340,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new RevocationCheckingPolicyItemMO instance.
+     *
+     * @return The new instance.
+     */
+    public static RevocationCheckingPolicyItemMO createRevocationCheckingPolicyItem() {
+        return new RevocationCheckingPolicyItemMO();
+    }
+
+    /**
      * Create a new ListenPortMO instance.
      *
      * @return The new instance.

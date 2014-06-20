@@ -140,7 +140,6 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
 
         final EntityMappingInstructions mapping;
         if (entity instanceof SsgKeyEntry ||
-                entity instanceof RevocationCheckPolicy ||
                 entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity ||
                 entity instanceof Role ||

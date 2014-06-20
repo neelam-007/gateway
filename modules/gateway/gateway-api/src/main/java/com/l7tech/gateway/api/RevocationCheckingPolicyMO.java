@@ -10,6 +10,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.get;
@@ -25,7 +27,7 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
  * @see ManagedObjectFactory#createRevocationCheckingPolicy()
  */
 @XmlRootElement(name="RevocationCheckingPolicy")
-@XmlType(name="RevocationCheckingPolicyType", propOrder={"nameValue","properties","extension","extensions"})
+@XmlType(name="RevocationCheckingPolicyType", propOrder={"nameValue","defaultPolicy","continueOnServerUnavailable","defaultSuccess","revocationCheckItems","properties","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="revocationCheckingPolicies")
 public class RevocationCheckingPolicyMO extends ElementExtendableAccessibleObject {
 
@@ -69,6 +71,43 @@ public class RevocationCheckingPolicyMO extends ElementExtendableAccessibleObjec
         this.properties = properties;
     }
 
+
+    @XmlElement(name="RevocationCheckItems")
+    public List<RevocationCheckingPolicyItemMO> getRevocationCheckItems() {
+        return revocationCheckItems;
+    }
+
+    public void setRevocationCheckItems(List<RevocationCheckingPolicyItemMO> revocationCheckItems) {
+        this.revocationCheckItems = revocationCheckItems;
+    }
+
+    @XmlElement(name="DefaultPolicy")
+    public Boolean isDefaultPolicy() {
+        return defaultPolicy == null? false: defaultPolicy;
+    }
+
+    public void setDefaultPolicy(Boolean defaultPolicy) {
+        this.defaultPolicy = defaultPolicy;
+    }
+
+    @XmlElement(name="DefaultSuccess")
+    public Boolean isDefaultSuccess() {
+        return defaultSuccess == null? false: defaultSuccess;
+    }
+
+    public void setDefaultSuccess(Boolean defaultSuccess) {
+        this.defaultSuccess = defaultSuccess;
+    }
+
+    @XmlElement(name="ContinueOnServerUnavailable")
+    public Boolean isContinueOnServerUnavailable() {
+        return continueOnServerUnavailable == null? false: continueOnServerUnavailable;
+    }
+
+    public void setContinueOnServerUnavailable(Boolean continueOnServerUnavailable) {
+        this.continueOnServerUnavailable = continueOnServerUnavailable;
+    }
+
     //- PROTECTED
 
     @XmlElement(name="Name", required=true)
@@ -88,5 +127,9 @@ public class RevocationCheckingPolicyMO extends ElementExtendableAccessibleObjec
     //- PRIVATE
 
     private AttributeExtensibleType.AttributeExtensibleString name;
+    private List<RevocationCheckingPolicyItemMO> revocationCheckItems = new ArrayList<>();
+    private Boolean defaultPolicy;
+    private Boolean defaultSuccess;
+    private Boolean continueOnServerUnavailable;
     private Map<String,Object> properties;
 }

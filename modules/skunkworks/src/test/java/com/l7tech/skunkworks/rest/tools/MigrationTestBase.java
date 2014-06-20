@@ -9,14 +9,17 @@ import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
+import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -157,12 +160,13 @@ public abstract class MigrationTestBase {
     }
 
     protected DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
-        return (DependencyMO) CollectionUtils.find(dependencies, new Predicate() {
+        final DependencyMO dependencyMO = Functions.grepFirst(dependencies, new Functions.Unary<Boolean, DependencyMO>() {
             @Override
-            public boolean evaluate(Object o) {
-                return ((DependencyMO) o).getId().equals(id);
+            public Boolean call(DependencyMO dependency) {
+                return id.equals(dependency.getId());
             }
         });
+        return dependencyMO;
     }
 
     protected DependencyMO getDependency(List<DependencyMO> dependencies, final EntityType type){
@@ -172,5 +176,29 @@ public abstract class MigrationTestBase {
                 return ((DependencyMO)o).getType().equals(type.toString());
             }
         });
+    }
+
+    @NotNull
+    protected static <O> O getBundleReference(@NotNull final Bundle bundle, @NotNull final String id) {
+        final Item referenceItem = Functions.grepFirst(bundle.getReferences(), new Functions.Unary<Boolean, Item>() {
+            @Override
+            public Boolean call(Item item) {
+                return id.equals(item.getId());
+            }
+        });
+        junit.framework.Assert.assertNotNull(referenceItem);
+        return (O) referenceItem.getContent();
+    }
+
+    @NotNull
+    protected static Mapping getMapping(@NotNull final Collection<Mapping> mappings, @NotNull final String id) {
+        final Mapping mapping = Functions.grepFirst(mappings, new Functions.Unary<Boolean, Mapping>() {
+            @Override
+            public Boolean call(Mapping mapping) {
+                return id.equals(mapping.getSrcId());
+            }
+        });
+        junit.framework.Assert.assertNotNull(mapping);
+        return mapping;
     }
 }

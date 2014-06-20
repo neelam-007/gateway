@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
@@ -161,6 +162,7 @@ public class RevocationCheckPolicy extends ZoneableNamedEntityImp implements Clo
             PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
+                xe.setPersistenceDelegate( Goid.class, Goid.getPersistenceDelegate() );
                 xe.writeObject(new ArrayList<RevocationCheckPolicyItem>(policyItems));
                 xe.close();
                 revocationCheckPolicyXml = baos.toString(PROPERTIES_ENCODING);

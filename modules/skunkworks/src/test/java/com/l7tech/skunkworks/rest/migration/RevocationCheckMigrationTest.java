@@ -1,28 +1,21 @@
 package com.l7tech.skunkworks.rest.migration;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
-import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
-import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.CollectionUtils;
+import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamResult;
@@ -31,216 +24,631 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.UUID;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.*;
-
 /**
-*
-*/
+ *
+ */
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
-public class RevocationCheckMigrationTest extends RestEntityTestBase {
+public class RevocationCheckMigrationTest extends MigrationTestBase {
     private static final Logger logger = Logger.getLogger(RevocationCheckMigrationTest.class.getName());
 
-    private TrustedCert trustedCert = new TrustedCert();
-    private RevocationCheckPolicy revocationCheckPolicy = new RevocationCheckPolicy();
-    private Policy policy = new Policy(PolicyType.INTERNAL, "Policy", "", false);
-    private TrustedCertManager trustedCertManager;
-    private RevocationCheckPolicyManager revocationCheckPolicyManager;
-    private PolicyManager policyManager;
+    private Item<PolicyMO> policyItem;
+    private Item<TrustedCertificateMO> trustedCertItem;
+    private Item<RevocationCheckingPolicyMO> revCheckItem;
+    private Item<Mappings> mappingsToClean;
 
     @Before
     public void before() throws Exception {
 
-        trustedCertManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedCertManager", TrustedCertManager.class);
-        revocationCheckPolicyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("revocationCheckPolicyManager", RevocationCheckPolicyManager.class);
-        policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
-
         // create revocation check policy
-        revocationCheckPolicy.setName("Test Revocation check policy");
-        revocationCheckPolicy.setGoid(revocationCheckPolicyManager.save(revocationCheckPolicy));
+        RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
+        checkPolicyMO.setName("Source Rev Check Policy");
+        checkPolicyMO.setDefaultPolicy(true);
+        RevocationCheckingPolicyItemMO checkItem = ManagedObjectFactory.createRevocationCheckingPolicyItem();
+        checkItem.setType(RevocationCheckingPolicyItemMO.Type.CRL_FROM_CERTIFICATE);
+        checkItem.setUrl(".*");
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        RestResponse response = getSourceEnvironment().processRequest("revocationCheckingPolicies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkCreatedResponse(response);
+
+        revCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        revCheckItem.setContent(checkPolicyMO);
 
         // create trusted cert using revocation check policy
-        X509Certificate newCertificate = new TestCertificateGenerator().subject("cn=revcheck").generate();
-        trustedCert.setName(CertUtils.extractFirstCommonNameFromCertificate(newCertificate));
-        trustedCert.setCertificate(newCertificate);
-        trustedCert.setTrustAnchor(false);
-        trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
-        trustedCert.setRevocationCheckPolicyOid(revocationCheckPolicy.getGoid());
-        trustedCert.setGoid(trustedCertManager.save(trustedCert));
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=revcheck").generate();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Source Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+        trustedCertificateMO.setRevocationCheckingPolicyId(revCheckItem.getId());
+        trustedCertificateMO.setProperties(new HashMap<String, Object>());
+        trustedCertificateMO.getProperties().put(
+                "revocationCheckingEnabled", true);
+        response = getSourceEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
 
-        final String policyXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        <L7p:WsSecurity>\n" +
-                        "            <L7p:RecipientTrustedCertificateGoid goidValue=\""+trustedCert.getId()+"\"/>\n" +
-                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
-                        "        </L7p:WsSecurity>" +
-                        "    </wsp:All>\n" +
-                        "</wsp:Policy>";
-        policy.setXml(policyXml);
-        policy.setGuid(UUID.randomUUID().toString());
-        policy.setGoid(policyManager.save(policy));
-    }
+        assertOkCreatedResponse(response);
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        DependencyTestBase.beforeClass();
+        trustedCertItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        trustedCertItem.setContent(trustedCertificateMO);
+
+        //create policy
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("MyPolicy");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:WsSecurity>\n" +
+                "            <L7p:RecipientTrustedCertificateGoid goidValue=\"" + trustedCertItem.getId() + "\"/>\n" +
+                "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                "        </L7p:WsSecurity>" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>");
+
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+        assertOkCreatedResponse(response);
+
+        policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItem.setContent(policyMO);
+
     }
 
     @After
     public void after() throws Exception {
-        cleanDatabase();
-    }
+        if (mappingsToClean != null)
+            cleanupAll(mappingsToClean);
 
-    private void cleanDatabase() throws Exception  {
-        for(TrustedCert cert: trustedCertManager.findAll()){
-            trustedCertManager.delete(cert);
-        }
+        RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
 
-        for(RevocationCheckPolicy rev: revocationCheckPolicyManager.findAll()){
-            revocationCheckPolicyManager.delete(rev);
-        }
+        response = getSourceEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
 
-        for(Policy policy: policyManager.findAll()){
-            if(!policy.getType().isServicePolicy())
-                policyManager.delete(policy);
-        }
-    }
-
-
-    @Test
-    public void migrationMapTest() throws Exception {
-        RestResponse response =
-                getDatabaseBasedRestManagementEnvironment().processRequest("bundle/policy/" + policy.getId(), HttpMethod.GET,null,"");
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
-
-        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 3 items. A policy, a trusted certificate", 3, bundleItem.getContent().getReferences().size());
-        assertEquals("The bundle should have 4 items. Root folder, a policy, a trusted certificate, a revocation check policy", 4, bundleItem.getContent().getMappings().size());
-
-        cleanDatabase();
-
-        // create new revocation check policy
-        RevocationCheckPolicy newRev = new RevocationCheckPolicy();
-        newRev.setName("Target Revocation check policy");
-        newRev.setGoid(revocationCheckPolicyManager.save(newRev));
-
-        // update bundle
-        bundleItem.getContent().getMappings().get(0).setTargetId(newRev.getId());
-
-        // import bundle
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(bundleItem.getContent()));
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
-        
-        // check mapping
-
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        
-        //verify the mappings
-        assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
-        Mapping revMapping = mappings.getContent().getMappings().get(0);
-        assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), revMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, revMapping.getAction());
-        assertEquals(Mapping.ActionTaken.UsedExisting, revMapping.getActionTaken());
-        assertNotSame(revMapping.getSrcId(), revMapping.getTargetId());
-        assertEquals(revocationCheckPolicy.getId(), revMapping.getSrcId());
-        assertEquals(newRev.getId(), revMapping.getTargetId());
-
-        Mapping certMapping = mappings.getContent().getMappings().get(1);
-        assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
-        assertEquals(Mapping.ActionTaken.CreatedNew, certMapping.getActionTaken());
-        assertEquals(trustedCert.getId(), certMapping.getSrcId());
-        assertEquals(certMapping.getSrcId(), certMapping.getTargetId());
-
-        Mapping policyMapping = mappings.getContent().getMappings().get(3);
-        assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        assertEquals(policy.getId(), policyMapping.getSrcId());
-        assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
-        
-        // check dependency
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
-        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
-
-        assertNotNull(dependencies);
-        assertEquals(2, dependencies.size());
-
-        assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(),dependencies.get(0).getType());
-        assertEquals(EntityType.TRUSTED_CERT.toString(),dependencies.get(1).getType());
+        response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
     }
 
     @Test
-    public void migrationUseExistingTest() throws Exception {
-        RestResponse response =
-                getDatabaseBasedRestManagementEnvironment().processRequest("bundle/policy/" + policy.getId(), HttpMethod.GET,null,"");
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
+    public void testImportNew() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        assertEquals("The bundle should have 3 items. A policy, a trusted certificate", 3, bundleItem.getContent().getReferences().size());
-        assertEquals("The bundle should have 4 items. Root folder, a policy, a trusted certificate, a revocation check policy", 4, bundleItem.getContent().getMappings().size());
 
-        cleanDatabase();
+        Assert.assertEquals("The bundle should have 3 items. A policy, trusted cert and revocation policy", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 items. A folder, a policy, trusted cert and revocation policy", 4, bundleItem.getContent().getMappings().size());
 
-        // create new revocation check policy
-        revocationCheckPolicyManager.save(revocationCheckPolicy.getGoid(),revocationCheckPolicy);
-
-        // import bundle
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(bundleItem.getContent()));
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
-
-        // check mapping
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
 
         Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
 
         //verify the mappings
-        assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
-        Mapping revMapping = mappings.getContent().getMappings().get(0);
-        assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), revMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, revMapping.getAction());
-        assertEquals(Mapping.ActionTaken.UsedExisting, revMapping.getActionTaken());
-        assertEquals(revocationCheckPolicy.getId(), revMapping.getSrcId());
-        assertEquals(revMapping.getSrcId(), revMapping.getTargetId());
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+        Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
 
-        Mapping certMapping = mappings.getContent().getMappings().get(1);
-        assertEquals(EntityType.TRUSTED_CERT.toString(), certMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, certMapping.getAction());
-        assertEquals(Mapping.ActionTaken.CreatedNew, certMapping.getActionTaken());
-        assertEquals(trustedCert.getId(), certMapping.getSrcId());
-        assertEquals(certMapping.getSrcId(), certMapping.getTargetId());
+        Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+        Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+        Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+        Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
 
         Mapping policyMapping = mappings.getContent().getMappings().get(3);
-        assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
-        assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
-        assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
-        assertEquals(policy.getId(), policyMapping.getSrcId());
-        assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        // check dependency
-        response = getDatabaseBasedRestManagementEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
-        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        assertEquals(200, response.getStatus());
-        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
+        validate(mappings);
 
-        assertNotNull(dependencies);
-        assertEquals(2, dependencies.size());
-
-        assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(),dependencies.get(0).getType());
-        assertEquals(EntityType.TRUSTED_CERT.toString(),dependencies.get(1).getType());
     }
+
+    @Test
+    public void testMapById() throws Exception {
+        // create revocation check policy
+        RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
+        checkPolicyMO.setName("Target Rev Check Policy");
+        checkPolicyMO.setDefaultPolicy(true);
+        RevocationCheckingPolicyItemMO checkItem = ManagedObjectFactory.createRevocationCheckingPolicyItem();
+        checkItem.setType(RevocationCheckingPolicyItemMO.Type.OCSP_FROM_CERTIFICATE);
+        checkItem.setUrl(".*");
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        RestResponse response = getTargetEnvironment().processRequest("revocationCheckingPolicies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<RevocationCheckingPolicyMO> targetRevCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        targetRevCheckItem.setContent(checkPolicyMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 3 items. A policy, trusted cert and revocation policy", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. A folder, a policy, trusted cert and revocation policy", 4, bundleItem.getContent().getMappings().size());
+
+            // map
+            bundleItem.getContent().getMappings().get(0).setTargetId(targetRevCheckItem.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
+            Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(targetRevCheckItem.getId(), passwordMapping.getTargetId());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + targetRevCheckItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            mappingsToClean = null;
+        }
+    }
+
+    @Test
+    public void testUsedExisting() throws Exception {
+        // create revocation check policy
+        RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
+        checkPolicyMO.setName("Target Rev Check Policy");
+        checkPolicyMO.setId(revCheckItem.getId());
+        checkPolicyMO.setDefaultPolicy(true);
+        RevocationCheckingPolicyItemMO checkItem = ManagedObjectFactory.createRevocationCheckingPolicyItem();
+        checkItem.setType(RevocationCheckingPolicyItemMO.Type.OCSP_FROM_CERTIFICATE);
+        checkItem.setUrl(".*");
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        RestResponse response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<RevocationCheckingPolicyMO> targetRevCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        targetRevCheckItem.setContent(checkPolicyMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 3 items. A policy, trusted cert and revocation policy", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. A folder, a policy, trusted cert and revocation policy", 4, bundleItem.getContent().getMappings().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, passwordMapping.getActionTaken());
+            Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + targetRevCheckItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            mappingsToClean = null;
+        }
+    }
+
+    @Test
+    public void testMigrateRevocationCheckPolicyWithCertificateReferences() throws Exception {
+        // create signer cert
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=revsigner").generate();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Source Signer Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+        RestResponse response = getSourceEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<TrustedCertificateMO> srcTrustedCertSignerItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        srcTrustedCertSignerItem.setContent(trustedCertificateMO);
+
+        // update revocation check policy
+        RevocationCheckingPolicyMO checkPolicyMO = revCheckItem.getContent();
+        RevocationCheckingPolicyItemMO checkItem = checkPolicyMO.getRevocationCheckItems().get(0);
+        checkItem.setTrustedSigners(CollectionUtils.list(srcTrustedCertSignerItem.getId()));
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkResponse(response);
+
+        revCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        revCheckItem.setContent(checkPolicyMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 4 items. A policy, 2 trusted certs and revocation policy", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. A folder, a policy, 2 trusted cert and revocation policy", 5, bundleItem.getContent().getMappings().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
+
+            Mapping signerCertMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), signerCertMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, signerCertMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, signerCertMapping.getActionTaken());
+            Assert.assertEquals(srcTrustedCertSignerItem.getId(), signerCertMapping.getSrcId());
+            Assert.assertEquals(signerCertMapping.getSrcId(), signerCertMapping.getTargetId());
+
+            Mapping passwordMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+
+            response = getSourceEnvironment().processRequest("trustedCertificates/" + srcTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+        }
+    }
+
+    @Test
+    public void testMigrateRevocationCheckPolicyMapCertificateReference() throws Exception {
+        // create signer cert
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=revsigner").generate();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Source Signer Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+        RestResponse response = getSourceEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<TrustedCertificateMO> srcTrustedCertSignerItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        srcTrustedCertSignerItem.setContent(trustedCertificateMO);
+
+        // update revocation check policy
+        RevocationCheckingPolicyMO checkPolicyMO = revCheckItem.getContent();
+        RevocationCheckingPolicyItemMO checkItem = checkPolicyMO.getRevocationCheckItems().get(0);
+        checkItem.setTrustedSigners(CollectionUtils.list(srcTrustedCertSignerItem.getId()));
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkResponse(response);
+
+        revCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        revCheckItem.setContent(checkPolicyMO);
+
+        // create target signer cert
+        certificate = new TestCertificateGenerator().subject("cn=targetrevsigner").generate();
+        trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Target Signer Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+        response = getTargetEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<TrustedCertificateMO> targetTrustedCertSignerItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        targetTrustedCertSignerItem.setContent(trustedCertificateMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 4 items. A policy, 2 trusted certs and revocation policy", 4, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 5 items. A folder, a policy, 2 trusted cert and revocation policy", 5, bundleItem.getContent().getMappings().size());
+
+            // map
+            bundleItem.getContent().getMappings().get(0).setTargetId(targetTrustedCertSignerItem.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
+
+            Mapping signerCertMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), signerCertMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, signerCertMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, signerCertMapping.getActionTaken());
+            Assert.assertEquals(srcTrustedCertSignerItem.getId(), signerCertMapping.getSrcId());
+            Assert.assertEquals(targetTrustedCertSignerItem.getId(), signerCertMapping.getTargetId());
+
+            Mapping passwordMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(4);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+
+            // validate dependency
+            response = getTargetEnvironment().processRequest("policies/"+policyItem.getId()+"/dependencies", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+            assertOkResponse(response);
+            Item<DependencyListMO> dependencyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(3, dependencyItem.getContent().getDependencies().size());
+
+        } finally {
+
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + targetTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+            response = getSourceEnvironment().processRequest("trustedCertificates/" + srcTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+        }
+    }
+
+    @Test
+    public void testMigrateRevocationCheckPolicyMapCircularCertificateReference() throws Exception {
+
+        // update revocation check policy to be circular
+        RevocationCheckingPolicyMO checkPolicyMO = revCheckItem.getContent();
+        RevocationCheckingPolicyItemMO checkItem = checkPolicyMO.getRevocationCheckItems().get(0);
+        checkItem.setTrustedSigners(CollectionUtils.list(trustedCertItem.getId()));
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        RestResponse response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+
+        assertOkResponse(response);
+
+        revCheckItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        revCheckItem.setContent(checkPolicyMO);
+
+        // create target signer cert
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=targetrevsigner").generate();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Target Signer Cert");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+        response = getTargetEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<TrustedCertificateMO> targetTrustedCertSignerItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        targetTrustedCertSignerItem.setContent(trustedCertificateMO);
+
+        try {
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 3 items. A policy, trusted cert and revocation policy", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 items. A folder, a policy, trusted cert and revocation policy", 4, bundleItem.getContent().getMappings().size());
+
+            // map
+            bundleItem.getContent().getMappings().get(1).setTargetId(targetTrustedCertSignerItem.getId());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+
+            Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.REVOCATION_CHECK_POLICY.toString(), passwordMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+            Assert.assertEquals(revCheckItem.getId(), passwordMapping.getSrcId());
+            Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, jdbcMapping.getActionTaken());
+            Assert.assertEquals(trustedCertItem.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(targetTrustedCertSignerItem.getId(), jdbcMapping.getTargetId());
+
+            Mapping rootFolderMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(3);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+
+            // check circular dependency
+            response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+            assertOkResponse(response);
+            Item<RevocationCheckingPolicyMO> migratedTargetRevocationCheckPolicy = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(1,migratedTargetRevocationCheckPolicy.getContent().getRevocationCheckItems().size());
+            RevocationCheckingPolicyItemMO item = migratedTargetRevocationCheckPolicy.getContent().getRevocationCheckItems().get(0);
+            Assert.assertEquals(1,item.getTrustedSigners().size());
+            Assert.assertEquals(targetTrustedCertSignerItem.getId(),item.getTrustedSigners().get(0));
+
+
+        } finally {
+
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + targetTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+            assertOkDeleteResponse(response);
+
+        }
+    }
+
 
     protected String objectToString(Object object) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
