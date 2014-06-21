@@ -179,7 +179,7 @@ public abstract class MigrationTestBase {
     }
 
     @NotNull
-    protected static <O> O getBundleReference(@NotNull final Bundle bundle, @NotNull final String id) {
+    public static <O> O getBundleReference(@NotNull final Bundle bundle, @NotNull final String id) {
         final Item referenceItem = Functions.grepFirst(bundle.getReferences(), new Functions.Unary<Boolean, Item>() {
             @Override
             public Boolean call(Item item) {
@@ -191,7 +191,7 @@ public abstract class MigrationTestBase {
     }
 
     @NotNull
-    protected static Mapping getMapping(@NotNull final Collection<Mapping> mappings, @NotNull final String id) {
+    public static Mapping getMapping(@NotNull final Collection<Mapping> mappings, @NotNull final String id) {
         final Mapping mapping = Functions.grepFirst(mappings, new Functions.Unary<Boolean, Mapping>() {
             @Override
             public Boolean call(Mapping mapping) {

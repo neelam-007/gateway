@@ -7,12 +7,14 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -137,26 +139,26 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
         
         //verify the mappings
         assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-        Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Mapping rootFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), Folder.ROOT_FOLDER_ID.toString());
         assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
         assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
 
-        Mapping idPolicyMapping = mappings.getContent().getMappings().get(1);
+        Mapping idPolicyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyBackedIdentityProviderPolicy.getId());
         assertEquals(EntityType.POLICY.toString(), idPolicyMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, idPolicyMapping.getAction());
         assertEquals(Mapping.ActionTaken.CreatedNew, idPolicyMapping.getActionTaken());
         assertEquals(policyBackedIdentityProviderPolicy.getId(), idPolicyMapping.getSrcId());
         assertEquals(idPolicyMapping.getSrcId(), idPolicyMapping.getTargetId());
 
-        Mapping roleMapping = mappings.getContent().getMappings().get(2);
+        Mapping roleMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), defaultPolicyBackedIdentityProviderRole.getId());
         assertEquals(EntityType.RBAC_ROLE.toString(), roleMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, roleMapping.getAction());
         assertEquals(Mapping.ActionTaken.UsedExisting, roleMapping.getActionTaken());
         assertEquals(defaultPolicyBackedIdentityProviderRole.getId(), roleMapping.getSrcId());
         assertEquals(roleMapping.getSrcId(), roleMapping.getTargetId());
 
-        Mapping idMapping = mappings.getContent().getMappings().get(3);
+        Mapping idMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyBackedIdentityProviderConfig.getId());
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, idMapping.getAction());
         assertEquals(Mapping.ActionTaken.UsedExisting, idMapping.getActionTaken());
@@ -164,7 +166,7 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
         assertEquals(policyBackedIdentityProviderConfig.getId(), idMapping.getSrcId());
         assertEquals(policyBackedIdentityProviderConfig.getId(), idMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(4);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policy.getId());
         assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
@@ -220,24 +222,24 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
 
         //verify the mappings
         assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-        Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Mapping rootFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), Folder.ROOT_FOLDER_ID.toString());
         assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
         assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
 
-        Mapping idPolicyMapping = mappings.getContent().getMappings().get(1);
+        Mapping idPolicyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyBackedIdentityProviderPolicy.getId());
         assertEquals(EntityType.POLICY.toString(), idPolicyMapping.getType());
         assertEquals(Mapping.Action.Ignore, idPolicyMapping.getAction());
         assertEquals(Mapping.ActionTaken.Ignored, idPolicyMapping.getActionTaken());
         assertEquals(policyBackedIdentityProviderPolicy.getId(), idPolicyMapping.getSrcId());
 
-        Mapping roleMapping = mappings.getContent().getMappings().get(2);
+        Mapping roleMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), defaultPolicyBackedIdentityProviderRole.getId());
         assertEquals(EntityType.RBAC_ROLE.toString(), roleMapping.getType());
         assertEquals(Mapping.Action.Ignore, roleMapping.getAction());
         assertEquals(Mapping.ActionTaken.Ignored, roleMapping.getActionTaken());
         assertEquals(defaultPolicyBackedIdentityProviderRole.getId(), roleMapping.getSrcId());
 
-        Mapping idMapping = mappings.getContent().getMappings().get(3);
+        Mapping idMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyBackedIdentityProviderConfig.getId());
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, idMapping.getAction());
         assertEquals(Mapping.ActionTaken.UsedExisting, idMapping.getActionTaken());
@@ -245,7 +247,7 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
         assertEquals(policyBackedIdentityProviderConfig.getId(), idMapping.getSrcId());
         assertEquals(internalProviderId, idMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(4);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policy.getId());
         assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
