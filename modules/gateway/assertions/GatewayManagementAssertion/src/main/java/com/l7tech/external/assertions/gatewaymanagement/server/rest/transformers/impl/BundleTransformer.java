@@ -309,7 +309,6 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      */
     @NotNull
     private Mapping.ErrorType getErrorTypeFromException(@NotNull final Throwable exception) {
-        //TODO: improve exception handling
         if (exception instanceof CannotReplaceDependenciesException) {
             return Mapping.ErrorType.CannotReplaceDependency;
         } else if (exception instanceof TargetNotFoundException || exception instanceof ResourceFactory.ResourceNotFoundException || exception instanceof FindException) {

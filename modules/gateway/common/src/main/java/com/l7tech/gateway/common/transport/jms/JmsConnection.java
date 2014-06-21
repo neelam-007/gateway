@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
@@ -332,6 +333,28 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
             headers.add(new SsgKeyHeader(keyStoreId + ":" + alias, GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), alias, alias));
         }
         return headers.toArray(new SsgKeyHeader[headers.size()]);
+    }
+
+    @Override
+    public void replacePrivateKeyUsed(@org.jetbrains.annotations.NotNull final SsgKeyHeader oldSSGKeyHeader, @org.jetbrains.annotations.NotNull final SsgKeyHeader newSSGKeyHeader) {
+        final Properties properties = properties();
+        if (TibcoEmsConstants.SSL.equals(properties.getProperty(TibcoEmsConstants.TibjmsContext.SECURITY_PROTOCOL)) && properties.getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID) != null) {
+            String alias = properties.getProperty(JmsConnection.PROP_JNDI_SSG_KEY_ALIAS);
+            String keyStoreId = properties.getProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID);
+            if(Goid.equals(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), oldSSGKeyHeader.getKeystoreId()) && alias.equals(oldSSGKeyHeader.getAlias())){
+                properties.setProperty(JmsConnection.PROP_JNDI_SSG_KEY_ALIAS, newSSGKeyHeader.getAlias());
+                properties.setProperty(JmsConnection.PROP_JNDI_SSG_KEYSTORE_ID, newSSGKeyHeader.getKeystoreId().toString());
+            }
+        }
+        if (("com.l7tech.server.transport.jms.prov.MQSeriesCustomizer".equals(properties.getProperty(JmsConnection.PROP_CUSTOMIZER)) || "com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer".equals(properties.getProperty(JmsConnection.PROP_CUSTOMIZER))) && properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID) != null) {
+            String alias = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
+            String keyStoreId = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
+            if(Goid.equals(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId), oldSSGKeyHeader.getKeystoreId()) && alias.equals(oldSSGKeyHeader.getAlias())){
+                properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, newSSGKeyHeader.getAlias());
+                properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, newSSGKeyHeader.getKeystoreId().toString());
+            }
+        }
+        properties(properties);
     }
 
     /**

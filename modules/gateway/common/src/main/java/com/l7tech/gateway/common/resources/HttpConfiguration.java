@@ -1,11 +1,11 @@
 package com.l7tech.gateway.common.resources;
 
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependency;
+import com.l7tech.security.rbac.RbacAttribute;
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
@@ -334,6 +334,16 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
             return new SsgKeyHeader[]{new SsgKeyHeader(getTlsKeystoreGoid() + ":" + getTlsKeystoreAlias(), getTlsKeystoreGoid(), getTlsKeystoreAlias(), getTlsKeystoreAlias())};
         }
         return null;
+    }
+
+    @Override
+    public void replacePrivateKeyUsed(@org.jetbrains.annotations.NotNull final SsgKeyHeader oldSSGKeyHeader, @org.jetbrains.annotations.NotNull final SsgKeyHeader newSSGKeyHeader) {
+        if(getTlsKeystoreAlias() != null) {
+            if(Goid.equals(getTlsKeystoreGoid(), oldSSGKeyHeader.getKeystoreId()) && getTlsKeystoreAlias().equals(oldSSGKeyHeader.getAlias())){
+                setTlsKeystoreGoid(newSSGKeyHeader.getKeystoreId());
+                setTlsKeystoreAlias(newSSGKeyHeader.getAlias());
+            }
+        }
     }
 
     //- PRIVATE

@@ -281,6 +281,16 @@ public class UDDIRegistry extends ZoneableNamedEntityImp implements UsesPrivateK
         return null;
     }
 
+    @Override
+    public void replacePrivateKeyUsed(@org.jetbrains.annotations.NotNull final SsgKeyHeader oldSSGKeyHeader, @org.jetbrains.annotations.NotNull final SsgKeyHeader newSSGKeyHeader) {
+        if(getKeyAlias() != null) {
+            if(Goid.equals(getKeystoreGoid(), oldSSGKeyHeader.getKeystoreId()) && getKeyAlias().equals(oldSSGKeyHeader.getAlias())){
+                setKeystoreGoid(newSSGKeyHeader.getKeystoreId());
+                setKeyAlias(newSSGKeyHeader.getAlias());
+            }
+        }
+    }
+
     public void copyFrom (UDDIRegistry copyFrom){
         this.setGoid(copyFrom.getGoid());
         this.setName(copyFrom.getName());

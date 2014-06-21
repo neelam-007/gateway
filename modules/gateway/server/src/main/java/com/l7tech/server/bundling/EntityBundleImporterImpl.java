@@ -476,7 +476,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         }
 
         //create/save dependent entities
-        beforeCreateOrUpdateEntities(entityContainer, existingEntity);
+        beforeCreateOrUpdateEntities(entityContainer, existingEntity, resourceMapping);
 
         //validate the entity. This should check the entity annotations and see if it contains valid data.
         validate(entityContainer);
@@ -606,11 +606,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param entityContainer The entity container to perform operations on before it is updated or saved.
      * @param existingEntity  The existing entity that this entity will map to. May be null if there is no existing
      *                        entity.
+     * @param replacementMap  The replacement map is a map of EntityHeaders to replace.
      * @throws ObjectModelException
      */
-    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity) throws ObjectModelException {
+    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
         if (entityContainer instanceof JmsContainer) {
             final JmsContainer jmsContainer = ((JmsContainer) entityContainer);
+            //need to replace jms connection dependencies
+            dependencyAnalyzer.replaceDependencies(jmsContainer.getJmsConnection(), replacementMap, false);
             if (existingEntity == null) {
                 //there is no existing jmsConnection so we need to create a new jms connection.
                 final Goid connectionId = (Goid) entityCrud.save(jmsContainer.getJmsConnection());

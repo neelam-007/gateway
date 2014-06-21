@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -39,6 +40,10 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
     private Item<JMSDestinationMO> jmsItem;
     private Item<Mappings> mappingsToClean;
     private Item<StoredPasswordMO> storedPasswordItem2;
+    private Item<PrivateKeyMO> privateKeyItem;
+    private Item<PrivateKeyMO> privateKeyItem2;
+    private Item<PrivateKeyMO> privateKeyItemTarget;
+    private Item<PrivateKeyMO> privateKeyItem2Target;
 
     @Before
     public void before() throws Exception {
@@ -107,6 +112,59 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         storedPasswordItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         storedPasswordItem2.setContent(storedPasswordMO);
 
+        // create private key
+        PrivateKeyCreationContext createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        createPrivateKey.setDn("CN=srcAlias1");
+        createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        response = getSourceEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":srcAlias1", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+        assertOkCreatedResponse(response);
+        privateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        response = getSourceEnvironment().processRequest("privateKeys/"+ privateKeyItem.getId(), HttpMethod.GET,null,"");
+        assertOkResponse(response);
+        privateKeyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        createPrivateKey.setDn("CN=srcAlias2");
+        createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        response = getSourceEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":srcAlias2", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+        assertOkCreatedResponse(response);
+        privateKeyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        response = getSourceEnvironment().processRequest("privateKeys/"+ privateKeyItem2.getId(), HttpMethod.GET,null,"");
+        assertOkResponse(response);
+        privateKeyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        createPrivateKey.setDn("CN=srcAlias1");
+        createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        response = getTargetEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":srcAlias1", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+        assertOkCreatedResponse(response);
+        privateKeyItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        response = getTargetEnvironment().processRequest("privateKeys/"+ privateKeyItemTarget.getId(), HttpMethod.GET,null,"");
+        assertOkResponse(response);
+        privateKeyItemTarget = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        createPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        createPrivateKey.setDn("CN=targetAlias2");
+        createPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        response = getTargetEnvironment().processRequest("privateKeys/"+ new Goid(0,2).toString() + ":targetAlias2", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(createPrivateKey)));
+        assertOkCreatedResponse(response);
+        privateKeyItem2Target = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        response = getTargetEnvironment().processRequest("privateKeys/"+ privateKeyItem2Target.getId(), HttpMethod.GET,null,"");
+        assertOkResponse(response);
+        privateKeyItem2Target = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
         //create jms
         JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetail.setName("Source JMS");
@@ -126,6 +184,12 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         jmsConnection.setContextPropertiesTemplate(CollectionUtils.<String, Object>mapBuilder()
                 .put("com.l7tech.server.jms.prop.hardwired.service.id", serviceItem.getId())
                 .put("java.naming.security.credentials", "${secpass." + storedPasswordItem2.getName() + ".plaintext}")
+                .put("com.l7tech.server.jms.prop.jndi.ssgKeyAlias", privateKeyItem.getContent().getAlias())
+                .put("com.l7tech.server.jms.prop.jndi.ssgKeystoreId", privateKeyItem.getContent().getKeystoreId())
+                .put("com.tibco.tibjms.naming.security_protocol", "ssl")
+                .put("com.l7tech.server.jms.prop.customizer.class", "com.l7tech.server.transport.jms.prov.MQSeriesCustomizer")
+                .put("com.l7tech.server.jms.prop.queue.ssgKeyAlias", privateKeyItem2.getContent().getAlias())
+                .put("com.l7tech.server.jms.prop.queue.ssgKeystoreId", privateKeyItem2.getContent().getKeystoreId())
                 .map());
         JMSDestinationMO jmsMO = ManagedObjectFactory.createJMSDestination();
         jmsMO.setJmsDestinationDetail(jmsDetail);
@@ -199,6 +263,18 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem2.getId(), HttpMethod.DELETE, null, "");
         assertOkDeleteResponse(response);
+
+        response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
+
+        response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem2.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
+
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItemTarget.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
+
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem2Target.getId(), HttpMethod.DELETE, null, "");
+        assertOkDeleteResponse(response);
     }
 
     @Test
@@ -213,6 +289,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -223,7 +300,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
         Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
         Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -244,6 +321,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
         Assert.assertEquals(securePass2Mapping.getSrcId(), securePass2Mapping.getTargetId());
+
+        Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+        Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+        Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+        Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
         Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
@@ -267,20 +358,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(4, policyDependencies.size());
+        Assert.assertEquals(6, policyDependencies.size());
 
         DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(jmsDependency);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
         Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
         Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
-        Assert.assertEquals(3, jmsDependency.getDependencies().size());
+        Assert.assertEquals(5, jmsDependency.getDependencies().size());
 
         validate(mappings);
     }
 
     @Test
-    public void testMapToExistingJMSCert() throws Exception {
+    public void testMapToExistingJMS() throws Exception {
         //create the jms on the target
         JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
         jmsDetail.setName("Target JMS");
@@ -318,6 +409,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setAction(Mapping.Action.Ignore);
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setAction(Mapping.Action.Ignore);
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -329,7 +421,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
             Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -348,6 +440,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals(Mapping.Action.Ignore, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.Ignored, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+            Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+            Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+            Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
             Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
@@ -409,6 +515,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         //import the bundle
         logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -420,7 +527,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+        Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
         Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
         Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -439,6 +546,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
         Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+        Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+        Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+        Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+        Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
         Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
@@ -469,14 +590,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
         Assert.assertNotNull(policyDependencies);
-        Assert.assertEquals(4, policyDependencies.size());
+        Assert.assertEquals(6, policyDependencies.size());
 
         DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
         Assert.assertNotNull(jmsDependency);
         Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
         Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
         Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
-        Assert.assertEquals(3, jmsDependency.getDependencies().size());
+        Assert.assertEquals(5, jmsDependency.getDependencies().size());
 
         validate(mappings);
     }
@@ -522,6 +643,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.NewOrUpdate);
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -533,7 +655,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
             Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -552,6 +674,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+            Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+            Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+            Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
             Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
@@ -582,14 +718,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(4, policyDependencies.size());
+            Assert.assertEquals(6, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsItem.getId());
             Assert.assertNotNull(jmsDependency);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
             Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
             Assert.assertEquals(jmsItem.getId(), jmsDependency.getId());
-            Assert.assertEquals(3, jmsDependency.getDependencies().size());
+            Assert.assertEquals(5, jmsDependency.getDependencies().size());
 
             validate(mappings);
         }finally{
@@ -638,6 +774,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         try{
             //import the bundle
@@ -650,7 +787,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
             Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -669,6 +806,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+            Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+            Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+            Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
             Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());
@@ -699,14 +850,14 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
 
             Assert.assertNotNull(policyDependencies);
-            Assert.assertEquals(4, policyDependencies.size());
+            Assert.assertEquals(6, policyDependencies.size());
 
             DependencyMO jmsDependency = getDependency(policyDependencies,jmsMO.getId());
             Assert.assertNotNull(jmsDependency);
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsDependency.getType());
             Assert.assertEquals(jmsItem.getName(), jmsDependency.getName());
             Assert.assertEquals(jmsMO.getId(), jmsDependency.getId());
-            Assert.assertEquals(3, jmsDependency.getDependencies().size());
+            Assert.assertEquals(5, jmsDependency.getDependencies().size());
 
             // check jms object, associated jms connection is updated and not creating a new one.
             response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsMO.getId(), HttpMethod.GET, null, "");
@@ -763,6 +914,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
             //import the bundle
             logger.log(Level.INFO, objectToString(bundleItem.getContent()));
@@ -774,7 +926,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             mappingsToClean = mappings;
 
             //verify the mappings
-            Assert.assertEquals("There should be 6 mappings after the import", 6, mappings.getContent().getMappings().size());
+            Assert.assertEquals("There should be 8 mappings after the import", 8, mappings.getContent().getMappings().size());
             Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
             Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceMapping.getAction());
@@ -793,6 +945,20 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             Assert.assertEquals(Mapping.Action.NewOrExisting, securePass2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, securePass2Mapping.getActionTaken());
             Assert.assertEquals(storedPasswordItem.getId(), securePass2Mapping.getSrcId());
+
+            Mapping privateKeyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKeyMapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+            Assert.assertEquals(privateKeyMapping.getSrcId(), privateKeyMapping.getTargetId());
+
+            Mapping privateKey2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), privateKeyItem2.getId());
+            Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKey2Mapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, privateKey2Mapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, privateKey2Mapping.getActionTaken());
+            Assert.assertEquals(privateKeyItem2.getId(), privateKey2Mapping.getSrcId());
+            Assert.assertEquals(privateKeyItem2Target.getId(), privateKey2Mapping.getTargetId());
 
             Mapping jmsMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), jmsItem.getId());
             Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), jmsMapping.getType());

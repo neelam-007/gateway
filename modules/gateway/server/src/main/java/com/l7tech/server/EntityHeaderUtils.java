@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -116,6 +117,11 @@ public final class EntityHeaderUtils {
         } else if (e instanceof GenericEntity) {
             final GenericEntity genericEntity = (GenericEntity) e;
             return new GenericEntityHeader(genericEntity);
+        } else if (e instanceof SsgKeyEntry) {
+            final SsgKeyEntry ssgKeyEntry = (SsgKeyEntry)e;
+            final SsgKeyHeader ssgKeyHeader = new SsgKeyHeader(ssgKeyEntry.getId(), ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias(), ssgKeyEntry.getName());
+            ssgKeyHeader.setSecurityZoneId(ssgKeyEntry.getSecurityZone() == null ? null : ssgKeyEntry.getSecurityZone().getGoid());
+            return ssgKeyHeader;
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             EntityHeader entityHeader = new EntityHeader(entity.getGoid(),

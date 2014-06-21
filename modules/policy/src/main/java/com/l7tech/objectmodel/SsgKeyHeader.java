@@ -3,13 +3,13 @@ package com.l7tech.objectmodel;
 /**
  * @author jbufu
  */
-public class SsgKeyHeader extends EntityHeader {
+public class SsgKeyHeader extends ZoneableEntityHeader {
 
     private Goid keystoreId;
     private String alias;
 
     public SsgKeyHeader(String id, Goid keystoreId, String alias, String name) {
-        super(id, EntityType.SSG_KEY_ENTRY, name, "");
+        super(id, EntityType.SSG_KEY_ENTRY, name, "", null);
         this.keystoreId = keystoreId;
         this.alias = alias;
     }

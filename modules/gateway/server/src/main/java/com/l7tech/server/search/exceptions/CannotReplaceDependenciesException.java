@@ -9,6 +9,10 @@ public class CannotReplaceDependenciesException extends Exception {
     private static final String exceptionMessageSimple = "Cannot replace dependency of type '%1$s'. %2$s";
     private static final String exceptionMessage = "Cannot replace dependency '%1$s' of type '%2$s' on object '%3$s'. Replacement dependency id: %4$s. %5$s";
 
+    public CannotReplaceDependenciesException(Class dependencyType, String reason){
+        super(String.format(exceptionMessageSimple, dependencyType.getSimpleName(), reason));
+    }
+
     public CannotReplaceDependenciesException(Class dependencyType, String reason, Throwable throwable){
         super(String.format(exceptionMessageSimple, dependencyType.getSimpleName(), reason), throwable);
     }

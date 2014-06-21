@@ -20,7 +20,6 @@ import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.Functions;
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,7 +76,7 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                     }
                 }, new ProcessSsgKeyHeader<FindException>() {
                     @Override
-                    public void process(@NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, FindException {
+                    public void process(@NotNull final UsesPrivateKeys usesPrivateKeys, @NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, FindException {
                         //find and process ssg key store dependencies.
                         final Entity keyEntry = loadEntity(ssgKeyHeader);
                         final Dependency dependency = finder.getDependency(keyEntry);
@@ -361,13 +360,14 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                         }
                     }, new ProcessSsgKeyHeader<CannotReplaceDependenciesException>() {
                         @Override
-                        public void process(@NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
+                        public void process(@NotNull final UsesPrivateKeys usesPrivateKeys, @NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
                             //replace private key dependencies
-                            final DependentObject dependentObject = finder.createDependentObject(ssgKeyHeader);
-                            final EntityHeader mappedHeader = findMappedHeader(replacementMap, ((DependentEntity) dependentObject).getEntityHeader());
+                            final EntityHeader mappedHeader = findMappedHeader(replacementMap, ssgKeyHeader);
                             if (mappedHeader != null) {
-                                //TODO: need a way to set the private keys used.
-                                throw new NotImplementedException();
+                                if(!(mappedHeader instanceof SsgKeyHeader)){
+                                    throw new CannotReplaceDependenciesException(usesPrivateKeys.getClass(), "Attempting to replace ssg key but mapped header in not an SsgKeyHeader.");
+                                }
+                                usesPrivateKeys.replacePrivateKeyUsed(ssgKeyHeader, (SsgKeyHeader)mappedHeader);
                             }
                         }
                     });
@@ -434,7 +434,7 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         if (object instanceof UsesPrivateKeys && ((UsesPrivateKeys) object).getPrivateKeysUsed() != null) {
             for (final SsgKeyHeader keyHeader : ((UsesPrivateKeys) object).getPrivateKeysUsed()) {
                 if (keyHeader != null) {
-                    processSsgKeyHeader.process(keyHeader);
+                   processSsgKeyHeader.process((UsesPrivateKeys) object, keyHeader);
                 }
             }
         }
@@ -469,11 +469,12 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
         /**
          * process an ssg key header.
          *
+         * @param usesPrivateKeys The object that uses the private keys.
          * @param ssgKeyHeader The ssg key header to process
          * @throws CannotRetrieveDependenciesException
          * @throws T
          */
-        void process(@NotNull SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, T;
+        void process(UsesPrivateKeys usesPrivateKeys, @NotNull SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, T;
     }
 
     /**

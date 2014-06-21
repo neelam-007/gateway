@@ -233,6 +233,19 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
             }
         }
 
-        //TODO: replace in PrivateKeyable assertions.
+        if (assertion instanceof PrivateKeyable) {
+            final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
+            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
+                final SsgKeyHeader privateKeyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
+                EntityHeader mappedHeader = findMappedHeader(replacementMap, privateKeyHeader);
+                if(mappedHeader != null) {
+                    if(!(mappedHeader instanceof SsgKeyHeader)){
+                        throw new CannotReplaceDependenciesException(assertion.getClass(), "Attempting to replace ssg key but mapped header in not an SsgKeyHeader.");
+                    }
+                    privateKeyable.setNonDefaultKeystoreId(((SsgKeyHeader)mappedHeader).getKeystoreId());
+                    privateKeyable.setKeyAlias(((SsgKeyHeader)mappedHeader).getAlias());
+                }
+            }
+        }
     }
 }

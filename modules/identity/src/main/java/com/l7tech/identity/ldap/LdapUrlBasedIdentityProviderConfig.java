@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.util.GoidUpgradeMapper;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
@@ -92,5 +93,16 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
             return new SsgKeyHeader[]{new SsgKeyHeader(keystoreId + ":" + getKeyAlias(), keystoreId, getKeyAlias(), getKeyAlias())};
         }
         return null;
+    }
+
+    @Override
+    public void replacePrivateKeyUsed(@NotNull final SsgKeyHeader oldSSGKeyHeader, @NotNull final SsgKeyHeader newSSGKeyHeader) {
+        if (isClientAuthEnabled()) {
+            final Goid keystoreId = getKeystoreId() == null ? PersistentEntity.DEFAULT_GOID : getKeystoreId();
+            if(Goid.equals(keystoreId, oldSSGKeyHeader.getKeystoreId()) && getKeyAlias().equals(oldSSGKeyHeader.getAlias())){
+                setKeystoreId(newSSGKeyHeader.getKeystoreId());
+                setKeyAlias(newSSGKeyHeader.getAlias());
+            }
+        }
     }
 }
