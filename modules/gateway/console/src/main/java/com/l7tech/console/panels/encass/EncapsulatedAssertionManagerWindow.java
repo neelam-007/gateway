@@ -49,6 +49,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,12 +84,12 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         Utilities.enableGrayOnDisabled(removeButton, propertiesButton);
 
         eacTableModel = TableUtil.configureTable(eacTable,
-            column(" ", 25, 25, 25, iconFinder(), Icon.class),
-            column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionConfig.class, "name")),
-            column("Palette Folder", 25, 165, 99999, paletteFolderFinder()),
-            column("Policy Name", 25, 140, 99999, policyNameFinder()),
-            column("In", 30, 30, 50, inputsFinder()),
-            column("Out", 30, 30, 50, outputsFinder()));
+                column(" ", 25, 25, 25, iconFinder(), Icon.class),
+                column("Name", 30, 140, 99999, propertyTransform(EncapsulatedAssertionConfig.class, "name")),
+                column("Palette Folder", 25, 165, 99999, paletteFolderFinder()),
+                column("Policy Name", 25, 140, 99999, policyNameFinder()),
+                column("In", 30, 30, 50, inputsFinder()),
+                column("Out", 30, 30, 50, outputsFinder()));
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
 
@@ -102,7 +103,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                final EncapsulatedAssertionConfig selected = getSelectedConfig();
+                final EncapsulatedAssertionConfig selected = getFirstSelectedConfig();
                 if (selected != null) {
                     final EncapsulatedAssertionConfig clone = selected.getCopy();
                     clone.setGuid(null);
@@ -116,7 +117,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         propertiesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final EncapsulatedAssertionConfig config = getSelectedConfig();
+                final EncapsulatedAssertionConfig config = getFirstSelectedConfig();
                 if (config != null)
                     doProperties(config, false);
             }
@@ -125,32 +126,30 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final EncapsulatedAssertionConfig config = getSelectedConfig();
-                if (config == null)
+                final Collection<EncapsulatedAssertionConfig> selected = getAllSelectedConfigs();
+                if (selected.isEmpty())
                     return;
 
-                final String msg = "Are you sure you wish to delete the encapsulated assertion configuration " + config.getName() + "?" +
-                        " Any existing policies that make use of this assertion will become invalid.";
                 DialogDisplayer.showSafeConfirmDialog(
-                    EncapsulatedAssertionManagerWindow.this,
-                        WordUtils.wrap(msg, DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
-                    "Confirm Remove Encapsulated Assertion",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE,
-                    new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (option == JOptionPane.YES_OPTION)
-                                doDeleteEncapsulatedAssertionConfig(config);
-                        }
-                    });
+                        EncapsulatedAssertionManagerWindow.this,
+                        WordUtils.wrap(createDeleteConfirmationMsg(selected), DeleteEntityNodeAction.LINE_CHAR_LIMIT, null, true),
+                        "Confirm Remove Encapsulated Assertion",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE,
+                        new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if (option == JOptionPane.YES_OPTION)
+                                    doDeleteEncapsulatedAssertionConfigs(selected);
+                            }
+                        });
             }
         });
 
         exportButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final EncapsulatedAssertionConfig config = getSelectedConfig();
+                final EncapsulatedAssertionConfig config = getFirstSelectedConfig();
                 if (config != null)
                     doExport(config);
             }
@@ -163,6 +162,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             }
         });
 
+        eacTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         eacTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -173,6 +173,25 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         Utilities.setRowSorter(eacTable, eacTableModel);
         loadEncapsulatedAssertionConfigs(false);
         enableOrDisable();
+    }
+
+    private String createDeleteConfirmationMsg(final Collection<EncapsulatedAssertionConfig> selected) {
+        final StringBuilder sb = new StringBuilder("Are you sure you wish to delete the ");
+        if (selected.size() > 1) {
+            sb.append("selected encapsulated assertion configurations");
+        } else {
+            sb.append("encapsulated assertion configuration ");
+            sb.append(selected.iterator().next().getName());
+        }
+        sb.append("?");
+        sb.append(" Any existing policies that make use of ");
+        if (selected.size() > 1) {
+            sb.append("these assertions ");
+        } else {
+            sb.append("this assertion ");
+        }
+        sb.append("will become invalid.");
+        return sb.toString();
     }
 
     private void doImport() {
@@ -409,7 +428,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
-    private EncapsulatedAssertionConfig getSelectedConfig() {
+    private EncapsulatedAssertionConfig getFirstSelectedConfig() {
         int row = eacTable.getSelectedRow();
         if (row < 0) {
             return null;
@@ -418,8 +437,21 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         return eacTableModel.getRowObject(modelRow);
     }
 
+    private Collection<EncapsulatedAssertionConfig> getAllSelectedConfigs() {
+        final List<EncapsulatedAssertionConfig> selected = new ArrayList<>();
+        final int[] rows = eacTable.getSelectedRows();
+        for (final int row : rows) {
+            final int modelRow = eacTable.convertRowIndexToModel(row);
+            final EncapsulatedAssertionConfig rowObject = eacTableModel.getRowObject(modelRow);
+            if (rowObject != null) {
+                selected.add(rowObject);
+            }
+        }
+        return selected;
+    }
+
     private void enableOrDisable() {
-        final EncapsulatedAssertionConfig selected = getSelectedConfig();
+        final EncapsulatedAssertionConfig selected = getFirstSelectedConfig();
         boolean haveConfig = selected != null;
         removeButton.setEnabled(flags.canDeleteSome() && haveConfig);
         propertiesButton.setEnabled(haveConfig);
@@ -493,7 +525,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             final Collection<EncapsulatedAssertionConfig> configs = Registry.getDefault().getEncapsulatedAssertionAdmin().findAllEncapsulatedAssertionConfigs();
             EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
             iconCache.clear();
-            eacTableModel.setRows(new ArrayList<EncapsulatedAssertionConfig>(configs));
+            eacTableModel.setRows(new ArrayList<>(configs));
             if (updateLocalRegistry) {
                 final EncapsulatedAssertionRegistry encapsulatedAssertionRegistry = TopComponents.getInstance().getEncapsulatedAssertionRegistry();
                 encapsulatedAssertionRegistry.replaceAllRegisteredConfigs(configs);
@@ -503,9 +535,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
     }
 
-    private void doDeleteEncapsulatedAssertionConfig(EncapsulatedAssertionConfig config) {
+    private void doDeleteEncapsulatedAssertionConfigs(final Collection<EncapsulatedAssertionConfig> configs) {
         try {
-            Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getGoid());
+            for (final EncapsulatedAssertionConfig config : configs) {
+                Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getGoid());
+            }
             loadEncapsulatedAssertionConfigs(true);
         } catch (FindException e1) {
             showError("Unable to delete encapsulated assertion config", e1);
