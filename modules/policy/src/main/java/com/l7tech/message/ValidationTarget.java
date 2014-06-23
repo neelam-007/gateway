@@ -55,22 +55,10 @@ public enum ValidationTarget {
                 return new Element[]{doc.getDocumentElement()};
             }
         }
-    },
-
-    STREAM( false, true ) {
-        @Override
-        public Element[] elementsToValidate( Document doc ) throws InvalidDocumentFormatException {
-            throw new IllegalStateException( "Should not have tried to use DOM-based validation for streaming validation request" );
-        }
-    }
-    ;
+    };
 
     public boolean isAttemptHardware() {
         return attemptHardware;
-    }
-
-    public boolean isUseStreamingMode() {
-        return useStreamingMode;
     }
 
     /**
@@ -81,15 +69,9 @@ public enum ValidationTarget {
     // - PRIVATE
 
     private boolean attemptHardware;
-    private boolean useStreamingMode;
 
     private ValidationTarget(boolean attemptHardware) {
-        this( attemptHardware, false );
-    }
-
-    private ValidationTarget( boolean attemptHardware, boolean useStreamingMode ) {
         this.attemptHardware = attemptHardware;
-        this.useStreamingMode = useStreamingMode;
     }
 
     private static Element[] getBodyChildren(Document doc) throws InvalidDocumentFormatException {

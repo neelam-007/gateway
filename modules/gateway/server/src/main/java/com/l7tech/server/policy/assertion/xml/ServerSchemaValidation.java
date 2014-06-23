@@ -202,7 +202,7 @@ public class ServerSchemaValidation
                 try {
                     //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
                     //xmlKnob.getElementCursor() is not needed, but will be used if support for MessageUrlResourceInfo's are allowed in this server assertion.
-                    schemaUrl = resourceGetter.getResource( null , vars );
+                    schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
                     ps = schemaManager.getSchemaByUri( getAudit(), schemaUrl );
                 } catch (IOException e) {
                     logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));

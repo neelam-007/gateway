@@ -78,7 +78,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private JRadioButton rbApplyToBody;
     private JRadioButton rbApplyToArgs;
     private JRadioButton rbApplyToEnvelope;
-    private JRadioButton rbStreamingMode;
     private JButton helpButton;
     private JButton okButton;
     private JButton cancelButton;
@@ -319,7 +318,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         rbApplyToArgs.setSelected(ValidationTarget.ARGUMENTS == target);
         rbApplyToBody.setSelected(ValidationTarget.BODY == target);
         rbApplyToEnvelope.setSelected(ValidationTarget.ENVELOPE == target);
-        rbStreamingMode.setSelected( ValidationTarget.STREAM == target );
 
         AssertionResourceInfo ri = schemaValidationAssertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -917,9 +915,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             schemaValidationAssertion.setValidationTarget(ValidationTarget.BODY);
         else if (rbApplyToEnvelope.isSelected())
             schemaValidationAssertion.setValidationTarget(ValidationTarget.ENVELOPE);
-        else if ( rbStreamingMode.isSelected() ) {
-            schemaValidationAssertion.setValidationTarget( ValidationTarget.STREAM );
-        }
 
         // exit
         changesCommitted = true;
@@ -1217,7 +1212,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         bg.add(rbApplyToEnvelope);
         bg.add(rbApplyToBody);
         bg.add(rbApplyToArgs);
-        bg.add( rbStreamingMode );
     }
 
     /** @return true if the Ok button was pressed and the changes committed successfully. */
