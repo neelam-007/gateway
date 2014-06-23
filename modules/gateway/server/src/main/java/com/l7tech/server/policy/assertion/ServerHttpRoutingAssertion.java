@@ -155,7 +155,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             sslSocketFactory = sslContext.getSocketFactory();
 
             if (assertion.getTlsCipherSuites() != null || assertion.getTlsVersion() != null) {
-                String[] tlsVersions = assertion.getTlsVersion() == null ? null : new String[] {assertion.getTlsVersion()};
+                String[] tlsVersions = assertion.getTlsVersion() == null ? null : assertion.getTlsVersion().trim().split("\\s*,\\s*");
                 String[] tlsCipherSuites = assertion.getTlsCipherSuites() == null ? null : assertion.getTlsCipherSuites().trim().split("\\s*,\\s*");
                 sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
             }

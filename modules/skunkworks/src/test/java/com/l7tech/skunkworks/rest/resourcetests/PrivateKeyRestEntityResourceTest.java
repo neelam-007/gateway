@@ -22,8 +22,8 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 import junit.framework.Assert;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
@@ -548,7 +548,7 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     @Test
     public void importKey() throws Exception {
         PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
-        privateKeyImportContext.setPkcs12Data(IOUtils.toByteArray(this.getClass().getResourceAsStream("testkey.p12")));
+        privateKeyImportContext.setPkcs12Data( IOUtils.slurpStream( this.getClass().getResourceAsStream( "testkey.p12" ) ));
         privateKeyImportContext.setPassword("");
         privateKeyImportContext.setAlias("testkey");
 
@@ -561,7 +561,7 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     @Test
     public void importKeyWithoutSpecifyingAlias() throws Exception {
         PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
-        privateKeyImportContext.setPkcs12Data(IOUtils.toByteArray(this.getClass().getResourceAsStream("testkey.p12")));
+        privateKeyImportContext.setPkcs12Data(IOUtils.slurpStream(this.getClass().getResourceAsStream("testkey.p12")));
         privateKeyImportContext.setPassword("");
 
         String importId = defaultKeystoreId.toString() + ":importtest";
@@ -573,7 +573,7 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     @Test
     public void importKeyExistingFail() throws Exception {
         PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
-        privateKeyImportContext.setPkcs12Data(IOUtils.toByteArray(this.getClass().getResourceAsStream("testkey.p12")));
+        privateKeyImportContext.setPkcs12Data(IOUtils.slurpStream(this.getClass().getResourceAsStream("testkey.p12")));
         privateKeyImportContext.setPassword("");
         privateKeyImportContext.setAlias("testkey");
 
@@ -587,7 +587,7 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
     @Test
     public void importKeyBadPasswordFail() throws Exception {
         PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
-        privateKeyImportContext.setPkcs12Data(IOUtils.toByteArray(this.getClass().getResourceAsStream("testkey.p12")));
+        privateKeyImportContext.setPkcs12Data(IOUtils.slurpStream(this.getClass().getResourceAsStream("testkey.p12")));
         privateKeyImportContext.setPassword("badPassword");
         privateKeyImportContext.setAlias("testkey");
 

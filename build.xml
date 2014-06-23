@@ -561,7 +561,6 @@
                 <propertyref name="module.build.output"/>
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
-                <propertyref prefix="build.em.version"/>
                 <propertyref prefix="build.api.version"/>
                 <propertyref name="build.timestamp"/>
                 <propertyref name="install.build.number"/>
@@ -723,9 +722,7 @@
             <param name="idea.pcconfig.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Controller&quot;"/>
             <param name="idea.client.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.esm.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.server.log.console=true -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.development=true"/>
             <param name="idea.controller.home" expression="${dev.deploy.dir}/Controller"/>
-            <param name="idea.esm.home" expression="${dev.deploy.dir}/EnterpriseManager"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
         <echo level="info">Generation complete.</echo>
@@ -1101,9 +1098,6 @@
         <ivy:resolve file="modules/xmlvpnclient/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="xmlvpnclient_dependencies.html" graph="false"/>
 
-        <ivy:resolve file="modules/ems/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
-        <ivy:report todir="${build.reports}/ivy" outputpattern="ems_dependencies.html" graph="false"/>
-
         <ivy:resolve file="modules/gateway/config/ivy.xml" conf="default" showprogress="false" log="quiet" checkIfChanged="false"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_config_dependencies.html" graph="false"/>
 
@@ -1120,7 +1114,6 @@
                         <li><a href="gateway_dependencies.html">Gateway</a></li>
                         <li><a href="manager_dependencies.html">Manager</a></li>
                         <li><a href="xmlvpnclient_dependencies.html">XML VPN Client</a></li>
-                        <li><a href="ems_dependencies.html">Enterprise Service Manager</a></li>
                         <li><a href="gateway_config_dependencies.html">Gateway Configuration Client</a></li>
                         <li><a href="gateway_processcontroller_dependencies.html">Gateway Process Controller</a></li>
                     </ul>
@@ -1350,7 +1343,7 @@
 
     <target name="package.extras" depends="zip.api, package.gatewaymanagementclient"/>
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.em, package.em.config, package.ssgbackup.zip"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.backuprestore, package.gateway, package.modules, pack.manager, package.ssgbackup.zip"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1368,9 +1361,8 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em, package.readversion.api">
+    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.api">
         <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}-${build.version.revision}]</echo>
-        <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}-${build.em.version.revision}]</echo>
         <echo level="info">Build is using API version: "${build.api.version}" [${build.api.rpmversion}-${build.api.version.revision}]</echo>
     </target>
     <target name="package.readlocal">
@@ -1387,17 +1379,6 @@
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
         <property name="build.rpmversion" value="${build.version}"/>
     </target>
-    <target name="package.readversion.em" unless="build.em.version" depends="package.defaultemrpmversion">
-        <!-- Set properties to keep IDEA happy -->
-        <property name="build.em.version.major" value=""/>
-        <property name="build.em.version.minor" value=""/>
-        <property name="build.em.version.subminor" value=""/>
-        <property name="build.em.version.label" value=""/>
-        <property name="build.em.version.revision" value=""/>
-
-        <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
-        <property name="build.em.rpmversion" value="${build.em.version}"/>
-    </target>
     <target name="package.readversion.api" unless="build.api.version" depends="package.defaultapirpmversion">
         <!-- Set properties to keep IDEA happy -->
         <property name="build.api.version.major" value=""/>
@@ -1411,9 +1392,6 @@
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
         <property name="build.rpmversion" value="${build.version}"/>        
-    </target>
-    <target name="package.defaultemrpmversion" if="build.em.version" unless="build.em.rpmversion">
-        <property name="build.em.rpmversion" value="${build.em.version}"/>        
     </target>
     <target name="package.defaultapirpmversion" if="build.api.version" unless="build.api.rpmversion">
         <property name="build.api.rpmversion" value="${build.api.version}"/>
@@ -1561,7 +1539,7 @@
     <!--
       Deploy all server applications for development
     -->
-    <target name="deploy-all" description="Deploy server applications for development (run with ./run.sh gateway, etc)" depends="deploy, deploy-controller, deploy-esm"/>
+    <target name="deploy-all" description="Deploy server applications for development (run with ./run.sh gateway, etc)" depends="deploy, deploy-controller"/>
 
     <!--
       Deploy SSG for development
@@ -1610,13 +1588,6 @@
     <target name="deploy-controller" description="Deploy a development Process Controller (run with ./run.sh controller)" depends="deploy-controller-init,deploy-controller-config"/>
     <!-- Deprecated deployment target -->
     <target name="deploycontroller" depends="deploy-controller"/>
-
-    <!--
-      Deploy ESM for development
-    -->
-    <target name="deploy-esm" description="Deploy a development ESM (run with ./run.sh esm)" depends="package.gateway.ifrequired, init-install-macros">
-        <install-esm-software dir="${dev.deploy.dir}/EnterpriseManager"/>
-    </target>
 
     <target name="pack.manager" depends="pack.manager.compress"/>
 
@@ -1733,7 +1704,7 @@
     <!--
       Package the SSG if it looks like something changed
     -->
-    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.backuprestore, package.em, package.em.config, package.ssgbackup.zip" unless="package.gateway.notrequired">
+    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.backuprestore, package.ssgbackup.zip" unless="package.gateway.notrequired">
     </target>
 
     <!--
@@ -1765,23 +1736,6 @@
             </fileset>
         </copy>
         <copy file="modules/gateway/server/build/layer7-gateway-server.jar" tofile="${build.dir}/gateway/Gateway.jar"/>
-    </target>
-
-    <!--
-      Package the Enterprise Manager (JAR).
-    -->
-    <target name="package.em" depends="package.jars" unless="ssg.only">
-        <!-- packaging gateway libs -->
-        <mkdir dir="${build.dir}/enterprisemanager/lib"/>
-        <delete>
-            <fileset dir="${build.dir}/enterprisemanager/lib" includes="layer7-*"/>
-        </delete>
-        <copy todir="${build.dir}/enterprisemanager/lib">
-            <fileset dir="modules/ems/build/dependency">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
-        <copy file="modules/ems/build/layer7-ems.jar" tofile="${build.dir}/enterprisemanager/EnterpriseManager.jar"/>
     </target>
 
     <target name="package.modules" depends="package.jars, package.modules.work"/>
@@ -2096,7 +2050,7 @@
     <!-- comment out package.installgateway.work.nsis depends item, bug 3703, as Gateway exe not supported post-3.7 -->
     <!-- target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.nsis, package.installgateway.work.rpm"/ -->
 
-    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.rpm, package.em.tar, package.installem.work.rpm"/>
+    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.rpm"/>
     
     <!--
       Build the SSG windows installer
@@ -2246,38 +2200,6 @@
         <rpm specFile="ssg-security.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
     </target>
 
-    <!--
-      Create the Enterprise Manager RPM
-    -->
-    <target name="package.installem.work.rpm.check" if="makerpm.enabled" depends="init">
-        <available property="package.installem.work.rpm.sourceavailable" file="${emtarball}"/>
-    </target>
-    <target name="package.installem.work.rpm.core" depends="package.installem.work.rpm.check, package.readversion, package.checkrelease" if="package.installem.work.rpm.sourceavailable">
-        <!-- create directories -->
-        <mkdir dir="${build.rpm}/BUILD"/>
-        <mkdir dir="${build.rpm}/RPMS"/>
-        <mkdir dir="${build.rpm}/SOURCES"/>
-        <mkdir dir="${build.rpm}/SPECS"/>
-        <mkdir dir="${build.rpm}/SRPMS"/>
-
-        <!-- build -->
-        <property name="build.release" value=""/>
-        <property name="package.installem.work.rpmspec" value="etc/enterprisemanager/ssem.spec"/>
-        <echo level="info">Using spec file : ${package.installem.work.rpmspec}</echo>
-        <echo level="info">Using source TGZ: ${emtarball}</echo>
-        <copy file="${emtarball}" tofile="${build.rpm}/SOURCES/ssem.tar.gz"/>
-        <copy file="${package.installem.work.rpmspec}" todir="${build.rpm}/SPECS">
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.em.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.em.version.revision}${build.release}" flags="m"/>
-                </tokenfilter>
-            </filterchain>
-        </copy>
-
-        <rpm specFile="ssem.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
-    </target>
-
     <target name="securityrpm" depends="package.installgateway.work.rpm.stig">
         <move todir="${dist.dir}" flatten="true">
             <fileset dir="${build.rpm}/RPMS">
@@ -2313,13 +2235,6 @@
     -->
     <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.i386, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
-    </target>
-
-    <!--
-      Create the Enterprise Manager RPM
-    -->
-    <target name="package.installem.work.rpm" depends="package.installem.work.rpm.core" if="makerpm.enabled">
-        <echo level="info">Enterprise Manager RPM build completed.</echo>
     </target>
 
     <target name="clean.ssgbackup.zip" description="Clean the ${build.dir}/gatewayconfig/SSGBackup.zip file">
@@ -3376,44 +3291,6 @@
             </sequential>
         </macrodef>
 
-        <!--
-          Macro to install ESM software files under the given directory
-        -->
-        <macrodef name="install-esm-software">
-            <attribute name="dir" default="${install.src.esm}"/>
-            <sequential>
-                <echo>Making ESM directories...</echo>
-
-                <!-- create directory structure for tar -->
-                <mkdir dir="@{dir}/${install.src.esm.base}"/>
-                <mkdir dir="@{dir}/${install.src.esm.bin}"/>
-                <mkdir dir="@{dir}/${install.src.esm.etc}"/>
-                <mkdir dir="@{dir}/${install.src.esm.lib}"/>
-                <mkdir dir="@{dir}/${install.src.esm.logs}"/>
-                <mkdir dir="@{dir}/${install.src.esm.db}"/>
-                <mkdir dir="@{dir}/${install.src.esm.web}"/>
-                <mkdir dir="@{dir}/${install.src.esm.config}"/>
-
-                <!-- copy files to install locations -->
-                <copy file="${src.root}/etc/enterprisemanager/enterprisemanager.sh" todir="@{dir}/${install.src.esm.bin}"/>
-                <copy file="${build.dir}/enterprisemanager/EnterpriseManager.jar" todir="@{dir}/${install.src.esm.base}"/>
-                <copy todir="@{dir}/${install.src.esm.lib}">
-                    <fileset dir="${build.dir}/enterprisemanager/lib"/>
-                </copy>
-                <copy todir="@{dir}/${install.src.esm.config}">
-                    <fileset dir="${build.dir}/emsconfigwizard"/>
-                </copy>
-                <copy file="${src.root}/etc/enterprisemanager/logging.template.properties" tofile="@{dir}/${install.src.esm.etc}/logging.properties"/>
-                <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.esm.etc}/omp.dat"/>
-
-                <!-- help files -->
-                <unzip src="${src.root}/webhelp/esm/help.zip"
-                       dest="@{dir}/${install.src.esm.web}"/>
-                <!-- allow for inconsistently named ESM help directory -->
-                <move file="@{dir}/${install.src.esm.web}/WebHelp"
-                      tofile="@{dir}/${install.src.esm.web}/help" failonerror="false"/>
-            </sequential>
-        </macrodef>
     </target>
 
     <!--
@@ -3533,57 +3410,6 @@
         </tar>
     </target>
 
-    <!-- Create the TAR used when building the Enterprise Manager -->
-    <target name="package.em.tar" depends="package.em.config" if="ssg.install.enabled">
-        <echo level="info">Creating Enterprise Manager Build Tar ...</echo>
-
-        <!-- ESM Appliance integration -->
-        <mkdir dir="${install.src.esmapp}/etc/init.d"/>
-        <copy file="${src.root}/etc/enterprisemanager/ssem-initd" tofile="${install.src.esmapp}/etc/init.d/ssem"/>
-        
-        <!-- ESM Software -->
-        <install-esm-software/>
-
-        <!-- package -->
-        <property name="emtarball" value="${build.dir}/enterprisemanager-b${install.build.number}.tar.gz"/>
-        <tar destfile="${emtarball}" compression="gzip" longfile="gnu">
-            <tarfileset dir="${install.src.esmapp}" username="root" group="root" mode="644">
-                <include name="**/*"/>
-            </tarfileset>
-            <tarfileset dir="${install.src.esm}" username="gateway" group="gateway" mode="755" prefix="${install.target.esm}">
-                <include name="**/*.sh"/>
-            </tarfileset>
-            <tarfileset dir="${install.src.esm}" username="gateway" group="gateway" mode="644" prefix="${install.target.esm}">
-                <exclude name="**/*.sh"/>
-            </tarfileset>
-        </tar>
-    </target>
-
-    <target name="package.em.config" unless="ssg.only" depends="package.jars, init-install-macros">
-        <echo level="info">Packaging Enterprise Manager Configuration Client</echo>
-        <mkdir dir="${build.dir}/emsconfigwizard/lib"/>
-
-        <copy todir="${build.dir}/emsconfigwizard">
-            <fileset dir="${src.root}/etc/enterprisemanager">
-                <include name="emconfig.sh"/>
-            </fileset>
-        </copy>
-
-        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-ems-config" showprogress="false" conf="default" log="quiet" checkIfChanged="false"/>
-        <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-ems-config" conf="default" pattern="${build.dir}/emsconfigwizard/lib/[artifact]-[revision].[ext]"/>
-        <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
-        <ivy:findrevision organisation="com.l7tech" module="layer7-ems-config" revision="latest.integration" property="module.ems.config.version"/>
-
-        <jar jarfile="${build.dir}/emsconfigwizard/ConfigWizard.jar">
-            <manifest>
-                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-ems-config-${module.ems.config.version}.jar"/>
-                <attribute name="X-Layer7-Main-Class" value="com.l7tech.ems.config.client.Main"/>
-            </manifest>
-        </jar>
-    </target>
-
     <!--
       Initialization for the pre-official build (set versions, etc)
     -->
@@ -3605,7 +3431,6 @@
         <fail if="die" message="Aborted at user request."/>
 
         <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
-        <input message="Enter EM version number" addproperty="official.build.em.version"/>
         <input message="Enter API version number" addproperty="official.build.api.version"/>
     </target>
     <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init-core,OFFICIAL-build.interactive">
@@ -3627,9 +3452,8 @@
         <property name="build.label" value=""/>
 
         <property name="official.build.version" value="${file.build.version.major}.${file.build.version.minor}.${file.build.version.subminor}${build.label}"/>
-        <property name="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}.${file.build.em.version.subminor}${build.label}"/>
         <property name="official.build.api.version" value="${file.build.api.version.major}.${file.build.api.version.minor}.${file.build.api.version.subminor}${build.label}"/>
-        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
+        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
     </target>
 
     <!--

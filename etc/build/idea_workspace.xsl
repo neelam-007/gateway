@@ -49,7 +49,6 @@
                     <option name="ENABLE_SWING_INSPECTOR" value="false"/>
                     <option name="ENV_VARIABLES"/>
                     <option name="PASS_PARENT_ENVS" value="true"/>
-                    <module name="layer7-ems"/>
                     <envs/>
                     <RunnerSettings RunnerId="Run"/>
                     <ConfigurationWrapper RunnerId="Run"/>

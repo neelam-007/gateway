@@ -13,14 +13,20 @@ import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import org.xml.sax.*;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
+import javax.xml.validation.ValidatorHandler;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -35,6 +41,8 @@ import java.util.logging.Logger;
 
 final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implements TarariSchemaSource {
     private static final Logger logger = Logger.getLogger(CompiledSchema.class.getName());
+
+    private static final String SYSTEM_ID_MESSAGE = "http://layer7tech.com/message"; // Dummy system identifier used to identify errors parsing a message.
 
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
@@ -227,7 +235,6 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
     void validateMessage(Message msg, ValidationTarget validationTarget, SchemaValidationErrorHandler errorHandler) throws NoSuchPartException, IOException, SAXException {
         if (isClosed()) throw new IllegalStateException("CompiledSchema has already been closed");
         TarariSchemaHandler schemaHandler = TarariLoader.getSchemaHandler();
-        boolean isSoap = msg.isSoap();
         TarariKnob tk = msg.getKnob(TarariKnob.class);
         TarariMessageContext tmc = tk == null ? null : tk.getContext();
         boolean tryHardware = true;
@@ -241,10 +248,16 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         final Lock readLock = manager.getReadLock();
         readLock.lock();
         try {
+            if ( validationTarget.isUseStreamingMode() ) {
+                validateMessageWithSAX( msg, errorHandler );
+                return;
+            }
+
             if (tryHardware && isHardwareEligible() && isLoaded() && !loadedAsInclude) {
 
                 // Do it in Tarari
                 try {
+                    boolean isSoap = msg.isSoap();
                     validateMessageWithTarari(schemaHandler, tk, isSoap, tmc, validationTarget);
 
                     // Success
@@ -283,6 +296,44 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
         } finally {
             readLock.unlock();
         }
+    }
+
+    private static final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
+    static {
+        saxParserFactory.setNamespaceAware( true );
+        saxParserFactory.setValidating( false );
+    }
+
+    /**
+     * Assert message first part validates with a SAX streaming validator.
+     * Throws on failure.  Returns normally on success.  Caller must hold read lock.
+     *
+     * @param msg message to validate.  if message is multipart, only first part will be validated.
+     * @param errorHandler error handler for error reporting.
+     */
+    private void validateMessageWithSAX( Message msg, SchemaValidationErrorHandler errorHandler ) throws SAXException, IOException {
+        try {
+            ValidatorHandler validatorHandler = softwareSchema.newValidatorHandler();
+            validatorHandler.setErrorHandler( errorHandler ); // collect validation errors
+
+            final InputSource input = msg.getXmlKnob().getInputSource( false );
+            input.setSystemId( SYSTEM_ID_MESSAGE ); // used to identify parse errors in message
+
+            SAXParser saxParser = saxParserFactory.newSAXParser();
+            XMLReader xmlReader = saxParser.getXMLReader();
+            xmlReader.setFeature( "http://xml.org/sax/features/namespaces", true );
+            xmlReader.setFeature( XmlUtil.XERCES_DISALLOW_DOCTYPE, true );
+            xmlReader.setEntityResolver( XmlUtil.getSafeEntityResolver() );
+            xmlReader.setErrorHandler( XmlUtil.getStrictErrorHandler() ); // fail on parse errors
+            xmlReader.setContentHandler( validatorHandler );
+            xmlReader.parse( input );
+
+        } catch ( ParserConfigurationException e ) {
+            throw new SAXException( "Unable to configure SAX parser: " + ExceptionUtils.getMessage( e ), e );
+        }
+
+        Collection<SAXParseException> errors = errorHandler.recordedErrors();
+        if (!errors.isEmpty()) throw errors.iterator().next();
     }
 
     /**
