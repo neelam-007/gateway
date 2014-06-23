@@ -2,6 +2,7 @@ package com.l7tech.console.panels.encass;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.*;
+import com.l7tech.console.panels.FilterPanel;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.policy.EncapsulatedAssertionRegistry;
 import com.l7tech.console.policy.exporter.ConsoleExternalReferenceFinder;
@@ -44,6 +45,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -69,6 +71,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private JButton cloneButton;
     private JButton importButton;
     private JButton exportButton;
+    private FilterPanel filterPanel;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
     private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
@@ -172,6 +175,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         Utilities.setDoubleClickAction(eacTable, propertiesButton);
         Utilities.setRowSorter(eacTable, eacTableModel);
         loadEncapsulatedAssertionConfigs(false);
+        initFiltering();
         enableOrDisable();
     }
 
@@ -526,6 +530,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
             iconCache.clear();
             eacTableModel.setRows(new ArrayList<>(configs));
+            filterPanel.allowFiltering( eacTableModel.getRowCount() > 0 );
+
             if (updateLocalRegistry) {
                 final EncapsulatedAssertionRegistry encapsulatedAssertionRegistry = TopComponents.getInstance().getEncapsulatedAssertionRegistry();
                 encapsulatedAssertionRegistry.replaceAllRegisteredConfigs(configs);
@@ -583,6 +589,27 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private void handleGenericException(final Exception e) {
         logger.log(Level.WARNING, "Error saving Encapsulated Assertion.", ExceptionUtils.getDebugException(e));
         showError("Error saving Encapsulated Assertion.", null);
+    }
+
+    private void updateFilterCount() {
+        final int visible = eacTable.getRowCount();
+        final int total = eacTableModel.getRowCount();
+        if ( filterPanel.isFiltered() ) {
+            filterPanel.setFilterLabel( "showing " + visible + " of " + total + " items" );
+        } else {
+            filterPanel.setFilterLabel( "Filter on name:" );
+        }
+    }
+
+    private void initFiltering() {
+        filterPanel.registerFilterCallback(new Runnable() {
+            @Override
+            public void run() {
+                updateFilterCount();
+            }
+        });
+        filterPanel.attachRowSorter((TableRowSorter) ( eacTable.getRowSorter() ), new int[] { 1 } );
+        updateFilterCount();
     }
 
     /**
