@@ -97,7 +97,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         // policy alias referencing same policy cannot be in same folder
         try{
             PolicyAlias checkAlias = policyAliasManager.findAliasByEntityAndFolder(toInternalId(policyId), parentFolder.some().getGoid());
-            if( checkAlias != null )
+            if( strict && checkAlias != null )
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolder.some().getName());
         } catch (FindException |InvalidResourceSelectors e) {
             throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Unable to check for existing alias");

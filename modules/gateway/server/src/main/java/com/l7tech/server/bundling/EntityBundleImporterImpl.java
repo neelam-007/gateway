@@ -242,10 +242,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 });
                 if (exception != null) {
                     //update the mapping to contain the exception.
-                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
-                    int index = mappingsRtn.indexOf(results);
-                    mappingsRtn.remove(index);
-                    mappingsRtn.add(index, newResult);
+                    results.makeExceptional(exception);
                 }
             }
         }
@@ -300,16 +297,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 });
                 if (exception != null) {
                     //update the mapping to contain the exception.
-                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
-                    int index = mappingsRtn.indexOf(results);
-                    mappingsRtn.remove(index);
-                    mappingsRtn.add(index, newResult);
+                    results.makeExceptional(exception);
                 }
             }
         }
     }
 
-    private void replacePolicyDependencies(List<EntityMappingResult> mappingsRtn, final Map<EntityHeader, EntityHeader> resourceMapping) {
+    private void replacePolicyDependencies(@NotNull final List<EntityMappingResult> mappingsRtn, final Map<EntityHeader, EntityHeader> resourceMapping) {
         // map dependencies for policies and services
         for (final EntityMappingResult results : mappingsRtn) {
             if (results.getTargetEntityHeader() != null &&
@@ -374,10 +368,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 });
                 if (exception != null) {
                     //update the mapping to contain the exception.
-                    final EntityMappingResult newResult = new EntityMappingResult(results.getSourceEntityHeader(), exception);
-                    int index = mappingsRtn.indexOf(results);
-                    mappingsRtn.remove(index);
-                    mappingsRtn.add(index, newResult);
+                    results.makeExceptional(exception);
                 }
 
             }
@@ -516,22 +507,36 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 //create a policy checkpoint with the new xml
                                 policyVersionManager.checkpointPolicy(policy, false, versionComment, false);
                             } else {
-                                importedID = saveOrUpdateEntity(entityContainer, id, existingEntity);
-                                //add the version comment to the latest policy or service version. In this case activate will always be true
-                                if (versionComment != null && (entityContainer.getEntity() instanceof Policy || entityContainer.getEntity() instanceof PublishedService)) {
-                                    //flush the newly created object so that it can be found by the policyVersionManager.
-                                    transactionStatus.flush();
-                                    final PolicyVersion policyVersion;
-                                    //get the latest policy version. It will be the version just saved or created.
-                                    if (entityContainer.getEntity() instanceof Policy) {
-                                        policyVersion = policyVersionManager.findLatestRevisionForPolicy(((Policy) entityContainer.getEntity()).getGoid());
-                                    } else {
-                                        policyVersion = policyVersionManager.findLatestRevisionForPolicy(((PublishedService) entityContainer.getEntity()).getPolicy().getGoid());
+                                if(policyOrService instanceof PublishedService){
+                                    if(existingEntity == null){
+                                        if(id == null) {
+                                            importedID = serviceManager.save((PublishedService) policyOrService);
+                                        }else{
+                                            serviceManager.save(id,(PublishedService) policyOrService);
+                                            importedID = id;
+                                        }
+                                    }else {
+                                        policyOrService.setGoid(id);
+                                        policyOrService.setVersion(((PublishedService) existingEntity).getVersion());
+                                        serviceManager.update((PublishedService) policyOrService);
+                                        importedID = policyOrService.getGoid();
                                     }
-                                    //update the comment and update the version.
-                                    policyVersion.setName(versionComment);
-                                    policyVersionManager.update(policyVersion);
+                                }else{
+                                    if(existingEntity == null){
+                                        if(id == null) {
+                                            importedID = policyManager.save((Policy) policyOrService);
+                                        }else{
+                                            policyManager.save(id,(Policy) policyOrService);
+                                            importedID = id;
+                                        }
+                                    }else {
+                                        policyOrService.setGoid(id);
+                                        policyOrService.setVersion(((Policy) existingEntity).getVersion());
+                                        policyManager.update((Policy) policyOrService);
+                                        importedID = policyOrService.getGoid();
+                                    }
                                 }
+                                policyVersionManager.checkpointPolicy(policy, true, versionComment, existingEntity == null);
                             }
                         } else {
                             importedID = saveOrUpdateEntity(entityContainer, id, existingEntity);

@@ -1185,4 +1185,36 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Assert.assertEquals("The bundle should have 6 item. A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getReferences().size());
         Assert.assertEquals("The bundle should have 6 mappings.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getMappings().size());
     }
+
+    @Test
+    public void testDoubleImportUpdate() throws Exception {
+        //get the bundle
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "includeRequestFolder=true", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals("The bundle should have 6 item. A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 6 mappings.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getMappings().size());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        // change policy item to update
+        bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrUpdate);
+
+        //import the bundle again
+        response = getTargetEnvironment().processRequest("bundle?activate=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        //import the bundle again
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+    }
 }

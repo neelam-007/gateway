@@ -12,11 +12,11 @@ public class EntityMappingResult {
     @NotNull
     private final EntityHeader sourceEntityHeader;
     @Nullable
-    private final MappingAction mappingAction;
+    private MappingAction mappingAction;
     @Nullable
-    private final EntityHeader targetEntityHeader;
+    private EntityHeader targetEntityHeader;
     @Nullable
-    private final Throwable exception;
+    private Throwable exception;
 
     /**
      * This is a mapping action that was taken on an entity during import
@@ -64,6 +64,17 @@ public class EntityMappingResult {
         this.sourceEntityHeader = sourceEntityHeader;
         this.exception = null;
         this.mappingAction = MappingAction.Ignored;
+        this.targetEntityHeader = null;
+    }
+
+    /**
+     * Make this mapping result represent an unsuccessful mapping.
+     *
+     * @param exception          The throwable exception that occurred attempting to import this source entity
+     */
+    public void makeExceptional(Throwable exception){
+        this.exception = exception;
+        this.mappingAction = null;
         this.targetEntityHeader = null;
     }
 

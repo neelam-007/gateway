@@ -93,9 +93,10 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         // If the most active or most recent PolicyVersion matches then this was a do-nothing policy change
         // and should be ignored (Bug #4569, #10662, SSG-7672)
         PolicyVersion found = findActiveVersionForPolicy(policyGoid);
+        final PolicyVersion latest = findLatestRevisionForPolicy(policyGoid);
         if (found == null) {
             logger.log(Level.WARNING, "Unable to find active version for policy with goid " + policyGoid);
-            found = findLatestRevisionForPolicy( policyGoid );
+            found = latest;
         }
         if ( found!=null ) {
             if ( found.getXml()!=null && found.getXml().equals( newPolicy.getXml() ) ) {
@@ -105,8 +106,8 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
                     deactivateVersions(policyGoid, found.getGoid());
                 }
                 return found;
-            } else if ( ver.getOrdinal() <= found.getOrdinal() ) {
-                ver.setOrdinal( found.getOrdinal() + 1L );
+            } else if ( ver.getOrdinal() <= latest.getOrdinal() ) {
+                ver.setOrdinal( latest.getOrdinal() + 1L );
             }
         }
 
