@@ -274,7 +274,6 @@ public class WorkSpacePanel extends JPanel {
         private final static String EXTRA_SPACES = "    ";  // the spaces for drawing the close-tab icon
         private JLabel tabTitleLabel;   // holds the tab title
         private JComponent component;   // a PolicyEditorPanel or HomePanel object
-        private String title;           // the tab title
 
         TabTitleComponentPanel(final JComponent component) {
             super(new FlowLayout(FlowLayout.CENTER));
@@ -285,20 +284,18 @@ public class WorkSpacePanel extends JPanel {
                 throw new IllegalArgumentException("The component must be specified.");
             }
             this.component = component;
-            title = component.getName();
             initializeComponents();
         }
 
         String getTabTitle() {
-            return title;
+            return tabTitleLabel.getText();
         }
 
         void setTabTitle(String title) {
-            this.title = title;
-            tabTitleLabel.setText(title + EXTRA_SPACES);
+            tabTitleLabel.setText(title);
 
             // Check if the new title has a valid width for displaying
-            validateTabTitleLength(title + EXTRA_SPACES);
+            validateTabTitleLength(title);
         }
 
         JComponent getComponent() {
@@ -307,14 +304,18 @@ public class WorkSpacePanel extends JPanel {
 
         private void initializeComponents() {
             // Add a tab label to display tab title
-            tabTitleLabel = new JLabel(title + EXTRA_SPACES);
+            final String title = component.getName();
+            tabTitleLabel = new JLabel(title);
+
             final Font font = tabTitleLabel.getFont();
             tabTitleLabel.setFont(new Font(font.getName(), Font.BOLD, 12));
             tabTitleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
-            add(tabTitleLabel);
 
-            // This method should be called after tabTitleLabel and tabCloseButton are initialized.
-            validateTabTitleLength(title + EXTRA_SPACES);
+            add(tabTitleLabel);
+            add(new JLabel(EXTRA_SPACES)); // Add one other label holding some extra spaces, where the close-tab icon will be painted if the policy tab is very short.
+
+            // This method should be called after tabTitleLabel is initialized.
+            validateTabTitleLength(title);
         }
 
         /**
@@ -326,12 +327,12 @@ public class WorkSpacePanel extends JPanel {
         private void validateTabTitleLength(String title) {
             final int workspaceWidth = getWorkspaceWidth();
             final FontMetrics metrics = tabTitleLabel.getFontMetrics(tabTitleLabel.getFont());
-            int titleWidth = SwingUtilities.computeStringWidth(metrics, title);
+            int totalWidth = SwingUtilities.computeStringWidth(metrics, title + EXTRA_SPACES);
             boolean changed = false;
 
-            while (titleWidth > workspaceWidth && workspaceWidth > 0 && title.length() >= 12) {
+            while (totalWidth > workspaceWidth && workspaceWidth > 0 && title.length() >= 11) {
                 title = TextUtils.truncStringMiddle(title, title.length() - 6); // Truncate 6 characters every time
-                titleWidth = SwingUtilities.computeStringWidth(metrics, title);
+                totalWidth = SwingUtilities.computeStringWidth(metrics, title + EXTRA_SPACES);
                 changed = true;
             }
 
