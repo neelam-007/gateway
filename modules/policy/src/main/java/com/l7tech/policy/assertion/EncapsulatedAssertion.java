@@ -289,6 +289,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             meta.put(DESCRIPTION, description);
         }
 
+        meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
+
         this.meta = meta;
         return meta;
     }
