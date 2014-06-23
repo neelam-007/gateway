@@ -536,17 +536,23 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     }
 
     private void doDeleteEncapsulatedAssertionConfigs(final Collection<EncapsulatedAssertionConfig> configs) {
+        int numDeleted = 0;
         try {
             for (final EncapsulatedAssertionConfig config : configs) {
                 Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getGoid());
+                numDeleted++;
             }
             loadEncapsulatedAssertionConfigs(true);
-        } catch (FindException e1) {
-            showError("Unable to delete encapsulated assertion config", e1);
-        } catch (DeleteException e1) {
-            showError("Unable to delete encapsulated assertion config", e1);
-        } catch (ConstraintViolationException e1) {
-            showError("Unable to delete encapsulated assertion config", e1);
+        } catch (final Exception e) {
+            if (numDeleted > 0) {
+                loadEncapsulatedAssertionConfigs(true);
+            }
+            if (e instanceof PermissionDeniedException) {
+                // delegate to PermissionDeniedErrorHandler
+                throw (PermissionDeniedException) e;
+            } else {
+                showError("Unable to delete encapsulated assertion config", e);
+            }
         }
     }
 
