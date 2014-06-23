@@ -2,6 +2,7 @@ package com.l7tech.console.panels.policydiff;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
+import com.l7tech.console.util.ScrollPanesSynchronizer;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -16,10 +17,7 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.event.*;
 import java.beans.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -184,8 +182,12 @@ public class AssertionDiffUI {
             }
         });
 
-        leftAssertionXmlScrollPane.getHorizontalScrollBar().setModel(rightAssertionXmlScrollPane.getHorizontalScrollBar().getModel());
-        leftAssertionXmlScrollPane.getVerticalScrollBar().setModel(rightAssertionXmlScrollPane.getVerticalScrollBar().getModel());
+        ScrollPanesSynchronizer synchronizer = new ScrollPanesSynchronizer(leftAssertionXmlScrollPane, rightAssertionXmlScrollPane);
+        leftAssertionXmlScrollPane.getVerticalScrollBar().addAdjustmentListener(synchronizer);
+        leftAssertionXmlScrollPane.getHorizontalScrollBar().addAdjustmentListener(synchronizer);
+        rightAssertionXmlScrollPane.getVerticalScrollBar().addAdjustmentListener(synchronizer);
+        rightAssertionXmlScrollPane.getHorizontalScrollBar().addAdjustmentListener(synchronizer);
+
         leftAssertionNumberScrollPane.getVerticalScrollBar().setModel(rightAssertionXmlScrollPane.getVerticalScrollBar().getModel());
         rightAssertionNumberScrollPane.getVerticalScrollBar().setModel(rightAssertionXmlScrollPane.getVerticalScrollBar().getModel());
 

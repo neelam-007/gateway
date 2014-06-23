@@ -4,6 +4,7 @@ import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.tree.AssertionLineNumbersTree;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.ScrollPanesSynchronizer;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -227,8 +228,12 @@ public class PolicyDiffWindow extends JFrame {
             }
         });
 
-        leftPolicyTreeScrollPane.getHorizontalScrollBar().setModel(rightPolicyTreeScrollPane.getHorizontalScrollBar().getModel());
-        leftPolicyTreeScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
+        ScrollPanesSynchronizer synchronizer = new ScrollPanesSynchronizer(leftPolicyTreeScrollPane, rightPolicyTreeScrollPane);
+        leftPolicyTreeScrollPane.getVerticalScrollBar().addAdjustmentListener(synchronizer);
+        leftPolicyTreeScrollPane.getHorizontalScrollBar().addAdjustmentListener(synchronizer);
+        rightPolicyTreeScrollPane.getVerticalScrollBar().addAdjustmentListener(synchronizer);
+        rightPolicyTreeScrollPane.getHorizontalScrollBar().addAdjustmentListener(synchronizer);
+
         leftAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
         rightAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
 
