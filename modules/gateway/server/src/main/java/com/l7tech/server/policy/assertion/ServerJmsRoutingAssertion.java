@@ -226,8 +226,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             if (cfg!=null) jmsResourceManager.invalidate(cfg);
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
-            String msg = "Caught FindException";
-            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
+            String msg = "Caught FindException: ";
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg + getMessage(e)}, getDebugException(e));
             return AssertionStatus.FAILED;
         } catch ( JmsConfigException e ) {
             logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR,
