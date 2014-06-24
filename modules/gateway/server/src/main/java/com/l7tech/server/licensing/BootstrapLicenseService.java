@@ -41,34 +41,32 @@ public class BootstrapLicenseService implements PostStartupApplicationListener {
 
     private void loadLicenseFromFile() {
         try {
-            AdminInfo.find(false).wrapCallable(new Callable<LicenseDocument>() {
-                @Override
-                public LicenseDocument call() throws Exception {
-                if (licenseDocumentManager.findAll().isEmpty() && BOOTSTRAP_LICENSE_FOLDER != null) {
-                    File licenseFolder = new File(BOOTSTRAP_LICENSE_FOLDER);
-                    if (!licenseFolder.exists()) return null;
-                    if (!licenseFolder.isDirectory()) return null;
-                    File[] licenseFiles = licenseFolder.listFiles();
-                    if (licenseFiles == null || licenseFiles.length == 0) return null;
-                    if (licenseFiles.length > 1) {
-                        logger.warning("More than one license found in " + licenseFolder.getCanonicalPath());
-                        return null;
-                    }
-                    // attempt to load license from file
-                    logger.info("Installing license from: " + licenseFiles[0].getCanonicalPath());
-                    InputStream is = new FileInputStream(licenseFiles[0]);
-                    try {
-                        byte[] docBytes = IOUtils.slurpStream(is);
-                        final LicenseDocument licenseDocument = new LicenseDocument(new String(docBytes));
-                        licenseDocumentManager.saveWithImmediateFlush(licenseDocument);
-                        return licenseDocument;
-                    } finally {
-                        is.close();
-                    }
+            if (licenseDocumentManager.findAll().isEmpty() && BOOTSTRAP_LICENSE_FOLDER != null) {
+                File licenseFolder = new File(BOOTSTRAP_LICENSE_FOLDER);
+                if (!licenseFolder.exists()) return;
+                if (!licenseFolder.isDirectory()) return;
+                File[] licenseFiles = licenseFolder.listFiles();
+                if (licenseFiles == null || licenseFiles.length == 0) return;
+                for (final File licenseFile : licenseFiles) {
+                    AdminInfo.find(false).wrapCallable(new Callable<LicenseDocument>() {
+                        @Override
+                        public LicenseDocument call() throws Exception {
+                            // attempt to load license from file
+                            logger.info("Installing license from: " + licenseFile.getCanonicalPath());
+                            InputStream is = new FileInputStream(licenseFile);
+                            try {
+                                byte[] docBytes = IOUtils.slurpStream(is);
+                                final LicenseDocument licenseDocument = new LicenseDocument(new String(docBytes));
+                                licenseDocumentManager.saveWithImmediateFlush(licenseDocument);
+                                return licenseDocument;
+                            } finally {
+                                is.close();
+                            }
+
+                        }
+                    }).call();
                 }
-                return null;
-                }
-            }).call();
+            }
         } catch (Exception e) {
             logger.warning(ExceptionUtils.getMessageWithCause(e));
         }

@@ -44,12 +44,13 @@ public class LicenseBootstrapServiceTest {
     @Test
     public void TestMoreThanOneLicense() throws Exception{
         URL otherLicense = LicenseBootstrapServiceTest.class.getResource("ValidLicenseDocumentWithoutSignature.xml");
+        URL otherLicense2 = LicenseBootstrapServiceTest.class.getResource("ValidLicenseDocumentWithValidSignature.xml");
         FileUtils.copyFile(new File(otherLicense.getFile()), new File(tmpDir,"license.xml"));
-        FileUtils.copyFile(new File(otherLicense.getFile()), new File(tmpDir,"license2.xml"));
+        FileUtils.copyFile(new File(otherLicense2.getFile()), new File(tmpDir,"license2.xml"));
 
         LicenseDocumentManager docManager = new LicenseDocumentManagerStub();
         BootstrapLicenseService service = new BootstrapLicenseService(docManager);
         service.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
-        assertEquals(0, docManager.findAll().size());
+        assertEquals(2, docManager.findAll().size());
     }
 }
