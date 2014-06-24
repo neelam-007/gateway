@@ -38,6 +38,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
@@ -146,6 +147,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox requestHeadersCustomCheckBox;
     private JCheckBox responseHeadersCustomCheckBox;
     private JLabel urlErrorLabel;
+    private JLabel methodStatusLabel;
+    private JLabel destinationStatusLabel;
+    private JLabel sourceStatusLabel;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -162,10 +166,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private UrlPanel urlValidator = new UrlPanel( "dummy", "", false );
     private String tlsCipherSuites;
     private Set<EntityHeader> tlsTrustedCerts;
-    private final Object REQ_METHOD_AUTO = "Automatic";
-    private final Object RESP_DEFAULT = "Default Respose";
+    private final Object REQ_METHOD_AUTO = "<Automatic>";
+    private final Object RESP_DEFAULT = "<Default Response>";
     private String responseUniqueContextVariableName = "httpResponse1";
-    private Object RESP_UNIQUE_CONTEXT_VAR = "New Context Variable: ${" + responseUniqueContextVariableName + "}";
+    private Object RESP_UNIQUE_CONTEXT_VAR = responseUniqueContextVariableName;
 
     /**
      * Creates new form ServicePanel
@@ -421,7 +425,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         final String resMsgDest = assertion.getResponseMsgDest();
         variableValidator.setAssertion( assertion, getPreviousAssertion() );
         responseUniqueContextVariableName = findUniqueResponseContextVariableName();
-        RESP_UNIQUE_CONTEXT_VAR = "New Context Variable: ${" + responseUniqueContextVariableName + "}";
+        RESP_UNIQUE_CONTEXT_VAR = responseUniqueContextVariableName;
         if ( resMsgDest == null ) {
             responseDestComboBox.setModel( new DefaultComboBoxModel<>( new Object[] { RESP_DEFAULT, RESP_UNIQUE_CONTEXT_VAR } ) );
             responseDestComboBox.setSelectedIndex( 0 );
@@ -429,38 +433,28 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             responseDestComboBox.setModel( new DefaultComboBoxModel<>( new Object[] { RESP_DEFAULT, resMsgDest } ) );
             responseDestComboBox.setSelectedIndex( 1 );
         }
+        responseDestComboBox.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                validateResponseDestination();
+            }
+        } );
         inputValidator.addRule( new InputValidator.ComponentValidationRule( responseDestComboBox ) {
             @Override
             public String getValidationError() {
-                Object respObj = responseDestComboBox.getSelectedItem();
-
-                if ( respObj == null ) {
-                    return "Response Destination must be specified";
-                }
-
-                if ( respObj == RESP_DEFAULT || respObj == RESP_UNIQUE_CONTEXT_VAR ) {
-                    // Ok
-                    return null;
-                }
-
-                if ( !(respObj instanceof String) ) {
-                    // Can't happen
-                    return "Response Destination must be a variable name";
-                }
-
-                String respVar = (String) respObj;
-                if ( respVar.trim().length() < 1 ) {
-                    return "Response Destination may not be empty";
-                }
-
-                String err = validateVariableName( respVar, false, true );
-
-                if ( err != null ) {
-                    return "Response Destination: " + err;
-                }
-
-                // Ok
-                return null;
+                return validateResponseDestination();
+            }
+        } );
+        inputValidator.addRule( new InputValidator.ComponentValidationRule( requestMethodComboBox ) {
+            @Override
+            public String getValidationError() {
+                return validateRequestMethod();
+            }
+        } );
+        requestMethodComboBox.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                validateRequestMethod();
             }
         } );
         inputValidator.addRule( new InputValidator.ComponentValidationRule( oauthPanel ) {
@@ -484,6 +478,25 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 return null;
             }
         });
+        reqMsgSrcComboBox.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                validateRequestSource();
+            }
+        } );
+        requestMethodComboBox.addFocusListener( new FocusAdapter() {
+            @Override
+            public void focusGained( FocusEvent e ) {
+                requestMethodComboBox.getEditor().selectAll();
+            }
+        } );
+
+        responseDestComboBox.addFocusListener( new FocusAdapter() {
+            @Override
+            public void focusGained( FocusEvent e ) {
+                responseDestComboBox.getEditor().selectAll();
+            }
+        } );
 
         byteLimitPanel.setValue( assertion.getResponseSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes() );
 
@@ -545,15 +558,143 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.attachToButton(okButton, okButtonAction);
         okButton.setEnabled( !readOnly );
 
-        cancelButton.addActionListener(new ActionListener() {
+        cancelButton.addActionListener( new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed( ActionEvent e ) {
                 dispose();
             }
-        });
+        } );
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);
+    }
+
+    private String validateRequestMethod() {
+        final String err;
+        Icon icon = null;
+        String label = "";
+
+        Object methObj = requestMethodComboBox.getSelectedItem();
+        if ( methObj == null ) {
+            err = "must be specified";
+            icon = variableValidator.getWarningIcon();
+        } else if ( methObj instanceof HttpMethod ) {
+            err = null;
+        } else if ( methObj == REQ_METHOD_AUTO ) {
+            err = null;
+        } else if ( !( methObj instanceof String ) ) {
+            // Can't happen
+            err = "must be a valid option or a variable name";
+        } else {
+            String methVar = methObj.toString();
+            if ( methVar.trim().length() < 1 ) {
+                err = "may not be empty";
+                icon = variableValidator.getWarningIcon();
+            } else {
+                // See if any context variables are present; if so, validate them
+                String[] vars = Syntax.getReferencedNames( methVar, false );
+                if ( vars.length < 1 ) {
+                    err = null;
+                    label = "(Custom; no context variables)";
+                } else {
+                    String varErr = null;
+                    for ( String var : vars ) {
+                        varErr = validateVariableName( var, true, false );
+                        if ( varErr != null )
+                            break;
+                    }
+
+                    err = varErr;
+                    if ( err == null ) {
+                        if ( vars.length == 1 ) {
+                            label = "(Existing context variable)";
+                        } else {
+                            label = "(Existing context variables)";
+                        }
+                    } else {
+                        icon = variableValidator.getStatusLabelIcon();
+                    }
+                }
+            }
+        }
+
+        if ( err != null ) {
+            label = err;
+        }
+        methodStatusLabel.setIcon( icon );
+        methodStatusLabel.setText( label );
+        return err == null ? null : "Request Method: " + err;
+    }
+
+    private String validateResponseDestination() {
+        final String err;
+        Icon icon = null;
+        String label = "";
+
+        Object respObj = responseDestComboBox.getSelectedItem();
+
+        if ( respObj == null ) {
+            err = "must be specified";
+            icon = variableValidator.getWarningIcon();
+        } else if ( respObj == RESP_DEFAULT ) {
+            // Ok
+            err = null;
+        } else if ( respObj == RESP_UNIQUE_CONTEXT_VAR ) {
+            // Ok
+            err = null;
+            label = "(New context variable)";
+        } else if ( !(respObj instanceof String) ) {
+            // Can't happen
+            err = "must be a valid option or a variable name";
+        } else {
+            String respVar = (String) respObj;
+            if ( respVar.trim().length() < 1 ) {
+                err = "may not be empty";
+                icon = variableValidator.getWarningIcon();
+            } else {
+                err = validateVariableName( respVar, false, true );
+                if ( err == null ) {
+                    TargetVariablePanel.Status status = variableValidator.getVariableStatus();
+                    if ( status == null || !status.isOk() ) {
+                        // Can't happen
+                        label = variableValidator.getStatusLabelText();
+                    } else if ( status.isVariableAlreadyExists() ) {
+                        label = "(Existing variable; will overwrite)";
+                    } else {
+                        label = "(New context variable)";
+                    }
+                } else {
+                    icon = variableValidator.getStatusLabelIcon();
+                }
+            }
+        }
+
+        if ( err != null ) {
+            label = err;
+        }
+        destinationStatusLabel.setIcon( icon );
+        destinationStatusLabel.setText( label );
+        return err == null ? null : "Response Destination: " + err;
+    }
+
+    private void validateRequestSource() {
+        final String label;
+
+        ComboBoxItem item = (ComboBoxItem) reqMsgSrcComboBox.getSelectedItem();
+        if ( item == null ) {
+            // Can't happen
+            label = "must be specified";
+        } else if ( item.getValue() == null ) {
+            // Ok, it's default request
+            label = "";
+        } else if ( item.getValue() instanceof String ) {
+            label = "(Existing context variable)";
+        } else {
+            // Can't happen
+            label = "must be specified or a string";
+        }
+
+        sourceStatusLabel.setText( label );
     }
 
     private String findUniqueResponseContextVariableName() {
@@ -609,18 +750,18 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private void populateReqMsgSrcComboBox() {
         reqMsgSrcComboBox.removeAllItems();
         reqMsgSrcComboBox.addItem(new ComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
-        final MessageFormat displayFormat = new MessageFormat(resources.getString("request.msgSrc.contextVariable.format"));
         final Map<String, VariableMetadata> predecessorVariables = getVariablesSetByPredecessors();
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final ComboBoxItem item = new ComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
+                final ComboBoxItem item = new ComboBoxItem( variableName, variableName );
                 reqMsgSrcComboBox.addItem(item);
                 if (variableName.equals(assertion.getRequestMsgSrc())) {
                     reqMsgSrcComboBox.setSelectedItem(item);
                 }
             }
         }
+        validateRequestSource();
     }
 
     private void populateHttpVersionComboBox() {
@@ -1073,6 +1214,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         enableOrDisableProxyFields();
         validateUrl( true );
+        validateRequestMethod();
+        validateResponseDestination();
     }
 
     private String lookUpTrustedCertName(Goid oid) {

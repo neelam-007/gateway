@@ -52,6 +52,7 @@ public class TargetVariablePanel  extends JPanel {
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
     private String defaultVariableOrPrefix;
+    private Status variableStatus = Status.ERR_SYNTAX;
 
     public TargetVariablePanel() {
 
@@ -344,29 +345,68 @@ public class TargetVariablePanel  extends JPanel {
 
             final String okPrefix = !suffixes.isEmpty() ? "ok.prefix" : "label.ok";
             final String label;
+            final Status status;
             if (valueWillBeWritten) {
                 if (unsettable) {
                     entryValid = false;
                     label = "built.in.not.settable";
+                    status = Status.ERR_EXISTS_CANT_OVERWRITE;
                 } else {
                     entryValid = true;
-                    label = builtin ? "ok.built.in.settable" : (exists || isAtLeastOneSuffixOverwritten()) ? "ok.overwrite" : okPrefix;
+                    if ( builtin ) {
+                        label = "ok.built.in.settable";
+                        status = Status.OK_EXISTS_WILL_USE;
+                    } else if ( exists || isAtLeastOneSuffixOverwritten() ) {
+                        label = "ok.overwrite";
+                        status = Status.OK_EXISTS_WILL_USE;
+                    } else {
+                        label = okPrefix;
+                        status = Status.OK_DOES_NOT_EXIST_WILL_CREATE;
+                    }
                 }
             } else if (valueWillBeRead) {
                 if (!exists || !isEverySuffixPresentInPredecessors()) {
                     entryValid = false;
                     label = "invalid.notfound";
+                    status = Status.ERR_DOES_NOT_EXIST;
                 } else {
                     entryValid = true;
                     label = okPrefix;
+                    status = Status.OK_EXISTS_WILL_USE;
                 }
             } else {
                 entryValid = true;
                 label = "label.ok";
+                status = exists ? Status.OK_EXISTS_WILL_USE : Status.OK_DOES_NOT_EXIST_WILL_CREATE;
             }
             statusLabel.setIcon(entryValid ? OK_ICON : WARNING_ICON);
             statusLabel.setText(resources.getString(label));
+            variableStatus = status;
+        }
+    }
 
+    public static enum Status {
+        OK_EMPTY( true, false ),
+        OK_DOES_NOT_EXIST_WILL_CREATE( true, false ),
+        OK_EXISTS_WILL_USE( true, true ),
+        ERR_EXISTS_CANT_OVERWRITE( false, true ),
+        ERR_DOES_NOT_EXIST( false, false ),
+        ERR_SYNTAX( false, false );
+
+        private final boolean ok;
+        private final boolean exists;
+
+        Status( boolean ok, boolean exists ) {
+            this.ok = ok;
+            this.exists = exists;
+        }
+
+        public boolean isOk() {
+            return ok;
+        }
+
+        public boolean isVariableAlreadyExists() {
+            return exists;
         }
     }
 
@@ -400,7 +440,23 @@ public class TargetVariablePanel  extends JPanel {
         statusLabel.setIcon(BLANK_ICON);
         statusLabel.setText(null);
     }
-    
+
+    public String getStatusLabelText() {
+        return statusLabel.getText();
+    }
+
+    public Icon getStatusLabelIcon() {
+        return statusLabel.getIcon();
+    }
+
+    public Status getVariableStatus() {
+        return variableStatus;
+    }
+
+    public Icon getWarningIcon() {
+        return WARNING_ICON;
+    }
+
     /**
      * Reconstruct a string by adding line break (<br>) tags into it.  The length of each row in the modified string is up to maxLength.
      *
