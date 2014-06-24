@@ -106,22 +106,22 @@ public class RevocationCheckingPolicyItemMO  extends ElementExtensionSupport {
         /**
          * Type for checking against a CRL from a URL contained in an X.509 Certificate
          */
-        @XmlEnumValue("Internal") CRL_FROM_CERTIFICATE,
+        @XmlEnumValue("CRL from certificate URL") CRL_FROM_CERTIFICATE,
 
         /**
          * Type for checking against a CRL from a specified URL
          */
-        @XmlEnumValue("LDAP") CRL_FROM_URL,
+        @XmlEnumValue("CRL from URL") CRL_FROM_URL,
 
         /**
          * Type for OCSP check against a responder URL contained in an X.509 Certificate
          */
-        @XmlEnumValue("Federated") OCSP_FROM_CERTIFICATE,
+        @XmlEnumValue("OCSP from certificate URL") OCSP_FROM_CERTIFICATE,
 
         /**
          * Type for OCSP check against a specified responder URL
          */
-        @XmlEnumValue("Simple LDAP") OCSP_FROM_URL
+        @XmlEnumValue("OCSP from URL") OCSP_FROM_URL
     }
 
     //- PACKAGE

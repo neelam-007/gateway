@@ -168,6 +168,15 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
     public Item<RevocationCheckingPolicyMO> template() {
         RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
         checkPolicyMO.setName("TemplateRevocationCheckingPolicy");
+        checkPolicyMO.setDefaultPolicy(false);
+        checkPolicyMO.setContinueOnServerUnavailable(false);
+        checkPolicyMO.setDefaultSuccess(false);
+        RevocationCheckingPolicyItemMO checkItem = ManagedObjectFactory.createRevocationCheckingPolicyItem();
+        checkItem.setType(RevocationCheckingPolicyItemMO.Type.CRL_FROM_CERTIFICATE);
+        checkItem.setUrl("TemplateItemUrl");
+        checkItem.setTrustedSigners(CollectionUtils.list("TrustedCertId"));
+        checkItem.setAllowIssuerSignature(false);
+        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
         return super.createTemplateItem(checkPolicyMO);
     }
 }
