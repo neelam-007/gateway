@@ -316,6 +316,9 @@ public class UserRestResourceFactory {
             {//limit session connected internal user scope
                 //were ignoring the incoming entity, were just using it for rbac and a container for it's id and provider id
                 final InternalUser internalUser = userManager.findByPrimaryKey(id);
+                if (internalUser == null) {
+                    throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
+                }
                 rbacAccessService.validatePermitted(internalUser, OperationType.UPDATE);
                 disconnectedUser.copyFrom(internalUser);
                 disconnectedUser.setVersion(internalUser.getVersion());

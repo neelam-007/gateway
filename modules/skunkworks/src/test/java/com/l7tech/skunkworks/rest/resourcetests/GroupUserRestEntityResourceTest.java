@@ -266,6 +266,18 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
     }
 
     @Test
+    public void UserChangePasswordInvalidInternalUserTest() throws Exception {
+
+        RestResponse response = processRequest("identityProviders/" + internalProviderId + "/users/" + otherIdentityProviderId + "/password", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), strongPassword2);
+        assertEquals(404, response.getStatus());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceNotFound",error.getType());
+        assertTrue(error.getDetail().contains("not found"));
+    }
+
+    @Test
     public void UserChangePasswordFailTest() throws Exception {
 
         String userId = usersToCleanup.get(0);
