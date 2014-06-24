@@ -7,7 +7,9 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.*;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -123,20 +125,86 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         for (final DependencySearchResults dependencySearchResult : dependencySearchResults) {
             if (dependencySearchResult != null) {
                 if (includeRootNode) {
+                    //get all security zone dependencies
+                    getSecurityZoneDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
+                    //get all folder dependencies
+                    getFolderDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
                     //include the DependencySearchResults.dependentObject
                     buildDependentObjectsList(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
                 } else if (dependencySearchResult.getDependencies() != null) {
                     //if we are not including the dependent object in the DependencySearchResults then process only the dependencies.
                     //keep track of processed object, this will improve processing time.
                     final ArrayList<DependentObject> processedObjects = new ArrayList<>();
+                    final ArrayList<DependentObject> processedSecurityZones = new ArrayList<>();
+                    final ArrayList<DependentObject> processedFolders = new ArrayList<>();
                     //loop throw all the dependencies to build up the dependent objects list.
                     for (final Dependency dependency : dependencySearchResult.getDependencies()) {
+                        //get all security zone dependencies
+                        getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedSecurityZones);
+                        //get all folder dependencies
+                        getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedFolders);
                         buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedObjects);
                     }
                 }
             }
         }
         return dependencyObjects;
+    }
+
+    /**
+     * This will return an ordered list of all the folder dependencies.
+     *
+     * @param dependencyObjects The list of dependency objects built so far.
+     * @param dependent         The dependent currently being processed.
+     * @param dependencies      current dependent's immediate dependencies.
+     * @param processed         The List of dependent objects already processed.
+     */
+    private void getFolderDependencies(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies, @NotNull final List<DependentObject> processed) {
+        // check if dependency is already processed.
+        if (processed.contains(dependent)) {
+            return;
+        }
+        //add to the processed list before processing to avoid circular dependency issues.
+        processed.add(dependent);
+
+        //if it is a folder dependency add it to the dependency list before processing its children
+        if (com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
+            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
+        }
+        //loop through the folders children to add all other folders to the list.
+        if (dependencies != null) {
+            for (final Dependency dependency : dependencies) {
+                getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
+            }
+        }
+    }
+
+    /**
+     * This will return a list of all the security zone dependencies.
+     *
+     * @param dependencyObjects The list of dependency objects built so far.
+     * @param dependent         The dependent currently being processed.
+     * @param dependencies      current dependent's immediate dependencies.
+     * @param processed         The List of dependent objects already processed.
+     */
+    private void getSecurityZoneDependencies(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies, @NotNull final List<DependentObject> processed) {
+        // check if dependency is already processed.
+        if (processed.contains(dependent)) {
+            return;
+        }
+        //add to the processed list before processing to avoid circular dependency issues.
+        processed.add(dependent);
+
+        //if the dependent is a security zone add it to the dependencies list.
+        if (com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependent.getDependencyType())) {
+            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
+        }
+        //recourse through the other dependencies to find the rest of the security zones.
+        if (dependencies != null) {
+            for (final Dependency dependency : dependencies) {
+                getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
+            }
+        }
     }
 
     /**
@@ -156,28 +224,15 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         //add to the processed list before processing to avoid circular dependency issues.
         processed.add(dependent);
 
-        // Need to handle folder dependencies specially because they are reversed in the DependencySearchResults tree.
-        // In the tree a folder dependencies are its children, however in the dependency list we want to list the parent
-        // folder before its children in order to have it get created in the correct order
-        if (com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
-            //if it is a folder we still need to put security zone dependencies first.
-            if (dependencies != null) {
-                for (final Dependency dependency : dependencies) {
-                    if (com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependency.getDependent().getDependencyType())) {
-                        buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
-                    }
-                }
-            }
-            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
-        }
         //process the dependent objects dependencies.
         if (dependencies != null) {
             for (final Dependency dependency : dependencies) {
                 buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
             }
         }
-        //A folder would already have been added to the dependency object list so only do this if it is not a folder.
-        if (!com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
+        //A folder or security zone would already have been added to the dependency object list so only do this if it is not a folder or security zone.
+        if (!com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType()) &&
+                !com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependent.getDependencyType())) {
             addDependentToDependencyList(dependencyObjects, dependent, dependencies);
         }
     }

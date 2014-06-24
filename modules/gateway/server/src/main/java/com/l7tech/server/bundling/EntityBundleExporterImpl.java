@@ -1,6 +1,5 @@
 package com.l7tech.server.bundling;
 
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -126,7 +125,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     private void addMapping(@NotNull final Properties bundleExportProperties, @NotNull final ArrayList<EntityMappingInstructions> mappings, @NotNull final DependentEntity dependentObject, @NotNull final Entity entity) {
         if (entity instanceof HasFolder) {
             // include parent folder mapping if not already in mapping.
-            final Entity parentFolder = ((HasFolder) entity).getFolder();
+            final Folder parentFolder = ((HasFolder) entity).getFolder();
             if(parentFolder != null) {
                 final EntityMappingInstructions folderMapping = new EntityMappingInstructions(
                         EntityHeaderUtils.fromEntity(parentFolder),
@@ -134,7 +133,9 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         EntityMappingInstructions.MappingAction.NewOrExisting,
                         true,
                         false);
-                if (!mappings.contains(folderMapping)) mappings.add(folderMapping);
+                if( !mappings.contains(folderMapping) ) {
+                    mappings.add(folderMapping);
+                }
             }
         }
 

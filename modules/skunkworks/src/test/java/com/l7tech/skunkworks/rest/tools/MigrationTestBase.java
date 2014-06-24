@@ -13,6 +13,7 @@ import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 
 import javax.xml.transform.stream.StreamResult;
@@ -200,5 +201,35 @@ public abstract class MigrationTestBase {
         });
         junit.framework.Assert.assertNotNull(mapping);
         return mapping;
+    }
+
+    /**
+     * Asserts that the first id is in the mapping list before the second id. This will fail if either id is not in the
+     * mapping list
+     *
+     * @param mappings The mappings list
+     * @param firstId  The first id
+     * @param secondId The second id
+     * @param message  The message to include with any error message.
+     */
+    public static void assertOrder(@NotNull final List<Mapping> mappings, @NotNull final String firstId, @NotNull final String secondId, @Nullable final String message) {
+        boolean foundFirst = false;
+        for (Mapping mapping : mappings) {
+            if (firstId.equals(mapping.getSrcId())) {
+                foundFirst = true;
+            } else if (secondId.equals(mapping.getSrcId())) {
+                if (!foundFirst) {
+                    Assert.fail("Found the second id (" + secondId + ") before the first (" + firstId + ") in the mappings list: " + message);
+                } else {
+                    return;
+                }
+            }
+        }
+        //in this case the second id has not been found
+        if (foundFirst) {
+            Assert.fail("Did not find the second (" + secondId + ") id in the mapping list: " + message);
+        } else {
+            Assert.fail("Did not find the first (" + firstId + ") or second (" + secondId + ") id in the mapping list: " + message);
+        }
     }
 }

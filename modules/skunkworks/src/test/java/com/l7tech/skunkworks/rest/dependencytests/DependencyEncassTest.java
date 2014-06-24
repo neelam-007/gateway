@@ -1,8 +1,7 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.common.http.HttpMethod;
-import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.DependencyListMO;
+import com.l7tech.gateway.api.DependencyMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
@@ -12,12 +11,11 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
-import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.apache.http.entity.ContentType;
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -28,7 +26,6 @@ import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -118,20 +115,27 @@ public class DependencyEncassTest extends DependencyTestBase{
 
                 assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO policydep  = dependencyAnalysisMO.getDependencies().get(0);
+                DependencyMO policydep  = getDependency(dependencyAnalysisMO.getDependencies(), encassPolicy.getId());
+                Assert.assertNotNull(policydep);
                 assertEquals(EntityType.POLICY.toString(), policydep.getType());
                 assertEquals(encassPolicy.getId(), policydep.getId());
                 assertEquals(encassPolicy.getName(), policydep.getName());
+                assertEquals(0, policydep.getDependencies()==null?0:policydep.getDependencies().size());
 
-                DependencyMO securityZonedep  = dependencyAnalysisMO.getDependencies().get(1);
+                DependencyMO securityZonedep  = getDependency(dependencyAnalysisMO.getDependencies(), securityZone.getId());
+                Assert.assertNotNull(securityZonedep);
                 assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getType());
                 assertEquals(securityZone.getId(), securityZonedep.getId());
                 assertEquals(securityZone.getName(), securityZonedep.getName());
+                assertEquals(0, securityZonedep.getDependencies()==null?0:securityZonedep.getDependencies().size());
 
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(2);
+                DependencyMO dep  =  getDependency(dependencyAnalysisMO.getDependencies(), encassConfig.getId());
+                Assert.assertNotNull(dep);
                 assertEquals(EntityType.ENCAPSULATED_ASSERTION.toString(), dep.getType());
                 assertEquals(encassConfig.getId(), dep.getId());
                 assertEquals(encassConfig.getName(), dep.getName());
+                assertEquals(2, dep.getDependencies()==null?0:dep.getDependencies().size());
+
             }
         });
     }
@@ -163,20 +167,23 @@ public class DependencyEncassTest extends DependencyTestBase{
 
                 assertEquals(3, dependencyAnalysisMO.getDependencies().size());
 
-                DependencyMO policydep  = dependencyAnalysisMO.getDependencies().get(0);
+                DependencyMO policydep  = getDependency(dependencyAnalysisMO.getDependencies(), encassPolicy.getId());
+                assertNotNull(policydep);
                 assertEquals(EntityType.POLICY.toString(), policydep.getType());
                 assertEquals(encassPolicy.getId(), policydep.getId());
                 assertEquals(encassPolicy.getName(), policydep.getName());
                 assertEquals(1, policydep.getDependencies().size());
                 assertNotNull("Missing dependency:" + encassConfig.getId(), getDependency(policydep.getDependencies(), encassConfig.getId()));
 
-                DependencyMO securityZonedep  = dependencyAnalysisMO.getDependencies().get(1);
+                DependencyMO securityZonedep  = getDependency(dependencyAnalysisMO.getDependencies(), securityZone.getId());
+                assertNotNull(securityZonedep);
                 assertEquals(EntityType.SECURITY_ZONE.toString(), securityZonedep.getType());
                 assertEquals(securityZone.getId(), securityZonedep.getId());
                 assertEquals(securityZone.getName(), securityZonedep.getName());
                 assertNull(securityZonedep.getDependencies());
 
-                DependencyMO dep  = dependencyAnalysisMO.getDependencies().get(2);
+                DependencyMO dep  = getDependency(dependencyAnalysisMO.getDependencies(), encassConfig.getId());
+                assertNotNull(dep);
                 assertEquals(EntityType.ENCAPSULATED_ASSERTION.toString(), dep.getType());
                 assertEquals(encassConfig.getId(), dep.getId());
                 assertEquals(encassConfig.getName(), dep.getName());

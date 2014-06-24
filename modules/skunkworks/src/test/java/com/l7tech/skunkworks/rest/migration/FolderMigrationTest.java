@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -430,19 +431,14 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
-        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
-        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
-
         Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
-        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
-        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
 
-        bundleItem.getContent().getMappings().get(0).setTargetId(targetChild1FolderItem.getId());
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild1FolderItem.getId(), "Parent Folder should be before child folder");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild2FolderItem.getId(), "Parent Folder should be before child folder");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId(), policyItem.getId(), "Folder 1 should be before policy");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId(), policyAliasItem.getId(), "Folder 2 should be before policy alias");
+
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId()).setTargetId(targetChild1FolderItem.getId());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -454,35 +450,35 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
         //verify the mappings
         Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-        Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+        Mapping parentFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceParentFolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
         Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
         Assert.assertEquals(targetChild1FolderItem.getId(), parentFolderMapping.getTargetId());
 
-        Mapping folderMapping = mappings.getContent().getMappings().get(1);
+        Mapping folderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild1FolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
         Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals( folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+        Mapping folder2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild2FolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, folder2Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folder2Mapping.getActionTaken());
         Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
         Assert.assertEquals( folder2Mapping.getSrcId(), folder2Mapping.getTargetId());
 
-        Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+        Mapping policyAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
         Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
@@ -511,19 +507,14 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
-        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
-        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
-
         Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
-        Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
-        Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
-        Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
 
-        bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild1FolderItem.getId(), "Parent Folder should be before child folder");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild2FolderItem.getId(), "Parent Folder should be before child folder");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId(), policyItem.getId(), "Folder 1 should be before policy");
+        MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId(), policyAliasItem.getId(), "Folder 2 should be before policy alias");
+
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId()).setTargetId(targetParentFolderItem.getId());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -535,35 +526,35 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
         //verify the mappings
         Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-        Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+        Mapping parentFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceParentFolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
         Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
         Assert.assertEquals(targetParentFolderItem.getId(), parentFolderMapping.getTargetId());
 
-        Mapping folderMapping = mappings.getContent().getMappings().get(1);
+        Mapping folderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild1FolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
         Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
         Assert.assertEquals( folderMapping.getSrcId(), folderMapping.getTargetId());
 
-        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
         Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
         Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-        Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+        Mapping folder2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild2FolderItem.getId());
         Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, folder2Mapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folder2Mapping.getActionTaken());
         Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
         Assert.assertEquals( folder2Mapping.getSrcId(), folder2Mapping.getTargetId());
 
-        Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+        Mapping policyAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
         Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
         Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
@@ -603,20 +594,15 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
-
             Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
 
-            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
-            bundleItem.getContent().getMappings().get(3).setAction(Mapping.Action.NewOrUpdate);
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild1FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild2FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId(), policyItem.getId(), "Folder 1 should be before policy");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId(), policyAliasItem.getId(), "Folder 2 should be before policy alias");
+
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId()).setTargetId(targetParentFolderItem.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId()).setAction(Mapping.Action.NewOrUpdate);
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -628,35 +614,35 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
             //verify the mappings
             Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-            Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+            Mapping parentFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceParentFolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
             Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
             Assert.assertEquals(targetParentFolderItem.getId(), parentFolderMapping.getTargetId());
 
-            Mapping folderMapping = mappings.getContent().getMappings().get(1);
+            Mapping folderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild1FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
             Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
             Assert.assertEquals( folderMapping.getSrcId(), folderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping folder2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild2FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrUpdate, folder2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, folder2Mapping.getActionTaken());
             Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
             Assert.assertEquals( folder2Mapping.getSrcId(), folder2Mapping.getTargetId());
 
-            Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+            Mapping policyAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
             Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
@@ -739,22 +725,17 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
-
             Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
 
-            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
-            bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrExisting);
-            bundleItem.getContent().getMappings().get(2).setTargetId(policyCreated.getId());
-            bundleItem.getContent().getMappings().get(2).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild1FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild2FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId(), policyItem.getId(), "Folder 1 should be before policy");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId(), policyAliasItem.getId(), "Folder 2 should be before policy alias");
+
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId()).setTargetId(targetParentFolderItem.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyItem.getId()).setAction(Mapping.Action.NewOrExisting);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyItem.getId()).setTargetId(policyCreated.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -766,35 +747,35 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
             //verify the mappings
             Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-            Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+            Mapping parentFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceParentFolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
             Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
             Assert.assertEquals(targetParentFolderItem.getId(), parentFolderMapping.getTargetId());
 
-            Mapping folderMapping = mappings.getContent().getMappings().get(1);
+            Mapping folderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild1FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folderMapping.getActionTaken());
             Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
             Assert.assertEquals( folderMapping.getSrcId(), folderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, policyMapping.getActionTaken());
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyCreated.getId(), policyMapping.getTargetId());
 
-            Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping folder2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild2FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, folder2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, folder2Mapping.getActionTaken());
             Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
             Assert.assertEquals( folder2Mapping.getSrcId(), folder2Mapping.getTargetId());
 
-            Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+            Mapping policyAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
             Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
@@ -987,7 +968,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             Assert.assertEquals("The bundle should have 7 mappings. a policy, a policy alias, a service, a service alias, 3 folders", 7, bundleItem.getContent().getMappings().size());
 
             // map parent folder
-            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), parent.getId()).setTargetId(targetParentFolderItem.getId());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle?activate=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1062,21 +1043,16 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
             Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             Assert.assertEquals("The bundle should have 4 item. A policy, a policy alias, 2 folders", 4, bundleItem.getContent().getReferences().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(0).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getReferences().get(1).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getReferences().get(2).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getReferences().get(3).getType());
-
             Assert.assertEquals("The bundle should have 5 mappings. a policy, a policy alias, 3 folders", 5, bundleItem.getContent().getMappings().size());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(0).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(1).getType());
-            Assert.assertEquals(EntityType.POLICY.toString(), bundleItem.getContent().getMappings().get(2).getType());
-            Assert.assertEquals(EntityType.FOLDER.toString(), bundleItem.getContent().getMappings().get(3).getType());
-            Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), bundleItem.getContent().getMappings().get(4).getType());
 
-            bundleItem.getContent().getMappings().get(0).setTargetId(targetParentFolderItem.getId());
-            bundleItem.getContent().getMappings().get(1).setTargetId(sourceChild2FolderItem.getId());
-            bundleItem.getContent().getMappings().get(3).setTargetId(folderCreated.getId());
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild1FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId(), sourceChild2FolderItem.getId(), "Parent Folder should be before child folder");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId(), policyItem.getId(), "Folder 1 should be before policy");
+            MigrationTestBase.assertOrder(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId(), policyAliasItem.getId(), "Folder 2 should be before policy alias");
+
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceParentFolderItem.getId()).setTargetId(targetParentFolderItem.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceChild1FolderItem.getId()).setTargetId(sourceChild2FolderItem.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), sourceChild2FolderItem.getId()).setTargetId(folderCreated.getId());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1088,35 +1064,35 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
 
             //verify the mappings
             Assert.assertEquals("There should be 5 mappings after the import", 5, mappings.getContent().getMappings().size());
-            Mapping parentFolderMapping = mappings.getContent().getMappings().get(0);
+            Mapping parentFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceParentFolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), parentFolderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, parentFolderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, parentFolderMapping.getActionTaken());
             Assert.assertEquals(sourceParentFolderItem.getId(), parentFolderMapping.getSrcId());
             Assert.assertEquals(targetParentFolderItem.getId(), parentFolderMapping.getTargetId());
 
-            Mapping folderMapping = mappings.getContent().getMappings().get(1);
+            Mapping folderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild1FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folderMapping.getActionTaken());
             Assert.assertEquals(sourceChild1FolderItem.getId(), folderMapping.getSrcId());
             Assert.assertEquals(sourceChild2FolderItem.getId(), folderMapping.getTargetId());
 
-            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Mapping policyMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyItem.getId());
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            Mapping folder2Mapping = mappings.getContent().getMappings().get(3);
+            Mapping folder2Mapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), sourceChild2FolderItem.getId());
             Assert.assertEquals(EntityType.FOLDER.toString(), folder2Mapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, folder2Mapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folder2Mapping.getActionTaken());
             Assert.assertEquals(sourceChild2FolderItem.getId(), folder2Mapping.getSrcId());
             Assert.assertEquals( folderCreated.getId(), folder2Mapping.getTargetId());
 
-            Mapping policyAliasMapping = mappings.getContent().getMappings().get(4);
+            Mapping policyAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), policyAliasItem.getId());
             Assert.assertEquals(EntityType.POLICY_ALIAS.toString(), policyAliasMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, policyAliasMapping.getAction());
             Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyAliasMapping.getActionTaken());
@@ -1205,7 +1181,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         mappingsToClean = mappings;
 
         // change policy item to update
-        bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.NewOrUpdate);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyItem.getId()).setAction(Mapping.Action.NewOrUpdate);
 
         //import the bundle again
         response = getTargetEnvironment().processRequest("bundle?activate=false", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
