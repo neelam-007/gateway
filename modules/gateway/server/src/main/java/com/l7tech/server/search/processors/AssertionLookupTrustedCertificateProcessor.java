@@ -1,7 +1,9 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.xmlsec.LookupTrustedCertificateAssertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -14,10 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.inject.Inject;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Dependency processor for LookupTrustedCertificateAssertion
@@ -30,7 +29,7 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
     @NotNull
     @Override
     public List<Dependency> findDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-        //TODO should the super.findDependencies be called here?
+        super.findDependencies(assertion,finder);
 
         final Collection<TrustedCert> certificates = getCertificatesUsed(assertion);
 
@@ -58,8 +57,8 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
                     return trustedCertManager.findByName(assertion.getTrustedCertificateName());
             }
         } catch (IllegalArgumentException e) {
-            //TODO: does this need to be done?
-            throw new CannotRetrieveDependenciesException(TrustedCert.class, assertion.getClass(), "", e);
+            // do nothing, certificate not found
+            return Collections.emptyList();
         }
     }
 
@@ -67,44 +66,13 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
     public void replaceDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         if(!replaceAssertionsDependencies) return;
 
-        // todo ???
-//        try {
-//            Collection<TrustedCert> certificates = // what is it dependent on from the original gateway?????
-//            if(certificates.isEmpty()) return;
-//            if(certificates.size()>1) {
-//                logger.info("Dependency not replaced for LookupTrustedCertificateAssertion, more then one certificate found"); // todo
-//                return;
-//            }
-//            EntityHeader replacementHeader = replacementMap.get(EntityHeaderUtils.fromEntity(CollectionUtils.toList(certificates).get(0)));
-//            if(replacementHeader == null) return;
-//            TrustedCert cert = (TrustedCert)loadEntity(replacementHeader);
-//
-//            switch (assertion.getLookupType()) {
-//                case CERT_ISSUER_SERIAL:
-//                    assertion.setCertIssuerDn(cert.getIssuerDn());
-//                    assertion.setCertSerialNumber(cert.getSerial().toString());
-//                    break;
-//
-//                case CERT_SKI:
-//                    assertion.setCertSubjectKeyIdentifier(cert.getSki());
-//                    break;
-//
-//                case CERT_SUBJECT_DN:
-//                    assertion.setCertSubjectDn(cert.getSubjectDn());
-//                    break;
-//
-//                case CERT_THUMBPRINT_SHA1:
-//                    assertion.setCertThumbprintSha1(cert.getThumbprintSha1());
-//                    break;
-//
-//                case TRUSTED_CERT_NAME:
-//                default:
-//                    assertion.setTrustedCertificateName(cert.getName());
-//                    break;
-//            }
-//
-//        } catch (FindException e) {
-//            // todo
-//        }
+        // only do replace dependency for lookup by name
+        if(assertion.getLookupType().equals(LookupTrustedCertificateAssertion.LookupType.TRUSTED_CERT_NAME) ){
+            final EntityHeader entityUsed = new EntityHeader(Goid.DEFAULT_GOID, EntityType.TRUSTED_CERT,assertion.getTrustedCertificateName(),"");
+            final EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+            if(newEntity!=null){
+                assertion.setTrustedCertificateName(newEntity.getName());
+            }
+        }
     }
 }

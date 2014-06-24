@@ -1,7 +1,9 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -29,7 +31,7 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
     @NotNull
     @Override
     public List<Dependency> findDependencies(@NotNull final WsSecurity assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-        //TODO should the super.findDependencies be called here?
+        super.findDependencies(assertion,finder);
 
         final TrustedCert certificate = getCertificateUsed(assertion);
 
@@ -52,8 +54,7 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
                 }
             }
         } catch (IllegalArgumentException e) {
-            //TODO: does this need to be done?
-            throw new CannotRetrieveDependenciesException(TrustedCert.class, assertion.getClass(), "", e);
+            // do nothing, certificate not found
         }
         return null;
     }
@@ -62,9 +63,7 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
     public void replaceDependencies(@NotNull final WsSecurity assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         if(!replaceAssertionsDependencies) return;
 
-        // todo for reference by name?
-        //todo: should super.replaceDependencies be called?
-        // only replace referencing by goid for now.
+        super.replaceDependencies(assertion,replacementMap,finder,replaceAssertionsDependencies);
         if (assertion.getRecipientTrustedCertificateGoid() != null) {
             final EntityHeader[] entitiesUsed = assertion.getEntitiesUsed();
             for (EntityHeader entityUsed : entitiesUsed) {
@@ -72,6 +71,12 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
                 if (newEntity != null) {
                     assertion.replaceEntity(entityUsed, newEntity);
                 }
+            }
+        }else if(assertion.getRecipientTrustedCertificateName() != null){
+            final EntityHeader entityUsed = new EntityHeader(Goid.DEFAULT_GOID, EntityType.TRUSTED_CERT,assertion.getRecipientTrustedCertificateName(),"");
+            final EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+            if(newEntity!=null){
+                assertion.setRecipientTrustedCertificateName(newEntity.getName());
             }
         }
     }
