@@ -2,13 +2,16 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RoleAPIResourceFactory;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.RbacRoleAssignmentMO;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.RemoveAssignmentsContext;
 import com.l7tech.gateway.rest.SpringBean;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.PUT;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -48,5 +51,25 @@ public class RoleAssignmentsResource {
         RemoveAssignmentsContext removeAssignmentsContext = new RemoveAssignmentsContext();
         removeAssignmentsContext.setAssignmentIds(assignmentIds);
         factory.removeAssignments(roleId, removeAssignmentsContext);
+    }
+
+    /**
+     * This will return a template add assignment context.
+     *
+     * @return The template add assignments context.
+     */
+    @GET
+    @Path("template/addassignments")
+    public Item<AddAssignmentsContext> getAddAssignmentsContextTemplate(){
+        AddAssignmentsContext addAssignmentsContext = new AddAssignmentsContext();
+        RbacRoleAssignmentMO roleAssignmentMO = ManagedObjectFactory.createRbacRoleAssignmentMO();
+        roleAssignmentMO.setEntityType("User or Group");
+        roleAssignmentMO.setIdentityName("Name");
+        roleAssignmentMO.setProviderId("ProviderID");
+        addAssignmentsContext.setAssignments(Arrays.asList(roleAssignmentMO));
+
+        return new ItemBuilder<AddAssignmentsContext>("AddAssignmentsContext Template", "AddAssignmentsContext")
+                .setContent(addAssignmentsContext)
+                .build();
     }
 }

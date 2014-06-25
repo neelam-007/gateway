@@ -9,6 +9,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -180,5 +182,15 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
 
         roleMO.setAssignments(Arrays.asList(roleAssignmentMO));
         return super.createTemplateItem(roleMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final RbacRoleMO rbacRoleMO) {
+        List<Link> links = super.getRelatedLinks(rbacRoleMO);
+        if (rbacRoleMO != null) {
+            links.add(ManagedObjectFactory.createLink("templateAddAssignments", getUrlString(rbacRoleMO.getId() + "/assignments/template/addassignments")));
+        }
+        return links;
     }
 }
