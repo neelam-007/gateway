@@ -3,6 +3,9 @@ package com.l7tech.external.assertions.odatavalidation;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -19,13 +22,15 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLA
 public class OdataValidationAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
     public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
+    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE, ALLOW_OPEN_TYPE_ENTITY }
 
     public static final String DEFAULT_PREFIX = "odata";
 
     private String odataMetadataSource;
+    private String odataSvcRootURL;
     private String variablePrefix;
 
-    private Map<String, Object> actionsMap = new HashMap<>();
+    private EnumSet<ProtectionActions> actions;
 
     private boolean readOperation;
     private boolean createOperation;
@@ -90,20 +95,25 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.odataMetadataSource = odataMetadataSource;
     }
 
-
-    public Map<String, Object> getAllActions() {
-        return Collections.unmodifiableMap(actionsMap);
+    public String getOdataSvcRootURL() {
+        return odataSvcRootURL;
     }
 
-    public void addAction(@NotNull String name, Object value) {
-        if(StringUtils.isEmpty(name)) {
-            throw new IllegalArgumentException("Action name cannot be null!");
-        }
-        actionsMap.put(name, value);
+    public void setOdataSvcRootURL(String odataSvcRootURL) {
+        this.odataSvcRootURL = odataSvcRootURL;
     }
 
-    public void removeAction(String name) {
-        actionsMap.remove(name);
+    public Set<ProtectionActions> getAllActions() {
+        return Collections.unmodifiableSet(actions);
+    }
+
+    public void addAction(@NotNull ProtectionActions action) {
+
+        actions.add(action);
+    }
+
+    public void removeAction(ProtectionActions action) {
+        actions.remove(action);
     }
 
 
@@ -125,6 +135,9 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         return super.doGetVariablesSet().withVariables(new VariableMetadata(getVariablePrefix() + "." + "query"));
     }
 
+    public EnumSet<ProtectionActions> getActions() { return actions; }
+
+    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
     //
     // Metadata
     //
@@ -169,6 +182,8 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
                 return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER,
+                new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(new Java5EnumSetTypeMapping(EnumSet.class, ProtectionActions.class, "actions"))));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
