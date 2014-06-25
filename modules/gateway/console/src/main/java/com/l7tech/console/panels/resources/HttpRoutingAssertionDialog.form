@@ -3,7 +3,7 @@
   <grid id="83deb" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="2" left="6" bottom="0" right="6"/>
     <constraints>
-      <xy x="52" y="40" width="722" height="788"/>
+      <xy x="52" y="40" width="722" height="837"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -934,16 +934,6 @@
               <editable value="true"/>
             </properties>
           </component>
-          <component id="5f0c7" class="javax.swing.JLabel" binding="urlErrorLabel">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <font size="10"/>
-              <foreground color="-65536"/>
-              <text value="URL Error Message"/>
-            </properties>
-          </component>
           <component id="371e6" class="javax.swing.JLabel" binding="destinationStatusLabel">
             <constraints>
               <grid row="5" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -978,6 +968,26 @@
               <text value="Source Status Message"/>
             </properties>
           </component>
+          <scrollpane id="e6fd" binding="urlErrorScrollPane">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <horizontalScrollBarPolicy value="31"/>
+              <verticalScrollBarPolicy value="21"/>
+            </properties>
+            <border type="none"/>
+            <children>
+              <component id="5f0c7" class="javax.swing.JLabel" binding="urlErrorLabel">
+                <constraints/>
+                <properties>
+                  <font size="10"/>
+                  <foreground color="-65536"/>
+                  <text value="URL Error Message"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
         </children>
       </grid>
     </children>

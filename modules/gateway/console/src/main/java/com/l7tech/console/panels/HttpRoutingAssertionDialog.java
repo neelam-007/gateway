@@ -150,6 +150,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JLabel methodStatusLabel;
     private JLabel destinationStatusLabel;
     private JLabel sourceStatusLabel;
+    private JScrollPane urlErrorScrollPane;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -410,6 +411,11 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateUrl( true );
             }
         } );
+
+        urlErrorScrollPane.setBorder(null);
+        urlErrorScrollPane.getViewport().setBackground( mainPanel.getBackground() );
+        FontMetrics fm = urlErrorLabel.getFontMetrics( urlErrorLabel.getFont() );
+        urlErrorScrollPane.setMinimumSize( new Dimension( -1, fm.getHeight() ) );
 
         populateReqMsgSrcComboBox();
         populateHttpVersionComboBox();
