@@ -52,12 +52,6 @@ public interface DependencyAnalyzer {
     public static final String FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey = "findSecurePasswordDependencyFromContextVariablePlaintext";
 
     /**
-     * This enables or disables finding secure password dependencies from the ${secpass.name.description} context
-     * variable. The default is true
-     */
-    public static final String FindSecurePasswordDependencyFromContextVariableDescriptionOptionKey = "findSecurePasswordDependencyFromContextVariableDescription";
-
-    /**
      * Returns the DependencySearchResults for the given entity. This is the same as calling {@link
      * #getDependencies(com.l7tech.objectmodel.EntityHeader, java.util.Map)} with an empty map for search options,
      * implying default options

@@ -60,8 +60,6 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
     private CustomAssertionsRegistrar customAssertionRegistrar;
 
     private static final Pattern SECPASS_PLAINTEXT_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
-    //TODO: why does the description regex not end with a $ like the plaintext one?
-    private static final Pattern SECPASS_DESCRIPTION_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.description");
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -103,7 +101,6 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         //If the assertion implements UsesVariables then all cluster properties or secure passwords used be the assertion are considered to be dependencies.
         if (assertion instanceof UsesVariables) {
             final boolean doSecPasswordPlaintext = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey, Boolean.class, true);
-            final boolean doSecPasswordDesc = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariableDescriptionOptionKey, Boolean.class, true);
 
             for (final String variable : ((UsesVariables) assertion).getVariablesUsed()) {
                 if (variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
@@ -127,14 +124,6 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                         if (dependency != null && !dependencies.contains(dependency)) {
                             dependencies.add(dependency);
                         }
-                    }
-                } else if (doSecPasswordDesc) {
-                    final Matcher descMatcher = SECPASS_DESCRIPTION_PATTERN.matcher(variable);
-                    final String alias = descMatcher.group(1);
-                    final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
-                    final Dependency dependency = finder.getDependency(securePassword);
-                    if (dependency != null && !dependencies.contains(dependency)) {
-                        dependencies.add(dependency);
                     }
                 }
             }
