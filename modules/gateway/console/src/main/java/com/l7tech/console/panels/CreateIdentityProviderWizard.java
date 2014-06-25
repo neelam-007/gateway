@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,7 +38,12 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
         }
 
         setShowDescription(false);
-        Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.setEscAction(this, new AbstractAction() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                cancel();
+            }
+        });
 
         this.wizardInput = wizardInput;
         if (readSettings) {
