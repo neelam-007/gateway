@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SchemaResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.WadlResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.XslStyleSheetResource;
 import com.l7tech.gateway.rest.RequestProcessingException;
 import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.gateway.rest.RestAgentImpl;
@@ -18,6 +21,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,7 +54,7 @@ public class WadlGenerator {
 
         RestAgent restAgent = buildRestAgent(classes);
 
-        RestResponse response = restAgent.handleRequest(null, URI.create(""), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, null);
+        RestResponse response = restAgent.handleRequest(null, URI.create(WadlResource.GATEWAY_URL), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, null);
 
         File wadlFile = new File(args[0] + "/restAPI.wadl");
 
@@ -59,12 +63,17 @@ public class WadlGenerator {
 
     private static RestAgent buildRestAgent(final List<String> classes) throws ClassNotFoundException {
         RestAgentImpl restAgent = new RestAgentImpl();
-        restAgent.setAdditionalResourceClasses(Functions.map(classes, new Functions.UnaryThrows<Class<?>, String, ClassNotFoundException>() {
+        //load Classes from the string names
+        final List<Class<?>> resourceClasses = Functions.map(classes, new Functions.UnaryThrows<Class<?>, String, ClassNotFoundException>() {
             @Override
             public Class<?> call(String s) throws ClassNotFoundException {
                 return Class.forName(s);
             }
-        }));
+        });
+        //remove resources we don't want to show in the wadl
+        resourceClasses.removeAll(Arrays.asList(WadlResource.class, SchemaResource.class, XslStyleSheetResource.class));
+        restAgent.setAdditionalResourceClasses(resourceClasses);
+
 
         // This adds the wsdl configurator so that the java docs get added to the generated wsdl
         restAgent.setResourceConfigProperties(CollectionUtils.MapBuilder.<String, Object>builder()

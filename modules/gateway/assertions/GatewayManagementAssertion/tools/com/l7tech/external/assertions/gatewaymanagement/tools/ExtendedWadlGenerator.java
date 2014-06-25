@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.WadlResource;
 import com.l7tech.util.Functions;
 import com.sun.research.ws.wadl.*;
 import org.apache.commons.lang.WordUtils;
@@ -90,12 +91,18 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
 
         //Add the grammars
         Include include = new Include();
-        include.setHref("gateway-management.xsd");
+        include.setHref(WadlResource.GATEWAY_URL + "1.0/gateway-management.xsd");
 
         Grammars grammars = new Grammars();
         grammars.getInclude().add(include);
 
         application.setGrammars(grammars);
+
+        //add a documentation reference
+        final Doc doc = new Doc();
+        doc.setTitle("api-documentation-url");
+        doc.getContent().add(WadlResource.GATEWAY_URL + "1.0/doc");
+        application.getAny().add(doc);
 
         return application;
     }
