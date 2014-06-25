@@ -15,11 +15,9 @@ import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -56,7 +54,6 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(EmailListenerMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -99,9 +96,6 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<EmailListenerMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "host", "serverType"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -141,7 +135,6 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(EmailListenerMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }

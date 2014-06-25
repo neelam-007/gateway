@@ -3,7 +3,10 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.AssertionSecurityZoneAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.AssertionSecurityZoneTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.Link;
@@ -12,13 +15,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,10 +29,8 @@ import java.util.List;
  * The assertion security zone resource
  */
 @Provider
-@Path(AssertionSecurityZoneResource.Version_URI + AssertionSecurityZoneResource.activeConnectors_URI)
+@Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + AssertionSecurityZoneResource.activeConnectors_URI)
 public class AssertionSecurityZoneResource implements URLAccessible<AssertionSecurityZoneMO> {
-
-    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
     protected static final String activeConnectors_URI = "assertionSecurityZones";
     private AssertionSecurityZoneAPIResourceFactory factory;
     private AssertionSecurityZoneTransformer transformer;
@@ -77,9 +78,6 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<AssertionSecurityZoneMO> list(
             @QueryParam("sort") @ChoiceParam({"name", "securityZone.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -95,18 +93,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        List<Item<AssertionSecurityZoneMO>> items = Functions.map(factory.listResources(sort, ascendingSort, filters.map()), new Functions.Unary<Item<AssertionSecurityZoneMO>, AssertionSecurityZoneMO>() {
-            @Override
-            public Item<AssertionSecurityZoneMO> call(AssertionSecurityZoneMO resource) {
-                return new ItemBuilder<>(transformer.convertToItem(resource))
-                        .addLink(getLink(resource))
-                        .build();
-            }
-        });
-        return new ItemsListBuilder<AssertionSecurityZoneMO>(EntityType.ASSERTION_ACCESS + " list", "List").setContent(items)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .addLinks(getRelatedLinks(null))
-                .build();
+        return RestEntityResourceUtils.createItemsList(factory.listResources(sort, ascendingSort, filters.map()), transformer, this, uriInfo.getRequestUri().toString());
     }
 
     /**
@@ -120,10 +107,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
     @Path("{name}")
     public Item<AssertionSecurityZoneMO> get(@PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException {
         AssertionSecurityZoneMO resource = factory.getResourceByName(name);
-        return new ItemBuilder<>(transformer.convertToItem(resource))
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(resource, transformer, this);
     }
 
 
@@ -140,11 +124,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
         assertionSecurityZoneMO.setName("TemplateAssertionSecurityZone");
         assertionSecurityZoneMO.setSecurityZoneId("SecurityZoneID");
 
-        return new ItemBuilder<AssertionSecurityZoneMO>(getResourceType() + " Template", getResourceType())
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .addLinks(getRelatedLinks(assertionSecurityZoneMO))
-                .setContent(assertionSecurityZoneMO)
-                .build();
+        return RestEntityResourceUtils.createTemplateItem(assertionSecurityZoneMO, this, uriInfo.getRequestUri().toString());
     }
 
     /**
@@ -160,26 +140,22 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
     @Path("{name}")
     public Response update(AssertionSecurityZoneMO resource, @PathParam("name") String name) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         AssertionSecurityZoneMO updatedResource = factory.updateResourceByName(name, resource);
-        return Response.ok().entity(new ItemBuilder<>(transformer.convertToItem(updatedResource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(updatedResource))
-                .build()).build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(updatedResource, transformer, this, false);
     }
 
     @NotNull
     @Override
     public Link getLink(@NotNull AssertionSecurityZoneMO resource) {
-        return ManagedObjectFactory.createLink("self", getUrl(resource));
+        return ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrl(resource));
     }
 
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable AssertionSecurityZoneMO resource) {
-        return Arrays.asList(
-                ManagedObjectFactory.createLink("template", getUrlString("template")),
-                ManagedObjectFactory.createLink("list", getUrlString(null))
-        );
+        final ArrayList<Link> links = new ArrayList<>();
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_TEMPLATE, getUrlString("template")));
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_LIST, getUrlString(null)));
+        return links;
     }
 
     @NotNull

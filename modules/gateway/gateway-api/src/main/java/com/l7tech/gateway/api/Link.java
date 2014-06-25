@@ -11,6 +11,10 @@ import javax.xml.bind.annotation.XmlType;
 @XmlRootElement(name = "Link")
 @XmlType(name = "LinkType")
 public class Link {
+    public static final String LINK_REL_SELF = "self";
+    public static final String LINK_REL_TEMPLATE = "template";
+    public static final String LINK_REL_LIST = "list";
+
     private String uri;
     private String rel;
 

@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PolicyVersionRestResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.NotEmpty;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PolicyVersionTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.Link;
@@ -105,19 +102,11 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
                 }
             })));
         }
-        //create the items list of policy versions
-        final List<Item<PolicyVersionMO>> items = Functions.map(policyVersionRestResourceFactory.listPolicyVersions(serviceOrPolicyId, sort, ascendingSort, filters.map()), new Functions.Unary<Item<PolicyVersionMO>, PolicyVersionMO>() {
-            @Override
-            public Item<PolicyVersionMO> call(PolicyVersionMO resource) {
-                return new ItemBuilder<>(transformer.convertToItem(resource))
-                        .addLink(getLink(resource))
-                        .build();
-            }
-        });
-        return new ItemsListBuilder<PolicyVersionMO>(EntityType.POLICY_VERSION + " list", "List")
-                .setContent(items)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .build();
+        return RestEntityResourceUtils.createItemsList(
+                policyVersionRestResourceFactory.listPolicyVersions(serviceOrPolicyId, sort, ascendingSort, filters.map()),
+                transformer,
+                this,
+                uriInfo.getRequestUri().toString());
     }
 
     /**
@@ -130,10 +119,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @Path("{versionNumber}")
     public Item<PolicyVersionMO> get(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
-        return new ItemBuilder<>(transformer.convertToItem(policyVersion))
-                .addLink(getLink(policyVersion))
-                .addLinks(getRelatedLinks(policyVersion))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
     }
 
     /**
@@ -145,10 +131,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @Path("active")
     public Item<PolicyVersionMO> getActiveVersion() throws ResourceFactory.ResourceNotFoundException {
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getActiveVersion(serviceOrPolicyId);
-        return new ItemBuilder<>(transformer.convertToItem(policyVersion))
-                .addLink(getLink(policyVersion))
-                .addLinks(getRelatedLinks(policyVersion))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
     }
 
     /**
@@ -160,13 +143,10 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @PUT
     @Path("{versionNumber}/comment")
-    public Response setComment(@PathParam("versionNumber") @NotEmpty final Long versionNumber, @Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
+    public Item<PolicyVersionMO> setComment(@PathParam("versionNumber") @NotEmpty final Long versionNumber, @Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.updateComment(serviceOrPolicyId, versionNumber, comment);
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
-        return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))
-                .addLink(getLink(policyVersion))
-                .addLinks(getRelatedLinks(policyVersion))
-                .build()).build();
+        return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
     }
 
     /**
@@ -177,13 +157,10 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @PUT
     @Path("active/comment")
-    public Response setActiveVersionComment(@Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
+    public Item<PolicyVersionMO> setActiveVersionComment(@Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.updateActiveComment(serviceOrPolicyId, comment);
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getActiveVersion(serviceOrPolicyId);
-        return Response.ok(new ItemBuilder<>(transformer.convertToItem(policyVersion))
-                .addLink(getLink(policyVersion))
-                .addLinks(getRelatedLinks(policyVersion))
-                .build()).build();
+        return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
     }
 
     /**
@@ -218,14 +195,21 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @NotNull
     @Override
     public Link getLink(@NotNull final PolicyVersionMO policyVersion) {
-        return ManagedObjectFactory.createLink("self", getUrl(policyVersion));
+        return ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrl(policyVersion));
     }
 
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable final PolicyVersionMO policyVersion) {
-        return Arrays.asList(
-                ManagedObjectFactory.createLink("list", getUrlString(null)));
+        ArrayList<Link> links = new ArrayList<>();
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_LIST, getUrlString(null)));
+        links.add(ManagedObjectFactory.createLink("active", getUrlString("active")));
+        if (policyVersion != null) {
+            links.add(ManagedObjectFactory.createLink(serviceOrPolicyId.isLeft() ? "service" : "policy", uriInfo.getBaseUriBuilder()
+                    .path(serviceOrPolicyId.isLeft() ? PublishedServiceResource.class : PolicyResource.class)
+                    .path(serviceOrPolicyId.isLeft() ? serviceOrPolicyId.left() : serviceOrPolicyId.right()).build().toString()));
+        }
+        return links;
     }
 
     private String getUrlString(@Nullable String versionNumber) {

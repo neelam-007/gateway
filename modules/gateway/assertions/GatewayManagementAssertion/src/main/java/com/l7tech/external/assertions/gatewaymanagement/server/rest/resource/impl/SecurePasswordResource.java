@@ -14,11 +14,9 @@ import com.l7tech.gateway.api.StoredPasswordMO;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.ArrayList;
@@ -56,7 +54,6 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(StoredPasswordMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -96,9 +93,6 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<StoredPasswordMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -146,7 +140,6 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(StoredPasswordMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }

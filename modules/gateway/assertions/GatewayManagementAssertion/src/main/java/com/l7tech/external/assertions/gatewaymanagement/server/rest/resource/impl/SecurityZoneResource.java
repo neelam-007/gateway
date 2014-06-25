@@ -12,11 +12,9 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.SecurityZoneMO;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -53,7 +51,6 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(SecurityZoneMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -92,9 +89,6 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<SecurityZoneMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -121,7 +115,6 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(SecurityZoneMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }

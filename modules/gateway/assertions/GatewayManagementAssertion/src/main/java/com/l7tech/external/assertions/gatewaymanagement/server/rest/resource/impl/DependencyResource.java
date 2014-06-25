@@ -1,18 +1,16 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.DependencyTransformer;
-import com.l7tech.gateway.api.DependencyListMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.CollectionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.core.Context;
@@ -22,8 +20,6 @@ import javax.ws.rs.core.UriInfo;
  * This is a provider for dependencies. It finds the dependencies of entities that can have dependencies.
  */
 public class DependencyResource {
-
-    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     @SpringBean
     private DependencyAnalyzer dependencyAnalyzer;
@@ -37,9 +33,10 @@ public class DependencyResource {
     @Context
     private UriInfo uriInfo;
 
+    @NotNull
     private final EntityHeader entityHeader;
 
-    public DependencyResource(EntityHeader entityHeader) {
+    public DependencyResource(@NotNull final EntityHeader entityHeader) {
         this.entityHeader = entityHeader;
     }
 
@@ -54,12 +51,10 @@ public class DependencyResource {
     @GET
     public Item get() throws FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
-        if (entityHeader == null) {
-            throw new IllegalStateException("Cannot find dependencies, no entity set.");
-        }
-        DependencyListMO dependencyListMO = transformer.convertToMO( dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map()));
+        final DependencySearchResults dependencySearchResults = dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map());
+        DependencyListMO dependencyListMO = transformer.convertToMO(dependencySearchResults);
         return new ItemBuilder<>(transformer.convertToItem(dependencyListMO))
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
 }

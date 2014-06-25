@@ -11,11 +11,11 @@ import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -52,7 +52,6 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(ServiceAliasMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -94,9 +93,6 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<ServiceAliasMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "service.id", "folder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -141,7 +137,6 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(ServiceAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
@@ -172,5 +167,16 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
         serviceAliasMO.setFolderId("Folder ID");
         serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, new Goid(3, 1).toString()));
         return super.createTemplateItem(serviceAliasMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final ServiceAliasMO serviceAliasMO) {
+        List<Link> links = super.getRelatedLinks(serviceAliasMO);
+        if (serviceAliasMO != null) {
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(serviceAliasMO.getFolderId())));
+            links.add(ManagedObjectFactory.createLink("service", getUrlString(serviceAliasMO.getServiceReference().getId())));
+        }
+        return links;
     }
 }

@@ -131,7 +131,7 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         });
     }
 
-    protected DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
+    public static DependencyMO getDependency(List<DependencyMO> dependencies, final String id){
         return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
             @Override
             public boolean evaluate(Object o) {

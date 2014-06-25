@@ -9,13 +9,11 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -65,7 +63,6 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(RbacRoleMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -105,7 +102,6 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
     public ItemsList<RbacRoleMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -136,7 +132,6 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(RbacRoleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }

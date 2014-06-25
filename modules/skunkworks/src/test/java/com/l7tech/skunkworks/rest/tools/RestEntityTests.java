@@ -536,7 +536,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         ItemsList<M> item = MarshallingUtils.unmarshal(ItemsList.class, source);
 
         Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", "List", item.getType());
-        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType() + " list", item.getName());
+        Assert.assertEquals("Error for search Query: " + query + "Message: " + "Type is incorrect", getType() + " List", item.getName());
         Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
         Assert.assertTrue("Error for search Query: " + query + "Message: " + "Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);

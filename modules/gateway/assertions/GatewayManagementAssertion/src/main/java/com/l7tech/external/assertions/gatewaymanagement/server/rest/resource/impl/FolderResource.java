@@ -2,21 +2,21 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.FolderAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.FolderTransformer;
-import com.l7tech.gateway.api.FolderMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -53,7 +53,6 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(FolderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -95,9 +94,6 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<FolderMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -133,7 +129,6 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(FolderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
@@ -164,5 +159,15 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
         folderMO.setName("Folder Template");
         folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
         return super.createTemplateItem(folderMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final FolderMO folder) {
+        List<Link> links = super.getRelatedLinks(folder);
+        if (folder != null && folder.getFolderId() != null) {
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(folder.getFolderId())));
+        }
+        return links;
     }
 }

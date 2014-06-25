@@ -12,17 +12,15 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
 import com.l7tech.util.Functions;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.Provider;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,18 +71,9 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(PolicyMO resource, @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String id = factory.createResource(resource, comment);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build())
-                .build();
+        factory.createResource(resource, comment);
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
     }
 
     /**
@@ -127,9 +116,6 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<PolicyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -169,7 +155,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         return Functions.map(types, new Functions.UnaryThrows<PolicyType, String, InvalidArgumentException>() {
             @Override
             public PolicyType call(String type) {
-                switch(type){
+                switch (type) {
                     case "Include":
                         return PolicyType.INCLUDE_FRAGMENT;
                     case "Internal":
@@ -206,27 +192,18 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(PolicyMO resource,
                            @PathParam("id") String id,
                            @QueryParam("active") @DefaultValue("true") Boolean active,
                            @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
 
         boolean resourceExists = factory.resourceExists(id);
-        final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {
             factory.updateResource(id, resource, comment, active);
-            responseBuilder = Response.ok();
         } else {
             factory.createResource(id, resource, comment);
-            responseBuilder = Response.created(uriInfo.getAbsolutePath());
         }
-        return responseBuilder.entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build()).build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, !resourceExists);
     }
 
     /**
@@ -278,5 +255,16 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         policyMO.setResourceSets(Arrays.asList(resourceSet));
         policyMO.setPolicyDetail(policyDetail);
         return super.createTemplateItem(policyMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final PolicyMO policy) {
+        List<Link> links = super.getRelatedLinks(policy);
+        if (policy != null) {
+            links.add(ManagedObjectFactory.createLink("versions", getUrlString(policy.getId() + "/" + PolicyVersionResource.VERSIONS_URI)));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(policy.getPolicyDetail().getFolderId())));
+        }
+        return links;
     }
 }

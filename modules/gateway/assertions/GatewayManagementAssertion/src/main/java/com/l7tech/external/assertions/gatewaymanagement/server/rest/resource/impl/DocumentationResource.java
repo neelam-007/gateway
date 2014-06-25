@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +22,7 @@ import java.util.Map;
  * This resource servers the documentation and it's resources
  */
 @Provider
-@Path(DependencyResource.Version_URI + DocumentationResource.DocumentationBasePath)
+@Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + DocumentationResource.DocumentationBasePath)
 @Singleton
 public class DocumentationResource {
     public static final String DocumentationBasePath = "doc";

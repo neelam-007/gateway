@@ -2,18 +2,18 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.RevocationCheckingPolicyAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.RevocationCheckingPolicyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RevocationCheckingPolicyResource.revocationCheckingPolicies_URI)
 @Singleton
-public class RevocationCheckingPolicyResource extends RestEntityResource<RevocationCheckingPolicyMO,RevocationCheckingPolicyAPIResourceFactory,RevocationCheckingPolicyTransformer> {
+public class RevocationCheckingPolicyResource extends RestEntityResource<RevocationCheckingPolicyMO, RevocationCheckingPolicyAPIResourceFactory, RevocationCheckingPolicyTransformer> {
 
     protected static final String revocationCheckingPolicies_URI = "revocationCheckingPolicies";
 
@@ -64,9 +64,6 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<RevocationCheckingPolicyMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -82,18 +79,7 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
         if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
             filters.put("securityZone.id", (List) securityZoneIds);
         }
-        List<Item<RevocationCheckingPolicyMO>> items = Functions.map(factory.listResources(sort, ascendingSort, filters.map()), new Functions.Unary<Item<RevocationCheckingPolicyMO>, RevocationCheckingPolicyMO>() {
-            @Override
-            public Item<RevocationCheckingPolicyMO> call(RevocationCheckingPolicyMO resource) {
-                return new ItemBuilder<>(transformer.convertToItem(resource))
-                        .addLink(getLink(resource))
-                        .build();
-            }
-        });
-        return new ItemsListBuilder<RevocationCheckingPolicyMO>(factory.getResourceType() + " list", "List").setContent(items)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .addLinks(getRelatedLinks(null))
-                .build();
+        return super.list(sort, ascendingSort, filters.map());
     }
 
     /**
@@ -106,11 +92,7 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
     @GET
     @Path("{id}")
     public Item<RevocationCheckingPolicyMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        RevocationCheckingPolicyMO resource = factory.getResource(id);
-        return new ItemBuilder<>(transformer.convertToItem(resource))
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build();
+        return super.get(id);
     }
 
 
@@ -123,7 +105,6 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(RevocationCheckingPolicyMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -139,7 +120,6 @@ public class RevocationCheckingPolicyResource extends RestEntityResource<Revocat
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(RevocationCheckingPolicyMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }

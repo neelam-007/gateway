@@ -2,28 +2,25 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.UserRestResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CertificateTransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.UserTransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Functions;
-import org.glassfish.jersey.message.XmlHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
-import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,7 +46,8 @@ public class UserResource implements URLAccessible<UserMO> {
     private UriInfo uriInfo;
 
     //The provider id to manage users for.
-    private String providerId;
+    @NotNull
+    private final String providerId;
 
     /**
      * Creates a user resource for handling group request for the internal identity provider
@@ -63,7 +61,7 @@ public class UserResource implements URLAccessible<UserMO> {
      *
      * @param providerId The provider the users belongs to.
      */
-    public UserResource(String providerId) {
+    public UserResource(@NotNull final String providerId) {
         this.providerId = providerId;
     }
 
@@ -80,17 +78,13 @@ public class UserResource implements URLAccessible<UserMO> {
      * <p/>
      * If a parameter is not a valid search value it will be ignored.
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
+     * @param sort   the key to sort the list by.
+     * @param order  the order to sort the list. true for ascending, false for descending. null implies ascending
      * @param logins The login filter
      * @return A list of entities. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<UserMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "login"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -103,17 +97,11 @@ public class UserResource implements URLAccessible<UserMO> {
         if (logins != null && !logins.isEmpty()) {
             filters.put("login", (List) logins);
         }
-        List<Item<UserMO>> items = Functions.map(userRestResourceFactory.listResources(sort,ascendingSort,providerId, filters.map()), new Functions.Unary<Item<UserMO>, UserMO>() {
-            @Override
-            public Item<UserMO> call(UserMO resource) {
-                return new ItemBuilder<>(transformer.convertToItem(resource))
-                        .addLink(getLink(resource))
-                        .build();
-            }
-        });
-        return new ItemsListBuilder<UserMO>(EntityType.USER + " list", "List").setContent(items)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .build();
+        return RestEntityResourceUtils.createItemsList(
+                userRestResourceFactory.listResources(sort, ascendingSort, providerId, filters.map()),
+                transformer,
+                this,
+                uriInfo.getRequestUri().toString());
     }
 
     /**
@@ -125,18 +113,9 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(UserMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String id = userRestResourceFactory.createResource(providerId, resource);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build())
-                .build();
+        userRestResourceFactory.createResource(providerId, resource);
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
     }
 
     /**
@@ -150,10 +129,7 @@ public class UserResource implements URLAccessible<UserMO> {
     @Path("{id}")
     public Item<UserMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         UserMO user = userRestResourceFactory.getResource(providerId, id);
-        return new ItemBuilder<>(transformer.convertToItem(user))
-                .addLink(getLink(user))
-                .addLinks(getRelatedLinks(user))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(user, transformer, this);
     }
 
     /**
@@ -167,18 +143,9 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(UserMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        final Response.ResponseBuilder responseBuilder;
         userRestResourceFactory.updateResource(providerId, id, resource);
-        responseBuilder = Response.ok();
-
-        return responseBuilder.entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build()).build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, false);
     }
 
     /**
@@ -194,14 +161,10 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @PUT
     @Path("{id}/password")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response changePassword(@PathParam("id") String id, String password, @QueryParam("format") @DefaultValue("plain") String format) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
+    public Item<UserMO> changePassword(@PathParam("id") String id, String password, @QueryParam("format") @DefaultValue("plain") String format) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
         userRestResourceFactory.changePassword(providerId, id, password, format);
         UserMO user = userRestResourceFactory.getResource(providerId, id);
-        return Response.ok(new ItemBuilder<>(transformer.convertToItem(user))
-                .addLink(getLink(user))
-                .addLinks(getRelatedLinks(user))
-                .build()).build();
+        return RestEntityResourceUtils.createGetResponseItem(user, transformer, this);
     }
 
     /**
@@ -219,8 +182,8 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Set this user's certificate
      *
-     * @param id       The id of the user
-     * @param certificateData  The certificate data resource
+     * @param id              The id of the user
+     * @param certificateData The certificate data resource
      * @return The certificate set
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -228,16 +191,20 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @PUT
     @Path("{id}/certificate")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response setCertificate(@PathParam("id") String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
-        X509Certificate cert  = userRestResourceFactory.setCertificate(providerId, id, certificateData);
-        return Response.ok(certTransformer.getCertData(cert)).build();
+    public Item<CertificateData> setCertificate(@PathParam("id") String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        X509Certificate cert = userRestResourceFactory.setCertificate(providerId, id, certificateData);
+        CertificateData certificateDataOut = certTransformer.getCertData(cert);
+        return new ItemBuilder<CertificateData>(certificateDataOut.getSubjectName() + " Certificate Data", id, getResourceType() + "CertificateData")
+                .addLinks(getRelatedLinks(null))
+                .setContent(certificateDataOut)
+                .build();
     }
 
 
     /**
      * Gets the user's certificate
-     * @param id    The id of the user
+     *
+     * @param id The id of the user
      * @return The certificate
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -245,22 +212,25 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @GET
     @Path("{id}/certificate")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
-    public Response getCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
-        X509Certificate cert  = userRestResourceFactory.getCertificate(providerId, id);
-        return Response.ok(certTransformer.getCertData(cert)).build();
+    public Item<CertificateData> getCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+        X509Certificate cert = userRestResourceFactory.getCertificate(providerId, id);
+        CertificateData certificateData = certTransformer.getCertData(cert);
+        return new ItemBuilder<CertificateData>(certificateData.getSubjectName() + " Certificate Data", id, getResourceType() + "CertificateData")
+                .addLinks(getRelatedLinks(null))
+                .setContent(certificateData)
+                .build();
     }
 
     /**
      * Removes the certificate from the user
-     * @param id    The id of the user
+     *
+     * @param id The id of the user
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      * @throws ObjectModelException
      */
     @DELETE
     @Path("{id}/certificate")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public void deleteCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
         userRestResourceFactory.revokeCertificate(providerId, id);
     }
@@ -277,7 +247,7 @@ public class UserResource implements URLAccessible<UserMO> {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(providerId);
         userMO.setLogin("Login");
-        return createTemplateItem(userMO);
+        return RestEntityResourceUtils.createTemplateItem(userMO, this, getUrlString(providerId, "template"));
     }
 
     @NotNull
@@ -289,30 +259,37 @@ public class UserResource implements URLAccessible<UserMO> {
     @NotNull
     @Override
     public String getUrl(@NotNull final UserMO user) {
-        return getUrlString(user.getProviderId(),user.getId());
+        return getUrlString(user.getProviderId(), user.getId());
     }
 
     @NotNull
     @Override
     public String getUrl(@NotNull final EntityHeader userHeader) {
-        if(userHeader instanceof IdentityHeader){
-            return getUrlString(((IdentityHeader)userHeader).getProviderGoid().toString(),userHeader.getStrId());
+        if (userHeader instanceof IdentityHeader) {
+            return getUrlString(((IdentityHeader) userHeader).getProviderGoid().toString(), userHeader.getStrId());
         }
-        return getUrlString(providerId,userHeader.getStrId());
+        return getUrlString(providerId, userHeader.getStrId());
     }
 
     @NotNull
     @Override
     public Link getLink(@NotNull final UserMO user) {
-        return ManagedObjectFactory.createLink("self", getUrl(user));
+        return ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrl(user));
     }
 
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable final UserMO user) {
-        return Arrays.asList(
-                ManagedObjectFactory.createLink("template", getUrlString(providerId,"template")),
-                ManagedObjectFactory.createLink("list", getUrlString(providerId,null)));
+        List<Link> links = new ArrayList<>();
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_TEMPLATE, getUrlString(providerId, "template")));
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_LIST, getUrlString(providerId, null)));
+        if (user != null) {
+            links.add(ManagedObjectFactory.createLink("certificate", getUrl(user)));
+            links.add(ManagedObjectFactory.createLink("provider", uriInfo.getBaseUriBuilder()
+                    .path(IdentityProviderResource.class)
+                    .path(providerId).build().toString()));
+        }
+        return links;
     }
 
     private String getUrlString(String providerId, @Nullable String userId) {
@@ -324,13 +301,5 @@ public class UserResource implements URLAccessible<UserMO> {
             uriBuilder.path(userId);
         }
         return uriBuilder.build().toString();
-    }
-
-    protected Item<UserMO> createTemplateItem(@NotNull final UserMO resource) {
-        return new ItemBuilder<UserMO>(getResourceType() + " Template", getResourceType())
-                .addLink(ManagedObjectFactory.createLink("self", getUrlString(providerId,"template")))
-                .addLinks(getRelatedLinks(resource))
-                .setContent(resource)
-                .build();
     }
 }

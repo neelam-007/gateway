@@ -2,20 +2,20 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.EncapsulatedAssertionAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.DependentRestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.EncapsulatedAssertionTransformer;
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -52,7 +52,6 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(EncapsulatedAssertionMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -94,9 +93,6 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<EncapsulatedAssertionMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -131,7 +127,6 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(EncapsulatedAssertionMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
@@ -162,5 +157,15 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
         encapsulatedAssertionMO.setName("Template Cluster Property Name");
         encapsulatedAssertionMO.setGuid("Encapsulated Assertion Guid");
         return super.createTemplateItem(encapsulatedAssertionMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final EncapsulatedAssertionMO encapsulatedAssertionMO) {
+        List<Link> links = super.getRelatedLinks(encapsulatedAssertionMO);
+        if (encapsulatedAssertionMO != null && encapsulatedAssertionMO.getPolicyReference() != null) {
+            links.add(ManagedObjectFactory.createLink("policy", getUrlString(encapsulatedAssertionMO.getPolicyReference().getId())));
+        }
+        return links;
     }
 }

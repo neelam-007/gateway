@@ -6,18 +6,15 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.ActiveConnectorTransformer;
-import com.l7tech.gateway.api.ActiveConnectorMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -55,7 +52,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      * @response.representation.201.qname {http://ns.l7tech.com/2010/04/gateway-management}Item
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(ActiveConnectorMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -99,9 +95,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<ActiveConnectorMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -148,7 +141,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(ActiveConnectorMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
@@ -181,5 +173,21 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
         activeConnectorMO.setEnabled(true);
         activeConnectorMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("ConnectorProperty", "PropertyValue").map());
         return super.createTemplateItem(activeConnectorMO);
+    }
+
+    /**
+     * Adds the hardwired service to the list of links if it is set.
+     *
+     * @param activeConnectorMO The active connect get the related links for
+     * @return The relate links for the given active connector
+     */
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final ActiveConnectorMO activeConnectorMO) {
+        List<Link> links = super.getRelatedLinks(activeConnectorMO);
+        if (activeConnectorMO != null && activeConnectorMO.getHardwiredId() != null) {
+            links.add(ManagedObjectFactory.createLink("hardwiredServiceId", getUrlString(activeConnectorMO.getHardwiredId())));
+        }
+        return links;
     }
 }

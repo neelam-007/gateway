@@ -8,7 +8,6 @@ import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -70,11 +69,10 @@ public interface DependencyAnalyzer {
      * @param searchOptions The search options. These can be used to customize the search. It can be used to specify
      *                      that some entities can be ignored, or to make it so that individual assertions are returned
      *                      as dependencies.
-     * @return The dependency search results. This can return null if the given entity header is for an entity that is
-     * in the ignore ids list in the search options.
+     * @return The dependency search results.
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
-    @Nullable
+    @NotNull
     public DependencySearchResults getDependencies(@NotNull EntityHeader entity, @NotNull Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException;
 
     /**

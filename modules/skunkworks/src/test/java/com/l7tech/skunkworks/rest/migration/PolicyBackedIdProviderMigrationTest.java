@@ -19,6 +19,7 @@ import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
@@ -183,14 +184,12 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
         assertNotNull(dependencies);
         assertEquals(3, dependencies.size());
 
-        assertEquals(EntityType.POLICY.toString(),dependencies.get(0).getType());
-        assertEquals(policyBackedIdentityProviderPolicy.getId(),dependencies.get(0).getId());
-
-        assertEquals(EntityType.RBAC_ROLE.toString(),dependencies.get(1).getType());
-        assertEquals(defaultPolicyBackedIdentityProviderRole.getId(),dependencies.get(1).getId());
-
-        assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(2).getType());
-        assertEquals(policyBackedIdentityProviderConfig.getId(),dependencies.get(2).getId());
+        DependencyMO policyBackedIdProviderDependency = DependencyTestBase.getDependency(dependencies, policyBackedIdentityProviderPolicy.getId());
+        Assert.assertNotNull(policyBackedIdProviderDependency);
+        DependencyMO defaultPolicyBackedIdentityProviderRoleDependency = DependencyTestBase.getDependency(dependencies, defaultPolicyBackedIdentityProviderRole.getId());
+        Assert.assertNotNull(defaultPolicyBackedIdentityProviderRoleDependency);
+        DependencyMO policyBackedIdentityProviderConfigDependency = DependencyTestBase.getDependency(dependencies, policyBackedIdentityProviderConfig.getId());
+        Assert.assertNotNull(policyBackedIdentityProviderConfigDependency);
     }
 
     @Test
@@ -207,9 +206,9 @@ public class PolicyBackedIdProviderMigrationTest extends RestEntityTestBase {
         cleanPolicies();
 
         //map to internal, ignore role and policy
-        bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.Ignore);
-        bundleItem.getContent().getMappings().get(2).setAction(Mapping.Action.Ignore);
-        bundleItem.getContent().getMappings().get(3).setTargetId(internalProviderId);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyBackedIdentityProviderConfig.getId()).setTargetId(internalProviderId);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), policyBackedIdentityProviderPolicy.getId()).setAction(Mapping.Action.Ignore);
+        MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), defaultPolicyBackedIdentityProviderRole.getId()).setAction(Mapping.Action.Ignore);
 
         // import bundle
         response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(bundleItem.getContent()));

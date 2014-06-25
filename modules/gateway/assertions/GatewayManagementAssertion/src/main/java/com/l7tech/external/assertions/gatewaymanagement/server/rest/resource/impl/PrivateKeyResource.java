@@ -1,25 +1,27 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PrivateKeyAPIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PrivateKeyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.math.BigInteger;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,11 +29,9 @@ import java.util.List;
  * The private key resource
  */
 @Provider
-@Path(PrivateKeyResource.Version_URI + PrivateKeyResource.privateKey_URI)
+@Path(RestEntityResource.RestEntityResource_version_URI + PrivateKeyResource.privateKey_URI)
 @Singleton
 public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, PrivateKeyAPIResourceFactory, PrivateKeyTransformer> {
-
-    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
 
     @Context
     protected UriInfo uriInfo;
@@ -62,28 +62,28 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * algorithm used for the signature hash.</td></tr> </table>
      * <p/>
      * Example request:
-<pre>
-     &lt;l7:PrivateKeyCreationContext xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
-         &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
-         &lt;l7:Properties&gt;
-             &lt;l7:Property key=&quot;signatureHashAlgorithm&quot;&gt;
-                &lt;l7:StringValue&gt;SHA384&lt;/l7:StringValue&gt;
-             &lt;/l7:Property&gt;
-             &lt;l7:Property key=&quot;rsaKeySize&quot;&gt;
-                &lt;l7:IntegerValue&gt;516&lt;/l7:IntegerValue&gt;
-             &lt;/l7:Property&gt;
-             &lt;l7:Property key=&quot;ecName&quot;&gt;
-                &lt;l7:StringValue&gt;secp384r1&lt;/l7:StringValue&gt;
-             &lt;/l7:Property&gt;
-             &lt;l7:Property key=&quot;daysUntilExpiry&quot;&gt;
-                &lt;l7:IntegerValue&gt;2&lt;/l7:IntegerValue&gt;
-             &lt;/l7:Property&gt;
-                &lt;l7:Property key=&quot;caCapable&quot;&gt;
-             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
-         &lt;/l7:Property&gt;
-         &lt;/l7:Properties&gt;
-     &lt;/l7:PrivateKeyCreationContext&gt;
-</pre>
+     * <pre>
+     * &lt;l7:PrivateKeyCreationContext xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+     * &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
+     * &lt;l7:Properties&gt;
+     * &lt;l7:Property key=&quot;signatureHashAlgorithm&quot;&gt;
+     * &lt;l7:StringValue&gt;SHA384&lt;/l7:StringValue&gt;
+     * &lt;/l7:Property&gt;
+     * &lt;l7:Property key=&quot;rsaKeySize&quot;&gt;
+     * &lt;l7:IntegerValue&gt;516&lt;/l7:IntegerValue&gt;
+     * &lt;/l7:Property&gt;
+     * &lt;l7:Property key=&quot;ecName&quot;&gt;
+     * &lt;l7:StringValue&gt;secp384r1&lt;/l7:StringValue&gt;
+     * &lt;/l7:Property&gt;
+     * &lt;l7:Property key=&quot;daysUntilExpiry&quot;&gt;
+     * &lt;l7:IntegerValue&gt;2&lt;/l7:IntegerValue&gt;
+     * &lt;/l7:Property&gt;
+     * &lt;l7:Property key=&quot;caCapable&quot;&gt;
+     * &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+     * &lt;/l7:Property&gt;
+     * &lt;/l7:Properties&gt;
+     * &lt;/l7:PrivateKeyCreationContext&gt;
+     * </pre>
      * <p/>
      * This responds with a reference to the newly created private key.
      *
@@ -95,19 +95,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @POST
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response createResource(PrivateKeyCreationContext privateKeyCreationContext, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-
         PrivateKeyMO mo = factory.createPrivateKey(privateKeyCreationContext, id);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(mo.getId());
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new ItemBuilder<>(
-                transformer.convertToItem(mo))
-                .setContent(null)
-                .addLink(getLink(mo))
-                .addLinks(getRelatedLinks(mo))
-                .build())
-                .build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(mo, transformer, this, true);
     }
 
     /**
@@ -145,7 +135,6 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
     public ItemsList<PrivateKeyMO> list(
             @QueryParam("sort") @ChoiceParam({"id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -190,7 +179,6 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * @throws FindException
      */
     @PUT
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/export")
     public Item<PrivateKeyExportResult> exportPrivateKey(@PathParam("id") final String id, final PrivateKeyExportContext privateKeyExportContext) throws ResourceFactory.ResourceNotFoundException, FindException {
         final PrivateKeyExportResult exportResult = factory.exportResource(id, privateKeyExportContext.getPassword(), privateKeyExportContext.getAlias());
@@ -198,7 +186,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         restExport.setPkcs12Data(exportResult.getPkcs12Data());
         return new ItemBuilder<PrivateKeyExportResult>(id + " Export", id, getResourceType() + "Export")
                 .setContent(restExport)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
                 .build();
     }
@@ -217,14 +205,10 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/import")
     public Item<PrivateKeyMO> importPrivateKey(@PathParam("id") String id, PrivateKeyImportContext privateKeyImportContext) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         PrivateKeyMO importResult = factory.importResource(id, privateKeyImportContext.getAlias(), privateKeyImportContext.getPkcs12Data(), privateKeyImportContext.getPassword());
-        return new ItemBuilder<>(transformer.convertToItem(importResult))
-                .addLink(getLink(importResult))
-                .addLinks(getRelatedLinks(importResult))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(importResult, transformer, this);
     }
 
     /**
@@ -238,14 +222,10 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     @Path("{id}/specialPurpose")
     public Item<PrivateKeyMO> markSpecialPurpose(@PathParam("id") String id, @QueryParam("purpose") @ChoiceParam({"SSL", "CA", "AUDIT_VIEWER", "AUDIT_SIGNING"}) List<String> purpose) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         PrivateKeyMO resource = factory.setSpecialPurpose(id, purpose);
-        return new ItemBuilder<>(transformer.convertToItem(resource))
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(resource, transformer, this);
     }
 
     /**
@@ -264,7 +244,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, signatureHash);
         return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, getResourceType() + "CSR")
                 .setContent(privateKeyGenerateCsrResult)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
                 .build();
     }
@@ -301,7 +281,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         PrivateKeySignCsrResult privateKeySignCsrResult = factory.signCert(id, subjectDN, expiryAge, signatureHash, certificate);
         return new ItemBuilder<PrivateKeySignCsrResult>("Signed Cert", id, getResourceType() + "SignedCert")
                 .setContent(privateKeySignCsrResult)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
                 .build();
     }
@@ -341,7 +321,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         privateKeyImportContext.setPassword("password");
         privateKeyImportContext.setAlias("keyAlias");
         return new ItemBuilder<PrivateKeyImportContext>("PrivateKeyImportContext Template", "PrivateKeyImportContext")
-                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeyimportcontext")))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrlString("template/privatekeyimportcontext")))
                 .setContent(privateKeyImportContext)
                 .build();
     }
@@ -358,7 +338,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         privateKeyExportContext.setPassword("password");
         privateKeyExportContext.setAlias("keyAlias");
         return new ItemBuilder<PrivateKeyExportContext>("PrivateKeyExportContext Template", "PrivateKeyExportContext")
-                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeyexportcontext")))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrlString("template/privatekeyexportcontext")))
                 .setContent(privateKeyExportContext)
                 .build();
     }
@@ -381,8 +361,21 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
                 .put("signatureHashAlgorithm", "SHA384")
                 .map());
         return new ItemBuilder<PrivateKeyCreationContext>("PrivateKeyCreationContext Template", "PrivateKeyCreationContext")
-                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template/privatekeycreationcontext")))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrlString("template/privatekeycreationcontext")))
                 .setContent(privateKeyCreationContext)
                 .build();
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final PrivateKeyMO privateKeyMO) {
+        List<Link> links = super.getRelatedLinks(privateKeyMO);
+        links.add(ManagedObjectFactory.createLink("templatePrivateKey", getUrlString("template/privatekeyimportcontext")));
+        links.add(ManagedObjectFactory.createLink("templatePrivateKeyExport", getUrlString("template/privatekeyexportcontext")));
+        links.add(ManagedObjectFactory.createLink("templatePrivateKeyCreation", getUrlString("template/privatekeycreationcontext")));
+        if (privateKeyMO != null) {
+            links.add(ManagedObjectFactory.createLink("generateCSR", getUrlString(privateKeyMO.getId() + "/generateCSR")));
+        }
+        return links;
     }
 }

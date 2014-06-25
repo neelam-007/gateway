@@ -52,7 +52,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     /**
      * {@inheritDoc}
      */
-    @Nullable
+    @NotNull
     @Override
     public DependencySearchResults getDependencies(@NotNull final EntityHeader entityHeader, @NotNull final Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException {
         return getDependencies(Arrays.asList(entityHeader), searchOptions).get(0);

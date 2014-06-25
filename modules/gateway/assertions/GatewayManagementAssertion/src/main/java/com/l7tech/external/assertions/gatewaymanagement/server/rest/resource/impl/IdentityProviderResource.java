@@ -6,23 +6,20 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Cho
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.IdentityProviderTransformer;
-import com.l7tech.gateway.api.IdentityProviderMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemsList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -60,7 +57,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @return The user resource for handling user requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/"+ UserResource.USERS_URI)
+    @Path("{id}/" + UserResource.USERS_URI)
     public UserResource users(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         return resourceContext.initResource(new UserResource(resolveId(id)));
     }
@@ -72,7 +69,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @return The group resource for handling group requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/groups")
+    @Path("{id}/" + GroupResource.GROUPS_URI)
     public GroupResource groups(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
         return resourceContext.initResource(new GroupResource(resolveId(id)));
     }
@@ -86,7 +83,6 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(IdentityProviderMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -128,9 +124,6 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<IdentityProviderMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "type"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -180,8 +173,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
         }
     }
 
-    private String resolveId(String id){
-        if(id.equals("default")){
+    private String resolveId(String id) {
+        if (id.equals("default")) {
             return IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
         }
         return id;
@@ -199,7 +192,6 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(IdentityProviderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, resolveId(id));
     }
@@ -238,5 +230,16 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
         detailsBindOnly.setBindPatternPrefix("prefix Pattern");
         detailsBindOnly.setBindPatternSuffix("suffix Pattern");
         return super.createTemplateItem(identityProviderMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final IdentityProviderMO identityProviderMO) {
+        List<Link> links = super.getRelatedLinks(identityProviderMO);
+        if (identityProviderMO != null) {
+            links.add(ManagedObjectFactory.createLink("users", getUrlString(identityProviderMO.getId() + "/" + UserResource.USERS_URI)));
+            links.add(ManagedObjectFactory.createLink("groups", getUrlString(identityProviderMO.getId() + "/" + GroupResource.GROUPS_URI)));
+        }
+        return links;
     }
 }

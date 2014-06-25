@@ -42,12 +42,9 @@ import java.util.concurrent.Callable;
 /**
  * This resource is used to export and import bundles for migration.
  */
-@Path(BundleResource.Version_URI + "bundle")
+@Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + "bundle")
 @RequestScoped
 public class BundleResource {
-
-    protected static final String Version_URI = ServerRESTGatewayManagementAssertion.Version1_0_URI;
-
     @SpringBean
     private BundleImporter bundleImporter;
 
@@ -124,7 +121,7 @@ public class BundleResource {
         }
 
         return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
 
@@ -170,7 +167,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy, exportGatewayRestManagementService, header)))
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
 
@@ -201,7 +198,7 @@ public class BundleResource {
         AuditContextUtils.setSystem(false);
 
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .setContent(ManagedObjectFactory.createMappings(mappings))
                 .build();
         return containsErrors(mappings) ? Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();

@@ -9,11 +9,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.util.CollectionUtils;
-import org.glassfish.jersey.message.XmlHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
@@ -52,7 +50,6 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(InterfaceTagMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         return super.create(resource);
     }
@@ -93,7 +90,6 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
     public ItemsList<InterfaceTagMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -121,7 +117,6 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(InterfaceTagMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
         if (resourceExists) {

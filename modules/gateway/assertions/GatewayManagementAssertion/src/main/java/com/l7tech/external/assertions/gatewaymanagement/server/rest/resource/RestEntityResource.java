@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.AP
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,8 +13,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.net.URI;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -76,21 +74,6 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T e
         return factory.getResourceType();
     }
 
-    public ItemsList<R> list(final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
-        List<Item<R>> items = Functions.map(factory.listResources(sort, asc, filters), new Functions.Unary<Item<R>, R>() {
-            @Override
-            public Item<R> call(R resource) {
-                return new ItemBuilder<>(transformer.convertToItem(resource))
-                        .addLink(getLink(resource))
-                        .build();
-            }
-        });
-        return new ItemsListBuilder<R>(getResourceType() + " list", "List").setContent(items)
-                .addLink(ManagedObjectFactory.createLink("self", uriInfo.getRequestUri().toString()))
-                .addLinks(getRelatedLinks(null))
-                .build();
-    }
-
     /**
      * Returns the Url of this resource with the given id
      *
@@ -109,8 +92,8 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T e
     @NotNull
     @Override
     public String getUrl(@NotNull R resource) {
-        if(resource instanceof ManagedObject){
-            return getUrlString(((ManagedObject)resource).getId());
+        if (resource instanceof ManagedObject) {
+            return getUrlString(((ManagedObject) resource).getId());
         }
         //In this case the getUrl method should have been overriden by the specific entityResource
         throw new IllegalArgumentException("Cannot get url for a non managed object resource: " + resource.getClass());
@@ -125,66 +108,101 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T e
     @NotNull
     @Override
     public Link getLink(@NotNull R resource) {
-        return ManagedObjectFactory.createLink("self", getUrl(resource));
+        return ManagedObjectFactory.createLink(Link.LINK_REL_SELF, getUrl(resource));
     }
 
+    /**
+     * Returns all related links for the given resource
+     *
+     * @param resource The resource to return related links for
+     * @return The list of related links
+     */
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable R resource) {
-        return Arrays.asList(
-                ManagedObjectFactory.createLink("template", getUrlString("template")),
-                ManagedObjectFactory.createLink("list", getUrlString(null))
-        );
+        final ArrayList<Link> links = new ArrayList<>();
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_TEMPLATE, getUrlString("template")));
+        links.add(ManagedObjectFactory.createLink(Link.LINK_REL_LIST, getUrlString(null)));
+        return links;
     }
 
-    public Item<R> get(String id) throws ResourceFactory.ResourceNotFoundException {
+    /**
+     * Retrieves a resource with the given id;
+     *
+     * @param id The id of the resource to retrieve
+     * @return The resource with the given id
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    protected Item<R> get(String id) throws ResourceFactory.ResourceNotFoundException {
         R resource = factory.getResource(id);
-        return new ItemBuilder<>(transformer.convertToItem(resource))
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build();
+        return RestEntityResourceUtils.createGetResponseItem(resource, transformer, this);
     }
 
+    /**
+     * Lists resources given a sort and filters.
+     *
+     * @param sort    The sort key to sort the reources by
+     * @param asc     The sort order
+     * @param filters The filters to use to filter list of resources.
+     * @return The resulting resource list
+     */
+    protected ItemsList<R> list(final String sort, final Boolean asc, final Map<String, List<Object>> filters) {
+        return RestEntityResourceUtils.createItemsList(
+                factory.listResources(sort, asc, filters),
+                transformer,
+                this,
+                uriInfo.getRequestUri().toString());
+    }
+
+    /**
+     * Creates a template item given a template resource
+     *
+     * @param resource The template resource
+     * @return The template item
+     */
     protected Item<R> createTemplateItem(@NotNull final R resource) {
-        return new ItemBuilder<R>(getResourceType() + " Template", getResourceType())
-                .addLink(ManagedObjectFactory.createLink("self", getUrlString("template")))
-                .addLinks(getRelatedLinks(resource))
-                .setContent(resource)
-                .build();
+        return RestEntityResourceUtils.createTemplateItem(resource, this, getUrlString("template"));
     }
 
-    public Response create(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String id = factory.createResource(resource);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build())
-                .build();
+    /**
+     * Creates the given resource
+     *
+     * @param resource The resource to create
+     * @return The created response
+     * @throws ResourceFactory.ResourceNotFoundException
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    protected Response create(R resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        factory.createResource(resource);
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
     }
 
-    public Response update(R resource, String id) throws ResourceFactory.ResourceFactoryException {
+    /**
+     * Updates the given resource. Or creates it if one with the given id does not exist.
+     *
+     * @param resource The resource to update
+     * @param id       The id of the resource to update
+     * @return The update or create response
+     * @throws ResourceFactory.ResourceFactoryException
+     */
+    protected Response update(R resource, String id) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
-        final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {
             factory.updateResource(id, resource);
-            responseBuilder = Response.ok();
         } else {
             factory.createResource(id, resource);
-            responseBuilder = Response.created(uriInfo.getAbsolutePath());
         }
-        return responseBuilder.entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build()).build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, !resourceExists);
+
     }
 
-    public void delete(String id) throws ResourceFactory.ResourceNotFoundException {
+    /**
+     * Deletes a resource with the given id
+     *
+     * @param id The id of the resource to delete
+     * @throws ResourceFactory.ResourceNotFoundException
+     */
+    protected void delete(String id) throws ResourceFactory.ResourceNotFoundException {
         factory.deleteResource(id);
     }
 }

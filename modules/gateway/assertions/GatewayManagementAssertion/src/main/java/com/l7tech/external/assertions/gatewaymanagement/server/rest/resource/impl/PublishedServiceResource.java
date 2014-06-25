@@ -9,17 +9,16 @@ import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
-import org.glassfish.jersey.message.XmlHeader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.Provider;
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -70,18 +69,9 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response create(ServiceMO resource, @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        String id = factory.createResource(resource, comment);
-        UriBuilder ub = uriInfo.getAbsolutePathBuilder().path(id);
-        final URI uri = ub.build();
-        return Response.created(uri).entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build())
-                .build();
+        factory.createResource(resource, comment);
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
     }
 
     /**
@@ -124,9 +114,6 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      */
     @SuppressWarnings("unchecked")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
-    //This xml header allows the list to be explorable when viewed in a browser
-    //@XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public ItemsList<ServiceMO> list(
             @QueryParam("sort") @ChoiceParam({"id", "name", "parentFolder.id"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
@@ -185,26 +172,17 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
      */
     @PUT
     @Path("{id}")
-    @XmlHeader(XslStyleSheetResource.DEFAULT_STYLESHEET_HEADER)
     public Response update(ServiceMO resource,
                            @PathParam("id") String id,
                            @QueryParam("active") @DefaultValue("true") Boolean active,
                            @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
-        final Response.ResponseBuilder responseBuilder;
         if (resourceExists) {
             factory.updateResource(id, resource, comment, active);
-            responseBuilder = Response.ok();
         } else {
             factory.createResource(id, resource, comment);
-            responseBuilder = Response.created(uriInfo.getAbsolutePath());
         }
-        return responseBuilder.entity(new ItemBuilder<>(
-                transformer.convertToItem(resource))
-                .setContent(null)
-                .addLink(getLink(resource))
-                .addLinks(getRelatedLinks(resource))
-                .build()).build();
+        return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, !resourceExists);
     }
 
     /**
@@ -244,5 +222,17 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
 
         return super.createTemplateItem(serviceMO);
+    }
+
+    @NotNull
+    @Override
+    public List<Link> getRelatedLinks(@Nullable final ServiceMO serviceMO) {
+        ArrayList<Link> links = new ArrayList<>(super.getRelatedLinks(serviceMO));
+        if(serviceMO != null) {
+            links.addAll(Arrays.asList(
+                    ManagedObjectFactory.createLink("versions", getUrlString(serviceMO.getId() + "/" + PolicyVersionResource.VERSIONS_URI)),
+                    ManagedObjectFactory.createLink("parentFolder", getUrlString(serviceMO.getServiceDetail().getFolderId()))));
+        }
+        return links;
     }
 }
