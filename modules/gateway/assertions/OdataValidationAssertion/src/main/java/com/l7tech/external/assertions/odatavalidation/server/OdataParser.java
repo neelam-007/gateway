@@ -7,7 +7,9 @@ import org.apache.olingo.odata2.api.edm.EdmException;
 import org.apache.olingo.odata2.api.uri.*;
 import org.apache.olingo.odata2.core.ODataPathSegmentImpl;
 import org.apache.olingo.odata2.core.PathInfoImpl;
+import org.apache.olingo.odata2.core.uri.UriInfoImpl;
 import org.apache.olingo.odata2.core.uri.UriParserImpl;
+import org.apache.olingo.odata2.core.uri.UriType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,13 +36,13 @@ public class OdataParser {
             throw new OdataParsingException("Could not parse resource path");
         }
 
-        UriInfo uriInfo;
+        UriInfoImpl uriInfo;
 
         try {
             List<PathSegment> odataSegments = extractPathSegments(resourcePath);
             Map<String, String> queryParameters = extractQueryParameters(queryString);
 
-            uriInfo = uriParser.parse(odataSegments, queryParameters);
+            uriInfo = (UriInfoImpl) uriParser.parse(odataSegments, queryParameters);
         } catch (UriSyntaxException | EdmException | UriNotMatchingException | IOException e) {
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);
         }
@@ -97,22 +99,22 @@ public class OdataParser {
     }
 
     public class OdataRequestInfo {
-        private final UriInfo uriInfo;
+        private final UriInfoImpl uriInfo;
 
-        public OdataRequestInfo(UriInfo uriInfo) {
+        public OdataRequestInfo(UriInfoImpl uriInfo) {
             this.uriInfo = uriInfo;
         }
 
-        public boolean isMetadataDocumentRequest() {
-            return false;
+        public boolean isServiceDocumentRequest() {
+            return UriType.URI0 == uriInfo.getUriType();
         }
 
-        public boolean isRawValueRequest() {
-            return false;
+        public boolean isMetadataRequest() {
+            return UriType.URI8 == uriInfo.getUriType();
         }
 
-        public HashMap<String, String> getQueryOptions() {
-            return null;
+        public boolean isValueRequest() {
+            return uriInfo.isValue();
         }
     }
 
@@ -121,7 +123,7 @@ public class OdataParser {
             return null;
         }
 
-        public String getOperation() {
+        public String getOperation() { // TODO jwilliams: necessary?
             return null;
         }
     }

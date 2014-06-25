@@ -3,9 +3,13 @@ package com.l7tech.external.assertions.odatavalidation.server;
 import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
+import org.apache.olingo.odata2.api.uri.UriNotMatchingException;
+import org.apache.olingo.odata2.api.uri.UriSyntaxException;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
@@ -104,29 +108,125 @@ public class OdataParserTest {
                 "  </edmx:DataServices>\n" +
                 "</edmx:Edmx>\n";
 
-    private final Edm entityDataModel;
-
     private OdataParser parser;
 
     public OdataParserTest() throws EntityProviderException {
-        entityDataModel = EntityProvider.readMetadata(new ByteArrayInputStream(METADATA_DOCUMENT_ODATA_V2.getBytes()), false);
+        Edm entityDataModel = EntityProvider.readMetadata(new ByteArrayInputStream(METADATA_DOCUMENT_ODATA_V2.getBytes()), false);
+        parser = new OdataParser(entityDataModel);
     }
 
     @Test
-    public void testParseRequest_GivenValidResourcePath_ParsingSucceeds() throws Exception {
-        parser = new OdataParser(entityDataModel);
+    public void testParseRequest_GivenValidParametersForMetadataDocument_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/$metadata", "");
 
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Products", "name=whatever");
+        assertTrue(requestInfo.isMetadataRequest());
 
-        // TODO jwilliams: verify requestInfo
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
     }
 
-    @Test(expected = OdataParser.OdataParsingException.class)
-    public void testParseRequest_GivenInValidResourcePath_ParsingFails() throws Exception {
-        parser = new OdataParser(entityDataModel);
+    @Test
+    public void testParseRequest_GivenValidParametersForServiceDocument_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/", "");
 
-        parser.parseRequest("/NonExistent", "");
+        assertTrue(requestInfo.isServiceDocumentRequest());
 
-        // TODO jwilliams: verify specific parsing exception
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+    }
+
+    @Test
+    public void testParseRequest_GivenValidParametersForEntitySet_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Products", "$orderby=Name asc");
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+    }
+
+    @Test
+    public void testParseRequest_GivenValidParametersForSingleEntity_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)", "");
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+    }
+
+    @Test
+    public void testParseRequest_GivenValidParametersForSingleEntityProperty_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name", "");
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+    }
+
+    @Test
+    public void testParseRequest_GivenValidParametersForSingleEntityPropertyRawValue_ParsingSucceeds() throws Exception {
+        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name/$value", "");
+
+        assertTrue(requestInfo.isValueRequest());
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+    }
+
+    /**
+     * Requests for the Service Metadata Document may only use the $format system option; all others will
+     * fail to be parsed.
+     */
+    @Test
+    public void testParseRequest_GivenOutOfPlaceSystemQueryOption_ParsingFails() {
+        try {
+            parser.parseRequest("/$metadata", "$skip=5");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(UriSyntaxException.class, e.getCause().getClass());
+            assertEquals("System query option '$skip' is not compatible with the return type.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseRequest_GivenInvalidEntitySetResourcePath_ParsingFails() {
+        try {
+            parser.parseRequest("/NonExistentEntitySet", "$top=5");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(UriNotMatchingException.class, e.getCause().getClass());
+            assertEquals("Could not find an entity set or function import for 'NonExistentEntitySet'.", e.getMessage());
+        }
+    }
+
+    /**
+     * In this test, the System Query Option '$top' has been misspelled and should not be recognized.
+     */
+    @Test
+    public void testParseRequest_GivenUnrecognizedSystemQueryOptions_ParsingFails() {
+        try {
+            parser.parseRequest("/Products(1)", "$toop=5");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(UriSyntaxException.class, e.getCause().getClass());
+            assertEquals("Invalid system query option: '$toop'. ", e.getMessage());
+        }
+    }
+
+    /**
+     * In this test, the System Query Option '$top' has been misspelled and should not be recognized.
+     */
+    @Test
+    public void testParseRequest_GivenPoorlyFormedOrderByExpression_ParsingFails() {
+        try {
+            parser.parseRequest("/Products", "$orderby=Nadme asc");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(UriSyntaxException.class, e.getCause().getClass());
+            assertEquals("Invalid order by expression: 'Nadme asc'. ", e.getMessage());
+        }
     }
 }

@@ -355,9 +355,9 @@ public class ServerOdataValidationAssertionTest {
      * Checks presence or absence of audits to confirm the expected audits are present/not present.
      */
     private void checkAuditPresence(boolean invalidServiceMetadataDocument, boolean invalidRequestUri) {
-        assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_SERVICE_METADATA_DOCUMENT.getMessage(),
+        assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_SMD.getMessage(),
                 invalidServiceMetadataDocument,
-                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_SERVICE_METADATA_DOCUMENT));
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_SMD));
 
         assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_URI.getMessage(),
                 invalidRequestUri,

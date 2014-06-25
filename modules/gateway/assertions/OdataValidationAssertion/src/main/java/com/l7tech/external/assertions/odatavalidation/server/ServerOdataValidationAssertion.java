@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
 
@@ -38,7 +39,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         try {
             EntityProvider.readMetadata(metadataStream, false);
         } catch (EntityProviderException e) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SERVICE_METADATA_DOCUMENT, e.getMessage());
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
 
