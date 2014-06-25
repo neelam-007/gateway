@@ -104,16 +104,25 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     }
 
     public Set<ProtectionActions> getAllActions() {
+        if ( actions == null ) {
+            actions = EnumSet.noneOf(ProtectionActions.class);
+        }
         return Collections.unmodifiableSet(actions);
     }
 
     public void addAction(@NotNull ProtectionActions action) {
-
-        actions.add(action);
+        if ( actions == null ) {
+            actions = EnumSet.noneOf(ProtectionActions.class);
+        }
+        HashSet<ProtectionActions> tempSet;
+        tempSet = new HashSet<>(actions);
+        tempSet.add(action);
+        actions = EnumSet.copyOf(tempSet);
     }
 
     public void removeAction(ProtectionActions action) {
-        actions.remove(action);
+        if ( actions != null )
+            actions.remove(action);
     }
 
 
