@@ -110,7 +110,6 @@ public class ExpandVariablesTemplate {
                 }
 
                 replacement = valueFilter != null ? valueFilter.call(replacement) : replacement;
-                replacement = Matcher.quoteReplacement(replacement); // bugzilla 3022 and 6813
 
                 sb.append(replacement);
             }

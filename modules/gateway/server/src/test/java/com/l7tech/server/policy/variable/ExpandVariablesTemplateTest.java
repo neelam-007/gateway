@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.NullAudit;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -25,6 +26,9 @@ public class ExpandVariablesTemplateTest {
             .put("baz", "wjhewiueh")
             .put("quux", "wuhweuh")
             .put("asdf", "uhwuhwruh")
+            .put("dollar", "$$$")
+            .put("bslash", "\\\\\\")
+            .put("specials", "~!@#$%^&*()_+`1[]{};'\\:\"|,./<>?")
             .unmodifiableMap();
 
     private Audit audit = new Auditor(this, null, logger);
@@ -47,6 +51,16 @@ public class ExpandVariablesTemplateTest {
         assertEquals("qwertzxcv", new ExpandVariablesTemplate("${foo}${bar}").process(vars, audit));
         assertEquals("qwert zxcv baz", new ExpandVariablesTemplate("${foo} ${bar} baz").process(vars, audit));
     }
+
+    @Test
+    @BugId( "SSG-8699" )
+    public void testEscapingOfSpecials() throws Exception {
+        assertEquals( "Dollars and backslashes should be left alone in replacement",
+                "test$$$blah\\\\\\", new ExpandVariablesTemplate( "test${dollar}blah${bslash}").process( vars, audit ) );
+        assertEquals( "Special characters should be left alone",
+                "~!@#$%^&*()_+`1[]{};'\\:\"|,./<>?", new ExpandVariablesTemplate( "${specials}").process( vars, audit ) );
+    }
+
 
     @Test
     @Ignore("Developer benchmark")
