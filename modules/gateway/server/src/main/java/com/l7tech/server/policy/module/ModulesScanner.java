@@ -551,6 +551,15 @@ public abstract class ModulesScanner<T extends BaseAssertionModule> {
                 return false;
             }
 
+            // Ensure files are always processed in sorted order, regardless of the ordering policy of File.listFiles() in this environment
+            // We will always process the files in Unicode lexical order, case sensitively, regardless of OS.
+            Arrays.sort( jars, new Comparator<File>() {
+                @Override
+                public int compare( File a, File b ) {
+                    return a.getName().compareTo( b.getName() );
+                }
+            } );
+
             // loop through all disabled modules and remove them from moduleFileNames
             for (final String disabledModuleName : disabledModuleFileNames) {
                 moduleFileNames.remove(disabledModuleName);
