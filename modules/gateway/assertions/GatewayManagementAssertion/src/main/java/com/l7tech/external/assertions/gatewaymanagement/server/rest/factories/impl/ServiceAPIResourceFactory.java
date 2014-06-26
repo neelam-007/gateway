@@ -96,6 +96,9 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                     final PublishedService newService = newServiceEntity.getEntity();
                     newService.setVersion(0);
 
+                    //check for permissions to create service.
+                    rbacAccessService.validatePermitted(newService, OperationType.CREATE);
+
                     //check assertion access
                     final Policy policy = newService.getPolicy();
                     policyHelper.checkPolicyAssertionAccess(policy);
@@ -105,7 +108,6 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
                         policy.setGuid(UUID.randomUUID().toString());
                     }
 
-                    rbacAccessService.validatePermitted(newService, OperationType.CREATE);
                     RestResourceFactoryUtils.validate(newService, Collections.<String, String>emptyMap());
                     final Goid savedId;
                     if (id == null) {
@@ -164,6 +166,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
 
                     rbacAccessService.validatePermitted(oldService, OperationType.UPDATE);
                     RestResourceFactoryUtils.checkMovePermitted(rbacAccessService, oldService.getFolder(), newService.getFolder());
+                    policyHelper.checkPolicyAssertionAccess(newService.getPolicy());
 
                     newService.setGoid(Goid.parseGoid(id));
                     //needs to be done this way to properly copy over the policy id.

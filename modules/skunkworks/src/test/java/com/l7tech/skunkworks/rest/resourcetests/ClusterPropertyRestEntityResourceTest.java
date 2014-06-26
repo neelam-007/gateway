@@ -73,6 +73,7 @@ public class ClusterPropertyRestEntityResourceTest extends RestEntityTests<Clust
         clusterProperty.setName("Cluster Property created");
         clusterProperty.setValue("Cluster Property created value");
 
+        clusterPropertyMOs.add(clusterProperty);
         return clusterPropertyMOs;
     }
 

@@ -4,6 +4,8 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 
@@ -19,11 +21,15 @@ public class InsufficientPermissionsException extends RuntimeException {
         super(message, e);
     }
 
-    public InsufficientPermissionsException(User user, Entity entity, OperationType operationType, String otherOperationName) {
-        super(MessageFormat.format("Permission denied for user {0} on entity {1} with id {2}. Requested operation {3}", user.getLogin(), EntityType.findTypeByEntity(entity.getClass()), entity.getId(), OperationType.OTHER.equals(operationType) ? otherOperationName : operationType));
+    public InsufficientPermissionsException(@Nullable final User user, Throwable e) {
+        super(MessageFormat.format("Permission denied for user {0}.", user != null ? user.getLogin() : "<unauthenticated>"), e);
     }
 
-    public InsufficientPermissionsException(User user, Entity entity, OperationType operationType, String otherOperationName, Throwable e) {
-        super(MessageFormat.format("Permission denied for user {0} on entity {1} with id {2}. Requested operation {3}", user.getLogin(), EntityType.findTypeByEntity(entity.getClass()), entity.getId(), OperationType.OTHER.equals(operationType) ? otherOperationName : operationType), e);
+    public InsufficientPermissionsException(@Nullable final User user, @NotNull final Entity entity, @Nullable final OperationType operationType, @Nullable final String otherOperationName) {
+        super(MessageFormat.format("Permission denied for user {0} on entity {1} with id {2}. Requested operation {3}", user != null ? user.getLogin() : "<unauthenticated>", EntityType.findTypeByEntity(entity.getClass()), entity.getId(), OperationType.OTHER.equals(operationType) ? otherOperationName : operationType));
+    }
+
+    public InsufficientPermissionsException(@Nullable final User user, @NotNull final Entity entity, @NotNull final OperationType operationType, @Nullable final String otherOperationName, @NotNull final Throwable e) {
+        super(MessageFormat.format("Permission denied for user {0} on entity {1} with id {2}. Requested operation {3}", user != null ? user.getLogin() : "<unauthenticated>", EntityType.findTypeByEntity(entity.getClass()), entity.getId(), OperationType.OTHER.equals(operationType) ? otherOperationName : operationType), e);
     }
 }

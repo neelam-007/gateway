@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper;
 import com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
@@ -49,6 +50,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
     @Inject
     private PolicyManager policyManager;
     @Inject
+    private PolicyHelper policyHelper;
+    @Inject
     private PolicyTransformer policyTransformer;
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
@@ -93,6 +96,8 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                     }
 
                     rbacAccessService.validatePermitted(newPolicy, OperationType.CREATE);
+                    policyHelper.checkPolicyAssertionAccess(newPolicy);
+
                     RestResourceFactoryUtils.validate(newPolicy, Collections.<String, String>emptyMap());
                     final String savedId;
                     if (id == null) {
@@ -139,8 +144,10 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
                         throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot change a policy's guid. Existing Guid: " + oldPolicy.getGuid());
                     }
 
+                    //permissions checks
                     rbacAccessService.validatePermitted(oldPolicy, OperationType.UPDATE);
                     RestResourceFactoryUtils.checkMovePermitted(rbacAccessService, oldPolicy.getFolder(), newPolicy.getFolder());
+                    policyHelper.checkPolicyAssertionAccess(newPolicy);
 
                     newPolicy.setGoid(Goid.parseGoid(id));
                     //need to update the policy version as wsman does not set it. SSG-8476

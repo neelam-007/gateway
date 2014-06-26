@@ -60,8 +60,11 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
         } else if ( e instanceof ResourceFactory.InvalidResourceException ) {
             status = Response.Status.BAD_REQUEST;
         } else if ( e instanceof PermissionDeniedException || e instanceof InsufficientPermissionsException ) {
-            String userId = JaasUtils.getCurrentUser()==null ? "<unauthenticated>" : JaasUtils.getCurrentUser().getLogin();
-            logMessage = ExceptionUtils.getMessage(e) + ", for user '"+userId+"'.";
+            final InsufficientPermissionsException insufficientPermissionsException = e instanceof InsufficientPermissionsException ? (InsufficientPermissionsException) e : ((PermissionDeniedException) e).getEntity() != null ? new InsufficientPermissionsException(JaasUtils.getCurrentUser(), ((PermissionDeniedException) e).getEntity(), ((PermissionDeniedException) e).getOperation(), ((PermissionDeniedException) e).getOtherOperationName(), e) : new InsufficientPermissionsException(JaasUtils.getCurrentUser(), e);
+            String userId = JaasUtils.getCurrentUser() == null ? "<unauthenticated>" : JaasUtils.getCurrentUser().getLogin();
+            logMessage = ExceptionUtils.getMessage(insufficientPermissionsException) + ", for user '" + userId + "'.";
+            errorResponse.setType("PermissionDenied");
+            errorResponse.setDetail(ExceptionUtils.getMessageWithCause(insufficientPermissionsException));
             status = Response.Status.UNAUTHORIZED;
         } else if ( e instanceof ResourceFactory.DuplicateResourceAccessException) {
             status = Response.Status.FORBIDDEN;
