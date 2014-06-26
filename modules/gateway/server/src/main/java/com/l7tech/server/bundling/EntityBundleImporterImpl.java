@@ -10,6 +10,7 @@ import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -652,6 +653,15 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             if (encassPolicy != null) {
                 final Policy policyFound = policyManager.findByPrimaryKey(encassPolicy.getGoid());
                 encassConfig.setPolicy(policyFound);
+            }
+        }
+        //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
+        if(entityContainer.getEntity() instanceof HasFolder && existingEntity != null) {
+            if(existingEntity instanceof HasFolder){
+                ((HasFolder)entityContainer.getEntity()).setFolder(((HasFolder)existingEntity).getFolder());
+            } else {
+                //this should never happen
+                throw new IllegalStateException("A folderable entity was mapped to an entity that is not folderable: " + existingEntity.getClass());
             }
         }
     }

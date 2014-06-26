@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -639,6 +640,155 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
         }finally{
             mappingsToClean = null;
+        }
+    }
+
+    /**
+     * Source:
+     * - Root
+     *   - Service A
+     *   - Folder A
+     *     - ServiceAlias A (for service A)
+     *
+     * Target:
+     * - Root
+     *   - ServiceAlias B (for Service B)
+     *   - Folder B
+     *     - Service B
+     *
+     * Map the following:
+     * Service A -> Service B
+     * ServiceAlias A -> ServiceAlias B
+     *
+     * Expected Result:
+     * - Root
+     *   - ServiceAlias A (for Service A)
+     *   - Folder B
+     *     - Service A
+     *   - Folder A
+     *
+     */
+    @BugId("SSG-8792")
+    @Test
+    public void testUpdateServiceInDifferentFolder() throws Exception{
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setName("MyTargetServiceFolder");
+        folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        RestResponse response = getTargetEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        folderMO.setId(folderCreated.getId());
+        folderCreated.setContent(folderMO);
+
+        ServiceMO serviceMO = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
+        serviceMO.setId(null);
+        serviceMO.getServiceDetail().setName("Target Service");
+        serviceMO.getServiceDetail().setId(null);
+        serviceMO.getServiceDetail().setFolderId(folderCreated.getId());
+        ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
+        wsdlResourceSet.setTag("wsdl");
+        wsdlResourceSet.setRootUrl("http://localhost:8080/targetTest.wsdl");
+        Resource wsdlResource = ManagedObjectFactory.createResource();
+        wsdlResourceSet.setResources(Arrays.asList(wsdlResource));
+        wsdlResource.setType("wsdl");
+        wsdlResource.setSourceUrl("http://localhost:8080/targetTest.wsdl");
+        wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
+        serviceMO.setResourceSets(Arrays.asList(serviceMO.getResourceSets().get(0),wsdlResourceSet));
+        logger.info( XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+        response = getTargetEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+        assertOkCreatedResponse(response);
+        Item<ServiceMO> serviceCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceMO.setId(serviceCreated.getId());
+        serviceCreated.setContent(serviceMO);
+
+        // create policy alias
+        ServiceAliasMO serviceAliasMO = ManagedObjectFactory.createServiceAlias();
+        serviceAliasMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, serviceCreated.getId()));
+        response = getTargetEnvironment().processRequest("serviceAliases", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceAliasMO)));
+        assertOkCreatedResponse(response);
+        Item<ServiceAliasMO> serviceAliasCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceAliasMO.setId(serviceAliasCreated.getId());
+        serviceAliasCreated.setContent(serviceAliasMO);
+
+        try{
+            response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 3 item. A service, folder and service alias", 3, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 4 mappings. 2 folder, a service, and service alias", 4, bundleItem.getContent().getMappings().size());
+
+            // map and update service
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceItem.getId()).setTargetId(serviceCreated.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceItem.getId()).addProperty("FailOnNew", true);
+
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceAliasItem.getId()).setTargetId(serviceAliasCreated.getId());
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceAliasItem.getId()).setAction(Mapping.Action.NewOrUpdate);
+            MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), serviceAliasItem.getId()).addProperty("FailOnNew", true);
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+            Mapping rootFolderMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), Folder.ROOT_FOLDER_ID.toString());
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, rootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+            Assert.assertEquals(rootFolderMapping.getSrcId(), rootFolderMapping.getTargetId());
+
+            Mapping serviceMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceItem.getId());
+            Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceMapping.getActionTaken());
+            Assert.assertEquals(serviceItem.getId(), serviceMapping.getSrcId());
+            Assert.assertEquals(serviceCreated.getId(), serviceMapping.getTargetId());
+
+            Mapping serviceAliasMapping = MigrationTestBase.getMapping(mappings.getContent().getMappings(), serviceAliasItem.getId());
+            Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrUpdate, serviceAliasMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, serviceAliasMapping.getActionTaken());
+            Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
+            Assert.assertEquals(serviceAliasCreated.getId(), serviceAliasMapping.getTargetId());
+
+            // validate updated service
+            response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+            Item<ServiceMO> updatedService = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(serviceItem.getContent().getServiceDetail().getName(), updatedService.getContent().getServiceDetail().getName());
+            Assert.assertEquals("The service folder was updated but it shouldn't have been.", folderCreated.getId(), updatedService.getContent().getServiceDetail().getFolderId());
+            Assert.assertEquals(2, updatedService.getContent().getResourceSets().size());
+            Assert.assertEquals("http://localhost:8080/test.wsdl", updatedService.getContent().getResourceSets().get(1).getRootUrl());
+
+            validate(mappings);
+
+            //get the created folder dependencies. It should be empty
+            response = getTargetEnvironment().processRequest("folders/" + folderItem.getId() + "/dependencies", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+            Item<DependencyListMO> dependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Assert.assertEquals(0, dependencies.getContent().getDependencies().size());
+
+        }finally{
+            response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("folders/" + folderCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
+            response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
         }
     }
 }
