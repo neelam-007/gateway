@@ -35,20 +35,20 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public long incrementOnlyWithinLimitAndReturnValue(boolean sync, String counterName, long timestamp, int fieldOfInterest, long limit) throws LimitAlreadyReachedException {
+    public long incrementOnlyWithinLimitAndReturnValue(boolean sync, boolean readSync, String counterName, long timestamp, int fieldOfInterest, long limit, int value) throws LimitAlreadyReachedException {
         if(throwException){
             throw new LimitAlreadyReachedException("Throwing exception from stub.");
         }
-        return counterValue;
+        return counterValue + value;
     }
 
     @Override
-    public long incrementAndReturnValue(boolean sync, String counterName, long timestamp, int fieldOfInterest) {
-        return counterValue;
+    public long incrementAndReturnValue(boolean sync, boolean readSync, String counterName, long timestamp, int fieldOfInterest, int value) {
+        return counterValue + value;
     }
 
     @Override
-    public long getCounterValue(String counterName, int fieldOfInterest) {
+    public long getCounterValue(boolean readSync, String counterName, int fieldOfInterest) {
         return counterValue;
     }
 
@@ -58,7 +58,7 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public void decrement(boolean sync, String counterName) {
+    public void decrement(boolean sync, String counterName, int incrementValue) {
     }
 
     @Override

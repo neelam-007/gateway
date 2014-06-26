@@ -34,6 +34,7 @@ public class AddThroughputQuotaAssertionAdvice implements Advice {
         final ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, false);
         dlg.setPolicyPosition( new PolicyPositionAware.PolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation()));
         subject.setSynchronous(false); // sync defaults to false for newly-created assertions going forward
+        subject.setReadSynchronous(true); //sync defaults to false for newly-created assertions going forward
         dlg.setData(subject);
         // show the dialog
         dlg.pack();

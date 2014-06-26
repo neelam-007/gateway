@@ -8,6 +8,7 @@ package com.l7tech.server.sla;
 
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Background;
 import com.l7tech.util.Either;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
@@ -27,8 +28,8 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.*;
-import java.util.Calendar;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -53,14 +54,52 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     private static final int maxThreads = SyspropUtil.getInteger("com.l7tech.hacounter.maxThreads", 128);
     private static final int keepAliveSec = SyspropUtil.getInteger("com.l7tech.hacounter.keepAliveSec", 10);
     private static final int supervisorQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.supervisorQueueSize", 4096);
-    private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 2048);
+    private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 4096);
+
+    private static final int flushTime = SyspropUtil.getInteger("com.l7tech.hacounter.flushTimeWriteDatabase", 1000);
+    private static final int readPeriod = SyspropUtil.getInteger("com.l7tech.hacounter.timeClearReadCache", 60000);
+
     private static final ExecutorService updateThreads = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveSec, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(supervisorQueueSize), new ThreadPoolExecutor.CallerRunsPolicy());
     private final ConcurrentMap<String,WorkQueue> counters = new ConcurrentHashMap<String,WorkQueue>();
+
+    private Map<String, Counter> readCounters = new HashMap<String, Counter>();
 
     private final PlatformTransactionManager transactionManager;
 
     public CounterManagerImpl(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+
+        Background.scheduleRepeated(new TimerTask() {
+            @Override
+            public void run() {
+                readCounters.clear(); // This is the only time entries are ever removed from the nameCache
+            }
+        }, readPeriod, readPeriod);
+
+        Background.scheduleRepeated(new TimerTask() {
+            @Override
+            public void run() {
+
+                for(final WorkQueue workQueue : counters.values()) {
+                    if(workQueue.queue.size() > 0) {
+                        // Ensure someone will service this queue
+                        updateThreads.submit(new Callable<Object>() {
+                            @Override
+                            public Object call() throws Exception {
+                                if (!workQueue.queue.isEmpty() && workQueue.workMutex.tryLock()) {
+                                    try {
+                                        serviceCounterUpdateQueue(workQueue);
+                                    } finally {
+                                        workQueue.workMutex.unlock();
+                                    }
+                                }
+                                return null;
+                            }
+                        });
+                    }
+                }
+            }
+        }, flushTime, flushTime);
     }
 
     private Counter loadCounter(Connection conn, String counterName, boolean lockForUpdate) throws SQLException {
@@ -103,22 +142,25 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
     @Override
     public long incrementOnlyWithinLimitAndReturnValue(final boolean synchronous,
+                                                       final boolean readSynchronous,
                                                        final String counterName,
                                                        final long timestamp,
                                                        final int fieldOfInterest,
-                                                       final long limit) throws LimitAlreadyReachedException
+                                                       final long limit,
+                                                       final int incrementValue) throws LimitAlreadyReachedException
     {
         if (synchronous) {
-            return synchronousIncrementOnlyWithinLimitAndReturnValue(counterName, timestamp, fieldOfInterest, limit);
+            return synchronousIncrementOnlyWithinLimitAndReturnValue(counterName, timestamp, fieldOfInterest, limit, incrementValue);
         } else {
-            return asyncIncrementOnlyWithinLimitAndReturnValue(counterName, timestamp, fieldOfInterest, limit);
+            return asyncIncrementOnlyWithinLimitAndReturnValue(readSynchronous, counterName, timestamp, fieldOfInterest, limit, incrementValue);
         }
     }
 
     private long synchronousIncrementOnlyWithinLimitAndReturnValue(final String counterName,
                                                                    final long timestamp,
                                                                    final int fieldOfInterest,
-                                                                   final long limit) throws LimitAlreadyReachedException
+                                                                   final long limit,
+                                                                   final int incrementValue) throws LimitAlreadyReachedException
     {
         TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
@@ -137,7 +179,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                     throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                                 }
 
-                                incrementCounter(dbcnt, timestamp);
+                                incrementCounter(dbcnt, timestamp, incrementValue);
 
                                 // check if the increment violates the limit
                                 boolean limitViolated = isLimitViolated(dbcnt, fieldOfInterest, limit);
@@ -163,15 +205,15 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     }
 
     @Override
-    public long incrementAndReturnValue(final boolean synchronous, final String counterName, final long timestamp, final int fieldOfInterest) {
+    public long incrementAndReturnValue(final boolean synchronous, final boolean readSynchronous, final String counterName, final long timestamp, final int fieldOfInterest, final int incrementValue) {
         if (synchronous) {
-            return synchronousIncrementAndReturnValue(counterName, timestamp, fieldOfInterest);
+            return synchronousIncrementAndReturnValue(counterName, timestamp, fieldOfInterest, incrementValue);
         } else {
-            return asyncIncrementAndReturnValue(counterName, timestamp, fieldOfInterest);
+            return asyncIncrementAndReturnValue(readSynchronous, counterName, timestamp, fieldOfInterest, incrementValue);
         }
     }
 
-    public long synchronousIncrementAndReturnValue(final String counterName, final long timestamp, final int fieldOfInterest) {
+    public long synchronousIncrementAndReturnValue(final String counterName, final long timestamp, final int fieldOfInterest, final int value) {
         TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
         return tt.execute(new TransactionCallback<Long>() {
@@ -189,7 +231,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                     throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                                 }
 
-                                incrementCounter(dbcnt, timestamp);
+                                incrementCounter(dbcnt, timestamp, value);
                                 // put new value in database
                                 recordNewCounterValue(connection, counterName, dbcnt);
 
@@ -203,8 +245,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         });
     }
 
-    public long getCounterValue(final String counterName, final int fieldOfInterest) {
-        Counter counter = getCurrentCounterValueReadOnly(counterName);
+    public long getCounterValue(final boolean readSynchronous, final String counterName, final int fieldOfInterest) {
+        Counter counter = getCurrentCounterValueReadOnly(readSynchronous, counterName);
         return getFieldOfInterest(counter, fieldOfInterest);
     }
 
@@ -253,11 +295,11 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     }
 
     @Override
-    public void decrement(final boolean synchronous, final String counterName) {
+    public void decrement(final boolean synchronous, final String counterName, int decrementValue) {
         if (synchronous) {
-            synchronousDecrement(counterName);
+            synchronousDecrement(counterName, decrementValue);
         } else {
-            asyncDecrement(counterName);
+            asyncDecrement(counterName, decrementValue);
         }
     }
 
@@ -297,7 +339,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         });
     }
 
-    private void synchronousDecrement(final String counterName) {
+    private void synchronousDecrement(final String counterName, final int decrementValue) {
         TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
         tt.execute(new TransactionCallbackWithoutResult() {
@@ -314,11 +356,11 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                     throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                                 }
 
-                                dbcnt.setCurrentSecondCounter(dbcnt.getCurrentSecondCounter() - 1);
-                                dbcnt.setCurrentMinuteCounter(dbcnt.getCurrentMinuteCounter() - 1);
-                                dbcnt.setCurrentHourCounter(dbcnt.getCurrentHourCounter() - 1);
-                                dbcnt.setCurrentDayCounter(dbcnt.getCurrentDayCounter() - 1);
-                                dbcnt.setCurrentMonthCounter(dbcnt.getCurrentMonthCounter() - 1);
+                                dbcnt.setCurrentSecondCounter(dbcnt.getCurrentSecondCounter() - decrementValue);
+                                dbcnt.setCurrentMinuteCounter(dbcnt.getCurrentMinuteCounter() - decrementValue);
+                                dbcnt.setCurrentHourCounter(dbcnt.getCurrentHourCounter() - decrementValue);
+                                dbcnt.setCurrentDayCounter(dbcnt.getCurrentDayCounter() - decrementValue);
+                                dbcnt.setCurrentMonthCounter(dbcnt.getCurrentMonthCounter() - decrementValue);
 
                                 // put new value in database
                                 recordNewCounterValue(connection, counterName, dbcnt);
@@ -331,7 +373,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         });
     }
 
-    private void incrementCounter(Counter cntr, long timestamp) {
+    private void incrementCounter(Counter cntr, long timestamp, long value) {
         Calendar now = Calendar.getInstance();
         now.setTimeInMillis(timestamp);
 
@@ -339,39 +381,39 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         last.setTimeInMillis(cntr.getLastUpdate());
 
         if (inSameMonth(last, now)) {
-            cntr.setCurrentMonthCounter(cntr.getCurrentMonthCounter()+1);
+            cntr.setCurrentMonthCounter(cntr.getCurrentMonthCounter()+value);
             if (inSameDay(last, now)) {
-                cntr.setCurrentDayCounter(cntr.getCurrentDayCounter()+1);
+                cntr.setCurrentDayCounter(cntr.getCurrentDayCounter()+value);
                 if (inSameHour(last, now)) {
-                    cntr.setCurrentHourCounter(cntr.getCurrentHourCounter()+1);
+                    cntr.setCurrentHourCounter(cntr.getCurrentHourCounter()+value);
                     if (inSameMinute(last, now)) {
-                        cntr.setCurrentMinuteCounter(cntr.getCurrentMinuteCounter()+1);
+                        cntr.setCurrentMinuteCounter(cntr.getCurrentMinuteCounter()+value);
                         if (inSameSecond(last, now)) {
-                            cntr.setCurrentSecondCounter(cntr.getCurrentSecondCounter()+1);
+                            cntr.setCurrentSecondCounter(cntr.getCurrentSecondCounter()+value);
                         } else {
-                            cntr.setCurrentSecondCounter(1);
+                            cntr.setCurrentSecondCounter(value);
                         }
                     } else {
-                        cntr.setCurrentMinuteCounter(1);
-                        cntr.setCurrentSecondCounter(1);
+                        cntr.setCurrentMinuteCounter(value);
+                        cntr.setCurrentSecondCounter(value);
                     }
                 } else {
-                    cntr.setCurrentHourCounter(1);
-                    cntr.setCurrentMinuteCounter(1);
-                    cntr.setCurrentSecondCounter(1);
+                    cntr.setCurrentHourCounter(value);
+                    cntr.setCurrentMinuteCounter(value);
+                    cntr.setCurrentSecondCounter(value);
                 }
             } else {
-                cntr.setCurrentDayCounter(1);
-                cntr.setCurrentHourCounter(1);
-                cntr.setCurrentMinuteCounter(1);
-                cntr.setCurrentSecondCounter(1);
+                cntr.setCurrentDayCounter(value);
+                cntr.setCurrentHourCounter(value);
+                cntr.setCurrentMinuteCounter(value);
+                cntr.setCurrentSecondCounter(value);
             }
         } else {
-            cntr.setCurrentMonthCounter(1);
-            cntr.setCurrentDayCounter(1);
-            cntr.setCurrentHourCounter(1);
-            cntr.setCurrentMinuteCounter(1);
-            cntr.setCurrentSecondCounter(1);
+            cntr.setCurrentMonthCounter(value);
+            cntr.setCurrentDayCounter(value);
+            cntr.setCurrentHourCounter(value);
+            cntr.setCurrentMinuteCounter(value);
+            cntr.setCurrentSecondCounter(value);
         }
         cntr.setLastUpdate(timestamp);
     }
@@ -476,33 +518,35 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         return output;
     }
 
-    public long asyncIncrementAndReturnValue(final String counterName, final long timestamp, final int fieldOfInterest) {
-        Counter counter = getCurrentCounterValueReadOnly(counterName);
+    public long asyncIncrementAndReturnValue(boolean readSynchronous, final String counterName, final long timestamp, final int fieldOfInterest, final int value) {
+        Counter counter = getCurrentCounterValueReadOnly(readSynchronous, counterName);
 
-        incrementCounter(counter, timestamp);
+        incrementCounter(counter, timestamp, value);
 
         // Schedule an async counter increment and return the current pre-incremented value
-        scheduleAsyncIncrement(counterName, timestamp, fieldOfInterest, -1);
+        scheduleAsyncIncrement(counterName, timestamp, fieldOfInterest, -1, value);
         return getFieldOfInterest(counter, fieldOfInterest);
     }
 
-    public long asyncIncrementOnlyWithinLimitAndReturnValue(final String counterName,
+    public long asyncIncrementOnlyWithinLimitAndReturnValue(boolean readSynchronous, final String counterName,
                                                             final long timestamp,
                                                             final int fieldOfInterest,
-                                                            final long limit)
+                                                            final long limit,
+                                                            final int incrementValue)
         throws LimitAlreadyReachedException
     {
-        Counter counter = getCurrentCounterValueReadOnly(counterName);
+        Counter counter = getCurrentCounterValueReadOnly(readSynchronous, counterName);
 
-        if (isLimitViolatedAfterIncrement(counter, timestamp, fieldOfInterest, limit))
+
+        if (isLimitViolatedAfterIncrement(counter, timestamp, fieldOfInterest, limit, incrementValue))
             throw new LimitAlreadyReachedException("Limit already met");
 
         // Schedule an async counter increment and return current pre-incremented value
-        scheduleAsyncIncrement(counterName, timestamp, fieldOfInterest, limit);
+        scheduleAsyncIncrement(counterName, timestamp, fieldOfInterest, limit, incrementValue);
         return getFieldOfInterest(counter, fieldOfInterest);
     }
 
-    private Counter getCurrentCounterValueReadOnly(final String counterName) {
+    private Counter getCurrentCounterValueReadOnly(final boolean readSynchronous, final String counterName) {
         // Use read-only transaction for checking current value, no row lock
         TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(true);
@@ -516,7 +560,17 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                         session.doWork(new Work() {
                             @Override
                             public void execute(Connection connection) throws SQLException {
-                                counter[0] = loadCounter(connection, counterName, false);
+                                if(!readSynchronous) {
+                                    if(!readCounters.containsKey(counterName)) {
+                                        counter[0] = loadCounter(connection, counterName, false);
+                                        readCounters.put(counterName, counter[0]);
+                                        return;
+                                    }
+
+                                    counter[0] = readCounters.get(counterName);
+                                } else {
+                                    counter[0] = loadCounter(connection, counterName, false);
+                                }
                             }
                         });
                         return counter[0];
@@ -526,8 +580,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         });
     }
 
-    private void scheduleAsyncIncrement(final String counterName, long timestamp, int fieldOfInterest, long limit) {
-        scheduleAsyncCounterStep(counterName, new CounterStep(timestamp, fieldOfInterest, limit));
+    private void scheduleAsyncIncrement(final String counterName, long timestamp, int fieldOfInterest, long limit, int value) {
+        scheduleAsyncCounterStep(counterName, new CounterStep(timestamp, fieldOfInterest, limit, value));
     }
 
     private void scheduleAsyncCounterStep(String counterName, CounterStep inc) {
@@ -536,21 +590,6 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         if (workQueue == null)
             throw new IllegalStateException("No WorkQueue for counter " + counterName); // can't happen if user called ensureCounterExists() before working with it
         final boolean enqueued = workQueue.queue.offer(inc);
-
-        // Ensure someone will service this queue
-        updateThreads.submit(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                if (!workQueue.queue.isEmpty() && workQueue.workMutex.tryLock()) {
-                    try {
-                        serviceCounterUpdateQueue(workQueue);
-                    } finally {
-                        workQueue.workMutex.unlock();
-                    }
-                }
-                return null;
-            }
-        });
 
         // If queue was full, resubmit with block
         if (!enqueued) {
@@ -587,13 +626,13 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                     Counter beforeStep = new Counter(counter);
 
                                     if (step.decrement) {
-                                        counter.setCurrentSecondCounter(counter.getCurrentSecondCounter() - 1);
-                                        counter.setCurrentMinuteCounter(counter.getCurrentMinuteCounter() - 1);
-                                        counter.setCurrentHourCounter(counter.getCurrentHourCounter() - 1);
-                                        counter.setCurrentDayCounter(counter.getCurrentDayCounter() - 1);
-                                        counter.setCurrentMonthCounter(counter.getCurrentMonthCounter() - 1);
+                                        counter.setCurrentSecondCounter(counter.getCurrentSecondCounter() - step.value);
+                                        counter.setCurrentMinuteCounter(counter.getCurrentMinuteCounter() - step.value);
+                                        counter.setCurrentHourCounter(counter.getCurrentHourCounter() - step.value);
+                                        counter.setCurrentDayCounter(counter.getCurrentDayCounter() - step.value);
+                                        counter.setCurrentMonthCounter(counter.getCurrentMonthCounter() - step.value);
                                         updated = true;
-                                    } else if (isLimitViolatedAfterIncrement(counter, step.timestamp, step.fieldOfInterest, step.limit)) {
+                                    } else if (isLimitViolatedAfterIncrement(counter, step.timestamp, step.fieldOfInterest, step.limit, step.value)) {
                                         // Oops.  We already let them through.  Log it at low level, in case any one cares
                                         logger.log(Level.FINE, "Async processing permitted request over quota for counter: {0}", counterName);
                                         // Roll back counter change
@@ -615,8 +654,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         });
     }
 
-    private boolean isLimitViolatedAfterIncrement(Counter dbcnt, long timestamp, int fieldOfInterest, long limit) {
-        incrementCounter(dbcnt, timestamp);
+    private boolean isLimitViolatedAfterIncrement(Counter dbcnt, long timestamp, int fieldOfInterest, long limit, long value) {
+        incrementCounter(dbcnt, timestamp, value);
 
         return isLimitViolated(dbcnt, fieldOfInterest, limit);
     }
@@ -657,8 +696,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         return limitViolated;
     }
 
-    public void asyncDecrement(final String counterName) {
-        scheduleAsyncCounterStep(counterName, new CounterStep(true));
+    public void asyncDecrement(final String counterName, int decrementValue) {
+        scheduleAsyncCounterStep(counterName, new CounterStep(true, decrementValue));
     }
 
     private boolean inSameSecond(Calendar last, Calendar now) {
@@ -680,19 +719,22 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         final int fieldOfInterest;
         final long limit;
         final boolean decrement;
+        final int value;
 
-        private CounterStep(long timestamp, int fieldOfInterest, long limit) {
+        private CounterStep(long timestamp, int fieldOfInterest, long limit, int value) {
             this.timestamp = timestamp;
             this.fieldOfInterest = fieldOfInterest;
             this.limit = limit;
             this.decrement = false;
+            this.value = value;
         }
 
-        private CounterStep(boolean decrement) {
+        private CounterStep(boolean decrement, int value) {
             this.decrement = decrement;
             this.timestamp = -1;
             this.fieldOfInterest = -1;
             this.limit = -1;
+            this.value = value;
         }
     }
 }

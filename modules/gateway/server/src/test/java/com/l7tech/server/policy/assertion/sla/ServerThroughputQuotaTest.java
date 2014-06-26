@@ -23,6 +23,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.MockConfig;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -34,6 +35,7 @@ import java.util.Map;
 
 import static com.l7tech.util.CollectionUtils.MapBuilder;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -58,6 +60,7 @@ public class ServerThroughputQuotaTest {
         assertion.setCounterName("quotaCounter");
         applicationContext = ApplicationContexts.getTestApplicationContext();
         counterManager = (CounterManagerStub)applicationContext.getBean("counterManager");
+        counterManager.setThrowException(false);
         testAudit = new TestAudit();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new InternalUser("testUser"), new OpaqueSecurityToken()));
@@ -67,16 +70,16 @@ public class ServerThroughputQuotaTest {
     @BugId("SSG-6851")
     public void testCompatibilityHalfAsyncThoughputQuotaModularAssertion() throws Exception {
         final String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "        <L7p:HalfAsyncThroughputQuota>\n" +
-            "            <L7p:CounterName stringValue=\"36994f1d-${request.authenticateduser.id}-${request.authenticateduser.providerid}-blahblah\"/>\n" +
-            "            <L7p:CounterStrategy intValue=\"1\"/>\n" +
-            "            <L7p:Global booleanValue=\"true\"/>\n" +
-            "            <L7p:Quota stringValue=\"553\"/>\n" +
-            "            <L7p:Synchronous booleanValue=\"false\"/>\n" +
-            "            <L7p:VariablePrefix stringValue=\"asdf\"/>\n" +
-            "        </L7p:HalfAsyncThroughputQuota>\n" +
-            "</wsp:Policy>";
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <L7p:HalfAsyncThroughputQuota>\n" +
+                "            <L7p:CounterName stringValue=\"36994f1d-${request.authenticateduser.id}-${request.authenticateduser.providerid}-blahblah\"/>\n" +
+                "            <L7p:CounterStrategy intValue=\"1\"/>\n" +
+                "            <L7p:Global booleanValue=\"true\"/>\n" +
+                "            <L7p:Quota stringValue=\"553\"/>\n" +
+                "            <L7p:Synchronous booleanValue=\"false\"/>\n" +
+                "            <L7p:VariablePrefix stringValue=\"asdf\"/>\n" +
+                "        </L7p:HalfAsyncThroughputQuota>\n" +
+                "</wsp:Policy>";
 
         AssertionRegistry tmf = new AssertionRegistry();
         tmf.setApplicationContext(null);
@@ -94,12 +97,12 @@ public class ServerThroughputQuotaTest {
     @Test
     public void testCompatibilityBug5043Format() throws Exception {
         final String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "            <L7p:ThroughputQuota>\n" +
-            "                <L7p:CounterName stringValue=\"quota1\"/>\n" +
-            "                <L7p:Quota longValue=\"202\"/>\n" +
-            "            </L7p:ThroughputQuota>\n" +
-            "    </wsp:Policy>";
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "            <L7p:ThroughputQuota>\n" +
+                "                <L7p:CounterName stringValue=\"quota1\"/>\n" +
+                "                <L7p:Quota longValue=\"202\"/>\n" +
+                "            </L7p:ThroughputQuota>\n" +
+                "    </wsp:Policy>";
 
         AssertionRegistry tmf = new AssertionRegistry();
         tmf.setApplicationContext(null);
@@ -238,6 +241,150 @@ public class ServerThroughputQuotaTest {
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertEquals(0, counterManager.getCounterValue());
         assertEquals("0", String.valueOf(context.getVariable("counter.value")));
+    }
+
+    @Test
+    public void testIncrementByAlwaysIncrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        assertion.setByValue("3");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(1L);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("4", context.getVariable(assertion.valueVariable()));
+    }
+
+    @Test
+    public void testIncrementByExceededLimitAlwaysIncrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        assertion.setByValue("3");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("8", context.getVariable(assertion.valueVariable()));
+        assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED ) );
+    }
+
+    @Test
+    public void testIncrementByInvalidIncrementValueAlwaysIncrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        assertion.setByValue("xxx");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        try {
+            final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+            fail();
+        } catch (AssertionStatusException ex) {
+            assertNotNull(ex);
+        }
+    }
+
+    @Test
+    public void testIncrementByOnSuccess() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.INCREMENT_ON_SUCCESS);
+        assertion.setByValue("3");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(1L);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("4", context.getVariable(assertion.valueVariable()));
+    }
+
+    @Test
+    public void testIncrementByExceededLimitOnSuccess() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.INCREMENT_ON_SUCCESS);
+        assertion.setByValue("3");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+        counterManager.setThrowException(true);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("5", context.getVariable(assertion.valueVariable()));
+        assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET ) );
+    }
+
+    @Test
+    public void testIncrementByInvalidIncrementValueOnSuccess() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.INCREMENT_ON_SUCCESS);
+        assertion.setByValue("xxx");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        try {
+            final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+            fail();
+        } catch (AssertionStatusException ex) {
+            assertNotNull(ex);
+        }
+    }
+
+    @Test
+    public void testIncrementByDecrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.DECREMENT);
+        assertion.setByValue("1");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(1L);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("-1", context.getVariable(assertion.valueVariable()));
+    }
+
+    @Test
+    public void testIncrementByExceededLimitDecrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.DECREMENT);
+        assertion.setByValue("1");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA + 2);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        Assert.assertEquals("-1", context.getVariable(assertion.valueVariable()));
+    }
+
+    @Test
+    public void testIncrementByInvalidIncrementValueDecrement() throws IOException, PolicyAssertionException, NoSuchVariableException {
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.DECREMENT);
+        assertion.setByValue("xxx");
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        configureServerAssertion(serverAssertion, null);
+        counterManager.setCounterValue(DEFAULT_QUOTA);
+
+        try {
+            final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+            fail();
+        } catch (AssertionStatusException ex) {
+            assertNotNull(ex);
+        }
     }
 
     private void configureServerAssertion(ServerThroughputQuota serverAssertion, @Nullable Map<String, String> props) {

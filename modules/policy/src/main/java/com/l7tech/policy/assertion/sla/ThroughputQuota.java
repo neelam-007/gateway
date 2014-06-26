@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
@@ -60,6 +61,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static final String VAR_SUFFIX_PERIOD = "period";
     public static final String VAR_SUFFIX_USER = "user";
     public static final String VAR_SUFFIX_MAX = "max";
+
     private String idVariable; // actually id is the same as name, since the GUI shows counter id for counter name.
     private String valueVariable;
     private String periodVariable;
@@ -67,7 +69,10 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     private String maxVariable;
     private String variablePrefix = "";
     private String quota = "200";
+    private String byValue;
+
     private boolean synchronous = true; // true by default to preserve old behavior for pre-Goatfish policy XML
+    private boolean readSynchronous = true;
 
     @SuppressWarnings({"UnusedDeclaration"})
     @Deprecated
@@ -82,6 +87,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static final int INCREMENT_ON_SUCCESS = 2;
     public static final int DECREMENT = 3;
     public static final int RESET = 4;
+
     private int counterStrategy = INCREMENT_ON_SUCCESS;
     private boolean logOnly = false;
 
@@ -160,6 +166,22 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         if (errorMsg != null) throw new IllegalArgumentException(errorMsg);
 
         this.quota = quota;
+    }
+
+    /**
+     * The value property represents the amount to increment/decrement the counter by.
+     * @return the increment/decrement value
+     */
+    public String getByValue() {
+        return byValue;
+    }
+
+    /**
+     * Retrieves the increment value property, which represents the amount to increment/decrement the counter by.
+     * @param byValue the increment/decrement value
+     */
+    public void setByValue(String byValue) {
+        this.byValue = byValue;
     }
 
     /**
@@ -271,11 +293,27 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         this.synchronous = synchronous;
     }
 
+    /**
+     * @return  true if the counter should be read in synchronous mode, meaning that the database should be queries for eachread.
+     *          false to use asynchronous mode where the cache will be checked for the counter first, before hitting the database.
+     */
+    public boolean isReadSynchronous() {
+        return readSynchronous;
+    }
+
+    /**
+     * @param readAsynchronous  true if the counter should be read in synchronous mode, meaning that the database should be queries for eachread.
+     *                          false to use asynchronous mode where the cache will be checked for the counter first, before hitting the database.
+     */
+    public void setReadSynchronous(boolean readAsynchronous) {
+        this.readSynchronous = readAsynchronous;
+    }
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         // If the assertion is a previous version, then update the counter name by calling the method getCounterName().
-        return Syntax.getReferencedNames(getCounterName(), getQuota());
+        return Syntax.getReferencedNames(getCounterName(), getQuota(), getByValue());
     }
 
     @Override
@@ -347,10 +385,60 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     public static String validateQuota(String quota) {
         String error = null;
-        final String[] varsUsed = Syntax.getReferencedNames(quota);
-        if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
-            error = "Throughput quota must be a value between 1 and " + MAX_THROUGHPUT_QUOTA;
+
+        try {
+
+            final String[] varsUsed = Syntax.getReferencedNames(quota);
+            if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
+                error = "Throughput quota must be a value between 1 and " + MAX_THROUGHPUT_QUOTA;
+            }
+
+        } catch (VariableNameSyntaxException e) {
+            error = "The context variable syntax for maximum quota is invalid";
         }
+
+        return error;
+    }
+
+    /**
+     * Helper method which will validation the increment/decrement value to determine if it is a valid integer value,
+     * otherwise it will return an error message.
+     *
+     * @param byValue the increment/decrement value
+     * @return null if valid, error message if otherwise
+     */
+    public static String validateByValue(String byValue, int counterStrategy) {
+
+        String error = null;
+        String strategy = null;
+
+        if(INCREMENT_ON_SUCCESS == counterStrategy || ALWAYS_INCREMENT == counterStrategy) {
+            strategy = "increment";
+        } else {
+            strategy = "decrement";
+        }
+
+        try {
+
+            final String[] varsUsed = Syntax.getReferencedNames(byValue);
+
+
+            if (varsUsed.length == 0) {
+                try {
+                    int byValueInt = Integer.parseInt(byValue);
+                    if(byValueInt < 0) {
+                        error = "Please enter a non-negative numeric for " + strategy + " value";
+                    }
+                } catch (NumberFormatException e) {
+                    error = "Please enter an integer for " + strategy + " value";
+                }
+            }
+            return error;
+
+        } catch (VariableNameSyntaxException e) {
+            error = "The context variable syntax for " + strategy + " is invalid";
+        }
+
         return error;
     }
 

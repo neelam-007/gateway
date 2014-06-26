@@ -685,6 +685,7 @@ public class AssertionMessages extends Messages {
     public static final M THROUGHPUT_QUOTA_ALREADY_MET = m(6901, Level.INFO, "Quota already exceeded on counter {0}");
     public static final M THROUGHPUT_QUOTA_INVALID_COUNTER_ID = m(6902, Level.WARNING, "Invalid Quota Counter ID: {0}");
     public static final M THROUGHPUT_QUOTA_INVALID_MAX_QUOTA = m(6903, Level.WARNING, "Configured max quota value {0} is too large. The max value allowed is {1}");
+    public static final M THROUGHPUT_QUOTA_INVALID_NEGATIVE_VALUE = m(6904, Level.WARNING, "Variable ''{0}'' is required to be a postive value");
 
     // ServerRateLimitAssertion
     public static final M RATELIMIT_RATE_EXCEEDED = m(6950, Level.INFO, "Rate limit exceeded on rate limiter {0}");

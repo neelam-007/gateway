@@ -20,10 +20,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.sla.CounterManager;
 import com.l7tech.util.Config;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Server side implementation of the ThroughputQuota assertion.
@@ -40,6 +42,10 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private final String userVariable;
     private final String maxVariable;
     private final boolean synchronous;
+    private final boolean readSynchronous;
+
+    private final int DEFAULT_INCREMENT_DECREMENT_VALUE = 1;
+
     @Inject
     private Config config;
 
@@ -53,6 +59,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         userVariable = assertion.userVariable();
         maxVariable = assertion.maxVariable();
         synchronous = assertion.isSynchronous();
+        readSynchronous = assertion.isReadSynchronous();
     }
 
     @Override
@@ -67,13 +74,16 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         }
         final long quota = getQuota(context);
         context.setVariable(maxVariable, String.valueOf(quota));
+
+        int incrementOrDecrementBy = getValueToIncrementOrDecrement(context);
+
         switch (assertion.getCounterStrategy()) {
             case ThroughputQuota.ALWAYS_INCREMENT:
-                return doIncrementAlways(context,quota);
+                return doIncrementAlways(context,quota,incrementOrDecrementBy);
             case ThroughputQuota.INCREMENT_ON_SUCCESS:
-                return doIncrementOnSuccess(context,quota);
+                return doIncrementOnSuccess(context,quota,incrementOrDecrementBy);
             case ThroughputQuota.DECREMENT:
-                return doDecrement(context);
+                return doDecrement(context,incrementOrDecrementBy);
             case ThroughputQuota.RESET:
                 return doReset(context);
         }
@@ -81,6 +91,33 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         // not supposed to happen
         throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
                                            "Unsupported counterStrategy: " + assertion.getCounterStrategy());
+    }
+
+    private int getValueToIncrementOrDecrement(PolicyEnforcementContext context) {
+        int incrementOrDecrementBy = DEFAULT_INCREMENT_DECREMENT_VALUE;
+        if(StringUtils.isNotBlank(assertion.getByValue())) {
+            Map<String, ?> varMap = context.getVariableMap(varsUsed, getAudit());
+            String value = ExpandVariables.process(assertion.getByValue(), varMap, getAudit());
+            try {
+
+                if(value == null) {
+                    logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getByValue());
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
+
+                //if negative then policy assertion exception thrown
+                incrementOrDecrementBy = Integer.parseInt(value);
+                if(incrementOrDecrementBy < 0) {
+                    logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_NEGATIVE_VALUE, assertion.getByValue());
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
+
+            } catch(NumberFormatException e) {
+                logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getByValue(), "Integer");
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            }
+        }
+        return incrementOrDecrementBy;
     }
 
     private AssertionStatus doReset(PolicyEnforcementContext context) throws IOException {
@@ -91,8 +128,8 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus doIncrementOnSuccess( final PolicyEnforcementContext context,
-                                                  final long quota ) throws IOException {
+    private AssertionStatus doIncrementOnSuccess(final PolicyEnforcementContext context,
+                                                 final long quota, int incrementValue) throws IOException {
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
         long now = System.currentTimeMillis();
         long val;
@@ -101,11 +138,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         final String counterName = getCounterName(context);
         if (requiresIncrement) {
             try {
-                val = counterManager.incrementOnlyWithinLimitAndReturnValue(synchronous,
+                val = counterManager.incrementOnlyWithinLimitAndReturnValue(synchronous, readSynchronous,
                                                                      counterName,
                                                                      now,
                                                                      assertion.getTimeUnit(),
-                                                                     quota);
+                                                                     quota, incrementValue);
                 this.setValue(context, val);
                 // no need to check the limit because the preceeding call would throw if limit was exceeded
                 logger.finest("Value " + val + " still within quota " + quota);
@@ -115,7 +152,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 logger.info(msg);
                 logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, counterName);
                 if(assertion.isLogOnly()){
-                    this.setValue(context, counterManager.getCounterValue(counterName, assertion.getTimeUnit()));
+                    this.setValue(context, counterManager.getCounterValue(readSynchronous, counterName, assertion.getTimeUnit()));
                     return AssertionStatus.NONE;
                 }else{
                     return AssertionStatus.FALSIFIED;
@@ -125,7 +162,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 context.getIncrementedCounters().add(counterName);
             }
         } else {
-            val = counterManager.getCounterValue(counterName, assertion.getTimeUnit());
+            val = counterManager.getCounterValue(readSynchronous, counterName, assertion.getTimeUnit());
             this.setValue(context, val);
             if (val <= quota) {
                 logger.fine("the quota was not exceeded. " + val + " smaller than " + quota);
@@ -141,12 +178,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         }
     }
 
-    private AssertionStatus doDecrement(PolicyEnforcementContext context) throws IOException {
+    private AssertionStatus doDecrement(PolicyEnforcementContext context, int decrementValue) throws IOException {
         final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
 
         if (alreadyIncrementedInThisContext(context)) {
             final String counterName = getCounterName(context);
-            counterManager.decrement(synchronous, counterName);
+            counterManager.decrement(synchronous, counterName, decrementValue);
             logger.fine("counter decremented " + counterName);
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
@@ -154,12 +191,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                         "counter was not previously recorded as incremented in this context.");
             // one could argue that this should result in error
         }
-        this.setValue(context, -1);
+        this.setValue(context, -decrementValue);
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus doIncrementAlways( final PolicyEnforcementContext context,
-                                               final long quota ) throws IOException {
+    private AssertionStatus doIncrementAlways(final PolicyEnforcementContext context,
+                                              final long quota, int incrementValue) throws IOException {
         final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
 
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
@@ -167,11 +204,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         long val;
         final String counterName = getCounterName(context);
         if (requiresIncrement) {
-            val = counterManager.incrementAndReturnValue(synchronous, counterName, now, assertion.getTimeUnit());
+            val = counterManager.incrementAndReturnValue(readSynchronous, synchronous, counterName, now, assertion.getTimeUnit(), incrementValue);
             // no sync issue here: this flag array belongs to the context which lives inside one thread only
             context.getIncrementedCounters().add(counterName);
         } else {
-            val = counterManager.getCounterValue(counterName, assertion.getTimeUnit());
+            val = counterManager.getCounterValue(readSynchronous, counterName, assertion.getTimeUnit());
         }
         this.setValue(context, val);
         if (val <= quota) {
