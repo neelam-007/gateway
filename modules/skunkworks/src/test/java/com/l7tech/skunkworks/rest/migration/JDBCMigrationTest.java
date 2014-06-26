@@ -255,10 +255,9 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                     objectToString(bundleItem.getContent()));
-            assertOkResponse(response);
+            assertConflictResponse(response);
 
             Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            mappingsToClean = mappings;
 
             //verify the mappings
             Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
@@ -272,9 +271,8 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
             Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
-            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(Mapping.ErrorType.CannotReplaceDependency, jdbcMapping.getErrorType());
             Assert.assertEquals(jdbcConnectionItem.getId(), jdbcMapping.getSrcId());
-            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
 
             Mapping policyMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
@@ -283,29 +281,6 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId(), HttpMethod.GET, null, "");
-            assertOkResponse(response);
-
-            Item<PolicyMO> policyCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            String policyXml = policyCreated.getContent().getResourceSets().get(0).getResources().get(0).getContent();
-
-            logger.log(Level.INFO, policyXml);
-
-            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
-            assertOkResponse(response);
-
-            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            List<DependencyMO> jdbcDependencies = policyCreatedDependencies.getContent().getDependencies();
-
-            Assert.assertNotNull(jdbcDependencies);
-            Assert.assertEquals(2, jdbcDependencies.size());
-
-            DependencyMO passwordDependency = getDependency(jdbcDependencies,storedPasswordMO.getId());
-            Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(securePasswordItem.getContent().getName(), passwordDependency.getName());
-            Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
-
-            validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);

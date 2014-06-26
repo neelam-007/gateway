@@ -16,7 +16,6 @@ import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
@@ -503,7 +502,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertItem.getId());
             Assert.assertNotNull(certDependency);
             Assert.assertEquals(EntityType.TRUSTED_CERT.toString(), certDependency.getType());
-            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
             Assert.assertEquals(trustedCertItem.getId(), certDependency.getId());
 
             validate(mappings);
@@ -583,7 +582,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
 
             DependencyMO certDependency = getDependency(policyDependencies, trustedCertificateMO.getId());
             Assert.assertNotNull(certDependency);
-            Assert.assertEquals(trustedCertItem.getName(), certDependency.getName());
+            Assert.assertEquals(trustedCertificateMO.getName(), certDependency.getName());
             Assert.assertEquals(trustedCertificateMO.getId(), certDependency.getId());
 
             validate(mappings);

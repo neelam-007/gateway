@@ -87,8 +87,8 @@ public class LocalMigrationTestCases extends RestEntityTestBase {
             Assert.assertNotNull(parentFolderAfterImport);
             Assert.assertNotNull(childFolderAfterImport);
             Assert.assertEquals(parentFolderAfterImport.getGoid(), childFolderAfterImport.getFolder().getGoid());
-            Assert.assertEquals(parentFolderName, parentFolderAfterImport.getName());
-            Assert.assertEquals(childFolderName, childFolderAfterImport.getName());
+            Assert.assertEquals(parentFolderName + "update name", parentFolderAfterImport.getName());
+            Assert.assertEquals(childFolderName + "update name", childFolderAfterImport.getName());
         } finally {
             folderManager.delete(childFolder.getGoid());
             folderManager.delete(parentFolder.getGoid());

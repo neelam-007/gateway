@@ -549,7 +549,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
             Assert.assertNotNull(passwordDependency);
             Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
-            Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
             Assert.assertEquals(securePasswordItem.getId(), passwordDependency.getId());
 
             validate(mappings);
@@ -636,7 +636,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
 
             DependencyMO passwordDependency = getDependency(policyDependencies,storedPasswordMO.getId());
             Assert.assertNotNull(passwordDependency);
-            Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+            Assert.assertEquals(storedPasswordMO.getName(), passwordDependency.getName());
             Assert.assertEquals(storedPasswordMO.getId(), passwordDependency.getId());
 
             validate(mappings);

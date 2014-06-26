@@ -553,7 +553,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<ServiceMO> updatedService = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Assert.assertEquals(serviceItem.getContent().getServiceDetail().getName(), updatedService.getContent().getServiceDetail().getName());
+            Assert.assertEquals(serviceMO.getServiceDetail().getName(), updatedService.getContent().getServiceDetail().getName());
             Assert.assertEquals(2, updatedService.getContent().getResourceSets().size());
             Assert.assertEquals("http://localhost:8080/test.wsdl", updatedService.getContent().getResourceSets().get(1).getRootUrl());
 
@@ -767,7 +767,7 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<ServiceMO> updatedService = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Assert.assertEquals(serviceItem.getContent().getServiceDetail().getName(), updatedService.getContent().getServiceDetail().getName());
+            Assert.assertEquals(serviceMO.getServiceDetail().getName(), updatedService.getContent().getServiceDetail().getName());
             Assert.assertEquals("The service folder was updated but it shouldn't have been.", folderCreated.getId(), updatedService.getContent().getServiceDetail().getFolderId());
             Assert.assertEquals(2, updatedService.getContent().getResourceSets().size());
             Assert.assertEquals("http://localhost:8080/test.wsdl", updatedService.getContent().getResourceSets().get(1).getRootUrl());

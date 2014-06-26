@@ -664,6 +664,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 throw new IllegalStateException("A folderable entity was mapped to an entity that is not folderable: " + existingEntity.getClass());
             }
         }
+        //if this is a nameable entity and the existing entity exists then preserve the existing entity name
+        if(entityContainer.getEntity() instanceof NameableEntity && existingEntity != null ) {
+            if(existingEntity instanceof NameableEntity){
+                ((NameableEntity) entityContainer.getEntity()).setName(((NameableEntity) existingEntity).getName());
+            } else {
+                //this should never happen
+                throw new IllegalStateException("A NameableEntity entity was mapped to an entity that is not NameableEntity: " + existingEntity.getClass());
+            }
+        }
+        //if this is a GuidEntity and the existing entity exists then preserve the existing entity guid
+        if(entityContainer.getEntity() instanceof GuidEntity && existingEntity != null ) {
+            if(existingEntity instanceof GuidEntity){
+                ((GuidEntity) entityContainer.getEntity()).setGuid(((GuidEntity) existingEntity).getGuid());
+            } else {
+                //this should never happen
+                throw new IllegalStateException("A GuidEntity entity was mapped to an entity that is not GuidEntity: " + existingEntity.getClass());
+            }
+        }
     }
 
     /**

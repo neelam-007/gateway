@@ -384,7 +384,7 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/"+siteminderMapping.getSrcId(), HttpMethod.GET, null, "");
             assertOkResponse(response);
             Item<SiteMinderConfigurationMO> updatedSiteminder = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            assertEquals(updatedSiteminder.getContent().getName(),siteminderItem.getName());
+            assertEquals(updatedSiteminder.getContent().getName(),siteMinderConfigurationMO.getName());
             assertEquals(updatedSiteminder.getContent().getFipsMode(), siteminderItem.getContent().getFipsMode());
             assertEquals(updatedSiteminder.getContent().getHostname(),siteminderItem.getContent().getHostname());
 

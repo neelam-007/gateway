@@ -418,7 +418,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             DependencyMO entityDependency = getDependency(policyDependencies, createdGenericEntity.getId());
             Assert.assertNotNull(entityDependency);
             Assert.assertEquals(EntityType.GENERIC.toString(), entityDependency.getType());
-            Assert.assertEquals(genericEntityItem.getName(), entityDependency.getName());
+            Assert.assertEquals(createdGenericEntity.getName(), entityDependency.getName());
             Assert.assertEquals(createdGenericEntity.getId(), entityDependency.getId());
 
             validate(mappings);
@@ -1267,7 +1267,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             DependencyMO entityDependency = getDependency(policyDependencies, createdGenericEntity1.getId());
             Assert.assertNotNull(entityDependency);
             Assert.assertEquals(EntityType.GENERIC.toString(), entityDependency.getType());
-            Assert.assertEquals(genericEntityItem.getName(), entityDependency.getName());
+            Assert.assertEquals(createdGenericEntity1.getName(), entityDependency.getName());
             Assert.assertEquals(createdGenericEntity1.getId(), entityDependency.getId());
             Assert.assertNotNull(entityDependency.getDependencies());
             Assert.assertEquals(1, entityDependency.getDependencies().size());
@@ -1277,7 +1277,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             DependencyMO entityDependency2 = getDependency(policyDependencies, createdGenericEntity2.getId());
             Assert.assertNotNull(entityDependency2);
             Assert.assertEquals(EntityType.GENERIC.toString(), entityDependency2.getType());
-            Assert.assertEquals(genericEntityItem2.getName(), entityDependency2.getName());
+            Assert.assertEquals(createdGenericEntity2.getName(), entityDependency2.getName());
             Assert.assertEquals(createdGenericEntity2.getId(), entityDependency2.getId());
             Assert.assertNotNull(entityDependency2.getDependencies());
             Assert.assertEquals(1, entityDependency2.getDependencies().size());
