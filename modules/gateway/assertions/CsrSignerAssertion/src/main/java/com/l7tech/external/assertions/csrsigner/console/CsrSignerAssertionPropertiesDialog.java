@@ -13,6 +13,7 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
     private JTextField prefixField;
     private TargetVariablePanel csrVariablePanel;
     private PrivateKeysComboBox privateKeyComboBox;
+    private TargetVariablePanel certDnVariablePanel;
 
     public CsrSignerAssertionPropertiesDialog(Window parent, CsrSignerAssertion bean) {
         super(bean.getClass(), parent, bean, true);
@@ -22,6 +23,8 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
 
     @Override
     public void setData(CsrSignerAssertion assertion) {
+        certDnVariablePanel.setAssertion(assertion, getPreviousAssertion());
+        certDnVariablePanel.setVariable(assertion.getCertDNVariableName());
         csrVariablePanel.setAssertion(assertion, getPreviousAssertion());
         csrVariablePanel.setVariable(assertion.getCsrVariableName());
         String prefix = assertion.getOutputPrefix();
@@ -37,6 +40,7 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
         if (csrVariablePanel.getVariable() == null || csrVariablePanel.getVariable().trim().length() < 1)
             throw new ValidationException("An input variable must be specified.");
 
+        assertion.setCertDNVariableName(certDnVariablePanel.getVariable());
         assertion.setCsrVariableName(csrVariablePanel.getVariable());
         assertion.setOutputPrefix(prefixField.getText());
 

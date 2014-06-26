@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.csrsigner.CsrSignerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -17,16 +16,14 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
-import org.springframework.beans.factory.BeanFactory;
 
 import javax.inject.Inject;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
-import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
@@ -60,8 +57,8 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
         final SignerInfo signerInfo;
         try {
             signerInfo = assertion.isUsesDefaultKeyStore()
-                            ? defaultKey.getSslInfo()
-                            : ssgKeyStoreManager.lookupKeyByKeyAlias(assertion.getKeyAlias(), assertion.getNonDefaultKeystoreId());
+                    ? defaultKey.getSslInfo()
+                    : ssgKeyStoreManager.lookupKeyByKeyAlias(assertion.getKeyAlias(), assertion.getNonDefaultKeystoreId());
         } catch (Exception e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to access CA private key: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
@@ -86,7 +83,15 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
             RsaSignerEngine signerEngine = JceProvider.getInstance().createRsaSignerEngine(caKey, caChain);
 
             // TODO allow certificate generation parameters to be customized, particularly things like DN, expiry date, and digest algorithm
-            X509Certificate cert = (X509Certificate)signerEngine.createCertificate(csrBytes, new CertGenParams());
+            CertGenParams params = new CertGenParams();
+            String certDNVariableName = assertion.getCertDNVariableName();
+            if (certDNVariableName != null && certDNVariableName.trim().length() > 0) {
+                final String certDN =  (String)context.getVariable(certDNVariableName);
+                if (certDN != null && certDN.trim().length() > 0) {
+                    params = new CertGenParams(new X500Principal(certDN), 365, false, null);
+                }
+            }
+            X509Certificate cert = (X509Certificate)signerEngine.createCertificate(csrBytes, params);
 
             X509Certificate[] fullChain = new X509Certificate[caChain.length + 1];
             fullChain[0] = cert;

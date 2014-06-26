@@ -28,7 +28,7 @@ public class CsrSignerAssertionTest {
 
     @Test
     public void testFeatureSetName() throws Exception {
-        assertEquals("set:modularAssertions", new CsrSignerAssertion().getFeatureSetName());
+        assertEquals("assertion:CsrSigner", new CsrSignerAssertion().getFeatureSetName());
     }
 
 }

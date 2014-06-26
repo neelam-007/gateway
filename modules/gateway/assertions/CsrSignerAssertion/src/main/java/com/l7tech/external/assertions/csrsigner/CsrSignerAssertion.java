@@ -16,8 +16,26 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
     public static final String VAR_CHAIN = "chain";
 
     private final PrivateKeyableSupport pks = new PrivateKeyableSupport();
+    private String certDNVariableName;
     private String csrVariableName;
     private String outputPrefix;
+
+    /**
+     * The given value for the DN
+     * @return the DN
+     */
+    public String getCertDNVariableName() {
+        return certDNVariableName;
+    }
+
+    /**
+     * Allow to override the DN for the signed certificate
+     *
+     * @param certDNVariableName contains the new (optional) DN
+     */
+    public void setCertDNVariableName(String certDNVariableName) {
+        this.certDNVariableName = certDNVariableName;
+    }
 
     /**
      * @return the name of a context variable expected to contain a PKCS#10 certificate signing request
@@ -86,14 +104,19 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
 
     @Override
     public String[] getVariablesUsed() {
-        return csrVariableName == null ? new String[0] : new String[] { csrVariableName };
+        if (csrVariableName != null) {
+            if (certDNVariableName != null)
+                return new String[] { certDNVariableName, csrVariableName };
+        } else if (certDNVariableName != null)
+            return new String[] { certDNVariableName };
+        return new String[0];
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata(prefix(VAR_CERT), false, false, prefix(VAR_CERT), false, DataType.CERTIFICATE),
-            new VariableMetadata(prefix(VAR_CHAIN), false, true, prefix(VAR_CHAIN), false, DataType.CERTIFICATE)
+                new VariableMetadata(prefix(VAR_CERT), false, false, prefix(VAR_CERT), false, DataType.CERTIFICATE),
+                new VariableMetadata(prefix(VAR_CHAIN), false, true, prefix(VAR_CHAIN), false, DataType.CERTIFICATE)
         };
     }
 
@@ -111,11 +134,13 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Sign Certificate");
         meta.put(AssertionMetadata.LONG_NAME, "Sign Certificate Request");
         meta.put(AssertionMetadata.DESCRIPTION, "Process a PKCS#10 Certificate Signing Request and create a signed X.509 certificate using a specified CA private key.  " +
-                                                "The CSR must be in binary DER format.  Use the Encode / Decode Data assertion if necessary.");
+                "The CSR must be in binary DER format.  Use the Encode / Decode Data assertion if necessary.");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.csrsigner.console.CsrSignerAssertionPropertiesDialog");
 
