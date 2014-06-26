@@ -370,7 +370,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @Override
     public List<Link> getRelatedLinks(@Nullable final PrivateKeyMO privateKeyMO) {
         List<Link> links = super.getRelatedLinks(privateKeyMO);
-        links.add(ManagedObjectFactory.createLink("templatePrivateKey", getUrlString("template/privatekeyimportcontext")));
+        links.add(ManagedObjectFactory.createLink("templatePrivateKeyImport", getUrlString("template/privatekeyimportcontext")));
         links.add(ManagedObjectFactory.createLink("templatePrivateKeyExport", getUrlString("template/privatekeyexportcontext")));
         links.add(ManagedObjectFactory.createLink("templatePrivateKeyCreation", getUrlString("template/privatekeycreationcontext")));
         if (privateKeyMO != null) {

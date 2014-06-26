@@ -284,7 +284,7 @@ public class UserResource implements URLAccessible<UserMO> {
         links.add(ManagedObjectFactory.createLink(Link.LINK_REL_TEMPLATE, getUrlString(providerId, "template")));
         links.add(ManagedObjectFactory.createLink(Link.LINK_REL_LIST, getUrlString(providerId, null)));
         if (user != null) {
-            links.add(ManagedObjectFactory.createLink("certificate", getUrl(user)));
+            links.add(ManagedObjectFactory.createLink("certificate", getUrl(user) + "/certificate"));
             links.add(ManagedObjectFactory.createLink("provider", uriInfo.getBaseUriBuilder()
                     .path(IdentityProviderResource.class)
                     .path(providerId).build().toString()));

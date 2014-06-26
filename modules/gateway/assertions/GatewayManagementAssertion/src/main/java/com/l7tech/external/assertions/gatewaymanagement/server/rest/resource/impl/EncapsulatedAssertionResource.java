@@ -164,7 +164,7 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
     public List<Link> getRelatedLinks(@Nullable final EncapsulatedAssertionMO encapsulatedAssertionMO) {
         List<Link> links = super.getRelatedLinks(encapsulatedAssertionMO);
         if (encapsulatedAssertionMO != null && encapsulatedAssertionMO.getPolicyReference() != null) {
-            links.add(ManagedObjectFactory.createLink("policy", getUrlString(encapsulatedAssertionMO.getPolicyReference().getId())));
+            links.add(ManagedObjectFactory.createLink("policy", getUrlString(PolicyResource.class, encapsulatedAssertionMO.getPolicyReference().getId())));
         }
         return links;
     }

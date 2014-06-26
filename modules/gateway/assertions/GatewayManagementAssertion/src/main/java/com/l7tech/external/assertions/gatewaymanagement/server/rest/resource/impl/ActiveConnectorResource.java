@@ -186,7 +186,7 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     public List<Link> getRelatedLinks(@Nullable final ActiveConnectorMO activeConnectorMO) {
         List<Link> links = super.getRelatedLinks(activeConnectorMO);
         if (activeConnectorMO != null && activeConnectorMO.getHardwiredId() != null) {
-            links.add(ManagedObjectFactory.createLink("hardwiredServiceId", getUrlString(activeConnectorMO.getHardwiredId())));
+            links.add(ManagedObjectFactory.createLink("hardwiredServiceId", getUrlString(PublishedServiceResource.class, activeConnectorMO.getHardwiredId())));
         }
         return links;
     }

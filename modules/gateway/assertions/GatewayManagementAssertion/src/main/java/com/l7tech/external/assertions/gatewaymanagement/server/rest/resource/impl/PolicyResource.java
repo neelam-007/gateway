@@ -263,7 +263,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         List<Link> links = super.getRelatedLinks(policy);
         if (policy != null) {
             links.add(ManagedObjectFactory.createLink("versions", getUrlString(policy.getId() + "/" + PolicyVersionResource.VERSIONS_URI)));
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(policy.getPolicyDetail().getFolderId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policy.getPolicyDetail().getFolderId())));
         }
         return links;
     }

@@ -231,7 +231,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         if(serviceMO != null) {
             links.addAll(Arrays.asList(
                     ManagedObjectFactory.createLink("versions", getUrlString(serviceMO.getId() + "/" + PolicyVersionResource.VERSIONS_URI)),
-                    ManagedObjectFactory.createLink("parentFolder", getUrlString(serviceMO.getServiceDetail().getFolderId()))));
+                    ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceMO.getServiceDetail().getFolderId()))));
         }
         return links;
     }

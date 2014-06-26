@@ -174,8 +174,8 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     public List<Link> getRelatedLinks(@Nullable final PolicyAliasMO policyAliasMO) {
         List<Link> links = super.getRelatedLinks(policyAliasMO);
         if (policyAliasMO != null) {
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(policyAliasMO.getFolderId())));
-            links.add(ManagedObjectFactory.createLink("policy", getUrlString(policyAliasMO.getPolicyReference().getId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policyAliasMO.getFolderId())));
+            links.add(ManagedObjectFactory.createLink("policy", getUrlString(PolicyResource.class, policyAliasMO.getPolicyReference().getId())));
         }
         return links;
     }

@@ -89,6 +89,20 @@ public abstract class RestEntityResource<R, F extends APIResourceFactory<R>, T e
         return uriBuilder.build().toString();
     }
 
+    /**
+     * Gets the url to the specified resource. With the specified id.
+     *
+     * @param urlAccessibleClass The class of the resource to get the link to
+     * @param id                 The id of the resource.
+     * @return The url to access this resource.
+     */
+    @NotNull
+    protected String getUrlString(@NotNull final Class<? extends URLAccessible> urlAccessibleClass, @NotNull final String id) {
+        final UriBuilder uriBuilder = uriInfo.getBaseUriBuilder().path(urlAccessibleClass);
+        uriBuilder.path(id);
+        return uriBuilder.build().toString();
+    }
+
     @NotNull
     @Override
     public String getUrl(@NotNull R resource) {

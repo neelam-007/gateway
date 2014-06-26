@@ -174,8 +174,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     public List<Link> getRelatedLinks(@Nullable final ServiceAliasMO serviceAliasMO) {
         List<Link> links = super.getRelatedLinks(serviceAliasMO);
         if (serviceAliasMO != null) {
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(serviceAliasMO.getFolderId())));
-            links.add(ManagedObjectFactory.createLink("service", getUrlString(serviceAliasMO.getServiceReference().getId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceAliasMO.getFolderId())));
+            links.add(ManagedObjectFactory.createLink("service", getUrlString(PublishedServiceResource.class, serviceAliasMO.getServiceReference().getId())));
         }
         return links;
     }
