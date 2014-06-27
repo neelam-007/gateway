@@ -81,12 +81,7 @@ public class MyAccountDialog extends JDialog {
         getRootPane().setDefaultButton(closeButton);
         Utilities.setEscAction(this, closeButton);
 
-        changePasswordButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                new ChangePasswordAction().actionPerformed(null);
-            }
-        });
+        changePasswordButton.setAction( new ChangePasswordAction() );
     }
 
     private void createUIComponents() {
