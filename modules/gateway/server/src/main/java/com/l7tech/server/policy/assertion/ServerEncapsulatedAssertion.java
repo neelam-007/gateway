@@ -173,6 +173,12 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
 
         final Either<String, EncapsulatedAssertionConfig> configOrError = configOrErrorRef.get();
         if (configOrError.isLeft()) {
+
+            if ( assertion.isNoOpIfConfigMissing() ) {
+                // Lack of a valid config is not a fatal error for this call site
+                return AssertionStatus.NONE;
+            }
+
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Invalid Encapsulated Assertion Config: " + configOrError.left());
             return AssertionStatus.SERVER_ERROR;
         }

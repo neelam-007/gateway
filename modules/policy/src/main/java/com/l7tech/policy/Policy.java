@@ -466,7 +466,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
                     if (ass instanceof UsesEntitiesAtDesignTime) {
                         UsesEntitiesAtDesignTime entityUser = (UsesEntitiesAtDesignTime) ass;
                         try {
-                            entityProvider.provideNeededEntities(entityUser, null);
+                            entityProvider.provideNeededEntities( entityUser, entityUser.getProvideEntitiesErrorHandler() );
                         } catch (FindException e) {
                             logger.log(Level.WARNING, "Unable to prepare entity for assertion ordinal " + ass.getOrdinal() + " of policy GUID " + getGuid() + " (" + getName() + "): " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }

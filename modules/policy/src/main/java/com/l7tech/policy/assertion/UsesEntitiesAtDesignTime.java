@@ -2,7 +2,10 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface implemented by assertions that use require entities at design time, for metadata and/or validation
@@ -38,4 +41,14 @@ public interface UsesEntitiesAtDesignTime extends UsesEntities {
      * @param entity a complete copy of the entity corresponding to this entity header.  Required.
      */
     void provideEntity(@NotNull EntityHeader header, @NotNull Entity entity);
+
+    /**
+     * Get an error handler to use if there is a problem obtaining an entity declared as needed as design time.
+     * <p/>
+     * On the Gateway, the default error handler will just log a WARNING.
+     *
+     * @return an error handler to use when providing entities at design time, or null to use the default error handling behavior.
+     */
+    @Nullable
+    Functions.BinaryVoid<EntityHeader,FindException> getProvideEntitiesErrorHandler();
 }

@@ -25,6 +25,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
     private ZoneableGuidEntityHeader configHeader = new ZoneableGuidEntityHeader();
     private Map<String,String> parameters = new TreeMap<String,String>(String.CASE_INSENSITIVE_ORDER);
+    private boolean noOpIfConfigMissing = false;
 
     private transient DefaultAssertionMetadata meta = null;
     private transient EncapsulatedAssertionConfig encapsulatedAssertionConfig;
@@ -55,6 +56,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         copy.configHeader.setGuid(configHeader.getGuid());
         copy.encapsulatedAssertionConfig = encapsulatedAssertionConfig == null ? null : encapsulatedAssertionConfig.getCopy();
         copy.meta = null;
+        copy.noOpIfConfigMissing = noOpIfConfigMissing;
 
         return copy;
     }
@@ -147,7 +149,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
      */
     @Nullable
     public String getParameter(@NotNull String key) {
-        return parameters.get(key);
+        return parameters.get( key );
     }
 
     /**
@@ -203,6 +205,29 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     }
 
     /**
+     * Check if this assertion should, if its encass config is missing, succeed at runtime without doing anything.
+     *
+     * @return true if it is non-fatal for this assertion's encass config to be missing.
+     *         false if a lack of an encass config with a matching GUID is a fatal error.
+     */
+    public boolean isNoOpIfConfigMissing() {
+        return noOpIfConfigMissing;
+    }
+
+    /**
+     * Set whether this assertion should, if its encass config is missing, succeed at runtime without doing anything.
+     * </p>
+     * If this is true, the assertion should be rendered greyed out at design time, and any validator warning
+     * about a missing encass config should be suppressed.  At design time, the assertion should return
+     * AssertionStatus.NONE without taking any action (or setting any variables).
+     *
+     * @param noOpIfConfigMissing true if a missing config should be non-fatal.  False if it should be fatal.
+     */
+    public void setNoOpIfConfigMissing( boolean noOpIfConfigMissing ) {
+        this.noOpIfConfigMissing = noOpIfConfigMissing;
+    }
+
+    /**
      * Migration mapping not supported for EncapsulatedAssertionConfig (it should already exist on the target SSG).
      */
     @Override
@@ -237,6 +262,29 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         }
     }
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EncapsulatedAssertion>(){
+        @Override
+        public String getAssertionName( final EncapsulatedAssertion assertion, final boolean decorate) {
+            EncapsulatedAssertionConfig config = assertion.encapsulatedAssertionConfig != null
+                    ? assertion.encapsulatedAssertionConfig
+                    : newConfigFromHeader( assertion.configHeader );
+
+            String baseName = config.getName();
+
+            if (!decorate)
+                return baseName;
+
+            if ( assertion.config() == null ) {
+                String suffix = assertion.isNoOpIfConfigMissing()
+                        ? "<font size=-3>(Not Available in Current Environment)"
+                        : "<font color=red>(Missing)";
+                return "<HTML><font color=gray>" + baseName + "   &nbsp;&nbsp;&nbsp;&nbsp;" + suffix;
+            }
+
+            return baseName;
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         if (this.meta != null)
@@ -252,6 +300,8 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         meta.put(SHORT_NAME, config.getName());
         meta.put(BASE_64_NODE_IMAGE, config.getProperty(EncapsulatedAssertionConfig.PROP_ICON_BASE64));
         meta.put(PALETTE_NODE_ICON, findIconResourcePath(config));
+
+        meta.put( POLICY_NODE_NAME_FACTORY, policyNameFactory );
 
         if (config.hasAtLeastOneGuiParameter()) {
             // Use dialog
@@ -284,7 +334,15 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             meta.put(PALETTE_FOLDERS, new String[] { folder });
         }
 
-        final String description = config.getProperty(EncapsulatedAssertionConfig.PROP_DESCRIPTION);
+        String description = config.getProperty(EncapsulatedAssertionConfig.PROP_DESCRIPTION);
+        if ( this.config() == null ) {
+            if ( description == null )
+                description = "";
+
+            description = description + (isNoOpIfConfigMissing()
+                    ? "\n\nOptional assertion not available in current environment; this assertion will always succeed."
+                    : "\n\nEncapsulated assertion not available; this assertion will always fail.");
+        }
         if (description != null) {
             meta.put(DESCRIPTION, description);
         }
@@ -378,6 +436,20 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
         if (entity instanceof EncapsulatedAssertionConfig) {
             config((EncapsulatedAssertionConfig) entity);
         }
+    }
+
+    @Nullable
+    @Override
+    public Functions.BinaryVoid<EntityHeader, FindException> getProvideEntitiesErrorHandler() {
+        if ( noOpIfConfigMissing ) {
+            return new Functions.BinaryVoid<EntityHeader, FindException>() {
+                @Override
+                public void call( EntityHeader entityHeader, FindException e ) {
+                    // Ignore the error, as it is expected that the encass config may not be available
+                }
+            };
+        }
+        return null;
     }
 
     @Override

@@ -13,7 +13,7 @@ public class EncapsulatedAssertionValidator extends AssertionValidatorSupport<En
             addMessage("encapsulated assertion does not contain an encapsulated assertion configuration GUID");
         } else {
             // This assumes that design-time entities have already been provided before the validator is invoked
-            if (assertion.config() == null)
+            if ( assertion.config() == null && !assertion.isNoOpIfConfigMissing() )
                 addMessage("no encapsulated assertion configuration available with GUID " + configGuid);
         }
     }

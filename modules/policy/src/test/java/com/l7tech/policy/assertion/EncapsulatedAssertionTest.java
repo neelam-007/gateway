@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -28,7 +29,7 @@ public class EncapsulatedAssertionTest {
     private EncapsulatedAssertionConfig config;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         assertion = new EncapsulatedAssertion();
         config = new EncapsulatedAssertionConfig();
         config.setGuid(CONFIG_GUID);
@@ -371,4 +372,31 @@ public class EncapsulatedAssertionTest {
         assertEquals(clone.getParameters(), assertion.getParameters());
         assertEquals(clone.config(), assertion.config());
     }
+
+    @Test
+    public void testPolicyName() {
+        assertion.config( config );
+        AssertionNodeNameFactory<EncapsulatedAssertion> nameFactory = assertion.meta().get( AssertionMetadata.POLICY_NODE_NAME_FACTORY );
+        String policyName = nameFactory.getAssertionName( assertion, true );
+        assertEquals( CONFIG_NAME, policyName );
+    }
+
+    @Test
+    public void testPolicyName_configMissing() {
+        assertion.config( null );
+        AssertionNodeNameFactory<EncapsulatedAssertion> nameFactory = assertion.meta().get( AssertionMetadata.POLICY_NODE_NAME_FACTORY );
+        String policyName = nameFactory.getAssertionName( assertion, true );
+        assertTrue( policyName.contains( "(Missing)" ) );
+    }
+
+    @Test
+    public void testPolicyName_configMissing_optional() {
+        assertion.config( null );
+        assertion.setNoOpIfConfigMissing( true );
+        AssertionNodeNameFactory<EncapsulatedAssertion> nameFactory = assertion.meta().get( AssertionMetadata.POLICY_NODE_NAME_FACTORY );
+        String policyName = nameFactory.getAssertionName( assertion, true );
+        assertTrue( policyName.contains( "(Not Available in Current Environment)" ) );
+    }
+
+
 }

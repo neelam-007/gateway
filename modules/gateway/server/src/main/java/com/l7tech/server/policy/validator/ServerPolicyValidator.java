@@ -443,23 +443,36 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 } catch (FindException e) {
                     thrown = e;
                 }
-                if (entity == null)
-                    result.addError(new PolicyValidatorResult.Error( assertion,
-                            "Assertion refers to a " +
-                                    EntitiesResolver.getEntityTypeName (
-                                            assertion,
-                                            header.getType(),
-                                            new Functions.Binary<String, UsesEntities, EntityType>() {
-                                                @Override
-                                                public String call(
-                                                        @NotNull final UsesEntities usesEntities,
-                                                        @NotNull EntityType entityType
-                                                ) {
-                                                    return EntityUseUtils.getTypeName(usesEntities, entityType);
+                if (entity == null) {
+                    boolean err = true;
+
+                    if ( assertion instanceof EncapsulatedAssertion ) {
+                        EncapsulatedAssertion encass = (EncapsulatedAssertion) assertion;
+                        if ( encass.isNoOpIfConfigMissing() && EntityType.ENCAPSULATED_ASSERTION.equals( header.getType() ) ) {
+                            // Explicitly declared as not a fatal error for this encass call site to refer to a nonexistent encass config
+                            err = false;
+                        }
+                    }
+
+                    if ( err ) {
+                        result.addError( new PolicyValidatorResult.Error( assertion,
+                                "Assertion refers to a " +
+                                        EntitiesResolver.getEntityTypeName(
+                                                assertion,
+                                                header.getType(),
+                                                new Functions.Binary<String, UsesEntities, EntityType>() {
+                                                    @Override
+                                                    public String call(
+                                                            @NotNull final UsesEntities usesEntities,
+                                                            @NotNull EntityType entityType
+                                                    ) {
+                                                        return EntityUseUtils.getTypeName( usesEntities, entityType );
+                                                    }
                                                 }
-                                            }
-                                    ) +
-                                    " that cannot be located on this system", thrown));
+                                        ) +
+                                        " that cannot be located on this system", thrown ) );
+                    }
+                }
             }
         }
 

@@ -148,6 +148,7 @@ public class PolicyUtilTest {
         public EntityHeader[] getEntitiesUsedAtDesignTime() { return new EntityHeader[0]; }
         public boolean needsProvideEntity(@NotNull EntityHeader header) { return false; }
         public void provideEntity(@NotNull EntityHeader header, @NotNull Entity entity) {}
+        public Functions.BinaryVoid<EntityHeader, FindException> getProvideEntitiesErrorHandler() { return null; }
         public EntityHeader[] getEntitiesUsed() { return new EntityHeader[0]; }
         public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) { }
     }
