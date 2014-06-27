@@ -256,6 +256,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // Process message
             status = messageProcessor.processMessageNoAudit( context );
 
+            // If we want to audit the request message, ensure it gets stashed before we finish the servlet lifecycle (SSG-8789)
+            if ( context.isAuditSaveRequest() && !request.getMimeKnob().isBufferingDisallowed() ) {
+                request.getMimeKnob().getFirstPart().getInputStream( false );
+            }
+
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
                 final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
