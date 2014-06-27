@@ -10,6 +10,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,7 +175,7 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
     public List<Link> getRelatedLinks(@Nullable final PolicyAliasMO policyAliasMO) {
         List<Link> links = super.getRelatedLinks(policyAliasMO);
         if (policyAliasMO != null) {
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policyAliasMO.getFolderId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policyAliasMO.getFolderId() != null ? policyAliasMO.getFolderId() : Folder.ROOT_FOLDER_ID.toString())));
             links.add(ManagedObjectFactory.createLink("policy", getUrlString(PolicyResource.class, policyAliasMO.getPolicyReference().getId())));
         }
         return links;

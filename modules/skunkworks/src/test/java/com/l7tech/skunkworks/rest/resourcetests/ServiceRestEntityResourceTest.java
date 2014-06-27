@@ -373,6 +373,21 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
         policyResourceSet.setResources(Arrays.asList(policyResource));
         serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
 
+        //create a service without specifying a folder. should use root by default SSG-8808
+        serviceMO = ManagedObjectFactory.createService();
+        serviceMO.setId(getGoid().toString());
+        serviceDetail = ManagedObjectFactory.createServiceDetail();
+        serviceDetail.setName("My New Service");
+        serviceDetail.setEnabled(false);
+        serviceMO.setServiceDetail(serviceDetail);
+        policyResourceSet = ManagedObjectFactory.createResourceSet();
+        policyResource = ManagedObjectFactory.createResource();
+        policyResourceSet.setTag("policy");
+        policyResource.setType("policy");
+        policyResource.setContent(POLICY);
+        policyResourceSet.setResources(Arrays.asList(policyResource));
+        serviceMO.setResourceSets(Arrays.asList(policyResourceSet));
+
         serviceMOs.add(serviceMO);
 
         return serviceMOs;
@@ -593,7 +608,7 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
 
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getServiceDetail().getName());
-            Assert.assertEquals(entity.getFolder().getId(), managedObject.getServiceDetail().getFolderId());
+            Assert.assertEquals(entity.getFolder().getId(), managedObject.getServiceDetail().getFolderId() != null ? managedObject.getServiceDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString());
             Assert.assertEquals(entity.getPolicy().getXml(), managedObject.getResourceSets().get(0).getResources().get(0).getContent());
             Assert.assertEquals(entity.isDisabled(), !managedObject.getServiceDetail().getEnabled());
 

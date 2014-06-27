@@ -64,7 +64,7 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
         folderManager.save(myEmptyFolder);
 
         //create the published service
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy " + i, POLICY, false);
             policy.setFolder(myPolicyFolder);
             policy.setGuid(UUID.randomUUID().toString());
@@ -138,6 +138,12 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
         policyAliasMO.setId(getGoid().toString());
         policyAliasMO.setFolderId(rootFolder.getId());
         policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(2).getId()));
+        policyAliasMOs.add(policyAliasMO);
+
+        //create a policy alias without specifying a folder. should use root by default SSG-8808
+        policyAliasMO = ManagedObjectFactory.createPolicyAlias();
+        policyAliasMO.setId(getGoid().toString());
+        policyAliasMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, policies.get(3).getId()));
         policyAliasMOs.add(policyAliasMO);
 
         return policyAliasMOs;
@@ -320,7 +326,7 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
 
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getEntityGoid().toString(), managedObject.getPolicyReference().getId());
-            Assert.assertEquals(entity.getFolder().getId(), managedObject.getFolderId());
+            Assert.assertEquals(entity.getFolder().getId(), managedObject.getFolderId() != null ? managedObject.getFolderId() : Folder.ROOT_FOLDER_ID.toString());
         }
     }
 

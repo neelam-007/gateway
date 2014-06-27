@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
 import org.jetbrains.annotations.NotNull;
@@ -231,7 +232,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
         if(serviceMO != null) {
             links.addAll(Arrays.asList(
                     ManagedObjectFactory.createLink("versions", getUrlString(serviceMO.getId() + "/" + PolicyVersionResource.VERSIONS_URI)),
-                    ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceMO.getServiceDetail().getFolderId()))));
+                    ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceMO.getServiceDetail().getFolderId() != null ? serviceMO.getServiceDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString()))));
         }
         return links;
     }

@@ -10,6 +10,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,8 +175,8 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     public List<Link> getRelatedLinks(@Nullable final ServiceAliasMO serviceAliasMO) {
         List<Link> links = super.getRelatedLinks(serviceAliasMO);
         if (serviceAliasMO != null) {
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceAliasMO.getFolderId())));
-            links.add(ManagedObjectFactory.createLink("service", getUrlString(PublishedServiceResource.class, serviceAliasMO.getServiceReference().getId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceAliasMO.getFolderId() != null ? serviceAliasMO.getFolderId() : Folder.ROOT_FOLDER_ID.toString())));
+            links.add(ManagedObjectFactory.createLink("service", getUrlString(PublishedServiceResource.class, serviceAliasMO.getServiceReference().getId() )));
         }
         return links;
     }

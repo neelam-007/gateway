@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Either;
@@ -263,7 +264,7 @@ public class PolicyResource extends DependentRestEntityResource<PolicyMO, Policy
         List<Link> links = super.getRelatedLinks(policy);
         if (policy != null) {
             links.add(ManagedObjectFactory.createLink("versions", getUrlString(policy.getId() + "/" + PolicyVersionResource.VERSIONS_URI)));
-            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policy.getPolicyDetail().getFolderId())));
+            links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, policy.getPolicyDetail().getFolderId() != null ? policy.getPolicyDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString())));
         }
         return links;
     }

@@ -59,7 +59,7 @@ public class ServiceAliasRestEntityResourceTest extends RestEntityTests<Publishe
         folderManager.save(myEmptyFolder);
 
         //create the published service
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             PublishedService service = new PublishedService();
             service.setName("Service" + i);
             service.setRoutingUri("/test" + i);
@@ -135,6 +135,12 @@ public class ServiceAliasRestEntityResourceTest extends RestEntityTests<Publishe
         serviceAliasMO.setId(getGoid().toString());
         serviceAliasMO.setFolderId(rootFolder.getId());
         serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, services.get(2).getId()));
+        serviceAliasMOs.add(serviceAliasMO);
+
+        //create a service alias without specifying a folder. should use root by default SSG-8808
+        serviceAliasMO = ManagedObjectFactory.createServiceAlias();
+        serviceAliasMO.setId(getGoid().toString());
+        serviceAliasMO.setServiceReference(new ManagedObjectReference(ServiceMO.class, services.get(3).getId()));
         serviceAliasMOs.add(serviceAliasMO);
 
         return serviceAliasMOs;
@@ -317,7 +323,7 @@ public class ServiceAliasRestEntityResourceTest extends RestEntityTests<Publishe
 
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getEntityGoid().toString(), managedObject.getServiceReference().getId());
-            Assert.assertEquals(entity.getFolder().getId(), managedObject.getFolderId());
+            Assert.assertEquals(entity.getFolder().getId(), managedObject.getFolderId() != null ? managedObject.getFolderId() : Folder.ROOT_FOLDER_ID.toString());
         }
     }
 

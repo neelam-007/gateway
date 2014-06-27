@@ -235,6 +235,31 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policy.setResourceSets(Arrays.asList(resourceSet));
         policies.add(policy);
 
+        //create a policy without specifying a folder. should use root by default SSG-8808
+        policy = ManagedObjectFactory.createPolicy();
+        policy.setId(getGoid().toString());
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName("New Policy 2");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policy.setPolicyDetail(policyDetail);
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:Export Version=\"3.0\"\n" +
+                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <exp:References/>\n" +
+                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:Policy>\n" +
+                "</exp:Export>\n");
+        resourceSet.setResources(Arrays.asList(resource));
+        policy.setResourceSets(Arrays.asList(resourceSet));
+        policies.add(policy);
+
         return policies;
     }
 
@@ -612,7 +637,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
                 default:
                     Assert.fail("should not be able to get policies of this type: " + entity.getType());
             }
-            Assert.assertEquals(entity.getFolder().getId(), managedObject.getPolicyDetail().getFolderId());
+            Assert.assertEquals(entity.getFolder().getId(), managedObject.getPolicyDetail().getFolderId() != null ? managedObject.getPolicyDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString());
             if (managedObject.getPolicyDetail().getGuid() != null) {
                 Assert.assertEquals(entity.getGuid(), managedObject.getPolicyDetail().getGuid());
             }
