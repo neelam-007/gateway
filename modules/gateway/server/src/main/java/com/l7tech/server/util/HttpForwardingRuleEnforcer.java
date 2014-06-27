@@ -8,8 +8,6 @@ import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Pair;
-import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,80 +118,6 @@ public class HttpForwardingRuleEnforcer {
             if (headerName.compareToIgnoreCase(gh.getName()) == 0) {
                 logger.finest("removing " + headerName + " user agent value " + gh.getFullValue());
                 iterator.remove();
-            }
-        }
-    }
-
-    /**
-     * Handle request headers for Bridge Routing.
-     *
-     * @param sourceMessage The source message (required)
-     * @param httpRequestParams The target for outbound headers (required)
-     * @param context The current context (required)
-     * @param rules The header processing rules (required)
-     * @param auditor The auditor to use (required)
-     * @param vars The relevant variables (may be null)
-     * @param varNames The variables used in header rules (may be null)
-     */
-    public static void handleRequestHeaders( final Message sourceMessage,
-                                            final GenericHttpRequestParams httpRequestParams,
-                                            final PolicyEnforcementContext context,
-                                            final HttpPassthroughRuleSet rules,
-                                            final Audit auditor,
-                                             @Nullable Map<String,?> vars,
-                                             @Nullable final String[] varNames ) {
-        final HeadersKnob copy = copyAndFilterNonPassThroughHeaders(sourceMessage.getHeadersKnob());
-
-        if (rules.isForwardAll()) {
-            String[] headerNames = copy.getHeaderNames(HEADER_TYPE_HTTP);
-            boolean cookieAlreadyHandled = false; // cause all cookies are processed in one go (unlike other headers)
-            for ( final String headerName : headerNames ) {
-                if ((headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) || headerName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) && !cookieAlreadyHandled) {
-                    // cookies are handled separately by the ServerBRA
-                }  else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION) && !cookieAlreadyHandled) {
-                    // the bridge has it's own handling for soap action
-                } else {
-                    final String[] values = copy.getHeaderValues(headerName, HEADER_TYPE_HTTP);
-                    for ( final String value : values ) {
-                        httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
-                    }
-                }
-            }
-        } else {
-            for (int i = 0; i < rules.getRules().length; i++) {
-                HttpPassthroughRule rule = rules.getRules()[i];
-                if ( rule.isUsesCustomizedValue() ) {
-                    // set header with custom value
-                    String headerName = rule.getName();
-                    String headerValue = rule.getCustomizeValue();
-                    //Handle it by virtual host
-                    if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerName)) continue;
-                    // resolve context variable if applicable
-                    if (varNames != null && varNames.length > 0) {
-                        if (vars == null) {
-                            vars = context.getVariableMap(varNames, auditor);
-                        }
-                        headerValue = ExpandVariables.process(headerValue, vars, auditor);
-                    }
-                    httpRequestParams.replaceExtraHeader(new GenericHttpHeader(headerName, headerValue));
-                } else {
-                    // set header with incoming value if it's present
-                    final String headerName = rule.getName();
-                    // special cookie handling
-                    if (headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE) || headerName.equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
-                        // outgoing cookies are handled separately by the ServerBra
-                    } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
-                        // the bridge already has its own handling for soap action
-                    } else if (HttpConstants.HEADER_HOST.equalsIgnoreCase(headerName)) {
-                        // Use the route host instead of gateway host
-                    } else {
-                        final String[] values = copy.getHeaderValues(headerName, HEADER_TYPE_HTTP);
-
-                        for (String value : values) {
-                            httpRequestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
-                        }
-                    }
-                }
             }
         }
     }
