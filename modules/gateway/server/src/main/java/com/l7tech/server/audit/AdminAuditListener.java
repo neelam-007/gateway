@@ -51,10 +51,12 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
 
 
     public void onApplicationEvent(ApplicationEvent event) {
+        AuditsCollector auditsCollector = null;
         if (event instanceof AdminEvent) {
             AdminEvent adminEvent = (AdminEvent) event;
             if (adminEvent.isAuditIgnore())
                 return;
+            auditsCollector = AuditContextUtils.getAuditsCollector();
         }
 
         if (event instanceof Updated) {
@@ -74,7 +76,11 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         }
 
         if (event instanceof AdminEvent || event instanceof LogonEvent) {
-            auditContextFactory.emitAuditRecordWithDetails(makeAuditRecord(event), false, event.getSource(), makeAuditDetails(event));
+            if(auditsCollector!=null){
+                auditsCollector.collectAudit(makeAuditRecord(event), event.getSource(), makeAuditDetails(event));
+            }else {
+                auditContextFactory.emitAuditRecordWithDetails(makeAuditRecord(event), false, event.getSource(), makeAuditDetails(event));
+            }
         }
     }
 

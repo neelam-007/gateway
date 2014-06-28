@@ -41,12 +41,31 @@ public class AuditContextUtils {
         }
     }
 
+    public static AuditsCollector getAuditsCollector() {
+        return logOnlyThreadLocal.get();
+    }
+
+    /**
+     * Sets a collector to collect administrative audit records.
+     *
+     * @param collector
+     */
+    public static void setAuditsCollector(AuditsCollector collector) {
+        logOnlyThreadLocal.set(collector);
+    }
+
     //- PRIVATE
 
     private static final ThreadLocal<Boolean> systemThreadLocal = new ThreadLocal<Boolean>(){
         @Override
         protected Boolean initialValue() {
             return false;
+        }
+    };
+    private static final ThreadLocal<AuditsCollector> logOnlyThreadLocal = new ThreadLocal<AuditsCollector>(){
+        @Override
+        protected AuditsCollector initialValue() {
+            return null;
         }
     };
 }

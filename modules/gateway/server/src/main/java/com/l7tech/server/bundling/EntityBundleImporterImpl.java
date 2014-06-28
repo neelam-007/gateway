@@ -1,5 +1,7 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -17,6 +19,9 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.audit.AuditsCollector;
+import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.bundling.exceptions.BundleImportException;
 import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
@@ -27,10 +32,7 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Either;
-import com.l7tech.util.Eithers;
-import com.l7tech.util.Option;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +76,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private ServiceManager serviceManager;
     @Inject
     private PolicyVersionManager policyVersionManager;
+    @Inject
+    private AuditContextFactory auditContextFactory;
+
 
     /**
      * This will import the given entity bundle. If test is true or there is an error during bundle import nothing is
@@ -87,6 +92,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param versionComment The comment to set for updated/created services and policies
      * @return The mapping results of the bundle import.
      */
+    @Override
     @NotNull
     public List<EntityMappingResult> importBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean activate, @Nullable final String versionComment) {
         if (!test) {
@@ -95,6 +101,37 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             logger.log(Level.FINE, "Test Importing bundle!");
         }
 
+        AuditContextUtils.setAuditsCollector(new AuditsCollector());
+
+        List<EntityMappingResult> results = doImportBundle(bundle, test, activate, versionComment);
+
+        AuditsCollector collector = AuditContextUtils.getAuditsCollector();
+        AuditContextUtils.setAuditsCollector(null);
+
+        if(!test) {
+            if (containsErrors(results)) {
+                logger.log(Level.INFO, "Error importing bundle");
+            } else {
+                for (Triple<AuditRecord, Object, Collection<AuditDetail>> record : collector) {
+                    auditContextFactory.emitAuditRecordWithDetails(record.left, false, record.middle, record.right);
+                }
+                logger.log(Level.INFO, "Bundle imported.");
+            }
+        }
+        return results;
+    }
+
+    private boolean containsErrors(List<EntityMappingResult> results) {
+        return Functions.exists(results, new Functions.Unary<Boolean, EntityMappingResult>() {
+            @Override
+            public Boolean call(EntityMappingResult mapping) {
+                return mapping.getException() != null;
+            }
+        });
+    }
+
+    @NotNull
+    private List<EntityMappingResult> doImportBundle(@NotNull final EntityBundle bundle, final boolean test, final boolean activate, @Nullable final String versionComment) {
         //Perform the bundle import within a transaction so that it can be rolled back if there is an error importing the bundle, or this is a test import.
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);

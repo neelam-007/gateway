@@ -15,8 +15,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.audit.AuditContextFactory;
-import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.Functions;
 import org.glassfish.jersey.process.internal.RequestScoped;
@@ -31,7 +29,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 /*
  * Do not make this a @Provider the will make allow
@@ -188,14 +185,8 @@ public class BundleResource {
                                  final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
 
-        AuditContextUtils.setSystem(true);
-        List<Mapping> mappings = AuditContextFactory.doWithCustomAuditContext(AuditContextFactory.createLogOnlyAuditContext(), new Callable<List<Mapping>>() {
-            @Override
-            public List<Mapping> call() throws Exception {
-                return bundleImporter.importBundle(bundle, test, activate, versionComment);
-            }
-        });
-        AuditContextUtils.setSystem(false);
+        List<Mapping> mappings =
+                bundleImporter.importBundle(bundle, test, activate, versionComment);
 
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
