@@ -15,41 +15,35 @@ public class CookieUtilsTest {
     public void testEnsurePathDomain() {
         HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, "/some", ".domain.com");
         String cookieOneHeader = CookieUtils.getSetCookieHeader(cookie1);
-
-        HttpCookie cookie2 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", "/some/path");
-
-        assertEquals("Check valid", cookieOneHeader, CookieUtils.getSetCookieHeader(cookie2));
-        assertEquals("Check valid Set-Cookie header", CookieUtils.replaceCookieDomainAndPath(cookieOneHeader, "a.domain.com", "/some/path"), CookieUtils.getSetCookieHeader(cookie2));
-
-        HttpCookie cookie3 = CookieUtils.ensureValidForDomainAndPath(cookie1, "b.bdomain.com", "/some/path");
-        assertFalse("Check modified domain", cookie1.equals(cookie3));
         assertFalse("Check modified domain", cookieOneHeader.equals(CookieUtils.replaceCookieDomainAndPath(cookieOneHeader, "b.bdomain.com", "/some/path")));
-
-        HttpCookie cookie4 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", "/otherpath");
         assertFalse("Check modified path", cookieOneHeader.equals(CookieUtils.replaceCookieDomainAndPath(cookieOneHeader, "a.domain.com", "/otherpath")));
-        assertFalse("Check modified path", cookie1.equals(cookie4));
-
-        HttpCookie cookie5 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
         assertEquals("Check unmodified path", cookieOneHeader, CookieUtils.replaceCookieDomainAndPath(cookieOneHeader, "a.domain.com", null));
-        assertEquals("Check unmodified path", cookie1, cookie5);
     }
 
     @Test
-    public void ensureValidForDomainAndPathNullCookieDomainAndPath() {
-        HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, null, null);
-        HttpCookie cookie2 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", null);
-        String setCookieHeader = CookieUtils.getSetCookieHeader(cookie1);
-        assertEquals(setCookieHeader, CookieUtils.replaceCookieDomainAndPath(setCookieHeader, "a.domain.com", null));
-        assertEquals("Check valid", cookie1, cookie2);
+    public void replaceCookieDomainAndPathNullCookieDomainPathMismatch() {
+        assertEquals("name=valuea; Path=/gatewayPath; Domain=gatewayDomain", CookieUtils.replaceCookieDomainAndPath("name=valuea; Path=/originalPath", "gatewayDomain", "/gatewayPath"));
     }
 
     @Test
-    public void ensureValidForDomainAndPathNullTargetDomain() throws Exception {
+    public void replaceCookieDomainAndPathNullCookiePathDomainMismatch() {
+        assertEquals("name=valuea; Domain=gatewayDomain; Path=/gatewayPath", CookieUtils.replaceCookieDomainAndPath("name=valuea; Domain=originalDomain", "gatewayDomain", "/gatewayPath"));
+    }
+
+    @Test
+    public void replaceCookieDomainAndPathNullCookieDomainAndPath() {
+        assertEquals("name=valuea; version=1", CookieUtils.replaceCookieDomainAndPath("name=valuea; version=1", "a.domain.com", "/otherPath"));
+    }
+
+    @Test
+    public void replaceCookieDomainAndPathAlreadyMatch() {
+        final String headerValue = "name=valuea; path=/originalPath; domain=originalDomain";
+        assertEquals(headerValue, CookieUtils.replaceCookieDomainAndPath(headerValue, "originalDomain", "/originalPath"));
+    }
+
+    @Test
+    public void replaceCookieDomainAndPathNullTargetDomain() throws Exception {
         HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain");
-        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, null, "/gatewayPath");
-        assertEquals("originalDomain", cookie.getDomain());
-        assertEquals("/gatewayPath", cookie.getPath());
-
         String cookieOneValue = CookieUtils.getSetCookieHeader(cookie1);
         HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, null, "/gatewayPath"));
         assertEquals("originalDomain", modifiedCookie.getDomain());
@@ -57,12 +51,8 @@ public class CookieUtilsTest {
     }
 
     @Test
-    public void ensureValidForDomainAndPathNullTargetPath() throws Exception {
+    public void replaceCookieDomainAndPathNullTargetPath() throws Exception {
         HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain");
-        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, "gatewayDomain", null);
-        assertEquals("gatewayDomain", cookie.getDomain());
-        assertEquals("/originalPath", cookie.getPath());
-
         String cookieOneValue = CookieUtils.getSetCookieHeader(cookie1);
         HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, "gatewayDomain", null));
         assertEquals("gatewayDomain", modifiedCookie.getDomain());
@@ -70,12 +60,8 @@ public class CookieUtilsTest {
     }
 
     @Test
-    public void ensureValidForDomainAndPathNullTargetDomainAndPath() throws Exception {
+    public void replaceCookieDomainAndPathNullTargetDomainAndPath() throws Exception {
         HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/originalPath", "originalDomain");
-        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, null, null);
-        assertEquals("originalDomain", cookie.getDomain());
-        assertEquals("/originalPath", cookie.getPath());
-
         String cookieOneValue = CookieUtils.getSetCookieHeader(cookie1);
         HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, null, null));
         assertEquals("originalDomain", modifiedCookie.getDomain());
@@ -87,12 +73,8 @@ public class CookieUtilsTest {
      */
     @BugId("SSG-8733")
     @Test
-    public void ensureValidForDomainAndPathAlwaysReplacePathIfDomainIsReplaced() throws Exception {
+    public void replaceCookieDomainAndPathAlwaysReplacePathIfDomainIsReplaced() throws Exception {
         HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, "/", "galactica.l7tech.com");
-        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, "gatewayDomain", "/gatewayPath");
-        assertEquals("gatewayDomain", cookie.getDomain());
-        assertEquals("/gatewayPath", cookie.getPath());
-
         String cookieOneValue = CookieUtils.getSetCookieHeader(cookie1);
         HttpCookie modifiedCookie = new HttpCookie(CookieUtils.replaceCookieDomainAndPath(cookieOneValue, "gatewayDomain", "/gatewayPath"));
         assertEquals("gatewayDomain", modifiedCookie.getDomain());
@@ -100,13 +82,20 @@ public class CookieUtilsTest {
     }
 
     @Test
-    public void ensureValidForDomainAndPathDomainIsReplacedButPathIsNull() {
-        HttpCookie cookie1 = new HttpCookie("foo", "bar", 1, null, "localhost");
-        final HttpCookie cookie = CookieUtils.ensureValidForDomainAndPath(cookie1, "gatewayDomain", null);
-        assertEquals("gatewayDomain", cookie.getDomain());
-        assertNull(cookie.getPath());
-
+    public void replaceCookieDomainAndPathDomainIsReplacedButPathIsNull() {
         assertEquals("foo=bar; Domain=gatewayDomain", CookieUtils.replaceCookieDomainAndPath("foo=bar; Domain=localhost", "gatewayDomain", null));
+    }
+
+    @Test
+    public void replaceCookieDomainAndPathSubDomain() {
+        final String headerValue = "name=valuea; path=/originalPath; domain=originalDomain";
+        assertEquals(headerValue, CookieUtils.replaceCookieDomainAndPath(headerValue, "sub.originalDomain", "/originalPath"));
+    }
+
+    @Test
+    public void replaceCookieDomainAndPathSubPath() {
+        final String headerValue = "name=valuea; path=/originalPath; domain=originalDomain";
+        assertEquals(headerValue, CookieUtils.replaceCookieDomainAndPath(headerValue, "originalDomain", "/originalPath/sub"));
     }
 
     /**

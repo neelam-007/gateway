@@ -179,66 +179,33 @@ public class CookieUtils {
     }
 
     /**
-     * <p>Ensures that the given cookie is valid to be returned from the given domain and path.</p>
-     * <p/>
-     * <p>If the cookie is valid then it is returned, else a new cookie is created with the same
-     * values but a modified domain and/or path.</p>
+     * Adjust cookie domain and path.
      *
-     * @param cookie the cookie to check
-     * @param domain the cookies target domain. If null, the cookie domain will be used for the return cookie domain.
-     * @param path   the cookies target path (not that the path is trimmed up to and including the last /)
-     *               If null, the cookie path will be used for the return cookie path.
-     * @return a valid cookie
-     */
-    public static HttpCookie ensureValidForDomainAndPath(HttpCookie cookie, String domain, String path) {
-        HttpCookie result = cookie;
-
-        if (result != null) {
-            String cookieDomain = cookie.getDomain();
-            String cookiePath = cookie.getPath();
-
-            String calcPath = path;
-            if (calcPath == null) {
-                calcPath = cookiePath;
-            }
-
-            if (calcPath != null) {
-                int trim = calcPath.lastIndexOf('/');
-                if (trim > 0) {
-                    calcPath = calcPath.substring(0, trim);
-                }
-            }
-
-            if ((cookieDomain != null && domain != null && !domain.endsWith(cookieDomain))
-                    || (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
-                result = new HttpCookie(cookie, domain != null ? domain : cookieDomain, calcPath);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * adjust cookie domain and path
+     * The domain in the cookie value will be added/replaced with the given domain if it is not null and either of the following is true:
+     * 1. the given domain is not equal to the cookie domain, nor is it a sub domain of the cookie domain
+     * 2. the cookie path required replacement
      *
-     * @param value  cookie value with attributes
-     * @param domain gateway domain
-     * @param path   gateway path
-     * @return cookie with modified domain and/or path
+     * The path in the cookie will be added/replaced with the given path if it is not null and either of the following is true:
+     * 1. the given path is not equal to the cookie path, nor is it a sub path of the cookie path
+     * 2. the cookie domain required replacement
+     *
+     * @param value  cookie header value with attributes
+     * @param domain gateway domain or null if the domain should not be replaced.
+     * @param path   gateway path or null if the path should not be replaced.
+     * @return cookie value with potentially modified/added domain and/or path
      */
-    public static String replaceCookieDomainAndPath(String value, String domain, String path) {
+    public static String replaceCookieDomainAndPath(@NotNull final String value, @Nullable final String domain, @Nullable final String path) {
         String s = value;
         if (StringUtils.isNotBlank(s)) {
-            //replace cookie domain
-            boolean domainChanged = false;
+            boolean replaceDomain = false;
             if (domain != null) {
                 String cookieDomain = findMatchingValue(domainPattern.matcher(s));
+                // replace if given domain is not equal to or a sub domain of the current cookie domain
                 if (cookieDomain != null && !domain.endsWith(cookieDomain)) {
-                    s = replaceMatchedValue(domainPattern.matcher(s), s, DOMAIN + EQUALS + domain);
-                    domainChanged = true;
+                    replaceDomain = true;
                 }
             }
-            //replace cookie path
+
             String calcPath = path;
             String cookiePath = findMatchingValue(pathPattern.matcher(s));
             if (calcPath == null) {
@@ -251,9 +218,20 @@ public class CookieUtils {
                     calcPath = calcPath.substring(0, trim);
                 }
             }
-            if ((domainChanged && calcPath != null) ||
-                    (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath))) {
-                s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath);
+            boolean replacePath = false;
+            // replace if the given path is not equal to or a sub path of the current cookie path
+            if (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath)) {
+                replacePath = true;
+            }
+
+            if (replaceDomain || replacePath) {
+                // if either domain or path needs to be replaced, must replace the other attribute as well
+                if (calcPath != null) {
+                    s = replaceMatchedValue(pathPattern.matcher(s), s, PATH + EQUALS + calcPath);
+                }
+                if (domain != null) {
+                    s = replaceMatchedValue(domainPattern.matcher(s), s, DOMAIN + EQUALS + domain);
+                }
             }
         }
         return s;
