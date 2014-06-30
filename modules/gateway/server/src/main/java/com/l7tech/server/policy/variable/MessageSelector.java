@@ -1043,12 +1043,12 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
                         // only names
                         cookieStr = cookie.getCookieName();
                     } else if (name.startsWith(HTTP_COOKIES_PREFIX)) {
-                        if (cookie.getCookieName().equals(prefixedName)) {
+                        if (cookie.getCookieName().equalsIgnoreCase(prefixedName)) {
                             // all cookie attributes
                             cookieStr = CookieUtils.getSetCookieHeader(cookie);
                         }
                     } else if (name.startsWith(HTTP_COOKIEVALUES_PREFIX)) {
-                        if (cookie.getCookieName().equals(prefixedName)) {
+                        if (cookie.getCookieName().equalsIgnoreCase(prefixedName)) {
                             // only value
                             cookieStr = cookie.getCookieValue();
                         }

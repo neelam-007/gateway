@@ -861,6 +861,15 @@ public class MessageSelectorTest {
         assertNull(selector.select(null, message, "http.cookies.", handler, false));
     }
 
+    @Test
+    public void selectCookieByNameCaseInsensitive() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookies.FOO", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertTrue(cookies.contains("foo=bar"));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void selectCookieByNameNoneStrict() {
         message.getHttpCookiesKnob().addCookie(new HttpCookie("1", "a", 1, "/", "localhost", 60, true, "test", false));
@@ -917,6 +926,15 @@ public class MessageSelectorTest {
             assertEquals("Unsupported variable: http.cookievalues.x", e.getMessage());
             throw e;
         }
+    }
+
+    @Test
+    public void selectCookieValueByNameCaseInsensitive() {
+        message.getHttpCookiesKnob().addCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "http.cookievalues.FOO", handler, false);
+        final List<String> cookies = Arrays.asList((String[]) selection.getSelectedValue());
+        assertEquals(1, cookies.size());
+        assertTrue(cookies.contains("bar"));
     }
 
     @Test
