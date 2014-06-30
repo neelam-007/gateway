@@ -109,7 +109,9 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
      */
     @Override
     public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
+        PolicyPosition oldValue = this.policyPosition;
         this.policyPosition = policyPosition;
+        firePropertyChange( "policyPosition", oldValue, this.policyPosition );
     }
 
     //- PROTECTED

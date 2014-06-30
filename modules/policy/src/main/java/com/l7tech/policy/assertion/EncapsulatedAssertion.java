@@ -347,7 +347,16 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             meta.put(DESCRIPTION, description);
         }
 
-        meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
+        // For now, we can't open the properties dialog automatically
+        // if there are any Message or Element arguments
+        // because the property editor components for Message and Element do not
+        // get populated correctly before the policy position is set,
+        // and they currently cannot update themselves afterwards.
+        if ( config.hasAtLeastOneGuiParameter() && !hasAtLeastOnePolicyPositionGuiParameter( config ) ) {
+            meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
+        } else {
+            meta.put( POLICY_ADVICE_CLASSNAME, "none" );
+        }
 
         this.meta = meta;
         return meta;
@@ -367,6 +376,23 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
             return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + filename;
 
         return EncapsulatedAssertionConfig.ICON_RESOURCE_DIRECTORY + EncapsulatedAssertionConfig.DEFAULT_ICON_RESOURCE_FILENAME;
+    }
+
+    /**
+     * Check if the assertion dialog can be created before a policy position is set.
+     *
+     * @return true if at least one encass argument requires a valid policy position to be set.
+     *         Currently arguments of type Message or XML Element require this.
+     */
+    private boolean hasAtLeastOnePolicyPositionGuiParameter( EncapsulatedAssertionConfig config ) {
+        Set<EncapsulatedAssertionArgumentDescriptor> args = config.getArgumentDescriptors();
+        if ( args == null )
+            return false;
+        for ( EncapsulatedAssertionArgumentDescriptor arg : args ) {
+            if ( arg.isGuiPrompt() && ( DataType.MESSAGE.equals( arg.dataType() ) || DataType.ELEMENT.equals( arg.dataType() ) ) )
+                return true;
+        }
+        return false;
     }
 
     @Override
