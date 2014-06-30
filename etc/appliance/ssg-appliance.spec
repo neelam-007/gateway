@@ -11,21 +11,16 @@ Source0: ssg-appliance.tar.gz
 Source1: jdk.tar.gz
 BuildRoot: %{_builddir}/%{name}-%{version}
 Requires(pre): /usr/sbin/useradd /usr/sbin/groupadd /usr/sbin/usermod
+Requires(post): /usr/bin/chage /usr/bin/passwd /sbin/chkconfig
 Requires(preun): /usr/sbin/userdel /usr/sbin/groupdel
 Requires: ssg >= %{version}
 Prefix: /opt/SecureSpan/Appliance
 
 # Prevents rpm build from erroring and halting
-#%undefine       __check_files
+%undefine __check_files
 
 # ensure that the included JDK isn't scanned for dependencies which then become a dependency for the built RPM
-%global _use_internal_dependency_generator 0
-%global __find_requires_orig %{__find_requires}
-%define __find_requires %{_builddir}/custom-find-requires.sh %{__find_requires_orig}
-
-# Need these to build RHEL5 rpm from Fedora 11 / 12
-%define _binary_filedigest_algorithm md5
-%define _binary_payload w9.bzdio
+%define __requires_exclude_from ^/opt/SecureSpan/JDK/.*$
 
 %description
 Layer 7 Gateway Appliance Add-On Package
@@ -38,7 +33,6 @@ rm -fr %{buildroot}
 
 %setup -qcn %{buildroot}
 %setup -qDTa 1 -n %{buildroot}
-cp %{_sourcedir}/custom-find-requires.sh %{_builddir}/
 
 [ ! -e %{buildroot}/jdk/db ] || rm -rf %{buildroot}/jdk/db
 [ ! -e %{buildroot}/jdk/demo ] || rm -rf %{buildroot}/jdk/demo
