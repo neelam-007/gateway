@@ -172,6 +172,7 @@ public class HomePagePanel extends JPanel {
         add("xmlObject32.gif", new PublishNonSoapServiceAction());
         add("xmlObject32.gif", new PublishRestServiceAction());
         add("services32.png", new PublishInternalServiceAction());
+        add("services32.png", new PublishReverseWebProxyAction());
         add("CreateWSDL32x32.gif", new CreateServiceWsdlAction());
 
         if (!isAdmin() || actions.size() < 3) {
