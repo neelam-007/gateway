@@ -5,7 +5,9 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.api.impl.VersionComment;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -19,6 +21,7 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Eithers.*;
@@ -26,6 +29,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;
@@ -52,13 +56,15 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                                   final FolderResourceFactory folderResourceFactory,
                                   final SecurityZoneManager securityZoneManager,
                                   final PolicyVersionManager policyVersionManager,
-                                  final ClusterPropertyManager clusterPropertyManager) {
+                                  final ClusterPropertyManager clusterPropertyManager,
+                                  final ServiceManager serviceManager) {
         super( false, true, true, services, securityFilter, transactionManager, policyManager, securityZoneManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
         this.folderResourceFactory = folderResourceFactory;
         this.policyVersionManager = policyVersionManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.serviceManager = serviceManager;
     }
 
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
@@ -300,6 +306,57 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     }
 
     @Override
+    protected void beforeDeleteEntity(final EntityBag<Policy> entityBag) throws ObjectModelException {
+        //if this is a debug trace policy it can only be deleted if there are no other services that have debug trace enabled.
+        if (isDebugTracePolicy(entityBag.getEntity()) && atLeastOneServiceHasTracingEnabled()) {
+            throw new DeleteException("Cannot delete policy it is currently in use as the global debug trace policy");
+        }
+    }
+
+    @Override
+    protected void afterDeleteEntity(final EntityBag<Policy> entityBag) throws ObjectModelException {
+        //if this is the debug trace policy need to clear the cluster property as well
+        if (isDebugTracePolicy(entityBag.getEntity())) {
+            final ClusterProperty traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+            if (traceProp == null)
+                return;
+            clusterPropertyManager.delete(traceProp);
+        }
+    }
+
+    /**
+     * Checks if the given policy is the debug trace policy
+     *
+     * @param policy The policy to check
+     * @return true if this is the debug trace policy
+     * @throws FindException
+     */
+    private boolean isDebugTracePolicy(@NotNull final Policy policy) throws FindException {
+        if (PolicyType.INTERNAL.equals(policy.getType()) && "debug-trace".equals(policy.getInternalTag()) && clusterPropertyManager.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID) != null) {
+            final String traceGuid = clusterPropertyManager.getProperty(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+            if (traceGuid != null && traceGuid.trim().equals(policy.getGuid())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if any services have trace enabled.
+     *
+     * @return returns true if any service has trace enabled.
+     * @throws FindException
+     */
+    private boolean atLeastOneServiceHasTracingEnabled() throws FindException {
+        final Collection<ServiceHeader> serviceHeaders = serviceManager.findAllHeaders();
+        for (final ServiceHeader serviceHeader : serviceHeaders) {
+            if (serviceHeader.isTracingEnabled())
+                return true;
+        }
+        return false;
+    }
+
+    @Override
     protected void updateEntity( final Policy oldEntity, final Policy newEntity ) throws InvalidResourceException {
         oldEntity.setFolder( folderResourceFactory.checkMovePermitted( oldEntity.getFolder(), newEntity.getFolder() ) );
         oldEntity.setType( newEntity.getType() );
@@ -351,6 +408,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
     private final FolderResourceFactory folderResourceFactory;
     private final PolicyVersionManager policyVersionManager;
     private final ClusterPropertyManager clusterPropertyManager;
+    private final ServiceManager serviceManager;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
 }

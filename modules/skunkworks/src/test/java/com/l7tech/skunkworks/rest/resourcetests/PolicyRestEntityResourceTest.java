@@ -1,8 +1,11 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -10,10 +13,13 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
+import com.l7tech.server.service.ServiceManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.BugId;
@@ -33,6 +39,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -41,6 +48,16 @@ import static org.junit.Assert.assertNotNull;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, PolicyMO> {
     private static final Logger logger = Logger.getLogger(PolicyRestEntityResourceTest.class.getName());
+    private final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<exp:Export Version=\"3.0\"\n" +
+            "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
+            "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <exp:References/>\n" +
+            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "        </wsp:All>\n" +
+            "    </wsp:Policy>\n" +
+            "</exp:Export>\n";
 
     private PolicyManager policyManager;
     private List<Policy> policies = new ArrayList<>();
@@ -52,9 +69,14 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
     private static final String comment = "MyComment1";
     private FolderManager folderManager;
     private Folder myFolder;
+    private ServiceManager serviceManager;
+    private ClusterPropertyManager clusterPropertyManager;
+    private PublishedService service;
 
     @Before
     public void before() throws ObjectModelException {
+        serviceManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serviceManager", ServiceManager.class);
+        clusterPropertyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("clusterPropertyManager", ClusterPropertyManager.class);
         policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
         policyVersionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyVersionManager", PolicyVersionManager.class);
 
@@ -72,16 +94,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
 
         //Create the policies
         Policy policy = new Policy(PolicyType.INCLUDE_FRAGMENT, "Policy 1",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <exp:References/>\n" +
-                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "        <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        </wsp:All>\n" +
-                        "    </wsp:Policy>\n" +
-                        "</exp:Export>\n",
+                POLICY_XML,
                 false
         );
         policy.setFolder(rootFolder);
@@ -94,16 +107,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policies.add(policy);
 
         policy = new Policy(PolicyType.INTERNAL, "Policy 2",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <exp:References/>\n" +
-                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "        <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        </wsp:All>\n" +
-                        "    </wsp:Policy>\n" +
-                        "</exp:Export>\n",
+                POLICY_XML,
                 false
         );
         policy.setFolder(myFolder);
@@ -115,16 +119,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policies.add(policy);
 
         policy = new Policy(PolicyType.GLOBAL_FRAGMENT, "Policy 3",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <exp:References/>\n" +
-                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "        <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        </wsp:All>\n" +
-                        "    </wsp:Policy>\n" +
-                        "</exp:Export>\n",
+                POLICY_XML,
                 true
         );
         policy.setFolder(rootFolder);
@@ -137,16 +132,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policies.add(policy);
 
         policy = new Policy(PolicyType.PRIVATE_SERVICE, "Policy 4",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <exp:References/>\n" +
-                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "        <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        </wsp:All>\n" +
-                        "    </wsp:Policy>\n" +
-                        "</exp:Export>\n",
+                POLICY_XML,
                 false
         );
         policy.setFolder(rootFolder);
@@ -157,16 +143,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policies.add(policy);
 
         policy = new Policy(PolicyType.IDENTITY_PROVIDER_POLICY, "Policy 5",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<exp:Export Version=\"3.0\"\n" +
-                        "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                        "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <exp:References/>\n" +
-                        "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "        <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        </wsp:All>\n" +
-                        "    </wsp:Policy>\n" +
-                        "</exp:Export>\n",
+                POLICY_XML,
                 false
         );
         policy.setFolder(rootFolder);
@@ -176,10 +153,20 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         policyVersionManager.checkpointPolicy(policy,true,comment,true);
         policies.add(policy);
 
+        service = new PublishedService();
+        service.setName("Service1");
+        service.setRoutingUri("/test");
+        service.getPolicy().setXml(POLICY_XML);
+        service.setFolder(rootFolder);
+        service.setSoap(false);
+        service.setDisabled(false);
+        service.getPolicy().setGuid(UUID.randomUUID().toString());
+        serviceManager.save(service);
     }
 
     @After
     public void after() throws FindException, DeleteException {
+        serviceManager.delete(service);
         Collection<Policy> all = policyManager.findAll();
         for (Policy policy : all) {
             policyManager.delete(policy.getGoid());
@@ -221,16 +208,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         resourceSet.setTag("policy");
         Resource resource = ManagedObjectFactory.createResource();
         resource.setType("policy");
-        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<exp:Export Version=\"3.0\"\n" +
-                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <exp:References/>\n" +
-                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
-                "        </wsp:All>\n" +
-                "    </wsp:Policy>\n" +
-                "</exp:Export>\n");
+        resource.setContent(POLICY_XML);
         resourceSet.setResources(Arrays.asList(resource));
         policy.setResourceSets(Arrays.asList(resourceSet));
         policies.add(policy);
@@ -246,16 +224,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         resourceSet.setTag("policy");
         resource = ManagedObjectFactory.createResource();
         resource.setType("policy");
-        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<exp:Export Version=\"3.0\"\n" +
-                "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-                "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <exp:References/>\n" +
-                "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "        <wsp:All wsp:Usage=\"Required\">\n" +
-                "        </wsp:All>\n" +
-                "    </wsp:Policy>\n" +
-                "</exp:Export>\n");
+        resource.setContent(POLICY_XML);
         resourceSet.setResources(Arrays.asList(resource));
         policy.setResourceSets(Arrays.asList(resourceSet));
         policies.add(policy);
@@ -843,6 +812,103 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         PolicyVersion oldVersion = policyVersionManager.findPolicyVersionForPolicy(policies.get(0).getGoid(), 1);
         assertNotNull(oldVersion);
         assertEquals("Active:", true, oldVersion.isActive());
+    }
+
+    @Test
+    public void testCreateDeleteDebugTracePolicy() throws Exception {
+        PolicyMO policy = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName("[Internal Debug Trace Policy]");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INTERNAL);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("tag", "debug-trace").map());
+        policy.setPolicyDetail(policyDetail);
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(POLICY_XML);
+        resourceSet.setResources(Arrays.asList(resource));
+        policy.setResourceSets(Arrays.asList(resourceSet));
+
+        RestResponse response = processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(policy)));
+        logger.log(Level.FINE, response.toString());
+        Assert.assertEquals(201, response.getStatus());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PolicyMO> policyReturned = MarshallingUtils.unmarshal(Item.class, source);
+
+        response = processRequest(getResourceUri() + "/" + policyReturned.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        source = new StreamSource(new StringReader(response.getBody()));
+        policyReturned = MarshallingUtils.unmarshal(Item.class, source);
+
+        ClusterProperty traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        Assert.assertNotNull(traceProp);
+        assertEquals(traceProp.getValue(), policyReturned.getContent().getGuid());
+
+        response = processRequest(getResourceUri() + "/" + policyReturned.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+        logger.info(response.toString());
+
+        assertEquals(204, response.getStatus());
+
+        traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        Assert.assertNull(traceProp);
+    }
+
+    @Test
+    public void testCreateDeleteFailedDebugTracePolicy() throws Exception {
+        PolicyMO policy = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName("[Internal Debug Trace Policy]");
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INTERNAL);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("tag", "debug-trace").map());
+        policy.setPolicyDetail(policyDetail);
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(POLICY_XML);
+        resourceSet.setResources(Arrays.asList(resource));
+        policy.setResourceSets(Arrays.asList(resourceSet));
+
+        RestResponse response = processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(policy)));
+        logger.log(Level.FINE, response.toString());
+        Assert.assertEquals(201, response.getStatus());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PolicyMO> policyReturned = MarshallingUtils.unmarshal(Item.class, source);
+
+        response = processRequest(getResourceUri() + "/" + policyReturned.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        source = new StreamSource(new StringReader(response.getBody()));
+        policyReturned = MarshallingUtils.unmarshal(Item.class, source);
+
+        ClusterProperty traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        Assert.assertNotNull(traceProp);
+        assertEquals(traceProp.getValue(), policyReturned.getContent().getGuid());
+
+        service.setTracingEnabled(true);
+        serviceManager.update(service);
+        service = serviceManager.findByPrimaryKey(service.getGoid());
+
+        response = processRequest(getResourceUri() + "/" + policyReturned.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+        logger.info(response.toString());
+
+        assertEquals(403, response.getStatus());
+        source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse returnedError = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("ResourceAccess", returnedError.getType());
+
+        traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        Assert.assertNotNull(traceProp);
+        assertEquals(traceProp.getValue(), policyReturned.getContent().getGuid());
+
+        service.setTracingEnabled(false);
+        serviceManager.update(service);
+
+        response = processRequest(getResourceUri() + "/" + policyReturned.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
+        logger.info(response.toString());
+
+        assertEquals(204, response.getStatus());
+
+        traceProp = clusterPropertyManager.findByUniqueName(ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        Assert.assertNull(traceProp);
     }
 
     protected String writeMOToString(ManagedObject mo) throws IOException {
