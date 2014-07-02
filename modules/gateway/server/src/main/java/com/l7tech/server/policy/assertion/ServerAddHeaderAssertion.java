@@ -100,7 +100,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         if (StringUtils.isBlank(assertion.getHeaderValue())) {
             // don't care about header value
             if (assertion.isEvaluateNameAsExpression()) {
-                for (final String headerName : headersKnob.getHeaderNames(assertion.getMetadataType())) {
+                for (final String headerName : headersKnob.getHeaderNames(assertion.getMetadataType(), true, true)) {
                     if (namePattern.matcher(headerName).matches()) {
                         // when using an expression, we must match case
                         headersKnob.removeHeader(headerName, assertion.getMetadataType(), true);
@@ -126,13 +126,7 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
                         "Invalid regular expression: " + ExceptionUtils.getMessage(e));
             }
 
-            final String[] headerNames;
-
-            if (assertion.isEvaluateNameAsExpression()) {
-                headerNames = headersKnob.getHeaderNames(assertion.getMetadataType(), true, false);
-            } else {
-                headerNames = headersKnob.getHeaderNames(assertion.getMetadataType(), true, true);
-            }
+            final String[] headerNames = headersKnob.getHeaderNames(assertion.getMetadataType(), true, assertion.isEvaluateNameAsExpression());
 
             for (final String headerName : headerNames) {
                 if ((!assertion.isEvaluateNameAsExpression() && assertionHeaderName.equalsIgnoreCase(headerName)) ||

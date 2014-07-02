@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
@@ -30,7 +31,6 @@ import java.util.List;
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link ServerAddHeaderAssertion}.
@@ -451,9 +451,7 @@ public class ServerAddHeaderAssertionTest {
             serverAssertion.checkRequest(pec);
             fail("Expected a PolicyAssertionException to be thrown.");
         } catch (PolicyAssertionException e) {
-            assertEquals("Invalid regular expression: Illegal repetition near index 15\n" +
-                    "`~!@#$%^&*()_+-={}|[]\":;'?><,./\n               ^",
-                    e.getMessage());
+            assertTrue(e.getMessage().contains("Invalid regular expression: Illegal repetition near index 15"));
         }
 
         // header should not have been removed
@@ -478,9 +476,7 @@ public class ServerAddHeaderAssertionTest {
             serverAssertion.checkRequest(pec);
             fail("Expected a PolicyAssertionException to be thrown.");
         } catch (PolicyAssertionException e) {
-            assertEquals("Invalid regular expression: Illegal repetition near index 15\n" +
-                    "`~!@#$%^&*()_+-={}|[]\":;'?><,./\n               ^",
-                    e.getMessage());
+            assertTrue(e.getMessage().contains("Invalid regular expression: Illegal repetition near index 15"));
         }
 
         // header should not have been removed
@@ -802,6 +798,79 @@ public class ServerAddHeaderAssertionTest {
         assertTrue(fooValues.contains("caseNoMatch"));
         assertEquals("shouldNotBeRemoved", headersKnob.getHeaderValues("doesNotMatch", HEADER_TYPE_HTTP)[0]);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.HEADER_REMOVED_BY_NAME_AND_VALUE));
+    }
+
+    @BugId("SSG-8820")
+    @Test
+    public void removeHeaderByNameExpressionAndEmptyValueFromContextVariable() throws Exception {
+        mess.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("cookie", "", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("Cookie", "", HEADER_TYPE_HTTP);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setHeaderName(".*");
+        ass.setEvaluateNameAsExpression(true);
+        ass.setHeaderValue("${empty}");
+        ass.setEvaluateValueExpression(false);
+        pec.setVariable("empty", "");
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final HeadersKnob headersKnob = pec.getRequest().getHeadersKnob();
+        final String[] cookies = headersKnob.getHeaderValues("Cookie");
+        assertEquals(1, cookies.length);
+        assertEquals("foo=bar", cookies[0]);
+    }
+
+    @Test
+    public void removeHeaderByNameCaseInsensitive() throws Exception {
+        mess.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("cookie", "test=blah", HEADER_TYPE_HTTP);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setHeaderName("cookie");
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        assertEquals(0, pec.getRequest().getHeadersKnob().getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderByNameExpressionCaseSensitive() throws Exception {
+        mess.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("cookie", "test=blah", HEADER_TYPE_HTTP);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setHeaderName("cookie");
+        ass.setEvaluateNameAsExpression(true);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final String[] cookies = pec.getRequest().getHeadersKnob().getHeaderValues("cookie");
+        assertEquals(1, cookies.length);
+        assertEquals("foo=bar", cookies[0]);
+    }
+
+    @Test
+    public void removeHeaderByNameAndValueCaseInsensitive() throws Exception {
+        mess.getHeadersKnob().addHeader("Cookie", "foo=bar", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("cookie", "FOO=BAR", HEADER_TYPE_HTTP);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setHeaderName("cOOkie");
+        ass.setHeaderValue("fOO=bar");
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        assertEquals(0, pec.getRequest().getHeadersKnob().getHeaderNames().length);
+    }
+
+    @Test
+    public void removeHeaderByNameExpressionAndValueExpressionCaseSensitive() throws Exception {
+        mess.getHeadersKnob().addHeader("Cookie", "FOO=BAR", HEADER_TYPE_HTTP);
+        mess.getHeadersKnob().addHeader("cookie", "foo=bar", HEADER_TYPE_HTTP);
+        ass.setOperation(AddHeaderAssertion.Operation.REMOVE);
+        ass.setHeaderName("cookie");
+        ass.setEvaluateNameAsExpression(true);
+        ass.setHeaderValue("foo=bar");
+        ass.setEvaluateValueExpression(true);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(pec));
+        final String[] cookies = pec.getRequest().getHeadersKnob().getHeaderValues("cookie");
+        assertEquals(1, cookies.length);
+        assertEquals("FOO=BAR", cookies[0]);
     }
 
     @Test
