@@ -11,7 +11,7 @@ Source0: ssg-appliance.tar.gz
 Source1: jdk.tar.gz
 BuildRoot: %{_builddir}/%{name}-%{version}
 Requires(pre): /usr/sbin/useradd /usr/sbin/groupadd /usr/sbin/usermod
-Requires(post): /usr/bin/chage /usr/bin/passwd /sbin/chkconfig
+Requires(post): /usr/bin/chage /usr/bin/passwd /sbin/chkconfig /etc/shadow
 Requires(preun): /usr/sbin/userdel /usr/sbin/groupdel
 Requires: ssg >= %{version}
 Prefix: /opt/SecureSpan/Appliance
