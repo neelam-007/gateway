@@ -1,5 +1,6 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.util.Functions;
 /**
  *
  */
@@ -41,18 +42,26 @@ public class AuditContextUtils {
         }
     }
 
+
     public static AuditsCollector getAuditsCollector() {
-        return logOnlyThreadLocal.get();
+        return auditsCollectorThreadLocal.get();
     }
 
     /**
-     * Sets a collector to collect administrative audit records.
+     * Run the specified code with a collector to collect administrative audit records.
      *
-     * @param collector
+     * @param collector  a collector to collect administrative audit records.
      */
-    public static void setAuditsCollector(AuditsCollector collector) {
-        logOnlyThreadLocal.set(collector);
+    public static <T> T doWithAuditsCollector(AuditsCollector collector, Functions.Nullary<T> callable){
+        final AuditsCollector oldac = auditsCollectorThreadLocal.get();
+        auditsCollectorThreadLocal.set(collector);
+        try {
+            return callable.call();
+        } finally {
+            auditsCollectorThreadLocal.set(oldac);
+        }
     }
+
 
     //- PRIVATE
 
@@ -62,10 +71,11 @@ public class AuditContextUtils {
             return false;
         }
     };
-    private static final ThreadLocal<AuditsCollector> logOnlyThreadLocal = new ThreadLocal<AuditsCollector>(){
+    private static final ThreadLocal<AuditsCollector> auditsCollectorThreadLocal = new ThreadLocal<AuditsCollector>(){
         @Override
         protected AuditsCollector initialValue() {
             return null;
         }
     };
+
 }

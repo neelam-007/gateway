@@ -100,13 +100,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         } else {
             logger.log(Level.FINE, "Test Importing bundle!");
         }
-
-        AuditContextUtils.setAuditsCollector(new AuditsCollector());
-
-        List<EntityMappingResult> results = doImportBundle(bundle, test, activate, versionComment);
-
-        AuditsCollector collector = AuditContextUtils.getAuditsCollector();
-        AuditContextUtils.setAuditsCollector(null);
+        AuditsCollector collector = new AuditsCollector();
+        List<EntityMappingResult> results =  AuditContextUtils.doWithAuditsCollector(collector, new Functions.Nullary<List<EntityMappingResult>>() {
+            @Override
+            public List<EntityMappingResult> call(){
+                return doImportBundle(bundle, test, activate, versionComment);
+            }
+        });
 
         if(!test) {
             if (containsErrors(results)) {
