@@ -420,8 +420,8 @@ public class CustomEntitiesResolverTest extends CustomEntitiesTestBase {
         // |_KVS3                    |_KVS1
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         verifyReplaceEntity(
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(1)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(4)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(1)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(4)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
                 customAssertionHolder,
                 Collections.unmodifiableCollection(keyValueStoreEntityBytes.values()),
                 new boolean[] {
@@ -457,8 +457,8 @@ public class CustomEntitiesResolverTest extends CustomEntitiesTestBase {
         // |_KVS3                    |_KVS1
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         verifyReplaceEntity(
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(3)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(5)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(3)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(5)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
                 customAssertionHolder,
                 Collections.unmodifiableCollection(keyValueStoreEntityBytes.values()),
                 new boolean[] {
@@ -494,8 +494,8 @@ public class CustomEntitiesResolverTest extends CustomEntitiesTestBase {
         // |_KVS3                    |_KVS1
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         verifyReplaceEntity(
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(2)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
-                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(6)), EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(2)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
+                new SecurePasswordEntityHeader(Goid.parseGoid(securePasswordId(6)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name()),
                 customAssertionHolder,
                 Collections.unmodifiableCollection(keyValueStoreEntityBytes.values()),
                 new boolean[] {

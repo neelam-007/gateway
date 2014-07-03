@@ -525,7 +525,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
         if (FtpCredentialsSource.SPECIFIED.equals(_credentialsSource) && passwordGoid != null) {
-            headers = ArrayUtils.concat(headers, new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())});
+            headers = ArrayUtils.concat(headers, new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())});
         }
         if (isUseClientCert()) {
             headers = ArrayUtils.concat(headers,  new SsgKeyHeader[] {new SsgKeyHeader(getClientCertKeystoreId() + ":" + getClientCertKeyAlias(),

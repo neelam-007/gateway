@@ -12,8 +12,8 @@ public class SecurePasswordEntityHeader extends EntityHeader {
     private static final long serialVersionUID = -4157615525036796883L;
     private String passwordType;
 
-    public SecurePasswordEntityHeader(@NotNull Goid goid, EntityType type, String name, String description, String passwordType) {
-        super(goid.toString(), type, name, description, null);
+    public SecurePasswordEntityHeader(@NotNull Goid goid, String name, String description, String passwordType) {
+        super(goid.toString(), EntityType.SECURE_PASSWORD, name, description, null);
         this.passwordType = passwordType;
     }
 

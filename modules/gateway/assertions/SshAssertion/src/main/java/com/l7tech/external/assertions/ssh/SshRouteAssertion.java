@@ -445,9 +445,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     public EntityHeader[] getEntitiesUsed() {
         if (isCredentialsSourceSpecified()) {
             if (usePrivateKey) {
-                return new EntityHeader[]{new SecurePasswordEntityHeader(privateKeyGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name())};
+                return new EntityHeader[]{new SecurePasswordEntityHeader(privateKeyGoid, null, null, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name())};
             } else {
-                return new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+                return new EntityHeader[]{new SecurePasswordEntityHeader(passwordGoid, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
             }
         }
         return new EntityHeader[0];

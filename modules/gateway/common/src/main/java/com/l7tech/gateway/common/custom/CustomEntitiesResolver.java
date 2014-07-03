@@ -149,7 +149,6 @@ public class CustomEntitiesResolver {
                         // add reference entity, will throw with RuntimeException when the password-id is not a valid GOID.
                         final EntityHeader entityHeader = new SecurePasswordEntityHeader(
                                 Goid.parseGoid(entityId),
-                                EntityType.SECURE_PASSWORD,
                                 null,
                                 null,
                                 "Password" // this is ignored

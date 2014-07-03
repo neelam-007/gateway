@@ -295,8 +295,8 @@ public class PolicyExporterTest extends CustomEntitiesTestBase {
         @Override
         public EntityHeader[] getEntitiesUsed() {
             return new EntityHeader[]{
-                    new SecurePasswordEntityHeader(privateKeyGoid, EntityType.SECURE_PASSWORD, privateKeyName, privateKeyDescription, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name()),
-                    new SecurePasswordEntityHeader(passwordGoid, EntityType.SECURE_PASSWORD, passwordName, passwordDescription, SecurePassword.SecurePasswordType.PASSWORD.name())};
+                    new SecurePasswordEntityHeader(privateKeyGoid, privateKeyName, privateKeyDescription, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name()),
+                    new SecurePasswordEntityHeader(passwordGoid, passwordName, passwordDescription, SecurePassword.SecurePasswordType.PASSWORD.name())};
         }
 
         @Override
@@ -940,7 +940,6 @@ public class PolicyExporterTest extends CustomEntitiesTestBase {
                         finder,
                         new SecurePasswordEntityHeader(
                                 Goid.parseGoid(passwordId),
-                                EntityType.SECURE_PASSWORD,
                                 null,
                                 (passwordId.equals(securePasswordId(2)) ? "Test PEM for id: \"" : "Test Password for id: \"") + passwordId + "\"",
                                 passwordId.equals(securePasswordId(2)) ? SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name() : SecurePassword.SecurePasswordType.PASSWORD.name()

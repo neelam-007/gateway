@@ -1,8 +1,10 @@
 package com.l7tech.external.assertions.radius;
 
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurePasswordEntityHeader;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -123,7 +125,7 @@ public class RadiusAuthenticateAssertion extends Assertion implements MessageTar
     @Override
     public EntityHeader[] getEntitiesUsed() {
         if(secretGoid!=null){
-            return new EntityHeader[]{new EntityHeader(secretGoid, EntityType.SECURE_PASSWORD,null,null)};
+            return new EntityHeader[]{new SecurePasswordEntityHeader(secretGoid, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
         }
         return new EntityHeader[0];
     }

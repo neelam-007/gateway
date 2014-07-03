@@ -154,7 +154,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
     @Override
     public EntityHeader[] getEntitiesUsed() {
         if (!krbUseGatewayKeytab) {
-            return new EntityHeader[]{new SecurePasswordEntityHeader(krbSecurePasswordReference, EntityType.SECURE_PASSWORD, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
+            return new EntityHeader[]{new SecurePasswordEntityHeader(krbSecurePasswordReference, null, null, SecurePassword.SecurePasswordType.PASSWORD.name())};
         }
         return new EntityHeader[0];
     }
