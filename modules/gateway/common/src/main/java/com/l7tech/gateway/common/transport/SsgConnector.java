@@ -158,15 +158,11 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
         @XmlEnumValue( "SNMP Query service" )
         SNMPQUERY,
 
-        /** Agent web service for HP SOA Manager. */
-        @XmlEnumValue( "HP SOA Manager agent service" )
-        HPSOAM,
-
         /**
          * All built-in servlets other than the first three.  This includes POLICYDISCO, PING, STS, PASSWD etc.
          */
         @XmlEnumValue( "Built-in services" )
-        OTHER_SERVLETS(POLICYDISCO, PING, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, HPSOAM),
+        OTHER_SERVLETS(POLICYDISCO, PING, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY),
 
         /** Process Controller Service Node API*/
         @XmlEnumValue( "Node Control" )

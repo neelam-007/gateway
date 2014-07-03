@@ -282,11 +282,6 @@
     </servlet>
 
     <servlet>
-        <servlet-name>wsmfServlet</servlet-name>
-        <servlet-class>com.l7tech.server.hpsoam.WSMFServlet</servlet-class>
-    </servlet>
-
-    <servlet>
         <servlet-name>backup</servlet-name>
         <servlet-class>com.l7tech.server.BackupServlet</servlet-class>
     </servlet>
@@ -346,11 +341,6 @@
     <servlet-mapping>
         <servlet-name>cluster</servlet-name>
         <url-pattern>/ssg/cluster/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>wsmfServlet</servlet-name>
-        <url-pattern>/ssg/wsmf/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

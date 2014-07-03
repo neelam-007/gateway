@@ -98,7 +98,6 @@ public class EntityPropertiesHelperTest {
                 "Password changing service",
                 "WSDL download service",
                 "SNMP Query service",
-                "HP SOA Manager agent service",
                 "Built-in services",
                 "Node Control",
                 "Inter-Node Communication" );
