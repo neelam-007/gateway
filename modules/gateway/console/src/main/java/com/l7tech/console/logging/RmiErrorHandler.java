@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.*;
 import java.security.AccessControlException;
+import java.security.cert.CertPathValidatorException;
 import java.util.logging.Level;
 
 /**
@@ -34,6 +35,7 @@ public class RmiErrorHandler implements ErrorHandler {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
         final RemoteException rex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
         final RemoteAccessException raex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
+        final CertPathValidatorException certex = ExceptionUtils.getCauseIfCausedBy( e.getThrowable(), CertPathValidatorException.class );
 
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
@@ -52,14 +54,17 @@ public class RmiErrorHandler implements ErrorHandler {
             TopComponents.getInstance().disconnectFromGateway();
         }
 
-        if (topParent != null && throwable instanceof SSLException) {
+        if (topParent != null && ( throwable instanceof SSLException || certex != null ) ) {
             Throwable t = e.getThrowable();
             String message = "A Gateway keystore or SSL/TLS communication error occurred.";
             e.getLogger().log(Level.SEVERE, message, t);
-            if (throwable instanceof SSLHandshakeException) {
+            if ( throwable instanceof SSLHandshakeException || certex != null ) {
                 message = "The SSL/TLS handshake with the Gateway has failed: " + ExceptionUtils.getMessage(throwable);
                 t = null;
             }
+            e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifying workspace.");
+            TopComponents.getInstance().setConnectionLost(true);
+            TopComponents.getInstance().disconnectFromGateway();
             refreshUI( topParent );
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else if (topParent != null &&
@@ -72,7 +77,7 @@ public class RmiErrorHandler implements ErrorHandler {
 
             Throwable t = e.getThrowable();
             String message = ERROR_MESSAGE;
-            e.getLogger().log(Level.SEVERE, message, ExceptionUtils.getDebugException(t));
+            e.getLogger().log( Level.SEVERE, message, ExceptionUtils.getDebugException( t ) );
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
                 if (throwable instanceof AccessControlException && throwable.getMessage().startsWith("Admin request not permitted on this port")) {
