@@ -3565,24 +3565,20 @@ public class MainWindow extends JFrame implements SheetHolder {
                     MainWindow.this.getStatusMsgRight().
                             setText("inactivity timeout expired; disconnecting...");
 
-                    try {
-                        getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
-                        getWorkSpacePanel().clearWorkspace();  // vetoable
-                        MainWindow.this.disconnectFromGateway();
-                        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-                        if (securityProvider != null) securityProvider.logoff();
+                    getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
+                    TopComponents.getInstance().setConnectionLost(true);
+                    MainWindow.this.disconnectFromGateway();
+                    SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+                    if (securityProvider != null) securityProvider.logoff();
 
-                        // ensure redraw after any errors
-                        validate();
+                    // ensure redraw after any errors
+                    validate();
 
-                        // add a top level dlg that indicates the connection was closed
-                        DialogDisplayer.showMessageDialog(MainWindow.this,
-                                "The Policy Manager connection has been closed due\n" +
-                                        "to timeout. Any unsaved work will be lost.",
-                                "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
-                    } catch (ActionVetoException e1) {
-                        // swallow, cannot happen from here
-                    }
+                    // add a top level dlg that indicates the connection was closed
+                    DialogDisplayer.showMessageDialog(MainWindow.this,
+                            "The Policy Manager connection has been closed due\n" +
+                                    "to timeout. Any unsaved work will be lost.",
+                            "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
                 }
             });
         } else if (Registry.getDefault().isAdminContextPresent() &&

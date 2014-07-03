@@ -1872,8 +1872,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             Object[] options = new String[] { saveOption, discardOption };
 
             int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
-                "<html><center><b>Connection Lost.  Do you want to save changes to service policy " +
-                    "file?</b></center></html>",
+                "<html><center><b>Connection Lost.  Do you want to save changes for" +
+                        "<br>'" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "'<br>" +
+                        "to service policy file?</b></center></html>",
                 "Save Service Policy",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.WARNING_MESSAGE,
