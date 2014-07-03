@@ -75,6 +75,8 @@ public class OdataParser {
         return new OdataRequestInfo(uriInfo, expandExpression, selectExpression);
     }
 
+    // TODO jwilliams: two methods, one each for json and atom? entry for atom could be evaluated after parsing for match on entity term and target uri
+
     public OdataPayloadInfo parsePayload(String method, OdataRequestInfo requestInfo,
                                          InputStream payload, String payloadContentType) throws OdataParsingException {
         if ("GET".equals(method) || "DELETE".equals(method)) {
@@ -85,7 +87,7 @@ public class OdataParser {
 
         try {
             EntityProviderReadProperties properties = EntityProviderReadProperties.init().mergeSemantic(false).build();
-            EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
+//            EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
 
             switch (requestInfo.getUriType()) {
                 case URI0: // TODO jwilliams: probably not needed - no payload - maybe confirm that it's empty?
@@ -232,7 +234,6 @@ public class OdataParser {
                     throw new OdataParsingException("Unknown request type.");
             }
         } catch (EntityProviderException e) {
-            e.printStackTrace();
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);
         }
 

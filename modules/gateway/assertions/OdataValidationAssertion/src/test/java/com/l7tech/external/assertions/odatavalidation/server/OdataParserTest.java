@@ -110,7 +110,7 @@ public class OdataParserTest {
                 "  </edmx:DataServices>\n" +
                 "</edmx:Edmx>\n";
 
-    private static final String NEW_CATEGORY_ENTRY_PAYLOAD =
+    private static final String NEW_CATEGORY_ENTRY_PAYLOAD_ATOM =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n"+
             "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" "+
             "    xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" "+
@@ -129,6 +129,16 @@ public class OdataParserTest {
             "    </m:properties> \n"+
             "  </content> \n"+
             "</entry>\n";
+
+    private static final String NEW_CATEGORY_ENTRY_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+            "   \"__metadata\": {\n" +
+            "       \"uri\": \"http://services.odata.org/V2/OData/OData.svc/Categories(0)\", " +
+            "       \"type\": \"ODataDemo.Category\"\n" +
+            "   }, \n" +
+            "   \"ID\": 100, \n" +
+            "   \"Name\": \"Food\"\n" +
+            "}}";
 
     private OdataParser parser;
 
@@ -377,26 +387,58 @@ public class OdataParserTest {
     }
 
     @Test
+    public void testParsePayload_UseInvalidMethodForRequestPathType_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_JSON.getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
+
+        try {
+            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("HTTP method PUT invalid for the requested resource.", e.getMessage());
+        }
+    }
+
+    @Test
     public void testParsePayload_GivenValidAtomPayload_ParsingSucceeds() throws Exception {
-        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD.getBytes());
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_ATOM.getBytes());
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
 
-//        OdataPayloadInfo payloadInfo =
-//                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+        OdataPayloadInfo payloadInfo =
+                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
 
-//        assertEquals(false, payloadInfo.containsOpenTypeEntity());
+        assertEquals(false, payloadInfo.containsOpenTypeEntity());
+        // TODO jwilliams: validate payloadInfo
+    }
+
+    /**
+     * The parsing of the Atom payload doesn't include determining if the payload is correct for the
+     * request path, so, unlike a JSON payload, it will succeed.
+     */
+    @Test
+    public void testParsePayload_GivenWrongAtomPayloadForUri_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_ATOM.getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
+
+        OdataPayloadInfo payloadInfo =
+                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+
+        assertEquals(false, payloadInfo.containsOpenTypeEntity());
         // TODO jwilliams: validate payloadInfo
     }
 
     @Test
-    public void testParsePayload_GivenPoorlyFormedAtomPayload_ParsingFails() throws OdataParser.OdataParsingException {
+    public void testParsePayload_GivenPoorlyFormedAtomPayload_ParsingFails() throws Exception {
         InputStream payloadInputStream = new ByteArrayInputStream("blarg/>".getBytes());
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
 
         try {
-            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/atom+xml");
+            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
@@ -406,13 +448,42 @@ public class OdataParserTest {
     }
 
     @Test
-    public void testParsePayload_GivenPoorlyFormedJsonPayload_ParsingFails() throws OdataParser.OdataParsingException {
+    public void testParsePayload_GivenValidJsonPayload_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_JSON.getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
+
+        OdataPayloadInfo payloadInfo =
+                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
+
+        assertEquals(false, payloadInfo.containsOpenTypeEntity());
+        // TODO jwilliams: validate payloadInfo
+    }
+
+    @Test
+    public void testParsePayload_GivenWrongJsonPayloadForUri_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_JSON.getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
+
+        try {
+            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(EntityProviderException.class, e.getCause().getClass());
+            assertEquals("Supplied entity type 'ODataDemo.Product' does not match the content entity type 'ODataDemo.Category'.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParsePayload_GivenPoorlyFormedJsonPayload_ParsingFails() throws Exception {
         InputStream payloadInputStream = new ByteArrayInputStream(":blarg".getBytes());
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
 
         try {
-            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/json");
+            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
