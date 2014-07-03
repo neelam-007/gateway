@@ -184,7 +184,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
         final PrivateKeyExportResult exportResult = factory.exportResource(id, privateKeyExportContext.getPassword(), privateKeyExportContext.getAlias());
         final PrivateKeyExportResult restExport = new PrivateKeyExportResult();
         restExport.setPkcs12Data(exportResult.getPkcs12Data());
-        return new ItemBuilder<PrivateKeyExportResult>(id + " Export", id, getResourceType() + "Export")
+        return new ItemBuilder<PrivateKeyExportResult>(id + " Export", id, "PrivateKeyExportResult")
                 .setContent(restExport)
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
@@ -242,7 +242,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @Path("{id}/generateCSR")
     public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, signatureHash);
-        return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, getResourceType() + "CSR")
+        return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, "PrivateKeyGenerateCsrResult")
                 .setContent(privateKeyGenerateCsrResult)
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
@@ -279,7 +279,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     @Consumes("application/x-pem-file")
     public Item<PrivateKeySignCsrResult> signCert(@PathParam("id") String id, @QueryParam("subjectDN") String subjectDN, @QueryParam("expiryAge") @DefaultValue("730") Integer expiryAge, @QueryParam("signatureHash") @ChoiceParam({"Automatic", "SHA1", "SHA256", "SHA384", "SHA512"}) @DefaultValue("Automatic") String signatureHash, String certificate) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         PrivateKeySignCsrResult privateKeySignCsrResult = factory.signCert(id, subjectDN, expiryAge, signatureHash, certificate);
-        return new ItemBuilder<PrivateKeySignCsrResult>("Signed Cert", id, getResourceType() + "SignedCert")
+        return new ItemBuilder<PrivateKeySignCsrResult>("Signed Cert", id, "PrivateKeySignCsrResult")
                 .setContent(privateKeySignCsrResult)
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .addLink(ManagedObjectFactory.createLink("privateKey", getUrlString(id)))
