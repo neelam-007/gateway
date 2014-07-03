@@ -8,6 +8,8 @@ import org.apache.olingo.odata2.api.uri.UriSyntaxException;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -108,6 +110,26 @@ public class OdataParserTest {
                 "  </edmx:DataServices>\n" +
                 "</edmx:Edmx>\n";
 
+    private static final String NEW_CATEGORY_ENTRY_PAYLOAD =
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n"+
+            "<entry xmlns:d=\"http://schemas.microsoft.com/ado/2007/08/dataservices\" "+
+            "    xmlns:m=\"http://schemas.microsoft.com/ado/2007/08/dataservices/metadata\" "+
+            "    xmlns=\"http://www.w3.org/2005/Atom\">\n"+
+            "  <title type=\"text\"></title> \n"+
+            "  <updated>2010-02-27T21:36:47Z</updated>\n"+
+            "  <author> \n"+
+            "    <name /> \n"+
+            "  </author> \n"+
+            "  <category term=\"DataServiceProviderDemo.Category\"\n"+
+            "      scheme=\"http://schemas.microsoft.com/ado/2007/08/dataservices/scheme\" /> \n"+
+            "  <content type=\"application/xml\"> \n"+
+            "    <m:properties> \n"+
+            "      <d:ID>10</d:ID> \n"+
+            "      <d:Name>Clothing</d:Name>\n"+
+            "    </m:properties> \n"+
+            "  </content> \n"+
+            "</entry>\n";
+
     private OdataParser parser;
 
     public OdataParserTest() throws EntityProviderException {
@@ -117,59 +139,183 @@ public class OdataParserTest {
 
     @Test
     public void testParseRequest_GivenValidParametersForMetadataDocument_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/$metadata", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/$metadata", "");
 
         assertTrue(requestInfo.isMetadataRequest());
 
         assertFalse(requestInfo.isValueRequest());
         assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertEquals(0, requestInfo.getExpandNavigationProperties().size());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
     @Test
     public void testParseRequest_GivenValidParametersForServiceDocument_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/", "");
 
         assertTrue(requestInfo.isServiceDocumentRequest());
 
         assertFalse(requestInfo.isMetadataRequest());
         assertFalse(requestInfo.isValueRequest());
+
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertEquals(0, requestInfo.getExpandNavigationProperties().size());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
+    }
+
+    @Test
+    public void testParseRequest_GivenMultipleValidQueryOptions_ParsingSucceeds() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories",
+                "$inlinecount=allpages&$orderby=Name asc&$filter=length(Name) ge 5&" +
+                        "$skip=2&$expand=Products&$format=atom&$select=Name,Products&custom1=val");
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertNotNull(requestInfo.getExpandNavigationProperties());
+        assertEquals("Products", requestInfo.getExpandExpressionString());
+        assertNotNull(requestInfo.getFilterExpression());
+        assertEquals("length(Name) ge 5", requestInfo.getFilterExpressionString());
+        assertEquals("atom", requestInfo.getFormat());
+        assertEquals("allpages", requestInfo.getInlineCount());
+        assertNotNull(requestInfo.getOrderByExpression());
+        assertEquals("Name asc", requestInfo.getOrderByExpressionString());
+        assertEquals("Name,Products", requestInfo.getSelectExpressionString());
+        assertNotNull(requestInfo.getSelectItemList());
+        assertEquals(new Integer(2), requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+
+        Map<String, String> customOptions = requestInfo.getCustomQueryOptions();
+
+        assertEquals(1, customOptions.size());
+
+        for (String optionName : customOptions.keySet()) {
+            assertEquals("custom1", optionName);
+            assertEquals("val", customOptions.get(optionName));
+        }
     }
 
     @Test
     public void testParseRequest_GivenValidParametersForEntitySet_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Products", "$orderby=Name asc");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Products/$count", "");
 
         assertFalse(requestInfo.isMetadataRequest());
         assertFalse(requestInfo.isValueRequest());
         assertFalse(requestInfo.isServiceDocumentRequest());
+
+        assertTrue(requestInfo.isCount());
+
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertEquals(0, requestInfo.getExpandNavigationProperties().size());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
     @Test
     public void testParseRequest_GivenValidParametersForSingleEntity_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)", "$expand=Products");
 
         assertFalse(requestInfo.isMetadataRequest());
         assertFalse(requestInfo.isValueRequest());
         assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertNotNull(requestInfo.getExpandNavigationProperties());
+        assertEquals("Products", requestInfo.getExpandExpressionString());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
     @Test
     public void testParseRequest_GivenValidParametersForSingleEntityProperty_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name", "$format=json");
 
         assertFalse(requestInfo.isMetadataRequest());
         assertFalse(requestInfo.isValueRequest());
         assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertEquals(0, requestInfo.getExpandNavigationProperties().size());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals("json", requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
     @Test
     public void testParseRequest_GivenValidParametersForSingleEntityPropertyRawValue_ParsingSucceeds() throws Exception {
-        OdataParser.OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name/$value", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name/$value", "");
 
         assertTrue(requestInfo.isValueRequest());
 
         assertFalse(requestInfo.isMetadataRequest());
         assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertEquals(0, requestInfo.getExpandNavigationProperties().size());
+        assertEquals(null, requestInfo.getFilterExpression());
+        assertEquals(null, requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
     /**
@@ -227,6 +373,51 @@ public class OdataParserTest {
         } catch (OdataParser.OdataParsingException e) {
             assertEquals(UriSyntaxException.class, e.getCause().getClass());
             assertEquals("Invalid order by expression: 'Nadme asc'. ", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParsePayload_GivenValidAtomPayload_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD.getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
+
+//        OdataPayloadInfo payloadInfo =
+//                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+
+//        assertEquals(false, payloadInfo.containsOpenTypeEntity());
+        // TODO jwilliams: validate payloadInfo
+    }
+
+    @Test
+    public void testParsePayload_GivenPoorlyFormedAtomPayload_ParsingFails() throws OdataParser.OdataParsingException {
+        InputStream payloadInputStream = new ByteArrayInputStream("blarg/>".getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
+
+        try {
+            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/atom+xml");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(EntityProviderException.class, e.getCause().getClass());
+            assertEquals("An exception of type 'WstxUnexpectedCharException' occurred.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParsePayload_GivenPoorlyFormedJsonPayload_ParsingFails() throws OdataParser.OdataParsingException {
+        InputStream payloadInputStream = new ByteArrayInputStream(":blarg".getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
+
+        try {
+            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(EntityProviderException.class, e.getCause().getClass());
+            assertEquals("An exception of type 'MalformedJsonException' occurred.", e.getMessage());
         }
     }
 }

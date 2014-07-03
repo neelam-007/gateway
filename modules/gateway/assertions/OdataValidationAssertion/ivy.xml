@@ -16,5 +16,6 @@
                     conf="compile->compile;runtime->runtime;test->test"/>
         <dependency org="org.apache.olingo" name="org.apache.olingo-olingo-odata2-api" rev="1.2.0" force="true" conf="core"/>
         <dependency org="org.apache.olingo" name="org.apache.olingo-olingo-odata2-core" rev="1.2.0"  force="true" conf="core"/>
+        <dependency org="com.google.code.gson" name="gson" rev="2.2.4"  force="true" conf="core"/>
 	</dependencies>
 </ivy-module>
