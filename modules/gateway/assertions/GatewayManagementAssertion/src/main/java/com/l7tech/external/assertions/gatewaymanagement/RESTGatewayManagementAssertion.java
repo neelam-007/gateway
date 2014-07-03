@@ -1,8 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
@@ -10,10 +7,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -21,31 +15,15 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 @SuppressWarnings({"serial"})
 @ProcessesRequest
-public class RESTGatewayManagementAssertion extends Assertion implements MessageTargetable{
+public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
 
-    //-PUBLIC
+    private static final String META_INITIALIZED = RESTGatewayManagementAssertion.class.getName() + ".metadataInitialized";
+
+    private String variablePrefix = "restGatewayMan";
+
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_URI = "uri";
-    public static final String SUFFIX_BODY = "body";
-    public static final String SUFFIX_BASE_URI = "baseuri";
-
-    public String getVariablePrefix() {
-        return variablePrefix;
-    }
-
-    public void setVariablePrefix( final String variablePrefix ) {
-        this.variablePrefix = variablePrefix;
-    }
-
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(
-                variablePrefix+"."+SUFFIX_ACTION,
-                variablePrefix+"."+SUFFIX_URI,
-                variablePrefix+"."+SUFFIX_BODY);
-    }
+    public static final String SUFFIX_CONTENT_TYPE = "contentType";
 
     @Override
     public AssertionMetadata meta() {
@@ -62,53 +40,26 @@ public class RESTGatewayManagementAssertion extends Assertion implements Message
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.gatewaymanagement.server.GatewayManagementModuleLifecycle");
         meta.put(POLICY_VALIDATOR_CLASSNAME, RESTGatewayManagementAssertion.Validator.class.getName());
         meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);
+        meta.putNull(PROPERTIES_ACTION_FACTORY);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
-    //- PRIVATE
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
 
-    private static final String META_INITIALIZED = RESTGatewayManagementAssertion.class.getName() + ".metadataInitialized";
-
-    private String variablePrefix = "RestGatewayMan";
-    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(false);
-
-    @Override
-    public TargetMessageType getTarget() {
-        return messageTargetableSupport.getTarget();
+    public void setVariablePrefix( final String variablePrefix ) {
+        this.variablePrefix = variablePrefix;
     }
 
     @Override
-    public void setTarget(TargetMessageType target) {
-        messageTargetableSupport.setTarget(target);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(variablePrefix+"."+SUFFIX_ACTION,
+                variablePrefix+"."+SUFFIX_URI,
+                variablePrefix+"."+SUFFIX_CONTENT_TYPE);
     }
-
-    @Override
-    public String getOtherTargetMessageVariable() {
-        return messageTargetableSupport.getOtherTargetMessageVariable();
-    }
-
-    @Override
-    public void setOtherTargetMessageVariable(String otherMessageVariable) {
-        messageTargetableSupport.setOtherTargetMessageVariable(otherMessageVariable);
-    }
-
-    @Override
-    public String getTargetName() {
-        return messageTargetableSupport.getTargetName();
-    }
-
-    @Override
-    public boolean isTargetModifiedByGateway() {
-        return messageTargetableSupport.isTargetModifiedByGateway();
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[0];
-    }
-
 
     public static class Validator implements AssertionValidator {
         private RESTGatewayManagementAssertion assertion;

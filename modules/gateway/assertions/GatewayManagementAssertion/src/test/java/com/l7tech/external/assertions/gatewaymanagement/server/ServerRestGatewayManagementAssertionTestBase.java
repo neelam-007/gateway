@@ -63,7 +63,7 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
 
     @Before
     public void before() throws Exception {
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false);
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml");
 
         MockitoAnnotations.initMocks(this);
     }

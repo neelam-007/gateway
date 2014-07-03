@@ -236,7 +236,7 @@ public class ServerGatewayManagementAssertionTestBase {
         managementAssertion = new ServerGatewayManagementAssertion(
                 new GatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
 
-        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml", false );
+        restManagementAssertion = new ServerRESTGatewayManagementAssertion(new RESTGatewayManagementAssertion(), applicationContext, "testGatewayManagementContext.xml" );
 
         GoidUpgradeMapperTestUtil.addPrefix("keystore_file", 0);
 
