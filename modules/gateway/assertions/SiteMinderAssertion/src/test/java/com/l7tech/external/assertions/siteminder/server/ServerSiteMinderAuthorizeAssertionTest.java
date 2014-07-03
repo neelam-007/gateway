@@ -5,6 +5,7 @@ import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.external.assertions.siteminder.SiteMinderAuthorizeAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -23,6 +24,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.util.Map;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
@@ -147,8 +149,46 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         assertEquals(1, cookies.size());
         final HttpCookie cookie = cookies.iterator().next();
         assertEquals("SMSESSION", cookie.getCookieName());
-        assertEquals(SSO_TOKEN, cookie.getCookieValue());
+        assertEquals("\"" + SSO_TOKEN + "\"", cookie.getCookieValue());
 
+    }
+
+    @Test
+    public void testSetCookie_cookieValueEndsWithEqualSign() throws Exception {
+        assertion.setPrefix("siteminder");
+        assertion.setUseVarAsCookieSource(true);
+        assertion.setCookieSourceVar("test");
+        assertion.setSetSMCookie(true);
+        assertion.setCookieName("SMSESSION");
+        pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
+        pec.setVariable("test", SSO_TOKEN);
+        Map<String,Object> map = pec.getVariableMap(assertion.getVariablesUsed(), new TestAudit());
+        fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
+        assertTrue(fixture.setSessionCookie(pec, mockContext, map));
+        verify(mockContext, times(1)).getSsoToken();
+        String[] cookies = pec.getResponse().getHeadersKnob().getHeaderValues("Set-Cookie", HeadersKnob.HEADER_TYPE_HTTP);
+        assertTrue("Only one cookie header is set",cookies.length == 1);
+        assertEquals("SMSESSION=\"" + SSO_TOKEN+ "\"", cookies[0]);
+    }
+
+    @Test
+    public void testSetCookie_cookieValueDoesNotEndWithEqualSign() throws Exception {
+        final String ssoToken = "abCdeFgh01/8986863/aVbgG";
+        assertion.setPrefix("siteminder");
+        assertion.setUseVarAsCookieSource(true);
+        assertion.setCookieSourceVar("test");
+        assertion.setSetSMCookie(true);
+        assertion.setCookieName("SMSESSION");
+        when(mockContext.getSsoToken()).thenReturn(ssoToken);
+        pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
+        pec.setVariable("test", ssoToken);
+        Map<String,Object> map = pec.getVariableMap(assertion.getVariablesUsed(), new TestAudit());
+        fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
+        assertTrue(fixture.setSessionCookie(pec, mockContext, map));
+        verify(mockContext, times(1)).getSsoToken();
+        String[] cookies = pec.getResponse().getHeadersKnob().getHeaderValues("Set-Cookie", HeadersKnob.HEADER_TYPE_HTTP);
+        assertTrue("Only one cookie header is set",cookies.length == 1);
+        assertEquals("SMSESSION=" + ssoToken, cookies[0]);
     }
 
     @Test

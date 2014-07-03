@@ -30,6 +30,9 @@ import java.util.logging.Level;
  */
 public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinderAssertion<SiteMinderAuthorizeAssertion> {
 
+    public static final char QUOTE = '"';
+    public static final String EQUALS = "=";
+
     private final String[] variablesUsed;
 
     public ServerSiteMinderAuthorizeAssertion(final SiteMinderAuthorizeAssertion assertion, ApplicationContext springContext) throws PolicyAssertionException {
@@ -127,6 +130,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             }
 
             logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
+
             //get cookie params  directly from assertion
             String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
             String secure = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieSecure(), varMap, getAudit());
@@ -152,7 +156,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
             String path = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookiePath(), varMap, getAudit());
 
-            HttpCookie cookie = new HttpCookie(assertion.getCookieName(), ssoCookie, iVer, path, domain, iMaxAge, isSecure, comment, false);
+            HttpCookie cookie = new HttpCookie(assertion.getCookieName(), wrapCookieValue(ssoCookie), iVer, path, domain, iMaxAge, isSecure, comment, false);
             Message response = pec.getResponse();
             if (response.isHttpResponse()) {
                 response.getHttpCookiesKnob().addCookie(cookie);
@@ -163,6 +167,20 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         }
 
         return result;
+    }
+
+    /**
+     * determine if cookie value needs to be wrapped in quotes.
+     * This is necessary if it ends with equal sign since our cookie management does not add quotation marks any more.
+     * See SSG-8526
+     * @param ssoCookie - SSO token
+     * @return - wrapped SSO token
+     */
+    private String wrapCookieValue(String ssoCookie) {
+        if(ssoCookie.endsWith(EQUALS)){
+           return QUOTE + ssoCookie + QUOTE;
+        }
+        return ssoCookie;
     }
 
     /*
