@@ -163,12 +163,14 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        return identityTarget.getEntitiesUsed();
+        return identityTarget != null ? identityTarget.getEntitiesUsed() : new EntityHeader[0];
     }
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        identityTarget.replaceEntity(oldEntityHeader,newEntityHeader);
+        if(identityTarget != null) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
     }
 
     @Override

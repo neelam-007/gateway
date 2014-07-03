@@ -362,6 +362,30 @@ public class DependencyIdentityTest extends DependencyTestBase {
     }
 
     @Test
+    public void BuildRstrSoapResponseAssertionNullIdentityTest() throws Exception {
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:BuildRstrSoapResponse>\n" +
+                        "            <L7p:ResponseForIssuance booleanValue=\"false\"/>\n" +
+                        "        </L7p:BuildRstrSoapResponse>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+            }
+        });
+    }
+
+    @Test
     public void ldapIdentityAssertionTest() throws Exception {
 
         final String assXml =
