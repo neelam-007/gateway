@@ -5,11 +5,12 @@ import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
 import org.apache.olingo.odata2.api.uri.UriNotMatchingException;
 import org.apache.olingo.odata2.api.uri.UriSyntaxException;
+import org.apache.olingo.odata2.api.uri.expression.CommonExpression;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -491,4 +492,38 @@ public class OdataParserTest {
             assertEquals("An exception of type 'MalformedJsonException' occurred.", e.getMessage());
         }
     }
+
+    @Test
+    public void testParseRequest_filterExpression() throws Exception {
+        String[] expectedParts = {"length", "Name", "eq", "gt", "le", "and", "Price", "10", "30"};
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=length(Name) eq 10 and Price gt 10 and Price le 30");
+        assertCommonExpression(expectedParts, requestInfo.getFilterExpression());
+    }
+    @Test
+    public void testParseRequest_filterWithUnaryExpression() throws Exception {
+        String[] expectedParts = {"not", "Address", "City", "eq", "'Redmond'"};
+        OdataRequestInfo requestInfo = parser.parseRequest("/Suppliers", "$filter=not (Address/City eq 'Redmond')");
+        assertCommonExpression(expectedParts, requestInfo.getFilterExpression());
+
+    }
+
+    @Test
+    public void testParseRequest_orderExpression() throws Exception {
+        String[] expectedParts = {"Rating", "Category", "Name", "desc", "asc"};
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$orderby=Rating,Category/Name desc");
+        CommonExpression expression = requestInfo.getOrderByExpression();
+        assertCommonExpression(expectedParts, expression);
+    }
+
+
+
+    private void assertCommonExpression(String[] expectedParts, CommonExpression expression) throws OdataValidationException {
+        Set<String> actualParts = OdataParserUtil.getExpressionParts(expression);
+        assertEquals(expectedParts.length, actualParts.size());
+        for(String part : expectedParts) {
+            assertTrue(actualParts.contains(part));
+        }
+    }
+
+
 }
