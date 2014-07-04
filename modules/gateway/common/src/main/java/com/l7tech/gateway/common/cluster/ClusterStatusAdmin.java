@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
@@ -37,7 +38,7 @@ import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 @Secured
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Administrative
-public interface ClusterStatusAdmin {
+public interface ClusterStatusAdmin extends AsyncAdminMethods {
     /**
      * Returns true if this node is part of a cluster.
      * @return true if this node is part of a cluster
@@ -240,27 +241,37 @@ public interface ClusterStatusAdmin {
     /**
      * Installs the specified FeatureLicense on the Gateway. The license will be activated immediately, enabling all
      * newly licensed features and propagating automatically to all nodes in the cluster.
+     * <p/>
+     * The installation will occur immediately but in the background.  This method
+     * will return immediately.  To see the result and pick up any exception that may have resulted,
+     * poll for the result of the returned JobId.
      *
      * @param license the FeatureLicense to install.
-     * @throws LicenseInstallationException if there was a problem installing the license.
+     * @return a JobId that can be redeemed later for true (if we succeeded)
+     *          or a LicenseInstallationException if there was a problem installing the license.
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     @Secured(types=EntityType.LICENSE_DOCUMENT, stereotype=MethodStereotype.SAVE)
     @Administrative(licensed=false)
-    void installLicense(FeatureLicense license) throws LicenseInstallationException;
+    JobId<Boolean> installLicense(FeatureLicense license);
 
     /**
      * Uninstalls the specified LicenseDocument. Of any features that are not enabled by other installed licenses, most
      * will automatically become unavailable. Policies containing Assertions that are no longer enabled will fail.
      * Some subsystems will not be disabled until the Gateway is restarted.
+     * <p/>
+     * The uninstallation will occur immediately but in the background.  This method
+     * will return immediately.  To see the result and pick up any exception that may have resulted,
+     * poll for the result of the returned JobId.
      *
      * @param document the LicenseDocument to uninstall
-     * @throws LicenseRemovalException if an error is encountered in uninstalling the license
+     * @return a JobId that can be redeemed later for either true (if we succeeded)
+     *          or a LicenseRemovalException if there was a problem uninstalling the license.
      */
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     @Secured(types=EntityType.LICENSE_DOCUMENT, stereotype=MethodStereotype.DELETE_MULTI)
     @Administrative(licensed=false)
-    void uninstallLicense(LicenseDocument document) throws LicenseRemovalException;
+    JobId<Boolean> uninstallLicense(LicenseDocument document);
 
     /**
      * @return the upgrade map for mapping legacy OIDs to GOIDs.  Never null.  Will be empty if this Gateway was not

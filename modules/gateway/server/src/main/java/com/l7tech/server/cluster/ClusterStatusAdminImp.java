@@ -20,7 +20,9 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TrustedEsmManager;
 import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -47,7 +49,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.Serializable;
 import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -62,7 +67,7 @@ import static com.l7tech.util.Option.optional;
  * User: flascell<br/>
  * Date: Jan 2, 2004<br/>
  */
-public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationContextAware {
+public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements ClusterStatusAdmin, ApplicationContextAware {
     /**
      * Constructs the new cluster status admin implementation.
      * On constructor change update the spring bean definition
@@ -319,19 +324,51 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public void installLicense(FeatureLicense license) throws LicenseInstallationException {
-        licenseManager.installLicense(license);
+    public JobId<Boolean> installLicense( final FeatureLicense license ) {
+        final FutureTask<Boolean> installLicenseTask = new FutureTask<>( AdminInfo.find( false ).wrapCallable( new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                licenseManager.installLicense( license );
 
-        // Make sure we don't return until any module updating has been dealt with
-        assertionRegistry.runNeededScan();
+                // Make sure we don't return until any module updating has been dealt with
+                assertionRegistry.runNeededScan();
+
+                return true;
+            }
+        } ) );
+
+        backgroundTimer.schedule( new TimerTask() {
+            @Override
+            public void run() {
+                installLicenseTask.run();
+            }
+        }, 0L );
+
+        return registerJob( installLicenseTask, Boolean.class );
     }
 
     @Override
-    public void uninstallLicense(LicenseDocument document) throws LicenseRemovalException {
-        licenseManager.uninstallLicense(document);
+    public JobId<Boolean> uninstallLicense( final LicenseDocument document ) {
+        final FutureTask<Boolean> uninstallLicenseTask = new FutureTask<>( AdminInfo.find( false ).wrapCallable( new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                licenseManager.uninstallLicense( document );
 
-        // Make sure we don't return until any module updating has been dealt with
-        assertionRegistry.runNeededScan();
+                // Make sure we don't return until any module updating has been dealt with
+                assertionRegistry.runNeededScan();
+
+                return true;
+            }
+        } ) );
+
+        backgroundTimer.schedule( new TimerTask() {
+            @Override
+            public void run() {
+                uninstallLicenseTask.run();
+            }
+        }, 0L );
+
+        return registerJob( uninstallLicenseTask, Boolean.class );
     }
 
     @Override
@@ -570,6 +607,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final RbacServices rbacServices;
     private final ExtensionInterfaceManager extensionInterfaceManager;
     private final DateTimeConfigUtils dateTimeConfigUtils;
+    private final Timer backgroundTimer = new Timer( "License Updater Task", false );
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

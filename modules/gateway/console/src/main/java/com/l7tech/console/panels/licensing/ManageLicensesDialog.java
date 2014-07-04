@@ -1,10 +1,8 @@
 package com.l7tech.console.panels.licensing;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SecurityZoneUtil;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.licensing.*;
@@ -13,10 +11,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.DateUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 import sun.security.util.Resources;
 
@@ -30,6 +25,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -212,18 +208,19 @@ public class ManageLicensesDialog extends JDialog {
         }
 
         try {
-            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            AsyncAdminMethods.JobId<Boolean> jobId = admin.installLicense( newLicense );
+            Either<String, Boolean> result =
+                    AdminGuiUtils.doAsyncAdmin( admin, this, "License Installation", "License Installation", jobId );
 
-            admin.installLicense(newLicense);
-        } catch (LicenseInstallationException e) {
-            setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-
-            logger.log(Level.SEVERE, "Unable to install license: " + ExceptionUtils.getMessage(e), e);
-
-            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                    ExceptionUtils.getMessage(e),
-                    RESOURCES.getString("dialog.install.error.failure.title"),
-                    JOptionPane.ERROR_MESSAGE, null);
+            if ( result.isLeft() ) {
+                showInstallError( result.left() );
+                return;
+            }
+        } catch ( InterruptedException e ) {
+            // Canceled by user, do nothing
+            return;
+        } catch ( InvocationTargetException e ) {
+            showInstallError( ExceptionUtils.getMessage( e ) );
             return;
         }
 
@@ -248,6 +245,15 @@ public class ManageLicensesDialog extends JDialog {
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
+    private void showInstallError( String err ) {
+        logger.log( Level.WARNING, "Unable to install license: " + err );
+
+        DialogDisplayer.showMessageDialog( ManageLicensesDialog.this,
+                err,
+                RESOURCES.getString( "dialog.install.error.failure.title" ),
+                JOptionPane.ERROR_MESSAGE, null );
+    }
+
     private void doRemoveSelectedLicense() {
         LicenseTableRow selectedRow = getSelectedTableRow();
 
@@ -269,13 +275,20 @@ public class ManageLicensesDialog extends JDialog {
                         }
 
                         try {
-                            admin.uninstallLicense(selected);
+                            AsyncAdminMethods.JobId<Boolean> jobId = admin.uninstallLicense( selected );
+                            Either<String, Boolean> result = AdminGuiUtils.doAsyncAdmin( admin, ManageLicensesDialog.this, "License Removal", "License Removal", jobId );
+
+                            if ( result.isLeft() ) {
+                                showRemoveError( result.left() );
+                                return;
+                            }
+
                             disconnectManagerOnClose = true;
-                        } catch (LicenseRemovalException e) {
-                            DialogDisplayer.showMessageDialog(ManageLicensesDialog.this,
-                                    ExceptionUtils.getMessage(e),
-                                    RESOURCES.getString("dialog.remove.error.title"),
-                                    JOptionPane.ERROR_MESSAGE, null);
+                        } catch ( InterruptedException e ) {
+                            // Canceled by user; do nothing
+                            return;
+                        } catch ( InvocationTargetException e ) {
+                            showRemoveError( ExceptionUtils.getMessage( e ) );
                             return;
                         }
 
@@ -284,6 +297,13 @@ public class ManageLicensesDialog extends JDialog {
                     }
                 }
         );
+    }
+
+    private void showRemoveError( String err ) {
+        DialogDisplayer.showMessageDialog( this,
+                err,
+                RESOURCES.getString( "dialog.remove.error.title" ),
+                JOptionPane.ERROR_MESSAGE, null );
     }
 
     private void viewDetails() {

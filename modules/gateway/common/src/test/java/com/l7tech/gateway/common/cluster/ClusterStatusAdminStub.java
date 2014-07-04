@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
@@ -192,13 +193,13 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public void installLicense(FeatureLicense license) throws LicenseInstallationException {
-        throw new LicenseInstallationException("Not implemented");
+    public JobId<Boolean> installLicense( FeatureLicense license ) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
-    public void uninstallLicense(LicenseDocument document) throws LicenseRemovalException {
-        throw new LicenseRemovalException("Not implemented");
+    public JobId<Boolean> uninstallLicense( LicenseDocument document ) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -321,4 +322,17 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         return FailoverStrategyFactory.getFailoverStrategyNames();
     }
 
+    @Override
+    public <OUT extends Serializable> String getJobStatus( JobId<OUT> jobId ) {
+        return null;
+    }
+
+    @Override
+    public <OUT extends Serializable> JobResult<OUT> getJobResult( JobId<OUT> jobId ) throws UnknownJobException, JobStillActiveException {
+        throw new UnknownJobException( "Unknown job" );
+    }
+
+    @Override
+    public <OUT extends Serializable> void cancelJob( JobId<OUT> jobId, boolean interruptIfRunning ) {
+    }
 }

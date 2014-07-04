@@ -75,7 +75,7 @@ public class AdminGuiUtils {
         try{
             return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, 500L);
         }catch (InterruptedException e){
-            admin.cancelJob(jobId, true);
+            admin.cancelJob( jobId, false );
             throw e;
         }
     }
