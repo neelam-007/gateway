@@ -9,17 +9,20 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import junit.framework.Assert;
+import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +32,7 @@ import java.io.StringReader;
 import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAlias, PolicyAliasMO> {
@@ -320,7 +324,7 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
     public void verifyEntity(String id, PolicyAliasMO managedObject) throws FindException {
         PolicyAlias entity = policyAliasManager.findByPrimaryKey(Goid.parseGoid(id));
         if (managedObject == null) {
-            Assert.assertNull(entity);
+            assertNull(entity);
         } else {
             Assert.assertNotNull(entity);
 
@@ -363,5 +367,16 @@ public class PolicyAliasRestEntityResourceTest extends RestEntityTests<PolicyAli
         ErrorResponse returnedError = MarshallingUtils.unmarshal(ErrorResponse.class, source);
         assertEquals("ResourceAccess", returnedError.getType());
         assertEquals("Folder is not empty", returnedError.getDetail());
+    }
+
+    @BugId("SSG-8052")
+    @Test
+    public void testForceDeleteNonEmptyFolder() throws Exception {
+        RestResponse response = processRequest("folders/" + myPolicyFolder.getId() + "?force=true", HttpMethod.DELETE, null, "");
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
+
+        // check folder is deleted
+        assertNull(folderManager.findByPrimaryKey(Goid.parseGoid(myPolicyFolder.getId())));
     }
 }

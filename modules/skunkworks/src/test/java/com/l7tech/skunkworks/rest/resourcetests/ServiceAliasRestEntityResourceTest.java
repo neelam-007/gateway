@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.ServiceAliasMO;
@@ -9,12 +10,14 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -22,8 +25,11 @@ import com.l7tech.util.Functions;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import java.util.*;
+
+import static junit.framework.Assert.assertNull;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class ServiceAliasRestEntityResourceTest extends RestEntityTests<PublishedServiceAlias, ServiceAliasMO> {
@@ -348,5 +354,27 @@ public class ServiceAliasRestEntityResourceTest extends RestEntityTests<Publishe
                 .put("folder.id=" + rootFolder.getId(), Arrays.asList(publishedServiceAliases.get(1).getId(), publishedServiceAliases.get(3).getId()))
                 .put("service.id=" + services.get(0).getId() + "&service.id=" + services.get(1).getId() + "&sort=service.id&order=desc", Arrays.asList(publishedServiceAliases.get(3).getId(), publishedServiceAliases.get(2).getId(), publishedServiceAliases.get(1).getId(), publishedServiceAliases.get(0).getId()))
                 .map();
+    }
+
+
+    @BugId("SSG-8052")
+    @Test
+    public void testForceDeleteNonEmptyServiceFolder() throws Exception {
+        RestResponse response = processRequest("folders/" + myServiceFolder.getId() + "?force=true", HttpMethod.DELETE, null, "");
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
+
+        // check folder is deleted
+        assertNull(folderManager.findByPrimaryKey(Goid.parseGoid(myServiceFolder.getId())));
+    }
+
+    @Test
+    public void testForceDeleteNonEmptyAliasFolder() throws Exception {
+        RestResponse response = processRequest("folders/" + myAliasFolder.getId() + "?force=true", HttpMethod.DELETE, null, "");
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(204, response.getStatus());
+
+        // check folder is deleted
+        assertNull(folderManager.findByPrimaryKey(Goid.parseGoid(myAliasFolder.getId())));
     }
 }

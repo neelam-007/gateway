@@ -27,6 +27,13 @@ public interface DependencyAnalyzer {
     public static final String SearchDepthOptionKey = "searchDepth";
 
     /**
+     * Specifies the entity types to search dependency for. Searching for FOLDER dependencies will return the dependencies of
+     * FOLDER entities. This should be a List of EntityType.
+     */
+    public static final String SearchEntityTypeOptionKey = "searchEntityType";
+
+
+    /**
      * By Default assertions are not returned as dependencies but this can be enabled by setting this property to true.
      * The Default is false
      */

@@ -278,4 +278,47 @@
     <bean id="bundleImporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter" />
     <bean id="bundleExporter" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter" />
     <bean id="rbacAccessService" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService" />
+
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinderStub"/>
+
+    <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
+        <property name="sessionFactory" ><bean class="com.l7tech.server.SessionFactoryStub"/></property>
+        <constructor-arg ref="entityFinder"/>
+        <constructor-arg>
+            <list>
+                <ref bean="auditRecordManager"/>
+                <ref bean="clusterPropertyManager"/>
+                <ref bean="resourceEntryManager"/>
+                <ref bean="folderManager"/>
+                <ref bean="identityProviderConfigManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="policyAliasManager"/>
+                <ref bean="roleManager"/>
+                <ref bean="serviceAliasManager"/>
+                <ref bean="serviceDocumentManager"/>
+                <ref bean="emailListenerManager"/>
+                <ref bean="jmsConnectionManager"/>
+                <ref bean="jmsEndpointManager"/>
+                <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                    <constructor-arg index="0" value="com.l7tech.identity.User"/>
+                    <constructor-arg index="1" ref="identityProviderFactory"/>
+                </bean>
+                <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                    <constructor-arg index="0" value="com.l7tech.identity.Group"/>
+                    <constructor-arg index="1" ref="identityProviderFactory"/>
+                </bean>
+                <ref bean="ssgActiveConnectorManager"/>
+                <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="assertionAccessManager"/>
+                <ref bean="httpConfigurationManager"/>
+                <ref bean="jdbcConnectionManager"/>
+                <ref bean="securePasswordManager"/>
+                <ref bean="uddiServiceControlManager"/>
+                <ref bean="siteMinderConfigurationManager"/>
+                <ref bean="serviceManager" />
+                <ref bean="policyManager" />
+                <ref bean="genericEntityManager"/>
+            </list>
+        </constructor-arg>
+    </bean>
 </beans>

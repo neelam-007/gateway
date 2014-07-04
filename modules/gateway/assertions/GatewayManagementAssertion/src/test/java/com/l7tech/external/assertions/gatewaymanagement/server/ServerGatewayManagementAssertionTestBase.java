@@ -20,6 +20,7 @@ import com.l7tech.policy.AssertionRegistryStub;
 import com.l7tech.policy.PolicyValidatorStub;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditRecordManagerStub;
 import com.l7tech.server.bundling.EntityBundleExporterStub;
 import com.l7tech.server.bundling.EntityBundleImporterStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -63,6 +64,7 @@ import com.l7tech.server.transport.email.EmailListenerManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.server.uddi.UDDIServiceControlManagerStub;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ResourceClassLoader;
 import com.l7tech.util.*;
@@ -195,6 +197,9 @@ public class ServerGatewayManagementAssertionTestBase {
 
         applicationContext.getBeanFactory().registerSingleton("entityBundleImporter", new EntityBundleImporterStub());
         applicationContext.getBeanFactory().registerSingleton("entityBundleExporter", new EntityBundleExporterStub());
+        applicationContext.getBeanFactory().registerSingleton("auditRecordManager", new AuditRecordManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("uddiServiceControlManager", new UDDIServiceControlManagerStub());
+
 
         moreInit();
 

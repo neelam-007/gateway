@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
@@ -149,11 +150,26 @@ public class DependencyFinder {
             return Collections.emptyList();
         }
 
+        if(!isSearchType(dependent)){
+            return Collections.emptyList();
+        }
+
         //find the dependency processor to use.
         final DependencyProcessor processor = processorStore.getProcessor(dependent);
         //using the dependency processor find the dependencies and return the results.
         //noinspection unchecked
         return processor.findDependencies(dependent, this);
+    }
+
+    private boolean isSearchType(Object dependent) {
+        final List searchTypes = getOption(DependencyAnalyzer.SearchEntityTypeOptionKey, List.class, (List) Collections.emptyList());
+        if(searchTypes.isEmpty())
+            return true;
+
+        if(dependent instanceof Entity){
+            return searchTypes.contains(EntityHeaderUtils.fromEntity((Entity)dependent).getType());
+        }
+        return false;
     }
 
     /**

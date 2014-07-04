@@ -137,13 +137,14 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      * Deletes an existing active connector.
      *
      * @param id The id of the active connector to delete.
+     * @param force If true, deletes folder and its contents
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
     @Path("{id}")
-    @Override
-    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        super.delete(id);
+    public void delete(@PathParam("id") String id,
+                       @QueryParam("force") @DefaultValue("false") final boolean force) throws ResourceFactory.ResourceNotFoundException {
+        factory.deleteResource(id,force);
     }
 
     /**
