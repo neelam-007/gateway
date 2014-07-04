@@ -28,16 +28,16 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
     private String odataMetadataSource;
     private String odataSvcRootURL;
-    private String variablePrefix;
+    private String variablePrefix ;
 
-    private EnumSet<ProtectionActions> actions;
+    private EnumSet<ProtectionActions> actions = EnumSet.of( ProtectionActions.ALLOW_METADATA );
 
-    private boolean readOperation;
-    private boolean createOperation;
-    private boolean updateOperation;
-    private boolean partialUpdateOperation;
-    private boolean mergeOperation;
-    private boolean deleteOperation;
+    private boolean readOperation = true;
+    private boolean createOperation = true;
+    private boolean updateOperation = true;
+    private boolean partialUpdateOperation = false;
+    private boolean mergeOperation = false;
+    private boolean deleteOperation = false;
 
     public boolean isReadOperation() {
         return readOperation;

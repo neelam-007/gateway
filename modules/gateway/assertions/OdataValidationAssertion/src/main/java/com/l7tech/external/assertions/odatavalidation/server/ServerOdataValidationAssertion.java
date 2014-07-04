@@ -49,12 +49,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
     private ByteArrayInputStream getMetadataDocumentStream(PolicyEnforcementContext context) { // TODO: clean up, audit
         String variable;
 
-        try {
-            variable = (String) context.getVariable(assertion.getOdataMetadataSource());
-        } catch (NoSuchVariableException e) {
-            e.printStackTrace();
-            return null;
-        }
+        variable = assertion.getOdataMetadataSource();
 
         return new ByteArrayInputStream(variable.getBytes());
     }
