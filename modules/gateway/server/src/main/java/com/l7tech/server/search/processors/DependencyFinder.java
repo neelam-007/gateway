@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
@@ -204,7 +203,7 @@ public class DependencyFinder {
      */
     @NotNull
     public List<Object> retrieveObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
-        final DependencyProcessor processor;
+        final InternalDependencyProcessor processor;
         //Finds the correct processor to use to retrieve the entity
         if (com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType)) {
             // If the search value type is an entity the get the processor based on the type of entity.
@@ -227,7 +226,7 @@ public class DependencyFinder {
     @NotNull
     DependentObject createDependentObject(@NotNull final Object dependent) {
         //Finds the correct processor to use
-        DependencyProcessor processor = processorStore.getProcessor(dependent);
+        InternalDependencyProcessor processor = processorStore.getProcessor(dependent);
         // use the processor to create the DependentObject from the dependent
         //noinspection unchecked
         return processor.createDependentObject(dependent);
@@ -288,7 +287,7 @@ public class DependencyFinder {
      */
     @NotNull
     List<DependentObject> createDependentObject(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws CannotRetrieveDependenciesException {
-        final DependencyProcessor processor;
+        final InternalDependencyProcessor processor;
         //Finds the correct processor to use to retrieve the entity
         if (com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType)) {
             // If the search value type is an entity the get the processor based on the type of entity.

@@ -5,6 +5,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
+import com.l7tech.server.search.processors.DependencyTestBaseClass;
 import org.junit.Assert;
 import org.junit.Test;
 

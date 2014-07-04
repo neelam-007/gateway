@@ -12,6 +12,7 @@ import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -34,7 +35,7 @@ public class GenericEntityDependencyProcessor extends DefaultDependencyProcessor
      */
     @Inject
     @Named("genericEntityDependencyProcessorRegistry")
-    private DependencyProcessorRegistry genericEntityDependencyProcessorRegistry;
+    private DependencyProcessorRegistry<GenericEntity> genericEntityDependencyProcessorRegistry;
 
     @Inject
     private GenericEntityManager genericEntityManager;
@@ -44,13 +45,14 @@ public class GenericEntityDependencyProcessor extends DefaultDependencyProcessor
     public List<Dependency> findDependencies(@NotNull final GenericEntity object, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         //need to up-cast the generic entity to the concrete version.
         final GenericEntity concreteGenericEntity = getConcreteGenericEntity(object);
-        final DependencyProcessor genericEntityProcessor = genericEntityDependencyProcessorRegistry.get(concreteGenericEntity.getClass().getName());
+        //find the default dependencies
+        final List<com.l7tech.server.search.objects.Dependency> dependencies = super.findDependencies(concreteGenericEntity, finder);
+        //delegate to the custom dependency processor for the generic entity type.
+        final DependencyProcessor<GenericEntity> genericEntityProcessor = genericEntityDependencyProcessorRegistry.get(concreteGenericEntity.getClass().getName());
         if (genericEntityProcessor != null) {
-            //noinspection unchecked
-            return genericEntityProcessor.findDependencies(concreteGenericEntity, finder);
-        } else {
-            return super.findDependencies(concreteGenericEntity, finder);
+            dependencies.addAll(CollectionUtils.subtract(genericEntityProcessor.findDependencies(concreteGenericEntity, finder), dependencies));
         }
+        return dependencies;
     }
 
     @NotNull
@@ -87,12 +89,12 @@ public class GenericEntityDependencyProcessor extends DefaultDependencyProcessor
         } catch (FindException e) {
             throw new CannotReplaceDependenciesException(object.getClass(), "Unable to load concrete entity class: " + ExceptionUtils.getMessage(e), e);
         }
-        final DependencyProcessor genericEntityProcessor = genericEntityDependencyProcessorRegistry.get(concreteGenericEntity.getClass().getName());
+
+        super.replaceDependencies(concreteGenericEntity, replacementMap, finder, replaceAssertionsDependencies);
+        final DependencyProcessor<GenericEntity> genericEntityProcessor = genericEntityDependencyProcessorRegistry.get(concreteGenericEntity.getClass().getName());
         if (genericEntityProcessor != null) {
             //noinspection unchecked
-            genericEntityProcessor.replaceDependencies(concreteGenericEntity, replacementMap, finder, replaceAssertionsDependencies);
-        } else {
-            super.replaceDependencies(concreteGenericEntity, replacementMap, finder, replaceAssertionsDependencies);
+            genericEntityProcessor.replaceDependencies(object, replacementMap, finder, replaceAssertionsDependencies);
         }
         //need to regenerate the xml and set it on the given object so that it can be properly saved.
         GenericEntityUtils.regenerateValueXml(concreteGenericEntity);

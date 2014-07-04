@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Dependency processor for WsSecurity Assertion
  */
-public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProcessor<WsSecurity> implements DependencyProcessor<WsSecurity> {
+public class AssertionWsSecurityProcessor implements DependencyProcessor<WsSecurity> {
 
     @Inject
     private TrustedCertManager trustedCertManager;
@@ -31,8 +31,6 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
     @NotNull
     @Override
     public List<Dependency> findDependencies(@NotNull final WsSecurity assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-        super.findDependencies(assertion,finder);
-
         final TrustedCert certificate = getCertificateUsed(assertion);
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
@@ -63,18 +61,17 @@ public class AssertionWsSecurityProcessor extends DefaultAssertionDependencyProc
     public void replaceDependencies(@NotNull final WsSecurity assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
         if(!replaceAssertionsDependencies) return;
 
-        super.replaceDependencies(assertion,replacementMap,finder,replaceAssertionsDependencies);
         if (assertion.getRecipientTrustedCertificateGoid() != null) {
             final EntityHeader[] entitiesUsed = assertion.getEntitiesUsed();
             for (EntityHeader entityUsed : entitiesUsed) {
-                EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+                EntityHeader newEntity = DependencyProcessorUtils.findMappedHeader(replacementMap, entityUsed);
                 if (newEntity != null) {
                     assertion.replaceEntity(entityUsed, newEntity);
                 }
             }
         }else if(assertion.getRecipientTrustedCertificateName() != null){
             final EntityHeader entityUsed = new EntityHeader(Goid.DEFAULT_GOID, EntityType.TRUSTED_CERT,assertion.getRecipientTrustedCertificateName(),"");
-            final EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+            final EntityHeader newEntity = DependencyProcessorUtils.findMappedHeader(replacementMap, entityUsed);
             if(newEntity!=null){
                 assertion.setRecipientTrustedCertificateName(newEntity.getName());
             }

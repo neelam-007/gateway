@@ -396,7 +396,7 @@
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 
-    <bean id="dependencyProcessorStore" class="com.l7tech.server.search.DependencyProcessorStore">
+    <bean id="dependencyProcessorStore" class="com.l7tech.server.search.processors.DependencyProcessorStore">
         <constructor-arg>
             <util:map>
                 <entry>
@@ -490,16 +490,8 @@
         <constructor-arg>
             <util:map key-type="java.lang.String" value-type="com.l7tech.server.search.processors.DependencyProcessor">
                 <entry>
-                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTP"/></key>
-                    <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
-                </entry>
-                <entry>
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_HTTPS"/></key>
                     <ref bean="sslSsgConnectorDependencyProcessor"/>
-                </entry>
-                <entry>
-                    <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTP"/></key>
-                    <bean class="com.l7tech.server.search.processors.DoNothingDependencyProcessor"/>
                 </entry>
                 <entry>
                     <key><util:constant static-field="com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS"/></key>

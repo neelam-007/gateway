@@ -11,10 +11,7 @@ import com.l7tech.message.HasServiceId;
 import com.l7tech.message.HasServiceIdImpl;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -23,7 +20,11 @@ import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.search.DependencyProcessorRegistry;
-import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -82,8 +83,8 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
 
     private static final Map<String, PendingAsyncRequest> activeAsyncRequests = new ConcurrentHashMap<String, PendingAsyncRequest>(2048, 0.75f, 256);
 
-    //This is the map of ssgConnectorDependency processors. We need it in order to add the AsyncHttp dependency processor
-    private static DependencyProcessorRegistry processorRegistry;
+    //This is the DependencyProcessorRegistry for ssgConnectors. We need it in order to add the AsyncHttp dependency processor
+    private static DependencyProcessorRegistry<SsgConnector> processorRegistry;
 
     protected AsyncHttpTransportModule(@NotNull final ApplicationEventProxy applicationEventProxy,
                                        @NotNull final GatewayState gatewayState,
@@ -410,12 +411,22 @@ public class AsyncHttpTransportModule extends TransportModule implements Applica
                 logger.log(Level.WARNING, "Async HTTP transport module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
 
-            //get the map of SsgConnector dependency processors.
+            //get the SsgConnector dependency registry.
             //noinspection unchecked
             processorRegistry = context.getBean( "ssgConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
             //add a custom processor for async http. this is the do nothing dependency processor because Async http does
             // not declare any dependencies beyond the default SsgConnector dependencies
-            processorRegistry.register(SCHEME_ASYNC_HTTP, new DoNothingDependencyProcessor<SsgConnector>());
+            processorRegistry.register(SCHEME_ASYNC_HTTP, new DependencyProcessor<SsgConnector>() {
+                @NotNull
+                @Override
+                public List<Dependency> findDependencies(@NotNull SsgConnector object, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public void replaceDependencies(@NotNull SsgConnector object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+                }
+            });
         }
     }
 

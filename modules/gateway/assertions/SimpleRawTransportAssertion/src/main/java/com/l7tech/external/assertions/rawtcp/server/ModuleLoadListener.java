@@ -1,12 +1,22 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.search.DependencyProcessorRegistry;
-import com.l7tech.server.search.processors.DoNothingDependencyProcessor;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.Dependency;
+import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,7 +26,7 @@ import java.util.logging.Logger;
 public class ModuleLoadListener {
     private static final Logger logger = Logger.getLogger(ModuleLoadListener.class.getName());
     private static SimpleRawTransportModule instance;
-    private static DependencyProcessorRegistry processorRegistry;
+    private static DependencyProcessorRegistry<SsgConnector> processorRegistry;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
         if (instance != null) {
@@ -30,11 +40,21 @@ public class ModuleLoadListener {
                 logger.log(Level.WARNING, "Simple raw transport module threw exception on startup: " + ExceptionUtils.getMessage(e), e);
             }
 
-            // Get the ssg connector dependency processor map to add the tcp connector dependency processor
+            // Get the ssg connector dependency processor registry to add the tcp connector dependency processor
             //noinspection unchecked
             processorRegistry = context.getBean( "ssgConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
             // Us the DoNothingDependencyProcessor because the tcp connector does not add any dependencies beyond the the defaults.
-            processorRegistry.register(SimpleRawTransportModule.SCHEME_RAW_TCP, new DoNothingDependencyProcessor<SsgConnector>());
+            processorRegistry.register(SimpleRawTransportModule.SCHEME_RAW_TCP, new DependencyProcessor<SsgConnector>() {
+                @NotNull
+                @Override
+                public List<Dependency> findDependencies(@NotNull SsgConnector object, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
+                    return Collections.emptyList();
+                }
+
+                @Override
+                public void replaceDependencies(@NotNull SsgConnector object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+                }
+            });
         }
     }
 

@@ -21,7 +21,7 @@ import java.util.*;
 /**
  * Dependency processor for LookupTrustedCertificateAssertion
  */
-public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertionDependencyProcessor<LookupTrustedCertificateAssertion> implements DependencyProcessor<LookupTrustedCertificateAssertion> {
+public class AssertionLookupTrustedCertificateProcessor implements DependencyProcessor<LookupTrustedCertificateAssertion> {
 
     @Inject
     private TrustedCertManager trustedCertManager;
@@ -29,8 +29,6 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
     @NotNull
     @Override
     public List<Dependency> findDependencies(@NotNull final LookupTrustedCertificateAssertion assertion, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-        super.findDependencies(assertion,finder);
-
         final Collection<TrustedCert> certificates = getCertificatesUsed(assertion);
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
@@ -69,7 +67,7 @@ public class AssertionLookupTrustedCertificateProcessor extends DefaultAssertion
         // only do replace dependency for lookup by name
         if(assertion.getLookupType().equals(LookupTrustedCertificateAssertion.LookupType.TRUSTED_CERT_NAME) ){
             final EntityHeader entityUsed = new EntityHeader(Goid.DEFAULT_GOID, EntityType.TRUSTED_CERT,assertion.getTrustedCertificateName(),"");
-            final EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+            final EntityHeader newEntity = DependencyProcessorUtils.findMappedHeader(replacementMap, entityUsed);
             if(newEntity!=null){
                 assertion.setTrustedCertificateName(newEntity.getName());
             }

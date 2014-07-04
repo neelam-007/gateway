@@ -1,16 +1,21 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.l7tech.external.assertions.ssh.SftpPollingListenerConstants;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SecurePasswordEntityHeader;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.search.DependencyProcessorRegistry;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.processors.DependencyProcessorUtils;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
@@ -32,7 +37,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
 
     // Manages all SFTP polling listener processes
     private static SftpPollingListenerModule sftpPollingListenerModule;
-    private static DependencyProcessorRegistry processorRegistry;
+    private static DependencyProcessorRegistry<SsgActiveConnector> processorRegistry;
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -63,10 +68,10 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
                 logger.log(Level.WARNING, "SFTP polling listener module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
 
-            // Get the ssg connector dependency processor map to add the mq connector dependency processor
+            // Get the ssg connector dependency processor registry to add the mq connector dependency processor
             //noinspection unchecked
             processorRegistry = context.getBean( "ssgActiveConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
-            processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new BaseDependencyProcessor<SsgActiveConnector>() {
+            processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_SFTP, new DependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
@@ -78,6 +83,24 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
                         dependentEntities = finder.retrieveObjects(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);
                     }
                     return finder.getDependenciesFromObjects(activeConnector, finder, dependentEntities);
+                }
+
+                @Override
+                public void replaceDependencies(@NotNull final SsgActiveConnector activeConnector, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+                    final SecurePasswordEntityHeader securePasswordEntityHeader;
+                    if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {
+                        securePasswordEntityHeader = new SecurePasswordEntityHeader(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID)), null, null, SecurePassword.SecurePasswordType.PASSWORD.name());
+                    } else {
+                        securePasswordEntityHeader = new SecurePasswordEntityHeader(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID)), null, null, SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY.name());
+                    }
+                    final EntityHeader newEntity = DependencyProcessorUtils.findMappedHeader(replacementMap, securePasswordEntityHeader);
+                    if(newEntity!=null){
+                        if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {
+                            activeConnector.setProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID, newEntity.getStrId());
+                        } else {
+                            activeConnector.setProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID, newEntity.getStrId());
+                        }
+                    }
                 }
             });
         }

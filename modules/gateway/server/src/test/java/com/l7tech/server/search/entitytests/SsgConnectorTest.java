@@ -5,12 +5,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
+import com.l7tech.server.search.processors.DependencyTestBaseClass;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -19,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -36,10 +39,15 @@ public class SsgConnectorTest extends DependencyTestBaseClass {
     @Before
     public void before() {
         //add the custom connector dependency processor
-        ssgConnectorDependencyProcessorRegistry.register(myCustomConnectorScheme, new BaseDependencyProcessor<SsgConnector>() {
+        ssgConnectorDependencyProcessorRegistry.register(myCustomConnectorScheme, new DependencyProcessor<SsgConnector>() {
             @NotNull
             public List<Dependency> findDependencies(@NotNull SsgConnector object, @NotNull DependencyFinder finder) throws FindException {
                 return Arrays.asList(myDependency);
+            }
+
+            @Override
+            public void replaceDependencies(@NotNull SsgConnector object, @NotNull Map<EntityHeader, EntityHeader> replacementMap, @NotNull DependencyFinder finder, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
+
             }
         });
     }

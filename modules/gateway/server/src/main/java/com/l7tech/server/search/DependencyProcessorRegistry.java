@@ -12,16 +12,16 @@ import java.util.Map;
  *
  * @author Victor Kazakov
  */
-public class DependencyProcessorRegistry {
+public class DependencyProcessorRegistry<O> {
 
     @NotNull
-    private final Map<String, DependencyProcessor> processors;
+    private final Map<String, DependencyProcessor<O>> processors;
 
     public DependencyProcessorRegistry() {
         processors = new HashMap<>();
     }
 
-    public DependencyProcessorRegistry(@NotNull final Map<String, DependencyProcessor> processors) {
+    public DependencyProcessorRegistry(@NotNull final Map<String, DependencyProcessor<O>> processors) {
         this.processors = new HashMap<>(processors);
     }
 
@@ -32,7 +32,7 @@ public class DependencyProcessorRegistry {
      * @return The associated dependency processor or null if there is not dependency processor for this key
      */
     @Nullable
-    public DependencyProcessor get(@NotNull final String key) {
+    public DependencyProcessor<O> get(@NotNull final String key) {
         return processors.get(key);
     }
 
@@ -43,7 +43,7 @@ public class DependencyProcessorRegistry {
      * @param key                 the key for this dependency processor
      * @param dependencyProcessor The dependency processor
      */
-    public void register(@NotNull final String key, @NotNull final DependencyProcessor dependencyProcessor) {
+    public void register(@NotNull final String key, @NotNull final DependencyProcessor<O> dependencyProcessor) {
         if (processors.containsKey(key))
             throw new IllegalArgumentException("There is already a dependency processor registered for key: " + key);
         processors.put(key, dependencyProcessor);
@@ -56,7 +56,7 @@ public class DependencyProcessorRegistry {
      * @return The dependency processor that was removed. Or null if there is no such dependency processor.
      */
     @Nullable
-    public DependencyProcessor remove(@NotNull final String key) {
+    public DependencyProcessor<O> remove(@NotNull final String key) {
         return processors.remove(key);
     }
 }

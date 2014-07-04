@@ -1,4 +1,4 @@
-package com.l7tech.server.search.entitytests;
+package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -17,8 +17,6 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.search.DependencyProcessorRegistry;
-import com.l7tech.server.search.DependencyProcessorStore;
-import com.l7tech.server.search.processors.*;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.CollectionUtils;
@@ -53,7 +51,7 @@ public abstract class DependencyTestBaseClass {
     DependencyProcessorRegistry dependencyProcessorRegistry;
 
     @Spy
-    DependencyProcessorRegistry ssgConnectorDependencyProcessorRegistry;
+    protected DependencyProcessorRegistry ssgConnectorDependencyProcessorRegistry;
 
     @Spy
     DependencyProcessorRegistry assertionDependencyProcessorRegistry;
@@ -86,7 +84,7 @@ public abstract class DependencyTestBaseClass {
     SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor();
 
     @Spy
-    DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, DependencyProcessor>builder()
+    DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, InternalDependencyProcessor>builder()
             .put(Dependency.DependencyType.ANY, defaultDependencyProcessor)
             .put(Dependency.DependencyType.POLICY, policyDependencyProcessor)
             .put(Dependency.DependencyType.FOLDER, folderDependencyProcessor)

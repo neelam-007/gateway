@@ -2,12 +2,12 @@ package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -26,7 +26,7 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
 
     @Inject
     @Named("ssgActiveConnectorDependencyProcessorRegistry")
-    private DependencyProcessorRegistry processorRegistry;
+    private DependencyProcessorRegistry<SsgActiveConnector> processorRegistry;
 
     @Override
     @NotNull
@@ -35,12 +35,10 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
         final List<Dependency> dependencies = super.findDependencies(activeConnector, finder);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        final DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
+        final DependencyProcessor<SsgActiveConnector> processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
-            dependencies.addAll(processor.findDependencies(activeConnector, finder));
-        } else {
-            throw new CannotRetrieveDependenciesException(activeConnector.getName(), SsgActiveConnector.class, activeConnector.getClass(), "Unknown active connector type: " + activeConnector.getType());
+            dependencies.addAll(CollectionUtils.subtract(processor.findDependencies(activeConnector, finder), dependencies));
         }
         return dependencies;
     }
@@ -51,12 +49,10 @@ public class SsgActiveConnectorDependencyProcessor extends DefaultDependencyProc
         super.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
 
         //delegate to the custom dependency processor for the SsgActiveConnector type.
-        final DependencyProcessor processor = processorRegistry.get(activeConnector.getType());
+        final DependencyProcessor<SsgActiveConnector> processor = processorRegistry.get(activeConnector.getType());
         if (processor != null) {
             //noinspection unchecked
             processor.replaceDependencies(activeConnector, replacementMap, finder, replaceAssertionsDependencies);
-        } else {
-            throw new CannotReplaceDependenciesException(activeConnector.getName(), activeConnector.getId(), EntityType.SSG_ACTIVE_CONNECTOR.getEntityClass(), activeConnector.getClass(), "Unknown active connector type: " + activeConnector.getType());
         }
     }
 }

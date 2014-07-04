@@ -3,7 +3,6 @@ package com.l7tech.server.search.processors;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityCrud;
-import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.CollectionUtils;
@@ -32,7 +31,7 @@ public class DefaultDependencyProcessorReplacementTest {
     DefaultDependencyProcessor processor = new DefaultDependencyProcessor();
 
     @Spy
-    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.ANY, processor).map()));
+    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, InternalDependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.ANY, processor).map()));
 
     @Test
     public void testReplaceDependenciesFromGoid() throws FindException, CannotRetrieveDependenciesException, CannotReplaceDependenciesException {

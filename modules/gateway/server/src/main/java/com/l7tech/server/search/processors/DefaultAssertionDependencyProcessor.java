@@ -195,7 +195,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                 .build();
         final EntityHeader[] entitiesUsed = entitiesResolver.getEntitiesUsed(assertion);
         for (final EntityHeader entityUsed : entitiesUsed) {
-            final EntityHeader newEntity = findMappedHeader(replacementMap, entityUsed);
+            final EntityHeader newEntity = DependencyProcessorUtils.findMappedHeader(replacementMap, entityUsed);
             if (newEntity != null) {
                 entitiesResolver.replaceEntity(assertion, entityUsed, newEntity);
             }
@@ -213,7 +213,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                 });
                 if (found != null) {
                     final GlobalResourceInfo newResourceInfo = new GlobalResourceInfo();
-                    final EntityHeader replace = findMappedHeader(replacementMap, found);
+                    final EntityHeader replace = DependencyProcessorUtils.findMappedHeader(replacementMap, found);
                     if (replace instanceof ResourceEntryHeader) {
                         newResourceInfo.setId(((ResourceEntryHeader) replace).getUri());
                         ((UsesResourceInfo) assertion).setResourceInfo(newResourceInfo);
@@ -226,7 +226,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
             final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
             if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
                 final SsgKeyHeader privateKeyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
-                EntityHeader mappedHeader = findMappedHeader(replacementMap, privateKeyHeader);
+                EntityHeader mappedHeader = DependencyProcessorUtils.findMappedHeader(replacementMap, privateKeyHeader);
                 if(mappedHeader != null) {
                     if(!(mappedHeader instanceof SsgKeyHeader)){
                         throw new CannotReplaceDependenciesException(assertion.getClass(), "Attempting to replace ssg key but mapped header in not an SsgKeyHeader.");

@@ -1,10 +1,9 @@
-package com.l7tech.server.search;
+package com.l7tech.server.search.processors;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.search.Dependency;
-import com.l7tech.server.search.processors.DependencyProcessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -17,14 +16,14 @@ import java.util.Map;
 public class DependencyProcessorStore {
 
     //The processors map
-    private Map<Dependency.DependencyType, DependencyProcessor> processors;
+    private Map<Dependency.DependencyType, InternalDependencyProcessor> processors;
 
     /**
      * Creates a new dependency processor store with the given dependency processors.
      *
      * @param processors The dependency processors that this store has.
      */
-    public DependencyProcessorStore(@NotNull final Map<Dependency.DependencyType, DependencyProcessor> processors) {
+    public DependencyProcessorStore(@NotNull final Map<Dependency.DependencyType, InternalDependencyProcessor> processors) {
         this.processors = processors;
         //validates that the default processor is present in the processor map. This is required.
         if (!processors.containsKey(Dependency.DependencyType.ANY) || processors.get(Dependency.DependencyType.ANY) == null) {
@@ -42,8 +41,8 @@ public class DependencyProcessorStore {
      * DependencyProcessor is returned.
      */
     @NotNull
-    public DependencyProcessor getProcessor(@NotNull final Dependency.DependencyType type) {
-        DependencyProcessor processor = processors.get(type);
+    InternalDependencyProcessor getProcessor(@NotNull final Dependency.DependencyType type) {
+        InternalDependencyProcessor processor = processors.get(type);
         return processor != null ? processor : processors.get(Dependency.DependencyType.ANY);
     }
 
@@ -56,7 +55,7 @@ public class DependencyProcessorStore {
      * DependencyProcessor is returned.
      */
     @NotNull
-    public DependencyProcessor getProcessor(@NotNull final Object object) {
+    InternalDependencyProcessor getProcessor(@NotNull final Object object) {
         return getProcessor(getTypeFromObject(object));
     }
 

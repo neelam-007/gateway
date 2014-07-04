@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  * also be annotated with  {@link com.l7tech.search.Dependency} or {@link com.l7tech.search.Dependencies} in order to
  * find dependencies in other ways or to exclude methods.
  */
-public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
+public class DefaultDependencyProcessor<O> implements InternalDependencyProcessor<O> {
     protected static final Logger logger = Logger.getLogger(DefaultDependencyProcessor.class.getName());
 
     @Inject
@@ -349,7 +349,7 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                                 if (dependentObject instanceof DependentEntity) {
                                     final DependentEntity dependentEntity = (DependentEntity) dependentObject;
                                     //replace the dependent entity with one that is in the replacement map
-                                    final EntityHeader header = findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
+                                    final EntityHeader header = DependencyProcessorUtils.findMappedHeader(replacementMap, dependentEntity.getEntityHeader());
                                     if (header != null) {
                                         setDependencyForMethod(object, method, annotation, header, dependentEntity.getEntityHeader());
                                     }
@@ -362,7 +362,7 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
                         @Override
                         public void process(@NotNull final UsesPrivateKeys usesPrivateKeys, @NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, CannotReplaceDependenciesException {
                             //replace private key dependencies
-                            final EntityHeader mappedHeader = findMappedHeader(replacementMap, ssgKeyHeader);
+                            final EntityHeader mappedHeader = DependencyProcessorUtils.findMappedHeader(replacementMap, ssgKeyHeader);
                             if (mappedHeader != null) {
                                 if(!(mappedHeader instanceof SsgKeyHeader)){
                                     throw new CannotReplaceDependenciesException(usesPrivateKeys.getClass(), "Attempting to replace ssg key but mapped header in not an SsgKeyHeader.");
@@ -475,62 +475,6 @@ public class DefaultDependencyProcessor<O> extends BaseDependencyProcessor<O> {
          * @throws T
          */
         void process(UsesPrivateKeys usesPrivateKeys, @NotNull SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, T;
-    }
-
-    /**
-     * This will find a mapped header in the given headers map it will first check by id, then by guid, then by name
-     *
-     * @param replacementMap  The map to search for a mapped header
-     * @param dependentHeader The depended entity header to find a mapping for
-     * @return The mapped entity header, or null if it cant find one.
-     */
-    @Nullable
-    protected static EntityHeader findMappedHeader(@NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final EntityHeader dependentHeader) {
-        //try to find normally
-        final EntityHeader header = replacementMap.get(dependentHeader);
-        if (header != null) {
-            return header;
-        }
-        // check by ID
-        final EntityHeader idHeaderKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
-            @Override
-            public Boolean call(@NotNull final EntityHeader entityHeader) {
-                return entityHeader.getType().equals(dependentHeader.getType())
-                        && entityHeader.getGoid().equals(dependentHeader.getGoid());
-            }
-        });
-        if (idHeaderKey != null) {
-            return replacementMap.get(idHeaderKey);
-        }
-
-        // check by GUID
-        if (dependentHeader instanceof GuidEntityHeader) {
-            final EntityHeader guidHeaderKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
-                @Override
-                public Boolean call(@NotNull final EntityHeader entityHeader) {
-                    return entityHeader instanceof GuidEntityHeader && entityHeader.getType().equals(dependentHeader.getType())
-                            && StringUtils.equals(((GuidEntityHeader) entityHeader).getGuid(), ((GuidEntityHeader) dependentHeader).getGuid());
-                }
-            });
-            if (guidHeaderKey != null) {
-                return replacementMap.get(guidHeaderKey);
-            }
-        }
-
-        //check by name
-        if (dependentHeader.getName() != null) {
-            final EntityHeader nameHeaderKey = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
-                @Override
-                public Boolean call(@NotNull final EntityHeader entityHeader) {
-                    return entityHeader.getType().equals(dependentHeader.getType())
-                            && StringUtils.equals(entityHeader.getName(), dependentHeader.getName());
-                }
-            });
-            if (nameHeaderKey != null) {
-                return replacementMap.get(nameHeaderKey);
-            }
-        }
-        return null;
     }
 
     /**

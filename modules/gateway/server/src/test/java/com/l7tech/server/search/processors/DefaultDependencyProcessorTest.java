@@ -6,7 +6,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
-import com.l7tech.server.search.DependencyProcessorStore;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -48,7 +47,7 @@ public class DefaultDependencyProcessorTest {
     DefaultDependencyProcessor processor = new DefaultDependencyProcessor();
 
     @Spy
-    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, DependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.ANY, processor).map()));
+    private DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String,Object>emptyMap(), new DependencyProcessorStore(CollectionUtils.MapBuilder.<com.l7tech.search.Dependency.DependencyType, InternalDependencyProcessor>builder().put(com.l7tech.search.Dependency.DependencyType.ANY, processor).map()));
 
     @Test
     public void testCreateDependentObjectFromPolicy() {

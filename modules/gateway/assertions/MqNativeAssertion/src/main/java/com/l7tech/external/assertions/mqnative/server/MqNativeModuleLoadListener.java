@@ -7,7 +7,10 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
 import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -19,8 +22,8 @@ import com.l7tech.server.search.DependencyProcessorRegistry;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.processors.BaseDependencyProcessor;
 import com.l7tech.server.search.processors.DependencyFinder;
+import com.l7tech.server.search.processors.DependencyProcessor;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
@@ -51,7 +54,7 @@ public class MqNativeModuleLoadListener {
     private static PolicyExporterImporterManager policyExporterImporterManager;
     private static MqNativeExternalReferenceFactory externalReferenceFactory;
 
-    private static DependencyProcessorRegistry processorRegistry;
+    private static DependencyProcessorRegistry<SsgActiveConnector> processorRegistry;
 
     /**
      * This is a complete list of cluster-wide properties used by the MQNative module.
@@ -168,10 +171,10 @@ public class MqNativeModuleLoadListener {
                 logger.log(Level.WARNING, "MQ Native active connector module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
 
-            // Get the ssg connector dependency processor map to add the mq connector dependency processor
+            // Get the ssg connector dependency processor registry to add the mq connector dependency processor
             //noinspection unchecked
             processorRegistry = context.getBean( "ssgActiveConnectorDependencyProcessorRegistry", DependencyProcessorRegistry.class );
-            processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, new BaseDependencyProcessor<SsgActiveConnector>() {
+            processorRegistry.register(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE, new DependencyProcessor<SsgActiveConnector>() {
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
