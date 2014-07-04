@@ -18,6 +18,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -25,6 +26,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -126,6 +128,15 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             }
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
+
+            // audit errors if any
+            if(!CollectionUtils.list(200, 201, 204).contains(managementResponse.getStatus())){
+                ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
+                String responseBody = bout.toString("UTF-8");
+                getAudit().logAndAudit(AssertionMessages.GATEWAYMANAGEMENT_ERROR, responseBody);
+            }
+
             return AssertionStatus.NONE;
         } catch (Exception e) {
             handleError(e);
