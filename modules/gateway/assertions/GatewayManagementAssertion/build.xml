@@ -54,7 +54,7 @@
 
         <xslt
             in="${basedir}/build/etc/wsdl/resources.xml"
-            out="${basedir}/build/etc/wsdl/gateway-management-8_0.wsdl"
+            out="${basedir}/build/etc/wsdl/gateway-management-8_2_00.wsdl"
             style="${src.test.res.dir}/com/l7tech/external/assertions/gatewaymanagement/server/gateway-management-wsdl.xsl"
             />
 

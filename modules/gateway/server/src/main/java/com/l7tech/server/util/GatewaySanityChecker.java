@@ -70,7 +70,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                     "com.l7tech.server.upgrade.Upgrade71To80SinkConfig",
                     "com.l7tech.server.upgrade.Upgrade71To80IdReferences",
                     "com.l7tech.server.upgrade.Upgrade71To80IdProviderReferences",
-                    "com.l7tech.server.upgrade.Upgrade71to80UpdateGatewayManagementWsdl") )
+                    "com.l7tech.server.upgrade.Upgrade71to80UpdateGatewayManagementWsdl",
+                    "com.l7tech.server.upgrade.Upgrade8102to8200UpdateGatewayManagementWsdl") )
             .put(Starting.class, set(
                     "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions" ))
             .put(Started.class, set(

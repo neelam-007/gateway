@@ -29,7 +29,8 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 --
 INSERT INTO cluster_properties
     (goid, version, propkey, propvalue, properties)
-    VALUES (toGoid(0,-800200),0,'upgrade.task.800200','com.l7tech.server.upgrade.Upgrade8102To8200UpdateRoles',null);
+    VALUES (toGoid(0,-800200),0,'upgrade.task.800200','com.l7tech.server.upgrade.Upgrade8102To8200UpdateRoles',null),
+           (toGoid(0,-800201),0, 'upgrade.task.800201', 'com.l7tech.server.upgrade.Upgrade8102to8200UpdateGatewayManagementWsdl', null);
 
 --
 -- Reenable FK at very end of script
