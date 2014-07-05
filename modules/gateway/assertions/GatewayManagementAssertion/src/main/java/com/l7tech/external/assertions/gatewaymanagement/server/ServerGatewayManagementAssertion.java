@@ -22,6 +22,7 @@ import com.sun.ws.management.InternalErrorFault;
 import com.sun.ws.management.Management;
 import com.sun.ws.management.SchemaValidationErrorFault;
 import com.sun.ws.management.addressing.Addressing;
+import com.sun.ws.management.enumeration.InvalidEnumerationContextFault;
 import com.sun.ws.management.identify.Identify;
 import com.sun.ws.management.server.HandlerContext;
 import com.sun.ws.management.server.HandlerContextImpl;
@@ -279,7 +280,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             setVariables( context, handlerContext.getRequestProperties() );
 
             processingResponse = true;
-            sendResponse(soapResponse, response);
+            sendResponse(soapResponse, response, handlerContext.getRequestProperties() );
             context.setRoutingStatus( RoutingStatus.ROUTED);
         } catch ( IOException e ) {
             if ( !processingResponse ) throw e;
@@ -351,7 +352,8 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     }
 
     private static void sendResponse( final SOAP soapResponse,
-                                      final Message response )
+                                      final Message response,
+                                      final Map<String,?> properties  )
             throws SOAPException, JAXBException, IOException {
 
         if ( soapResponse instanceof Identify ) {
@@ -359,12 +361,13 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             soapResponse.writeTo( os );
             response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, os.toByteArray() );
         } else {
-            sendManagementResponse( (Management) soapResponse, response );
+            sendManagementResponse( (Management) soapResponse, response, properties );
         }
     }
 
     private static void sendManagementResponse( final Management managementResponse,
-                                                final Message response )
+                                                final Message response,
+                                                final Map<String,?> properties  )
             throws SOAPException, JAXBException, IOException {
         final HttpResponseKnob httpResponseKnob = response.getHttpResponseKnob();
 
@@ -373,7 +376,13 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             if ( SOAP.SENDER.equals(managementResponse.getBody().getFault().getFaultCodeAsQName())) {
                 httpResponseKnob.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             } else {
-                httpResponseKnob.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                Object exception = properties.get("com.l7tech.status.exception");
+                if(exception instanceof InvalidEnumerationContextFault){
+                    // invalid enumeration context is a sender fault
+                    httpResponseKnob.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                }else {
+                    httpResponseKnob.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                }
             }
         }
 
