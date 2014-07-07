@@ -189,14 +189,8 @@ public class WorkSpacePanel extends JPanel {
                 // Maybe the opened service/policy has a few other versions that have been added into the policy editor panel,
                 // so other tabs should keep their versions number unchanged and update active status as inactive.
                 if (jc instanceof PolicyEditorPanel) {
-                    try {
-                        final boolean currentActiveStatus = ((PolicyEditorPanel) jc).getPolicyNode().getPolicy().isVersionActive();
-                        updateTabs(false, currentActiveStatus);
-                    } catch (FindException e) {
-                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                            "Cannot find the policy for the policy editor panel, '" + ((PolicyEditorPanel) jc).getDisplayName() + "'.",
-                            "Open Policy Tab Error", JOptionPane.ERROR_MESSAGE, null);
-                    }
+                    final boolean currentActiveStatus = ((PolicyEditorPanel) jc).isVersionActive();  // This method will load overrideVersionActive value first.
+                    updateTabs(false, currentActiveStatus);
                 }
             }
         });
