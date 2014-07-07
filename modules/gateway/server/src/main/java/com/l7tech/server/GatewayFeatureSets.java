@@ -341,7 +341,8 @@ public class GatewayFeatureSets {
             "Everything that used to be enabled by the catchall Feature.ADMIN plus enterprise management",
             admin,
             ems,
-            mass("assertion:GatewayManagement"));
+            mass("assertion:GatewayManagement"),
+            mass("assertion:RESTGatewayManagement"));
 
         GatewayFeatureSet uiAccel =
         fsr("set:UI:Accel", "SecureSpan Accelerator UI features",

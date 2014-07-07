@@ -36,7 +36,7 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
         meta.put(PROPERTIES_ACTION_NAME, "REST Gateway Management Properties");
         meta.put(PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        meta.put(FEATURE_SET_NAME, "set:modularAssertions");      // todo  new feature set
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.gatewaymanagement.server.GatewayManagementModuleLifecycle");
         meta.put(POLICY_VALIDATOR_CLASSNAME, RESTGatewayManagementAssertion.Validator.class.getName());
         meta.put(IS_ROUTING_ASSERTION, Boolean.TRUE);
