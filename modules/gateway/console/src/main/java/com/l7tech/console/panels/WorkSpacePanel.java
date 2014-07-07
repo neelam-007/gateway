@@ -1333,15 +1333,14 @@ public class WorkSpacePanel extends JPanel {
 
     /**
      * Close all tabs (each tab title has a different policy version) associated with a same policy node.
-     * @param policyNode: the policy node to find all related tabs.
+     * @param policyGoid: the policy node's policy GOID, which is used to match other policy versions
      */
-    public void closeTabsRelatedToPolicyNode(EntityWithPolicyNode policyNode) {
+    public void closeTabsRelatedToPolicyNode(Goid policyGoid) {
         java.util.List<Component> matchedComponents = new ArrayList<>();
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             final Component component = tabbedPane.getComponentAt(i);
             if (component instanceof PolicyEditorPanel) {
-                EntityWithPolicyNode node = ((PolicyEditorPanel) component).getPolicyNode();
-                if (policyNode == node) {
+                if (Goid.equals(policyGoid, ((PolicyEditorPanel) component).getPolicyGoid())) {
                     matchedComponents.add(component);
                 }
             }

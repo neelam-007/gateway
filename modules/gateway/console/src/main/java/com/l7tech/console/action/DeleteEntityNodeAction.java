@@ -82,7 +82,7 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         StringBuilder sb = new StringBuilder("Are you sure you want to delete the '").append(node.getName()).append("' ").append(nodeEntityType).append("?");
         if (sb.length() <= LINE_CHAR_LIMIT) return sb.toString();
 
-        sb = new StringBuilder("Are you sure you want to delete the " + nodeEntityType + ", ").append("'" + node.getName() + "'").append("?");
+        sb = new StringBuilder("Are you sure you want to delete the " + nodeEntityType + ", ").append("'").append(node.getName()).append("'").append("?");
         return WordUtils.wrap(sb.toString(), LINE_CHAR_LIMIT, null, true);
     }
 
@@ -113,7 +113,7 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
         if(node instanceof ServiceNode && !(node instanceof ServiceNodeAlias)){
             final ServiceNode serviceNode = (ServiceNode) node;            
             //if confirmation is enabled, it means that it's a single delete, so we should check if UDDI has data
-            final Set<Goid> serviceGoidSet = new HashSet<Goid>();
+            final Set<Goid> serviceGoidSet = new HashSet<>();
             try {
                 serviceGoidSet.add(serviceNode.getEntity().getGoid());
                 final Collection<ServiceHeader> headers = Registry.getDefault().getUDDIRegistryAdmin().getServicesPublishedToUDDI(serviceGoidSet);
@@ -191,21 +191,23 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
             rootNode.removeAlias(oldServiceGoid, node);
         }
 
+        final Goid policyGoid;
+        try {
+            policyGoid = entityNode.getPolicy().getGoid();
+        } catch (FindException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Cannot find the policy, '" + entityNode.getName() + "'.",
+                "Delete Policy Tab Settings Error", JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
         // Delete policy tab settings from all policy tab properties, The entity node is used to retrieve the policy GOID.
         // So any policy tabs whose policy version has the policy GOID would be candidates.
         if (this instanceof DeletePolicyAction || this instanceof DeleteServiceAction) {
-            try {
-                final Goid policyGoid = entityNode.getPolicy().getGoid();
-                creg.getCurrentWorkspace().deletePolicyTabSettingsByPolicyGoid(policyGoid);
-            } catch (FindException e) {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "Cannot find the policy, '" + entityNode.getName() + "'.",
-                    "Delete Policy Tab Settings Error", JOptionPane.WARNING_MESSAGE, null);
-                return;
-            }
+            creg.getCurrentWorkspace().deletePolicyTabSettingsByPolicyGoid(policyGoid);
         }
 
         // Close all tabs related to the deleted entity node.
-        creg.getCurrentWorkspace().closeTabsRelatedToPolicyNode(entityNode);
+        creg.getCurrentWorkspace().closeTabsRelatedToPolicyNode(policyGoid);
     }
 }
