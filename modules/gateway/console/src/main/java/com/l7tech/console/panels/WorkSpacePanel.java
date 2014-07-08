@@ -157,6 +157,9 @@ public class WorkSpacePanel extends JPanel {
             tabbedPane.addTab(null, jc);
         }
 
+        // Update the list of the last opened policies
+        saveLastOpenedPolicyTabs();
+
         final int index = tabbedPane.indexOfComponent(jc);
         final TabTitleComponentPanel newTabCompPanel = new TabTitleComponentPanel(jc);
         tabbedPane.setTabComponentAt(index, newTabCompPanel); // Add a table title render object
@@ -397,7 +400,7 @@ public class WorkSpacePanel extends JPanel {
      * Save policy goid and policy version number of all last opened policies into the property, "last.opened.policy.tabs".
      * So when the policy manager starts next time, these recorded policies will be loaded into the workspace.
      */
-    private void saveLastOpenedPolicyTabs() {
+    public void saveLastOpenedPolicyTabs() {
         final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
         if (preferences == null) return;
 
@@ -1074,6 +1077,9 @@ public class WorkSpacePanel extends JPanel {
                         final int mouseX = e.getX();
                         if (mouseX >= (tabRectangle.x + tabRectangle.width - closeTabIcon.getIconWidth() - CLOSE_TAB_ICON_RIGHT_GAP_WIDTH)) {
                             doCloseTab(index);
+
+                            // Update the list of the last opened policies
+                            saveLastOpenedPolicyTabs();
                         }
                     }
                 }
@@ -1083,9 +1089,9 @@ public class WorkSpacePanel extends JPanel {
 
                     // Add "Close Tab" Action
                     final JMenuItem closeTab = new JMenuItem("Close Tab");
-                    closeTab.addActionListener(new ActionListener() {
+                    closeTab.addActionListener(new TabMenuActionListener() {
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        protected void performTabAction() {
                             doCloseTab(index);
                         }
                     });
@@ -1093,9 +1099,9 @@ public class WorkSpacePanel extends JPanel {
 
                     // Add "Close Others" Action
                     final JMenuItem closeOthers = new JMenuItem("Close Others");
-                    closeOthers.addActionListener(new ActionListener() {
+                    closeOthers.addActionListener(new TabMenuActionListener() {
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        protected void performTabAction() {
                             doCloseOthers(index);
                         }
                     });
@@ -1104,9 +1110,9 @@ public class WorkSpacePanel extends JPanel {
 
                     // Add "Close All" Action
                     final JMenuItem closeAll = new JMenuItem("Close All");
-                    closeAll.addActionListener(new ActionListener() {
+                    closeAll.addActionListener(new TabMenuActionListener() {
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        protected void performTabAction() {
                             doCloseAll();
                         }
                     });
@@ -1114,9 +1120,9 @@ public class WorkSpacePanel extends JPanel {
 
                     // Add "Close Unmodified" Action
                     final JMenuItem closeUnmodified = new JMenuItem("Close Unmodified");
-                    closeUnmodified.addActionListener(new ActionListener() {
+                    closeUnmodified.addActionListener(new TabMenuActionListener() {
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        protected void performTabAction() {
                             doCloseUnmodified();
                         }
                     });
@@ -1125,9 +1131,9 @@ public class WorkSpacePanel extends JPanel {
 
                     // Add "Reopen Closed Tab" Action
                     final JMenuItem reopenClosedTab = new JMenuItem("Reopen Closed Tab");
-                    reopenClosedTab.addActionListener(new ActionListener() {
+                    reopenClosedTab.addActionListener(new TabMenuActionListener() {
                         @Override
-                        public void actionPerformed(ActionEvent e) {
+                        protected void performTabAction() {
                             doReopenClosedTab();
                         }
                     });
@@ -1149,6 +1155,19 @@ public class WorkSpacePanel extends JPanel {
                     popupMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
             }
+        }
+
+        private abstract class TabMenuActionListener implements ActionListener {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Perform a particular tab action, such as close tab, close all tabs, etc.
+                performTabAction();
+
+                // Update the list of the last opened policies after the tab(s) changed
+                saveLastOpenedPolicyTabs();
+            }
+
+            protected abstract void performTabAction();
         }
 
         public void doCloseTab(int index) {
