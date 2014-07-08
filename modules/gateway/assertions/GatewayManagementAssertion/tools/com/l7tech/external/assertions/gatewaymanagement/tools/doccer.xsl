@@ -6,14 +6,14 @@
     <!-- HTML 5 output -->
     <xsl:output
             method="html"
-            doctype-system="about:legacy-compat"
             encoding="UTF-8"
-            indent="yes"/>
+            indent="yes"
+            omit-xml-declaration="yes"/>
 
     <!-- matches the root application -->
     <xsl:template match="wadl:application">
-        <div>
-            <h1>Resources</h1>
+        <div id="rest-api-docs">
+            <h2>Resources</h2>
             <xsl:call-template name="table-of-contents"/>
             <xsl:apply-templates select="wadl:resources/wadl:resource">
                 <!-- order by the resource name -->
@@ -24,6 +24,7 @@
 
     <xsl:template name="table-of-contents">
         <div class="table-of-contents">
+            <p><strong>Page Contents</strong></p>
             <ul>
                 <xsl:for-each select="wadl:resources/wadl:resource">
                     <!-- order by the resource name -->
@@ -60,18 +61,24 @@
     <!-- This matched root resources -->
     <xsl:template match="wadl:resources/wadl:resource">
         <div class="resource">
-            <h2>
+            <a href="#" class="scrollToTop">Top</a>
+            <a class="anchor">
                 <xsl:attribute name="id">
                     <xsl:value-of select="@path"/>
                 </xsl:attribute>
+                <xsl:value-of select="@path"/>
+            </a>
+            <h3 class="resource-name">
                 <xsl:call-template name="extract-name"/>
-            </h2>
-            <div class="doc">
-                <xsl:apply-templates select="wadl:doc"/>
+            </h3>
+            <div class="resource-content">
+                <div class="doc">
+                    <xsl:apply-templates select="wadl:doc"/>
+                </div>
+                <xsl:apply-templates select="wadl:method|wadl:resource">
+                    <xsl:with-param name="path" select="@path"/>
+                </xsl:apply-templates>
             </div>
-            <xsl:apply-templates select="wadl:method|wadl:resource">
-                <xsl:with-param name="path" select="@path"/>
-            </xsl:apply-templates>
         </div>
     </xsl:template>
 
@@ -101,25 +108,27 @@
                     <xsl:with-param name="path" select="concat(@name, ' ', $path)"/>
                 </xsl:call-template>
             </h3>
-            <div class="doc">
-                <xsl:apply-templates select="wadl:doc"/>
-            </div>
-            <div class="request">
-                <h4>Request</h4>
-                <div class="resource-path">
-                    <xsl:value-of select="concat(@name, ' ', $path)"/>
+            <div class="api-call-content">
+                <div class="doc">
+                    <xsl:apply-templates select="wadl:doc"/>
                 </div>
-                <xsl:apply-templates select="wadl:request">
-                    <xsl:with-param name="path-params" select="$path-params"/>
-                </xsl:apply-templates>
+                <div class="request">
+                    <h5>Request</h5>
+                    <div class="resource-path">
+                        <xsl:value-of select="concat(@name, ' ', $path)"/>
+                    </div>
+                    <xsl:apply-templates select="wadl:request">
+                        <xsl:with-param name="path-params" select="$path-params"/>
+                    </xsl:apply-templates>
+                </div>
+                <xsl:if test="wadl:response">
+                    <xsl:apply-templates select="wadl:response"/>
+                </xsl:if>
+                <xsl:if test="not(wadl:response)">
+                    <h5>Response</h5>
+                    <div>No Response Body</div>
+                </xsl:if>
             </div>
-            <xsl:if test="wadl:response">
-                <xsl:apply-templates select="wadl:response"/>
-            </xsl:if>
-            <xsl:if test="not(wadl:response)">
-                <h4>Response</h4>
-                <div>No Response Body</div>
-            </xsl:if>
         </div>
     </xsl:template>
 
@@ -159,15 +168,21 @@
     </xsl:template>
 
     <xsl:template match="wadl:representation">
-        <h5>Body</h5>
+        <h6>Body</h6>
         <xsl:if test="@element">
             <div>
-                <span>Element:</span>
+                <span class="body-info">Element: </span>
                 <xsl:apply-templates select="@element"/>
             </div>
         </xsl:if>
-        <xsl:if test="wadl:doc">
+        <xsl:if test="@mediaType">
             <div>
+                <span class="body-info">Content-Type: </span>
+                <xsl:apply-templates select="@mediaType"/>
+            </div>
+        </xsl:if>
+        <xsl:if test="wadl:doc">
+            <div class="body-doc">
                 <xsl:apply-templates select="wadl:doc"/>
             </div>
         </xsl:if>
@@ -200,9 +215,9 @@
     </xsl:template>
 
     <xsl:template match="wadl:response">
-        <h4>Response</h4>
+        <h5>Response</h5>
         <xsl:apply-templates select="wadl:representation"/>
-        <div>
+        <div class="response-doc">
             <xsl:apply-templates select="wadl:doc"/>
         </div>
     </xsl:template>

@@ -1,8 +1,8 @@
 <div>
-    <h1>Migration</h1>
+    <h2>Migration</h2>
     <p>The migration API's allow you to move folders, services and policies from one gateway to another. This will include all their dependent resources.</p>
     <p>The migration workflow generally involves exporting a bundle from a source gateway. Mapping any entities that need to be mapped. Importing the bundle into the target gateway.</p>
-    <h2>How to export a bundle</h2>
+    <h3>How to export a bundle</h3>
     <p>To export a bundle send the following request.</p>
     <table border="1" cellpadding="0" cellspacing="0" width="100%">
         <caption>Bundle Export Example</caption>
@@ -57,7 +57,7 @@
     <p>For example:</p>
     <p class="code">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=888&service=123&service=567</p>
     <p>The above URI will bundle folder with id 888, and services with id 123 and 456.</p>
-    <h2>How to import a bundle</h2>
+    <h3>How to import a bundle</h3>
     <p>To import a bundle PUT the same bundle XML to https://$#{host}:$#{port}/$#{service-url}/1.0/bundle url</p>
     <table border="1" cellpadding="0" cellspacing="0" width="100%">
         <caption>Import Bundle Example</caption>
@@ -124,8 +124,8 @@
         </tbody>
     </table>
     <p>The response will be a list of mappings describing the actions that were performed during the bundle import. If bundle import failed for any reason then the mappings will describe what the errors were.</p>
-    <h2>Mapping</h2>
-    <h3>Mapping Attributes</h3>
+    <h3>Mapping</h3>
+    <h4>Mapping Attributes</h4>
     <p>The mapping section in the bundle tells the bundle imported how to import the entities listed in the resource section. When a bundle is exported default mappings are created. A mapping have the following attributes:</p>
     <table>
         <tr><td>type</td><td>This is the type of entity being mapped</td></tr>
@@ -166,8 +166,8 @@
             </td>
         </tr>
     </table>
-    <h3>Simple Mapping Examples</h3>
-    <h4>NewOrExisting</h4>
+    <h4>Simple Mapping Examples</h4>
+    <h5>NewOrExisting</h5>
     <p>This will create a new entity or reuse an existing one.</p>
     <div class="code">
         <pre>
@@ -179,7 +179,7 @@
     action=&quot;NewOrExisting&quot; /&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same ID exists on the target gateway this will not do anything and use the existing entity.</p>
     <div class="code">
         <pre>
@@ -213,7 +213,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
-    <h4>NewOrUpdate</h4>
+    <h5>NewOrUpdate</h5>
     <p>This will create a new entity or update an existing one.</p>
     <div class="code">
         <pre>
@@ -225,7 +225,7 @@
     action=&quot;NewOrUpdate&quot; /&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same ID exists on the target gateway this will update the entity using the entity in the import bundle.</p>
     <div class="code">
         <pre>
@@ -259,7 +259,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
-    <h4>AlwaysCreateNew</h4>
+    <h5>AlwaysCreateNew</h5>
     <p>This will create a new entity.</p>
     <div class="code">
         <pre>
@@ -271,7 +271,7 @@
     action=&quot;AlwaysCreateNew&quot; /&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same ID exists on the target gateway this will create a new entity on the target gateway with a new id.</p>
     <div class="code">
         <pre>
@@ -305,7 +305,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
-    <h4>Ignore</h4>
+    <h5>Ignore</h5>
     <p>This will ignore the entity. No attempt will be made to import the entity.</p>
     <div class="code">
         <pre>
@@ -317,7 +317,7 @@
     action=&quot;Ignore&quot; /&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>There is only one possible response</p>
     <div class="code">
         <pre>
@@ -328,7 +328,7 @@
     actionTaken=&quot;Ignored&quot; /&gt;
         </pre>
     </div>
-    <h3>Mapping Properties</h3>
+    <h4>Mapping Properties</h4>
     <p>A mapping can also have properties specified. Properties are specified as a key value map. The currently supported properties are:</p>
     <table>
         <tr><td>FailOnExisting</td><td>This is a boolean property that can be applied to any mapping type. If true it will fail with a 409 if an entity with the same id exists on the target. The possible values are 'true' or 'false'. If this is not specified false is assumed. Example Failure response:
@@ -352,8 +352,8 @@
         <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name'. If this is not specified mapping is done by the id.</td></tr>
         <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapTo property.</td></tr>
     </table>
-    <h3>Complex Mapping Examples</h3>
-    <h4>Mapping by Name</h4>
+    <h4>Complex Mapping Examples</h4>
+    <h5>Mapping by Name</h5>
     <p>Map a service to a service on the target gateway with the same name.</p>
     <div class="code">
         <pre>
@@ -367,7 +367,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same Name DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
     <div class="code">
         <pre>
@@ -401,7 +401,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <h4>Mapping by Name to a Specific Entity</h4>
+    <h5>Mapping by Name to a Specific Entity</h5>
     <p>Map a service to a service on the target gateway with a specific name.</p>
     <div class="code">
         <pre>
@@ -416,7 +416,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the target name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
@@ -450,7 +450,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <h4>Mapping by ID where Entity Must Exist on the Target</h4>
+    <h5>Mapping by ID where Entity Must Exist on the Target</h5>
     <p>Map a service to a service on the target gateway. The service must exist on the target gateway.</p>
     <div class="code">
         <pre>
@@ -464,7 +464,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same ID DOES NOT exist on the target gateway this will fail).</p>
     <div class="code">
         <pre>
@@ -487,7 +487,7 @@
         </pre>
     </div>
 
-    <h4>Mapping by Name to Specific Entity Do Not Fail on ID Clash </h4>
+    <h5>Mapping by Name to Specific Entity Do Not Fail on ID Clash </h5>
     <p>Map a service to a service on the target gateway with a specific name. Do not fail if a service with the same id exists on the target gateway.</p>
     <div class="code">
         <pre>
@@ -502,7 +502,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <h5>Possible Responses</h5>
+    <h6>Possible Responses</h6>
     <p>If an entity with the same Name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
@@ -536,6 +536,6 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
-    <h2>Example Bundle Migration</h2>
+    <h3>Example Bundle Migration</h3>
     <p>TODO!!!</p>
 </div>

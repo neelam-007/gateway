@@ -1,0 +1,80 @@
+#rest-api-docs {
+
+}
+
+#rest-api-docs .table-of-contents {
+    padding: 0;
+}
+#rest-api-docs .table-of-contents ul {
+    list-style: disc outside none;
+    margin-left: 0;
+}
+#rest-api-docs .table-of-contents ul li {
+    margin-bottom: 0;
+}
+
+#rest-api-docs .resource-content {
+    padding-left: 20px;
+}
+
+#rest-api-docs .resource-name {
+}
+#rest-api-docs .scrollToTop {
+    float: right;
+    text-decoration: underline;
+    margin-top: 40px;
+}
+
+/* API Call */
+#rest-api-docs .api-call .call-title {
+    font-style: italic;
+    border-bottom: solid #808080 1px;
+}
+#rest-api-docs .api-call .api-call-content {
+    padding-left: 20px;
+}
+#rest-api-docs .api-call .request .resource-path {
+    border: solid #808080 1px;
+    background-color: #d9deff;
+    padding: 3px 5px;
+}
+
+/* API Call Request Parameters Table*/
+#rest-api-docs .api-call .request table.params-table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 15px 0 0 0;
+    width:100%;
+}
+#rest-api-docs .api-call .request .params-table tr th, .api-call .request .params-table tr td {
+    border: solid lightgrey 1px;
+}
+.api-call .request .params-table tr td {
+    font-size: small;
+}
+#rest-api-docs .api-call .request .params-table caption {
+    text-align: left;
+    font-weight: bold;
+    color: #666666;
+}
+#rest-api-docs .api-call .request .params-table tr th {
+    background-color: lightgreen;
+}
+#rest-api-docs .api-call .request .params-table td.params-type-title {
+    font-weight: bold;
+    background-color: lightgrey;
+}
+#rest-api-docs .api-call .request .params-table ul.param-choice-list
+{
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+#rest-api-docs .api-call .body-info {
+    font-weight: bold;
+    color: darkgreen;
+}
+#rest-api-docs .api-call .body-doc, #rest-api-docs .api-call .response-doc {
+    padding-top: 15px;
+}

@@ -8,6 +8,20 @@ body {
     font-size: 67%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'CA Sans Web',Verdana,Geneva,'DejaVu Sans',sans-serif;
+}
+
+a {
+    color: #006daf;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+a.anchor{display: block; position: relative; top: -113px; visibility: hidden;}
+
+
 #top-container {
     width: 100%;
     background: none repeat scroll 0 0 #F8F8F8;
@@ -71,16 +85,24 @@ body {
 
 /* menu */
 #content-menu {
-    min-height: 734px;
+    min-height: 100px;
     width: 280px;
     float: left;
+    position: fixed;
+    top: 150px;
+    bottom: 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 #content-menu .menu-wrapper {
     background: none repeat scroll 0 0 #E0E0E0;
     border-radius: 5px;
+    height: 100%;
+}
+
+#content-menu .menu-wrapper .menu {
     padding: 1em 0;
-    min-height: 699px;
 }
 
 #content-menu .menu-wrapper ul{
@@ -110,52 +132,15 @@ body {
 /* body */
 #content-body h1 {
     color: #14AA13;
-    font-size: 2em;
+    font-size: 1.3em;
     font-weight: normal;
     letter-spacing: -0.03em;
     line-height: 38px;
     margin: 0;
 }
 
-
-.api-call .call-title {
-    border-bottom: solid #808080 1px;
-}
-
-.api-call .request .resource-path {
-    border: solid #808080 1px;
-    background-color: #d9deff;
-    padding: 3px 5px;
-}
-.api-call .request table.params-table {
-    border-collapse: collapse;
-    border-spacing: 0;
-}
-
-.api-call .request .params-table tr th, .api-call .request .params-table tr td {
-    border: solid lightgrey 1px;
-}
-
-.api-call .request .params-table caption {
-    text-align: left;
-    font-weight: bold;
-    font-size: large;
-}
-
-.api-call .request .params-table tr th {
-    background-color: lightgreen;
-}
-
-.api-call .request .params-table td.params-type-title {
-    font-weight: bold;
-    background-color: lightgrey;
-}
-
-.api-call .request .params-table ul.param-choice-list
-{
-    list-style-type: none;
-    padding: 0px;
-    margin: 0px;
+#content-body {
+    font-size: 1.2em;
 }
 
 /* The print style. Remove the menu and header. */

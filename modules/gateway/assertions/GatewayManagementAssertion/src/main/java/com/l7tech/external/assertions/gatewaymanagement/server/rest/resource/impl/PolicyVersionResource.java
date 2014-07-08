@@ -77,7 +77,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     @SuppressWarnings("unchecked")
     @GET
     @Produces(MediaType.APPLICATION_XML)
-    public ItemsList<PolicyVersionMO> list(
+    public ItemsList<PolicyVersionMO> listVersions(
             @QueryParam("sort") @ChoiceParam({"id", "version"}) final String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) final String order,
             @QueryParam("id") final List<Goid> ids,

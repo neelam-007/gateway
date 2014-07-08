@@ -1,7 +1,11 @@
 <div>
-    <h1>Authentication</h1>
-    <p>In order to access the management API you must be authenticated as a user capable of managing gateway resources.</p>
-    <p>Authentication is handled by the Rest Management API policy. By default it used HTTP Basic authentication.</p>
-    <p>If trying to access resources that you do not have access to you will get 403 access forbidden response. If listing resources only resources you have access to will be returned in the list. This means it is possible to return an empty list of resources but there can actually be resources on the gateway that you do not have access to.</p>
-    <p>Access to the Dependency analysis or Migration API calls require administration access to the gateway.</p>
+    <h2>Authentication</h2>
+    <p>In order to access the Management API, you must be authenticated as a user capable of managing Gateway resources.</p>
+    <p>Authentication is handled by the REST Management API policy. By default, HTTP Basic authentication is used.</p>
+    <p>The Gateway will respond as follows:</p>
+    <ul>
+        <li>When attempting to access resources, you will receive a "403 Access Forbidden" response if you have not been granted access.</li>
+        <li>When listing resources, only the resources to which you have access will be returned. This may result in an empty list or only a partial list of the actual resources available on the Gateway.</li>
+    </ul>
+    <p>Access to the Dependency analysis or Migration API calls require administrator access to the Gateway.</p>
 </div>

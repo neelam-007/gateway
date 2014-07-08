@@ -1,46 +1,47 @@
     <div>
-        <h1>Getting Started</h1>
-        <h2>Making a REST API call</h2>
-        <p>The simplest way to get started is by making an actual API call. For example let’s list all the services you have on the gateway:</p>
+        <h2>Migration API Reference for CA API Gateway</h2>
+        <h3>Making a REST API call</h3>
+        <p>The simplest way to get started is by making an actual API call. For example, to list all the services on your Gateway:</p>
         <p class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/services">https://$#{host}:$#{port}/$#{service-url}/1.0/services</a></p>
-        <p>If you follow the link above you will be making a REST API call to list all the services in the gateway.</p>
-        <h3>The URL</h3>
-        <p>All the available api calls have a similar url format:</p>
-        <p class="code">https://[gateway-host]/[restman-service]/[api-version]/[api-resource]</p>
+        <p>The above link makes a REST API call to list all the services in the Gateway.</p>
+        <h4>The URL</h4>
+        <p>All the available API calls have a similar URL format:</p>
+        <p class="code indent italicize">https://[gateway-host]/[restman-service]/[api-version]/[api-resource]</p>
         <table>
-            <tr><td>gateway-host</td><td>This is the host and port that this gateway can be reached at</td></tr>
-            <tr><td>restman-service</td><td>This is the uri that the rest management service is published to.</td></tr>
-            <tr><td>Api-version</td><td>This is the version of the api that you are accessing. All api calls will require an api version</td></tr>
-            <tr><td>Api-resource</td><td>this is the resource that is being accessed. This can either map to an actual resource available on the gateway, like a policy or JDBCConnection, or it can reference an available service, like the migration service.</td></tr>
+            <tr><td class="italicize">[gateway-host]</td><td>Host and port of the Gateway</td></tr>
+            <tr><td class="italicize">[restman-service]</td><td>Published URI of the REST management service</td></tr>
+            <tr><td class="italicize">[api-version]</td><td>Version of the API that you are accessing; all API calls require an API version</td></tr>
+            <tr><td class="italicize">[api-resource]</td><td>Resource being accessed. This can either map to an actual resource available on the Gateway, like a policy or JDBC Connection, or it can reference an available service, like the migration service</td></tr>
         </table>
-        <h3>The Response</h3>
+        <h4>The Response</h4>
         <p>All API calls will return the results wrapped. The wrapper will be either a l7:List or l7:Item. These are both based on the same underlying object and so they both will have:</p>
         <table>
-            <tr><td>Name</td><td>A nice human readable name of what this contains</td></tr>
-            <tr><td>Id</td><td>The id of the contained object</td></tr>
-            <tr><td>Type</td><td>They type of item that this contains</td></tr>
-            <tr><td>TimeStamp</td><td>The time that this item was created.</td></tr>
-            <tr><td>Link</td><td>0 or more links. These are links related to the containing object</td></tr>
+            <tr><td>Name</td><td>A human readable name describing the contents</td></tr>
+            <tr><td>Id</td><td>ID of the contained object</td></tr>
+            <tr><td>Type</td><td>Type of the item that this contains</td></tr>
+            <tr><td>TimeStamp</td><td>When this item was created</td></tr>
+            <tr><td>Link</td><td>0 or more links relating to the containing object</td></tr>
         </table>
-        <p>The List wrapper will also contain 0 or more Items. These items are the listing results</p>
+        <p>The List wrapper will also contain 0 or more Items. These items are the listing results.</p>
         <p>The Item wrapper will contain a single resource. This resource will be the object that this item wraps.</p>
-        <h2>Setup</h2>
-        <h3>Setup from the Policy Manager</h3>
-        <p>In order to install the Gateway REST Management Service from the Policy Manager follow these steps:</p>
+        <h3>Setting Up</h3>
+        <h4>Set Up from the Policy Manager</h4>
+        <p>To install the Gateway REST Management Service from the Policy Manager:</p>
         <ol>
-            <li>Select Tasks -> Publish Internal Service from the menu</li>
-            <li>In the "Publish Internal Service Wizard” select the “Gateway REST Management Service"</li>
-            <li>Optionally, you can change to routing URI to something other than the default. However, the routing URI should always end with a '/*'</li>
-            <li>Click finish to publish the Gateway REST Management Service. This will create a new service in the root folder called "Gateway REST Management Service"</li>
+            <li>Select <strong>Tasks</strong> -> <strong>Publish Internal Service</strong> from the main menu (on the browser client, from the Manage menu). The Publish Internal Service Wizard appears.</li>
+            <li>Choose "Gateway REST Management Service" from the drop-down list as the service to publish.</li>
+            <li>Optionally, change the routing URI if necessary. Note that the routing URI should always end with a "/*"</li>
+            <li>Click [Finish] to publish the internal service. This will create a new service in the root folder called "Gateway REST Management Service".</li>
         </ol>
-        <h3>Setup Using Auto-Provisioning</h3>
-        <p>The Gateway REST Management service can be installed automatically on a new gateway using the auto-provisioning service.</p>
-        <p>A gateway can automatically install an internal service on startup if it is licensed and there are no other services installed (essentially a new gateway). This is done by providing a file in a folder on the gateway machine specifying the internal service to install. By default running this command on the gateway should set it up</p>
-        <p class="code">touch /opt/SecureSpan/Gateway/node/default/etc/bootstrap/services/restman</p>
-        <h2>Basic Entity Operations</h2>
-        <p>Most of the entities support the same set of similar operations. These include the basic CRUD (Create, Retrieve, Update and Delete) operations, Listing/Searching operations, and retrieving template (example) entities. The general use case for these operations is described below.</p>
-        <h3>Listing and Searching Entities</h3>
-        <p>You can list all entities of a given type by making a GET request to that entity’s URI. For example you can list all Folders on the gateway by making a request to <a>https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a>. This will return a List of Items representing all the folders on the gateway.</p>
+        <h4>Setup Using Auto-Provisioning</h4>
+        <p>The Gateway REST Management service can be installed automatically on a new Gateway using the auto-provisioning service.</p>
+        <p>A Gateway can automatically install an internal service on startup if it is licensed and there are no other services installed (as would be the case for a new Gateway). This is done by providing a file in a folder on the Gateway machine specifying the internal service to install. By default, running this command on the Gateway should set it up:</p>
+        <p class="code indent"><strong>touch /opt/SecureSpan/Gateway/node/default/etc/bootstrap/services/restman</strong></p>
+        <h3>Basic Entity Operations</h3>
+        <p>Most of the entities support the same set of similar operations. These include the basic CRUD (Create, Read, Update and Delete) operations, Listing/Searching operations, and retrieving template (example) entities. The general use case for these operations is described below.</p>
+        <h4>Listing and Searching Entities</h4>
+        <p>You can list all entities of a given type by making a GET request to that entity's URI. For example, to list all Folders on the Gateway, make a request to:</p>
+        <p class="code"><a>https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Listing Example</caption>
             <tbody>
@@ -100,8 +101,12 @@
             </tr>
             </tbody>
         </table>
-        <p>The returned message above shows two folders. The Root Folder, this will always be present in a folder listing. There is also another folder called “My Services”.</p>
-        <p>The listing API call can also be used for searching and sorting entities. For example may entities have a name and in most cases you can find an entity by its name using the listing API call and providing a name parameter. For example you can find the folder called “My Services” using the following api call:</p>
+        <p>The returned message above shows two folders:</p>
+        <ul>
+            <li>Root Node: This is the root folder.</li>
+            <li>My Services</li>
+        </ul>
+        <p>The listing API call can also be used for searching and sorting entities. For example, many entities have a name and in most cases you can find an entity by its name using the listing API call and providing a name parameter. For example, you can find the folder named "My Services" using the following API call:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Listing Example 2</caption>
             <tbody>
@@ -152,8 +157,8 @@
         <p>The returned message is very similar to the one returned when listing all folders however only the folder with the name “My Services” is returned. You can specify multiple search parameters to create more complex searches. For example to list all enabled ssg connectors using protocol ‘HTTP’ or ‘FTP’:    <a>https://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP</a></p>
         <p>Listing results can also be sorted and ordered using ‘sort’ and ‘order’ query parameters. See the &lt;WADL&gt; or the &lt;Resources&gt; to find what you can sort and search by for an entity. For example you can sort all email listener in descending order by their host name:    <a>https://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc</a></p>
         <p>If the returned list does not contain any items than none could be found with the specified search fields or you do not have the correct permissions to view the items. See &lt;Authentication&gt; for more info on authentication and permissions.</p>
-        <h3>Retrieving an Entity</h3>
-        <p>An individual entity can be returned by using its id. For example you can retrieve a secure password with id b0f109679d51ca3d3be3f08a13052f72 by making the following api call:</p>
+        <h4>Retrieving an Entity</h4>
+        <p>An individual entity can be returned by using its ID. For example you can retrieve a secure password with ID b0f109679d51ca3d3be3f08a13052f72 by making the following API call:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Retrieving Example 1</caption>
             <tbody>
@@ -209,7 +214,7 @@
             </tr>
             </tbody>
         </table>
-        <h3>Creating an Entity</h3>
+        <h4>Creating an Entity</h4>
         <p>In order to create an entity you POST the entity description to the entity's uri. All properties that are not in the entity description will be set to null. For example, to create a new folder</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Creating Example 1</caption>
@@ -264,7 +269,7 @@
             </tbody>
         </table>
         <p>An entity can be created with a specific ID by using the PUT http method. See below on how to do that.</p>
-        <h3>Updating an Entity</h3>
+        <h4>Updating an Entity</h4>
         <p>In order to update an entity you PUT the entity description to the entity's uri. All properties that are not in the entity description will be set to null. For example, to update the folder created above and change its name:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Updating Example</caption>
@@ -373,8 +378,8 @@
             </tbody>
         </table>
         <p>Not that when you all updating an entity all properties of that entity need to be in the entity description, even if they do not change. Otherwise they will be set to null.</p>
-        <h3>Deleting an Entity</h3>
-        <p>An entity can be deleted by sending a DELETE request to that entities URI. For example to delete a policy with id b0f109679d51ca3d3be3f08a130531a0 send the following request:</p>
+        <h4>Deleting an Entity</h4>
+        <p>An entity can be deleted by sending a DELETE request to that entities URI. For example to delete a policy with ID b0f109679d51ca3d3be3f08a130531a0 send the following request:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Deleting Example</caption>
             <tbody>
@@ -394,7 +399,7 @@
             </tr>
             </tbody>
         </table>
-        <h3>Retrieving an Entity Template</h3>
+        <h4>Retrieving an Entity Template</h4>
         <p>Most entities have a template uri that allows you to retrieve a template entity object. This can be used to then create a new entity. For example the template for cluster properties can be retrieved like this:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Template Example</caption>
@@ -437,11 +442,11 @@
             </tr>
             </tbody>
         </table>
-        <h2>Other Operations</h2>
-        <h3>Dependency Analysis</h3>
+        <h3>Other Operations</h3>
+        <h4>Dependency Analysis</h4>
         <p>Different entities depend on each other in many different ways. For example a Service can use a secure password, and a JDBC connection through the JDBC connection assertion.</p>
         <p>The dependencies that a service, folder, policy, or encapsulated assertion has can be retrieved by using the dependency analysis sub-resource available on those resources.</p>
-        <p>For example you can get all the dependencies that a service has by making the following api call:</p>
+        <p>For example you can get all the dependencies that a service has by making the following API call:</p>
         <table border="1" cellpadding="0" cellspacing="0" width="100%">
             <caption>Dependency Example</caption>
             <tbody>
@@ -518,7 +523,7 @@
         <p>The Dependency list response lists all the dependencies of an entity. The Reference is the entity that this dependency list is for. This reference contains:</p>
         <table>
             <tr><td>Name</td><td>This is a human readable name for the entity.</td></tr>
-            <tr><td>Id</td><td>The id of the entity</td></tr>
+            <tr><td>Id</td><td>The ID of the entity</td></tr>
             <tr><td>Type</td><td>The type of the entity</td></tr>
             <tr><td>Dependencies</td><td>This is a list of the direct dependencies that this entity has.</td></tr>
             <tr><td>Link</td><td>0 or more links. These are links related to the containing object</td></tr>
@@ -526,11 +531,11 @@
         <p>Following the Reference is a list of dependencies. This is a list of all the dependencies, both direct and indirect, that this reference has. Each dependency contains:</p>
         <table>
             <tr><td>Name</td><td>This is a human readable name for the entity.</td></tr>
-            <tr><td>Id</td><td>The id of the entity</td></tr>
+            <tr><td>Id</td><td>The ID of the entity</td></tr>
             <tr><td>Type</td><td>The type of the entity</td></tr>
             <tr><td>Dependencies</td><td>This is a list of the direct dependencies that this entity has.</td></tr>
             <tr><td>Link</td><td>0 or more links. These are links related to the containing object</td></tr>
         </table>
-        <h3>Migration</h3>
-        <p>The migration resource can be used to migrate folders, services, and policies between gateways. See more information about using the migration resource here: <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html">https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html</a></p>
+        <h4>Migration</h4>
+        <p>The migration resource can be used to migrate folders, services, and policies between Gateways. See more information about using the migration resource here: <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html">https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html</a></p>
     </div>
