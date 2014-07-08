@@ -94,7 +94,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         // and should be ignored (Bug #4569, #10662, SSG-7672)
         PolicyVersion found = findActiveVersionForPolicy(policyGoid);
         final PolicyVersion latest = findLatestRevisionForPolicy(policyGoid);
-        if (found == null) {
+        if (!newEntity && found == null) {
             logger.log(Level.WARNING, "Unable to find active version for policy with goid " + policyGoid);
             found = latest;
         }
