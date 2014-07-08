@@ -304,14 +304,16 @@ public class ServerOdataValidationAssertionTest {
     @Test
     public void doCheckRequest_GivenValidServiceMetadataDocument_AssertionPasses() throws Exception {
         OdataValidationAssertion assertion = new OdataValidationAssertion();
-        assertion.setOdataMetadataSource("fooVar");
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
                         ODATA_JSON,
                         new ByteArrayInputStream(new byte[0])));
 
-        pec.setVariable(assertion.getOdataMetadataSource(), METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories(1)/Products");
 
         ServerOdataValidationAssertion serverAssertion = createServer(assertion);
 

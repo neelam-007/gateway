@@ -27,7 +27,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     public static final String DEFAULT_PREFIX = "odata";
 
     private String odataMetadataSource;
-    private String odataSvcRootURL;
+    private String resourceUrl;
     private String variablePrefix ;
 
     private EnumSet<ProtectionActions> actions = EnumSet.of( ProtectionActions.ALLOW_METADATA );
@@ -95,12 +95,12 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.odataMetadataSource = odataMetadataSource;
     }
 
-    public String getOdataSvcRootURL() {
-        return odataSvcRootURL;
+    public String getResourceUrl() {
+        return resourceUrl;
     }
 
-    public void setOdataSvcRootURL(String odataSvcRootURL) {
-        this.odataSvcRootURL = odataSvcRootURL;
+    public void setResourceUrl(String resourceUrl) {
+        this.resourceUrl = resourceUrl;
     }
 
     public Set<ProtectionActions> getAllActions() {
@@ -136,7 +136,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions(odataMetadataSource, variablePrefix);
+        return super.doGetVariablesUsed().withExpressions(odataMetadataSource, resourceUrl, variablePrefix);
     }
 
     @Override

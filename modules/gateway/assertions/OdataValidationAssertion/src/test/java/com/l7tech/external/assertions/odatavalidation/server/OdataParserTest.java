@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -496,7 +497,7 @@ public class OdataParserTest {
     @Test
     public void testParseRequest_filterExpression() throws Exception {
         String[] expectedParts = {"length", "Name", "eq", "gt", "le", "and", "Price", "10", "30"};
-        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=length(Name) eq 10 and Price gt 10 and Price le 30");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=Namelength() eq 10 and Price gt 10 and Price le 30");
         assertCommonExpression(expectedParts, requestInfo.getFilterExpression());
     }
     @Test
@@ -513,6 +514,14 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$orderby=Rating,Category/Name desc");
         CommonExpression expression = requestInfo.getOrderByExpression();
         assertCommonExpression(expectedParts, expression);
+    }
+
+
+    @Test
+    public void testParserRequestUrl() throws Exception {
+        URL testUrl = new URL("/Suppliers?$filter=not (Address/City eq 'Redmond')");
+        System.out.println(testUrl.getQuery());
+        System.out.println(testUrl.getPath());
     }
 
 

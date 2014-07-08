@@ -8,17 +8,14 @@ import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.util.Pair;
 import org.apache.commons.lang.BooleanUtils;
 
-import javax.rmi.CORBA.Util;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,8 +42,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private JLabel metadataSourceLabel;
     private JButton okButton;
     private JButton cancelButton;
-    private JTextField odataSvcRootURL;
+    private JTextField odataResourcetUrl;
     private JPanel xmlPanel;
+    private JLabel resourceUrlLabel;
     private XMLContainer xmlContainer;
 
 
@@ -75,6 +73,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
         inputValidator = new InputValidator(this,"Something - in property file");
         // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
+        inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourcetUrl, null);
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -113,7 +112,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public void setData(OdataValidationAssertion assertion) {
         // metadataSourceTextField.setText(assertion.getOdataMetadataSource());
-        odataSvcRootURL.setText(assertion.getOdataSvcRootURL());
+        odataResourcetUrl.setText(assertion.getResourceUrl());
         Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.getAllActions();
         metadataCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
         rawValueCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
@@ -138,7 +137,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public OdataValidationAssertion getData(OdataValidationAssertion assertion) throws ValidationException {
         // assertion.setOdataMetadataSource(metadataSourceTextField.getText());
-        assertion.setOdataSvcRootURL(odataSvcRootURL.getText());
+        assertion.setResourceUrl(odataResourcetUrl.getText());
         if ( metadataCheckBox.isSelected() )
             assertion.addAction(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
         if ( rawValueCheckBox.isSelected() )

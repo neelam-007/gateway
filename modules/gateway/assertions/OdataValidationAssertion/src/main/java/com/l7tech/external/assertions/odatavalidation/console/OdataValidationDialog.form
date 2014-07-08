@@ -158,7 +158,7 @@
           <text value="Service Metadata: *"/>
         </properties>
       </component>
-      <component id="55b74" class="javax.swing.JTextField" binding="odataSvcRootURL">
+      <component id="55b74" class="javax.swing.JTextField" binding="odataResourcetUrl">
         <constraints>
           <grid row="1" column="2" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="150" height="-1"/>
@@ -166,7 +166,7 @@
         </constraints>
         <properties/>
       </component>
-      <component id="8b325" class="javax.swing.JLabel">
+      <component id="8b325" class="javax.swing.JLabel" binding="resourceUrlLabel">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
@@ -177,7 +177,10 @@
       <grid id="19411" binding="xmlPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="0" column="2" row-span="1" col-span="3" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="2" row-span="1" col-span="3" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <minimum-size width="-1" height="100"/>
+            <maximum-size width="-1" height="400"/>
+          </grid>
         </constraints>
         <properties/>
         <border type="none"/>
