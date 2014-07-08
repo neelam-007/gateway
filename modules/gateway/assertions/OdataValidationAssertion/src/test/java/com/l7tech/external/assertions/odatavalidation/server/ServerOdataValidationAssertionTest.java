@@ -16,6 +16,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.CollectionUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,6 +30,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -326,6 +329,34 @@ public class ServerOdataValidationAssertionTest {
         checkAuditPresence(false, false);
     }
 
+    @Test
+    public void doCheckRequest_withQuery_AssertionPasses() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setVariablePrefix("o");
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories%281%29/Products?$top=3&$filter=length%28Name%29%20le%205",
+                        ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0])));
+
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories(1)/Products?$top=3&$filter=length(Name) le 5&$skip=2&$orderby=Rating,Category/Name desc&$expand=Category");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.doCheckRequest(pec, pec.getRequest(),assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
+
+        assertTrue(pec.getVariable("o.query.filter") instanceof String[]);
+        assertEquals("3", pec.getVariable("o.query.top"));
+        assertEquals("2", pec.getVariable("o.query.skip"));
+        assertTrue(pec.getVariable("o.query.orderby") instanceof String[]);
+
+        // expect the entry name length violation to be audited
+        checkAuditPresence(false, false);
+    }
+
     /**
      * Given a poorly formed or unsupported Service Metadata Document, the assertion should
      * audit the fact and return FAILED.
@@ -333,7 +364,8 @@ public class ServerOdataValidationAssertionTest {
     @Test
     public void doCheckRequest_GivenBadServiceMetadataDocument_AssertionFails() throws Exception {
         OdataValidationAssertion assertion = new OdataValidationAssertion();
-        assertion.setOdataMetadataSource("fooVar");
+        assertion.setOdataMetadataSource("{fooVar}");
+        assertion.setResourceUrl("/Category(1)/Products?$top=2");
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",

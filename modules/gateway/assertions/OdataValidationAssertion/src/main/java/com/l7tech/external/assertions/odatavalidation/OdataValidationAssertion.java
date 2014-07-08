@@ -21,10 +21,22 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLA
  */
 public class OdataValidationAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
 
-    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
-    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE, ALLOW_OPEN_TYPE_ENTITY }
-
     public static final String DEFAULT_PREFIX = "odata";
+    public static final String QUERY_TOP = ".query.top";
+    public static final String QUERY_FILTER = ".query.filter";
+    public static final String QUERY_SKIP = ".query.skip";
+    public static final String QUERY_ORDERBY = ".query.orderby";
+    public static final String QUERY_EXPAND = ".query.expand";
+    public static final String QUERY_FORMAT = ".query.format";
+    public static final String QUERY_INLINECOUNT = ".query.inlinecount";
+    public static final String QUERY_SELECT = ".query.select";
+    public static final String QUERY_CUSTOMOPTIONS = ".query.customoptions";
+    public static final String QUERY_PATHSEGMENTS = ".query.pathsegments";
+
+    public static final String QUERY_COUNT = ".query.count";
+    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
+
+    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE, ALLOW_OPEN_TYPE_ENTITY }
 
     private String odataMetadataSource;
     private String resourceUrl;
@@ -141,7 +153,18 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
     @Override
     protected VariablesSet doGetVariablesSet() {
-        return super.doGetVariablesSet().withVariables(new VariableMetadata(getVariablePrefix() + "." + "query"));
+        return super.doGetVariablesSet().withVariables(new VariableMetadata(getVariablePrefix() + QUERY_COUNT),
+                new VariableMetadata(getVariablePrefix() + QUERY_TOP),
+                new VariableMetadata(getVariablePrefix() + QUERY_FILTER),
+                new VariableMetadata(getVariablePrefix() + QUERY_SKIP),
+                new VariableMetadata(getVariablePrefix() + QUERY_ORDERBY),
+                new VariableMetadata(getVariablePrefix() + QUERY_EXPAND),
+                new VariableMetadata(getVariablePrefix() + QUERY_FORMAT),
+                new VariableMetadata(getVariablePrefix() + QUERY_INLINECOUNT),
+                new VariableMetadata(getVariablePrefix() + QUERY_SELECT),
+                new VariableMetadata(getVariablePrefix() + QUERY_CUSTOMOPTIONS),
+                new VariableMetadata(getVariablePrefix() + QUERY_PATHSEGMENTS)
+        );
     }
 
     public EnumSet<ProtectionActions> getActions() { return actions; }

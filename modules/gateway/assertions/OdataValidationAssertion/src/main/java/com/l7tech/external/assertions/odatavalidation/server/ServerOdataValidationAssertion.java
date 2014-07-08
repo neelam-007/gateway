@@ -14,10 +14,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
+import org.apache.olingo.odata2.api.uri.NavigationPropertySegment;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,6 +43,9 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                                           final String targetName,
                                           final AuthenticationContext authContext) throws IOException {
         Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
+        //get context variable prefix
+        String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
+        variablePrefix = variablePrefix != null ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
         String metadata = ExpandVariables.process(assertion.getOdataMetadataSource(), varMap, getAudit());
         if(StringUtils.isBlank(metadata)) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, metadata);
@@ -67,7 +73,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             OdataParser parser = new OdataParser(medatadaEdm);
             //get request info
             OdataRequestInfo odataRequestInfo = parser.parseRequest(path, query);
-            setContextVariables(odataRequestInfo, context);
+            setContextVariables(odataRequestInfo, variablePrefix, context);
 
         } catch (EntityProviderException e) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
@@ -80,21 +86,31 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         return AssertionStatus.NONE;
     }
 
-    private void setContextVariables(OdataRequestInfo odataRequestInfo, PolicyEnforcementContext context) {
+    private void setContextVariables(OdataRequestInfo odataRequestInfo, String prefix, PolicyEnforcementContext context) {
         try {
+            context.setVariable(prefix + OdataValidationAssertion.QUERY_COUNT, Boolean.toString(odataRequestInfo.isCount()));
+
             Set<String> filterParts = OdataParserUtil.getExpressionParts(odataRequestInfo.getFilterExpression());
-            context.setVariable("odata.query.filter", filterParts.toArray(new String[]{}));
+            if(filterParts.size() > 0) {
+                context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, filterParts.toArray(new String[]{}));
+            }
+
+            final Integer top = odataRequestInfo.getTop();
+            if(top != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_TOP, top.toString());
+
+            final Integer skip = odataRequestInfo.getSkip();
+            if(skip != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_SKIP, skip.toString());
+
+            Set<String> orderByParts = OdataParserUtil.getExpressionParts(odataRequestInfo.getFilterExpression());
+            if(orderByParts.size() > 0) {
+                context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, orderByParts.toArray(new String[]{}));
+            }
+            //TODO: set the rest of the context variables
+
+
         } catch (OdataValidationException e) {
-            e.printStackTrace();
+           logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
         }
 
-    }
-
-    private ByteArrayInputStream getMetadataDocumentStream(PolicyEnforcementContext context) { // TODO: clean up, audit
-        String variable;
-
-        variable = assertion.getOdataMetadataSource();
-
-        return new ByteArrayInputStream(variable.getBytes());
     }
 }
