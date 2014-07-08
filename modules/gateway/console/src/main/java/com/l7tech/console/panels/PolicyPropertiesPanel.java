@@ -149,6 +149,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
                 if (looksLikeAuditLookupPolicy(policy) && policyInternalTag != null)
                     policyTags.put(policyInternalTag, null);
 
+                if (looksLikeDebugTracePolicy(policy) && policyInternalTag != null)
+                    policyTags.put(policyInternalTag, null);
+
             }
 
             for ( final String tag : type.getGuiTags() ) {
