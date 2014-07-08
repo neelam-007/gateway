@@ -48,7 +48,7 @@ public class ClusterPropertyManagerImpl
     @Override
     @Transactional(readOnly=true)
     public String getProperty(String key) throws FindException {
-        ClusterProperty prop = findByKey(key);
+        ClusterProperty prop = findByKey(key, false);
         if (prop != null) {
             return prop.getValue();
         }
@@ -67,7 +67,7 @@ public class ClusterPropertyManagerImpl
 
     @Override
     public ClusterProperty putProperty(String key, String value) throws FindException, SaveException, UpdateException {
-        ClusterProperty prop = findByKey(key);
+        ClusterProperty prop = findByKey(key, true);
         if (prop == null) {
             prop = new ClusterProperty(key, value);
             Goid goid = save(prop);
@@ -119,8 +119,16 @@ public class ClusterPropertyManagerImpl
         return all;
     }
 
+    /**
+     * Finds a cluster property given its name
+     *
+     * @param key      The name of the cluster property to find
+     * @param describe if to the cluster property will have its description found in the server config
+     * @return The cluster property
+     * @throws FindException
+     */
     @Transactional(readOnly=true)
-    private ClusterProperty findByKey(final String key) throws FindException {
+    private ClusterProperty findByKey(final String key, final boolean describe) throws FindException {
         try {
             return (ClusterProperty)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
@@ -128,7 +136,8 @@ public class ClusterPropertyManagerImpl
                     // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
                     Query q = session.createQuery(HQL_FIND_BY_NAME);
                     q.setString(0, key);
-                    return describe((ClusterProperty)q.uniqueResult());
+                    ClusterProperty clusterProperty = (ClusterProperty) q.uniqueResult();
+                    return describe ? describe(clusterProperty) : clusterProperty;
                 }
             });
         } catch (HibernateException e) {
