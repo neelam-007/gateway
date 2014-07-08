@@ -45,7 +45,12 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
     private List<PublishedService> publishedServices = new ArrayList<>();
     private ServiceManager serviceManager;
     private Folder rootFolder;
-    private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
+    private static final String POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "<wsp:All wsp:Usage=\"Required\">\n" +
+            "<L7p:AuditAssertion/>\n" +
+            "</wsp:All>\n" +
+            "</wsp:Policy>\n";
     private static final String WSDL_XML = "<definitions name=\"HelloService\"\n" +
             "   targetNamespace=\"http://www.examples.com/wsdl/HelloService.wsdl\"\n" +
             "   xmlns=\"http://schemas.xmlsoap.org/wsdl/\"\n" +
@@ -609,7 +614,9 @@ public class ServiceRestEntityResourceTest extends RestEntityTests<PublishedServ
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getServiceDetail().getName());
             Assert.assertEquals(entity.getFolder().getId(), managedObject.getServiceDetail().getFolderId() != null ? managedObject.getServiceDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString());
-            Assert.assertEquals(entity.getPolicy().getXml(), managedObject.getResourceSets().get(0).getResources().get(0).getContent());
+            Assert.assertEquals("Policy xml's differ",
+                    entity.getPolicy().getXml().trim().replaceAll("\\s+", " "),
+                    managedObject.getResourceSets().get(0).getResources().get(0).getContent().trim().replaceAll("\\s+", " "));
             Assert.assertEquals(entity.isDisabled(), !managedObject.getServiceDetail().getEnabled());
 
             if(entity.isSoap() && entity.getWsdlXml() != null) {

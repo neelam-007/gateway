@@ -49,15 +49,9 @@ import static org.junit.Assert.assertNotNull;
 public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, PolicyMO> {
     private static final Logger logger = Logger.getLogger(PolicyRestEntityResourceTest.class.getName());
     private final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<exp:Export Version=\"3.0\"\n" +
-            "    xmlns:L7p=\"http://www.layer7tech.com/ws/policy\"\n" +
-            "    xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <exp:References/>\n" +
-            "    <wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "        <wsp:All wsp:Usage=\"Required\">\n" +
-            "        </wsp:All>\n" +
-            "    </wsp:Policy>\n" +
-            "</exp:Export>\n";
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\"/>\n" +
+            "</wsp:Policy>";
 
     private PolicyManager policyManager;
     private List<Policy> policies = new ArrayList<>();
@@ -589,7 +583,9 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
 
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getPolicyDetail().getName());
-            Assert.assertEquals(entity.getXml(), managedObject.getResourceSets().get(0).getResources().get(0).getContent());
+            Assert.assertEquals("Policy xml's differ",
+                    entity.getXml().trim().replaceAll("\\s+", " "),
+                    managedObject.getResourceSets().get(0).getResources().get(0).getContent().trim().replaceAll("\\s+", " "));
             switch (entity.getType()) {
                 case INTERNAL:
                     Assert.assertEquals(PolicyDetail.PolicyType.INTERNAL, managedObject.getPolicyDetail().getPolicyType());

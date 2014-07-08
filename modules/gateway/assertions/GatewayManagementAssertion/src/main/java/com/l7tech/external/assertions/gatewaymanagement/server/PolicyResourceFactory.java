@@ -14,6 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -32,6 +33,7 @@ import com.l7tech.xml.soap.SoapVersion;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.l7tech.util.Either.left;
@@ -193,9 +195,15 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
         final Resource resource = ManagedObjectFactory.createResource();
         resourceSet.setResources( Collections.singletonList(resource) );
         resource.setType( ResourceHelper.POLICY_TYPE );
-        resource.setContent( policy.getXml() );
+        try {
+            // Recreate the policy xml instead of using the existing one so that all ID's will be proper and fully updated.
+            // ID's could be incorrect in the stored xml in the case of a policy that was saves pre 8.0 (Goid update) SSG-8854
+            resource.setContent( WspWriter.getPolicyXml(policy.getAssertion()) );
+        } catch (IOException e) {
+            throw new ResourceAccessException( "Could not retrieve policy xml", e );
+        }
 
-        policyDetail.setId( policy.getId() );
+        policyDetail.setId(policy.getId());
         policyDetail.setGuid( policy.getGuid() );
         policyDetail.setVersion( policy.getVersion() );
         policyDetail.setFolderId( getFolderId( policy ) );

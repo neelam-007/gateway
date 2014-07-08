@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -498,7 +499,13 @@ public class ServiceResourceFactory extends SecurityZoneableEntityManagerResourc
         final Resource resource = ManagedObjectFactory.createResource();
         resourceSet.setResources( Collections.singletonList(resource) );
         resource.setType( ResourceHelper.POLICY_TYPE );
-        resource.setContent( policy.getXml() );
+        try {
+            // Recreate the policy xml instead of using the existing one so that all ID's will be proper and fully updated.
+            // ID's could be incorrect in the stored xml in the case of a policy that was saves pre 8.0 (Goid update) SSG-8854
+            resource.setContent( WspWriter.getPolicyXml(policy.getAssertion()) );
+        } catch (IOException e) {
+            throw new ResourceAccessException( "Could not retrieve policy xml", e );
+        }
         if (policy.getVersion() != -1 ) {
             resource.setVersion( policy.getVersion() );
         }
