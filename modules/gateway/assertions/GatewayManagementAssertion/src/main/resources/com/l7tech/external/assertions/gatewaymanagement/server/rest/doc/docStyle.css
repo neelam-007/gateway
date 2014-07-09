@@ -2,25 +2,139 @@
 body {
     background: none repeat scroll 0 0 #EEEEEE;
     color: #333333;
-    font-family: Verdana,"Trebuchet MS",Tahoma,sans-serif;
+    font-family: Verdana, "Trebuchet MS", Tahoma, sans-serif;
     padding: 0;
     margin: 0;
     font-size: 67%;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'CA Sans Web',Verdana,Geneva,'DejaVu Sans',sans-serif;
+    font-family: 'CA Sans Web', Verdana, Geneva, 'DejaVu Sans', sans-serif;
 }
 
 a {
     color: #006daf;
     text-decoration: none;
 }
+
 a:hover {
     text-decoration: underline;
 }
-a.anchor{display: block; position: relative; top: -113px; visibility: hidden;}
 
+a.anchor {
+    display: block;
+    position: relative;
+    top: -113px;
+    visibility: hidden;
+    height: 0;
+}
+
+.indent {
+    padding-left: 15px;
+}
+
+.italicize {
+    font-style: italic;
+}
+
+.code {
+    overflow-x: auto;
+}
+
+.code pre {
+    padding: 0;
+    margin: 0;
+}
+
+table.properties-table {
+    border: solid #666666 1px;
+    border-radius: 5px;
+}
+
+table.properties-table > tbody > tr > td {
+    border-bottom: solid #aaaaaa 1px;
+    padding: 5px 3px 3px 3px;
+}
+
+table.properties-table > tbody > tr:first-child > td {
+    padding-top: 3px;
+}
+
+table.properties-table > tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+/* This selects the first td in the table */
+table.properties-table > tbody > tr > td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+    border-right: solid #aaaaaa 1px;
+    vertical-align: top;
+}
+
+table.api-example {
+    width: 871px;
+    table-layout: fixed;
+    border: solid #666666 1px;
+    border-radius: 5px;
+    background-color: #EEEEEE;
+}
+
+table.api-example caption {
+    text-align: left;
+    font-style: italic;
+}
+
+table.api-example > tbody > tr > td {
+    border-bottom: solid #aaaaaa 1px;
+    padding: 5px 3px 3px 3px;
+}
+
+table.api-example > tbody > tr > td:first-child {
+    vertical-align: top;
+}
+
+table.api-example > tbody > tr > td:not([colspan]) {
+    background-color: #f8f8f8;
+}
+
+table.api-example > tbody > tr > td[colspan] {
+    border-bottom: solid #666666 2px;
+    font-weight: bold;
+}
+
+table.api-example > tbody > tr:not(:nth-child(2)) > td[colspan] {
+    padding-top: 5px;
+}
+
+table.api-example > tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+table.api-example > tbody > tr:last-child > td:first-child {
+    border-bottom-left-radius: 5px;
+}
+
+table.api-example > tbody > tr:last-child > td:last-child {
+    border-bottom-right-radius: 5px;
+}
+
+table.api-example > tbody > tr > td:first-child:not([colspan]) {
+    white-space: nowrap;
+    border-right: solid #aaaaaa 1px;
+}
+
+table.api-example > tbody > tr:first-child {
+    visibility: hidden;
+}
+
+table.api-example > tbody > tr:first-child td {
+    padding: 1px 0 0 0;
+}
+
+table.api-example > tbody > tr:first-child > td:first-child {
+    width: 150px;
+}
 
 #top-container {
     width: 100%;
@@ -105,19 +219,19 @@ a.anchor{display: block; position: relative; top: -113px; visibility: hidden;}
     padding: 1em 0;
 }
 
-#content-menu .menu-wrapper ul{
+#content-menu .menu-wrapper ul {
     margin-top: 0;
     padding: 0;
 }
 
-#content-menu .menu-wrapper ul li{
+#content-menu .menu-wrapper ul li {
     background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
     list-style: none outside none;
     margin: 0;
     padding: 0;
 }
 
-#content-menu .menu-wrapper ul li a{
+#content-menu .menu-wrapper ul li a {
     color: #3C3C3C;
     margin-left: 4px;
     padding: 2px 4px;
@@ -125,7 +239,7 @@ a.anchor{display: block; position: relative; top: -113px; visibility: hidden;}
     font-size: 90%;
 }
 
-#content-menu .menu-wrapper ul li a:hover{
+#content-menu .menu-wrapper ul li a:hover {
     color: #00B0CA;
 }
 
