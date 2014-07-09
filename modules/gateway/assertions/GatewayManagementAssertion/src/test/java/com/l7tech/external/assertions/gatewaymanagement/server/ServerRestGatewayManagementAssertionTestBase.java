@@ -23,9 +23,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.util.GoidUpgradeMapperTestUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
@@ -111,10 +109,10 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
     }
 
     protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
-        return processRequest(uri, null, method, contentType, body);
+        return processRequest(uri, null, method, contentType, body, Collections.<String,Object>emptyMap());
     }
 
-    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body) throws Exception {
+    protected RestResponse processRequest(String uri, String queryString, HttpMethod method, @Nullable String contentType, String body, Map<String,Object> contextVariables) throws Exception {
         final ContentTypeHeader contentTypeHeader = contentType == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(contentType);
         final Message request = new Message();
         request.initialize(contentTypeHeader, body.getBytes("utf-8"));
@@ -156,6 +154,10 @@ public abstract class ServerRestGatewayManagementAssertionTestBase {
             final PublishedService service = new PublishedService();
             service.setRoutingUri("/restman*");
             context.setService(service);
+
+            for(String key: contextVariables.keySet()) {
+                context.setVariable(key,contextVariables.get(key));
+            }
 
             AssertionStatus assertionStatus = restManagementAssertion.checkRequest(context);
 

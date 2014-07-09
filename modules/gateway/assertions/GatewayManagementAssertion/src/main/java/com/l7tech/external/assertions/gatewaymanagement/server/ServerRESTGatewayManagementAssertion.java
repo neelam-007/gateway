@@ -80,7 +80,6 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
         try {
             final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-            message.getHttpRequestKnob().isSecure();
 
             // get the uri
             final URI uri = getURI(context, message, assertion);
@@ -113,7 +112,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             };
-            RestResponse managementResponse = restAgent.handleRequest(message.getHttpRequestKnob().getRemoteHost(), baseUri, uri, action.getProtocolName(), contentType, message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map());
+            RestResponse managementResponse = restAgent.handleRequest(message.isHttpRequest()?message.getHttpRequestKnob().getRemoteHost():null, baseUri, uri, action.getProtocolName(), contentType, message.getMimeKnob().getEntireMessageBodyAsInputStream(), securityContext, CollectionUtils.MapBuilder.<String, Object>builder().put("ServiceId", serviceId).map());
             response.initialize(stashManagerFactory.createStashManager(), managementResponse.getContentType()==null?ContentTypeHeader.NONE:ContentTypeHeader.parseValue(managementResponse.getContentType()), managementResponse.getInputStream());
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(managementResponse.getStatus());
@@ -148,7 +147,11 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         try {
             return context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE).toString();
         } catch (NoSuchVariableException e) {
-            return message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE);
+            if (message.isHttpRequest()) {
+                return message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE);
+            }else{
+                throw new IllegalArgumentException("Content type not found, must be HTTP request or use context variables");
+            }
         }
     }
 
@@ -160,7 +163,11 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             String actionVar = context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_ACTION).toString();
             method = HttpMethod.valueOf(actionVar.toUpperCase());
         } catch (NoSuchVariableException e) {
-            method = message.getHttpRequestKnob().getMethod();
+            if(message.isHttpRequest()) {
+                method = message.getHttpRequestKnob().getMethod();
+            }else{
+                throw new IllegalArgumentException("Action not found, must be HTTP request or use context variables");
+            }
         }
         if (method == null) {
             throw new IllegalArgumentException();
@@ -176,17 +183,21 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         try {
             uri = context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI).toString();
         } catch (NoSuchVariableException e) {
-            String requestURI = message.getHttpRequestKnob().getRequestUri();
-            String baseURI = context.getService().getRoutingUri();
-            Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
-            Matcher matcher = pattern.matcher(requestURI);
-            if (matcher.matches())
-                uri = matcher.group(1);
-            else
-                throw new IllegalArgumentException("Could not calculate uri");
-            final String queryString = message.getHttpRequestKnob().getQueryString();
-            if (queryString != null) {
-                uri += "?" + queryString;
+            if(message.isHttpRequest()) {
+                String requestURI = message.getHttpRequestKnob().getRequestUri();
+                String baseURI = context.getService().getRoutingUri();
+                Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
+                Matcher matcher = pattern.matcher(requestURI);
+                if (matcher.matches())
+                    uri = matcher.group(1);
+                else
+                    throw new IllegalArgumentException("Could not calculate uri");
+                final String queryString = message.getHttpRequestKnob().getQueryString();
+                if (queryString != null) {
+                    uri += "?" + queryString;
+                }
+            }else{
+                throw new IllegalArgumentException("URI not found, must be HTTP request or use context variables");
             }
         }
         if (uri == null) {
@@ -198,16 +209,20 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
     protected static URI getBaseURI(final PolicyEnforcementContext context,
                                 final Message message) throws IllegalArgumentException, URISyntaxException {
 
-        String uri =  message.getHttpRequestKnob().isSecure()?"https://":"http://";
-        uri += message.getTcpKnob().getLocalHost();
-        uri += ":" + message.getTcpKnob().getLocalPort();
-        String baseURI = context.getService().getRoutingUri();
-        if(baseURI.endsWith("*")) {
-            uri+=baseURI.substring(0,baseURI.length()-1);
-        } else {
-            throw new IllegalArgumentException("Could not calculate base uri. The service needs to resolve with a wild card (*)");
+        if(message.isHttpRequest()) {
+            String uri = message.getHttpRequestKnob().isSecure() ? "https://" : "http://";
+            uri += message.getTcpKnob().getLocalHost();
+            uri += ":" + message.getTcpKnob().getLocalPort();
+            String baseURI = context.getService().getRoutingUri();
+            if (baseURI.endsWith("*")) {
+                uri += baseURI.substring(0, baseURI.length() - 1);
+            } else {
+                throw new IllegalArgumentException("Could not calculate base uri. The service needs to resolve with a wild card (*)");
+            }
+            return new URI(uri);
+        }else{
+            return new URI("/");
         }
-        return new URI(uri);
     }
 
     private int handleError(Exception exception) {
