@@ -9,6 +9,8 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import org.apache.commons.lang.BooleanUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,7 +47,8 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private JTextField odataResourcetUrl;
     private JPanel xmlPanel;
     private JLabel resourceUrlLabel;
-    private XMLContainer xmlContainer;
+    private RSyntaxTextArea metadataSource;
+    private JCheckBox validatePayload;
 
 
     private InputValidator inputValidator;
@@ -66,13 +69,17 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         getRootPane().setDefaultButton(okButton);
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
-        xmlContainer = XMLContainerFactory.createXmlContainer(true);
-        xmlPanel.removeAll();
-        xmlPanel.setLayout(new BorderLayout(0,5));
-        xmlPanel.add(xmlContainer.getView(),BorderLayout.CENTER);
+
+        String firstNonWSChar = assertion.getOdataMetadataSource().trim().substring(0,1);
+        if ( firstNonWSChar.equals("<") ) {
+            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
+        } else if ( firstNonWSChar.equals("{") ) {
+            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+        } else {
+            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        }
 
         inputValidator = new InputValidator(this,"Something - in property file");
-        // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
         inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourcetUrl, null);
 
         inputValidator.attachToButton(okButton, new ActionListener() {
@@ -111,9 +118,8 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      */
     @Override
     public void setData(OdataValidationAssertion assertion) {
-        // metadataSourceTextField.setText(assertion.getOdataMetadataSource());
         odataResourcetUrl.setText(assertion.getResourceUrl());
-        Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.getAllActions();
+        Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.returnAllActions();
         metadataCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
         rawValueCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
         openTypeEntityCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY)));
@@ -123,8 +129,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         patchMethodCheckBox.setSelected(assertion.isPartialUpdateOperation());
         mergeMethodCheckBox.setSelected(assertion.isMergeOperation());
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
+        validatePayload.setSelected(assertion.isValidatePayload());
         if ( assertion.getOdataMetadataSource() != null)
-          xmlContainer.getUIAccessibility().getEditor().setText(assertion.getOdataMetadataSource());
+          metadataSource.setText(assertion.getOdataMetadataSource());
     }
 
     /**
@@ -151,7 +158,8 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         assertion.setMergeOperation(mergeMethodCheckBox.isSelected());
         assertion.setDeleteOperation(deleteMethodCheckBox.isSelected());
         assertion.setVariablePrefix(targetVariablePanel.getVariable());
-        assertion.setOdataMetadataSource(xmlContainer.getUIAccessibility().getEditor().getText());
+        assertion.setOdataMetadataSource(metadataSource.getText());
+        assertion.setValidatePayload(validatePayload.isSelected());
         setConfirmed(true);
         return assertion;
     }
@@ -166,7 +174,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     protected JPanel createPropertyPanel() {
         return contentPanel;
     }
-
 
     /*
      * Validating Field:

@@ -40,7 +40,8 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
     private String odataMetadataSource;
     private String resourceUrl;
-    private String variablePrefix ;
+    private String variablePrefix;
+    private boolean validatePayload = true;
 
     private EnumSet<ProtectionActions> actions = EnumSet.of( ProtectionActions.ALLOW_METADATA );
 
@@ -50,6 +51,16 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     private boolean partialUpdateOperation = false;
     private boolean mergeOperation = false;
     private boolean deleteOperation = false;
+
+
+    public boolean isValidatePayload() {
+        return validatePayload;
+    }
+
+    public void setValidatePayload(boolean validatePayload) {
+        this.validatePayload = validatePayload;
+    }
+
 
     public boolean isReadOperation() {
         return readOperation;
@@ -115,7 +126,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.resourceUrl = resourceUrl;
     }
 
-    public Set<ProtectionActions> getAllActions() {
+    public Set<ProtectionActions> returnAllActions() {
         if ( actions == null ) {
             actions = EnumSet.noneOf(ProtectionActions.class);
         }
@@ -126,10 +137,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         if ( actions == null ) {
             actions = EnumSet.noneOf(ProtectionActions.class);
         }
-        HashSet<ProtectionActions> tempSet;
-        tempSet = new HashSet<>(actions);
-        tempSet.add(action);
-        actions = EnumSet.copyOf(tempSet);
+        actions.add(action);
     }
 
     public void removeAction(ProtectionActions action) {
@@ -167,9 +175,9 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         );
     }
 
-    public EnumSet<ProtectionActions> getActions() { return actions; }
-
-    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
+//    public EnumSet<ProtectionActions> getActions() { return actions; }
+//
+//    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
     //
     // Metadata
     //
