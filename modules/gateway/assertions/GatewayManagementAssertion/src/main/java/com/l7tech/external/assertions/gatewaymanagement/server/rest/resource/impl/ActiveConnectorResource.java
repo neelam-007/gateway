@@ -49,7 +49,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      * @return a reference to the newly created active connector
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
-     * @response.representation.201.qname {http://ns.l7tech.com/2010/04/gateway-management}Item
      */
     @POST
     public Response create(ActiveConnectorMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
@@ -134,10 +133,6 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
      * @return a reference to the newly updated or created entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
-     * @response.representation.200.qname {http://ns.l7tech.com/2010/04/gateway-management}Item
-     * @response.representation.200.doc This is returned if an existing entity is updated.
-     * @response.representation.201.qname {http://ns.l7tech.com/2010/04/gateway-management}Item
-     * @response.representation.201.doc This is returned if a new entity is created.
      */
     @PUT
     @Path("{id}")
