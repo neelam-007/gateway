@@ -126,23 +126,16 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.resourceUrl = resourceUrl;
     }
 
-    public Set<ProtectionActions> returnAllActions() {
-        if ( actions == null ) {
-            actions = EnumSet.noneOf(ProtectionActions.class);
-        }
-        return Collections.unmodifiableSet(actions);
+    public Set<ProtectionActions> allActions() {
+        return actions;
     }
 
     public void addAction(@NotNull ProtectionActions action) {
-        if ( actions == null ) {
-            actions = EnumSet.noneOf(ProtectionActions.class);
-        }
         actions.add(action);
     }
 
     public void removeAction(ProtectionActions action) {
-        if ( actions != null )
-            actions.remove(action);
+        actions.remove(action);
     }
 
 
@@ -175,9 +168,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         );
     }
 
-//    public EnumSet<ProtectionActions> getActions() { return actions; }
-//
-//    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
+    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
     //
     // Metadata
     //

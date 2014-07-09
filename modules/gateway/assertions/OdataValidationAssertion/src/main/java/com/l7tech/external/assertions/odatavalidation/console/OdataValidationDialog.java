@@ -80,6 +80,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         }
 
         inputValidator = new InputValidator(this,"Something - in property file");
+        // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
         inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourcetUrl, null);
 
         inputValidator.attachToButton(okButton, new ActionListener() {
@@ -119,7 +120,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public void setData(OdataValidationAssertion assertion) {
         odataResourcetUrl.setText(assertion.getResourceUrl());
-        Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.returnAllActions();
+        Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.allActions();
         metadataCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
         rawValueCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
         openTypeEntityCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY)));
@@ -145,12 +146,11 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     public OdataValidationAssertion getData(OdataValidationAssertion assertion) throws ValidationException {
         // assertion.setOdataMetadataSource(metadataSourceTextField.getText());
         assertion.setResourceUrl(odataResourcetUrl.getText());
-        if ( metadataCheckBox.isSelected() )
-            assertion.addAction(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
-        if ( rawValueCheckBox.isSelected() )
-            assertion.addAction(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
-        if ( openTypeEntityCheckBox.isSelected() )
-            assertion.addAction(OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY);
+        //set actions
+        setAction(assertion, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+        setAction(assertion, rawValueCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
+        setAction(assertion, openTypeEntityCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY);
+        //set operations
         assertion.setReadOperation(getMethodCheckBox.isSelected());
         assertion.setCreateOperation(postMethodCheckBox.isSelected());
         assertion.setUpdateOperation(putMethodCheckBox.isSelected());
@@ -162,6 +162,15 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         assertion.setValidatePayload(validatePayload.isSelected());
         setConfirmed(true);
         return assertion;
+    }
+
+    private void setAction(OdataValidationAssertion assertion, JCheckBox control, OdataValidationAssertion.ProtectionActions action) {
+        if ( control.isSelected() ) {
+            assertion.addAction(action);
+        }
+        else {
+            assertion.removeAction(action);
+        }
     }
 
     /**
