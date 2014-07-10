@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.odatavalidation.server;
 
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.AuthenticationContext;
@@ -14,6 +15,7 @@ import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,6 +127,14 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             OdataParser parser = new OdataParser(medatadaEdm);
             //get request info
             OdataRequestInfo odataRequestInfo = parser.parseRequest(path, query);
+
+            if ( assertion.isValidatePayload() ) {
+                HttpServletRequest httpServletRequest = context.getRequest().getKnob(HttpServletRequestKnob.class).getHttpServletRequest();
+                OdataPayloadInfo odataPayloadInfo = parser.parsePayload(requestMethod.toString(),
+                        odataRequestInfo, httpServletRequest.getInputStream(),
+                        httpServletRequest.getContentType());
+            }
+
             setContextVariables(odataRequestInfo, variablePrefix, context);
 
         } catch (EntityProviderException e) {

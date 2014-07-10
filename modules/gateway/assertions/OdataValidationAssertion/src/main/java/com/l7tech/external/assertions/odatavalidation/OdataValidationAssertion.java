@@ -8,6 +8,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -35,7 +36,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     public static final String QUERY_COUNT = ".query.count";
     public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
 
-    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE, ALLOW_OPEN_TYPE_ENTITY }
+    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE }
 
     private String odataMetadataSource;
     private String resourceUrl;
@@ -129,11 +130,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         return actions;
     }
 
-    public void setActions(EnumSet<ProtectionActions> actions) {
-        this.actions = actions;
-    }
-
-
     public String getVariablePrefix() {
         return StringUtils.isBlank(variablePrefix)?DEFAULT_PREFIX:variablePrefix;
     }
@@ -163,6 +159,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         );
     }
 
+    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
     //
     // Metadata
     //

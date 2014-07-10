@@ -31,7 +31,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 //    private JTextField metadataSourceTextField;
     private JCheckBox metadataCheckBox;
     private JCheckBox rawValueCheckBox;
-    private JCheckBox openTypeEntityCheckBox;
     private JCheckBox getMethodCheckBox;
     private JCheckBox postMethodCheckBox;
     private JCheckBox putMethodCheckBox;
@@ -68,10 +67,16 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
 
-        String firstNonWSChar = assertion.getOdataMetadataSource().trim().substring(0,1);
-        if ( firstNonWSChar.equals("<") ) {
+
+        String firstNonWSChar = assertion.getOdataMetadataSource();
+        if ( firstNonWSChar != null ) {
+            firstNonWSChar = firstNonWSChar.trim();
+        } else {
+            firstNonWSChar = "."; //sentinel -- forces SYNTAX_STYLE_NONE
+        }
+        if ( firstNonWSChar.startsWith("<") ) {
             metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
-        } else if ( firstNonWSChar.equals("{") ) {
+        } else if ( firstNonWSChar.startsWith("{") ) {
             metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         } else {
             metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
@@ -121,7 +126,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         EnumSet<OdataValidationAssertion.ProtectionActions> availableActions = assertion.getActions() != null?assertion.getActions():EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
         metadataCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
         rawValueCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
-        openTypeEntityCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY)));
         getMethodCheckBox.setSelected(assertion.isReadOperation());
         postMethodCheckBox.setSelected(assertion.isCreateOperation());
         putMethodCheckBox.setSelected(assertion.isUpdateOperation());
@@ -148,7 +152,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         EnumSet<OdataValidationAssertion.ProtectionActions> tempSet = EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class);
         setAction(tempSet, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
         setAction(tempSet, rawValueCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
-        setAction(tempSet, openTypeEntityCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY);
         assertion.setActions(tempSet);
         //set operations
         assertion.setReadOperation(getMethodCheckBox.isSelected());
