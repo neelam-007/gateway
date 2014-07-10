@@ -17,7 +17,7 @@
         </tr>
         <tr>
             <td>Uri</td>
-            <td>https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?[folder|service|policy]={id}</td>
+            <td><div class="code">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?[folder|service|policy]={id}</div></td>
         </tr>
         <tr><td>Http Method</td>
             <td>GET</td>
@@ -45,9 +45,9 @@
                 ...
             &lt;/l7:References&gt;
             &lt;l7:Mappings&gt;
-                    &lt;!-- This is the list of mappings. It describes how to create the entity on import. The must be
-                    one mapping for every entity. A mapping may not reference a resource in the bundle if it will not be
-                    migrated. They are in the order they should be created in so to avoid any dependency issues.--&gt;
+                &lt;!-- This is the list of mappings. It describes how to create the entity on import. The must be
+                one mapping for every entity. A mapping may not reference a resource in the bundle if it will not be
+                migrated. They are in the order they should be created in so to avoid any dependency issues.--&gt;
                 &lt;l7:Mapping /&gt;
                 ...
             &lt;/l7:Mappings&gt;
@@ -73,7 +73,7 @@
         </tr>
         <tr>
             <td>Uri</td>
-            <td>https://${host}:${port}/${service-url}/1.0/bundle</td>
+            <td><div class="code">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle</div></td>
         </tr>
         <tr>
             <td>Http Method</td>
@@ -117,7 +117,7 @@
     &lt;l7:Name&gt;Bundle mappings&lt;/l7:Name&gt;
     &lt;l7:Type&gt;BUNDLE MAPPINGS&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-01T15:20:04.222-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://${host}:${port}/${service-url}/1.0/bundle&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/bundle&quot;/&gt;
     &lt;l7:Resource&gt;
         &lt;l7:Mappings&gt;
             &lt;l7:Mapping /&gt;
@@ -180,7 +180,6 @@
 &lt;l7:mapping
     type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;NewOrExisting&quot; /&gt;
         </pre>
@@ -194,6 +193,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;UsedExisting&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -205,6 +205,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -216,6 +217,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -226,7 +228,6 @@
 &lt;l7:mapping
     type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;NewOrUpdate&quot; /&gt;
         </pre>
@@ -240,6 +241,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;UpdatedExisting&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -251,6 +253,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -262,6 +265,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -272,7 +276,6 @@
 &lt;l7:mapping
     type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;AlwaysCreateNew&quot; /&gt;
         </pre>
@@ -286,6 +289,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -297,6 +301,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -308,6 +313,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -318,7 +324,6 @@
 &lt;l7:mapping
     type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;Ignore&quot; /&gt;
         </pre>
@@ -356,7 +361,7 @@
             </pre>
         </td></tr>
         <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name'. If this is not specified mapping is done by the id.</td></tr>
-        <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapTo property.</td></tr>
+        <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapBy property.</td></tr>
     </table>
     <h4>Complex Mapping Examples</h4>
     <h5>Mapping by Name</h5>
@@ -366,7 +371,6 @@
 &lt;l7:mapping
      type=&quot;SERVICE&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrUpdate&quot; &gt;
     &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
@@ -382,6 +386,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -393,6 +398,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;UpdatedExisting&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -404,6 +410,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -414,7 +421,6 @@
 &lt;l7:mapping
      type=&quot;SERVICE&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
     &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
@@ -431,6 +437,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -442,6 +449,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;UsedExisting&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -453,6 +461,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -463,7 +472,6 @@
 &lt;l7:mapping
      type=&quot;SERVICE&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
     &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
@@ -471,7 +479,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same ID DOES NOT exist on the target gateway this will fail).</p>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -489,6 +497,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;UsedExisting&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -500,7 +509,6 @@
 &lt;l7:mapping
      type=&quot;SERVICE&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     referencePath=&quot;//l7:reference[l7:id=&#39;97cd0afb295cd2d823d0fdd43e720bbc&#39;]&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;AlwaysCreateNew&quot; &gt;
     &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
@@ -517,6 +525,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
@@ -528,6 +537,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
@@ -539,6 +549,7 @@
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
+    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>

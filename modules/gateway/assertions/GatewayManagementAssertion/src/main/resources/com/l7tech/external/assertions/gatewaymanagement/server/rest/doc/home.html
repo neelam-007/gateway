@@ -8,21 +8,20 @@
         <p class="code indent italicize">https://[gateway-host]/[restman-service]/[api-version]/[api-resource]</p>
         <table class="properties-table" cellpadding="0" cellspacing="0">
             <tr><td class="italicize">[gateway-host]</td><td>Host and port of the Gateway</td></tr>
-            <tr><td class="italicize">[restman-service]</td><td>Published URI of the REST management service</td></tr>
-            <tr><td class="italicize">[api-version]</td><td>Version of the API that you are accessing; all API calls require an API version</td></tr>
+            <tr><td class="italicize">[restman-service]</td><td>Published URI of the REST management service. Default is "restman"</td></tr>
+            <tr><td class="italicize">[api-version]</td><td>Version of the API that you are accessing; all API calls require an API version. Current version is 1.0</td></tr>
             <tr><td class="italicize">[api-resource]</td><td>Resource being accessed. This can either map to an actual resource available on the Gateway, like a policy or JDBC Connection, or it can reference an available service, like the migration service</td></tr>
         </table>
         <h3>The Response</h3>
         <p>All API calls will return the results wrapped. The wrapper will be either a l7:List or l7:Item. These are both based on the same underlying object and so they both will have:</p>
         <table class="properties-table" cellpadding="0" cellspacing="0">
             <tr><td>Name</td><td>A human readable name describing the contents</td></tr>
-            <tr><td>Id</td><td>ID of the contained object</td></tr>
             <tr><td>Type</td><td>Type of the item that this contains</td></tr>
             <tr><td>TimeStamp</td><td>When this item was created</td></tr>
             <tr><td>Link</td><td>0 or more links relating to the containing object</td></tr>
         </table>
         <p>The List wrapper will also contain 0 or more Items. These items are the listing results.</p>
-        <p>The Item wrapper will contain a single resource. This resource will be the object that this item wraps.</p>
+        <p>The Item wrapper will contain an ID element containing the ID of the contained object.  The Item wrapper will also contain a single resource. This resource will be the object that this item wraps.</p>
         <h2>Setting Up</h2>
         <h3>Set Up from the Policy Manager</h3>
         <p>To install the Gateway REST Management Service from the Policy Manager:</p>
@@ -49,7 +48,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -115,7 +114,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services">https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services">https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -157,7 +156,7 @@
         </table>
         <p>The returned message is very similar to the one returned when listing all folders, however only the folder with the name "My Services" is returned. You can specify multiple search parameters to create more complex searches. For example, to list all enabled Gateway connectors using the HTTP or FTP protocols:</p>
         <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP">https://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP</a></p>
-        <p>Listing results can also be sorted and ordered using the "sort" and "order" query parameters. Refer to the &lt;WADL&gt; or the &lt;Resources&gt; to find what you can sort and search by for an entity. For example, use this to sort all email listener in descending order by their host name:</p>
+        <p>Listing results can also be sorted and ordered using the "sort" and "order" query parameters. Refer to the <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/rest.wadl">WADL</a> or the <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/restDoc.html">Resources</a> to find what you can sort and search by for an entity. For example, use this to sort all email listener in descending order by their host name:</p>
         <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc">https://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc</a></p>
         <p>If the returned list does not contain any items, then none could be found with the specified search fields or you do not have the correct permissions to view the items. See <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html">https://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html</a> for more info on authentication and permissions.</p>
         <h3>Retrieving an Entity</h3>
@@ -170,7 +169,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72">https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72">https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -228,7 +227,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
             </tr>
             <tr>
                 <td>Http Method</td>
@@ -284,7 +283,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>PUT</td>
@@ -340,7 +339,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>PUT</td>
@@ -395,7 +394,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0">https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0">https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>DELETE</td>
@@ -417,7 +416,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template">https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template">https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -454,7 +453,7 @@
         <h2>Other Operations</h2>
         <h3>Dependency Analysis</h3>
         <p>Entities depend on each other in many different ways. For example, a service may require a secure password and a JDBC connection.</p>
-        <p>You can view the dependencies for a service, folder, policy, or encapsulated assertion by using the dependency analysis sub-resource for those resources.</p>
+        <p>You can view the dependencies for a service, folder, policy, or encapsulated assertion by using the dependency analysis sub-resource.</p>
         <p>For example, to display all the dependencies for a service, make the following API call:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
             <caption>Dependency Example</caption>
@@ -464,7 +463,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies">https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies</a></td>
+                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies">https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -536,7 +535,6 @@
             <tr><td>Id</td><td>The ID of the entity</td></tr>
             <tr><td>Type</td><td>Type of the entity</td></tr>
             <tr><td>Dependencies</td><td>A list of the direct dependencies for this entity</td></tr>
-            <tr><td>Link</td><td>0 or more links related to the containing object</td></tr>
         </table>
         <p>Following the Reference is a list of dependencies. This list includes all dependencies for the Reference, both direct and indirect. Each dependency contains:</p>
         <table class="properties-table" cellpadding="0" cellspacing="0">
@@ -544,7 +542,6 @@
             <tr><td>Id</td><td>The ID of the entity</td></tr>
             <tr><td>Type</td><td>Type of the entity</td></tr>
             <tr><td>Dependencies</td><td>A list of the direct dependencies for this entity</td></tr>
-            <tr><td>Link</td><td>0 or more links related to the containing object</td></tr>
         </table>
         <h3>Migration</h3>
         <p>The Migration resource can be used to migrate folders, services, and policies between Gateways. For more information about using the Migration resource:</p>
