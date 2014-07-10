@@ -523,15 +523,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         });
 
-        saveButton.addActionListener(new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if(inputValidator.isValid())
-                    onSave();
-            }
-        });
-
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
