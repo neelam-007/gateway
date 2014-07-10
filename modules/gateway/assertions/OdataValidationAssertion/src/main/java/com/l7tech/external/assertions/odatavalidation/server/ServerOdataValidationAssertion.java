@@ -157,6 +157,24 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             if(orderByParts.size() > 0) {
                 context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, orderByParts.toArray(new String[]{}));
             }
+            //set $expand expression
+            final String expand = odataRequestInfo.getExpandExpressionString();
+            if(expand != null)context.setVariable(prefix + OdataValidationAssertion.QUERY_EXPAND, expand);
+            //set $format expression
+            String format = odataRequestInfo.getFormat();
+            if(format != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_FORMAT, format);
+
+            final String inlinecount = odataRequestInfo.getInlineCount();
+            if(inlinecount != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_INLINECOUNT, inlinecount);
+
+            final String select = odataRequestInfo.getSelectExpressionString();
+            if(select != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_SELECT, select);
+
+            Map<String,String> customQueryOptions = odataRequestInfo.getCustomQueryOptions();
+            if(!customQueryOptions.isEmpty()) context.setVariable(prefix + OdataValidationAssertion.QUERY_CUSTOMOPTIONS, customQueryOptions);
+
+
+
             //TODO: set the rest of the context variables
 
 
