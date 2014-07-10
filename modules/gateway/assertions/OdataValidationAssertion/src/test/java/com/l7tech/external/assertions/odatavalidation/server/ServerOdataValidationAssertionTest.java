@@ -16,7 +16,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.CollectionUtils;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -312,8 +311,9 @@ public class ServerOdataValidationAssertionTest {
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
-                        ODATA_JSON,
-                        new ByteArrayInputStream(new byte[0])));
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
 
         pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
         pec.setVariable("urlResource", "/Categories(1)/Products");
@@ -338,8 +338,9 @@ public class ServerOdataValidationAssertionTest {
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories%281%29/Products?$top=3&$filter=length%28Name%29%20le%205",
-                        ODATA_JSON,
-                        new ByteArrayInputStream(new byte[0])));
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
 
         pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
         pec.setVariable("urlResource", "/Categories(1)/Products?$top=3&$filter=length(Name) le 5&$skip=2&$orderby=Rating,Category/Name desc&$expand=Category");
@@ -369,8 +370,9 @@ public class ServerOdataValidationAssertionTest {
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
-                        ODATA_JSON,
-                        new ByteArrayInputStream(new byte[0])));
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
 
         pec.setVariable(assertion.getOdataMetadataSource(), METADATA_DOCUMENT_ODATA_V3);
 
@@ -427,9 +429,10 @@ public class ServerOdataValidationAssertionTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
-    private Message createHttpRequestMessage(String requestUri, ContentTypeHeader contentTypeHeader,
+    private Message createHttpRequestMessage(String requestUri, String method, ContentTypeHeader contentTypeHeader,
                                              InputStream body) throws IOException {
         MockHttpServletRequest hRequest = new MockHttpServletRequest();
+        hRequest.setMethod(method);
 
         hRequest.setRequestURI(requestUri);
 
