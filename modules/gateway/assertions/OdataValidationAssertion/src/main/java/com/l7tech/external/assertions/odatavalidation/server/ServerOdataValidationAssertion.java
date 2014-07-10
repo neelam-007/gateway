@@ -88,10 +88,10 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         // Check Permitted Actions
         boolean isMetadataRequest = inboundURL.endsWith(METADATA_SUFFIX);
         boolean isValueRequest = inboundURL.endsWith(VALUE_SUFFIX);
-        if ( isMetadataRequest && ! assertion.allActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA) ) {
+        if ( isMetadataRequest && ! assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA) ) {
             return AssertionStatus.UNAUTHORIZED;
         }
-        if ( isValueRequest && ! assertion.allActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE) ) {
+        if ( isValueRequest && ! assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE) ) {
             return AssertionStatus.UNAUTHORIZED;
         }
 

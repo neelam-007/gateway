@@ -1,9 +1,7 @@
 package com.l7tech.external.assertions.odatavalidation.console;
 
-import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -18,7 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * Copyright: CA Technologies, 2014
@@ -120,9 +118,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public void setData(OdataValidationAssertion assertion) {
         odataResourcetUrl.setText(assertion.getResourceUrl());
-        Set<OdataValidationAssertion.ProtectionActions> availableActions = assertion.allActions();
-        metadataCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
-        rawValueCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
+        EnumSet<OdataValidationAssertion.ProtectionActions> availableActions = assertion.getActions() != null?assertion.getActions():EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+        metadataCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
+        rawValueCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
         openTypeEntityCheckBox.setSelected(BooleanUtils.toBoolean((Boolean) availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY)));
         getMethodCheckBox.setSelected(assertion.isReadOperation());
         postMethodCheckBox.setSelected(assertion.isCreateOperation());
@@ -147,9 +145,11 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         // assertion.setOdataMetadataSource(metadataSourceTextField.getText());
         assertion.setResourceUrl(odataResourcetUrl.getText());
         //set actions
-        setAction(assertion, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
-        setAction(assertion, rawValueCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
-        setAction(assertion, openTypeEntityCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY);
+        EnumSet<OdataValidationAssertion.ProtectionActions> tempSet = EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class);
+        setAction(tempSet, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+        setAction(tempSet, rawValueCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
+        setAction(tempSet, openTypeEntityCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_OPEN_TYPE_ENTITY);
+        assertion.setActions(tempSet);
         //set operations
         assertion.setReadOperation(getMethodCheckBox.isSelected());
         assertion.setCreateOperation(postMethodCheckBox.isSelected());
@@ -164,12 +164,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         return assertion;
     }
 
-    private void setAction(OdataValidationAssertion assertion, JCheckBox control, OdataValidationAssertion.ProtectionActions action) {
+    private void setAction(EnumSet<OdataValidationAssertion.ProtectionActions> enumSet, JCheckBox control, OdataValidationAssertion.ProtectionActions action) {
         if ( control.isSelected() ) {
-            assertion.addAction(action);
-        }
-        else {
-            assertion.removeAction(action);
+            enumSet.add(action);
         }
     }
 

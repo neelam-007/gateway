@@ -8,7 +8,6 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -52,9 +51,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     private boolean mergeOperation = false;
     private boolean deleteOperation = false;
 
-    private EnumSet<ProtectionActions> lazyGetActions() {
-        return actions == null ? EnumSet.of(ProtectionActions.ALLOW_METADATA) : actions;
-    }
 
     public boolean isValidatePayload() {
         return validatePayload;
@@ -129,16 +125,12 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.resourceUrl = resourceUrl;
     }
 
-    public Set<ProtectionActions> allActions() {
-        return lazyGetActions();
+    public EnumSet<ProtectionActions> getActions() {
+        return actions;
     }
 
-    public void addAction(@NotNull ProtectionActions action) {
-        lazyGetActions().add(action);
-    }
-
-    public void removeAction(ProtectionActions action) {
-        lazyGetActions().remove(action);
+    public void setActions(EnumSet<ProtectionActions> actions) {
+        this.actions = actions;
     }
 
 
@@ -171,7 +163,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         );
     }
 
-    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
     //
     // Metadata
     //
