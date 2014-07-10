@@ -20,17 +20,17 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
     private JTextField routingUriTextField;
     private JLabel gatewayUrlLabel;
     private JCheckBox locationCheckBox;
-    private JCheckBox cookieCheckBox;
+    private JCheckBox cookiesCheckBox;
     private JRadioButton allRespContentRadio;
     private JRadioButton specifiedTagsRadio;
-    private JRadioButton noneRespRadioButton;
     private JTextField specifiedTagsTextField;
     private JComboBox platformComboBox;
     private JCheckBox httpsCheckBox;
-    private JRadioButton allReqRadioButton;
-    private JRadioButton noneReqRadioButton1;
     private JCheckBox hostCheckBox;
     private JCheckBox requestPortCheckBox;
+    private JCheckBox queryCheckBox;
+    private JCheckBox requestBodyCheckBox;
+    private JCheckBox responseBodyCheckBox;
 
     public ReverseWebProxyConfigurationPanel() {
         super(null);
@@ -60,8 +60,8 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
                 notifyListeners();
             }
         });
+        responseBodyCheckBox.addActionListener(changeListener);
         allRespContentRadio.addActionListener(changeListener);
-        noneRespRadioButton.addActionListener(changeListener);
         specifiedTagsRadio.addActionListener(changeListener);
         platformComboBox.setModel(new DefaultComboBoxModel(new String[]{ReverseWebProxyConfig.WebApplicationType.SHAREPOINT.getName(), ReverseWebProxyConfig.WebApplicationType.GENERIC.getName()}));
         add(contentPanel);
@@ -77,7 +77,7 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
         return !nameTextField.getText().isEmpty() &&
                 !webAppHostTextField.getText().isEmpty() &&
                 !routingUriTextField.getText().isEmpty() &&
-                (!specifiedTagsRadio.isSelected() || StringUtils.isNotBlank(specifiedTagsTextField.getText()));
+                (!responseBodyCheckBox.isSelected() || !specifiedTagsRadio.isSelected() || StringUtils.isNotBlank(specifiedTagsTextField.getText()));
     }
 
     @Override
@@ -95,13 +95,13 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             routingUriTextField.setText(config.getRoutingUri());
             gatewayUrlLabel.setText("http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/");
             httpsCheckBox.setSelected(config.isUseHttps());
+            queryCheckBox.setSelected(config.isRewriteQuery());
             locationCheckBox.setSelected(config.isRewriteLocationHeader());
             hostCheckBox.setSelected(config.isRewriteHostHeader());
-            cookieCheckBox.setSelected(config.isRewriteCookies());
-            allReqRadioButton.setSelected(config.isRewriteRequestContent());
-            noneReqRadioButton1.setSelected(!config.isRewriteRequestContent());
+            cookiesCheckBox.setSelected(config.isRewriteCookies());
+            requestBodyCheckBox.setSelected(config.isRewriteRequestContent());
+            responseBodyCheckBox.setSelected(config.isRewriteResponseContent());
             allRespContentRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isBlank(config.getHtmlTagsToRewrite()));
-            noneRespRadioButton.setSelected(!config.isRewriteResponseContent());
             specifiedTagsRadio.setSelected(config.isRewriteResponseContent() && StringUtils.isNotBlank(config.getHtmlTagsToRewrite()));
             requestPortCheckBox.setSelected(config.isIncludeRequestPort());
             enableDisable();
@@ -117,17 +117,21 @@ public class ReverseWebProxyConfigurationPanel extends WizardStepPanel {
             config.setRoutingUri(routingUriTextField.getText().trim());
             config.setWebAppHost(webAppHostTextField.getText().trim());
             config.setUseHttps(httpsCheckBox.isSelected());
+            config.setRewriteQuery(queryCheckBox.isSelected());
             config.setRewriteLocationHeader(locationCheckBox.isSelected());
             config.setRewriteHostHeader(hostCheckBox.isSelected());
-            config.setRewriteCookies(cookieCheckBox.isSelected());
-            config.setRewriteRequestContent(allReqRadioButton.isSelected());
-            config.setRewriteResponseContent(allRespContentRadio.isSelected() || specifiedTagsRadio.isSelected());
-            config.setHtmlTagsToRewrite(specifiedTagsTextField.getText().trim());
+            config.setRewriteCookies(cookiesCheckBox.isSelected());
+            config.setRewriteRequestContent(requestBodyCheckBox.isSelected());
+            config.setRewriteResponseContent(responseBodyCheckBox.isSelected());
+            config.setHtmlTagsToRewrite(responseBodyCheckBox.isSelected() && specifiedTagsRadio.isSelected() ? specifiedTagsTextField.getText().trim() : null);
             config.setIncludeRequestPort(requestPortCheckBox.isSelected());
         }
     }
 
     private void enableDisable() {
-        specifiedTagsTextField.setEnabled(specifiedTagsRadio.isSelected());
+        final boolean rewriteResponseBody = responseBodyCheckBox.isSelected();
+        allRespContentRadio.setEnabled(rewriteResponseBody);
+        specifiedTagsRadio.setEnabled(rewriteResponseBody);
+        specifiedTagsTextField.setEnabled(rewriteResponseBody && specifiedTagsRadio.isSelected());
     }
 }

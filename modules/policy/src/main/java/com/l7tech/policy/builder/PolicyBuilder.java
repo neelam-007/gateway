@@ -18,6 +18,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -209,18 +210,28 @@ public class PolicyBuilder {
     public PolicyBuilder regex(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
                                @NotNull final String regexPattern, @Nullable final String replacement, final boolean caseInsensitive,
                                final boolean enable, @Nullable final String comment) {
-        validateTarget(targetMessage, otherTargetMessageName);
-        final Regex regex = new Regex();
-        setTarget(targetMessage, otherTargetMessageName, regex);
-        regex.setAutoTarget(false);
-        regex.setRegex(regexPattern);
-        regex.setPatternContainsVariables(Syntax.isAnyVariableReferenced(regexPattern));
-        regex.setReplace(replacement != null);
-        regex.setReplacement(replacement);
-        regex.setCaseInsensitive(caseInsensitive);
-        regex.setEnabled(enable);
+        final Regex regex = createRegexAssertion(targetMessage, otherTargetMessageName, regexPattern, replacement, caseInsensitive, enable);
         addRightComment(comment, regex);
         appendAssertion(regex);
+        return this;
+    }
+
+    /**
+     * Appends multiple Regex assertions inside an All assertion to the document.
+     *
+     * @param regexAssertions the Regex assertions to add to the All assertion.
+     * @param enable          false if the appended All assertion should be disabled.
+     * @param comment         an optional comment to add to the All assertion.
+     * @return the PolicyBuilder.
+     */
+    public PolicyBuilder multipleRegex(@NotNull final Collection<Regex> regexAssertions, final boolean enable, @Nullable final String comment) {
+        final AllAssertion all = new AllAssertion();
+        all.setEnabled(enable);
+        addRightComment(comment, all);
+        for (final Regex regex : regexAssertions) {
+            all.addChild(regex);
+        }
+        appendAssertion(all);
         return this;
     }
 
@@ -499,6 +510,33 @@ public class PolicyBuilder {
         return this;
     }
 
+    /**
+     * Convenience method for creating a Regex assertion.
+     *
+     * @param targetMessage          the {@link TargetMessageType} to target.
+     * @param otherTargetMessageName if targetMessage is {@link TargetMessageType#OTHER}, the name of the other message variable.
+     * @param regexPattern           the regex pattern to match.
+     * @param replacement            the optional replacement if the regex matches.
+     * @param caseInsensitive        true if the matching should be case-insensitive.
+     * @param enable                 false if the appended policy should be disabled.
+     * @return the created Regex assertion.
+     */
+    public static Regex createRegexAssertion(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName,
+                                             @NotNull final String regexPattern, @Nullable final String replacement,
+                                             final boolean caseInsensitive, final boolean enable) {
+        validateTarget(targetMessage, otherTargetMessageName);
+        final Regex regex = new Regex();
+        setTarget(targetMessage, otherTargetMessageName, regex);
+        regex.setAutoTarget(false);
+        regex.setRegex(regexPattern);
+        regex.setPatternContainsVariables(Syntax.isAnyVariableReferenced(regexPattern));
+        regex.setReplace(replacement != null);
+        regex.setReplacement(replacement);
+        regex.setCaseInsensitive(caseInsensitive);
+        regex.setEnabled(enable);
+        return regex;
+    }
+
     private void createAndAppendDisabledElement(final Document doc) {
         final Element targetName = doc.createElementNS(L7_NS, L7P_PREFIX + ENABLED);
         targetName.setAttribute(BOOLEAN_VALUE, "false");
@@ -522,7 +560,7 @@ public class PolicyBuilder {
         }
     }
 
-    private void validateTarget(TargetMessageType targetMessage, String otherTargetMessageName) {
+    private static void validateTarget(TargetMessageType targetMessage, String otherTargetMessageName) {
         if (targetMessage == TargetMessageType.OTHER && otherTargetMessageName == null) {
             throw new IllegalArgumentException("OtherTargetMessageName must be specified for targetMessage=" + TargetMessageType.OTHER);
         }
@@ -602,7 +640,7 @@ public class PolicyBuilder {
         }
     }
 
-    private void setTarget(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull MessageTargetableAssertion assertion) {
+    private static void setTarget(@NotNull final TargetMessageType targetMessage, @Nullable final String otherTargetMessageName, @NotNull MessageTargetableAssertion assertion) {
         if (targetMessage != TargetMessageType.REQUEST) {
             assertion.setTarget(targetMessage);
         }

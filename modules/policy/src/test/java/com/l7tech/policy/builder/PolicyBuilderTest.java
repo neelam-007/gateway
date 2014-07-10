@@ -2,6 +2,7 @@ package com.l7tech.policy.builder;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -299,6 +300,89 @@ public class PolicyBuilderTest {
                 "    </wsp:All>\n" +
                 "</wsp:Policy>";
         builder.regex(TargetMessageType.REQUEST, null, "foo", "bar", true, true, null);
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void multipleRegex() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <L7p:Regex>\n" +
+                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            </L7p:Regex>\n" +
+                "            <L7p:Regex>\n" +
+                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                <L7p:Regex stringValue=\"bar\"/>\n" +
+                "            </L7p:Regex>\n" +
+                "            <L7p:assertionComment>\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:assertionComment>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        final Regex reg1 = new Regex();
+        reg1.setAutoTarget(false);
+        reg1.setRegex("foo");
+        final Regex reg2 = new Regex();
+        reg2.setAutoTarget(false);
+        reg2.setRegex("bar");
+        builder.multipleRegex(Arrays.asList(new Regex[]{reg1, reg2}), true, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void multipleRegexDisabled() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All L7p:Enabled=\"false\" wsp:Usage=\"Required\">\n" +
+                "            <L7p:Regex>\n" +
+                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            </L7p:Regex>\n" +
+                "            <L7p:assertionComment>\n" +
+                "                <L7p:Properties mapValue=\"included\">\n" +
+                "                    <L7p:entry>\n" +
+                "                        <L7p:key stringValue=\"RIGHT.COMMENT\"/>\n" +
+                "                        <L7p:value stringValue=\"test\"/>\n" +
+                "                    </L7p:entry>\n" +
+                "                </L7p:Properties>\n" +
+                "            </L7p:assertionComment>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        final Regex reg1 = new Regex();
+        reg1.setAutoTarget(false);
+        reg1.setRegex("foo");
+        builder.multipleRegex(Arrays.asList(new Regex[]{reg1}), false, "test");
+        assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
+    }
+
+    @Test
+    public void multipleRegexNullComment() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsp:All wsp:Usage=\"Required\">\n" +
+                "            <L7p:Regex>\n" +
+                "                <L7p:AutoTarget booleanValue=\"false\"/>\n" +
+                "                <L7p:Regex stringValue=\"foo\"/>\n" +
+                "            </L7p:Regex>\n" +
+                "        </wsp:All>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        final Regex reg1 = new Regex();
+        reg1.setAutoTarget(false);
+        reg1.setRegex("foo");
+        builder.multipleRegex(Arrays.asList(new Regex[]{reg1}), true, null);
         assertEquals(expected, XmlUtil.nodeToFormattedString(builder.getPolicy()).trim());
     }
 
@@ -1097,5 +1181,49 @@ public class PolicyBuilderTest {
     @Test(expected = IllegalArgumentException.class)
     public void addHeaderOtherTargetNullOtherTargetName() throws Exception {
         builder.addOrReplaceHeader(TargetMessageType.OTHER, null, "Host", "localhost", false, true, "test");
+    }
+
+    @Test
+    public void createRegexAssertion() throws Exception {
+        final Regex regex = PolicyBuilder.createRegexAssertion(TargetMessageType.RESPONSE, null, "foo", null, false, false);
+        assertEquals(TargetMessageType.RESPONSE, regex.getTarget());
+        assertNull(regex.getOtherTargetMessageVariable());
+        assertFalse(regex.isAutoTarget());
+        assertEquals("foo", regex.getRegex());
+        assertFalse(regex.isReplace());
+        assertNull(regex.getReplacement());
+        assertFalse(regex.isCaseInsensitive());
+        assertFalse(regex.isEnabled());
+    }
+
+    @Test
+    public void createRegexAssertionWithReplacement() throws Exception {
+        final Regex regex = PolicyBuilder.createRegexAssertion(TargetMessageType.RESPONSE, null, "foo", "bar", true, true);
+        assertEquals(TargetMessageType.RESPONSE, regex.getTarget());
+        assertNull(regex.getOtherTargetMessageVariable());
+        assertFalse(regex.isAutoTarget());
+        assertEquals("foo", regex.getRegex());
+        assertTrue(regex.isReplace());
+        assertEquals("bar", regex.getReplacement());
+        assertTrue(regex.isCaseInsensitive());
+        assertTrue(regex.isEnabled());
+    }
+
+    @Test
+    public void createRegexAssertionOtherTarget() throws Exception {
+        final Regex regex = PolicyBuilder.createRegexAssertion(TargetMessageType.OTHER, "other", "foo", null, false, false);
+        assertEquals(TargetMessageType.OTHER, regex.getTarget());
+        assertEquals("other", regex.getOtherTargetMessageVariable());
+        assertFalse(regex.isAutoTarget());
+        assertEquals("foo", regex.getRegex());
+        assertFalse(regex.isReplace());
+        assertNull(regex.getReplacement());
+        assertFalse(regex.isCaseInsensitive());
+        assertFalse(regex.isEnabled());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createRegexAssertionOtherTargetNullOtherTargetName() throws Exception {
+        PolicyBuilder.createRegexAssertion(TargetMessageType.OTHER, null, "foo", null, false, false);
     }
 }

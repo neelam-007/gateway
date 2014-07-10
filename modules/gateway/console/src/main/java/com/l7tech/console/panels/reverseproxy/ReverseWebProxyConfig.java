@@ -13,6 +13,7 @@ public class ReverseWebProxyConfig {
     private String webAppHost;
     private String routingUri = "*";
     private WebApplicationType webAppType = WebApplicationType.SHAREPOINT;
+    private boolean rewriteQuery = true;
     private boolean rewriteLocationHeader = true;
     private boolean rewriteHostHeader;
     private boolean rewriteCookies = true;
@@ -56,6 +57,14 @@ public class ReverseWebProxyConfig {
 
     public void setWebAppType(@NotNull final WebApplicationType webAppType) {
         this.webAppType = webAppType;
+    }
+
+    public boolean isRewriteQuery() {
+        return rewriteQuery;
+    }
+
+    public void setRewriteQuery(final boolean rewriteQuery) {
+        this.rewriteQuery = rewriteQuery;
     }
 
     public boolean isRewriteLocationHeader() {

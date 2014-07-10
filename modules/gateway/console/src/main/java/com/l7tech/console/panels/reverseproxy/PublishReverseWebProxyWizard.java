@@ -9,6 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.builder.PolicyBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -171,7 +172,12 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
 
     private static void rewriteQuery(final ReverseWebProxyConfig config, final PolicyBuilder builder) {
         if (config.getWebAppType() == ReverseWebProxyConfig.WebApplicationType.SHAREPOINT) {
-            builder.regex(OTHER, QUERY, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, true, REWRITE_REQ_QUERY);
+            final List<Regex> assertions = new ArrayList<>();
+            assertions.add(PolicyBuilder.createRegexAssertion(OTHER, QUERY, $_REQUEST_HOST, $_WEB_APP_HOST, true, config.isRewriteQuery()));
+            assertions.add(PolicyBuilder.createRegexAssertion(OTHER, QUERY, $_REQUEST_HOST_ENCODED, $_WEB_APP_HOST_ENCODED, true, config.isRewriteQuery()));
+            builder.multipleRegex(assertions, config.isRewriteQuery(), REWRITE_REQ_QUERY);
+        } else {
+            builder.regex(OTHER, QUERY, $_REQUEST_HOST, $_WEB_APP_HOST, true, config.isRewriteQuery(), REWRITE_REQ_QUERY);
         }
     }
 
