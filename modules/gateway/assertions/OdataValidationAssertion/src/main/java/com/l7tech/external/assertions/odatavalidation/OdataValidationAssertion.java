@@ -43,7 +43,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     private String variablePrefix;
     private boolean validatePayload = true;
 
-    private EnumSet<ProtectionActions> actions = EnumSet.of( ProtectionActions.ALLOW_METADATA );
+    private EnumSet<ProtectionActions> actions;
 
     private boolean readOperation = true;
     private boolean createOperation = true;
@@ -52,6 +52,9 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     private boolean mergeOperation = false;
     private boolean deleteOperation = false;
 
+    private EnumSet<ProtectionActions> lazyGetActions() {
+        return actions == null ? EnumSet.of(ProtectionActions.ALLOW_METADATA) : actions;
+    }
 
     public boolean isValidatePayload() {
         return validatePayload;
@@ -127,15 +130,15 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     }
 
     public Set<ProtectionActions> allActions() {
-        return actions;
+        return lazyGetActions();
     }
 
     public void addAction(@NotNull ProtectionActions action) {
-        actions.add(action);
+        lazyGetActions().add(action);
     }
 
     public void removeAction(ProtectionActions action) {
-        actions.remove(action);
+        lazyGetActions().remove(action);
     }
 
 

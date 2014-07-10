@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.odatavalidation.server;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -14,13 +13,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
-import org.apache.olingo.odata2.api.uri.NavigationPropertySegment;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,6 +26,10 @@ import java.util.Set;
  * @see com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion
  */
 public class ServerOdataValidationAssertion extends AbstractMessageTargetableServerAssertion<OdataValidationAssertion> {
+
+    public static final String METADATA_SUFFIX = "$metadata";
+    public static final String VALUE_SUFFIX = "$value";
+
     private final String[] variablesUsed;
 
     public ServerOdataValidationAssertion(final OdataValidationAssertion assertion) {
@@ -43,6 +43,58 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                                           final String targetName,
                                           final AuthenticationContext authContext) throws IOException {
         Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
+
+        OdataValidationAssertion.OdataOperations requestMethod =
+                OdataValidationAssertion.OdataOperations.valueOf(context.getRequest().getHttpRequestKnob().getMethodAsString());
+
+        String inboundURL = context.getRequest().getHttpRequestKnob().getRequestUrl();
+
+        // Check HTTP request method is authorized
+        switch ( requestMethod ) {
+            case GET:
+                if ( ! assertion.isReadOperation() ) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            case POST:
+                if ( ! assertion.isCreateOperation() ) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            case PUT:
+                if ( ! assertion.isUpdateOperation() ) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            case MERGE:
+                if ( ! assertion.isMergeOperation() ) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            case PATCH:
+                if ( ! assertion.isPartialUpdateOperation() ) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            default:
+                return AssertionStatus.UNAUTHORIZED;
+        }
+
+        // Check Permitted Actions
+        boolean isMetadataRequest = inboundURL.endsWith(METADATA_SUFFIX);
+        boolean isValueRequest = inboundURL.endsWith(VALUE_SUFFIX);
+        if ( isMetadataRequest && ! assertion.allActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA) ) {
+            return AssertionStatus.UNAUTHORIZED;
+        }
+        if ( isValueRequest && ! assertion.allActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE) ) {
+            return AssertionStatus.UNAUTHORIZED;
+        }
+
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
         variablePrefix = variablePrefix != null ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
