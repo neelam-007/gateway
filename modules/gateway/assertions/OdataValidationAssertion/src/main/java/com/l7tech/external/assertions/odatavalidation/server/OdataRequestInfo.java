@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.odatavalidation.server;
 import org.apache.olingo.odata2.api.edm.EdmEntitySet;
 import org.apache.olingo.odata2.api.edm.EdmProperty;
 import org.apache.olingo.odata2.api.uri.NavigationPropertySegment;
+import org.apache.olingo.odata2.api.uri.PathSegment;
 import org.apache.olingo.odata2.api.uri.SelectItem;
 import org.apache.olingo.odata2.api.uri.expression.FilterExpression;
 import org.apache.olingo.odata2.api.uri.expression.OrderByExpression;
@@ -23,12 +24,14 @@ public class OdataRequestInfo {
 
     private final String expandExpression;
     private final String selectExpression;
+    private final List<PathSegment> odataSegments;
 
     public OdataRequestInfo(@NotNull UriInfoImpl uriInfo,
-                            @Nullable String expandExpression, @Nullable String selectExpression) {
+                            @Nullable String expandExpression, @Nullable String selectExpression, List<PathSegment> odataSegments) {
         this.uriInfo = uriInfo; // TODO jwilliams: maybe add a flag to indicate if a payload is expected or not, based on the URI type?
         this.expandExpression = expandExpression;
         this.selectExpression = selectExpression;
+        this.odataSegments = odataSegments;
     }
 
     public boolean isServiceDocumentRequest() {
@@ -123,5 +126,9 @@ public class OdataRequestInfo {
 
     public UriType getUriType() {
         return uriInfo.getUriType();
+    }
+
+    public List<PathSegment> getOdataSegments() {
+        return odataSegments;
     }
 }

@@ -38,8 +38,9 @@ public class OdataParser {
         UriInfoImpl uriInfo;
         Map<String, String> queryParameters;
 
+        List<PathSegment> odataSegments = extractPathSegments(resourcePath);
+
         try {
-            List<PathSegment> odataSegments = extractPathSegments(resourcePath);
             queryParameters = extractQueryParameters(queryString);
 
             uriInfo = (UriInfoImpl) uriParser.parse(odataSegments, queryParameters);
@@ -72,7 +73,7 @@ public class OdataParser {
             }
         }
 
-        return new OdataRequestInfo(uriInfo, expandExpression, selectExpression);
+        return new OdataRequestInfo(uriInfo, expandExpression, selectExpression, odataSegments);
     }
 
     /**
@@ -127,7 +128,7 @@ public class OdataParser {
                 case URI16:
                 case URI50A:
                 case URI50B:
-                    System.out.println("PAYLOAD NOT SUPPORTED " + requestInfo.getUriType());
+                    System.out.println("PAYLOAD NOT SUPPORTED " + requestInfo.getUriType()); // TODO jwilliams: remove me!
                         throw new OdataParsingException("Payload not supported for this request type.");
 
                 // batch operation
@@ -135,12 +136,17 @@ public class OdataParser {
                     throw new OdataParsingException("Parsing of Batch Requests not supported.");
 
                 // create an entity
-                case URI1:          // TODO jwilliams: check what happens when creating a new media entry - does readEntry() fail? Should we check for hasStream first?
+                case URI1:
                 case URI6B:
                     switch (method) {
                         case "POST":
-                            entry = EntityProvider.readEntry(payloadContentType,
-                                    requestInfo.getTargetEntitySet(), payload, readProperties);
+                            if (requestInfo.getTargetEntitySet().getEntityType().hasStream()) {  // creating a media resource
+                                // no need to use EntityProvider.readBinary() - it doesn't do any validation
+                                media = true;
+                            } else {  // creating regular entry
+                                entry = EntityProvider.readEntry(payloadContentType,
+                                        requestInfo.getTargetEntitySet(), payload, readProperties);
+                            }
                             break;
                         default:
                             throw new OdataParsingException("HTTP method '" + method +
@@ -238,7 +244,7 @@ public class OdataParser {
                 case URI17:
                     switch (method) {
                         case "PUT":
-                            // no need to read the input with EntityProvider.readBinary() - it doesn't do any validation
+                            // no need to use EntityProvider.readBinary() - it doesn't do any validation
                             media = true;
                             break;
                         default:
@@ -251,7 +257,7 @@ public class OdataParser {
                 default:
                     throw new OdataParsingException("Unknown request type.");
             }
-        } catch (EntityProviderException e) {
+        } catch (EntityProviderException | EdmException e) {
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);
         }
 

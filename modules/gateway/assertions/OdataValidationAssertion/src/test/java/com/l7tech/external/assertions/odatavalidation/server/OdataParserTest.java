@@ -601,6 +601,17 @@ public class OdataParserTest {
         }
     }
 
+    @Test
+    public void testParsePayload_CreateNewMediaResourceEntryWithHttpMethodPost_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("JUNK BYTES".getBytes());
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/ProductImages", "");
+
+        OdataPayloadInfo payloadInfo = parser.parsePayload(POST, requestInfo, payloadInputStream, "image/png");
+
+        validatePayloadInfo(payloadInfo, false, false, true, 0, 0); // new media resource entry
+    }
+
     /**
      * Create entity requests should only accept POST
      */
