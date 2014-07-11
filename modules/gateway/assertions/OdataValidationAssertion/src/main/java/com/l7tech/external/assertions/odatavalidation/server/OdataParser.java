@@ -100,6 +100,8 @@ public class OdataParser {
             } catch (IOException e) {
                 throw new OdataParsingException("Payload could not be read: " + ExceptionUtils.getMessage(e), e);
             }
+
+            return null;
         }
 
         boolean media = false;
@@ -121,10 +123,6 @@ public class OdataParser {
                 case URI16:     // count single entity
                 case URI50A:    // count of link to single entity
                 case URI50B:    // count of links to multiple entities
-                    if ("GET".equals(method)) {
-                        return null;
-                    }
-
                     throw new OdataParsingException("HTTP method '" + method + "' invalid for the requested resource.");
 
                 // service operations - only take GET and POST requests, but payload can't be validated
@@ -133,7 +131,7 @@ public class OdataParser {
                 case URI12:     // function import returning single complex property
                 case URI13:     // function import returning collection of primitives
                 case URI14:     // function import returning single primitive property
-                    if ("GET".equals(method) || "POST".equals(method)) {
+                    if ("POST".equals(method)) {
                         return null;  // we don't know what the payload might be, so we can't parse it
                     }
 
