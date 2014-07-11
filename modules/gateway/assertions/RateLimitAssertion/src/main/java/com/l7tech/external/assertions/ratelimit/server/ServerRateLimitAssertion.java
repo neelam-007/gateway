@@ -64,6 +64,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong maxTotalSleepTime = new AtomicLong( (long) DEFAULT_MAX_TOTAL_SLEEP_TIME );
     private static final AtomicLong clusterPollInterval = new AtomicLong( DEFAULT_CLUSTER_POLL_INTERVAL );
     private static final AtomicLong clusterStatusInteval = new AtomicLong( DEFAULT_CLUSTER_STATUS_INTERVAL );
+    static boolean auditLimitExceeded = true;
     static boolean useNanos = true;
     static boolean autoFallbackFromNanos = !ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.forceNanos", false );
     static TimeSource clock = new TimeSource();
@@ -188,7 +189,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             return AssertionStatus.NONE;
         }
 
-        logAndAudit( AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName );
+        if ( auditLimitExceeded )
+            logAndAudit( AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName );
         if(assertion.isLogOnly()){
             return AssertionStatus.NONE;
         }
@@ -380,6 +382,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     public static RateLimitCounter findExistingCounter(String counterName) {
         return counters.get(counterName);
     }
+
+
 
     private String getConterName(PolicyEnforcementContext context) {
         return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, getAudit()), getAudit());

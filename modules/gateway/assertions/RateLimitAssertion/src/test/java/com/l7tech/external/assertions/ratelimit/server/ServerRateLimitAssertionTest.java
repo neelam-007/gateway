@@ -21,10 +21,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TestTimeSource;
-import com.l7tech.util.TimeSource;
-import com.l7tech.util.TimeoutExecutor;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,10 +49,6 @@ import static junit.framework.Assert.*;
  * Test the RateLimitAssertion.
  */
 public class ServerRateLimitAssertionTest {
-    static {
-        //SyspropUtil.setProperty( "com.l7tech.external.server.ratelimit.logAtInfo", "true" );
-    }
-
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
 
     /** A mock system clock for testing purposes. */
@@ -131,6 +125,9 @@ public class ServerRateLimitAssertionTest {
         ServerRateLimitAssertion.useNanos = true;
         ServerRateLimitAssertion.autoFallbackFromNanos = false;
         sleepHandler.set(new FailingSleepHandler("no sleep handler configured for current test"));
+
+        // Turn off auditing for limit exceeded, to avoid flooding the TeamCity test server log and eating time
+        ServerRateLimitAssertion.auditLimitExceeded = false;
     }
 
     private PolicyEnforcementContext makeContext() throws Exception {
@@ -226,6 +223,7 @@ public class ServerRateLimitAssertionTest {
     }
 
     private void doLogOnlyTest(final boolean shapeRequests) throws Exception {
+        ServerRateLimitAssertion.auditLimitExceeded = true;
         final RateLimitAssertion rla = new RateLimitAssertion();
         rla.setMaxRequestsPerSecond("1");
         rla.setLogOnly(true);
