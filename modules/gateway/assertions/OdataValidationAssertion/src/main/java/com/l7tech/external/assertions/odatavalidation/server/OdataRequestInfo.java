@@ -28,7 +28,7 @@ public class OdataRequestInfo {
 
     public OdataRequestInfo(@NotNull UriInfoImpl uriInfo,
                             @Nullable String expandExpression, @Nullable String selectExpression, List<PathSegment> odataSegments) {
-        this.uriInfo = uriInfo; // TODO jwilliams: maybe add a flag to indicate if a payload is expected or not, based on the URI type?
+        this.uriInfo = uriInfo;
         this.expandExpression = expandExpression;
         this.selectExpression = selectExpression;
         this.odataSegments = odataSegments;

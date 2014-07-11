@@ -32,9 +32,6 @@ import java.util.Set;
  */
 public class ServerOdataValidationAssertion extends AbstractMessageTargetableServerAssertion<OdataValidationAssertion> {
 
-    public static final String METADATA_SUFFIX = "$metadata";
-    public static final String VALUE_SUFFIX = "$value";
-
     private final String[] variablesUsed;
 
     public ServerOdataValidationAssertion(final OdataValidationAssertion assertion) {
@@ -51,8 +48,6 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
         OdataValidationAssertion.OdataOperations requestMethod =
                 OdataValidationAssertion.OdataOperations.valueOf(context.getRequest().getHttpRequestKnob().getMethodAsString());
-
-        String inboundURL = context.getRequest().getHttpRequestKnob().getRequestUrl();
 
         // Check HTTP request method is authorized
         switch (requestMethod) {
@@ -96,18 +91,6 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                 return AssertionStatus.UNAUTHORIZED;
         }
 
-        // Check Permitted Actions
-        boolean isMetadataRequest = inboundURL.endsWith(METADATA_SUFFIX);
-        boolean isValueRequest = inboundURL.endsWith(VALUE_SUFFIX);
-        if (isMetadataRequest && !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_SMD);
-            return AssertionStatus.UNAUTHORIZED;
-        }
-        if (isValueRequest && !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE);
-            return AssertionStatus.UNAUTHORIZED;
-        }
-
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
         variablePrefix = !variablePrefix.isEmpty() ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
@@ -131,16 +114,19 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         } else {
             path = resourceUrl;
         }
-        OdataRequestInfo odataRequestInfo = null;
+
+        Edm metadataEdm;
         InputStream metadataStream = new ByteArrayInputStream(metadata.getBytes());
-        Edm metadataEdm = null;
 
         try {
             metadataEdm = EntityProvider.readMetadata(metadataStream, false);
         } catch (EntityProviderException e) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD,
+                    new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
+
+        OdataRequestInfo odataRequestInfo;
 
         //Create parser
         OdataParser parser = new OdataParser(metadataEdm);
@@ -152,8 +138,21 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             setContextVariables(odataRequestInfo, variablePrefix, context);
 
         } catch (OdataParser.OdataParsingException e) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI,
+                    new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FALSIFIED;
+        }
+
+        // Check Permitted Actions
+        if (odataRequestInfo.isMetadataRequest() &&
+                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_SMD);
+            return AssertionStatus.UNAUTHORIZED;
+        }
+        if (odataRequestInfo.isValueRequest() &&
+                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE);
+            return AssertionStatus.UNAUTHORIZED;
         }
 
         if (assertion.isValidatePayload()) {
@@ -165,23 +164,26 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                 logAndAudit(AssertionMessages.MESSAGE_NOT_INITIALIZED, targetName);
                 return getBadMessageStatus();
             }
-            //determine
+
+            //determine content type
             String contentType;
-            ContentTypeHeader ctype = mimeKnob.getOuterContentType();
-            if (ctype != null) {
-                contentType = ctype.getType() + "/" + ctype.getSubtype();
+            ContentTypeHeader contentTypeHeader = mimeKnob.getOuterContentType();
+            if (contentTypeHeader != null) {
+                contentType = contentTypeHeader.getType() + "/" + contentTypeHeader.getSubtype();
             } else {
-                contentType = "application/xml";// this is OData default content type
+                contentType = "application/xml"; // this is OData default content type
             }
 
             try {
                 //parse the payload
                 parser.parsePayload(requestMethod.toString(), odataRequestInfo, mimeKnob.getEntireMessageBodyAsInputStream(), contentType);
             } catch (OdataParser.OdataParsingException e) {
-                logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD, new String[]{targetName, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD,
+                        new String[]{targetName, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FALSIFIED;
             } catch (NoSuchPartException e) {
-                logAndAudit(AssertionMessages.NO_SUCH_PART, new String[]{assertion.getTargetName(), e.getWhatWasMissing()}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.NO_SUCH_PART, new String[]{assertion.getTargetName(),
+                        e.getWhatWasMissing()}, ExceptionUtils.getDebugException(e));
                 return getBadMessageStatus();
             }
         }
@@ -198,7 +200,8 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                 context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, filterParts.toArray(new String[filterParts.size()]));
             }
         } catch (OdataValidationException e) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_EXPRESSION_ERROR, new String[]{"filter", ExceptionUtils.getMessage(e.getCause())}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_EXPRESSION_ERROR,
+                    new String[]{"filter", ExceptionUtils.getMessage(e.getCause())}, ExceptionUtils.getDebugException(e));
             //set filter as string
             context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, odataRequestInfo.getFilterExpressionString());
         }
@@ -214,7 +217,8 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                 context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, orderByParts.toArray(new String[orderByParts.size()]));
             }
         } catch (OdataValidationException e) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_EXPRESSION_ERROR, new String[]{"orderby", ExceptionUtils.getMessage(e.getCause())}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_EXPRESSION_ERROR,
+                    new String[]{"orderby", ExceptionUtils.getMessage(e.getCause())}, ExceptionUtils.getDebugException(e));
             //set orderby as string
             context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, odataRequestInfo.getOrderByExpressionString());
         }

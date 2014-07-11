@@ -581,9 +581,13 @@ public class OdataParserTest {
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
 
-        OdataPayloadInfo payloadInfo = parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+        try {
+            parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
 
-        assertNull(payloadInfo);
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("HTTP method 'DELETE' invalid for the requested resource.", e.getMessage());
+        }
     }
 
     @Test
@@ -601,6 +605,22 @@ public class OdataParserTest {
         }
     }
 
+    /**
+     * Metadata request URI should not
+     */
+    @Test
+    public void testParsePayload_MetadataDocumentRequest_ParsingSucceeds() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/$metadata", "");
+
+        OdataPayloadInfo payloadInfo =
+                checkInvalidMethodsRejected("FOO", requestInfo, POST, PUT, PATCH, MERGE, TRACE);
+
+        assertNull(payloadInfo);
+    }
+
+    /**
+     * Create media resource requests should only accept POST
+     */
     @Test
     public void testParsePayload_CreateNewMediaResourceEntryWithHttpMethodPost_ParsingSucceeds() throws Exception {
         InputStream payloadInputStream = new ByteArrayInputStream("JUNK BYTES".getBytes());

@@ -171,31 +171,28 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "OData Validation");
-        meta.put(AssertionMetadata.LONG_NAME, "Validate OData request against Service Metadata Document and scan for threats");
+        meta.put(AssertionMetadata.LONG_NAME, "Validate OData request against Service Metadata Document");
 
         // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "threatProtection" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON,
+                "com/l7tech/external/assertions/odatavalidation/console/resources/OData.jpg");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.odatavalidation.console.OdataValidationDialog");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME,
+                "com.l7tech.external.assertions.odatavalidation.console.OdataValidationDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "OData Validation Properties");
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:OdataValidation" rather than "set:modularAssertions"
+
+        // request default feature set name for our class name, since we are a known optional module, that is, we
+        // want our required feature set to be "assertion:OdataValidation" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, OdataValidationAssertion>(){
             @Override

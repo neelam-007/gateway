@@ -158,7 +158,7 @@
               <text value="Service Metadata: *"/>
             </properties>
           </component>
-          <component id="55b74" class="javax.swing.JTextField" binding="odataResourcetUrl">
+          <component id="55b74" class="javax.swing.JTextField" binding="odataResourceUrl">
             <constraints>
               <grid row="1" column="2" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>

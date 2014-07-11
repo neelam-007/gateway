@@ -100,8 +100,6 @@ public class OdataParser {
             } catch (IOException e) {
                 throw new OdataParsingException("Payload could not be read: " + ExceptionUtils.getMessage(e), e);
             }
-
-            return null;
         }
 
         boolean media = false;
@@ -115,21 +113,31 @@ public class OdataParser {
                     EntityProviderReadProperties.init().mergeSemantic(false).build();
 
             switch (requestInfo.getUriType()) {
-                // operations that don't take payloads
-                case URI0:
-                case URI6A:
-                case URI8:
-                case URI10:
-                case URI11:
-                case URI12:     // TODO jwilliams: test these cases for rejection
-                case URI13:
-                case URI14:
-                case URI15:
-                case URI16:
-                case URI50A:
-                case URI50B:
-                    System.out.println("PAYLOAD NOT SUPPORTED " + requestInfo.getUriType()); // TODO jwilliams: remove me!
-                        throw new OdataParsingException("Payload not supported for this request type.");
+                // operations that don't take payloads, and only allow GET requests
+                case URI0:      // service document
+                case URI6A:     // navigation property with multiplicity '1' or '0..1'
+                case URI8:      // $metadata
+                case URI15:     // count of entity set
+                case URI16:     // count single entity
+                case URI50A:    // count of link to single entity
+                case URI50B:    // count of links to multiple entities
+                    if ("GET".equals(method)) {
+                        return null;
+                    }
+
+                    throw new OdataParsingException("HTTP method '" + method + "' invalid for the requested resource.");
+
+                // service operations - only take GET and POST requests, but payload can't be validated
+                case URI10:     // function import returning single entity
+                case URI11:     // function import returning collection of complex type
+                case URI12:     // function import returning single complex property
+                case URI13:     // function import returning collection of primitives
+                case URI14:     // function import returning single primitive property
+                    if ("GET".equals(method) || "POST".equals(method)) {
+                        return null;  // we don't know what the payload might be, so we can't parse it
+                    }
+
+                    throw new OdataParsingException("HTTP method '" + method + "' invalid for the requested resource.");
 
                 // batch operation
                 case URI9:
@@ -255,7 +263,7 @@ public class OdataParser {
                     break;
 
                 default:
-                    throw new OdataParsingException("Unknown request type.");
+                    throw new OdataParsingException("Unrecognized request type.");
             }
         } catch (EntityProviderException | EdmException e) {
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);

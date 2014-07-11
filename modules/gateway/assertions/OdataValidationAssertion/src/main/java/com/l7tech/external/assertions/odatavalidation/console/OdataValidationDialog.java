@@ -41,7 +41,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private JLabel metadataSourceLabel;
     private JButton okButton;
     private JButton cancelButton;
-    private JTextField odataResourcetUrl;
+    private JTextField odataResourceUrl;
     private JPanel xmlPanel;
     private JLabel resourceUrlLabel;
     private RSyntaxTextArea metadataSource;
@@ -55,7 +55,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
     protected void initComponents() {
         super.initComponents();
-        //TODO implement specific dialog initialization
+
         targetVariablePanel.setDefaultVariableOrPrefix("odata");
         targetVariablePanel.setSuffixes(new ArrayList<>(Arrays.asList("one", "two", "three")));
         setContentPane(contentPanel);
@@ -81,7 +81,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
         InputValidator inputValidator = new InputValidator(this,"Something - in property file");
         // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
-        inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourcetUrl, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourceUrl, null);
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -117,8 +117,12 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      */
     @Override
     public void setData(OdataValidationAssertion assertion) {
-        odataResourcetUrl.setText(assertion.getResourceUrl());
-        EnumSet<OdataValidationAssertion.ProtectionActions> availableActions = assertion.getActions() != null?assertion.getActions():EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+        EnumSet<OdataValidationAssertion.ProtectionActions> availableActions =
+                assertion.getActions() != null
+                        ? assertion.getActions()
+                        : EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+
+        odataResourceUrl.setText(assertion.getResourceUrl());
         metadataCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
         rawValueCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
         getMethodCheckBox.setSelected(assertion.isReadOperation());
@@ -128,7 +132,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         mergeMethodCheckBox.setSelected(assertion.isMergeOperation());
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
         validatePayload.setSelected(assertion.isValidatePayload());
-        if ( assertion.getOdataMetadataSource() != null)
+        if (assertion.getOdataMetadataSource() != null)
           metadataSource.setText(assertion.getOdataMetadataSource());
     }
 
@@ -142,7 +146,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public OdataValidationAssertion getData(OdataValidationAssertion assertion) throws ValidationException {
         // assertion.setOdataMetadataSource(metadataSourceTextField.getText());
-        assertion.setResourceUrl(odataResourcetUrl.getText());
+        assertion.setResourceUrl(odataResourceUrl.getText());
         //set actions
         EnumSet<OdataValidationAssertion.ProtectionActions> tempSet = EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class);
         setAction(tempSet, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
