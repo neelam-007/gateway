@@ -391,7 +391,7 @@ public class WorkSpacePanel extends JPanel {
     /**
      * Update policy tabs information such as saving last opened tabs and validating policy tab properties.
      */
-    public void updatePolicyTabsInformationIntoProperties() {
+    public void updatePolicyTabsProperties() {
         validatePolicyTabProperties();
         saveLastOpenedPolicyTabs();
     }
@@ -515,7 +515,8 @@ public class WorkSpacePanel extends JPanel {
                 }
 
                 String policyGoid = token.substring(0, delimiterIdx);
-                // Check if the policy goid has been validated or not.  If so, do not validate it again.
+
+                // Validate a policy goid.  Before doing that, check if the policy goid has been validated or not.
                 boolean validPolicy;
                 if (validationCache.containsKey(policyGoid)) {
                     validPolicy = validationCache.get(policyGoid);
@@ -527,16 +528,13 @@ public class WorkSpacePanel extends JPanel {
                             validPolicy = false;
                             log.fine("The policy (goid=" + policyGoid + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
                         }
-                    } catch (PermissionDeniedException pde) {
-                        // Still treat this case as a valid policy
-                        log.fine(ExceptionUtils.getMessage(pde));
-                    } catch (Exception e) {
+                    } catch (FindException e) {
                         validPolicy = false;
-                        if (e instanceof FindException) {
-                            log.fine("The policy (goid=" + policyGoid + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
-                        } else {
-                            log.info("Error on finding a policy: " + ExceptionUtils.getMessage(e) + ".  The tab setting of the policy is removed from '" + propName + "'.");
-                        }
+                        log.fine("The policy (goid=" + policyGoid + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                    } catch (Throwable t) {
+                        // For other exceptions such as PermissionDeniedException, RemoteInvocationFailureException, etc,
+                        // we still treat these cases as a valid policy
+                        log.fine(ExceptionUtils.getMessage(t));
                     }
                     validationCache.put(policyGoid, validPolicy);
                 }
@@ -562,7 +560,9 @@ public class WorkSpacePanel extends JPanel {
                         log.fine("The property '" + propName + "' has an invalid policy version number, '" + versionOrdinal + "', so its policy tab settings is removed from '" + propName + "'.");
                         continue;
                     }
-                    // Validate policy goid and policy version number.  However, check if the policy version has been validated already.
+
+                    // Validate policy versions (identified by policy goid and policy version ordinal).
+                    // However, first check if the policy version has been validated already.
                     String versionUniqueKey = policyGoid + '#' + versionOrdinal;
                     boolean validPolicyVersion;
                     if (validationCache.containsKey(versionUniqueKey)) {
@@ -575,16 +575,13 @@ public class WorkSpacePanel extends JPanel {
                                 log.fine("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") does not exist, its policy tab setting is removed from '" + propName + "'.");
                                 validPolicyVersion = false;
                             }
-                        } catch (PermissionDeniedException pde) {
-                            // Still treat this case as a valid policy
-                            log.fine(ExceptionUtils.getMessage(pde));
-                        } catch (Exception e) {
+                        } catch (FindException e) {
                             validPolicyVersion = false;
-                            if (e instanceof FindException) {
-                                log.fine("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
-                            } else {
-                                log.info("Error on finding a policy version: " + ExceptionUtils.getMessage(e) + ".  The tab setting of the policy version is removed from '" + propName + "'.");
-                            }
+                            log.fine("The policy version (goid=" + policyGoid + ", version=" + versionOrdinal + ") cannot be found, its policy tab setting is removed from '" + propName + "'.");
+                        } catch (Throwable t) {
+                            // For other exceptions such as PermissionDeniedException, RemoteInvocationFailureException, etc,
+                            // we still treat these cases as a valid policy
+                            log.fine(ExceptionUtils.getMessage(t));
                         }
                         validationCache.put(versionUniqueKey, validPolicyVersion);
                     }
@@ -592,6 +589,10 @@ public class WorkSpacePanel extends JPanel {
 
                     // At this moment, policyGoid and verionOrdinal are good, then add the version and version back to the string builder
                     if (updatedVersionAndValueSB.length() > 0) updatedVersionAndValueSB.append(", ");
+
+                    // Remove a redundant character ')'.
+                    if (settingValue.endsWith(")")) settingValue = settingValue.substring(0, settingValue.length() - 1);
+
                     updatedVersionAndValueSB.append(versionOrdinal).append('#').append(settingValue);
                 }
                 if (updatedVersionAndValueSB.length() == 0) continue;
@@ -605,12 +606,12 @@ public class WorkSpacePanel extends JPanel {
             } else if (! updatedPropValueSB.equals(propValue)) {
                 preferences.putProperty(propName, updatedPropValueSB.toString());
             }
-
-            try {
-                preferences.store();
-            } catch ( IOException e ) {
-                log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
-            }
+        }
+        // Update the policy manager preferences in ssg.properties
+        try {
+            preferences.store();
+        } catch ( IOException e ) {
+            log.warning( "Unable to store preferences " + ExceptionUtils.getMessage(e));
         }
     }
 

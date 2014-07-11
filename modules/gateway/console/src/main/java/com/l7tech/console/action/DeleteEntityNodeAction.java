@@ -209,5 +209,8 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
 
         // Close all tabs related to the deleted entity node.
         creg.getCurrentWorkspace().closeTabsRelatedToPolicyNode(policyGoid);
+
+        // Update the list of the last opened policies
+        creg.getCurrentWorkspace().saveLastOpenedPolicyTabs();
     }
 }

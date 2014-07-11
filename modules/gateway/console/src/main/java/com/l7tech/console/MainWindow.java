@@ -1355,7 +1355,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     public void actionPerformed(ActionEvent event) {
                         try {
                             if (isConnected()) {
-                                getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
+                                getWorkSpacePanel().updatePolicyTabsProperties();
                             }
                             getWorkSpacePanel().clearWorkspace(); // vetoable
 
@@ -3272,7 +3272,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void exitMenuEventHandler() {
         if (isConnected()) {
             try {
-                getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
+                getWorkSpacePanel().updatePolicyTabsProperties();
                 getWorkSpacePanel().clearWorkspace(); // vetoable
                 disconnectFromGateway();
             } catch (ActionVetoException e) {
@@ -3565,7 +3565,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     MainWindow.this.getStatusMsgRight().
                             setText("inactivity timeout expired; disconnecting...");
 
-                    getWorkSpacePanel().updatePolicyTabsInformationIntoProperties();
+                    getWorkSpacePanel().updatePolicyTabsProperties();
                     TopComponents.getInstance().setConnectionLost(true);
                     MainWindow.this.disconnectFromGateway();
                     SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();

@@ -194,7 +194,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             // is not invalidated when disconnecting the workspace
             if ( mainWindow.isConnected() ) {
                 String sessionId = this.sessionId;
-                TopComponents.getInstance().getCurrentWorkspace().updatePolicyTabsInformationIntoProperties();
+                TopComponents.getInstance().getCurrentWorkspace().updatePolicyTabsProperties();
                 mainWindow.disconnectFromGateway();
                 this.sessionId = sessionId;
             }
@@ -427,7 +427,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             public void run() {
                 // Remove applet content
                 AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );
-                TopComponents.getInstance().getCurrentWorkspace().updatePolicyTabsInformationIntoProperties();
+                TopComponents.getInstance().getCurrentWorkspace().updatePolicyTabsProperties();
                 getApplication().getMainWindow().disconnectFromGateway();
 
                 sessionId = null;
