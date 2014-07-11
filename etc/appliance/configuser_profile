@@ -136,7 +136,7 @@ doSystemConfiguration() {
             case $choice in
                 1) clear
                    if [ "${FST_PRESENT}" == "true" ] ; then
-                        (${FST_WIZARD} com.l7tech.platform.wizard.BaseSystemConfigurationWizard 2>"/tmp/network-wizard.err");
+                        (${FST_WIZARD} com.l7tech.platform.wizard.BaseSystemConfigurationWizard 2>"/dev/null");
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
                           confirmedMessage "Foundation Services is currently unavailable."
@@ -154,7 +154,7 @@ doSystemConfiguration() {
                    clear;;
                 3) clear
                    if [ "${FST_PRESENT}" == "true" ] ; then
-                        (${FST_WIZARD} com.l7tech.platform.wizard.system.KeyboardConfigurationWizard 2>"/tmp/keyboard-wizard.err");
+                        (${FST_WIZARD} com.l7tech.platform.wizard.system.KeyboardConfigurationWizard 2>"/dev/null");
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
                           confirmedMessage "Foundation Services is currently unavailable."
@@ -180,7 +180,7 @@ doSystemConfiguration() {
                 *) if [ "$choice" == "4" ] && [ "${AUTHMETHODS_CONFIG}" == "true" ]; then
                        clear
                        if [ "${FST_PRESENT}" == "true" ] ; then
-                            (${FST_WIZARD} com.l7tech.platform.wizard.authentication.AuthenticationConfigurationWizard 2>"/tmp/authentication-wizard.err");
+                            (${FST_WIZARD} com.l7tech.platform.wizard.authentication.AuthenticationConfigurationWizard 2>"/dev/null");
                             STATUS=$?
                             if [ $STATUS -eq 2 ] ; then
                               confirmedMessage "Foundation Services is currently unavailable."
@@ -196,7 +196,7 @@ doSystemConfiguration() {
                    elif [ "$choice" == "5" ] && [ "${FST_PRESENT}" == "true" ] ; then
                         clear
                         export JAVA_HOME=/opt/SecureSpan/JDK
-                        (${RESTRICTED_SHELL} -h 127.0.0.1 2>"/tmp/restricted-shell.err")
+                        (${RESTRICTED_SHELL} -h 127.0.0.1 2>"/dev/null")
                         STATUS=$?
                         if [ $STATUS -gt 0 ] ; then
                           confirmedMessage "Foundation Services is currently unavailable."
