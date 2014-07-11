@@ -276,7 +276,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
 
             if ( assertion.config() == null ) {
                 String suffix = assertion.isNoOpIfConfigMissing()
-                        ? "<font size=-3>(Not Available in Current Environment)"
+                        ? "<font size=-2>(Not Available in Current Environment)"
                         : "<font color=red>(Missing)";
                 return "<HTML><font color=gray>" + baseName + "   &nbsp;&nbsp;&nbsp;&nbsp;" + suffix;
             }
