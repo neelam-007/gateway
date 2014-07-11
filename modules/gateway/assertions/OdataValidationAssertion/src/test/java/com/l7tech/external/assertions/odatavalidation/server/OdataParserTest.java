@@ -581,13 +581,9 @@ public class OdataParserTest {
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
 
-        try {
-            parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+        OdataPayloadInfo payloadInfo = parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
 
-            fail("Expected OdataParsingException");
-        } catch (OdataParser.OdataParsingException e) {
-            assertEquals("HTTP method 'DELETE' invalid for the requested resource.", e.getMessage());
-        }
+        assertNull(payloadInfo);
     }
 
     @Test
