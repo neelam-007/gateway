@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -45,6 +44,9 @@ public class OdataParserTest {
                 "        <NavigationProperty Name=\"Category\" \n" +
                 "Relationship=\"ODataDemo.Product_Category_Category_Products\" FromRole=\"Product_Category\" \n" +
                 "ToRole=\"Category_Products\" />\n" +
+                "        <NavigationProperty Name=\"ProductImage\" \n" +
+                "Relationship=\"ODataDemo.Product_ProductImage_ProductImage_Products\" FromRole=\"Product_ProductImage\" \n" +
+                "ToRole=\"ProductImage_Products\" />\n" +
                 "        <NavigationProperty Name=\"Supplier\" \n" +
                 "Relationship=\"ODataDemo.Product_Supplier_Supplier_Products\" FromRole=\"Product_Supplier\" \n" +
                 "ToRole=\"Supplier_Products\" />\n" +
@@ -74,6 +76,12 @@ public class OdataParserTest {
                 "Relationship=\"ODataDemo.Product_Supplier_Supplier_Products\" FromRole=\"Supplier_Products\" \n" +
                 "ToRole=\"Product_Supplier\" />\n" +
                 "      </EntityType>\n" +
+                "      <EntityType Name=\"ProductImage\" m:HasStream=\"true\">\n" +
+                "        <Key>\n" +
+                "           <PropertyRef Name=\"PhotoId\" />\n" +
+                "        </Key>\n" +
+                "        <Property Name=\"PhotoId\" Type=\"Edm.Int32\" Nullable=\"false\" />\n" +
+                "      </EntityType>\n" +
                 "      <ComplexType Name=\"Address\">\n" +
                 "        <Property Name=\"Street\" Type=\"Edm.String\" Nullable=\"true\" />\n" +
                 "        <Property Name=\"City\" Type=\"Edm.String\" Nullable=\"true\" />\n" +
@@ -85,6 +93,10 @@ public class OdataParserTest {
                 "        <End Role=\"Product_Category\" Type=\"ODataDemo.Product\" Multiplicity=\"*\" />\n" +
                 "        <End Role=\"Category_Products\" Type=\"ODataDemo.Category\" Multiplicity=\"0..1\" />\n" +
                 "      </Association>\n" +
+                "      <Association Name=\"Product_ProductImage_ProductImage_Products\">\n" +
+                "        <End Role=\"Product_ProductImage\" Type=\"ODataDemo.Product\" Multiplicity=\"*\" />\n" +
+                "        <End Role=\"ProductImage_Products\" Type=\"ODataDemo.ProductImage\" Multiplicity=\"0..1\" />\n" +
+                "      </Association>\n" +
                 "      <Association Name=\"Product_Supplier_Supplier_Products\">\n" +
                 "        <End Role=\"Product_Supplier\" Type=\"ODataDemo.Product\" Multiplicity=\"*\" />\n" +
                 "        <End Role=\"Supplier_Products\" Type=\"ODataDemo.Supplier\" Multiplicity=\"0..1\" />\n" +
@@ -93,10 +105,16 @@ public class OdataParserTest {
                 "        <EntitySet Name=\"Products\" EntityType=\"ODataDemo.Product\" />\n" +
                 "        <EntitySet Name=\"Categories\" EntityType=\"ODataDemo.Category\" />\n" +
                 "        <EntitySet Name=\"Suppliers\" EntityType=\"ODataDemo.Supplier\" />\n" +
+                "        <EntitySet Name=\"ProductImages\" EntityType=\"ODataDemo.ProductImage\" />\n" +
                 "        <AssociationSet Name=\"Products_Category_Categories\" \n" +
                 "Association=\"ODataDemo.Product_Category_Category_Products\">\n" +
                 "          <End Role=\"Product_Category\" EntitySet=\"Products\" />\n" +
                 "          <End Role=\"Category_Products\" EntitySet=\"Categories\" />\n" +
+                "        </AssociationSet>\n" +
+                "        <AssociationSet Name=\"Product_ProductImage_ProductImage_Products\" \n" +
+                "Association=\"ODataDemo.Product_ProductImage_ProductImage_Products\">\n" +
+                "          <End Role=\"Product_ProductImage\" EntitySet=\"Products\" />\n" +
+                "          <End Role=\"ProductImage_Products\" EntitySet=\"ProductImages\" />\n" +
                 "        </AssociationSet>\n" +
                 "        <AssociationSet Name=\"Products_Supplier_Suppliers\" \n" +
                 "Association=\"ODataDemo.Product_Supplier_Supplier_Products\">\n" +
@@ -135,12 +153,52 @@ public class OdataParserTest {
     private static final String NEW_CATEGORY_ENTRY_PAYLOAD_JSON =
             "{\"d\": {\n" +
             "   \"__metadata\": {\n" +
-            "       \"uri\": \"http://services.odata.org/V2/OData/OData.svc/Categories(0)\", " +
             "       \"type\": \"ODataDemo.Category\"\n" +
             "   }, \n" +
             "   \"ID\": 100, \n" +
             "   \"Name\": \"Food\"\n" +
             "}}";
+
+    private static final String UPDATE_CATEGORY_ENTRY_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+            "   \"__metadata\": {\n" +
+            "       \"type\": \"ODataDemo.Category\"\n" +
+            "   }, \n" +
+            "   \"Name\": \"Cuisine\"\n" +
+            "}}";
+
+    private static final String UPDATE_PRODUCT_ENTRY_SIMPLE_PROPERTY_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+            "   \"Description\": \"Updated description\"\n" +
+            "}}";
+
+    private static final String UPDATE_SUPPLIER_ENTRY_COMPLEX_PROPERTY_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+            "   \"Address\": {\n" +
+            "       \"Street\": \"123 Street Rd\"\n" +
+            "   }\n" +
+            "}}";
+
+    private static final String UPDATE_ENTRY_SINGLE_ENTITY_LINK_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+            "   \"uri\" : \"Categories(0)\"\n" +
+            "}}";
+
+    private static final String UPDATE_ENTRY_MULTIPLE_ENTITIES_LINK_PAYLOAD_JSON =
+            "{\"d\": [\n" +
+            "   {\"uri\" : \"Products(0)\"},\n" +
+            "   {\"uri\" : \"Products(1)\"},\n" +
+            "   {\"uri\" : \"Products(2)\"}\n" +
+            "]}";
+
+    private static final String GET = "GET";
+    private static final String POST = "POST";
+    private static final String PUT = "PUT";
+    private static final String PATCH = "PATCH";
+    private static final String MERGE = "MERGE";
+    private static final String DELETE = "DELETE";
+    private static final String TRACE = "TRACE"; // this is used as an example of an unsupported method
+    private static final List<String> PAYLOAD_METHODS = Arrays.asList(POST, PUT, PATCH, MERGE, TRACE);
 
     private OdataParser parser;
 
@@ -395,11 +453,11 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
 
         try {
-            parser.parsePayload("PUT", requestInfo, payloadInputStream, "application/json");
+            parser.parsePayload(PUT, requestInfo, payloadInputStream, "application/json");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
-            assertEquals("HTTP method PUT invalid for the requested resource.", e.getMessage());
+            assertEquals("HTTP method 'PUT' invalid for the requested resource.", e.getMessage());
         }
     }
 
@@ -410,10 +468,9 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
 
         OdataPayloadInfo payloadInfo =
-                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+                parser.parsePayload(POST, requestInfo, payloadInputStream, "application/atom+xml");
 
-        assertEquals(false, payloadInfo.containsOpenTypeEntity());
-        // TODO jwilliams: validate payloadInfo
+        validatePayloadInfo(payloadInfo, true, false, false, 0, 0); // entity
     }
 
     /**
@@ -427,10 +484,9 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
 
         OdataPayloadInfo payloadInfo =
-                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+                parser.parsePayload(POST, requestInfo, payloadInputStream, "application/atom+xml");
 
-        assertEquals(false, payloadInfo.containsOpenTypeEntity());
-        // TODO jwilliams: validate payloadInfo
+        validatePayloadInfo(payloadInfo, true, false, false, 0, 0); // entity
     }
 
     @Test
@@ -440,7 +496,7 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
 
         try {
-            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/atom+xml");
+            parser.parsePayload(POST, requestInfo, payloadInputStream, "application/atom+xml");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
@@ -456,10 +512,9 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
 
         OdataPayloadInfo payloadInfo =
-                parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
+                parser.parsePayload(POST, requestInfo, payloadInputStream, "application/json");
 
-        assertEquals(false, payloadInfo.containsOpenTypeEntity());
-        // TODO jwilliams: validate payloadInfo
+        validatePayloadInfo(payloadInfo, true, false, false, 0, 0); // entity
     }
 
     @Test
@@ -469,7 +524,7 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
 
         try {
-            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
+            parser.parsePayload(POST, requestInfo, payloadInputStream, "application/json");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
@@ -485,12 +540,186 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
 
         try {
-            parser.parsePayload("POST", requestInfo, payloadInputStream, "application/json");
+            parser.parsePayload(POST, requestInfo, payloadInputStream, "application/json");
 
             fail("Expected OdataParsingException");
         } catch (OdataParser.OdataParsingException e) {
             assertEquals(EntityProviderException.class, e.getCause().getClass());
             assertEquals("An exception of type 'MalformedJsonException' occurred.", e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testParsePayload_GivenEmptyPayloadWithHttpMethodGET_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload expected
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
+
+        OdataPayloadInfo payloadInfo = parser.parsePayload(GET, requestInfo, payloadInputStream, "application/json");
+
+        assertNull(payloadInfo);
+    }
+
+    @Test
+    public void testParsePayload_GivenNonEmptyPayloadWithHttpMethodGET_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("FOO".getBytes()); // non-empty payload will fail
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
+
+        try {
+            parser.parsePayload(GET, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("Payload not supported for HTTP method 'GET'.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParsePayload_GivenEmptyPayloadWithHttpMethodDELETE_ParsingSucceeds() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload expected
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
+
+        OdataPayloadInfo payloadInfo = parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+
+        assertNull(payloadInfo);
+    }
+
+    @Test
+    public void testParsePayload_GivenNonEmptyPayloadWithHttpMethodDELETE_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("FOO".getBytes()); // non-empty payload will fail
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
+
+        try {
+            parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("Payload not supported for HTTP method 'DELETE'.", e.getMessage());
+        }
+    }
+
+    /**
+     * Create entity requests should only accept POST
+     */
+    @Test
+    public void testParsePayload_CreateEntity_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
+
+        OdataPayloadInfo payloadInfo =
+                checkInvalidMethodsRejected(NEW_CATEGORY_ENTRY_PAYLOAD_JSON, requestInfo, PUT, PATCH, MERGE, TRACE);
+
+        validatePayloadInfo(payloadInfo, true, false, false, 0, 0); // entity
+    }
+
+    /**
+     * Update entity requests should only accept PUT, PATCH, and MERGE
+     */
+    @Test
+    public void testParsePayload_UpdateEntity_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(1)", "");
+
+        OdataPayloadInfo payloadInfo =
+                checkInvalidMethodsRejected(UPDATE_CATEGORY_ENTRY_PAYLOAD_JSON, requestInfo, POST, TRACE);
+
+        validatePayloadInfo(payloadInfo, true, false, false, 0, 0); // entity
+    }
+
+    /**
+     * Update complex property requests should only accept PUT, PATCH, and MERGE
+     */
+    @Test
+    public void testParsePayload_UpdateComplexProperty_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Suppliers(1)/Address", "");
+
+        OdataPayloadInfo payloadInfo = checkInvalidMethodsRejected(UPDATE_SUPPLIER_ENTRY_COMPLEX_PROPERTY_PAYLOAD_JSON,
+                requestInfo, POST, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, false, false, 0, 1); // one property
+    }
+
+    /**
+     * Update simple property requests should only accept PUT, PATCH, and MERGE
+     */
+    @Test
+    public void testParsePayload_UpdateSimpleProperty_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Description", "");
+
+        OdataPayloadInfo payloadInfo = checkInvalidMethodsRejected(UPDATE_PRODUCT_ENTRY_SIMPLE_PROPERTY_PAYLOAD_JSON,
+                requestInfo, POST, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, false, false, 0, 1); // one property
+    }
+
+    /**
+     * Update simple property value should only accept PUT, PATCH, and MERGE
+     */
+    @Test
+    public void testParsePayload_UpdateSimplePropertyValue_ParsingFails() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Name/$value", "");
+
+        OdataPayloadInfo payloadInfo =
+                checkInvalidMethodsRejected("DifferentValue", requestInfo, POST, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, true, false, 0, 0); // value
+    }
+
+    /**
+     * Update link to single entity (1 or 0..1 multiplicity) requests should only accept
+     */
+    @Test
+    public void testParsePayload_UpdateLinkToSingleEntity_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/$links/Category", "");
+
+        OdataPayloadInfo payloadInfo = checkInvalidMethodsRejected(UPDATE_ENTRY_SINGLE_ENTITY_LINK_PAYLOAD_JSON,
+                requestInfo, POST, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, false, false, 1, 0); // one link
+    }
+
+    /**
+     * Update link to multiple entities ('*' multiplicity) requests should only accept
+     */
+    @Test
+    public void testParsePayload_UpdateLinkToMultipleEntities_ParsingFailsOnInvalidHttpMethods() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories(1)/$links/Products", "");
+
+        OdataPayloadInfo payloadInfo = checkInvalidMethodsRejected(UPDATE_ENTRY_MULTIPLE_ENTITIES_LINK_PAYLOAD_JSON,
+                requestInfo, PUT, PATCH, MERGE, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, false, false, 3, 0); // three links
+    }
+
+    /**
+     * Update media resource
+     */
+    @Test
+    public void testParsePayload_UpdateMediaLinkEntry_ParsingFails() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/ProductImages(1)/$value", "");
+
+        OdataPayloadInfo payloadInfo =
+                checkInvalidMethodsRejected("FOR JUNK BYTES", requestInfo, POST, PATCH, MERGE, TRACE);
+
+        validatePayloadInfo(payloadInfo, false, false, true, 0, 0); // is media
+    }
+
+    /**
+     * As of Icefish, batch requests are entirely unsupported.
+     */
+    @Test
+    public void testParsePayload_BatchRequest_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload is fine - it should not be touched anyway
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/$batch", "");
+
+        try {
+            parser.parsePayload(POST, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("Parsing of Batch Requests not supported.", e.getMessage());
         }
     }
 
@@ -500,12 +729,12 @@ public class OdataParserTest {
         OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=length(Name) eq 10 and Price gt 10 and Price le 30");
         assertCommonExpression(expectedParts, requestInfo.getFilterExpression());
     }
+
     @Test
     public void testParseRequest_filterWithUnaryExpression() throws Exception {
         String[] expectedParts = {"not", "Address", "City", "eq", "'Redmond'"};
         OdataRequestInfo requestInfo = parser.parseRequest("/Suppliers", "$filter=not (Address/City eq 'Redmond')");
         assertCommonExpression(expectedParts, requestInfo.getFilterExpression());
-
     }
 
     @Test
@@ -519,10 +748,58 @@ public class OdataParserTest {
     private void assertCommonExpression(String[] expectedParts, CommonExpression expression) throws OdataValidationException {
         Set<String> actualParts = OdataParserUtil.getExpressionParts(expression);
         assertEquals(expectedParts.length, actualParts.size());
-        for(String part : expectedParts) {
+
+        for (String part : expectedParts) {
             assertTrue(actualParts.contains(part));
         }
     }
 
+    private OdataPayloadInfo checkInvalidMethodsRejected(String jsonPayload,
+                                                         OdataRequestInfo requestInfo, String... invalidMethods) {
+        List<String> invalidMethodList = Arrays.asList(invalidMethods);
 
+        OdataPayloadInfo payloadInfo = null;
+
+        for (String method : PAYLOAD_METHODS) {
+            try {
+                InputStream payloadInputStream = new ByteArrayInputStream(jsonPayload.getBytes());
+                payloadInfo = parser.parsePayload(method, requestInfo, payloadInputStream, "application/json");
+
+                if (invalidMethodList.contains(method)) {
+                    fail("Expected failure for method '" + method + "'.");
+                }
+            } catch (OdataParser.OdataParsingException e) {
+                if (invalidMethodList.contains(method)) {
+                    assertEquals("HTTP method '" + method + "' invalid for the requested resource.", e.getMessage());
+                } else {
+                    fail("Method '" + method + "' should not have caused an exception: " + e.getMessage());
+                }
+            }
+        }
+
+        // at least one HTTP method will parse successfully, and the OdataPayloadInfo will be identical for each
+        return payloadInfo;
+    }
+
+    private void validatePayloadInfo(OdataPayloadInfo payloadInfo, boolean expectEntity, boolean expectValue,
+                                     boolean expectMedia, int numExpectedLinks, int numExpectedProperties) {
+        assertNotNull(payloadInfo);
+
+        if (expectEntity) {
+            assertNotNull(payloadInfo.getOdataEntry());
+        } else {
+            assertNull(payloadInfo.getOdataEntry());
+        }
+
+        if (expectValue) {
+            assertNotNull(payloadInfo.getValue());
+        } else {
+            assertNull(payloadInfo.getValue());
+        }
+
+        assertEquals(expectMedia, payloadInfo.isMedia());
+
+        assertEquals(numExpectedLinks, payloadInfo.getLinks().size());
+        assertEquals(numExpectedProperties, payloadInfo.properties().size());
+    }
 }

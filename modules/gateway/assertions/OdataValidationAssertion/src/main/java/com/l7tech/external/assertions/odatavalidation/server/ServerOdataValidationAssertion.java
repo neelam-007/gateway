@@ -52,33 +52,39 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         String inboundURL = context.getRequest().getHttpRequestKnob().getRequestUrl();
 
         // Check HTTP request method is authorized
-        switch ( requestMethod ) {
+        switch (requestMethod) {
             case GET:
-                if ( ! assertion.isReadOperation() ) {
+                if (!assertion.isReadOperation()) {
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 break;
 
             case POST:
-                if ( ! assertion.isCreateOperation() ) {
+                if (!assertion.isCreateOperation()) {
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 break;
 
             case PUT:
-                if ( ! assertion.isUpdateOperation() ) {
+                if (!assertion.isUpdateOperation()) {
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 break;
 
             case MERGE:
-                if ( ! assertion.isMergeOperation() ) {
+                if (!assertion.isMergeOperation()) {
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 break;
 
             case PATCH:
-                if ( ! assertion.isPartialUpdateOperation() ) {
+                if (!assertion.isPartialUpdateOperation()) {
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                break;
+
+            case DELETE:
+                if (!assertion.isDeleteOperation()) {
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 break;
@@ -99,7 +105,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
-        variablePrefix = variablePrefix != null ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
+        variablePrefix = variablePrefix != null ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX; // TODO ExpandVariables.process() never returns null, change this check
         String metadata = ExpandVariables.process(assertion.getOdataMetadataSource(), varMap, getAudit());
         if(StringUtils.isBlank(metadata)) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, metadata);
@@ -122,9 +128,9 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         }
         try {
             InputStream metadataStream = new ByteArrayInputStream(metadata.getBytes());
-            Edm medatadaEdm = EntityProvider.readMetadata(metadataStream, false);
+            Edm metadataEdm = EntityProvider.readMetadata(metadataStream, false);
             //Create parser
-            OdataParser parser = new OdataParser(medatadaEdm);
+            OdataParser parser = new OdataParser(metadataEdm);
             //get request info
             OdataRequestInfo odataRequestInfo = parser.parseRequest(path, query);
 
@@ -154,7 +160,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
             Set<String> filterParts = OdataParserUtil.getExpressionParts(odataRequestInfo.getFilterExpression());
             if(filterParts.size() > 0) {
-                context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, filterParts.toArray(new String[]{}));
+                context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, filterParts.toArray(new String[filterParts.size()]));
             }
 
             final Integer top = odataRequestInfo.getTop();
@@ -165,7 +171,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
             Set<String> orderByParts = OdataParserUtil.getExpressionParts(odataRequestInfo.getFilterExpression());
             if(orderByParts.size() > 0) {
-                context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, orderByParts.toArray(new String[]{}));
+                context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, orderByParts.toArray(new String[orderByParts.size()]));
             }
             //set $expand expression
             final String expand = odataRequestInfo.getExpandExpressionString();

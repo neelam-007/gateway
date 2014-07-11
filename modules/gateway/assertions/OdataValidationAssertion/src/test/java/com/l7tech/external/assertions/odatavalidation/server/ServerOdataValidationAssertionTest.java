@@ -29,7 +29,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -272,8 +271,6 @@ public class ServerOdataValidationAssertionTest {
             "Term=\"Org.OData.Publication.V1.ImageUrl \" String=\"http://www.odata.org/\" \n" +
             "/></Annotations></Schema></edmx:DataServices></edmx:Edmx>\n";
 
-    private final ContentTypeHeader ODATA_XML = ContentTypeHeader.create("application/xml");
-    private final ContentTypeHeader ODATA_ATOM = ContentTypeHeader.create("application/atom+xml");
     private final ContentTypeHeader ODATA_JSON = ContentTypeHeader.create("application/json");
 
     @Inject

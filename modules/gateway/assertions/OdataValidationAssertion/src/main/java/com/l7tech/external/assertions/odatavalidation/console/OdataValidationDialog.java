@@ -47,9 +47,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private RSyntaxTextArea metadataSource;
     private JCheckBox validatePayload;
 
-
-    private InputValidator inputValidator;
-
     public OdataValidationDialog(final Frame parent, final OdataValidationAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
         this.assertion = assertion;
@@ -60,7 +57,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         super.initComponents();
         //TODO implement specific dialog initialization
         targetVariablePanel.setDefaultVariableOrPrefix("odata");
-        targetVariablePanel.setSuffixes(new ArrayList<String>(Arrays.asList("one", "two", "three")));
+        targetVariablePanel.setSuffixes(new ArrayList<>(Arrays.asList("one", "two", "three")));
         setContentPane(contentPanel);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
@@ -82,7 +79,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
             metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         }
 
-        inputValidator = new InputValidator(this,"Something - in property file");
+        InputValidator inputValidator = new InputValidator(this,"Something - in property file");
         // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
         inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourcetUrl, null);
 
@@ -103,12 +100,10 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     }
 
     private void doCancel() {
-
         this.dispose();
     }
 
     private void doOk() {
-
         getData(assertion);
 
         this.dispose();

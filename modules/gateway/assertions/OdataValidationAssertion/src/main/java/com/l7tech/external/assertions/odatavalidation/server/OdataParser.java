@@ -75,70 +75,113 @@ public class OdataParser {
         return new OdataRequestInfo(uriInfo, expandExpression, selectExpression);
     }
 
-    // TODO jwilliams: two methods, one each for json and atom? entry for atom could be evaluated after parsing for match on entity term and target uri
-
+    /**
+     * Parse the payload, validating against its related request information.
+     *
+     * N.B. Batch requests are unsupported and will cause an exception
+     *
+     * @param method the HTTP method of the request
+     * @param requestInfo the information about the request the payload came with
+     * @param payload the payload of the request, to be validated
+     * @param payloadContentType the content type of the payload
+     * @return OdataPayloadInfo describing the payload, or null if the payload is empty
+     * @throws OdataParsingException if the payload could not be read, is malformed, or does not match the request
+     * details; if the method is not supported for the given request type; or if parsing fails for any other reason
+     */
     public OdataPayloadInfo parsePayload(String method, OdataRequestInfo requestInfo,
                                          InputStream payload, String payloadContentType) throws OdataParsingException {
+        // payloads are not expected for GET or DELETE operations
         if ("GET".equals(method) || "DELETE".equals(method)) {
-            throw new OdataParsingException("Payload not supported for HTTP method '" + method + "'.");
+            try {
+                if (-1 != payload.read()) {
+                    throw new OdataParsingException("Payload not supported for HTTP method '" + method + "'.");
+                }
+            } catch (IOException e) {
+                throw new OdataParsingException("Payload could not be read: " + ExceptionUtils.getMessage(e), e);
+            }
+
+            return null;
         }
 
+        boolean media = false;
         ODataEntry entry = null;
+        List<String> links = new ArrayList<>();
+        Object propertyValue = null;
+        Map<String, Object> properties = new HashMap<>();
 
         try {
-            EntityProviderReadProperties properties = EntityProviderReadProperties.init().mergeSemantic(false).build();
-//            EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
+            EntityProviderReadProperties readProperties =
+                    EntityProviderReadProperties.init().mergeSemantic(false).build();
 
             switch (requestInfo.getUriType()) {
-                case URI0: // TODO jwilliams: probably not needed - no payload - maybe confirm that it's empty?
+                // operations that don't take payloads
+                case URI0:
+                case URI6A:
+                case URI8:
+                case URI10:
+                case URI11:
+                case URI12:     // TODO jwilliams: test these cases for rejection
+                case URI13:
+                case URI14:
+                case URI15:
+                case URI16:
+                case URI50A:
+                case URI50B:
+                    System.out.println("PAYLOAD NOT SUPPORTED " + requestInfo.getUriType());
                         throw new OdataParsingException("Payload not supported for this request type.");
 
-                case URI1:
+                // batch operation
+                case URI9:
+                    throw new OdataParsingException("Parsing of Batch Requests not supported.");
+
+                // create an entity
+                case URI1:          // TODO jwilliams: check what happens when creating a new media entry - does readEntry() fail? Should we check for hasStream first?
                 case URI6B:
                     switch (method) {
                         case "POST":
-                            entry = EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
-//                            return service.getEntitySetProcessor().createEntity(requestInfo, payload, payloadContentType, contentType);
+                            entry = EntityProvider.readEntry(payloadContentType,
+                                    requestInfo.getTargetEntitySet(), payload, readProperties);
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
+                // update an entity
                 case URI2:
                     switch (method) {
                         case "PUT":
-//                            return service.getEntityProcessor().updateEntity(requestInfo, payload, payloadContentType, false, contentType);
                         case "PATCH":
                         case "MERGE":
-                            entry = EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
-//                            return service.getEntityProcessor().updateEntity(requestInfo, payload, payloadContentType, true, contentType);
+                            entry = EntityProvider.readEntry(payloadContentType,
+                                    requestInfo.getTargetEntitySet(), payload, readProperties);
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
+                // update complex property
                 case URI3:
                     switch (method) {
                         case "PUT":
-//                            return service.getEntityComplexPropertyProcessor().updateEntityComplexProperty(requestInfo, payload,
-//                                    payloadContentType, false, contentType);
                         case "PATCH":
                         case "MERGE":
-//                            Map<String, Object> propertyValues =
-//                                    EntityProvider.readProperty(payloadContentType, requestInfo.getTargetProperty(), payload, properties);
-//                            return service.getEntityComplexPropertyProcessor().updateEntityComplexProperty(requestInfo, payload,
-//                                    payloadContentType, true, contentType);
+                            properties = EntityProvider.readProperty(payloadContentType,
+                                    requestInfo.getTargetProperty(), payload, readProperties);
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
+                // update simple property
                 case URI4:
                 case URI5:
                     switch (method) {
@@ -146,86 +189,61 @@ public class OdataParser {
                         case "PATCH":
                         case "MERGE":
                             if (requestInfo.isValueRequest()) {
-//                                Object propertyValue =
-                                        EntityProvider.readPropertyValue(requestInfo.getTargetProperty(), payload);
-//                                return service.getEntitySimplePropertyValueProcessor().updateEntitySimplePropertyValue(requestInfo, payload,
-//                                        payloadContentType, contentType);
+                                propertyValue = EntityProvider.readPropertyValue(requestInfo.getTargetProperty(),
+                                        payload);
                             } else {
-//                                Map<String, Object> propertyValues =
-                                        EntityProvider.readProperty(payloadContentType, requestInfo.getTargetProperty(), payload, properties);
-//                                return service.getEntitySimplePropertyProcessor().updateEntitySimpleProperty(requestInfo, payload,
-//                                        payloadContentType, contentType);
+                                properties = EntityProvider.readProperty(payloadContentType,
+                                        requestInfo.getTargetProperty(), payload, readProperties);
                             }
 
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
-                case URI6A:
-                    throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
-
+                // update link to a single entity
                 case URI7A:
                     switch (method) {
                         case "PUT":
                         case "PATCH":
                         case "MERGE":
-//                            String link =
-                                    EntityProvider.readLink(payloadContentType, requestInfo.getStartEntitySet(), payload);
-//                            return service.getEntityLinkProcessor().updateEntityLink(requestInfo, payload, payloadContentType, contentType);
+                            links.add(EntityProvider.readLink(payloadContentType,
+                                    requestInfo.getTargetEntitySet(), payload));
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
+                // update link to multiple entities
                 case URI7B:
                     switch (method) {
                         case "POST":
-//                            String link =
-                                    EntityProvider.readLink(payloadContentType, requestInfo.getStartEntitySet(), payload);
-//                            return service.getEntityLinksProcessor().createEntityLink(requestInfo, payload, payloadContentType, contentType);
+                            links.addAll(EntityProvider.readLinks(payloadContentType,
+                                    requestInfo.getTargetEntitySet(), payload));
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
 
-                case URI8:
-                    throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
-
-                case URI9:
-//                    if ("POST".equals(method)) {
-//                        BatchHandler handler = new BatchHandlerImpl(serviceFactory, service);
-//                        return service.getBatchProcessor().executeBatch(handler, payloadContentType, payload);
-//                    } else {
-//                        throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
-//                    }
-                    throw new OdataParsingException("Parsing of Batch Requests not supported.");
-
-                case URI10:
-                case URI11:
-                case URI12:
-                case URI13:
-                case URI14:
-                case URI15:
-                case URI16:
-                case URI50A:
-                case URI50B:
-                    throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
-
+                // update entity media resource
                 case URI17:
                     switch (method) {
                         case "PUT":
-                            entry = EntityProvider.readEntry(payloadContentType, requestInfo.getStartEntitySet(), payload, properties);
-//                            return service.getEntityMediaProcessor().updateEntityMedia(requestInfo, payload, payloadContentType, contentType);
+                            // no need to read the input with EntityProvider.readBinary() - it doesn't do any validation
+                            media = true;
                             break;
                         default:
-                            throw new OdataParsingException("HTTP method " + method + " invalid for the requested resource.");
+                            throw new OdataParsingException("HTTP method '" + method +
+                                    "' invalid for the requested resource.");
                     }
 
                     break;
@@ -237,7 +255,7 @@ public class OdataParser {
             throw new OdataParsingException(ExceptionUtils.getMessage(e), e);
         }
 
-        return new OdataPayloadInfo(entry);
+        return new OdataPayloadInfo(entry, links, propertyValue, properties, media);
     }
 
     protected static List<PathSegment> extractPathSegments(String resourcePath) {
@@ -257,7 +275,7 @@ public class OdataParser {
 
         PathInfoImpl pathInfo = new PathInfoImpl();
         pathInfo.setODataPathSegment(odataSegments);
-        pathInfo.setPrecedingPathSegment(Collections.<PathSegment>emptyList()); // TODO jwilliams: necessary?
+        pathInfo.setPrecedingPathSegment(Collections.<PathSegment>emptyList());
 
         return odataSegments;
     }

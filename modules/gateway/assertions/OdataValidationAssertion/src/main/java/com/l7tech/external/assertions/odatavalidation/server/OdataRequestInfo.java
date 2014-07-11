@@ -112,8 +112,8 @@ public class OdataRequestInfo {
         return uriInfo.getCustomQueryOptions();
     }
 
-    public EdmEntitySet getStartEntitySet() {
-        return uriInfo.getStartEntitySet();
+    public EdmEntitySet getTargetEntitySet() {
+        return uriInfo.getTargetEntitySet();
     }
 
     public EdmProperty getTargetProperty() {
