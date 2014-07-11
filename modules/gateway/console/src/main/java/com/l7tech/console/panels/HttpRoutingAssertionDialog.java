@@ -390,6 +390,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 if (wsdl != null) {
                     serviceURI = wsdl.getServiceURI();
                     urlField.setText(serviceURI);
+                    urlField.setCaretPosition( 0 );
                     validateUrl( true );
                 } else {
                     log.log(Level.INFO, "Can't retrieve WSDL from the published service");
@@ -1070,6 +1071,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private void initFormData() {
         urlField.setText(assertion.getProtectedServiceUrl());
+        urlField.setCaretPosition( 0 );
         JRadioButton which = authNoneRadio;
         if (assertion.isTaiCredentialChaining()) which = authTaiRadio;
         if (assertion.isPassthroughHttpAuthentication()) which = authPassthroughRadio;
