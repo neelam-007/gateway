@@ -15,7 +15,8 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -33,12 +34,16 @@ import com.l7tech.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -49,7 +54,9 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -226,7 +233,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                     DialogDisplayer.showOptionDialog(EncapsulatedAssertionManagerWindow.this,
                             "Found an existing Encapsulated Assertion with name " + sameGuid.getName() + ".",
                             "Import Encapsulated Assertion", JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null,
-                            new Object[]{ "Overwrite", "Create New", "Cancel"}, "Update", new DialogDisplayer.OptionListener() {
+                            new Object[]{"Overwrite", "Create New", "Cancel"}, "Update", new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(int option) {
                             if (option == 0) {
@@ -273,11 +280,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     /**
      * Detects name collisions and asks the user to resolve them before saving.
-     *
+     * <p/>
      * Displays an error dialog if an error occurs.
      *
      * @param policyDoc the backing policy xml Document.
-     * @param config the EncapsulatedAssertionConfig to save which doesn't yet exist in the database.
+     * @param config    the EncapsulatedAssertionConfig to save which doesn't yet exist in the database.
      */
     private void resolveConflictsAndSave(@NotNull final Document policyDoc, @NotNull final EncapsulatedAssertionConfig config) {
         try {
@@ -301,7 +308,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                                 handleImportCancelledException(e);
                             } catch (final PermissionDeniedException e) {
                                 handlePermissionDeniedForImport(e);
-                            }catch (final Exception e) {
+                            } catch (final Exception e) {
                                 handleGenericException(e);
                             }
                         }
@@ -322,7 +329,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     /**
      * Creates a Policy fragment.
-     * @param name the name of the Policy fragment to create.
+     *
+     * @param name      the name of the Policy fragment to create.
      * @param policyDoc the Document containing the Policy xml.
      * @return a Pair where key = the created Policy fragment and value = map of any sub included Policy fragments (key = fragment guid).
      * @throws PolicyImportCancelledException
@@ -335,7 +343,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
         final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
         final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, policyDoc,
-                PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder );
+                PolicyExportUtils.getExternalReferenceFactories(), wspReader, finder, finder, finder, finder);
         if (result.assertion != null) {
             final String newPolicyXml = WspWriter.getPolicyXml(result.assertion);
             policy.setXml(newPolicyXml);
@@ -364,7 +372,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         } else {
             logger.log(Level.WARNING, "Unable to set policy version comment for imported encapsulated assertion");
         }
-        final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         tree.refresh();
 
         // update/create config
@@ -395,7 +403,8 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     /**
      * Display the config properties dialog.
-     * @param config the config to display.
+     *
+     * @param config                     the config to display.
      * @param promptForAutoPopulateOnNew whether the user should be asked if they want to auto-populate inputs and outputs if this is a new config.
      */
     private void doProperties(@NotNull final EncapsulatedAssertionConfig config, final boolean promptForAutoPopulateOnNew) {
@@ -530,7 +539,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
             EncapsulatedAssertionConsoleUtil.attachPolicies(configs);
             iconCache.clear();
             eacTableModel.setRows(new ArrayList<>(configs));
-            filterPanel.allowFiltering( eacTableModel.getRowCount() > 0 );
+            filterPanel.allowFiltering(eacTableModel.getRowCount() > 0);
 
             if (updateLocalRegistry) {
                 final EncapsulatedAssertionRegistry encapsulatedAssertionRegistry = TopComponents.getInstance().getEncapsulatedAssertionRegistry();
@@ -543,29 +552,38 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
 
     private void doDeleteEncapsulatedAssertionConfigs(final Collection<EncapsulatedAssertionConfig> configs) {
         int numDeleted = 0;
-        try {
-            for (final EncapsulatedAssertionConfig config : configs) {
+        final List<Exception> errors = new ArrayList<>();
+        for (final EncapsulatedAssertionConfig config : configs) {
+            try {
                 Registry.getDefault().getEncapsulatedAssertionAdmin().deleteEncapsulatedAssertionConfig(config.getGoid());
                 numDeleted++;
+            } catch (final Exception e) {
+                logger.log(Level.WARNING, "Error deleting encapsulated assertion config " + config.getName() + ": " + ExceptionUtils.getMessage(e),
+                        ExceptionUtils.getDebugException(e));
+                errors.add(e);
             }
+        }
+        if (numDeleted > 0) {
             loadEncapsulatedAssertionConfigs(true);
-        } catch (final Exception e) {
-            if (numDeleted > 0) {
-                loadEncapsulatedAssertionConfigs(true);
-            }
-            if (e instanceof PermissionDeniedException) {
+        }
+        if (errors.size() == 1) {
+            final Exception error = errors.get(0);
+            if (error instanceof PermissionDeniedException) {
                 // delegate to PermissionDeniedErrorHandler
-                throw (PermissionDeniedException) e;
+                throw (PermissionDeniedException) error;
             } else {
-                showError("Unable to delete encapsulated assertion config", e);
+                showError("Unable to delete encapsulated assertion configurations", error);
             }
+        } else if (errors.size() > 1) {
+            showError("Not all encapsulated assertion configurations could be deleted", null);
         }
     }
 
     /**
      * Displays an error message to the user.
+     *
      * @param message the error message to show the user.
-     * @param e the Throwable which caused the error or null if you do not want to show the exception to the user.
+     * @param e       the Throwable which caused the error or null if you do not want to show the exception to the user.
      */
     private void showError(@NotNull final String message, @Nullable final Throwable e) {
         String error = message;
@@ -594,10 +612,10 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private void updateFilterCount() {
         final int visible = eacTable.getRowCount();
         final int total = eacTableModel.getRowCount();
-        if ( filterPanel.isFiltered() ) {
-            filterPanel.setFilterLabel( "showing " + visible + " of " + total + " items" );
+        if (filterPanel.isFiltered()) {
+            filterPanel.setFilterLabel("showing " + visible + " of " + total + " items");
         } else {
-            filterPanel.setFilterLabel( "Filter on name:" );
+            filterPanel.setFilterLabel("Filter on name:");
         }
     }
 
@@ -608,7 +626,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
                 updateFilterCount();
             }
         });
-        filterPanel.attachRowSorter((TableRowSorter) ( eacTable.getRowSorter() ), new int[] { 1 } );
+        filterPanel.attachRowSorter((TableRowSorter) (eacTable.getRowSorter()), new int[]{1});
         updateFilterCount();
     }
 
@@ -617,9 +635,11 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
      */
     private class ConfigChangeWindowUpdater implements Runnable {
         private final EncapsulatedAssertionConfig config;
-        private ConfigChangeWindowUpdater (@NotNull final EncapsulatedAssertionConfig config) {
+
+        private ConfigChangeWindowUpdater(@NotNull final EncapsulatedAssertionConfig config) {
             this.config = config;
         }
+
         @Override
         public void run() {
             loadEncapsulatedAssertionConfigs(false);
