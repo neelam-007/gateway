@@ -127,6 +127,8 @@ public class RevocationCheckingPolicyResourceFactory extends SecurityZoneableEnt
             revocationCheckPolicy.setRevocationCheckItems(items);
         }
 
+        doSecurityZoneFromResource(revocationCheckingPolicyMO,revocationCheckPolicy,strict);
+
         return revocationCheckPolicy;
     }
 

@@ -1,15 +1,20 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -19,8 +24,11 @@ import com.l7tech.util.Functions;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import sun.security.provider.certpath.OCSP;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -33,12 +41,21 @@ public class RevocationCheckingPolicyRestEntityResourceTest extends RestEntityTe
     private List<RevocationCheckPolicy> checkPolicies = new ArrayList<>();
     private TrustedCertManager trustedCertManager;
     private TrustedCert trustedCert = new TrustedCert();
+    private SecurityZoneManager securityZoneManager;
+    private SecurityZone securityZone1;
 
 
     @Before
     public void before() throws Exception {
         revocationCheckPolicyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("revocationCheckPolicyManager", RevocationCheckPolicyManager.class);
         trustedCertManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedCertManager", TrustedCertManager.class);
+        securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
+
+        // create security zone
+        securityZone1 = new SecurityZone();
+        securityZone1.setName("Zone1");
+        securityZone1.setPermittedEntityTypes(CollectionUtils.set(EntityType.REVOCATION_CHECK_POLICY));
+        securityZoneManager.save(securityZone1);
 
         // create cert
         X509Certificate certificate = new TestCertificateGenerator().subject("cn=test").generate();
@@ -92,6 +109,7 @@ public class RevocationCheckingPolicyRestEntityResourceTest extends RestEntityTe
             revocationCheckPolicyManager.delete(checkPolicy.getGoid());
         }
         trustedCertManager.delete(trustedCert);
+        securityZoneManager.delete(securityZone1);
     }
 
     @Override
@@ -116,6 +134,7 @@ public class RevocationCheckingPolicyRestEntityResourceTest extends RestEntityTe
         checkItem.setType(RevocationCheckingPolicyItemMO.Type.CRL_FROM_CERTIFICATE);
         checkItem.setUrl(".*");
         checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+        checkPolicyMO.setSecurityZoneId(securityZone1.getId());
         checkPolicies.add(checkPolicyMO);
 
         // with trusted cert reference
@@ -265,6 +284,7 @@ public class RevocationCheckingPolicyRestEntityResourceTest extends RestEntityTe
             Assert.assertEquals(entity.isDefaultPolicy(), managedObject.isDefaultPolicy().booleanValue());
             Assert.assertEquals(entity.isDefaultSuccess(), managedObject.isDefaultSuccess().booleanValue());
 
+            Assert.assertEquals(entity.getSecurityZone()==null?null:entity.getSecurityZone().getId(), managedObject.getSecurityZoneId());
 
             Assert.assertEquals(entity.getRevocationCheckItems().size(), managedObject.getRevocationCheckItems().size());
             for(int i = 0 ; i < entity.getRevocationCheckItems().size() ; ++i){
@@ -302,4 +322,33 @@ public class RevocationCheckingPolicyRestEntityResourceTest extends RestEntityTe
                 .put("name=banName", Collections.<String>emptyList())
                 .map();
     }
+
+//    @Test
+//    public void testSecurityZoneSaved() throws Exception {
+//
+//        RevocationCheckingPolicyMO checkPolicyMO = ManagedObjectFactory.createRevocationCheckingPolicy();
+//        checkPolicyMO.setName("Create Rev Check Policy");
+//        checkPolicyMO.setId(getGoid().toString());
+//        checkPolicyMO.setDefaultPolicy(true);
+//        RevocationCheckingPolicyItemMO checkItem = ManagedObjectFactory.createRevocationCheckingPolicyItem();
+//        checkItem.setType(RevocationCheckingPolicyItemMO.Type.CRL_FROM_CERTIFICATE);
+//        checkItem.setUrl(".*");
+//        checkPolicyMO.setRevocationCheckItems(CollectionUtils.list(checkItem));
+//        checkPolicyMO.setSecurityZone(securityZone1.getId());
+//
+//
+//        RestResponse response = processRequest(getResourceUri() , HttpMethod.POST, null, XmlUtil.nodeToString(ManagedObjectFactory.write(checkPolicyMO)));
+//        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+//        Assert.assertEquals(204, response.getStatus());
+//
+//        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+//        Item item = MarshallingUtils.unmarshal(Item.class, source);
+//        item.getId();
+//
+//
+//
+//
+//    }
+
+
 }
