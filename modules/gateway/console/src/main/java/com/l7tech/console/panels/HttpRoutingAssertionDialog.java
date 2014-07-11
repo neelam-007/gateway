@@ -57,6 +57,8 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
+    private static final int MAX_URL_ERROR_LENGTH = 120;
+
     private static class ComboBoxItem {
         private final Object _value;
         private final String _displayName;
@@ -890,6 +892,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         
         if (bad) {
+            if ( url.length() > MAX_URL_ERROR_LENGTH )
+                url = url.substring( 0, MAX_URL_ERROR_LENGTH ) + "[...]";
             JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidUrlMessage"), url));
             return;
         }
