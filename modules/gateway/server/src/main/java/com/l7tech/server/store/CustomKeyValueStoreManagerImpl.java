@@ -71,11 +71,16 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
             CustomKeyValueStore customKeyValue = this.findByUniqueName(key);
             if (customKeyValue != null) {
                 this.delete(customKeyValue);
-                deletedKeys.put(customKeyValue.getGoid(), key);
             }
         } catch (FindException e) {
             throw new DeleteException("Unable to delete using key: " + key, e);
         }
+    }
+
+    @Override
+    public void delete(final CustomKeyValueStore customKeyValue) throws DeleteException {
+        super.delete(customKeyValue);
+        deletedKeys.put(customKeyValue.getGoid(), customKeyValue.getName());
     }
 
     @Override
