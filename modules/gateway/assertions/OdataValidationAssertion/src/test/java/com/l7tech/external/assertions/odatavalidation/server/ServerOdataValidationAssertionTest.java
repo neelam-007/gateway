@@ -308,6 +308,7 @@ public class ServerOdataValidationAssertionTest {
         OdataValidationAssertion assertion = new OdataValidationAssertion();
         assertion.setOdataMetadataSource("${fooVar}");
         assertion.setResourceUrl("${urlResource}");
+        assertion.setValidatePayload(false);
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
@@ -335,6 +336,7 @@ public class ServerOdataValidationAssertionTest {
         assertion.setOdataMetadataSource("${fooVar}");
         assertion.setResourceUrl("${urlResource}");
         assertion.setVariablePrefix("o");
+        assertion.setValidatePayload(false);
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories%281%29/Products?$top=3&$filter=length%28Name%29%20le%205",
