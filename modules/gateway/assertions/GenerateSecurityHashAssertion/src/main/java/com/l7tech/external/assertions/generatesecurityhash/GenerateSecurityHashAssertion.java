@@ -61,6 +61,7 @@ public class GenerateSecurityHashAssertion extends Assertion implements UsesVari
         m.put("HMAC-SHA256", "HmacSHA256");
         m.put("HMAC-SHA384", "HmacSHA384");
         m.put("HMAC-SHA512", "HmacSHA512");
+        m.put("HMAC-MD5", "HmacMD5");
         m.put("MD5", "MD5");
         m.put("SHA-1", "SHA-1");
         m.put("SHA-256", "SHA-256");
