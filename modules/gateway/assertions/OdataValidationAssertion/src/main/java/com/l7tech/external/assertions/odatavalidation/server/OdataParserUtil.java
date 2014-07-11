@@ -5,9 +5,7 @@ import org.apache.olingo.odata2.api.edm.EdmTyped;
 import org.apache.olingo.odata2.api.exception.ODataApplicationException;
 import org.apache.olingo.odata2.api.uri.expression.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by yuri on 04/07/14.
@@ -15,6 +13,16 @@ import java.util.Set;
 public class OdataParserUtil {
 
     private OdataParserUtil() {}
+
+    public static <K, V> String[] map2Array(Map<K, V> map) {
+        if(map == null) throw new IllegalArgumentException("Map is null");
+
+        List<String> list = new ArrayList<>();
+        for(Map.Entry<K, V> entry : map.entrySet()){
+             list.add(entry.toString());
+        }
+        return list.toArray(new String[list.size()]);
+    }
 
     public static Set<String> getExpressionParts(CommonExpression expression) throws OdataValidationException {
         Set<String> expressions = new HashSet<>();

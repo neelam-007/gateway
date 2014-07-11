@@ -342,7 +342,7 @@ public class ServerOdataValidationAssertionTest {
         );
 
         pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
-        pec.setVariable("urlResource", "/Categories(1)/Products?$top=3&$filter=length(Name) le 5&$skip=2&$orderby=Rating,Category/Name desc&$expand=Category");
+        pec.setVariable("urlResource", "/Categories(1)/Products?$top=3&$filter=length(Name) le 5&$skip=2&$select=*&$orderby=Rating,Category/Name desc&$expand=Category&custom=option");
 
         ServerOdataValidationAssertion serverAssertion = createServer(assertion);
 
@@ -352,6 +352,8 @@ public class ServerOdataValidationAssertionTest {
         assertEquals("3", pec.getVariable("o.query.top"));
         assertEquals("2", pec.getVariable("o.query.skip"));
         assertTrue(pec.getVariable("o.query.orderby") instanceof String[]);
+        assertEquals("*", pec.getVariable("o.query.select"));
+        assertTrue(pec.getVariable("o.query.customoptions") instanceof String[]);
 
         // expect the entry name length violation to be audited
         checkAuditPresence(false, false);

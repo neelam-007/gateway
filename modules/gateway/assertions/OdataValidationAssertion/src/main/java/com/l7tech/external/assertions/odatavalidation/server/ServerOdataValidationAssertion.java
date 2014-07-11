@@ -105,7 +105,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
-        variablePrefix = variablePrefix != null ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX; // TODO ExpandVariables.process() never returns null, change this check
+        variablePrefix = !variablePrefix.isEmpty() ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
         String metadata = ExpandVariables.process(assertion.getOdataMetadataSource(), varMap, getAudit());
         if(StringUtils.isBlank(metadata)) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, metadata);
@@ -187,11 +187,9 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             if(select != null) context.setVariable(prefix + OdataValidationAssertion.QUERY_SELECT, select);
 
             Map<String,String> customQueryOptions = odataRequestInfo.getCustomQueryOptions();
-            if(!customQueryOptions.isEmpty()) context.setVariable(prefix + OdataValidationAssertion.QUERY_CUSTOMOPTIONS, customQueryOptions);
+            if(!customQueryOptions.isEmpty()) context.setVariable(prefix + OdataValidationAssertion.QUERY_CUSTOMOPTIONS, OdataParserUtil.map2Array(customQueryOptions));
 
-
-
-            //TODO: set the rest of the context variables
+            //TODO: set path segments
 
 
         } catch (OdataValidationException e) {

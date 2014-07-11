@@ -8,7 +8,6 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -147,15 +146,15 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(new VariableMetadata(getVariablePrefix() + QUERY_COUNT),
                 new VariableMetadata(getVariablePrefix() + QUERY_TOP),
-                new VariableMetadata(getVariablePrefix() + QUERY_FILTER),
+                new VariableMetadata(getVariablePrefix() + QUERY_FILTER, false, true, null, false),
                 new VariableMetadata(getVariablePrefix() + QUERY_SKIP),
-                new VariableMetadata(getVariablePrefix() + QUERY_ORDERBY),
+                new VariableMetadata(getVariablePrefix() + QUERY_ORDERBY, false, true, null, false),
                 new VariableMetadata(getVariablePrefix() + QUERY_EXPAND),
                 new VariableMetadata(getVariablePrefix() + QUERY_FORMAT),
                 new VariableMetadata(getVariablePrefix() + QUERY_INLINECOUNT),
                 new VariableMetadata(getVariablePrefix() + QUERY_SELECT),
-                new VariableMetadata(getVariablePrefix() + QUERY_CUSTOMOPTIONS),
-                new VariableMetadata(getVariablePrefix() + QUERY_PATHSEGMENTS)
+                new VariableMetadata(getVariablePrefix() + QUERY_CUSTOMOPTIONS, false, true, null, false),
+                new VariableMetadata(getVariablePrefix() + QUERY_PATHSEGMENTS, false, true, null, false)
         );
     }
 
