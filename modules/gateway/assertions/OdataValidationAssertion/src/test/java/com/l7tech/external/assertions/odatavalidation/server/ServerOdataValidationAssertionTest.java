@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -271,6 +272,15 @@ public class ServerOdataValidationAssertionTest {
             "Term=\"Org.OData.Publication.V1.ImageUrl \" String=\"http://www.odata.org/\" \n" +
             "/></Annotations></Schema></edmx:DataServices></edmx:Edmx>\n";
 
+    private static final String NEW_CATEGORY_ENTRY_PAYLOAD_JSON =
+            "{\"d\": {\n" +
+                    "   \"__metadata\": {\n" +
+                    "       \"type\": \"ODataDemo.Category\"\n" +
+                    "   }, \n" +
+                    "   \"ID\": 100, \n" +
+                    "   \"Name\": \"Food\"\n" +
+                    "}}";
+
     private final ContentTypeHeader ODATA_JSON = ContentTypeHeader.create("application/json");
 
     @Inject
@@ -322,6 +332,8 @@ public class ServerOdataValidationAssertionTest {
                 assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
 
         assertEquals(AssertionStatus.NONE, status);
+        assertTrue(pec.getVariable("odata.query.pathsegments") instanceof String[]);
+        assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("odata.query.pathsegments"));
 
         // expect the entry name length violation to be audited
         checkAuditPresence(false, false);
@@ -354,9 +366,35 @@ public class ServerOdataValidationAssertionTest {
         assertTrue(pec.getVariable("o.query.orderby") instanceof String[]);
         assertEquals("*", pec.getVariable("o.query.select"));
         assertTrue(pec.getVariable("o.query.customoptions") instanceof String[]);
+        assertTrue(pec.getVariable("o.query.pathsegments") instanceof String[]);
+        assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("o.query.pathsegments"));
 
         // expect the entry name length violation to be audited
         checkAuditPresence(false, false);
+    }
+
+    @Test
+    public void shouldValidateAddNewEntry_AssertionPasses() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setVariablePrefix("o");
+        assertion.setValidatePayload(true);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories",
+                        "POST", ODATA_JSON,
+                        new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_JSON.getBytes()))
+        );
+
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.doCheckRequest(pec, pec.getRequest(),assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
+        assertArrayEquals(new String[]{"Categories"}, (String[])pec.getVariable("o.query.pathsegments"));
+
     }
 
     /**

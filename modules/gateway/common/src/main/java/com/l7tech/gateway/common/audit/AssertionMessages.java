@@ -1287,10 +1287,12 @@ public class AssertionMessages extends Messages {
     // OData Validation Assertion
     public static final M ODATA_VALIDATION_INVALID_SMD = m(10600, Level.WARNING, "The specified Service Metadata Document is invalid: {0}");
     public static final M ODATA_VALIDATION_INVALID_URI = m(10601, Level.WARNING, "Could not parse OData resource path: {0}");
-    public static final M ODATA_VALIDATION_TARGET_INVALID_JSON = m(10602, Level.WARNING, "{0} payload could not be parsed.");
+    public static final M ODATA_VALIDATION_TARGET_INVALID_PAYLOAD = m(10602, Level.WARNING, "{0} payload could not be parsed: {1}");
     public static final M ODATA_VALIDATION_REQUEST_MADE_FOR_SMD = m(10603, Level.WARNING, "Request for Service Metadata Document attempted.");
     public static final M ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE = m(10604, Level.WARNING, "Request for raw value attempted: {0}.");
     public static final M ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED = m(10605, Level.WARNING, "OData request attempted using forbidden operation ''{0}''.");
+    public static final M ODATA_VALIDATION_EXPRESSION_ERROR = m(10606, Level.WARNING, "Unable to parse {0} expression: {1}");
+
 
     // Highest ID reserved for AssertionMessages = 99999
 }

@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.odatavalidation.server;
 import org.apache.olingo.odata2.api.edm.EdmLiteral;
 import org.apache.olingo.odata2.api.edm.EdmTyped;
 import org.apache.olingo.odata2.api.exception.ODataApplicationException;
+import org.apache.olingo.odata2.api.uri.PathSegment;
 import org.apache.olingo.odata2.api.uri.expression.*;
 
 import java.util.*;
@@ -37,6 +38,14 @@ public class OdataParserUtil {
         }
 
         return expressions;
+    }
+
+    public static String[] pathSegments2Strings(List<PathSegment> segments) {
+        List<String> temp = new ArrayList<>();
+        for(PathSegment segment : segments){
+            temp.add(segment.getPath());
+        }
+        return temp.toArray(new String[temp.size()]);
     }
 
     private static class OdataRequestInfoExpressionVisitor implements ExpressionVisitor {
