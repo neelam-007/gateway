@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.policy.assertion.JdbcConnectionable;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 
@@ -42,14 +43,18 @@ public class JdbcConnectionPropertyResolver extends AbstractPropertyResolver {
         final ExternalEntityHeader.ValueType valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
 
-        JdbcConnectionable connectionable = (JdbcConnectionable) entity;
+        final String connectionName = ((JdbcConnectionable) entity).getConnectionName();
         try {
-            JdbcConnection connection = connectionManager.getJdbcConnection(connectionable.getConnectionName());
-            ExternalEntityHeader dependency = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(connection));
-            dependency.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
-            result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, getType(), mappingType, exported)));
+            // if the connection name is referenced from a context variable we cannot resolve it (there is no context available),
+            // therefore don't try to find the jdbc connection as a dependency.
+            if(Syntax.getSingleVariableReferenced(connectionName) == null) {
+                JdbcConnection connection = connectionManager.getJdbcConnection(connectionName);
+                ExternalEntityHeader dependency = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(connection));
+                dependency.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
+                result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, getType(), mappingType, exported)));
+            }
         } catch (Exception e) {
-            throw new PropertyResolverException("Error retrieving JDBC connection: " + connectionable.getConnectionName() );
+            throw new PropertyResolverException("Error retrieving JDBC connection: " + connectionName );
         }
 
         return result;
