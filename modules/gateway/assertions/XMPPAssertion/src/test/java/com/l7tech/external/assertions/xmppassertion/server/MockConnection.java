@@ -1,0 +1,326 @@
+package com.l7tech.external.assertions.xmppassertion.server;
+
+import java.sql.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Executor;
+
+/**
+ * User: ashah
+ * Date: 26/04/12
+ * Time: 10:13 AM
+ */
+public class MockConnection implements Connection {
+
+    @Override
+    public Statement createStatement() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        outputPlaceholder();
+        return new MockPreparedStatement(sql);
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public String nativeSQL(String sql) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void setAutoCommit(boolean autoCommit) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public boolean getAutoCommit() throws SQLException {
+        outputPlaceholder();
+        return false;
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void close() throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public boolean isClosed() throws SQLException {
+        outputPlaceholder();
+        return false;
+    }
+
+    @Override
+    public DatabaseMetaData getMetaData() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void setReadOnly(boolean readOnly) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public boolean isReadOnly() throws SQLException {
+        outputPlaceholder();
+        return false;
+    }
+
+    @Override
+    public void setCatalog(String catalog) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public String getCatalog() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void setTransactionIsolation(int level) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public int getTransactionIsolation() throws SQLException {
+        outputPlaceholder();
+        return 0;
+    }
+
+    @Override
+    public SQLWarning getWarnings() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void clearWarnings() throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Map<String, Class<?>> getTypeMap() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void setHoldability(int holdability) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public int getHoldability() throws SQLException {
+        outputPlaceholder();
+        return 0;
+    }
+
+    @Override
+    public Savepoint setSavepoint() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Savepoint setSavepoint(String name) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void rollback(Savepoint savepoint) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Clob createClob() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public NClob createNClob() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public SQLXML createSQLXML() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public boolean isValid(int timeout) throws SQLException {
+        outputPlaceholder();
+        return false;
+    }
+
+    @Override
+    public void setClientInfo(String name, String value) throws SQLClientInfoException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void setClientInfo(Properties properties) throws SQLClientInfoException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public String getClientInfo(String name) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Properties getClientInfo() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        outputPlaceholder();
+        return false;
+    }
+
+    @Override
+    public void setSchema(String schema) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public String getSchema() throws SQLException {
+        outputPlaceholder();
+        return null;
+    }
+
+    @Override
+    public void abort(Executor executor) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        outputPlaceholder();
+    }
+
+    @Override
+    public int getNetworkTimeout() throws SQLException {
+        outputPlaceholder();
+        return 0;
+    }
+
+    private void outputPlaceholder() {
+        // When outputting, get the method that called this method. IE: The second entry in the stack trace.
+        StackTraceElement ste = (new Throwable()).getStackTrace()[1];
+        System.out.println("!!!! MOCK PLACEHOLDER CALL ->  " + this.getClass().getName() + " :: " + ste.getMethodName() + " (File: " + ste.getFileName() + ", Line " + ste.getLineNumber() + ")");
+    }
+}

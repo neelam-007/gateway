@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <bean id="sessionFactory" class="com.l7tech.external.assertions.xmppassertion.server.MockSessionFactory"/>
+
+    <bean id="genericEntityManager" class="com.l7tech.external.assertions.xmppassertion.server.MockGenericEntityManager" />
+    <bean id="stashManagerFactory" class="com.l7tech.external.assertions.xmppassertion.server.MockStashManagerFactory" />
+    <bean id="ssgKeyStoreManager" class="com.l7tech.external.assertions.xmppassertion.server.MockSsgKeystoreManager" />
+    <bean id="routingTrustManager" class="com.l7tech.external.assertions.xmppassertion.server.MockRoutingTrustManager" />
+    <bean id="secureRandom" class="com.l7tech.external.assertions.xmppassertion.server.MockSecureRandom" />
+    <bean id="defaultKey" class="com.l7tech.external.assertions.xmppassertion.server.MockDefaultKey" />
+    <bean id="ssgFirewallManager" class="com.l7tech.external.assertions.xmppassertion.server.MockFirewallRulesManager" />
+
+    <!-- Needed for the MessageProcessor -->
+    <!-- Prereq's for the MessageProcessor beans -->
+    <bean id="platformTransactionManager" class="com.l7tech.external.assertions.xmppassertion.server.MockPlatformTransactionManager"/>
+    <bean id="serviceManager" class="com.l7tech.external.assertions.xmppassertion.server.MockServiceManager"/>
+    <bean id="serviceUsageManager" class="com.l7tech.external.assertions.xmppassertion.server.MockServiceUsageManager"/>
+    <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerImpl">
+        <property name="sessionFactory"><ref local="sessionFactory"/></property>
+    </bean>
+
+    <bean id="serviceResolutionManager" class="com.l7tech.external.assertions.xmppassertion.server.MockServiceResolutionManager"/>
+
+    <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
+    <bean id="clusterInfoManager" class="com.l7tech.server.cluster.ClusterInfoManagerImpl">
+        <!-- String -->
+        <constructor-arg value="0"/>
+        <property name="sessionFactory"><ref local="sessionFactory"/></property>
+    </bean>
+    <bean id="timer" class="java.util.Timer"/>
+    <bean id="serverPolicyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+        <!-- AssertionLicense, Injector -->
+        <constructor-arg index="0" ref="licenseManager"/>
+        <constructor-arg index="1" ref="injector"/>
+    </bean>
+    <bean id="roleManager" class="com.l7tech.external.assertions.xmppassertion.server.MockRoleManager"/>
+    <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl">
+        <!-- RoleManager -->
+        <constructor-arg ref="roleManager"/>
+        <property name="sessionFactory"><ref local="sessionFactory"/></property>
+    </bean>
+    <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
+        <!-- FolderManager -->
+        <constructor-arg ref="folderManager"/>
+    </bean>
+    <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
+        <constructor-arg ref="defaultKey"/>
+        <property name="sessionFactory"><ref local="sessionFactory"/></property>
+    </bean>
+    <bean id="clusterPropertyManager" class="com.l7tech.external.assertions.xmppassertion.server.MockClusterPropertyManager"/>
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
+        <property name="sessionFactory"><ref local="sessionFactory"/></property>
+    </bean>
+    <bean id="jdbcConnectionManager" class="com.l7tech.external.assertions.xmppassertion.server.MockJdbcConnectionManager"/>
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.external.assertions.xmppassertion.server.MockJdbcConnectionPoolManager">
+        <constructor-arg index="0" ref="jdbcConnectionManager"/>
+    </bean>
+    <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerStub"/>
+    <bean id="auditPolicyEvaluator" class="com.l7tech.server.audit.AuditPolicyEvaluator">
+        <constructor-arg index="0" ref="config"/>
+        <constructor-arg index="1" ref="policyCache"/>
+        <constructor-arg index="2" ref="policyManager"/>
+        <constructor-arg index="3" ref="jdbcConnectionPoolManager"/>
+    </bean>
+    <bean id="auditFilterPolicyManager" class="com.l7tech.server.audit.AuditFilterPolicyManager">
+        <constructor-arg index="0" ref="policyCache"/>
+        <constructor-arg index="1" ref="stashManagerFactory"/>
+    </bean>
+
+    <!-- MessageProcessor Beans -->
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+        <!-- PolicyCache, PlatformTransactionManager, ServiceManager,
+             ServiceUsageManager, ServiceResolutionManager,
+             ClusterInfoManager, Timer -->
+        <constructor-arg index="0" ref="policyCache"/>
+        <constructor-arg index="1" ref="platformTransactionManager"/>
+        <constructor-arg index="2" ref="serviceManager"/>
+        <constructor-arg index="3" ref="serviceUsageManager"/>
+        <constructor-arg index="4" ref="serviceResolutionManager"/>
+        <constructor-arg index="5" ref="clusterInfoManager"/>
+        <constructor-arg index="6" ref="timer"/>
+    </bean>
+    <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl" >
+        <!-- PlatformTransactionManger, ServerPolicyFactory, FolderCache -->
+        <constructor-arg index="0" ref="platformTransactionManager"/>
+        <constructor-arg index="1" ref="serverPolicyFactory"/>
+        <constructor-arg index="2" ref="folderCache"/>
+    </bean>
+    <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl" />
+    <bean id="securityTokenResolver" class="com.l7tech.server.UserCertificateResolver">
+        <!-- ClientCertManager -->
+        <constructor-arg ref="clientCertManager"/>
+    </bean>
+    <bean id="securityContextFinder" class="com.l7tech.external.assertions.xmppassertion.server.MockSecurityContextFinder" />
+    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" >
+        <!-- ClusterPropertyManager -->
+        <constructor-arg ref="clusterPropertyManager"/>
+    </bean>
+    <bean id="serviceMetricsServices" class="com.l7tech.server.service.ServiceMetricsServicesImpl" >
+        <!-- String -->
+        <constructor-arg value=""/>
+    </bean>
+    <bean id="auditLogListener" class="com.l7tech.server.log.LoggingAuditLogListener"/>
+    <bean id="auditContext" class="com.l7tech.server.audit.AuditContextImpl">
+        <!-- Config, AuditRecordManager, AuditPolicyEvaluator, AuditFilterPolicyManager, String -->
+        <constructor-arg index="0" ref="config"/>
+        <constructor-arg index="1" ref="auditRecordManager"/>
+        <constructor-arg index="2" ref="auditPolicyEvaluator"/>
+        <constructor-arg index="3" ref="auditFilterPolicyManager"/>
+        <constructor-arg index="4" value=""/>
+        <constructor-arg index="5" ref="defaultKey"/>
+        <constructor-arg index="6" ref="auditLogListener"/>
+    </bean>
+    <bean id="config" class="com.l7tech.server.ServerConfig">
+        <!-- Properties, long -->
+        <constructor-arg index="0">
+            <props>
+                <prop key="test">true</prop>
+            </props>
+        </constructor-arg>
+        <constructor-arg index="1" value="0"/>
+    </bean>
+
+    <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
+        <!-- Config, SoapFaultManager -->
+        <constructor-arg index="0" ref="config"/>
+        <constructor-arg index="1" ref="soapFaultManager"/>
+    </bean>
+    <bean id="auditFactory" class="com.l7tech.external.assertions.xmppassertion.server.MockLoggingAuditFactory"/>
+    <bean id="soapFaultManager" class="com.l7tech.external.assertions.xmppassertion.server.MockSoapFaultManager"/>
+    <bean id="applicationEventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>
+
+    <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryStub">
+        <constructor-arg index="0" ref="config"/>
+        <constructor-arg index="1" value=""/>
+    </bean>
+
+    <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
+        <constructor-arg index="0" value=""/>
+    </bean>
+
+    <bean id="messageProcessor" class="com.l7tech.external.assertions.xmppassertion.server.MockMessageProcessor">
+        <!-- ServiceCache, PolicyCache, WssDecorator, SecurityTokenResolver,
+             SecurityContextFinder, LicenseManager, ServiceMetricsServices,
+             AuditContext, Config, TrafficLogger, SoapFaultManager,
+             ApplicationEventPublisher -->
+        <constructor-arg index="0" ref="serviceCache"/>
+        <constructor-arg index="1" ref="policyCache"/>
+        <constructor-arg index="2" ref="wssDecorator"/>
+        <constructor-arg index="3" ref="securityTokenResolver"/>
+        <constructor-arg index="4" ref="securityContextFinder"/>
+        <constructor-arg index="5" ref="licenseManager"/>
+        <constructor-arg index="6" ref="serviceMetricsServices"/>
+        <constructor-arg index="7" ref="auditContextFactory"/>
+        <constructor-arg index="8" ref="messageSummaryAuditFactory"/>
+        <constructor-arg index="9" ref="config"/>
+        <constructor-arg index="10" ref="trafficLogger"/>
+        <constructor-arg index="11" ref="applicationEventPublisher"/>
+    </bean>
+
+</beans>

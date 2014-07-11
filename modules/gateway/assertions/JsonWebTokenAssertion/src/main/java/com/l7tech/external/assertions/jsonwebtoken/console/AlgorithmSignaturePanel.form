@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.jsonwebtoken.console.AlgorithmSignaturePanel">
+  <grid id="27dc6" binding="sigPanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="5"/>
+    <constraints>
+      <xy x="20" y="20" width="318" height="114"/>
+    </constraints>
+    <properties/>
+    <border type="etched" title="Signature Algorithm"/>
+    <children>
+      <component id="f0b3e" class="javax.swing.JRadioButton" binding="signatureListRadioButton" default-binding="true">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false">
+            <preferred-size width="86" height="23"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="From List"/>
+        </properties>
+      </component>
+      <component id="79ba2" class="javax.swing.JRadioButton" binding="signatureVariableRadioButton" default-binding="true">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false">
+            <preferred-size width="86" height="23"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="From Variable"/>
+        </properties>
+      </component>
+      <component id="902db" class="javax.swing.JComboBox" binding="signatureListDrop">
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="dbc22" class="com.l7tech.console.panels.TargetVariablePanel" binding="signatureVariableField">
+        <constraints>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <valueWillBeRead value="true"/>
+          <valueWillBeWritten value="false"/>
+        </properties>
+      </component>
+      <vspacer id="beb5f">
+        <constraints>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+    </children>
+  </grid>
+  <buttonGroups>
+    <group name="signatureGroup">
+      <member id="79ba2"/>
+      <member id="79ba2"/>
+      <member id="f0b3e"/>
+    </group>
+  </buttonGroups>
+</form>
