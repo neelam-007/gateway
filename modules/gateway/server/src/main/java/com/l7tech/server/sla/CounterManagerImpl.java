@@ -56,7 +56,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     private static final int supervisorQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.supervisorQueueSize", 4096);
     private static final int counterQueueSize = SyspropUtil.getInteger("com.l7tech.hacounter.counterQueueSize", 4096);
 
-    private static final int flushTime = SyspropUtil.getInteger("com.l7tech.hacounter.flushTimeWriteDatabase", 1000);
+    private static final int flushTime = SyspropUtil.getInteger("com.l7tech.hacounter.flushTimeWriteDatabase", 1);
     private static final int readPeriod = SyspropUtil.getInteger("com.l7tech.hacounter.timeClearReadCache", 60000);
 
     private static final ExecutorService updateThreads = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveSec, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(supervisorQueueSize), new ThreadPoolExecutor.CallerRunsPolicy());
@@ -295,11 +295,11 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     }
 
     @Override
-    public void decrement(final boolean synchronous, final String counterName, int decrementValue) {
+    public void decrement(final boolean synchronous, final String counterName, int decrementValue, long timestamp) {
         if (synchronous) {
             synchronousDecrement(counterName, decrementValue);
         } else {
-            asyncDecrement(counterName, decrementValue);
+            asyncDecrement(counterName, decrementValue, timestamp);
         }
     }
 
@@ -330,6 +330,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
                                 // put new value in database
                                 recordNewCounterValue(connection, counterName, dbcnt);
+                                readCounters.put(counterName, dbcnt);
+
                             }
                         });
                         return null;
@@ -599,6 +601,11 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                 Thread.currentThread().interrupt();
             }
         }
+
+        if(inc.decrement && readCounters.containsKey(counterName)) {
+            incrementCounter(readCounters.get(counterName), inc.timestamp, -inc.value);
+        }
+
     }
 
     // Batch all outstanding updates for the specified counter into a single atomic update
@@ -696,8 +703,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
         return limitViolated;
     }
 
-    public void asyncDecrement(final String counterName, int decrementValue) {
-        scheduleAsyncCounterStep(counterName, new CounterStep(true, decrementValue));
+    public void asyncDecrement(final String counterName, int decrementValue, long timestamp) {
+        scheduleAsyncCounterStep(counterName, new CounterStep(true, decrementValue, timestamp));
     }
 
     private boolean inSameSecond(Calendar last, Calendar now) {
@@ -729,9 +736,9 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
             this.value = value;
         }
 
-        private CounterStep(boolean decrement, int value) {
+        private CounterStep(boolean decrement, int value, long timestamp) {
             this.decrement = decrement;
-            this.timestamp = -1;
+            this.timestamp = timestamp;
             this.fieldOfInterest = -1;
             this.limit = -1;
             this.value = value;

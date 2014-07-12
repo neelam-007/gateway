@@ -65,7 +65,7 @@ public interface CounterManager {
      * get a current counter value without incrementing anything
      *
      * @param readSynchronous true if the ready should be done synchronously, false if use caching
-     */ 
+     */
     public long getCounterValue(boolean readSynchronous, String counterName, int fieldOfInterest);
 
     /**
@@ -82,8 +82,9 @@ public interface CounterManager {
      *                    false if it is OK to schedule the DB decrement to occur later in a batch.
      * @param counterName the name of the counter used for counter lookup
      * @param decrementValue the value to decrement by
+     * @parma timestamp the time for which this decrement should be recorded at
      */
-    public void decrement(boolean synchronous, String counterName, int decrementValue);
+    public void decrement(boolean synchronous, String counterName, int decrementValue, long timestamp);
 
     /**
      * Reset the counter synchronously.

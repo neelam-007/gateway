@@ -58,7 +58,7 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public void decrement(boolean sync, String counterName, int incrementValue) {
+    public void decrement(boolean sync, String counterName, int incrementValue, long timestamp) {
     }
 
     @Override

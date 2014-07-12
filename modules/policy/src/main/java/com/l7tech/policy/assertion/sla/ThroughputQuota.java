@@ -338,7 +338,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             default: return "something";
         }
     }
-    
+
     private final static String baseName = "Apply Throughput Quota";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ThroughputQuota>(){
@@ -391,6 +391,8 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             final String[] varsUsed = Syntax.getReferencedNames(quota);
             if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
                 error = "Throughput quota must be a value between 1 and " + MAX_THROUGHPUT_QUOTA;
+            } else if(varsUsed.length > 0 && !Syntax.isOnlyASingleVariableReferenced(quota)) {
+                error = "Only a single context variable is allowed for quota";
             }
 
         } catch (VariableNameSyntaxException e) {
@@ -405,6 +407,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      * otherwise it will return an error message.
      *
      * @param byValue the increment/decrement value
+     * @param counterStrategy
      * @return null if valid, error message if otherwise
      */
     public static String validateByValue(String byValue, int counterStrategy) {
@@ -422,17 +425,12 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
             final String[] varsUsed = Syntax.getReferencedNames(byValue);
 
-
-            if (varsUsed.length == 0) {
-                try {
-                    int byValueInt = Integer.parseInt(byValue);
-                    if(byValueInt < 0) {
-                        error = "Please enter a non-negative numeric for " + strategy + " value";
-                    }
-                } catch (NumberFormatException e) {
-                    error = "Please enter an integer for " + strategy + " value";
-                }
+            if (varsUsed.length == 0 && !ValidationUtils.isValidInteger(byValue, false, 0, Integer.MAX_VALUE)) {
+                error = "Please enter an integer for " + strategy + " value between 0 and " + Integer.MAX_VALUE;
+            } else if(varsUsed.length > 0 && !Syntax.isOnlyASingleVariableReferenced(byValue)) {
+                error = "Only a single context variable is allowed for " + strategy + " value";
             }
+
             return error;
 
         } catch (VariableNameSyntaxException e) {

@@ -70,7 +70,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         if (user != null) {
             context.setVariable(userVariable, user.getName());
         } else {
-            context.setVariable(userVariable, "");            
+            context.setVariable(userVariable, "");
         }
         final long quota = getQuota(context);
         context.setVariable(maxVariable, String.valueOf(quota));
@@ -179,11 +179,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     }
 
     private AssertionStatus doDecrement(PolicyEnforcementContext context, int decrementValue) throws IOException {
+        long now = System.currentTimeMillis();
         final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
 
         if (alreadyIncrementedInThisContext(context)) {
             final String counterName = getCounterName(context);
-            counterManager.decrement(synchronous, counterName, decrementValue);
+            counterManager.decrement(synchronous, counterName, decrementValue, now);
             logger.fine("counter decremented " + counterName);
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
