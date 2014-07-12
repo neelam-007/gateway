@@ -5,7 +5,7 @@ import com.l7tech.identity.User;
 import java.io.Serializable;
 
 /**
- * The return value from {@link AdminLogin#login(String, String)}.
+ * The return value from {@link AdminLogin#loginNew(String, String)}.
  */
 public final class AdminLoginResult implements Serializable {
     private static final long serialVersionUID = 13L;

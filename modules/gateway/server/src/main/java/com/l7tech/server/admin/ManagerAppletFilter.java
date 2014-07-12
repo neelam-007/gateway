@@ -366,7 +366,7 @@ public class ManagerAppletFilter implements Filter {
                     //perform change password and login
                     loginResult = adminLogin.loginWithPasswordUpdate(username, password, newPassword);
                 } else if ( username != null || password != null ){
-                    loginResult = adminLogin.login(username, password);
+                    loginResult = adminLogin.loginNew(username, password);
                 } else {
                     loginResult = adminLoginHelper.login(authContext.getLastCredentials().getClientCert());
                 }

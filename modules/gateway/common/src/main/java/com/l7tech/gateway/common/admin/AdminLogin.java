@@ -82,6 +82,30 @@ public interface AdminLogin {
      * @throws LoginException on failed login
      */
     @Administrative(authenticated =false, licensed=false)
+    AdminLoginResult loginNew(String username, String password)
+            throws AccessControlException, LoginException;
+
+
+    /**
+     * Legacy login method called by pre-Icefish SSMs.  Older SSMs do not support GOIDs so will not be able to
+     * deserialize the User inside a successful AdminLoginResult.  They certainly won't be able to successfully
+     * consume any APIs, even with correct credentials.  So, rather than let the logon succeed and return a result
+     * that they won't be able to deserialize, we will simulate a logon failure with an error message suggesting
+     * the SSM version is out of date.
+     * <p/>
+     * This method always fails with a "version out of date" error regardless of passed-in credentials.
+     * <p/>
+     * <b>DO NOT USE</b>
+     *
+     * @deprecated use {@link #loginNew} instead
+     * @param username The name of the user.
+     * @param password The password of the user.
+     * @return An {@link AdminLoginResult} if the login was successful, or throws. Never null.
+     * @throws AccessControlException on access denied for the given credentials
+     * @throws LoginException on failed login
+     */
+    @Administrative(authenticated =false, licensed=false)
+    @Deprecated
     AdminLoginResult login(String username, String password)
             throws AccessControlException, LoginException;
 

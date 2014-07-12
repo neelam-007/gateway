@@ -6,6 +6,7 @@ package com.l7tech.server.admin;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -49,6 +50,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +78,7 @@ public class AdminLoginImpl
     }
 
     @Override
-    public AdminLoginResult login(final String username, final String password)
+    public AdminLoginResult loginNew(final String username, final String password)
             throws AccessControlException, LoginException {
         final X509Certificate cert = RemoteUtils.getClientCertificate();
         if (username == null || password == null || (cert == null && password.isEmpty())) { // Don't trim password here, i.e., NOT use password.trim().isEmpty(), because white space password is probably valid and allowed.
@@ -152,6 +154,11 @@ public class AdminLoginImpl
         }
     }
 
+    public AdminLoginResult login(final String username, final String password) throws AccessControlException, LoginException {
+        VersionException ve = new VersionException( "The client Policy Manager version is too old to log in to this version of the Gateway." );
+        throw new RuntimeException( ve );
+    }
+
     @Override
     public AdminLoginResult loginWithPasswordUpdate(final String username, final String oldPassword, final String newPassword)
             throws AccessControlException, LoginException, InvalidPasswordException {
@@ -168,7 +175,7 @@ public class AdminLoginImpl
         }
 
         //password change was successful, proceed to login
-        return login(username, newPassword);
+        return loginNew(username, newPassword);
     }
 
 

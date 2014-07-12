@@ -123,7 +123,7 @@ public class SecurityProviderImpl extends SecurityProvider
                             //determine the type of logon process should be performed
                             if (newPassword == null) {
                                 //proceed with normal logon process
-                                result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+                                result = adminLogin.loginNew(creds.getUserName(), new String(creds.getPassword()));
                             } else {
                                 //proceed with password change and then logon process
                                 result = adminLogin.loginWithPasswordUpdate(creds.getUserName(), new String(creds.getPassword()), newPassword);

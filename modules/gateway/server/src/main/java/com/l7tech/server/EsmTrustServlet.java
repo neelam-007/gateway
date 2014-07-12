@@ -410,7 +410,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                 throw new LoginException("Empty username");
             }
 
-            result = adminLogin.login(username, password);
+            result = adminLogin.loginNew(username, password);
         }
 
         return result.getUser();
