@@ -75,16 +75,18 @@ public class WebSocketLoadListener {
                 if (event instanceof AssertionModuleRegistrationEvent ) {
                     logger.log(Level.INFO, "Starting WebSocket Services");
                     AssertionModuleRegistrationEvent registrationEvent = (AssertionModuleRegistrationEvent)event;
-                    Set<? extends Assertion> protos = ((ModularAssertionModule)registrationEvent.getModule()).getAssertionPrototypes();
-                    if (protos.size() > 0) {
-                        Assertion proto = protos.iterator().next();
-                        if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
-                            // Our module has just been registered.  Time to do our delayed initialization.
-                            try {
-                                loadProps();
-                                contextInitialized();
-                            } catch (FindException e) {
-                                logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+                    if (registrationEvent.getModule() instanceof ModularAssertionModule) {
+                        Set<? extends Assertion> protos = ((ModularAssertionModule)registrationEvent.getModule()).getAssertionPrototypes();
+                        if (protos.size() > 0) {
+                            Assertion proto = protos.iterator().next();
+                            if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
+                                // Our module has just been registered.  Time to do our delayed initialization.
+                                try {
+                                    loadProps();
+                                    contextInitialized();
+                                } catch (FindException e) {
+                                    logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+                                }
                             }
                         }
                     }
