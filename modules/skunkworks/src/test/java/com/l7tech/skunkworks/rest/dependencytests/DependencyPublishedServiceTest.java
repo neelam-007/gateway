@@ -81,7 +81,6 @@ public class DependencyPublishedServiceTest extends DependencyTestBase{
         policy.setXml(policyXml);
         policy.setName("Policy for Test Service");
         policy.setGuid(UUID.randomUUID().toString());
-        policyManager.save(policy);
         policyGoids.add(policy.getGoid());
 
         // create service

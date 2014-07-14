@@ -346,6 +346,31 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
             }
         });
 
+        //existing guid
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyDetail.setName("test");
+        policyDetail.setGuid(policy.getGuid());
+        policyMO.setGuid(policy.getGuid());
+        policyDetail.setFolderId(policy.getFolder().getId());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyMO.setPolicyDetail(policyDetail);
+        policyMO.setVersion(policy.getVersion());
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resource.setType("policy");
+        resource.setContent(policy.getXml());
+        resourceSet.setResources(Arrays.asList(resource));
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+
+        builder.put(policyMO, new Functions.BinaryVoid<PolicyMO, RestResponse>() {
+            @Override
+            public void call(PolicyMO policyMO, RestResponse restResponse) {
+                Assert.assertEquals(400, restResponse.getStatus());
+            }
+        });
+
         return builder.map();
     }
 
@@ -636,7 +661,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
                 }))
                 .put("name=banName", Collections.<String>emptyList())
                 .put("guid="+policies.get(1).getGuid(), Arrays.asList(policies.get(1).getId()))
-                .put("guid="+policies.get(0).getGuid()+"&guid="+policies.get(2).getGuid(), Arrays.asList(policies.get(0).getId(), policies.get(2).getId()))
+                .put("guid="+policies.get(0).getGuid()+"&guid="+policies.get(2).getGuid() + "&sort=id", Arrays.asList(policies.get(0).getId(), policies.get(2).getId()))
                 .put("type=Include", Arrays.asList(policies.get(0).getId()))
                 .put("type=Internal", Arrays.asList(policies.get(1).getId()))
                 .put("type=Global", Arrays.asList(policies.get(2).getId()))

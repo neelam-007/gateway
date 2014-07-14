@@ -228,7 +228,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
                 replacePolicyDependencies(mappingsRtn, resourceMapping);
 
-                if (test) {
+                if (test || containsErrors(mappingsRtn)) {
                     transactionStatus.setRollbackOnly();
                 }
                 return mappingsRtn;

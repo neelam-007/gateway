@@ -31,6 +31,11 @@ INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_ope
 -- RABC for "debugger" other permission: Update "Publish Webservices" canned role --
 INSERT INTO rbac_permission (goid, version, role_goid, operation_type, other_operation, entity_type) VALUES (toGoid(0, -443),0, toGoid(0, -400),'OTHER','debugger','POLICY');
 
+-- adding guid unique key constraint to policy table for derby. this matched the mysql schema.
+alter table policy
+    add constraint i_guid
+    unique (guid);
+
 --
 -- Register upgrade task for adding "debugger" other permission to auto-created "Manage <Blah>" roles
 --

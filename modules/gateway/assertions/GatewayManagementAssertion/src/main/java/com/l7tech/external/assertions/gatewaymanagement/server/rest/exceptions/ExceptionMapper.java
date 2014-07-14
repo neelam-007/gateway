@@ -113,6 +113,18 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
                 logger.log( Level.WARNING, "Resource access error processing management request: "+ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
                 status = Response.Status.FORBIDDEN;
             }
+        } else if ( e instanceof DataIntegrityViolationException ) {
+            final DataIntegrityViolationException cause = (DataIntegrityViolationException)e;
+            if(cause.getCause() instanceof ConstraintViolationException){
+                ConstraintViolationException constraintViolationException = (ConstraintViolationException) cause.getCause();
+                errorResponse.setType("ConstraintViolation");
+                errorResponse.setDetail(ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage()));
+                status = Response.Status.BAD_REQUEST;
+            } else {
+                errorResponse.setType(cause.getClass().getSimpleName().replace("Exception", ""));
+                logger.log(Level.INFO, "Resource operation forbidden, '" + ExceptionUtils.getMessage(cause) + "'", ExceptionUtils.getDebugException(e));
+                status = Response.Status.FORBIDDEN;
+            }
         } else if (e instanceof InvalidArgumentException) {
             logger.log(Level.WARNING, "InvalidArgumentException error processing management request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             final InvalidArgumentException ex = (InvalidArgumentException) e;

@@ -1145,6 +1145,10 @@ alter table policy
     foreign key (folder_goid)
     references folder;
 
+alter table policy
+    add constraint i_guid
+    unique (guid);
+
 alter table policy_alias
     add constraint FKA07B7103DB935A63
     foreign key (folder_goid)

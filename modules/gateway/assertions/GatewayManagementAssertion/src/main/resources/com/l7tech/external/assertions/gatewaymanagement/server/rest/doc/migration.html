@@ -178,9 +178,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;NewOrExisting&quot; /&gt;
         </pre>
     </div>
@@ -189,36 +189,42 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     actionTaken=&quot;UsedExisting&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
     <p>An entity with the same ID does NOT exist on the target gateway and a new entity with the specified ID was created:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target gateway but one with a conflicting unique key was present instead, resulting in a 409 error response. Here the targetUri is the entity on the target that has the unique key conflicts:</p>
+    <p>An entity with the same ID does NOT exist on the target gateway but one with a conflicting unique key was present instead, resulting in a 409 error response:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    errorType=&quot;UniqueKeyConflict&quot;
-    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
+    errorType=&quot;UniqueKeyConflict&quot; &gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key="ErrorMessage"&gt;
+                &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+&lt;/l7:Mapping&gt;
         </pre>
     </div>
     <h5>NewOrUpdate</h5>
@@ -226,9 +232,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;NewOrUpdate&quot; /&gt;
         </pre>
     </div>
@@ -237,36 +243,42 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot;
     actionTaken=&quot;UpdatedExisting&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
     <p>An entity with the same ID does NOT exist on the target gateway and a new entity with the ID specified was created:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway, but an entity with a conflicting unique key is present instead. Alternatively, an entity with the same ID exists, but unique key errors occurred when updating it, resulting in a 409 error response. Here the targetUri is the entity on the target Gateway with the unique key conflicts:</p>
+    <p>An entity with the same ID does NOT exist on the target Gateway, but an entity with a conflicting unique key is present instead. Alternatively, an entity with the same ID exists, but unique key errors occurred when updating it, resulting in a 409 error response:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    errorType=&quot;UniqueKeyConflict&quot;
-    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot;
+    errorType=&quot;UniqueKeyConflict&quot; &gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key="ErrorMessage"&gt;
+                &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+&lt;/l7:Mapping&gt;
         </pre>
     </div>
     <h5>AlwaysCreateNew</h5>
@@ -274,9 +286,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;AlwaysCreateNew&quot; /&gt;
         </pre>
     </div>
@@ -285,36 +297,42 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;AlwaysCreateNew&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
     <p>An entity with the same ID does NOT exist on the target gateway, resulting in a new entity being created with the specified ID.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;AlwaysCreateNew&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>The entity created has unique key conflicts with an entity on the gateway, resulting in a 409 error response. Here the targetUri is the entity on the target with the unique key conflicts:</p>
+    <p>The entity created has unique key conflicts with an entity on the gateway, resulting in a 409 error response::</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    errorType=&quot;UniqueKeyConflict&quot;
-    targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;AlwaysCreateNew&quot;
+    errorType=&quot;UniqueKeyConflict&quot; &gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key="ErrorMessage"&gt;
+                &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+&lt;/l7:Mapping&gt;
         </pre>
     </div>
     <h5>Ignore</h5>
@@ -322,9 +340,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;Ignore&quot; /&gt;
         </pre>
     </div>
@@ -333,9 +351,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;Ignored&quot; /&gt;
         </pre>
     </div>
@@ -345,18 +363,18 @@
         <tr><td><a class="anchor" id="failonexisting">NewOrExisting</a>FailOnExisting</td><td>This is a boolean property that can be applied to any mapping type. If true it will fail with a 409 if an entity with the same id exists on the target. The possible values are 'true' or 'false'. If this is not specified false is assumed. Example Failure response:
             <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;TargetExists&quot; /&gt;
             </pre>
         </td></tr>
         <tr><td><a class="anchor" id="failonnew">FailOnNew</a>FailOnNew</td><td>This is a boolean property that can be applied to any mapping type. If true it will fail with a 409 if an entity with the same id DOES NOT EXIST on the target. The possible values are 'true' or 'false'. If this is not specified false is assumed. Example Failure response:
             <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;TargetNotFound&quot; /&gt;
             </pre>
         </td></tr>
@@ -365,13 +383,13 @@
     </table>
     <h4>Complex Mapping Examples</h4>
     <h5>Mapping by Name</h5>
-    <p>Map a service to a service on the target gateway with the same name.</p>
+    <p>Map a policy to a policy on the target gateway with the same name.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-     type=&quot;SERVICE&quot;
+     type=&quot;POLICY&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrUpdate&quot; &gt;
     &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
 &lt;/l7:mapping&gt;
@@ -382,36 +400,51 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot; &gt;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the same Name exist on the target gateway this will update the entity.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot; &gt;
     actionTaken=&quot;UpdatedExisting&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the same Name DOES NOT exist on the target gateway but one with the same id does, this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrUpdate&quot; &gt;
     errorType=&quot;UniqueKeyConflict&quot;
-    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+            &lt;l7:StringValue&gt;Other entity exists with the given id: 97cd0afb295cd2d823d0fdd43e720bbc&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;MapBy&quot;&gt;
+            &lt;l7:StringValue&gt;name&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+&lt;/l7:Mapping&gt;
         </pre>
     </div>
     <h5>Mapping by Name to a Specific Entity</h5>
@@ -419,9 +452,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-     type=&quot;SERVICE&quot;
+     type=&quot;POLICY&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
     &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
     &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
@@ -433,36 +466,51 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the target name exist on the target gateway this will do nothing, used the existing service.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     actionTaken=&quot;UsedExisting&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the target name DOES NOT exist on the target gateway but one with the same id does, this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     errorType=&quot;UniqueKeyConflict&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+        &lt;l7:StringValue&gt;Other entity exists with the given id: 7d428d5529fece370bc3cb5b44027ba0&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <h5>Mapping by ID where Entity Must Exist on the Target</h5>
@@ -470,9 +518,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-     type=&quot;SERVICE&quot;
+     type=&quot;POLICY&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
     &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
 &lt;/l7:mapping&gt;
@@ -483,22 +531,28 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    errorType=&quot;TargetNotFound&quot; /&gt;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
+    errorType=&quot;TargetNotFound&quot; &gt;
+    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the same ID exist on the target gateway this will do nothing, used the existing service.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;NewOrExisting&quot;
     actionTaken=&quot;UsedExisting&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
 
@@ -507,9 +561,9 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-     type=&quot;SERVICE&quot;
+     type=&quot;POLICY&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;AlwaysCreateNew&quot; &gt;
     &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
     &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
@@ -521,36 +575,45 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the same Name exist on the target gateway this will fail with unique key conflict.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <p>If an entity with the same Name DOES NOT exist on the target gateway but one with the same id does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;SERVICE&quot;
+    type=&quot;POLICY&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+&lt;/l7:mapping&gt;
         </pre>
     </div>
     <h3>Example Bundle Migration</h3>
