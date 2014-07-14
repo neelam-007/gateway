@@ -8,8 +8,7 @@ import org.apache.olingo.odata2.api.uri.UriSyntaxException;
 import org.apache.olingo.odata2.api.uri.expression.CommonExpression;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -198,6 +197,7 @@ public class OdataParserTest {
     private static final String MERGE = "MERGE";
     private static final String DELETE = "DELETE";
     private static final String TRACE = "TRACE"; // this is used as an example of an unsupported method
+
     private static final List<String> PAYLOAD_METHODS = Arrays.asList(POST, PUT, PATCH, MERGE, TRACE);
 
     private OdataParser parser;
@@ -388,6 +388,17 @@ public class OdataParserTest {
         assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
+    @Test
+    public void testParseRequest_MatrixParametersInResourcePath_ParsingFails() {
+        try {
+            parser.parseRequest("/Categori;es", "$top=5");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("Could not parse matrix parameters in resource path.", e.getMessage());
+        }
+    }
+
     /**
      * Requests for the Service Metadata Document may only use the $format system option; all others will
      * fail to be parsed.
@@ -443,6 +454,23 @@ public class OdataParserTest {
         } catch (OdataParser.OdataParsingException e) {
             assertEquals(UriSyntaxException.class, e.getCause().getClass());
             assertEquals("Invalid order by expression: 'Nadme asc'. ", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParsePayload_GivenClosedPayloadInputStream_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new BufferedInputStream(new ByteArrayInputStream(NEW_CATEGORY_ENTRY_PAYLOAD_JSON.getBytes()));
+        payloadInputStream.close();
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Categories", "");
+
+        try {
+            parser.parsePayload(GET, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals(IOException.class, e.getCause().getClass());
+            assertEquals("Payload could not be read: Stream closed", e.getMessage());
         }
     }
 
