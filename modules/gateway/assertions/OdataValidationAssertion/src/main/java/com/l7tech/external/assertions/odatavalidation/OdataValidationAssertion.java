@@ -159,6 +159,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     }
 
     public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
+
     //
     // Metadata
     //
@@ -186,7 +187,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME,
                 "com.l7tech.external.assertions.odatavalidation.console.OdataValidationDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "OData Validation Properties");
