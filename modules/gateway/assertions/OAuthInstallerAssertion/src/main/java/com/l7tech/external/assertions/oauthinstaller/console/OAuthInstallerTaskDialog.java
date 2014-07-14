@@ -33,6 +33,7 @@ public class OAuthInstallerTaskDialog extends BundleInstallerDialog {
 
     public OAuthInstallerTaskDialog(Frame owner) {
         super(owner, OAUTH_FOLDER, null);
+        setTitle("OAuth Toolkit Installer");
 
         JButton manageSecureZoneDatabaseButton = new JButton("Manage OTK Database");
         customizableButtonPanel.add(manageSecureZoneDatabaseButton);
