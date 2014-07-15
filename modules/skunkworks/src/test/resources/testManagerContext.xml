@@ -1611,4 +1611,6 @@
         <constructor-arg ref="auditContextFactory"/>
     </bean>
 
+    <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
+
 </beans>

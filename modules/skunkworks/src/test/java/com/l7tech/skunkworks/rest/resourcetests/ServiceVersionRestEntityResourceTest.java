@@ -8,10 +8,12 @@ import com.l7tech.gateway.api.PolicyVersionMO;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
@@ -47,22 +49,31 @@ public class ServiceVersionRestEntityResourceTest extends RestEntityTestBase {
         serviceManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serviceManager", ServiceManager.class);
         policyVersionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyVersionManager", PolicyVersionManager.class);
 
+        FolderManager folderManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("folderManager", FolderManager.class);
+        Folder rootFolder = folderManager.findRootFolder();
+
         //Create Policy
         publishedService = new PublishedService();
-        publishedService.setPolicy(new Policy(
-                PolicyType.PRIVATE_SERVICE,
-                "My Policy",
-                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+        publishedService.setName("My Policy");
+        publishedService.setRoutingUri("/test");
+        publishedService.setFolder(rootFolder);
+        publishedService.getPolicy().setXml("<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                         "    <wsp:All wsp:Usage=\"Required\"/>\n" +
-                        "</wsp:Policy>",
-                false
-        ));
+                        "</wsp:Policy>");
+        publishedService.setSoap(false);
+        publishedService.setDisabled(false);
+        publishedService.getPolicy().setGuid(UUID.randomUUID().toString());
         serviceManager.save(publishedService);
-
         policyVersions.add(policyVersionManager.checkpointPolicy(publishedService.getPolicy(), true, true));
+
+        publishedService = serviceManager.findByPrimaryKey(publishedService.getGoid());
         publishedService.getPolicy().setXml(publishedService.getPolicy().getXml()+"<!-- comment1 -->");
+        serviceManager.update(publishedService);
         policyVersions.add(policyVersionManager.checkpointPolicy(publishedService.getPolicy(), true, "comment1", false));
+
+        publishedService = serviceManager.findByPrimaryKey(publishedService.getGoid());
         publishedService.getPolicy().setXml(publishedService.getPolicy().getXml()+"<!-- comment2 -->");
+        serviceManager.update(publishedService);
         policyVersions.add(policyVersionManager.checkpointPolicy(publishedService.getPolicy(), true, "comment2", false));
 
     }

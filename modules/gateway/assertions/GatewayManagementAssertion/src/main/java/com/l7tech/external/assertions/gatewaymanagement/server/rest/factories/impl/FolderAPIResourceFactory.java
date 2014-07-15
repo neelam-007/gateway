@@ -21,6 +21,9 @@ import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
 import java.util.Collections;
@@ -91,15 +94,33 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
                     final List<Dependency> dependentObjects = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, true);
                     Collections.reverse(dependentObjects);
 
-                    for (Dependency dependentObject : dependentObjects) {
-                        EntityHeader entityHeader = ((DependentEntity) dependentObject.getDependent()).getEntityHeader();
-                        final Entity entity = entityCrud.find(entityHeader);
-                        // todo validation
-                        rbacAccessService.validatePermitted(entity, OperationType.DELETE);
-                        try {
-                            entityCrud.delete(entity);
-                        }catch (DeleteException e) {
-                            throw new ResourceFactory.ResourceNotFoundException(entityHeader.getType().toString() +" resource #"+entity.getId()+" could not be deleted", e);
+                    for (final Dependency dependentObject : dependentObjects) {
+                        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                        tt.setReadOnly(false);
+                        final ResourceFactory.ResourceNotFoundException exception = tt.execute(new TransactionCallback<ResourceFactory.ResourceNotFoundException>() {
+                            @Override
+                            public ResourceFactory.ResourceNotFoundException doInTransaction(final TransactionStatus transactionStatus) {
+                                try {
+                                    EntityHeader entityHeader = ((DependentEntity) dependentObject.getDependent()).getEntityHeader();
+                                    final Entity entity = entityCrud.find(entityHeader);
+                                    if (entity != null) {
+                                        // todo validation
+                                        rbacAccessService.validatePermitted(entity, OperationType.DELETE);
+                                        try {
+                                            entityCrud.delete(entity);
+                                        } catch (DeleteException e) {
+                                            return new ResourceFactory.ResourceNotFoundException(entityHeader.getType().toString() + " resource #" + entity.getId() + " could not be deleted", e);
+                                        }
+                                    }
+                                    transactionStatus.flush();
+                                    return null;
+                                } catch (FindException e) {
+                                    return new ResourceFactory.ResourceNotFoundException(ExceptionUtils.getMessage(e), e);
+                                }
+                            }});
+
+                        if (exception != null) {
+                            throw exception;
                         }
                     }
                 } catch (FindException e) {

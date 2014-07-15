@@ -101,6 +101,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
         policy2.setSecurityZone(securityZone1);
         policyManager.save(policy2);
         policyGoids.add(policy2.getGoid());
+        policyVersionManager.checkpointPolicy(policy2, true, true);
 
         // create policy
         final String policyXml =
@@ -123,6 +124,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
         policy.setSecurityZone(securityZone);
         policyManager.save(policy);
         policyGoids.add(policy.getGoid());
+        policyVersionManager.checkpointPolicy(policy, true, true);
 
         // create service alias
         policyAlias = new PolicyAlias(policy, folder2);
@@ -137,12 +139,14 @@ public class DependencyPolicyTest extends DependencyTestBase {
 
     @After
     public void after() throws Exception {
-        policyAliasManager.delete(policyAlias);
+        policyAliasManager.delete(policyAlias.getGoid());
+        policyManager.delete(policy.getGoid());
+        policyManager.delete(policy2.getGoid());
         super.after();
-        folderManager.delete(folder2);
-        folderManager.delete(folder);
-        securityZoneManager.delete(securityZone);
-        securityZoneManager.delete(securityZone1);
+        folderManager.delete(folder2.getGoid());
+        folderManager.delete(folder.getGoid());
+        securityZoneManager.delete(securityZone.getGoid());
+        securityZoneManager.delete(securityZone1.getGoid());
     }
 
     @Test

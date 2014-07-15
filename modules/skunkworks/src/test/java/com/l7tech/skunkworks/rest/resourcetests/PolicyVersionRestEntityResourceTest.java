@@ -59,9 +59,13 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
         policyManager.save(policy);
 
         policyVersions.add(policyVersionManager.checkpointPolicy(policy, true, true));
+        policy = policyManager.findByPrimaryKey(policy.getGoid());
         policy.setXml(policy.getXml()+"<!-- comment1 -->");
+        policyManager.update(policy);
         policyVersions.add(policyVersionManager.checkpointPolicy(policy, true, "comment1", false));
+        policy = policyManager.findByPrimaryKey(policy.getGoid());
         policy.setXml(policy.getXml()+"<!-- comment2 -->");
+        policyManager.update(policy);
         policyVersions.add(policyVersionManager.checkpointPolicy(policy, true, "comment2", false));
 
     }

@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.util.Functions;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -33,11 +34,13 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
     protected FolderManager folderManager;
     protected Folder rootFolder;
     protected List<Goid> policyGoids = new ArrayList<Goid>();
+    protected PolicyVersionManager policyVersionManager;
 
     @Before
     public void before() throws Exception {
         policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
         folderManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("folderManager", FolderManager.class);
+        policyVersionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyVersionManager", PolicyVersionManager.class);
 
         rootFolder = folderManager.findRootFolder();
     }

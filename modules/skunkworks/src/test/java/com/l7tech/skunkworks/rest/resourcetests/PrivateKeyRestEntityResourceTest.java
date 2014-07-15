@@ -370,7 +370,7 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
             if (managedObject.getKeystoreId() != null) {
                 Assert.assertEquals(entity.getKeystoreId().toString(), managedObject.getKeystoreId());
             }
-            if (managedObject.getProperties() != null && managedObject.getProperties().get("keyAlgorithm") != null) {
+            if (managedObject.getProperties() != null && managedObject.getProperties().get("keyAlgorithm") != null && !entity.isRestrictedAccess()) {
                 Assert.assertEquals(entity.getPrivate().getAlgorithm(), managedObject.getProperties().get("keyAlgorithm"));
             }
             Assert.assertEquals(entity.getCertificateChain().length, managedObject.getCertificateChain().size());

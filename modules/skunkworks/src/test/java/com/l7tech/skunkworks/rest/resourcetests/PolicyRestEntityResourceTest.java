@@ -156,6 +156,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         service.setDisabled(false);
         service.getPolicy().setGuid(UUID.randomUUID().toString());
         serviceManager.save(service);
+        policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
     }
 
     @After
@@ -904,6 +905,7 @@ public class PolicyRestEntityResourceTest extends RestEntityTests<Policy, Policy
         Assert.assertNotNull(traceProp);
         assertEquals(traceProp.getValue(), policyReturned.getContent().getGuid());
 
+        service = serviceManager.findByPrimaryKey(service.getGoid());
         service.setTracingEnabled(true);
         serviceManager.update(service);
         service = serviceManager.findByPrimaryKey(service.getGoid());

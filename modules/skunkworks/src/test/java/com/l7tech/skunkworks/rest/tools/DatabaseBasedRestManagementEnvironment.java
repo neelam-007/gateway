@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.external.assertions.gatewaymanagement.server.ServerRESTGatewayManagementAssertion;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.whichmodule.GenericEntityManagerDemoAssertion;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -16,6 +17,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -57,7 +59,7 @@ public class DatabaseBasedRestManagementEnvironment {
     public static final String EXIT = "EXIT";
     public static final String PROCESS = "PROCESS";
 
-    private ApplicationContext applicationContext;
+    private ClassPathXmlApplicationContext applicationContext;
     private ServerRESTGatewayManagementAssertion restManagementAssertion;
 
     public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException {
@@ -79,6 +81,9 @@ public class DatabaseBasedRestManagementEnvironment {
         assertionRegistry.registerAssertion(GatewayManagementAssertion.class);
         assertionRegistry.registerAssertion(RESTGatewayManagementAssertion.class);
         assertionRegistry.registerAssertion(GenericEntityManagerDemoAssertion.class);
+
+        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.start();
     }
 
     /**

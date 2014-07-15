@@ -9,9 +9,8 @@ import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.email.EmailListenerManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
@@ -31,28 +30,35 @@ import java.util.*;
 public class EmailListenerRestEntityResourceTest extends RestEntityTests<EmailListener, EmailListenerMO> {
     private EmailListenerManager emailListenerManager;
     private ServiceManager serviceManager;
+    private PolicyVersionManager policyVersionManager;
+
 
     private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
 
 
-    private static final PublishedService service = new PublishedService();
+    private static PublishedService service;
     private List<EmailListener> emailListeners = new ArrayList<>();
 
     @Before
-    public void before() throws SaveException, FindException {
+    public void before() throws Exception {
         emailListenerManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("emailListenerManager", EmailListenerManager.class);
         serviceManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("serviceManager", ServiceManager.class);
+        policyVersionManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyVersionManager", PolicyVersionManager.class);
+
 
         FolderManager folderManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("folderManager", FolderManager.class);
         Folder rootFolder = folderManager.findRootFolder();
 
+        service = new PublishedService();
         service.setName("Service1");
         service.setRoutingUri("/test");
-        service.setPolicy(new Policy(PolicyType.INCLUDE_FRAGMENT, "Service1 Policy", POLICY, false));
         service.setFolder(rootFolder);
+        service.getPolicy().setXml(POLICY);
         service.setSoap(false);
+        service.setDisabled(false);
         service.getPolicy().setGuid(UUID.randomUUID().toString());
         serviceManager.save(service);
+        policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
 
         //Create the active connectors
 
