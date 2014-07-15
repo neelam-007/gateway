@@ -44,9 +44,21 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_STATUS = m(4016, Level.WARNING, true, true, "Protected service ({0}) responded with status {1}");
     public static final M HTTPROUTE_ADDCOOKIE_VERSION = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
     public static final M HTTPROUTE_UPDATECOOKIE = m(4018, Level.FINE, "Updating cookie: name = {0}");
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static final M BRIDGEROUTE_NO_ATTACHMENTS = m(4019, Level.WARNING, "Route via SecureSpan Bridge assertion does not currently support SOAP with attachments; ignoring additional MIME parts");
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static final M BRIDGEROUTE_BAD_CONFIG = m(4020, Level.WARNING, "Route via SecureSpan Bridge assertion is configured with invalid protected service URL or policy XML");
     public static final M HTTPROUTE_BAD_ORIGINAL_URL = m(4021, Level.WARNING, "Invalid original request URI -- using default");
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static final M HTTPROUTE_ACCESS_DENIED = m(4022, Level.WARNING, "Protected service has denied access based on credentials from the Route via SecureSpan Bridge assertion");
     public static final M HTTPROUTE_TOO_MANY_ATTEMPTS = m(4023, Level.WARNING, "Unable to route to the service after multiple failed attempts");
     public static final M HTTPROUTE_SAML_SV_NOT_AUTH = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated");
@@ -69,6 +81,10 @@ public class AssertionMessages extends Messages {
      */
     @Deprecated
     public static final M _UNUSED_HTTPROUTE_CTYPEWOUTPAYLOAD = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static final M BRIDGEROUTE_REQUEST_NOT_SOAP = m(4040, Level.WARNING, "Route via SecureSpan Bridge Assertion failed because request is not SOAP; this assertion currently does not support non-SOAP requests.");
     public static final M HTTPROUTE_SOCKET_TIMEOUT = m(4041, Level.WARNING, "Remote network connection timed out.");
     public static final M HTTPROUTE_GENERIC_PROBLEM = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");
@@ -77,6 +93,10 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_UNEXPECTED_METHOD = m(4045, Level.WARNING, "Unexpected request HTTP method {0}; using POST");
     public static final M HTTPROUTE_DEFAULT_METHOD_NON_HTTP = m(4046, Level.INFO, "Request was not HTTP; using POST");
     public static final M HTTPROUTE_DEFAULT_METHOD_VAR = m(4047, Level.INFO, "Request is a context variable; using POST");
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static final M BRIDGEROUTE_WSS_PROCESSING_RESP = m(4048, Level.WARNING, "Error in WSS processing of response ''{0}''");
     public static final M HTTPROUTE_RESPONSE_DEFCONTENTTYPE = m(4049, Level.INFO, "Downstream service response did not include a content type header, using default.");
     public static final M HTTPROUTE_CONFIGURATION_ERROR = m(4050, Level.WARNING, "Invalid HTTP configuration ''{0}''.");
