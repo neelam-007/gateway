@@ -106,8 +106,9 @@ confirmAction() {
 }
 
 doSystemConfiguration() {
+    svc=`service foundation-services status | grep -v grep | grep "is running" | wc -l`
     FST_PRESENT=""
-    if [ -d "$PLATFORM_HOME" ]; then
+    if [ -d "$PLATFORM_HOME" -a "$svc" != "0" ] ; then
         cd $PLATFORM_HOME
         FST_PRESENT="true"
     fi
