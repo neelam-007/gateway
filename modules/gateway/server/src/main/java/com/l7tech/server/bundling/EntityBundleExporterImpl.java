@@ -1,6 +1,7 @@
 package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -144,6 +145,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity ||
                 entity instanceof Role ||
+                entity instanceof SecurePassword ||
                 (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID))) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(

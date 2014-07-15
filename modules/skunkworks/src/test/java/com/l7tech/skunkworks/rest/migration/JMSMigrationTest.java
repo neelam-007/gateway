@@ -21,6 +21,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -288,7 +289,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         Assert.assertEquals("The bundle should have 5 items. A policy, and jms endpoint", 5, bundleItem.getContent().getReferences().size());
 
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         //import the bundle
@@ -407,7 +410,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
 
             //update the bundle mapping to map the cert to the existing one
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setAction(Mapping.Action.Ignore);
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setAction(Mapping.Action.Ignore);
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
@@ -514,7 +519,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.AlwaysCreateNew);
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnExisting", true).map());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         //import the bundle
@@ -642,7 +649,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             //update the bundle mapping to map the cert to the existing one
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setAction(Mapping.Action.NewOrUpdate);
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
             //import the bundle
@@ -773,7 +782,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).map());
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+        getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
         MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
         try{
@@ -913,7 +924,9 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setProperties(CollectionUtils.<String, Object>mapBuilder().put("FailOnNew", true).put("MapBy", "name").put("MapTo", jmsCreated.getName()).map());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), jmsItem.getId()).setTargetId(jmsMO.getId());
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem.getId()).setPassword("myPassword");
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.<StoredPasswordMO>getBundleReference(bundleItem.getContent(), storedPasswordItem2.getId()).setPassword("myPassword");
+            getMapping(bundleItem.getContent().getMappings(), storedPasswordItem2.getId()).setProperties(Collections.<String,Object>emptyMap());
             MigrationTestBase.getMapping(bundleItem.getContent().getMappings(), privateKeyItem2.getId()).setTargetId(privateKeyItem2Target.getId());
 
             //import the bundle

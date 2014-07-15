@@ -20,6 +20,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -134,6 +135,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         //change the secure password MO to contain a password.
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -939,6 +941,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             bundleItem.getContent().getMappings().get(1).setTargetId(jdbcConnectionMO.getId());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1027,6 +1030,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             bundleItem.getContent().getMappings().get(1).setTargetId(jdbcConnectionMO.getId());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1117,6 +1121,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             bundleItem.getContent().getMappings().get(1).setTargetId(jdbcConnectionMO.getId());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1209,6 +1214,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
                             .put("MapTo", jdbcConnectionMO.getName()).map());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1303,6 +1309,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             bundleItem.getContent().getMappings().get(1).setAction(Mapping.Action.NewOrUpdate);
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1397,6 +1404,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
                             .put("MapTo", jdbcConnectionMO.getName()).map());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1489,6 +1497,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
                             .put("MapBy", "name").map());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -1582,6 +1591,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
                             .put("MapBy", "name").map());
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),

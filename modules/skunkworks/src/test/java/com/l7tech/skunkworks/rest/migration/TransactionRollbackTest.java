@@ -20,6 +20,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
@@ -135,7 +136,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
         Mapping passwordMapping = mappings.getContent().getMappings().get(0);
         Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
-        Assert.assertEquals(Mapping.ErrorType.InvalidResource, passwordMapping.getErrorType());
+        Assert.assertEquals(Mapping.ErrorType.TargetNotFound, passwordMapping.getErrorType());
         Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
 
         Mapping jdbcMapping = mappings.getContent().getMappings().get(1);
@@ -177,6 +178,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         //change the secure password MO to contain a password.
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
         //make it so that the policy is asserted to exist
         bundleItem.getContent().getMappings().get(3).setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("FailOnNew", true).map());
@@ -234,6 +236,7 @@ public class TransactionRollbackTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         //change the secure password MO to contain a password.
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
         //import the bundle
         response = getTargetEnvironment().processRequest("bundle", "test=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),

@@ -19,6 +19,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -139,6 +140,7 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
 
         //change the secure password MO to contain a password.
         ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+        getMapping(bundleItem.getContent().getMappings(), passwordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
         //change the siteminder MO to contain a secret.
         ((SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(1).getContent()).setSecret("secret");
@@ -237,6 +239,7 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
 
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), passwordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
             //change the siteminder MO to contain a secret.
             ((SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(1).getContent()).setSecret("secret");
@@ -342,6 +345,7 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
 
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), passwordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
             //change the siteminder MO to contain a secret.
             ((SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(1).getContent()).setSecret("secret");
@@ -458,6 +462,7 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
 
             //change the secure password MO to contain a password.
             ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent()).setPassword("password");
+            getMapping(bundleItem.getContent().getMappings(), passwordItem.getId()).setProperties(Collections.<String, Object>emptyMap());
 
             //change the siteminder MO to contain a secret.
             ((SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(1).getContent()).setSecret("secret");
