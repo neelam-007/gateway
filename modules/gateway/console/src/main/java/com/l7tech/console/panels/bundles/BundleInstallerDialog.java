@@ -53,9 +53,10 @@ public abstract class BundleInstallerDialog extends JDialog {
     private JPanel sizingPanel;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JLabel versionLabel;
+    protected JLabel versionNameLabel;
+    protected JLabel versionValueLabel;
     private JLabel installToLabel;
-    private JScrollPane componentsToInstallScrollPane;
+    protected JScrollPane componentsToInstallScrollPane;
     private JCheckBox prefixResolutionURIsAndCheckBox;
     private SquigglyTextField installationPrefixTextField;
     private JLabel exampleRoutingUrlLabel;
@@ -116,7 +117,7 @@ public abstract class BundleInstallerDialog extends JDialog {
         final PolicyBundleInstallerAdmin admin = getExtensionInterface(extensionInterfaceInstanceIdentifier);
         try {
             final String version = admin.getVersion();
-            versionLabel.setText(version);
+            versionValueLabel.setText(version);
 
             final List<BundleInfo> allAvailableBundles = admin.getAllComponents();
 
