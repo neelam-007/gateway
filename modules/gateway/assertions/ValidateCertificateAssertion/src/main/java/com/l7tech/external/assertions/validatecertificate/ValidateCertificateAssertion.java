@@ -74,7 +74,7 @@ public class ValidateCertificateAssertion extends Assertion implements SetsVaria
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.SHORT_NAME, "Validate Certificate");
-        meta.put(AssertionMetadata.LONG_NAME, "Validates an X509 Certificate context variable. " + DISCLAIMER);
+        meta.put(AssertionMetadata.LONG_NAME, "Validates an X.509 Certificate context variable. " + DISCLAIMER);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/check16.gif");

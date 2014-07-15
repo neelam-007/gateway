@@ -101,7 +101,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
                 if ( specifyCredentialsRadioButton.isSelected()
                        && ! usernameAndPasswordCheckBox.isSelected()
                        && ! x509CertificateCheckBox.isSelected() ) {
-                    return "At least one of Username or X509 Certificate must be selected when using Specified Credentials.";
+                    return "At least one of Username or X.509 Certificate must be selected when using Specified Credentials.";
                 }
 
                 return null;
