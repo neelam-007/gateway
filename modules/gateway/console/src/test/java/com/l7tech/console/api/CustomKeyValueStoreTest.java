@@ -3,8 +3,10 @@ package com.l7tech.console.api;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.CustomKeyValueStoreAdmin;
 import com.l7tech.policy.CustomKeyValueStore;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -165,5 +167,12 @@ public class CustomKeyValueStoreTest {
     public void testDelete() throws Exception {
         customKeyValueStore.delete(KEY);
         // Nothing to check. Just make sure that method does not throw any exceptions.
+    }
+
+    @Test
+    public void testKeyValueStoreChangeEventListener() throws Exception {
+        KeyValueStoreChangeEventListener listener = customKeyValueStore.getListener(KeyValueStoreChangeEventListener.class);
+        // Key value store change event listener not supported in the SSM.
+        Assert.assertNull(listener);
     }
 }

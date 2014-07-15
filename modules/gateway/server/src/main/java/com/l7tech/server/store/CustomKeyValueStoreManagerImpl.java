@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
     private final Map<Goid, String> deletedKeys = new ConcurrentHashMap<>(); // keep track of deleted GOIDs to key names.
-    private final Map<String, Set<KeyValueStoreChangeEventListener>> listeners = new ConcurrentHashMap<>();
+    private final KeyValueStoreChangeEventListenerImpl listener = new KeyValueStoreChangeEventListenerImpl();
 
     public CustomKeyValueStoreManagerImpl(ApplicationEventProxy eventProxy) {
         eventProxy.addApplicationListener(new ApplicationListener() {
@@ -78,28 +78,19 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
     }
 
     @Override
+    public <T> T getListener(Class<T> lClass) {
+        if (KeyValueStoreChangeEventListener.class.equals(lClass)) {
+            //noinspection unchecked
+            return (T) listener;
+        }
+
+        return null;
+    }
+
+    @Override
     public void delete(final CustomKeyValueStore customKeyValue) throws DeleteException {
         super.delete(customKeyValue);
         deletedKeys.put(customKeyValue.getGoid(), customKeyValue.getName());
-    }
-
-    @Override
-    public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
-        if (keyPrefixListeners == null) {
-            keyPrefixListeners = new HashSet<>();
-            listeners.put(keyPrefix, keyPrefixListeners);
-        }
-
-        keyPrefixListeners.add(listener);
-    }
-
-    @Override
-    public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
-        if (keyPrefixListeners != null) {
-            keyPrefixListeners.remove(listener);
-        }
     }
 
     private void handleEvent(ApplicationEvent event) {
@@ -157,9 +148,9 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
             }
         }
 
-        // Call event listeners.
+        // Call event callbacks.
         //
-        for (Map.Entry<String, Set<KeyValueStoreChangeEventListener>> entry : listeners.entrySet()) {
+        for (Map.Entry<String, Set<KeyValueStoreChangeEventListener.EventCallback>> entry : listener.getEvenCallbacks().entrySet()) {
             // Get events for given key prefix.
             //
             List<KeyValueStoreChangeEventListener.Event> keyPrefixEvents = new LinkedList<>();
@@ -169,15 +160,15 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
                 }
             }
 
-            // Call event listeners.
+            // Call event callbacks.
             //
-            for (KeyValueStoreChangeEventListener listener : entry.getValue()) {
-                listener.onEvent(keyPrefixEvents);
+            for (KeyValueStoreChangeEventListener.EventCallback eventCallback : entry.getValue()) {
+                eventCallback.onEvent(keyPrefixEvents);
             }
         }
     }
 
-    private class KeyValueStoreChangeEventImpl implements KeyValueStoreChangeEventListener.Event {
+    private class KeyValueStoreChangeEventImpl extends KeyValueStoreChangeEventListener.Event {
         private final String key;
         private final KeyValueStoreChangeEventListener.Operation operation;
 
@@ -194,6 +185,38 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
         @Override
         public KeyValueStoreChangeEventListener.Operation getOperation() {
             return operation;
+        }
+    }
+
+    private class KeyValueStoreChangeEventListenerImpl extends KeyValueStoreChangeEventListener {
+        private final Map<String, Set<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
+
+        @Override
+        public void add(String keyPrefix, EventCallback eventCallback) {
+            Set<EventCallback> keyPrefixEventCallbacks = eventCallbacks.get(keyPrefix);
+            if (keyPrefixEventCallbacks == null) {
+                keyPrefixEventCallbacks = new HashSet<>();
+                eventCallbacks.put(keyPrefix, keyPrefixEventCallbacks);
+            }
+
+            keyPrefixEventCallbacks.add(eventCallback);
+        }
+
+        @Override
+        public void remove(String keyPrefix, EventCallback eventCallback) {
+            Set<EventCallback> keyPrefixListeners = eventCallbacks.get(keyPrefix);
+            if (keyPrefixListeners != null) {
+                keyPrefixListeners.remove(eventCallback);
+            }
+        }
+
+        /**
+         * Gets registered event callbacks.
+         *
+         * @return the event callbacks
+         */
+        private Map<String, Set<EventCallback>> getEvenCallbacks() {
+            return eventCallbacks;
         }
     }
 }

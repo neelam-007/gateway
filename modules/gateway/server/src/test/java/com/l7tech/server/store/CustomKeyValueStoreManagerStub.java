@@ -11,10 +11,11 @@ import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
-    private final Map<String, Set<KeyValueStoreChangeEventListener>> listeners = new HashMap<>();
+    private final KeyValueStoreChangeEventListener listener = new KeyValueStoreChangeEventListenerStub();
 
     public CustomKeyValueStoreManagerStub(CustomKeyValueStore... customKeyValueStoresIn) {
         super(customKeyValueStoresIn);
@@ -48,26 +49,40 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
     }
 
     @Override
-    public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
-        if (keyPrefixListeners == null) {
-            keyPrefixListeners = new HashSet<>();
-            listeners.put(keyPrefix, keyPrefixListeners);
+    public <T> T getListener(Class<T> lClass) {
+        if (KeyValueStoreChangeEventListener.class.equals(lClass)) {
+            //noinspection unchecked
+            return (T) listener;
         }
 
-        keyPrefixListeners.add(listener);
-    }
-
-    @Override
-    public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-        Set<KeyValueStoreChangeEventListener> keyPrefixListeners = listeners.get(keyPrefix);
-        if (keyPrefixListeners != null) {
-            keyPrefixListeners.remove(listener);
-        }
+        return null;
     }
 
     @Override
     public Class<? extends PersistentEntityImp> getImpClass() {
         return CustomKeyValueStore.class;
+    }
+
+    private class KeyValueStoreChangeEventListenerStub extends KeyValueStoreChangeEventListener {
+        private final Map<String, Set<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
+
+        @Override
+        public void add(String keyPrefix, EventCallback eventCallback) {
+            Set<EventCallback> keyPrefixEventCallbacks = eventCallbacks.get(keyPrefix);
+            if (keyPrefixEventCallbacks == null) {
+                keyPrefixEventCallbacks = new HashSet<>();
+                eventCallbacks.put(keyPrefix, keyPrefixEventCallbacks);
+            }
+
+            keyPrefixEventCallbacks.add(eventCallback);
+        }
+
+        @Override
+        public void remove(String keyPrefix, EventCallback eventCallback) {
+            Set<EventCallback> keyPrefixListeners = eventCallbacks.get(keyPrefix);
+            if (keyPrefixListeners != null) {
+                keyPrefixListeners.remove(eventCallback);
+            }
+        }
     }
 }

@@ -28,7 +28,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
-import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
@@ -779,13 +778,8 @@ public class PolicyHelper {
             }
 
             @Override
-            public void addListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-                throw new UnsupportedOperationException("Cannot add key value store change event listener here.");
-            }
-
-            @Override
-            public void removeListener(String keyPrefix, KeyValueStoreChangeEventListener listener) {
-                throw new UnsupportedOperationException("Cannot remove key value store change event listener here.");
+            public <T> T getListener(Class<T> lClass) {
+                return null;
             }
         }
     }

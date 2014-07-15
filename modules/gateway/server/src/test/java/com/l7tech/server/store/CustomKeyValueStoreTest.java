@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreServices;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -189,17 +190,21 @@ public class CustomKeyValueStoreTest {
         // Cannot fully test event notification mechanism because CustomKeyValueStoreManagerStub is
         // used, and not the actual CustomKeyValueStoreManagerImpl in this unit test.
         //
-        KeyValueStoreChangeEventListener listener = new KeyValueStoreChangeEventListenerImpl();
-        customKeyValueStore.addListener(PREFIX, listener);
-        customKeyValueStore.removeListener(PREFIX, listener);
+        KeyValueStoreChangeEventListener.EventCallback eventCallback = new KeyValueStoreChangeEventCallback();
+
+        KeyValueStoreChangeEventListener listener = customKeyValueStore.getListener(KeyValueStoreChangeEventListener.class);
+        Assert.assertNotNull(listener);
+
+        listener.add(PREFIX, eventCallback);
+        listener.remove(PREFIX, eventCallback);
     }
 
-    private class KeyValueStoreChangeEventListenerImpl implements KeyValueStoreChangeEventListener {
-        public KeyValueStoreChangeEventListenerImpl() {
+    private class KeyValueStoreChangeEventCallback implements KeyValueStoreChangeEventListener.EventCallback {
+        public KeyValueStoreChangeEventCallback() {
         }
 
         @Override
-        public void onEvent(List<Event> events) {
+        public void onEvent(List<KeyValueStoreChangeEventListener.Event> events) {
             // Do something.
         }
     }
