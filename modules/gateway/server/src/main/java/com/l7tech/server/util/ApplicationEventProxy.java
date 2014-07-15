@@ -91,7 +91,7 @@ public class ApplicationEventProxy implements ApplicationListener, ApplicationEv
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof AssertionModuleUnregistrationEvent)
-            removeListenersFromClassLoader(((AssertionModuleUnregistrationEvent)event).getModule().getModuleClassLoader());
+            removeListenersFromClassLoader(((AssertionModuleUnregistrationEvent) event).getModuleClassLoader());
 
         if (isPrimaryChannel())
             deliverEventToSubscribers(event);

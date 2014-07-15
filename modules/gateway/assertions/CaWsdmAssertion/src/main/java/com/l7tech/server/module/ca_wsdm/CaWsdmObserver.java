@@ -432,9 +432,9 @@ public class CaWsdmObserver implements ApplicationListener {
 
         if (event instanceof AssertionModuleRegistrationEvent) {
             AssertionModuleRegistrationEvent regEvent = (AssertionModuleRegistrationEvent)event;
-            if (regEvent.getModule() instanceof ModularAssertionModule) {
-                final ModularAssertionModule assMod = (ModularAssertionModule)regEvent.getModule();
-                Set<? extends Assertion> protos = assMod.getAssertionPrototypes();
+            // handle only ModularAssertionModule
+            if (regEvent.getModule().isLeft()) {
+                Set<? extends Assertion> protos = regEvent.getModule().left().getAssertionPrototypes();
                 if (protos.size() > 0) {
                     Assertion proto = protos.iterator().next();
                     if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {

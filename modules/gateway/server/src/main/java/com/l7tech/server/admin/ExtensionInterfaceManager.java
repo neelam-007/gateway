@@ -276,7 +276,7 @@ public class ExtensionInterfaceManager implements PostStartupApplicationListener
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof AssertionModuleUnregistrationEvent) {
             AssertionModuleUnregistrationEvent event = (AssertionModuleUnregistrationEvent) applicationEvent;
-            unregisterAllFromClassLoader(event.getModule().getModuleClassLoader());
+            unregisterAllFromClassLoader(event.getModuleClassLoader());
         }
     }
 

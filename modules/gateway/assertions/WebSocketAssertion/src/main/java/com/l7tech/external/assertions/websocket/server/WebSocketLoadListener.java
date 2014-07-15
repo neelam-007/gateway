@@ -75,8 +75,9 @@ public class WebSocketLoadListener {
                 if (event instanceof AssertionModuleRegistrationEvent ) {
                     logger.log(Level.INFO, "Starting WebSocket Services");
                     AssertionModuleRegistrationEvent registrationEvent = (AssertionModuleRegistrationEvent)event;
-                    if (registrationEvent.getModule() instanceof ModularAssertionModule) {
-                        Set<? extends Assertion> protos = ((ModularAssertionModule)registrationEvent.getModule()).getAssertionPrototypes();
+                    // handle only ModularAssertionModule
+                    if (registrationEvent.getModule().isLeft()) {
+                        Set<? extends Assertion> protos = registrationEvent.getModule().left().getAssertionPrototypes();
                         if (protos.size() > 0) {
                             Assertion proto = protos.iterator().next();
                             if (proto.getClass().getClassLoader() == getClass().getClassLoader()) {
