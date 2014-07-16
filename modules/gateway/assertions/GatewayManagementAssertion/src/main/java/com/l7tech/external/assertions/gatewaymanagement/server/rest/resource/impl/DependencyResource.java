@@ -41,15 +41,15 @@ public class DependencyResource {
     }
 
     /**
-     * Returns the dependency analysis for the resource
+     * Returns the list of dependencies for this entity
      *
-     * @return The dependencies of this entity.
+     * @return The list of dependencies.
      * @throws FindException
      *
      * @title Get Dependencies
      */
     @GET
-    public Item get() throws FindException, CannotRetrieveDependenciesException {
+    public Item getDependencies() throws FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final DependencySearchResults dependencySearchResults = dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map());
         DependencyListMO dependencyListMO = transformer.convertToMO(dependencySearchResults);

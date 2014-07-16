@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The secure password resource
+ * Secure passwords are used to securely store passwords and plain text PEM private keys in the Gateway database.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + SecurePasswordResource.securePassword_URI)
@@ -46,10 +46,10 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     }
 
     /**
-     * Creates a new entity
+     * Creates a new secure password
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The secure password to create
+     * @return A reference to the newly created secure password
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -59,10 +59,10 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a secure password with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the secure password to return
+     * @return The secure password.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -72,24 +72,22 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of secure passwords. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/passwords?name=MyPassword</div>
+     * <p>Returns secure password with name "MySFTPPollingListener".</p>
+     * <div class="code indent">/restman/1.0/passwords?type=Password&name=MyPassword&name=MyOtherPassword</div>
+     * <p>Returns secure password of Password type with name either "MyPassword" or
+     * "MyOtherPassword"</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort  the key to sort the list by.
-     * @param order the order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param names The name filter
-     * @param types The type filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort  Key to sort the list by
+     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *              ascending if not specified
+     * @param names Name filter
+     * @param types Type filter
+     * @return A list of secure passwords. If the list is empty then no secure passwords were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -114,8 +112,8 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
 
     private List<SecurePassword.SecurePasswordType> convertTypes(List<String> types) {
         List<SecurePassword.SecurePasswordType> passwordTypes = new ArrayList<>(types.size());
-        for(String typeString : types){
-            switch(typeString){
+        for (String typeString : types) {
+            switch (typeString) {
                 case "Password":
                     passwordTypes.add(SecurePassword.SecurePasswordType.PASSWORD);
                     break;
@@ -130,24 +128,25 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing secure password. If a secure password with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Secure password to create or update
+     * @param id       ID of the secure password to create or update
+     * @return A reference to the newly created or updated secure password.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(StoredPasswordMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(StoredPasswordMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing secure password.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the secure password to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -158,10 +157,10 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example secure password that can be used as a reference for what secure password
+     * objects should look like.
      *
-     * @return The template entity.
+     * @return The template secure password.
      */
     @GET
     @Path("template")

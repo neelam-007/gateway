@@ -1,0 +1,1418 @@
+<div>
+    <h2>Example Bundle Migration</h2>
+    <p>This bundle migration example will work through the following work flow:</p>
+    <ol>
+        <li>Migrating from a development Gateway to a new production Gateway.</li>
+        <li>Migrating updated policies from the development Gateway to the production Gateway.</li>
+    </ol>
+    <h3>Set Up</h3>
+    <p>The are two Gateways running. A development (source) Gateway, and a production (target) Gateway. Both Gateways are licensed and have the Gateway REST Management Service installed. The production Gateway is otherwise empty.</p>
+    <p>The development Gateways contains the following:</p>
+    <ul>
+        <li>A secure password: "LocalhostDBPassword"</li>
+        <li>A JDBC connection to the local database. It used the password from above via a context variable.</li>
+        <li>A policy fragment that uses the JDBC Connection via a JDBC Query Assertion.</li>
+        <li>An Encapsulated Assertion that uses the policy fragment above</li>
+        <li>A service that uses the Encapsulated Assertion above.</li>
+        <li>A folder containing the service from above.</li>
+    </ul>
+    <h3>Exporting the Migration Bundle</h3>
+    <p>To create the migration bundle we will export the folder from above. In order to export the folder we first need to get it's id. In order to do that send a request to list folders and filter by the folder name, "Migration":</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+        <caption>List folders with name "Migration"</caption>
+        <tbody>
+        <tr><td></td><td></td></tr>
+        <tr><td colspan="2">Request</td>
+        </tr>
+        <tr>
+            <td>Uri</td>
+            <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration">https://$#{host}:$#{port}/$#{service-url}/1.0/folders=Migration</a></div></td>
+        </tr>
+        <tr><td>Http Method</td>
+            <td>GET</td>
+        </tr>
+        <tr><td colspan="2">Response</td></tr>
+        <tr>
+            <td>Http Status</td>
+            <td>200</td>
+        </tr>
+        <tr>
+            <td>Message Body</td>
+            <td><div class="code">
+                    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:List xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;FOLDER List&lt;/l7:Name&gt;
+        &lt;l7:Type&gt;List&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T15:53:10.941-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration&quot;/&gt;
+        &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+        &lt;l7:Item&gt;
+            &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+            &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
+            &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
+            &lt;l7:TimeStamp&gt;2014-07-14T15:53:10.941-07:00&lt;/l7:TimeStamp&gt;
+            &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot;/&gt;
+            &lt;l7:Resource&gt;
+                &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
+                    &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                &lt;/l7:Folder&gt;
+            &lt;/l7:Resource&gt;
+        &lt;/l7:Item&gt;
+    &lt;/l7:List&gt;
+                    </pre></div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p>The folder id is "6b52de26ef82cc4df397d1909490d736" from above. Export the bundle using the folder id:</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+    <caption>Export bundle of folder "6b52de26ef82cc4df397d1909490d736"</caption>
+    <tbody>
+    <tr><td></td><td></td></tr>
+    <tr><td colspan="2">Request</td>
+    </tr>
+    <tr>
+        <td>Uri</td>
+        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
+    </tr>
+    <tr><td>Http Method</td>
+        <td>GET</td>
+    </tr>
+    <tr><td colspan="2">Response</td></tr>
+    <tr>
+        <td>Http Status</td>
+        <td>200</td>
+    </tr>
+    <tr>
+    <td>Message Body</td>
+    <td><div class="code">
+    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;Bundle&lt;/l7:Name&gt;
+        &lt;l7:Type&gt;BUNDLE&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.399-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&quot;/&gt;
+        &lt;l7:Resource&gt;
+            &lt;l7:Bundle&gt;
+                &lt;l7:References&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.387-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                            &lt;/l7:Folder&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.387-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:StoredPassword id=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;usageFromVariable&quot;&gt;
+        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;description&quot;&gt;
+        &lt;l7:StringValue&gt;&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;lastUpdated&quot;&gt;
+        &lt;l7:DateValue&gt;2014-05-13T17:21:45.137-07:00&lt;/l7:DateValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;type&quot;&gt;
+        &lt;l7:StringValue&gt;Password&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:StoredPassword&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7d9&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;JDBC_CONNECTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.388-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:JDBCConnection id=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                                &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;maximumPoolSize&quot;&gt;
+        &lt;l7:IntegerValue&gt;15&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;minimumPoolSize&quot;&gt;
+        &lt;l7:IntegerValue&gt;3&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                                &lt;l7:Extension&gt;
+    &lt;l7:DriverClass&gt;com.mysql.jdbc.Driver&lt;/l7:DriverClass&gt;
+    &lt;l7:JdbcUrl&gt;jdbc:mysql://localhost:3306/&lt;/l7:JdbcUrl&gt;
+    &lt;l7:ConnectionProperties&gt;
+        &lt;l7:Property key=&quot;EnableCancelTimeout&quot;&gt;
+            &lt;l7:StringValue&gt;true&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;password&quot;&gt;
+            &lt;l7:StringValue&gt;${secpass.localhostDBPassword.plaintext}&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;user&quot;&gt;
+            &lt;l7:StringValue&gt;root&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:ConnectionProperties&gt;
+                                &lt;/l7:Extension&gt;
+                            &lt;/l7:JDBCConnection&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7bf&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;POLICY&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.390-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Policy guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:PolicyDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;2&quot;&gt;
+    &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+    &lt;l7:PolicyType&gt;Include&lt;/l7:PolicyType&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;revision&quot;&gt;
+            &lt;l7:LongValue&gt;3&lt;/l7:LongValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                                &lt;/l7:PolicyDetail&gt;
+                                &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+        &lt;l7:Resource type=&quot;policy&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+        &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:AuditDetailAssertion&amp;gt;
+                &amp;lt;L7p:Detail stringValue=&amp;quot;Policy Fragment: encassPolicy&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:AuditDetailAssertion&amp;gt;
+            &amp;lt;L7p:JdbcQuery&amp;gt;
+                &amp;lt;L7p:ConnectionName stringValue=&amp;quot;LocalJDBC&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ConvertVariablesToStrings booleanValue=&amp;quot;false&amp;quot;/&amp;gt;
+                &amp;lt;L7p:SqlQuery stringValue=&amp;quot;select &amp;amp;quot;test&amp;amp;quot;&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:JdbcQuery&amp;gt;
+            &amp;lt;L7p:HardcodedResponse&amp;gt;
+                &amp;lt;L7p:Base64ResponseBody stringValue=&amp;quot;VGhpcyBkb2VzIG5vdCBkbyBhbnl0aGluZyB5ZXQh&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ResponseContentType stringValue=&amp;quot;text/plain; charset=UTF-8&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:HardcodedResponse&amp;gt;
+        &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Policy&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d802&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;ENCAPSULATED_ASSERTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.391-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:EncapsulatedAssertion id=&quot;6b52de26ef82cc4df397d1909490d802&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                                &lt;l7:Guid&gt;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&lt;/l7:Guid&gt;
+                                &lt;l7:PolicyReference id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; resourceUri=&quot;http://ns.l7tech.com/2010/04/gateway-management/policies&quot;/&gt;
+                                &lt;l7:EncapsulatedArguments/&gt;
+                                &lt;l7:EncapsulatedResults&gt;
+    &lt;l7:EncapsulatedAssertionResult&gt;
+        &lt;l7:ResultName&gt;jdbcQuery.queryresult.count&lt;/l7:ResultName&gt;
+        &lt;l7:ResultType&gt;int&lt;/l7:ResultType&gt;
+    &lt;/l7:EncapsulatedAssertionResult&gt;
+                                &lt;/l7:EncapsulatedResults&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;paletteFolder&quot;&gt;
+        &lt;l7:StringValue&gt;internalAssertions&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;policyGuid&quot;&gt;
+        &lt;l7:StringValue&gt;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;allowTracing&quot;&gt;
+        &lt;l7:StringValue&gt;false&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:EncapsulatedAssertion&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d77b&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SERVICE&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.399-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Service id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:ServiceDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+    &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+    &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+    &lt;l7:ServiceMappings&gt;
+        &lt;l7:HttpMapping&gt;
+            &lt;l7:UrlPattern&gt;/SimpleService&lt;/l7:UrlPattern&gt;
+            &lt;l7:Verbs&gt;
+                &lt;l7:Verb&gt;GET&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;POST&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;PUT&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;DELETE&lt;/l7:Verb&gt;
+            &lt;/l7:Verbs&gt;
+        &lt;/l7:HttpMapping&gt;
+    &lt;/l7:ServiceMappings&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;policyRevision&quot;&gt;
+            &lt;l7:LongValue&gt;2&lt;/l7:LongValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;wssProcessingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;internal&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;tracingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                                &lt;/l7:ServiceDetail&gt;
+                                &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+        &lt;l7:Resource type=&quot;policy&quot; version=&quot;1&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+        &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:Encapsulated&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigGuid stringValue=&amp;quot;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&amp;quot;/&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigName stringValue=&amp;quot;MyJDBCEncass&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:Encapsulated&amp;gt;
+        &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Service&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                &lt;/l7:References&gt;
+                &lt;l7:Mappings&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                &lt;/l7:Mappings&gt;
+            &lt;/l7:Bundle&gt;
+        &lt;/l7:Resource&gt;
+    &lt;/l7:Item&gt;
+                    </pre></div>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+    <h3>Importing the Migration Bundle</h3>
+    <p>If we try to import this bundle as is it will fail with the following mapping:</p>
+    <div class="code"><pre>
+    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+                &lt;l7:StringValue&gt;Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=null, id=6b52de26ef82cc4df397d1909490d7ee, description=null, type = SECURE_PASSWORD&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre></div>
+    <p>We can solve this by either creating a password on the production Gateway and mapping to it. Create one on the Production Gateway using the API with the same ID as the one on the development gateway:</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+        <caption>Create secure password with id</caption>
+        <tbody>
+        <tr><td></td><td></td></tr>
+        <tr><td colspan="2">Request</td>
+        </tr>
+        <tr>
+            <td>Uri</td>
+            <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee">https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee</a></div></td>
+        </tr>
+        <tr>
+            <td>Http Method</td>
+            <td>PUT</td>
+        </tr>
+        <tr>
+            <td>Content-Type</td>
+            <td>application/xml</td>
+        </tr>
+        <tr>
+            <td>Message Body</td>
+            <td><div class="code">
+                    <pre>
+    &lt;l7:StoredPassword id=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; version=&quot;2&quot xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" &gt;
+                        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                        &lt;l7:Password&gt;password&lt;/l7:Password&gt;
+                        &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;usageFromVariable&quot;&gt;
+    &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;description&quot;&gt;
+    &lt;l7:StringValue&gt;&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;lastUpdated&quot;&gt;
+    &lt;l7:DateValue&gt;2014-05-13T17:21:45.137-07:00&lt;/l7:DateValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;type&quot;&gt;
+    &lt;l7:StringValue&gt;Password&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:StoredPassword&gt;
+                    </pre></div>
+            </td>
+        </tr>
+        <tr><td colspan="2">Response</td></tr>
+        <tr>
+            <td>Http Status</td>
+            <td>201</td>
+        </tr>
+        <tr>
+            <td>Message Body</td>
+            <td><div class="code">
+                    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
+        &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T17:16:05.337-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot;/&gt;
+        &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/template&quot;/&gt;
+        &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords&quot;/&gt;
+    &lt;/l7:Item&gt;
+                    </pre></div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p>One the password is created you can import the bundle:</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+    <caption>Importing bundle</caption>
+    <tbody>
+    <tr><td></td><td></td></tr>
+    <tr><td colspan="2">Request</td>
+    </tr>
+    <tr>
+        <td>Uri</td>
+        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle</a></div></td>
+    </tr>
+    <tr>
+        <td>Http Method</td>
+        <td>PUT</td>
+    </tr>
+    <tr>
+        <td>Content-Type</td>
+        <td>application/xml</td>
+    </tr>
+    <tr>
+    <td>Message Body</td>
+    <td><div class="code">
+    <pre>
+    &lt;l7:Bundle xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+                &lt;l7:References&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.387-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                            &lt;/l7:Folder&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.387-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:StoredPassword id=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                                &lt;l7:Password&gt;password&lt;/l7:Password&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;usageFromVariable&quot;&gt;
+        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;description&quot;&gt;
+        &lt;l7:StringValue&gt;&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;lastUpdated&quot;&gt;
+        &lt;l7:DateValue&gt;2014-05-13T17:21:45.137-07:00&lt;/l7:DateValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;type&quot;&gt;
+        &lt;l7:StringValue&gt;Password&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:StoredPassword&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7d9&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;JDBC_CONNECTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.388-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:JDBCConnection id=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                                &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;maximumPoolSize&quot;&gt;
+        &lt;l7:IntegerValue&gt;15&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;minimumPoolSize&quot;&gt;
+        &lt;l7:IntegerValue&gt;3&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                                &lt;l7:Extension&gt;
+    &lt;l7:DriverClass&gt;com.mysql.jdbc.Driver&lt;/l7:DriverClass&gt;
+    &lt;l7:JdbcUrl&gt;jdbc:mysql://localhost:3306/&lt;/l7:JdbcUrl&gt;
+    &lt;l7:ConnectionProperties&gt;
+        &lt;l7:Property key=&quot;EnableCancelTimeout&quot;&gt;
+            &lt;l7:StringValue&gt;true&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;password&quot;&gt;
+            &lt;l7:StringValue&gt;${secpass.localhostDBPassword.plaintext}&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;user&quot;&gt;
+            &lt;l7:StringValue&gt;root&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:ConnectionProperties&gt;
+                                &lt;/l7:Extension&gt;
+                            &lt;/l7:JDBCConnection&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7bf&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;POLICY&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.390-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Policy guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:PolicyDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;2&quot;&gt;
+    &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+    &lt;l7:PolicyType&gt;Include&lt;/l7:PolicyType&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;revision&quot;&gt;
+            &lt;l7:LongValue&gt;3&lt;/l7:LongValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                                &lt;/l7:PolicyDetail&gt;
+                                &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+        &lt;l7:Resource type=&quot;policy&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+        &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:AuditDetailAssertion&amp;gt;
+                &amp;lt;L7p:Detail stringValue=&amp;quot;Policy Fragment: encassPolicy&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:AuditDetailAssertion&amp;gt;
+            &amp;lt;L7p:JdbcQuery&amp;gt;
+                &amp;lt;L7p:ConnectionName stringValue=&amp;quot;LocalJDBC&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ConvertVariablesToStrings booleanValue=&amp;quot;false&amp;quot;/&amp;gt;
+                &amp;lt;L7p:SqlQuery stringValue=&amp;quot;select &amp;amp;quot;test&amp;amp;quot;&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:JdbcQuery&amp;gt;
+            &amp;lt;L7p:HardcodedResponse&amp;gt;
+                &amp;lt;L7p:Base64ResponseBody stringValue=&amp;quot;VGhpcyBkb2VzIG5vdCBkbyBhbnl0aGluZyB5ZXQh&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ResponseContentType stringValue=&amp;quot;text/plain; charset=UTF-8&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:HardcodedResponse&amp;gt;
+        &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Policy&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d802&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;ENCAPSULATED_ASSERTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.391-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:EncapsulatedAssertion id=&quot;6b52de26ef82cc4df397d1909490d802&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                                &lt;l7:Guid&gt;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&lt;/l7:Guid&gt;
+                                &lt;l7:PolicyReference id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; resourceUri=&quot;http://ns.l7tech.com/2010/04/gateway-management/policies&quot;/&gt;
+                                &lt;l7:EncapsulatedArguments/&gt;
+                                &lt;l7:EncapsulatedResults&gt;
+    &lt;l7:EncapsulatedAssertionResult&gt;
+        &lt;l7:ResultName&gt;jdbcQuery.queryresult.count&lt;/l7:ResultName&gt;
+        &lt;l7:ResultType&gt;int&lt;/l7:ResultType&gt;
+    &lt;/l7:EncapsulatedAssertionResult&gt;
+                                &lt;/l7:EncapsulatedResults&gt;
+                                &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;paletteFolder&quot;&gt;
+        &lt;l7:StringValue&gt;internalAssertions&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;policyGuid&quot;&gt;
+        &lt;l7:StringValue&gt;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;allowTracing&quot;&gt;
+        &lt;l7:StringValue&gt;false&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:EncapsulatedAssertion&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d77b&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SERVICE&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.399-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Service id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:ServiceDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+    &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+    &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+    &lt;l7:ServiceMappings&gt;
+        &lt;l7:HttpMapping&gt;
+            &lt;l7:UrlPattern&gt;/SimpleService&lt;/l7:UrlPattern&gt;
+            &lt;l7:Verbs&gt;
+                &lt;l7:Verb&gt;GET&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;POST&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;PUT&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;DELETE&lt;/l7:Verb&gt;
+            &lt;/l7:Verbs&gt;
+        &lt;/l7:HttpMapping&gt;
+    &lt;/l7:ServiceMappings&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;policyRevision&quot;&gt;
+            &lt;l7:LongValue&gt;2&lt;/l7:LongValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;wssProcessingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;internal&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:Property key=&quot;tracingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+        &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                                &lt;/l7:ServiceDetail&gt;
+                                &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+        &lt;l7:Resource type=&quot;policy&quot; version=&quot;1&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+        &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:Encapsulated&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigGuid stringValue=&amp;quot;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&amp;quot;/&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigName stringValue=&amp;quot;MyJDBCEncass&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:Encapsulated&amp;gt;
+        &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Service&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                &lt;/l7:References&gt;
+                &lt;l7:Mappings&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                &lt;/l7:Mappings&gt;
+            &lt;/l7:Bundle&gt;
+                    </pre></div>
+    </td>
+    </tr>
+    <tr><td colspan="2">Response</td></tr>
+    <tr>
+        <td>Http Status</td>
+        <td>201</td>
+    </tr>
+    <tr>
+        <td>Message Body</td>
+        <td><div class="code">
+                    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;Bundle mappings&lt;/l7:Name&gt;
+        &lt;l7:Type&gt;BUNDLE MAPPINGS&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T16:13:48.452-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://productionGateway/restman/1.0/bundle/&quot;/&gt;
+        &lt;l7:Resource&gt;
+            &lt;l7:Mappings&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;/l7:Mapping&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;/&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://productionGateway/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://productionGateway/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://productionGateway/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://productionGateway/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+            &lt;/l7:Mappings&gt;
+        &lt;/l7:Resource&gt;
+    &lt;/l7:Item&gt;
+                    </pre></div>
+        </td>
+    </tr>
+    </tbody>
+    </table>
+    <p>The production Gateway should now have the same folder, service, encapsulated assertion, policy jdbc connection and secure password that the development gateway has.</p>
+    <h3>Exporting the Updated Migration Bundle</h3>
+    <p>Assume that there was some development on the SimpleService that was exported above from the development Gateway. Some authentication security is added to restrict usage of the service. The Require SSL assertion is added and a simple service user must be authenticated using Basic http credentials.</p>
+    <p>Export the bundle from the development gateway again, but this time with default action NewOrUpdate. This will change the mapping so that it will update existing entities on the production gateway when it is importing them.</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+    <caption>Export bundle of folder "6b52de26ef82cc4df397d1909490d736" with default action NewOrUpdate</caption>
+    <tbody>
+    <tr><td></td><td></td></tr>
+    <tr><td colspan="2">Request</td>
+    </tr>
+    <tr>
+        <td>Uri</td>
+        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
+    </tr>
+    <tr><td>Http Method</td>
+        <td>GET</td>
+    </tr>
+    <tr><td colspan="2">Response</td></tr>
+    <tr>
+        <td>Http Status</td>
+        <td>200</td>
+    </tr>
+    <tr>
+    <td>Message Body</td>
+    <td><div class="code">
+    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;Bundle&lt;/l7:Name&gt;
+        &lt;l7:Type&gt;BUNDLE&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T17:20:53.700-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://10.242.14.142:8443/restman/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&amp;amp;defaultAction=NewOrUpdate&quot;/&gt;
+        &lt;l7:Resource&gt;
+            &lt;l7:Bundle&gt;
+                &lt;l7:References&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.546-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                            &lt;/l7:Folder&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.549-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:StoredPassword id=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                                &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;usageFromVariable&quot;&gt;
+            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;description&quot;&gt;
+            &lt;l7:StringValue&gt;&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;lastUpdated&quot;&gt;
+            &lt;l7:DateValue&gt;2014-05-13T17:21:45.137-07:00&lt;/l7:DateValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;type&quot;&gt;
+            &lt;l7:StringValue&gt;Password&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:StoredPassword&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7d9&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;JDBC_CONNECTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.549-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:JDBCConnection id=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                                &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+                                &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;maximumPoolSize&quot;&gt;
+            &lt;l7:IntegerValue&gt;15&lt;/l7:IntegerValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;minimumPoolSize&quot;&gt;
+            &lt;l7:IntegerValue&gt;3&lt;/l7:IntegerValue&gt;
+            &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                                &lt;l7:Extension&gt;
+            &lt;l7:DriverClass&gt;com.mysql.jdbc.Driver&lt;/l7:DriverClass&gt;
+            &lt;l7:JdbcUrl&gt;jdbc:mysql://localhost:3306/&lt;/l7:JdbcUrl&gt;
+            &lt;l7:ConnectionProperties&gt;
+            &lt;l7:Property key=&quot;EnableCancelTimeout&quot;&gt;
+            &lt;l7:StringValue&gt;true&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;password&quot;&gt;
+            &lt;l7:StringValue&gt;${secpass.localhostDBPassword.plaintext}&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;user&quot;&gt;
+            &lt;l7:StringValue&gt;root&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;/l7:ConnectionProperties&gt;
+                                &lt;/l7:Extension&gt;
+                            &lt;/l7:JDBCConnection&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7bf&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;POLICY&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Policy guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;3&quot;&gt;
+                                &lt;l7:PolicyDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;3&quot;&gt;
+            &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+            &lt;l7:PolicyType&gt;Include&lt;/l7:PolicyType&gt;
+            &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;revision&quot;&gt;
+            &lt;l7:LongValue&gt;4&lt;/l7:LongValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;/l7:Properties&gt;
+                                &lt;/l7:PolicyDetail&gt;
+                                &lt;l7:Resources&gt;
+            &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+            &lt;l7:Resource type=&quot;policy&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+            &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+            &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:JdbcQuery&amp;gt;
+                &amp;lt;L7p:ConnectionName stringValue=&amp;quot;LocalJDBC&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ConvertVariablesToStrings booleanValue=&amp;quot;false&amp;quot;/&amp;gt;
+                &amp;lt;L7p:GenerateXmlResult booleanValue=&amp;quot;true&amp;quot;/&amp;gt;
+                &amp;lt;L7p:NamingMap mapValue=&amp;quot;included&amp;quot;&amp;gt;
+                    &amp;lt;L7p:entry&amp;gt;
+                        &amp;lt;L7p:key stringValue=&amp;quot;current_version&amp;quot;/&amp;gt;
+                        &amp;lt;L7p:value stringValue=&amp;quot;current_version&amp;quot;/&amp;gt;
+                    &amp;lt;/L7p:entry&amp;gt;
+                &amp;lt;/L7p:NamingMap&amp;gt;
+                &amp;lt;L7p:SqlQuery stringValue=&amp;quot;select * from ssg.ssg_version;&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:JdbcQuery&amp;gt;
+            &amp;lt;L7p:HardcodedResponse&amp;gt;
+                &amp;lt;L7p:Base64ResponseBody stringValue=&amp;quot;U1NHIFZlcnNpb246ICR7amRiY1F1ZXJ5LmN1cnJlbnRfdmVyc2lvbn0=&amp;quot;/&amp;gt;
+                &amp;lt;L7p:ResponseContentType stringValue=&amp;quot;text/plain; charset=UTF-8&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:HardcodedResponse&amp;gt;
+            &amp;lt;/wsp:All&amp;gt;
+            &amp;lt;/wsp:Policy&amp;gt;
+            &lt;/l7:Resource&gt;
+            &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Policy&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;Internal Identity Provider&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;0000000000000000fffffffffffffffe&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;ID_PROVIDER_CONFIG&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:IdentityProvider id=&quot;0000000000000000fffffffffffffffe&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;Internal Identity Provider&lt;/l7:Name&gt;
+                                &lt;l7:IdentityProviderType&gt;Internal&lt;/l7:IdentityProviderType&gt;
+                            &lt;/l7:IdentityProvider&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;SimpleServiceUser&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;a71d2733b59a6360e8134b6e32c1fb6b&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;USER&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:User providerId=&quot;0000000000000000fffffffffffffffe&quot; id=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot;&gt;
+                                &lt;l7:Login&gt;SimpleServiceUser&lt;/l7:Login&gt;
+                            &lt;/l7:User&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d802&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;ENCAPSULATED_ASSERTION&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:EncapsulatedAssertion id=&quot;6b52de26ef82cc4df397d1909490d802&quot; version=&quot;0&quot;&gt;
+                                &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                                &lt;l7:Guid&gt;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&lt;/l7:Guid&gt;
+                                &lt;l7:PolicyReference id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; resourceUri=&quot;http://ns.l7tech.com/2010/04/gateway-management/policies&quot;/&gt;
+                                &lt;l7:EncapsulatedArguments/&gt;
+                                &lt;l7:EncapsulatedResults&gt;
+            &lt;l7:EncapsulatedAssertionResult&gt;
+            &lt;l7:ResultName&gt;jdbcQuery.queryresult.count&lt;/l7:ResultName&gt;
+            &lt;l7:ResultType&gt;int&lt;/l7:ResultType&gt;
+            &lt;/l7:EncapsulatedAssertionResult&gt;
+                                &lt;/l7:EncapsulatedResults&gt;
+                                &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;paletteFolder&quot;&gt;
+            &lt;l7:StringValue&gt;internalAssertions&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;policyGuid&quot;&gt;
+            &lt;l7:StringValue&gt;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;allowTracing&quot;&gt;
+            &lt;l7:StringValue&gt;false&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+                                &lt;/l7:Properties&gt;
+                            &lt;/l7:EncapsulatedAssertion&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                    &lt;l7:Item&gt;
+                        &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+                        &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d77b&lt;/l7:Id&gt;
+                        &lt;l7:Type&gt;SERVICE&lt;/l7:Type&gt;
+                        &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.558-07:00&lt;/l7:TimeStamp&gt;
+                        &lt;l7:Resource&gt;
+                            &lt;l7:Service id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+                                &lt;l7:ServiceDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+            &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+            &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+            &lt;l7:ServiceMappings&gt;
+            &lt;l7:HttpMapping&gt;
+            &lt;l7:UrlPattern&gt;/SimpleService&lt;/l7:UrlPattern&gt;
+            &lt;l7:Verbs&gt;
+                &lt;l7:Verb&gt;GET&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;POST&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;PUT&lt;/l7:Verb&gt;
+                &lt;l7:Verb&gt;DELETE&lt;/l7:Verb&gt;
+            &lt;/l7:Verbs&gt;
+            &lt;/l7:HttpMapping&gt;
+            &lt;/l7:ServiceMappings&gt;
+            &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;policyRevision&quot;&gt;
+            &lt;l7:LongValue&gt;3&lt;/l7:LongValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;wssProcessingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;soap&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;internal&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;tracingEnabled&quot;&gt;
+            &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;/l7:Properties&gt;
+                                &lt;/l7:ServiceDetail&gt;
+                                &lt;l7:Resources&gt;
+            &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+            &lt;l7:Resource type=&quot;policy&quot; version=&quot;2&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+            &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+            &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+            &amp;lt;L7p:SslAssertion&amp;gt;
+                &amp;lt;L7p:RequireClientAuthentication booleanValue=&amp;quot;true&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:SslAssertion&amp;gt;
+            &amp;lt;L7p:HttpBasic/&amp;gt;
+            &amp;lt;L7p:SpecificUser&amp;gt;
+                &amp;lt;L7p:IdentityProviderOid goidValue=&amp;quot;0000000000000000fffffffffffffffe&amp;quot;/&amp;gt;
+                &amp;lt;L7p:UserLogin stringValue=&amp;quot;SimpleServiceUser&amp;quot;/&amp;gt;
+                &amp;lt;L7p:UserName stringValue=&amp;quot;SimpleServiceUser&amp;quot;/&amp;gt;
+                &amp;lt;L7p:UserUid stringValue=&amp;quot;a71d2733b59a6360e8134b6e32c1fb6b&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:SpecificUser&amp;gt;
+            &amp;lt;L7p:Encapsulated&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigGuid stringValue=&amp;quot;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&amp;quot;/&amp;gt;
+                &amp;lt;L7p:EncapsulatedAssertionConfigName stringValue=&amp;quot;MyJDBCEncass&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:Encapsulated&amp;gt;
+            &amp;lt;/wsp:All&amp;gt;
+            &amp;lt;/wsp:Policy&amp;gt;
+            &lt;/l7:Resource&gt;
+            &lt;/l7:ResourceSet&gt;
+                                &lt;/l7:Resources&gt;
+                            &lt;/l7:Service&gt;
+                        &lt;/l7:Resource&gt;
+                    &lt;/l7:Item&gt;
+                &lt;/l7:References&gt;
+                &lt;l7:Mappings&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+                        &lt;l7:Properties&gt;
+                            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                            &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:Mapping&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                &lt;/l7:Mappings&gt;
+            &lt;/l7:Bundle&gt;
+        &lt;/l7:Resource&gt;
+    &lt;/l7:Item&gt;
+        </pre></div>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+    <p>If we try and import the bundle as is above it will fail because it expects the simple service user to exist on the target gateway. The following mapping is returned:</p>
+    <div class="code"><pre>
+    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+                &lt;l7:StringValue&gt;Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=SimpleServiceUser, id=a71d2733b59a6360e8134b6e32c1fb6b, description=null, type = USER&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre></div>
+    <p>Create a user on the production gateway in the internal identity provider called "ProductionSimpleServiceUser". Map the Simple service user by name to the "ProductionSimpleServiceUser" and import the bundle:</p>
+    <table cellpadding="0" cellspacing="0" class="api-example">
+    <caption>Importing bundle 2</caption>
+    <tbody>
+    <tr><td></td><td></td></tr>
+    <tr><td colspan="2">Request</td>
+    </tr>
+    <tr>
+        <td>Uri</td>
+        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle</a></div></td>
+    </tr>
+    <tr>
+        <td>Http Method</td>
+        <td>PUT</td>
+    </tr>
+    <tr>
+        <td>Content-Type</td>
+        <td>application/xml</td>
+    </tr>
+    <tr>
+    <td>Message Body</td>
+    <td><div class="code">
+    <pre>
+    &lt;l7:Bundle xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:References&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.546-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
+                        &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
+                    &lt;/l7:Folder&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.549-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:StoredPassword id=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; version=&quot;2&quot;&gt;
+                        &lt;l7:Name&gt;LocalhostDBPassword&lt;/l7:Name&gt;
+                        &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;usageFromVariable&quot;&gt;
+    &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;description&quot;&gt;
+    &lt;l7:StringValue&gt;&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;lastUpdated&quot;&gt;
+    &lt;l7:DateValue&gt;2014-05-13T17:21:45.137-07:00&lt;/l7:DateValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;type&quot;&gt;
+    &lt;l7:StringValue&gt;Password&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:StoredPassword&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7d9&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;JDBC_CONNECTION&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.549-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:JDBCConnection id=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; version=&quot;2&quot;&gt;
+                        &lt;l7:Name&gt;LocalJDBC&lt;/l7:Name&gt;
+                        &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+                        &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;maximumPoolSize&quot;&gt;
+    &lt;l7:IntegerValue&gt;15&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;minimumPoolSize&quot;&gt;
+    &lt;l7:IntegerValue&gt;3&lt;/l7:IntegerValue&gt;
+    &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                        &lt;l7:Extension&gt;
+    &lt;l7:DriverClass&gt;com.mysql.jdbc.Driver&lt;/l7:DriverClass&gt;
+    &lt;l7:JdbcUrl&gt;jdbc:mysql://localhost:3306/&lt;/l7:JdbcUrl&gt;
+    &lt;l7:ConnectionProperties&gt;
+    &lt;l7:Property key=&quot;EnableCancelTimeout&quot;&gt;
+    &lt;l7:StringValue&gt;true&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;password&quot;&gt;
+    &lt;l7:StringValue&gt;${secpass.localhostDBPassword.plaintext}&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;user&quot;&gt;
+    &lt;l7:StringValue&gt;root&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;/l7:ConnectionProperties&gt;
+                        &lt;/l7:Extension&gt;
+                    &lt;/l7:JDBCConnection&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7bf&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;POLICY&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:Policy guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;3&quot;&gt;
+                        &lt;l7:PolicyDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; guid=&quot;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&quot; id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; version=&quot;3&quot;&gt;
+    &lt;l7:Name&gt;encassPolicy&lt;/l7:Name&gt;
+    &lt;l7:PolicyType&gt;Include&lt;/l7:PolicyType&gt;
+    &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;revision&quot;&gt;
+    &lt;l7:LongValue&gt;4&lt;/l7:LongValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;soap&quot;&gt;
+    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                        &lt;/l7:PolicyDetail&gt;
+                        &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+    &lt;l7:Resource type=&quot;policy&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+    &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+    &amp;lt;L7p:JdbcQuery&amp;gt;
+        &amp;lt;L7p:ConnectionName stringValue=&amp;quot;LocalJDBC&amp;quot;/&amp;gt;
+        &amp;lt;L7p:ConvertVariablesToStrings booleanValue=&amp;quot;false&amp;quot;/&amp;gt;
+        &amp;lt;L7p:GenerateXmlResult booleanValue=&amp;quot;true&amp;quot;/&amp;gt;
+        &amp;lt;L7p:NamingMap mapValue=&amp;quot;included&amp;quot;&amp;gt;
+            &amp;lt;L7p:entry&amp;gt;
+                &amp;lt;L7p:key stringValue=&amp;quot;current_version&amp;quot;/&amp;gt;
+                &amp;lt;L7p:value stringValue=&amp;quot;current_version&amp;quot;/&amp;gt;
+            &amp;lt;/L7p:entry&amp;gt;
+        &amp;lt;/L7p:NamingMap&amp;gt;
+        &amp;lt;L7p:SqlQuery stringValue=&amp;quot;select * from ssg.ssg_version;&amp;quot;/&amp;gt;
+    &amp;lt;/L7p:JdbcQuery&amp;gt;
+    &amp;lt;L7p:HardcodedResponse&amp;gt;
+        &amp;lt;L7p:Base64ResponseBody stringValue=&amp;quot;U1NHIFZlcnNpb246ICR7amRiY1F1ZXJ5LmN1cnJlbnRfdmVyc2lvbn0=&amp;quot;/&amp;gt;
+        &amp;lt;L7p:ResponseContentType stringValue=&amp;quot;text/plain; charset=UTF-8&amp;quot;/&amp;gt;
+    &amp;lt;/L7p:HardcodedResponse&amp;gt;
+    &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                        &lt;/l7:Resources&gt;
+                    &lt;/l7:Policy&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;Internal Identity Provider&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;0000000000000000fffffffffffffffe&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;ID_PROVIDER_CONFIG&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:IdentityProvider id=&quot;0000000000000000fffffffffffffffe&quot; version=&quot;0&quot;&gt;
+                        &lt;l7:Name&gt;Internal Identity Provider&lt;/l7:Name&gt;
+                        &lt;l7:IdentityProviderType&gt;Internal&lt;/l7:IdentityProviderType&gt;
+                    &lt;/l7:IdentityProvider&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;SimpleServiceUser&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;a71d2733b59a6360e8134b6e32c1fb6b&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;USER&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:User providerId=&quot;0000000000000000fffffffffffffffe&quot; id=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot;&gt;
+                        &lt;l7:Login&gt;SimpleServiceUser&lt;/l7:Login&gt;
+                    &lt;/l7:User&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d802&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;ENCAPSULATED_ASSERTION&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.551-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:EncapsulatedAssertion id=&quot;6b52de26ef82cc4df397d1909490d802&quot; version=&quot;0&quot;&gt;
+                        &lt;l7:Name&gt;MyJDBCEncass&lt;/l7:Name&gt;
+                        &lt;l7:Guid&gt;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&lt;/l7:Guid&gt;
+                        &lt;l7:PolicyReference id=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; resourceUri=&quot;http://ns.l7tech.com/2010/04/gateway-management/policies&quot;/&gt;
+                        &lt;l7:EncapsulatedArguments/&gt;
+                        &lt;l7:EncapsulatedResults&gt;
+    &lt;l7:EncapsulatedAssertionResult&gt;
+    &lt;l7:ResultName&gt;jdbcQuery.queryresult.count&lt;/l7:ResultName&gt;
+    &lt;l7:ResultType&gt;int&lt;/l7:ResultType&gt;
+    &lt;/l7:EncapsulatedAssertionResult&gt;
+                        &lt;/l7:EncapsulatedResults&gt;
+                        &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;paletteFolder&quot;&gt;
+    &lt;l7:StringValue&gt;internalAssertions&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;policyGuid&quot;&gt;
+    &lt;l7:StringValue&gt;945a4a17-a9b3-44c4-92a9-1dc2f09bb430&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;allowTracing&quot;&gt;
+    &lt;l7:StringValue&gt;false&lt;/l7:StringValue&gt;
+    &lt;/l7:Property&gt;
+                        &lt;/l7:Properties&gt;
+                    &lt;/l7:EncapsulatedAssertion&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+            &lt;l7:Item&gt;
+                &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+                &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d77b&lt;/l7:Id&gt;
+                &lt;l7:Type&gt;SERVICE&lt;/l7:Type&gt;
+                &lt;l7:TimeStamp&gt;2014-07-14T16:35:58.558-07:00&lt;/l7:TimeStamp&gt;
+                &lt;l7:Resource&gt;
+                    &lt;l7:Service id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+                        &lt;l7:ServiceDetail folderId=&quot;6b52de26ef82cc4df397d1909490d736&quot; id=&quot;6b52de26ef82cc4df397d1909490d77b&quot; version=&quot;2&quot;&gt;
+    &lt;l7:Name&gt;SimpleService&lt;/l7:Name&gt;
+    &lt;l7:Enabled&gt;true&lt;/l7:Enabled&gt;
+    &lt;l7:ServiceMappings&gt;
+    &lt;l7:HttpMapping&gt;
+    &lt;l7:UrlPattern&gt;/SimpleService&lt;/l7:UrlPattern&gt;
+    &lt;l7:Verbs&gt;
+        &lt;l7:Verb&gt;GET&lt;/l7:Verb&gt;
+        &lt;l7:Verb&gt;POST&lt;/l7:Verb&gt;
+        &lt;l7:Verb&gt;PUT&lt;/l7:Verb&gt;
+        &lt;l7:Verb&gt;DELETE&lt;/l7:Verb&gt;
+    &lt;/l7:Verbs&gt;
+    &lt;/l7:HttpMapping&gt;
+    &lt;/l7:ServiceMappings&gt;
+    &lt;l7:Properties&gt;
+    &lt;l7:Property key=&quot;policyRevision&quot;&gt;
+    &lt;l7:LongValue&gt;3&lt;/l7:LongValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;wssProcessingEnabled&quot;&gt;
+    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;soap&quot;&gt;
+    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;internal&quot;&gt;
+    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;l7:Property key=&quot;tracingEnabled&quot;&gt;
+    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
+    &lt;/l7:Property&gt;
+    &lt;/l7:Properties&gt;
+                        &lt;/l7:ServiceDetail&gt;
+                        &lt;l7:Resources&gt;
+    &lt;l7:ResourceSet tag=&quot;policy&quot;&gt;
+    &lt;l7:Resource type=&quot;policy&quot; version=&quot;2&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+    &amp;lt;wsp:Policy xmlns:L7p=&amp;quot;http://www.layer7tech.com/ws/policy&amp;quot; xmlns:wsp=&amp;quot;http://schemas.xmlsoap.org/ws/2002/12/policy&amp;quot;&amp;gt;
+    &amp;lt;wsp:All wsp:Usage=&amp;quot;Required&amp;quot;&amp;gt;
+    &amp;lt;L7p:SslAssertion&amp;gt;
+        &amp;lt;L7p:RequireClientAuthentication booleanValue=&amp;quot;true&amp;quot;/&amp;gt;
+    &amp;lt;/L7p:SslAssertion&amp;gt;
+    &amp;lt;L7p:HttpBasic/&amp;gt;
+    &amp;lt;L7p:SpecificUser&amp;gt;
+        &amp;lt;L7p:IdentityProviderOid goidValue=&amp;quot;0000000000000000fffffffffffffffe&amp;quot;/&amp;gt;
+        &amp;lt;L7p:UserLogin stringValue=&amp;quot;SimpleServiceUser&amp;quot;/&amp;gt;
+        &amp;lt;L7p:UserName stringValue=&amp;quot;SimpleServiceUser&amp;quot;/&amp;gt;
+        &amp;lt;L7p:UserUid stringValue=&amp;quot;a71d2733b59a6360e8134b6e32c1fb6b&amp;quot;/&amp;gt;
+    &amp;lt;/L7p:SpecificUser&amp;gt;
+    &amp;lt;L7p:Encapsulated&amp;gt;
+        &amp;lt;L7p:EncapsulatedAssertionConfigGuid stringValue=&amp;quot;405c790d-35f3-4f7d-8dfe-57f6647ab5b4&amp;quot;/&amp;gt;
+        &amp;lt;L7p:EncapsulatedAssertionConfigName stringValue=&amp;quot;MyJDBCEncass&amp;quot;/&amp;gt;
+    &amp;lt;/L7p:Encapsulated&amp;gt;
+    &amp;lt;/wsp:All&amp;gt;
+    &amp;lt;/wsp:Policy&amp;gt;
+    &lt;/l7:Resource&gt;
+    &lt;/l7:ResourceSet&gt;
+                        &lt;/l7:Resources&gt;
+                    &lt;/l7:Service&gt;
+                &lt;/l7:Resource&gt;
+            &lt;/l7:Item&gt;
+        &lt;/l7:References&gt;
+        &lt;l7:Mappings&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                &lt;l7:Properties&gt;
+                    &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                    &lt;/l7:Property&gt;
+                &lt;/l7:Properties&gt;
+            &lt;/l7:Mapping&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                &lt;l7:Properties&gt;
+                    &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                    &lt;/l7:Property&gt;
+                &lt;/l7:Properties&gt;
+            &lt;/l7:Mapping&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+                &lt;l7:Properties&gt;
+                    &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                    &lt;/l7:Property&gt;
+                &lt;/l7:Properties&gt;
+            &lt;/l7:Mapping&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+                &lt;l7:Properties&gt;
+                    &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                        &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                    &lt;/l7:Property&gt;
+                    &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                        &lt;l7:StringValue&gt;name&lt;/l7:StringValue&gt;
+                    &lt;/l7:Property&gt;
+                    &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                        &lt;l7:StringValue&gt;ProductionSimpleServiceUser&lt;/l7:StringValue&gt;
+                    &lt;/l7:Property&gt;
+                &lt;/l7:Properties&gt;
+            &lt;/l7:Mapping&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+        &lt;/l7:Mappings&gt;
+    &lt;/l7:Bundle&gt;
+                    </pre></div>
+    </td>
+    </tr>
+    <tr><td colspan="2">Response</td></tr>
+    <tr>
+        <td>Http Status</td>
+        <td>201</td>
+    </tr>
+    <tr>
+        <td>Message Body</td>
+        <td><div class="code">
+                    <pre>
+    &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+    &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
+        &lt;l7:Name&gt;Bundle mappings&lt;/l7:Name&gt;
+        &lt;l7:Type&gt;BUNDLE MAPPINGS&lt;/l7:Type&gt;
+        &lt;l7:TimeStamp&gt;2014-07-14T17:29:32.042-07:00&lt;/l7:TimeStamp&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/bundle/&quot;/&gt;
+        &lt;l7:Resource&gt;
+            &lt;l7:Mappings&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;/l7:Mapping&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;/l7:Mapping&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; targetId=&quot;0000000000000000fffffffffffffffe&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;/l7:Mapping&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; targetId=&quot;959c06d8af08a8cb2a568915e0314d89&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/959c06d8af08a8cb2a568915e0314d89&quot; type=&quot;USER&quot;&gt;
+                    &lt;l7:Properties&gt;
+                        &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                            &lt;l7:StringValue&gt;ProductionSimpleServiceUser&lt;/l7:StringValue&gt;
+                        &lt;/l7:Property&gt;
+                        &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
+                            &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+                        &lt;/l7:Property&gt;
+                        &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                            &lt;l7:StringValue&gt;name&lt;/l7:StringValue&gt;
+                        &lt;/l7:Property&gt;
+                    &lt;/l7:Properties&gt;
+                &lt;/l7:Mapping&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+            &lt;/l7:Mappings&gt;
+        &lt;/l7:Resource&gt;
+    &lt;/l7:Item&gt;
+                    </pre></div>
+        </td>
+    </tr>
+    </tbody>
+    </table>
+    <p>The service in now updated on the target gateway to match the one from the development gateway, except it used the "ProductionSimpleServiceUser" instead.</p>    
+</div>
+    

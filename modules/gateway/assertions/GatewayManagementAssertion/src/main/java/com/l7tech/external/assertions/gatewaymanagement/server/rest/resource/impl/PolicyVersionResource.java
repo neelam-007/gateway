@@ -53,26 +53,17 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     }
 
     /**
-     * This will return a list of policy versions for the selected policy. A sort can be specified to allow the
-     * resulting list to be sorted in either ascending or descending order. Other params given will be used as search
-     * values. Examples:
-     * <p/>
-     * ?id=a86a7745f9005baa52d380d228a3735a
-     * <p/>
-     * Returns policy version with id = a86a7745f9005baa52d380d228a3735a
-     * <p/>
-     * ?active=false&comment=RevisionA&comment=RevisionB
-     * <p/>
-     * Returns no active policy versions with comments "RevisionA" or "RevisionB"
-     * <p/>
-     * If any other parameters are given an error will be returned
+     * <p>Returns a list of policy versions. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort     The key to sort the list by. Default is null
-     * @param order    The order to sort the list. 'asc' for ascending, 'desc' for descending. Default is ascending
-     * @param ids      The id filter
-     * @param active   The active filter
-     * @param comments The comment filter
-     * @return A list of policy versions. If the list is empty then no entities were found.
+     * @param sort     Key to sort the list by
+     * @param order    Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                 ascending if not specified
+     * @param ids      Id filter
+     * @param active   Active filter
+     * @param comments Comment filter
+     * @return A list of policy versions. If the list is empty then no policy versions were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -112,7 +103,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     /**
      * Retrieve a policy version by the version number
      *
-     * @param versionNumber The version of the policy to return.
+     * @param versionNumber Version of the policy to return.
      * @return The policy version.
      */
     @GET
@@ -137,8 +128,8 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     /**
      * Sets the comment on a specific policy version.
      *
-     * @param versionNumber The version of the policy version to set the comment on.
-     * @param comment       The comment to set on the policy version. This will override any existing comment
+     * @param versionNumber Version of the policy version to set the comment on.
+     * @param comment       Comment to set on the policy version. This will override any existing comment
      * @return A reference to the updated policy version
      */
     @PUT
@@ -150,9 +141,9 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     }
 
     /**
-     * Setts a comment on the active policy version
+     * Sets a comment on the active policy version
      *
-     * @param comment The comment to set on the active policy version
+     * @param comment Comment to set on the active policy version
      * @return The updated active policy version
      */
     @PUT
@@ -166,7 +157,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
     /**
      * Activates the specified policy version
      *
-     * @param versionNumber The id of the policy version to set active.
+     * @param versionNumber Version of the policy version to set active.
      */
     @POST
     @Path("{versionNumber}/activate")

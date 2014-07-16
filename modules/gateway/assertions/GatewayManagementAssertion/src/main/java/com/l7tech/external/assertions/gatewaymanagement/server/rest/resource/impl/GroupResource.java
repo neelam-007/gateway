@@ -27,8 +27,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * This resource handles policy version operations.
+ * A group represents a group identity in an identity provider. When no identity provider is specified in the url then
+ * the internal identity provider is assumed. Groups can only be retrieved, they can not be created.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + GroupResource.GROUPS_URI)
@@ -65,26 +68,19 @@ public class GroupResource implements URLAccessible<GroupMO> {
     }
 
     /**
-     * This will return a list of entity references. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of groups. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort  the key to sort the list by.
-     * @param order the order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param names The name filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort  Key to sort the list by.
+     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *              ascending if not specified
+     * @param names Name filter
+     * @return A list of groups. If the list is empty then no groups were found.
      */
     @SuppressWarnings("unchecked")
     @GET
-    public ItemsList<GroupMO> list(
+    public ItemsList<GroupMO> listGroups(
             @QueryParam("sort") @ChoiceParam({"id", "name"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("name") List<String> names) throws ResourceFactory.ResourceNotFoundException {
@@ -100,28 +96,28 @@ public class GroupResource implements URLAccessible<GroupMO> {
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a group with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the group to return
+     * @return The group.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
     @Path("{id}")
-    public Item<GroupMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    public Item<GroupMO> getGroup(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         GroupMO group = groupRestResourceFactory.getResource(providerId, id);
         return RestEntityResourceUtils.createGetResponseItem(group, transformer, this);
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * Returns a template, which is an example group that can be used as a reference for what group objects should look
      * like.
      *
-     * @return The template entity.
+     * @return The template group.
      */
     @GET
     @Path("template")
-    public Item<GroupMO> template() {
+    public Item<GroupMO> groupTemplate() {
         GroupMO groupMO = ManagedObjectFactory.createGroupMO();
         groupMO.setProviderId(providerId);
         groupMO.setName("Name");

@@ -39,6 +39,7 @@ a.anchor {
 
 .code {
     overflow-x: auto;
+    max-height: 700px;
 }
 
 .code pre {

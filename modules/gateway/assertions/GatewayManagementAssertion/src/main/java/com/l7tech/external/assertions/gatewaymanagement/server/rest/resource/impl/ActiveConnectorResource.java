@@ -20,8 +20,11 @@ import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * The active connector resource
+ * Active connectors are connectors that poll for messages. For example MQ Native Queues and SFTP Polling Listeners are
+ * examples of Active Connectors.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ActiveConnectorResource.activeConnectors_URI)
@@ -43,10 +46,10 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * Creates a new active connector
+     * Creates a new active connector.
      *
      * @param resource The active connector to create
-     * @return a reference to the newly created active connector
+     * @return A reference to the newly created active connector
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -56,9 +59,9 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * Returns an active connector by a given id.
+     * Returns an active connector with the given ID.
      *
-     * @param id The identity of the active connector to return
+     * @param id The ID of the active connector to return
      * @return The active connector.
      * @throws ResourceFactory.ResourceNotFoundException
      */
@@ -69,28 +72,25 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * This will return a list of active connector references. A sort can be specified to allow the resulting list to be
-     * sorted in either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword&name=ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value a bad request error will be returned.
+     * <p>Returns a list of active connectors. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/activeConnectors?name=MySFTPPollingListener</div>
+     * <p>Returns active connector with name "MySFTPPollingListener".</p>
+     * <div class="code indent">/restman/1.0/activeConnectors?type=SFTP&name=MySFTPPollingListener&name=MyOtherSFTPPollingListener</div>
+     * <p>Returns active connector of SFTP type with name either "MySFTPPollingListener" or
+     * "MyOtherSFTPPollingListener"</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort                  the key to sort the list by.
-     * @param order                 the order to sort the list. true for ascending, false for descending. null implies
-     *                              ascending
-     * @param names                 The name filter
-     * @param enabled               the enabled filter
-     * @param types                 The type filter
-     * @param hardwiredServiceGoids The service id filter
-     * @param securityZoneIds       the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort                  Key to sort the list by
+     * @param order                 Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                              ascending if not specified
+     * @param names                 Name filter
+     * @param enabled               Enabled filter
+     * @param types                 Type filter
+     * @param hardwiredServiceGoids Service ID filter
+     * @param securityZoneIds       Security zone ID filter
+     * @return A list of active connectors. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -126,24 +126,25 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * Updates an existing active connector
+     * Creates or Updates an existing active connector. If an active connector with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated or created entity.
+     * @param resource Active connector to create or update
+     * @param id       ID of the active connector to create or update
+     * @return A reference to the newly created or updated active connector.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(ActiveConnectorMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(ActiveConnectorMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
      * Deletes an existing active connector.
      *
-     * @param id The id of the active connector to delete.
+     * @param id ID of the active connector to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -154,10 +155,10 @@ public class ActiveConnectorResource extends RestEntityResource<ActiveConnectorM
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example active connector that can be used as a reference for what active
+     * connector objects should look like.
      *
-     * @return The template entity.
+     * @return The template active connector.
      */
     @GET
     @Path("template")

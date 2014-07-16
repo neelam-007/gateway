@@ -45,7 +45,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      * properties.
      *
      * @param resource The interface to create
-     * @return a reference to the newly created interface
+     * @return A reference to the newly created interface
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -55,11 +55,11 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     }
 
     /**
-     * Retrieves an interface tag given its id. In order to get an interface tag you must have read access to cluster
+     * Retrieves an interface tag given it's ID. In order to get an interface tag you must have read access to cluster
      * properties.
      *
      * @param id The identity of the interface tag to select
-     * @return The selected interface tag.
+     * @return The interface tag.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -69,23 +69,19 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     }
 
     /**
-     * This will return a list of interface tag references. A sort can be specified to allow the resulting list to be
-     * sorted in either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/interfaceTags?name=MyInterface
-     * <p/>
-     * Returns interface with name = "MyInterface"
-     * <p/>
-     * /restman/interfaceTags?name=MyInterface&name=MyInterfaceProd
-     * <p/>
-     * Returns interfaces with name either "MyInterface" or "MyInterfaceProd"
-     * <p/>
-     * In order to list interface tags you must have read access to cluster properties.
+     * Returns a list of interface tags. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/interfaceTags?name=MyInterface</div>
+     * <p>Returns interface with name = "MyInterface"</p>
+     * <div class="code indent">/restman/interfaceTags?name=MyInterface&name=MyInterfaceProd</div>
+     * <p>Returns interfaces with name either "MyInterface" or "MyInterfaceProd"</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort  the key to sort the list by.
-     * @param order the order to sort the list. true for ascending, false for descending. not specified implies
-     *              ascending
-     * @param names The name filter. This will return interfaces with the specified names.
+     * @param sort  Key to sort the list by
+     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *              ascending if not specified
+     * @param names Name filter. This will return interfaces with the specified names.
      * @return A list of interfaces. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
@@ -110,7 +106,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      * patterns. In order to update an interface tag you must have read and write access to cluster properties.
      *
      * @param resource The updated interface tag
-     * @param id       The id of the interface tag to update
+     * @param id       The ID of the interface tag to update
      * @return a reference to the newly updated interface tag.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -134,7 +130,7 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     /**
      * Deletes an existing interface tag.
      *
-     * @param id The id of the interface tag to delete.
+     * @param id The ID of the interface tag to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -145,10 +141,10 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example interface tag that can be used as a reference for what interface tag
+     * objects should look like.
      *
-     * @return The template entity.
+     * @return The template interface tag.
      */
     @GET
     @Path("template")

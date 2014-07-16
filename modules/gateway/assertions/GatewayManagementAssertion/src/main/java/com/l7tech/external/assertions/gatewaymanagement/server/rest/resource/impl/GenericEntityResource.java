@@ -20,8 +20,10 @@ import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * The generic entity resource
+ * A generic entities is used by some modular assertions to represent any entity.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + GenericEntityResource.genericEntity_URI)
@@ -46,7 +48,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
      * Creates a new generic entity.
      *
      * @param resource The generic entity to create
-     * @return a reference to the newly created generic entity
+     * @return A reference to the newly created generic entity
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -56,9 +58,9 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * Retrieves a generic entity given its id
+     * Retrieves a generic entity given its ID
      *
-     * @param id The id of the generic entity to retrieve
+     * @param id The ID of the generic entity to retrieve
      * @return The generic entity.
      * @throws ResourceFactory.ResourceNotFoundException
      */
@@ -69,24 +71,19 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This will return a list of generic entity references. A sort can be specified to allow the resulting list to be
-     * sorted in either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/genericEntities?name=MyGeneric
-     * <p/>
-     * Returns the generic entities with name = "MyGeneric"
-     * <p/>
-     * /restman/genericEntities?entityClassName=foo.GenericFoo&name=MyGeneric&name=MyGeneric2
-     * <p/>
-     * Returns generic entities with class name foo.GenericFoo and with name either "MyGeneric" or "MyGeneric2"
-     * <p/>
+     * <p>Returns a list of generic entities. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/activeConnectors?name=MyGenericEntity</div>
+     * <p>Returns generic entity with name "MyGenericEntity".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort             the key to sort the list by.
-     * @param order            the order to sort the list. true for ascending, false for descending. null implies
-     *                         ascending
-     * @param names            The name filter
-     * @param enabled          the enabled filter
-     * @param entityClassNames The entityClassName filter
+     * @param sort             Key to sort the list by
+     * @param order            Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                         ascending if not specified
+     * @param names            Name filter
+     * @param enabled          Enabled filter
+     * @param entityClassNames Entity class name filter
      * @return A list of generic entities. If the list is empty then no entities were found.
      */
     @SuppressWarnings("unchecked")
@@ -115,24 +112,25 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * Updates an existing generic entity
+     * Creates or Updates an existing generic entity. If a generic entity with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated generic entity
-     * @param id       The id of the generic entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Generic entity to create or update
+     * @param id       ID of the generic entity to create or update
+     * @return A reference to the newly created or updated generic entity.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(GenericEntityMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(GenericEntityMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
      * Deletes an existing generic entity.
      *
-     * @param id The id of the generic entity to delete.
+     * @param id The ID of the generic entity to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -143,7 +141,7 @@ public class GenericEntityResource extends RestEntityResource<GenericEntityMO, G
     }
 
     /**
-     * This will return a template, example generic entity that can be used as a reference for what generic entity
+     * Returns a template, which is an example generic entity that can be used as a reference for what generic entity
      * objects should look like.
      *
      * @return The template generic entity.

@@ -77,6 +77,8 @@
                 </div>
                 <xsl:apply-templates select="wadl:method|wadl:resource">
                     <xsl:with-param name="path" select="@path"/>
+                    <!-- order by the method name -->
+                    <xsl:sort select="concat(wadl:doc[@title='title-javadoc'], wadl:doc[@title='title-src'], @path)"/>
                 </xsl:apply-templates>
             </div>
         </div>
@@ -95,6 +97,8 @@
         <xsl:apply-templates select="wadl:method|wadl:resource">
             <xsl:with-param name="path" select="concat($path, '/', @path)"/>
             <xsl:with-param name="path-params" select="$path-params-updated"/>
+            <!-- order by the method name -->
+            <xsl:sort select="concat(wadl:doc[@title='title-javadoc'], wadl:doc[@title='title-src'], @path)"/>
         </xsl:apply-templates>
     </xsl:template>
 

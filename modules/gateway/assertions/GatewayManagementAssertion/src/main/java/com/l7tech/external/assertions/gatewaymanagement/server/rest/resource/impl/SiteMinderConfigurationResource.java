@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The active connector resource
+ * A SiteMinder Configuration describes a connection to site minder.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + SiteMinderConfigurationResource.siteMinderConfigurations_URI)
@@ -44,10 +44,10 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * Creates a new entity
+     * Creates a new SiteMinder configuration
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The SiteMinder configuration to create
+     * @return A reference to the newly created SiteMinder configuration
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -57,10 +57,10 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a SiteMinder configuration with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the SiteMinder configuration to return
+     * @return The SiteMinder configuration
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -70,26 +70,20 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of SiteMinder configurations. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/siteMinderConfigurations?name=MySiteMinderConfiguration</div>
+     * <p>Returns SiteMinder configuration with name "MySiteMinderConfiguration".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param names           The name filter
-     * @param enabled         the enabled filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param names           Name filter
+     * @param enabled         Enabled filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of SiteMinder configurations. If the list is empty then no SiteMinder configurations were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -117,11 +111,13 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing SiteMinder configuration. If a SiteMinder configuration with the given ID does not
+     * exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource SiteMinder configuration to create or update
+     * @param id       ID of the SiteMinder configuration to create or update
+     * @return A reference to the newly created or updated SiteMinder configuration.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -132,9 +128,9 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing SiteMinder configuration.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the SiteMinder configuration to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -145,10 +141,10 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example SiteMinder configuration that can be used as a reference for what
+     * SiteMinder configuration objects should look like.
      *
-     * @return The template entity.
+     * @return The template SiteMinder configuration.
      */
     @GET
     @Path("template")

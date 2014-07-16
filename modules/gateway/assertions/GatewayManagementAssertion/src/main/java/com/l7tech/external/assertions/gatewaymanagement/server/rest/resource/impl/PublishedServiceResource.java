@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The published service resource
+ * This resource is used to manage services.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PublishedServiceResource.SERVICES_URI)
@@ -61,11 +61,11 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * Creates a new entity
+     * Creates a new service
      *
-     * @param resource The entity to create
+     * @param resource The service to create
      * @param comment  The comment to add to the policy version when creating the service
-     * @return a reference to the newly created entity
+     * @return A reference to the newly created service
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -76,10 +76,10 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a service with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the service to return
+     * @return The service.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -89,29 +89,23 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of servicees. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/services?name=MyService</div>
+     * <p>Returns service with name "MyService".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param names           The name filter
-     * @param guids           the guid filter
-     * @param enabled         The enabled filter
-     * @param soap            The soap filter
-     * @param parentFolderIds The parent folder id filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param names           Name filter
+     * @param guids           Guid filter
+     * @param enabled         Enabled filter
+     * @param soap            Soap filter
+     * @param parentFolderIds Parent folder ID filter.
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of services. If the list is empty then no services were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -161,22 +155,23 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing service. If a service with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @param active   Should the service be activated after the update
-     * @param comment  The comment to add to the policy version when creating the service
-     * @return a reference to the newly updated entity.
+     * @param resource Service to create or update
+     * @param id       ID of the service to create or update
+     * @param active   Should the service be activated after the update.
+     * @param comment  The comment to add to the policy version when updating the service
+     * @return A reference to the newly created or updated service.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(ServiceMO resource,
-                           @PathParam("id") String id,
-                           @QueryParam("active") @DefaultValue("true") Boolean active,
-                           @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
+    public Response updateOrCreate(ServiceMO resource,
+                                   @PathParam("id") String id,
+                                   @QueryParam("active") @DefaultValue("true") Boolean active,
+                                   @QueryParam("versionComment") String comment) throws ResourceFactory.ResourceFactoryException {
         boolean resourceExists = factory.resourceExists(id);
         if (resourceExists) {
             factory.updateResource(id, resource, comment, active);
@@ -187,9 +182,9 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing service.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the service to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -200,10 +195,10 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example service that can be used as a reference for what service objects should
+     * look like.
      *
-     * @return The template entity.
+     * @return The template service.
      */
     @GET
     @Path("template")
@@ -229,7 +224,7 @@ public class PublishedServiceResource extends DependentRestEntityResource<Servic
     @Override
     public List<Link> getRelatedLinks(@Nullable final ServiceMO serviceMO) {
         ArrayList<Link> links = new ArrayList<>(super.getRelatedLinks(serviceMO));
-        if(serviceMO != null) {
+        if (serviceMO != null) {
             links.addAll(Arrays.asList(
                     ManagedObjectFactory.createLink("versions", getUrlString(serviceMO.getId() + "/" + PolicyVersionResource.VERSIONS_URI)),
                     ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceMO.getServiceDetail().getFolderId() != null ? serviceMO.getServiceDetail().getFolderId() : Folder.ROOT_FOLDER_ID.toString()))));

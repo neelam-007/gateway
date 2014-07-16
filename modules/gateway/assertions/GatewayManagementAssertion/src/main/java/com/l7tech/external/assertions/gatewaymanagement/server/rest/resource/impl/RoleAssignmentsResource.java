@@ -28,14 +28,14 @@ public class RoleAssignmentsResource {
     }
 
     /**
-     * Adds role assignments.
+     * Adds role assignments to the role.
      *
      * @param addAssignmentsContext The role assignments to add.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    public void createAssignment(AddAssignmentsContext addAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public void addAssignment(AddAssignmentsContext addAssignmentsContext) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         factory.addAssignments(roleId, addAssignmentsContext);
     }
 
@@ -54,13 +54,14 @@ public class RoleAssignmentsResource {
     }
 
     /**
-     * This will return a template add assignment context.
+     * Returns a template, which is an example add assignments context that can be used as a reference for what add
+     * assignments context objects should look like.
      *
      * @return The template add assignments context.
      */
     @GET
     @Path("template/addassignments")
-    public Item<AddAssignmentsContext> getAddAssignmentsContextTemplate(){
+    public Item<AddAssignmentsContext> addAssignmentsContextTemplate() {
         AddAssignmentsContext addAssignmentsContext = new AddAssignmentsContext();
         RbacRoleAssignmentMO roleAssignmentMO = ManagedObjectFactory.createRbacRoleAssignmentMO();
         roleAssignmentMO.setEntityType("User or Group");

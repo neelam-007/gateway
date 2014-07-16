@@ -22,8 +22,10 @@ import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * The folder resource
+ * Folders are used to organize the policies, services, and aliases you have on the Gateway.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + FolderResource.FOLDERS_URI)
@@ -45,10 +47,10 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * Creates a new entity
+     * Creates a new folder
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The folder to create
+     * @return A reference to the newly created folder
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -58,10 +60,10 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a folder with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the folder to return
+     * @return The folder.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -71,26 +73,20 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of folders. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/activeConnectors?name=MyFolder</div>
+     * <p>Returns folder with name "MyFolder".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param names           The name filter
-     * @param parentFolderIds The service id filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param names           Name filter
+     * @param parentFolderIds The parent folder filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of folders. If the list is empty then no folders were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -119,11 +115,12 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing folder. If a folder with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Folder to create or update
+     * @param id       ID of the folder to create or update
+     * @return A reference to the newly created or updated folder.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -134,9 +131,9 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing folder.
      *
-     * @param id The id of the active connector to delete.
+     * @param id    The id of the folder to delete.
      * @param force If true, deletes folder and its contents
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
@@ -144,14 +141,14 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
     @Path("{id}")
     public void delete(@PathParam("id") String id,
                        @QueryParam("force") @DefaultValue("false") final boolean force) throws ResourceFactory.ResourceNotFoundException {
-        factory.deleteResource(id,force);
+        factory.deleteResource(id, force);
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example folder that can be used as a reference for what folder objects should
+     * look like.
      *
-     * @return The template entity.
+     * @return The template folder.
      */
     @GET
     @Path("template")

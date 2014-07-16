@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The private key resource
+ * This resource is used to manage private keys.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + PrivateKeyResource.privateKey_URI)
@@ -51,17 +51,41 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * Creates a new private key given a PrivateKeyCreationContext. The PrivateKeyCreationContext is used specify how
+     * <p>Creates a new private key given a PrivateKeyCreationContext. The PrivateKeyCreationContext is used to specify
+     * how
      * the private key should be created. The PrivateKeyCreationContext dn is the domain name to create the key with.
-     * The properties are optional but you may specify: <table> <tr><th>Key</th><th>Type</th><th>Description</th></tr>
-     * <tr><td>ecName</td><td>String</td><td>This the Elliptic Curve key type to use. If it is not specified an RSA key
-     * type is used.</td></tr> <tr><td>rsaKeySize</td><td>Integer</td><td>This is the rsa key size to use. This is only
-     * applicable if an ecName is not specified. Defaults to 2048</td></tr> <tr><td>daysUntilExpiry</td><td>Integer</td><td>Specify
-     * the number of days until the key expires. Defaults to 5 years.</td></tr> <tr><td>caCapable</td><td>Boolean</td><td>Specify
-     * if the certificate should be CA capable. Defaults to false</td></tr> <tr><td>signatureHashAlgorithm</td><td>String</td><td>The
-     * algorithm used for the signature hash.</td></tr> </table>
-     * <p/>
-     * Example request:
+     * The properties are optional but you may specify:</p>
+     * <table class="properties-table" cellpadding="0" cellspacing="0">
+     * <tr><th>Key</th><th>Type</th><th>Description</th></tr>
+     * <tr>
+     * <td>ecName</td>
+     * <td>String</td>
+     * <td>This the Elliptic Curve key type to use. If it is not specified an RSA key type is used.</td>
+     * </tr>
+     * <tr>
+     * <td>rsaKeySize</td>
+     * <td>Integer</td>
+     * <td>This is the rsa key size to use. This is only applicable if an ecName is not specified. Defaults to
+     * 2048</td>
+     * </tr>
+     * <tr>
+     * <td>daysUntilExpiry</td>
+     * <td>Integer</td>
+     * <td>Specify the number of days until the key expires. Defaults to 5 years.</td>
+     * </tr>
+     * <tr>
+     * <td>caCapable</td>
+     * <td>Boolean</td>
+     * <td>Specify if the certificate should be CA capable. Defaults to false</td>
+     * </tr>
+     * <tr>
+     * <td>signatureHashAlgorithm</td>
+     * <td>String</td>
+     * <td>The algorithm used for the signature hash.</td>
+     * </tr>
+     * </table>
+     * <p class="italicize">Example request:</p>
+     * <div class="code">
      * <pre>
      * &lt;l7:PrivateKeyCreationContext xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
      * &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
@@ -84,11 +108,11 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * &lt;/l7:Properties&gt;
      * &lt;/l7:PrivateKeyCreationContext&gt;
      * </pre>
-     * <p/>
-     * This responds with a reference to the newly created private key.
+     * </div>
+     * <p>This responds with a reference to the newly created private key.</p>
      *
      * @param privateKeyCreationContext This specifies how to create the private key.
-     * @param id                        The identity of the private key to create in the form of [keystore id]:[alias]
+     * @param id                        The ID of the private key to create in the form of [keystore ID]:[alias]
      * @return A reference to the newly created private key
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -101,11 +125,12 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * Retrieve a private key by its ID. The ID is a combination of the keystoreId and the key alias seperated by a ':'.
+     * Retrieve a private key by its ID. The ID is a combination of the keystoreId and the key alias separated by a
+     * ':'.
      * For example 00000000000000000000000000000002:mykey
      *
-     * @param id The identity of the key to select
-     * @return The selected private key.
+     * @param id The ID of the private key to retrieve
+     * @return The private key.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -115,23 +140,18 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a list of private keys. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/1.0/privateKeys?alias=mykey
-     * <p/>
-     * Returns the private key with alias "mykey"
-     * <p/>
-     * /restman/1.0/privateKeys?alias=mykey&alias=myotherkey
-     * <p/>
-     * Returns the private keys with alias "mykey" and "myotherkey"
-     * <p/>
-     * If a parameter is not a valid search value an error will be returned.
+     * <p>Returns a list of private keys. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/privateKeys?alias=mykey</div>
+     * <p>Returns the private key with alias "mykey"</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort    The key to sort the list by. Currently only 'id' is supported.
-     * @param order   The order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param aliases The alias filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort    Key to sort the list by
+     * @param order   Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                ascending if not specified
+     * @param aliases Alias filter
+     * @return A list of private keys. If the list is empty then no private keys were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -151,11 +171,13 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * Updates an existing private key. This api call can be used to replace a keys certificate chain or change its
+     * Updates an existing private key. This api call can be used to replace a private key's certificate chain or
+     * change
+     * its
      * security zone.
      *
      * @param resource The updated private key.
-     * @param id       The id of the private key to update
+     * @param id       The ID of the private key to update
      * @return A reference to the newly updated private key.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -169,7 +191,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Export a private key.
      *
-     * @param id                      The id of the key to export
+     * @param id                      The ID of the key to export
      * @param privateKeyExportContext The export key context. This contains a password to secure the exported key with.
      *                                The password must always be specified but can be the empty string to specify no
      *                                password. This can also specify the alias to export the private key with. If no
@@ -194,11 +216,11 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Import a private key.
      *
-     * @param id                      The id to import the key into
+     * @param id                      The ID to import the key into
      * @param privateKeyImportContext The private key to import. This contains the key data. It contains the password
-     *                                that the key is secured with. An Alias can also be given to specify which alias to
-     *                                use if the key given contains more then one alias. By default the first alias in
-     *                                the given key is used.
+     *                                that the key is secured with. An Alias can also be given to specify which alias
+     *                                to use if the key given contains more then one alias. By default the first alias
+     *                                in the given key is used.
      * @return A reference to the newly imported private key.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
@@ -214,7 +236,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Mark a private key for a special special purpose
      *
-     * @param id      The id of the key to mark for special purpose
+     * @param id      The ID of the key to mark for special purpose
      * @param purpose The special purpose to mark the key with. Can specify more then one special purposes.
      * @return A reference to the newly updated private key.
      * @throws ResourceFactory.ResourceNotFoundException
@@ -231,7 +253,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Generate a certificate signing request for this private key.
      *
-     * @param id            The id of the key to generate the CSR from
+     * @param id            The ID of the key to generate the CSR from
      * @param dn            The CSR subject dn to use. It defaults to the key's subject dn if none is specified.
      * @param signatureHash The signature hash to use. Defaults to 'Automatic'
      * @return The CSR data.
@@ -252,7 +274,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Deletes an existing private key.
      *
-     * @param id The id of the private key to delete.
+     * @param id The ID of the private key to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -265,7 +287,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     /**
      * Signs a csr pem file with the specified key.
      *
-     * @param id            The id of the key to sign the certificate with
+     * @param id            The ID of the key to sign the certificate with
      * @param subjectDN     The subject DN to set on the signed certificate
      * @param expiryAge     The expiry age of the certificate
      * @param signatureHash The signature hash to use. Defaults to 'Automatic'
@@ -287,7 +309,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template, example private key that can be used as a reference for what private key objects
+     * Returns a template, which is an example private key that can be used as a reference for what private key objects
      * should look like.
      *
      * @return The template private key.
@@ -309,7 +331,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template import context.
+     * Returns a template, which is an example private key import context that can be used as a reference for what
+     * private key import context objects
+     * should look like.
      *
      * @return The template private key import context.
      */
@@ -327,7 +351,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template export context.
+     * Returns a template, which is an example private key export context that can be used as a reference for what
+     * private key export context objects
+     * should look like.
      *
      * @return The template private key export context.
      */
@@ -344,7 +370,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
     }
 
     /**
-     * This will return a template key creation context.
+     * Returns a template, which is an example private key creation context that can be used as a reference for what
+     * private key creation context objects
+     * should look like.
      *
      * @return The template private key creation context.
      */

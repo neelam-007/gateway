@@ -22,7 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The listen port resource
+ * A listen port is a TCP port that "listens" for incoming messages that are then passed to the Gateway message
+ * processor.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ListenPortResource.listenPort_URI)
@@ -44,10 +45,10 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * Creates a new entity
+     * Creates a new listen port
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The listen port to create
+     * @return A reference to the newly created listen port
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -57,10 +58,10 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a listen port with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the listen port to return
+     * @return The listen port.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -70,28 +71,22 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of listen ports. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/listenPorts?name=MyListenPort</div>
+     * <p>Returns listen port with name "MyListenPort".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param names           The name filter
-     * @param enabled         the enabled filter
-     * @param protocol        The protocol filter
-     * @param ports           The port filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param names           Name filter
+     * @param enabled         Enabled filter
+     * @param protocol        Protocol filter
+     * @param ports           Port filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of listen ports. If the list is empty then no listen ports were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -137,11 +132,12 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing listen port. If a listen port with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Listen port to create or update
+     * @param id       ID of the listen port to create or update
+     * @return A reference to the newly created or updated listen port.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -152,9 +148,9 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing listen port.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the listen port to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -165,10 +161,10 @@ public class ListenPortResource extends RestEntityResource<ListenPortMO, ListenP
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example listen port that can be used as a reference for what listen port objects
+     * should look like.
      *
-     * @return The template entity.
+     * @return The template listen port.
      */
     @GET
     @Path("template")

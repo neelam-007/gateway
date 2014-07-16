@@ -23,7 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The service alias resource
+ * A service alias allows a service to appear in more than one folder in the Services and Policies list. The service
+ * alias is a linked copy of the original service.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + ServiceAliasResource.publishedServiceAlias_URI)
@@ -45,10 +46,10 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * Creates a new entity
+     * Creates a new service alias
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The service alias to create
+     * @return A reference to the newly created service alias
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -58,10 +59,10 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a service alias with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the service alias to return
+     * @return The service alias.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -71,26 +72,20 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of service aliases. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/serviceAliases?serviceIds=26df9b0abc4dd6780fd9da5929cde13e</div>
+     * <p>Returns service aliases for service with ID "26df9b0abc4dd6780fd9da5929cde13e".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param serviceIds      The service id filter
-     * @param folderIds       the folder id filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param serviceIds      Service id filter
+     * @param folderIds       Folder id filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of service aliases. If the list is empty then no service aliases were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -128,24 +123,25 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing service alias. If a service alias with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Service alias to create or update
+     * @param id       ID of the service alias to create or update
+     * @return A reference to the newly created or updated service alias.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(ServiceAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response updateOrCreate(ServiceAliasMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing service alias.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the service alias to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -156,10 +152,10 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example service alias that can be used as a reference for what service alias
+     * objects should look like.
      *
-     * @return The template entity.
+     * @return The template service alias.
      */
     @GET
     @Path("template")
@@ -176,7 +172,7 @@ public class ServiceAliasResource extends RestEntityResource<ServiceAliasMO, Ser
         List<Link> links = super.getRelatedLinks(serviceAliasMO);
         if (serviceAliasMO != null) {
             links.add(ManagedObjectFactory.createLink("parentFolder", getUrlString(FolderResource.class, serviceAliasMO.getFolderId() != null ? serviceAliasMO.getFolderId() : Folder.ROOT_FOLDER_ID.toString())));
-            links.add(ManagedObjectFactory.createLink("service", getUrlString(PublishedServiceResource.class, serviceAliasMO.getServiceReference().getId() )));
+            links.add(ManagedObjectFactory.createLink("service", getUrlString(PublishedServiceResource.class, serviceAliasMO.getServiceReference().getId())));
         }
         return links;
     }

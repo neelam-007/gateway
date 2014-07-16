@@ -35,9 +35,12 @@ import java.util.Properties;
  * @queryParam on fields. This will be added to the rest application using the application context. See
  * /com/l7tech/external/assertions/gatewaymanagement/server/gatewayManagementContext.xml:restAgent
  */
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
 
 /**
- * This resource is used to export and import bundles for migration.
+ * This resource is used to export and import bundles for migration. See <a href="migration.html">migration.html</a>
+ * for
+ * more documentation on migration and bundling.
  */
 @Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + "bundle")
 @RequestScoped
@@ -81,12 +84,12 @@ public class BundleResource {
     /**
      * Returns the bundle for the given resources.
      *
-     * @param defaultAction                      The default bundling action. By default this is NewOrExisting
+     * @param defaultAction                      Default bundling action. By default this is NewOrExisting
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
      *                                           default.
-     * @param folderIds                          The folders to export
-     * @param serviceIds                         The services to export
-     * @param policyIds                          The policies to export
+     * @param folderIds                          Folders to export
+     * @param serviceIds                         Services to export
+     * @param policyIds                          Policies to export
      * @return The bundle for the resources
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -123,12 +126,12 @@ public class BundleResource {
     }
 
     /**
-     * Returns the for the given resource type. The resource type is either a policy, service, or folder
+     * Returns the bundle for the given resource type. The resource type is either a policy, service, or folder
      *
-     * @param resourceType                       The resource type. Either folder, service or policy
-     * @param id                                 The id of the resource to bundle
-     * @param defaultAction                      The default bundling action. By default this is NewOrExisting
-     * @param defaultMapBy                       The default map by action.
+     * @param resourceType                       Resource type. Either folder, service or policy
+     * @param id                                 ID of the resource to bundle
+     * @param defaultAction                      Default bundling action. By default this is NewOrExisting
+     * @param defaultMapBy                       Default map by action.
      * @param includeRequestFolder               For a folder export, specifies whether to include the folder in the
      *                                           bundle or just its contents.
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
@@ -137,15 +140,16 @@ public class BundleResource {
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws FindException
+     * @title Folder, Service or Policy Export
      */
     @GET
     @Path("{resourceType}/{id}")
-    public Item<Bundle> exportFolderServicePolicyBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
-                                     @PathParam("id") Goid id,
-                                     @QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
-                                     @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
-                                     @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
-                                     @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+    public Item<Bundle> exportFolderServiceOrPolicyBundle(@PathParam("resourceType") @ChoiceParam({"folder", "policy", "service"}) String resourceType,
+                                                          @PathParam("id") Goid id,
+                                                          @QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
+                                                          @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
+                                                          @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
+                                                          @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
@@ -169,11 +173,11 @@ public class BundleResource {
     }
 
     /**
-     * This will import the bundle.
+     * This will import a bundle.
      *
-     * @param test   If true the bundle import will be tested no changes will be made to the gateway.,
-     * @param bundle The bundle to import
-     * @param activate False to not activate the updated services and policies.
+     * @param test           If true the bundle import will be tested no changes will be made to the gateway
+     * @param bundle         The bundle to import
+     * @param activate       False to not activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException

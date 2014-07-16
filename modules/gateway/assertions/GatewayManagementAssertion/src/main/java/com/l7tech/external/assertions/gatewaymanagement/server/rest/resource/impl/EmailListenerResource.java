@@ -23,8 +23,10 @@ import javax.ws.rs.ext.Provider;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * The email listener resource
+ * An email listener will periodically poll an email server for messages to process.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + EmailListenerResource.emailListener_URI)
@@ -46,10 +48,10 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * Creates a new entity
+     * Creates a new email listener
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The email listener to create
+     * @return a reference to the newly email listener
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -59,10 +61,10 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns an email listener with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the email listener to return
+     * @return The email listener.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -72,27 +74,23 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of email listeners. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/emailListeners?name=MyEmailListener</div>
+     * <p>Returns email listener with name "MyEmailListener".</p>
+     * <div class="code indent">/restman/1.0/emailListeners?serverTypes=IMAP</div>
+     * <p>Returns email listener of SFTP type</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param names           The name filter
-     * @param active          the active filter
-     * @param serverTypes     The server type filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param names           Name filter
+     * @param active          Active filter
+     * @param serverTypes     Server type filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of email listener. If the list is empty then no email listeners were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -125,24 +123,25 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing email listener. If an email listener with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Email listener to create or update
+     * @param id       ID of the email listener to create or update
+     * @return A reference to the newly created or updated email listener.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(EmailListenerMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(EmailListenerMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing email listener.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the email listener to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -153,10 +152,10 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example email listener that can be used as a reference for what email listener
+     * objects should look like.
      *
-     * @return The template entity.
+     * @return The template email listener.
      */
     @GET
     @Path("template")

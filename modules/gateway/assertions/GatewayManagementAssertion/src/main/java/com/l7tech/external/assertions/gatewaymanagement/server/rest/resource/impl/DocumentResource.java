@@ -21,9 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * The resource document resource
- * @title Service Document
+ * Resource documents are documents schema documents. They are either a dtd or an xml schema.
+ *
+ * @title Resource Document
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + DocumentResource.document_URI)
@@ -45,10 +48,10 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * Creates a new entity
+     * Creates a new resource document
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The resource document to create
+     * @return a reference to the newly created resource document
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -58,10 +61,10 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a resource document with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the resource document to return
+     * @return The resource document.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -71,27 +74,23 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * This will return a list of entity references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of resource documents. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/resources?uri=documentURI</div>
+     * <p>Returns resource document with uri "documentURI".</p>
+     * <div class="code indent">/restman/1.0/resources?type=xmlschema</div>
+     * <p>Returns resource documents of xmlschema type</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort            the key to sort the list by.
-     * @param order           the order to sort the list. true for ascending, false for descending. null implies
-     *                        ascending
-     * @param uris            The uri filter
-     * @param descriptions    the description filter
-     * @param types           The type filter
-     * @param securityZoneIds the securityzone id filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort            Key to sort the list by
+     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                        ascending if not specified
+     * @param uris            Uri filter
+     * @param descriptions    Description filter
+     * @param types           Type filter
+     * @param securityZoneIds Security zone ID filter
+     * @return A list of resource documents. If the list is empty then no resource documents were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -124,8 +123,8 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
 
     private List<ResourceType> convertTypes(List<String> types) {
         List<ResourceType> resourceTypes = new ArrayList<>(types.size());
-        for(String typeString : types){
-            switch(typeString){
+        for (String typeString : types) {
+            switch (typeString) {
                 case "dtd":
                     resourceTypes.add(ResourceType.DTD);
                     break;
@@ -140,11 +139,12 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * Updates an existing entity
+     * Creates or Updates an existing resource document. If a resource document with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource Resource document to create or update
+     * @param id       ID of the resource document to create or update
+     * @return A reference to the newly created or updated resource document.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -155,9 +155,9 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * Deletes an existing active connector.
+     * Deletes an existing resource document.
      *
-     * @param id The id of the active connector to delete.
+     * @param id The ID of the resource document to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -168,10 +168,10 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
-     * like.
+     * Returns a template, which is an example resource document that can be used as a reference for what resource
+     * document objects should look like.
      *
-     * @return The template entity.
+     * @return The template resource document.
      */
     @GET
     @Path("template")

@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/* NOTE: The java docs in this class get converted to API documentation seen by customers!*/
+
 /**
- * This resource handles user operations.
+ * A user represents a user identity in an identity provider. When no identity provider is specified in the url then
+ * the internal identity provider is assumed. Users can only be created and updated in the internal identity provider..
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + UserResource.USERS_URI)
@@ -66,22 +69,15 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * This will return a list of entity references. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/services?name=MyService
-     * <p/>
-     * Returns services with name = "MyService"
-     * <p/>
-     * /restman/storedpasswords?type=password&name=DevPassword,ProdPassword
-     * <p/>
-     * Returns stored passwords of password type with name either "DevPassword" or "ProdPassword"
-     * <p/>
-     * If a parameter is not a valid search value it will be ignored.
+     * <p>Returns a list of users. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort   the key to sort the list by.
-     * @param order  the order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param logins The login filter
-     * @return A list of entities. If the list is empty then no entities were found.
+     * @param sort   Key to sort the list by.
+     * @param order  Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *               ascending if not specified
+     * @param logins Login filter
+     * @return A list of groups. If the list is empty then no groups were found.
      */
     @SuppressWarnings("unchecked")
     @GET
@@ -105,10 +101,10 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * Creates a new entity
+     * Creates a new user. New users can only be created on the internal identity provider.
      *
-     * @param resource The entity to create
-     * @return a reference to the newly created entity
+     * @param resource The user to create.
+     * @return A reference to the newly created user
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -119,10 +115,10 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * This implements the GET method to retrieve an entity by a given id.
+     * Returns a user with the given ID.
      *
-     * @param id The identity of the entity to select
-     * @return The selected entity.
+     * @param id The ID of the user to return
+     * @return The user.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -133,11 +129,11 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * Updates an existing entity
+     * Updates an existing user
      *
-     * @param resource The updated entity
-     * @param id       The id of the entity to update
-     * @return a reference to the newly updated entity.
+     * @param resource The updated user
+     * @param id       The ID of the user to update
+     * @return A reference to the newly updated user.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -151,7 +147,7 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Change this users password
      *
-     * @param id       The id of the user
+     * @param id       The ID of the user
      * @param password The new password
      * @param format   The format of the password. "plain" or "sha512crypt"
      * @return The user that the password was changed for.
@@ -170,7 +166,7 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Deletes an existing user
      *
-     * @param id The id of the user to delete.
+     * @param id The ID of the user to delete.
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -182,9 +178,9 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Set this user's certificate
      *
-     * @param id              The id of the user
-     * @param certificateData The certificate data resource
-     * @return The certificate set
+     * @param id              The ID of the user
+     * @param certificateData The certificate data
+     * @return The certificate set on the user
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      * @throws FindException
@@ -204,7 +200,7 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Gets the user's certificate
      *
-     * @param id The id of the user
+     * @param id The ID of the user
      * @return The certificate
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
@@ -224,7 +220,7 @@ public class UserResource implements URLAccessible<UserMO> {
     /**
      * Removes the certificate from the user
      *
-     * @param id The id of the user
+     * @param id The ID of the user
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      * @throws ObjectModelException
@@ -236,10 +232,10 @@ public class UserResource implements URLAccessible<UserMO> {
     }
 
     /**
-     * This will return a template, example entity that can be used as a reference for what entity objects should look
+     * Returns a template, which is an example user that can be used as a reference for what user objects should look
      * like.
      *
-     * @return The template entity.
+     * @return The template user.
      */
     @GET
     @Path("template")

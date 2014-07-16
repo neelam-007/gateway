@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The rbac role resource
+ * A role defines a set of permissions that a user or group is allowed to perform. A user must be assigned to at least
+ * one of these roles in order to connect to the Gateway and perform administrative tasks in the Policy Manager or
+ * through the API.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + RoleResource.ROLES_URI)
@@ -48,6 +50,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
 
     /**
      * Access to the rbac role assignments resource
+     *
      * @param id The ID of the role to change assignments for.
      * @return The role assignments resource
      */
@@ -60,7 +63,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
      * Creates a new role
      *
      * @param resource The role to create
-     * @return a reference to the newly created role
+     * @return A reference to the newly created role
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -70,10 +73,10 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     }
 
     /**
-     * Returns a role.
+     * Returns a role with the given ID.
      *
-     * @param id The id of the role to return
-     * @return The role.
+     * @param id The ID of the role to return
+     * @return The role
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
@@ -83,23 +86,18 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     }
 
     /**
-     * This will return a list of role references. A sort can be specified to allow the resulting list to be sorted in
-     * either ascending or descending order. Other params given will be used as search values. Examples:
-     * <p/>
-     * /restman/roles?name=MyRole
-     * <p/>
-     * Returns role with name = "MyRole"
-     * <p/>
-     * /restman/roles?userCreated=true&name=MyDevRole&name=MyProdRole
-     * <p/>
-     * Returns roles that are user created with name either "MyDevRole" or "MyProdRole"
-     * <p/>
-     * If a parameter is not a valid search value an error will be returned.
+     * <p>Returns a list of roles. Can optionally sort the resulting list in ascending or
+     * descending order. Other params given will be used as search values.</p>
+     * <p class="italicize">Examples:</p>
+     * <div class="code indent">/restman/1.0/roles?name=MyRole</div>
+     * <p>Returns role with name "MyRole".</p>
+     * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
-     * @param sort        the key to sort the list by.
-     * @param order       the order to sort the list. true for ascending, false for descending. null implies ascending
-     * @param names       The name filter
-     * @param userCreated The userCreated filter
+     * @param sort        Key to sort the list by
+     * @param order       Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     *                    ascending if not specified
+     * @param names       Name filter
+     * @param userCreated User created filter
      * @return A list of roles. If the list is empty then no roles were found.
      */
     @SuppressWarnings("unchecked")
@@ -124,24 +122,25 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     }
 
     /**
-     * Updates an existing role
+     * Creates or Updates an existing role. If a role with the given ID does not exist one
+     * will be created, otherwise the existing one will be updated.
      *
-     * @param resource The updated role
-     * @param id       The id of the role to update
-     * @return a reference to the newly updated role
+     * @param resource Role to create or update
+     * @param id       ID of the role to create or update
+     * @return A reference to the newly created or updated role.
      * @throws ResourceFactory.ResourceNotFoundException
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
     @Path("{id}")
-    public Response update(RbacRoleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(RbacRoleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 
     /**
      * Deletes an existing role.
      *
-     * @param id The id of the role to delete.
+     * @param id The ID of the role to delete.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
     @DELETE
@@ -152,7 +151,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
     }
 
     /**
-     * This will return a template, example role that can be used as a reference for what role objects should look
+     * Returns a template, which is an example role that can be used as a reference for what role objects should look
      * like.
      *
      * @return The template role.

@@ -34,6 +34,7 @@ public class DocumentationResource {
             .put("home.html", "Getting Started")
             .put("authentication.html", "Authentication")
             .put("migration.html", "Migration")
+            .put("migration-example.html", "Migration Example")
             .put("restDoc.html", "API Resources")
             .map();
 
