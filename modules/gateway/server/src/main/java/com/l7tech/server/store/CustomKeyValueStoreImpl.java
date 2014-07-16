@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreListener;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.util.ExceptionUtils;
 
@@ -110,7 +111,7 @@ public class CustomKeyValueStoreImpl implements KeyValueStore {
     }
 
     @Override
-    public <T> T getListener(Class<T> lClass) {
+    public <L extends KeyValueStoreListener> L getListener(Class<L> lClass) {
         return customKeyValueStoreManager.getListener(lClass);
     }
 }

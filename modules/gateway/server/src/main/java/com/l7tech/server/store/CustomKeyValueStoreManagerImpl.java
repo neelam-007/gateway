@@ -3,6 +3,7 @@ package com.l7tech.server.store;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreListener;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
@@ -19,6 +20,7 @@ import org.springframework.context.ApplicationListener;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
@@ -78,7 +80,7 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
     }
 
     @Override
-    public <T> T getListener(Class<T> lClass) {
+    public <T extends KeyValueStoreListener> T getListener(Class<T> lClass) {
         if (KeyValueStoreChangeEventListener.class.equals(lClass)) {
             //noinspection unchecked
             return (T) listener;
@@ -108,7 +110,7 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
 
         // Convert from EntityInvalidationEvent to KeyValueStoreChangeEvent
         //
-        List<KeyValueStoreChangeEventListener.Event> allEvents = new LinkedList<>();
+        List<KeyValueStoreChangeEventListener.Event> allEvents = new ArrayList<>(goids.length);
         for (int ix = 0; ix < goids.length; ix++) {
             String key = null;
             KeyValueStoreChangeEventListener.Operation operation;
@@ -148,22 +150,22 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
             }
         }
 
-        // Call event callbacks.
+        // Call callbacks.
         //
-        for (Map.Entry<String, Set<KeyValueStoreChangeEventListener.EventCallback>> entry : listener.getEvenCallbacks().entrySet()) {
+        for (Map.Entry<String, Set<KeyValueStoreChangeEventListener.Callback>> entry : listener.getCallbacks().entrySet()) {
             // Get events for given key prefix.
             //
-            List<KeyValueStoreChangeEventListener.Event> keyPrefixEvents = new LinkedList<>();
+            List<KeyValueStoreChangeEventListener.Event> keyPrefixEvents = new ArrayList<>(allEvents.size());
             for (KeyValueStoreChangeEventListener.Event currEvent : allEvents) {
                 if (currEvent.getKey().startsWith(entry.getKey())) {
                     keyPrefixEvents.add(currEvent);
                 }
             }
 
-            // Call event callbacks.
+            // Call callbacks.
             //
-            for (KeyValueStoreChangeEventListener.EventCallback eventCallback : entry.getValue()) {
-                eventCallback.onEvent(keyPrefixEvents);
+            for (KeyValueStoreChangeEventListener.Callback callback : entry.getValue()) {
+                callback.onEvent(keyPrefixEvents);
             }
         }
     }
@@ -189,24 +191,25 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
     }
 
     private class KeyValueStoreChangeEventListenerImpl extends KeyValueStoreChangeEventListener {
-        private final Map<String, Set<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
+        private final Map<String, Set<Callback>> callbacks = new ConcurrentHashMap<>();
 
         @Override
-        public void add(String keyPrefix, EventCallback eventCallback) {
-            Set<EventCallback> keyPrefixEventCallbacks = eventCallbacks.get(keyPrefix);
-            if (keyPrefixEventCallbacks == null) {
-                keyPrefixEventCallbacks = new HashSet<>();
-                eventCallbacks.put(keyPrefix, keyPrefixEventCallbacks);
+        public void add(Callback callback) {
+            String keyPrefix = callback.getKeyPrefix();
+            Set<Callback> keyPrefixCallbacks = callbacks.get(keyPrefix);
+            if (keyPrefixCallbacks == null) {
+                keyPrefixCallbacks = new CopyOnWriteArraySet<>();
+                callbacks.put(keyPrefix, keyPrefixCallbacks);
             }
-
-            keyPrefixEventCallbacks.add(eventCallback);
+            keyPrefixCallbacks.add(callback);
         }
 
         @Override
-        public void remove(String keyPrefix, EventCallback eventCallback) {
-            Set<EventCallback> keyPrefixListeners = eventCallbacks.get(keyPrefix);
-            if (keyPrefixListeners != null) {
-                keyPrefixListeners.remove(eventCallback);
+        public void remove(Callback callback) {
+            String keyPrefix = callback.getKeyPrefix();
+            Set<Callback> keyPrefixCallbacks = callbacks.get(keyPrefix);
+            if (keyPrefixCallbacks != null) {
+                keyPrefixCallbacks.remove(callback);
             }
         }
 
@@ -215,8 +218,8 @@ public class CustomKeyValueStoreManagerImpl extends HibernateEntityManager<Custo
          *
          * @return the event callbacks
          */
-        private Map<String, Set<EventCallback>> getEvenCallbacks() {
-            return eventCallbacks;
+        private Map<String, Set<Callback>> getCallbacks() {
+            return callbacks;
         }
     }
 }

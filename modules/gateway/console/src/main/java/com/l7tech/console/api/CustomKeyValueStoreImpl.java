@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreListener;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;
@@ -105,8 +106,8 @@ public class CustomKeyValueStoreImpl implements KeyValueStore {
     }
 
     @Override
-    public <T> T getListener(Class<T> lClass) {
-        // Key value store change event listener not supported in the SSM.
+    public <L extends KeyValueStoreListener> L getListener(Class<L> lClass) {
+        // Key value store listener not supported in the SSM.
         //
         return null;
     }

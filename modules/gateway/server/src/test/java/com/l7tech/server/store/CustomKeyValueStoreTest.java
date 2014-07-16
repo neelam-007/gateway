@@ -190,17 +190,22 @@ public class CustomKeyValueStoreTest {
         // Cannot fully test event notification mechanism because CustomKeyValueStoreManagerStub is
         // used, and not the actual CustomKeyValueStoreManagerImpl in this unit test.
         //
-        KeyValueStoreChangeEventListener.EventCallback eventCallback = new KeyValueStoreChangeEventCallback();
+        KeyValueStoreChangeEventListener.Callback callback = new KeyValueStoreChangeEventCallback();
 
         KeyValueStoreChangeEventListener listener = customKeyValueStore.getListener(KeyValueStoreChangeEventListener.class);
         Assert.assertNotNull(listener);
 
-        listener.add(PREFIX, eventCallback);
-        listener.remove(PREFIX, eventCallback);
+        listener.add(callback);
+        listener.remove(callback);
     }
 
-    private class KeyValueStoreChangeEventCallback implements KeyValueStoreChangeEventListener.EventCallback {
+    private class KeyValueStoreChangeEventCallback implements KeyValueStoreChangeEventListener.Callback {
         public KeyValueStoreChangeEventCallback() {
+        }
+
+        @Override
+        public String getKeyPrefix() {
+            return PREFIX;
         }
 
         @Override

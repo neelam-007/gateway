@@ -6,12 +6,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.policy.CustomKeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreListener;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyValueStore, EntityHeader> implements CustomKeyValueStoreManager {
 
@@ -49,10 +51,10 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
     }
 
     @Override
-    public <T> T getListener(Class<T> lClass) {
+    public <L extends KeyValueStoreListener> L getListener(Class<L> lClass) {
         if (KeyValueStoreChangeEventListener.class.equals(lClass)) {
             //noinspection unchecked
-            return (T) listener;
+            return (L) listener;
         }
 
         return null;
@@ -64,24 +66,25 @@ public class CustomKeyValueStoreManagerStub extends EntityManagerStub<CustomKeyV
     }
 
     private class KeyValueStoreChangeEventListenerStub extends KeyValueStoreChangeEventListener {
-        private final Map<String, Set<EventCallback>> eventCallbacks = new ConcurrentHashMap<>();
+        private final Map<String, Set<Callback>> callbacks = new ConcurrentHashMap<>();
 
         @Override
-        public void add(String keyPrefix, EventCallback eventCallback) {
-            Set<EventCallback> keyPrefixEventCallbacks = eventCallbacks.get(keyPrefix);
-            if (keyPrefixEventCallbacks == null) {
-                keyPrefixEventCallbacks = new HashSet<>();
-                eventCallbacks.put(keyPrefix, keyPrefixEventCallbacks);
+        public void add(Callback callback) {
+            String keyPrefix = callback.getKeyPrefix();
+            Set<Callback> keyPrefixCallbacks = callbacks.get(keyPrefix);
+            if (keyPrefixCallbacks == null) {
+                keyPrefixCallbacks = new CopyOnWriteArraySet<>();
+                callbacks.put(keyPrefix, keyPrefixCallbacks);
             }
-
-            keyPrefixEventCallbacks.add(eventCallback);
+            keyPrefixCallbacks.add(callback);
         }
 
         @Override
-        public void remove(String keyPrefix, EventCallback eventCallback) {
-            Set<EventCallback> keyPrefixListeners = eventCallbacks.get(keyPrefix);
-            if (keyPrefixListeners != null) {
-                keyPrefixListeners.remove(eventCallback);
+        public void remove(Callback callback) {
+            String keyPrefix = callback.getKeyPrefix();
+            Set<Callback> keyPrefixCallbacks = callbacks.get(keyPrefix);
+            if (keyPrefixCallbacks != null) {
+                keyPrefixCallbacks.remove(callback);
             }
         }
     }

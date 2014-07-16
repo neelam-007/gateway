@@ -94,10 +94,12 @@ public interface KeyValueStore {
 
     /**
      * Retrieves the listener object specified by <tt>lClass</tt>.
+     * <p/>
+     * Note: This method will always return null when called from the management console.
      *
      * @param lClass the requested listener class
-     * @param <T> the listener class e.g. {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener KeyValueStoreChangeEventListener}
+     * @param <L> the listener class e.g. {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener KeyValueStoreChangeEventListener}
      * @return the requested listener object, or null if the requested listener class is not supported
      */
-    <T> T getListener(Class<T> lClass);
+    <L extends KeyValueStoreListener> L getListener(Class<L> lClass);
 }

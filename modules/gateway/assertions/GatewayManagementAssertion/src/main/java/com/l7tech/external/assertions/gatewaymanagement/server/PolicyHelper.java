@@ -29,6 +29,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.policy.assertion.ext.store.KeyValueStore;
 import com.l7tech.policy.assertion.ext.store.KeyValueStoreException;
+import com.l7tech.policy.assertion.ext.store.KeyValueStoreListener;
 import com.l7tech.policy.exporter.*;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
@@ -778,7 +779,9 @@ public class PolicyHelper {
             }
 
             @Override
-            public <T> T getListener(Class<T> lClass) {
+            public <L extends KeyValueStoreListener> L getListener(Class<L> lClass) {
+                // Key value store listener not supported.
+                //
                 return null;
             }
         }

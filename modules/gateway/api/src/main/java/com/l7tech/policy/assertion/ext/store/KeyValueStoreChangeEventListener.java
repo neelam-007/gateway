@@ -3,10 +3,10 @@ package com.l7tech.policy.assertion.ext.store;
 import java.util.List;
 
 /**
- * This class is used to add or remove {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener.EventCallback EventCallbacks} that will be invoked when
+ * This class is used to add or remove {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener.Callback Callbacks} that will be invoked when
  * key values are modified.
  */
-public abstract class KeyValueStoreChangeEventListener {
+public abstract class KeyValueStoreChangeEventListener extends KeyValueStoreListener<KeyValueStoreChangeEventListener.Callback> {
 
     /**
      * The enumeration of operations.
@@ -40,7 +40,15 @@ public abstract class KeyValueStoreChangeEventListener {
     /**
      * The event callback interface. When key values are modified, {@link #onEvent(java.util.List) onEvent} method is invoked.
      */
-    public interface EventCallback {
+    public interface Callback {
+
+        /**
+         * Provide the key prefix to identify all key values that should be invoked when modified for this Callback.
+         *
+         * @return the key prefix
+         */
+        String getKeyPrefix();
+
         /**
          * Invoked when key values are modified.
          *
@@ -48,23 +56,4 @@ public abstract class KeyValueStoreChangeEventListener {
          */
         void onEvent(List<Event> events);
     }
-
-    /**
-     * Adds an {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener.EventCallback EventCallback} that will be invoked when key values are modified.
-     * <p/>
-     * The {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener.EventCallback EventCallback} will receive a list of {@link KeyValueStoreChangeEventListener.Event Events}
-     * when key values with the given key prefix have been modified.
-     *
-     * @param keyPrefix the key prefix
-     * @param callback the callback to be invoked
-     */
-    public abstract void add(String keyPrefix, EventCallback callback);
-
-    /**
-     * Removes an {@link com.l7tech.policy.assertion.ext.store.KeyValueStoreChangeEventListener.EventCallback EventCallback} that has been added with the given key prefix.
-     *
-     * @param keyPrefix the key prefix
-     * @param callback the callback to remove
-     */
-    public abstract void remove(String keyPrefix, EventCallback callback);
 }
