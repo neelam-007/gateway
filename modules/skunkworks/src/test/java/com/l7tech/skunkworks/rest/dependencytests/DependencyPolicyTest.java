@@ -12,7 +12,7 @@ import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.PolicyAliasManager;
-import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.policy.PolicyCacheImpl;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
@@ -49,7 +49,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
     private PolicyManager policyManager;
     private PolicyAliasManager policyAliasManager;
     private SecurityZoneManager securityZoneManager;
-    private PolicyCache policyCache;
+    private PolicyCacheImpl policyCache;
 
 
     @Before
@@ -58,7 +58,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
 
         securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
         policyManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyManager", PolicyManager.class);
-        policyCache = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyCache", PolicyCache.class);
+        policyCache = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyCache", PolicyCacheImpl.class);
         policyAliasManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("policyAliasManager", PolicyAliasManager.class);
 
 //        rootFolder
@@ -144,8 +144,8 @@ public class DependencyPolicyTest extends DependencyTestBase {
     public void after() throws Exception {
         policyAliasManager.delete(policyAlias.getGoid());
         policyManager.delete(policy.getGoid());
-        //todo: find a better solution sleep for 1 second to let policy cache remove the policy.
-        Thread.sleep(1000);
+        //policy cache remove the policy.
+        policyCache.initializePolicyCache();
         policyManager.delete(policy2.getGoid());
         super.after();
         folderManager.delete(folder2.getGoid());
