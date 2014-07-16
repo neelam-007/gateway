@@ -330,4 +330,22 @@ public class CookieUtilsTest {
     public void getNameAndValueNoValue() {
         assertNull(CookieUtils.getNameAndValue("foo"));
     }
+
+    @Test
+    public void trimLastSubPath() {
+        assertEquals("/foo/bar", CookieUtils.trimLastSubPath("/foo/bar/test"));
+        assertEquals("foo/bar", CookieUtils.trimLastSubPath("foo/bar/test"));
+        assertEquals("foo/", CookieUtils.trimLastSubPath("foo//test"));
+    }
+
+    @Test
+    public void trimLastSubPathNoSubPaths() {
+        assertEquals("/foo", CookieUtils.trimLastSubPath("/foo"));
+        assertEquals("foobar", CookieUtils.trimLastSubPath("foobar"));
+    }
+
+    @Test
+    public void trimLastSubPathNull() {
+        assertNull(CookieUtils.trimLastSubPath(null));
+    }
 }

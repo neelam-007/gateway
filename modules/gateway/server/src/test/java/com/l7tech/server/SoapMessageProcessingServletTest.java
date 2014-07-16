@@ -247,6 +247,29 @@ public class SoapMessageProcessingServletTest {
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
+    @Test
+    public void contextResponseCookiesAddedToResponseWithSubPath() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test/foo/bar");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/shouldBeOverwritten", "shouldBeOverwritten", 60, false, "test", false));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=/test/foo; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=/test/foo; Comment=test; Max-Age=60"));
+    }
+
     @BugId("SSG-8033")
     @Test
     public void contextResponseCookiesAddedToResponseDoNotOverwriteDomain() throws Exception {
@@ -296,6 +319,31 @@ public class SoapMessageProcessingServletTest {
         assertEquals(2, cookieHeaders.size());
         assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=/original; Comment=test; Max-Age=60"));
         assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=/original; Comment=test; Max-Age=60"));
+    }
+
+    @BugId("SSG-8884")
+    @Test
+    public void contextResponseCookiesAddedToResponseDoNotOverwriteSubPath() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setRequestURI("/test");
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                context.setOverwriteResponseCookiePath(false);
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original/with/sub/path", "original", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original/with/sub/path", "original", 60, false, "test", false));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=/original/with/sub/path; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=/original/with/sub/path; Comment=test; Max-Age=60"));
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 

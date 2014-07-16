@@ -174,6 +174,66 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "Set-Cookie", "invalid");
     }
 
+    @Test
+    public void responseSetCookieHeaderContainsSubPath() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setCookieService/cookie/test");
+        final String routePolicy = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(routeAssertion)));
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetCookieService");
+        routeParams.put(SERVICEURL, "/routeToSetCookieService/cookie/test");
+        routeParams.put(SERVICEPOLICY, routePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/setCookieService/cookie/test"))));
+        final Map<String, String> setCookieParams = new HashMap<>();
+        setCookieParams.put(SERVICENAME, "SetCookieService");
+        setCookieParams.put(SERVICEURL, "/setCookieService/cookie/test");
+        setCookieParams.put(SERVICEPOLICY, setCookiePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setCookieParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetCookieService/cookie/test")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/routeToSetCookieService/cookie");
+    }
+
+    /**
+     * Behaviour changed as of Icefish.
+     */
+    @BugId("SSG-8884")
+    @Test
+    public void responseSetCookieHeaderContainsSubPathDoNotOverwritePath() throws Exception {
+        final HttpRoutingAssertion routeAssertion = new HttpRoutingAssertion();
+        routeAssertion.setProtectedServiceUrl("http://" + BASE_URL + ":8080/setCookieService/cookie/test");
+        final String routePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                new SetVariableAssertion("response.cookie.overwritePath", "false"), routeAssertion)));
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToSetCookieService");
+        routeParams.put(SERVICEURL, "/routeToSetCookieService/cookie/test");
+        routeParams.put(SERVICEPOLICY, routePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final String setCookiePolicy = WspWriter.getPolicyXml(new AllAssertion(assertionList(
+                new SetVariableAssertion("response.cookie.overwritePath", "false"),
+                createEchoHeadersHardcodedResponseAssertion(),
+                createAddHeaderAssertion(TargetMessageType.RESPONSE, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/setCookieService/cookie/test"))));
+        final Map<String, String> setCookieParams = new HashMap<>();
+        setCookieParams.put(SERVICENAME, "SetCookieService");
+        setCookieParams.put(SERVICEURL, "/setCookieService/cookie/test");
+        setCookieParams.put(SERVICEPOLICY, setCookiePolicy);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(setCookieParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToSetCookieService/cookie/test")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar; Domain=" + BASE_URL + "; Path=/setCookieService/cookie/test");
+    }
+
     /**
      * If the route response sets any non-application headers, they should not be passed by default.
      */

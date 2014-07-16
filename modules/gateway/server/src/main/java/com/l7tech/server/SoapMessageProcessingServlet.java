@@ -434,7 +434,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         URI url = URI.create(reqKnob.getRequestUrl());
         //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
         String domain = context.isOverwriteResponseCookieDomain() ? url.getHost() : null;
-        String path = context.isOverwriteResponseCookiePath() ? url.getPath() : null;
+        String path = context.isOverwriteResponseCookiePath() ? CookieUtils.trimLastSubPath(url.getPath()) : null;
         List<HttpCookie> cookieValues = new ArrayList<>();
         for (final Header header : headersKnob.getHeaders(HeadersKnob.HEADER_TYPE_HTTP, false)) {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {

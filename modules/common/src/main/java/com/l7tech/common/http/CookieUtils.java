@@ -212,12 +212,6 @@ public class CookieUtils {
                 calcPath = cookiePath;
             }
 
-            if (calcPath != null) {
-                int trim = calcPath.lastIndexOf('/');
-                if (trim > 0) {
-                    calcPath = calcPath.substring(0, trim);
-                }
-            }
             boolean replacePath = false;
             // replace if the given path is not equal to or a sub path of the current cookie path
             if (cookiePath != null && calcPath != null && !calcPath.startsWith(cookiePath)) {
@@ -235,6 +229,24 @@ public class CookieUtils {
             }
         }
         return s;
+    }
+
+    /**
+     * Trim the last sub path from the given path. Ex) /foo/bar will return /foo.
+     *
+     * @param path the path to trim.
+     * @return the path with the last sub path trimmed or null if the given path is null.
+     */
+    @Nullable
+    public static String trimLastSubPath(@Nullable final String path) {
+        String toTrim = path;
+        if (toTrim != null) {
+            int trim = toTrim.lastIndexOf('/');
+            if (trim > 0) {
+                toTrim = toTrim.substring(0, trim);
+            }
+        }
+        return toTrim;
     }
 
     private static String findMatchingValue(@NotNull Matcher matcher) {
