@@ -96,7 +96,7 @@ public class EncapsulatedAssertionExportUtil {
      */
     public static EncapsulatedAssertionConfig importFromNode(@NotNull final Node node, final boolean resetOidsAndVersions) throws IOException {
         try {
-            final Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            final Unmarshaller unmarshaller = getJAXBContext().createUnmarshaller();
             final Object unmarshalled = unmarshaller.unmarshal(node);
             if (!(unmarshalled instanceof EncapsulatedAssertionConfig)) {
                 throw new IOException("Expected EncapsulatedAssertionConfig but received " + unmarshalled.getClass());
@@ -168,20 +168,23 @@ public class EncapsulatedAssertionExportUtil {
         }
     }
 
-    private static JAXBContext createJAXBContext() {
-        try {
-            return JAXBContext.newInstance("com.l7tech.objectmodel.encass");
-        } catch (final JAXBException e) {
-            throw new UncheckedIOException(new IOException(e));
+    private static synchronized JAXBContext getJAXBContext() {
+        if(jaxbContext == null) {
+            try {
+                jaxbContext = JAXBContext.newInstance("com.l7tech.objectmodel.encass");
+            } catch (final JAXBException e) {
+                throw new UncheckedIOException(new IOException(e));
+            }
         }
+        return jaxbContext;
     }
 
-    private static final JAXBContext jaxbContext = createJAXBContext();
+    private static JAXBContext jaxbContext;
     private static final String JAXB_FORMATTED_OUTPUT = "jaxb.formatted.output";
     private static final String JAXB_FRAGMENT = "jaxb.fragment";
 
     private static Marshaller createMarshaller() throws JAXBException {
-        final Marshaller marshaller = jaxbContext.createMarshaller();
+        final Marshaller marshaller = getJAXBContext().createMarshaller();
         marshaller.setProperty(JAXB_FORMATTED_OUTPUT, true);
         marshaller.setProperty(JAXB_FRAGMENT, true);
         return marshaller;
