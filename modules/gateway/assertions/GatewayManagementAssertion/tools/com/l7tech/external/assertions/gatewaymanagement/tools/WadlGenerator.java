@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DocumentationResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SchemaResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.WadlResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.XslStyleSheetResource;
@@ -71,7 +72,7 @@ public class WadlGenerator {
             }
         });
         //remove resources we don't want to show in the wadl
-        resourceClasses.removeAll(Arrays.asList(WadlResource.class, SchemaResource.class, XslStyleSheetResource.class));
+        resourceClasses.removeAll(Arrays.asList(WadlResource.class, SchemaResource.class, XslStyleSheetResource.class, DocumentationResource.class));
         restAgent.setAdditionalResourceClasses(resourceClasses);
 
 
