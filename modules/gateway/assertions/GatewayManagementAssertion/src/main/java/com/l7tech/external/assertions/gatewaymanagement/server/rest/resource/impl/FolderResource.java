@@ -76,7 +76,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      * <p>Returns a list of folders. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/activeConnectors?name=MyFolder</div>
+     * <div class="code indent"><pre>/restman/1.0/activeConnectors?name=MyFolder</pre></div>
      * <p>Returns folder with name "MyFolder".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

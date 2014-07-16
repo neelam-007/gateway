@@ -73,7 +73,7 @@ public class CustomKeyValueStoreResource extends RestEntityResource<CustomKeyVal
      * <p>Returns a list of custom key values. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/customKeyValues?key=MyKey</div>
+     * <div class="code indent"><pre>/restman/1.0/customKeyValues?key=MyKey</pre></div>
      * <p>Returns custom key value with key "MyKey".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

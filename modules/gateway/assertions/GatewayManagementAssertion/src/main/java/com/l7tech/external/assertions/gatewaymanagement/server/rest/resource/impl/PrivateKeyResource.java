@@ -143,7 +143,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * <p>Returns a list of private keys. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/privateKeys?alias=mykey</div>
+     * <div class="code indent"><pre>/restman/1.0/privateKeys?alias=mykey</pre></div>
      * <p>Returns the private key with alias "mykey"</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

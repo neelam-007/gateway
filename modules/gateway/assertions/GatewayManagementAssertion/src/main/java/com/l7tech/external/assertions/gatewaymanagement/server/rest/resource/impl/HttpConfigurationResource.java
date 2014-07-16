@@ -77,7 +77,7 @@ public class HttpConfigurationResource extends RestEntityResource<HttpConfigurat
      * <p>Returns a list of HTTP configurations. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/httpConfigurations?name=MyHTTPConfiguration</div>
+     * <div class="code indent"><pre>/restman/1.0/httpConfigurations?name=MyHTTPConfiguration</pre></div>
      * <p>Returns HTTP configuration with name "MyHTTPConfiguration".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

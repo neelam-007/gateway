@@ -73,7 +73,7 @@ public class CertificateResource extends RestEntityResource<TrustedCertificateMO
      * <p>Returns a list of certificates. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/trustedCertificates?name=MyCertificate</div>
+     * <div class="code indent"><pre>/restman/1.0/trustedCertificates?name=MyCertificate</pre></div>
      * <p>Returns certificates with name "MyCertificate".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

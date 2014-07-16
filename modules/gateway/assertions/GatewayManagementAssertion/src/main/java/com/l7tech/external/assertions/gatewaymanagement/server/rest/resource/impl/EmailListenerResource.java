@@ -77,9 +77,9 @@ public class EmailListenerResource extends RestEntityResource<EmailListenerMO, E
      * <p>Returns a list of email listeners. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/emailListeners?name=MyEmailListener</div>
+     * <div class="code indent"><pre>/restman/1.0/emailListeners?name=MyEmailListener</pre></div>
      * <p>Returns email listener with name "MyEmailListener".</p>
-     * <div class="code indent">/restman/1.0/emailListeners?serverTypes=IMAP</div>
+     * <div class="code indent"><pre>/restman/1.0/emailListeners?serverTypes=IMAP</pre></div>
      * <p>Returns email listener of SFTP type</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

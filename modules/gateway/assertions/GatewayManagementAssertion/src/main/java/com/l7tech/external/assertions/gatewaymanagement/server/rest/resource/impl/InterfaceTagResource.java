@@ -72,9 +72,9 @@ public class InterfaceTagResource extends RestEntityResource<InterfaceTagMO, Int
      * Returns a list of interface tags. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/interfaceTags?name=MyInterface</div>
+     * <div class="code indent"><pre>/restman/interfaceTags?name=MyInterface</pre></div>
      * <p>Returns interface with name = "MyInterface"</p>
-     * <div class="code indent">/restman/interfaceTags?name=MyInterface&name=MyInterfaceProd</div>
+     * <div class="code indent"><pre>/restman/interfaceTags?name=MyInterface&name=MyInterfaceProd</pre></div>
      * <p>Returns interfaces with name either "MyInterface" or "MyInterfaceProd"</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

@@ -77,9 +77,9 @@ public class DocumentResource extends RestEntityResource<ResourceDocumentMO, Doc
      * <p>Returns a list of resource documents. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/resources?uri=documentURI</div>
+     * <div class="code indent"><pre>/restman/1.0/resources?uri=documentURI</pre></div>
      * <p>Returns resource document with uri "documentURI".</p>
-     * <div class="code indent">/restman/1.0/resources?type=xmlschema</div>
+     * <div class="code indent"><pre>/restman/1.0/resources?type=xmlschema</pre></div>
      * <p>Returns resource documents of xmlschema type</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

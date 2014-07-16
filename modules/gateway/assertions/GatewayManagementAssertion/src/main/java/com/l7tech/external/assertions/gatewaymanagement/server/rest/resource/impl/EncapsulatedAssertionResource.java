@@ -76,7 +76,7 @@ public class EncapsulatedAssertionResource extends DependentRestEntityResource<E
      * <p>Returns a list of encapsulated assertions. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/activeConnectors?name=MyEncass</div>
+     * <div class="code indent"><pre>/restman/1.0/activeConnectors?name=MyEncass</pre></div>
      * <p>Returns encapsulated assertion with name "MyEncass".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

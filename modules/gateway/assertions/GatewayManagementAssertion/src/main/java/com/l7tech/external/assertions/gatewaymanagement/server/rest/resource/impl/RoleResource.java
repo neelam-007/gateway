@@ -89,7 +89,7 @@ public class RoleResource extends RestEntityResource<RbacRoleMO, RoleAPIResource
      * <p>Returns a list of roles. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/roles?name=MyRole</div>
+     * <div class="code indent"><pre>/restman/1.0/roles?name=MyRole</pre></div>
      * <p>Returns role with name "MyRole".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

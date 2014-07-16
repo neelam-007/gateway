@@ -104,9 +104,9 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * <p>Returns a list of identity providers. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/identityProviders?name=MyIDProvider</div>
+     * <div class="code indent"><pre>/restman/1.0/identityProviders?name=MyIDProvider</pre></div>
      * <p>Returns identity provider with name "MyIDProvider".</p>
-     * <div class="code indent">/restman/1.0/identityProviders?type=LDAP</div>
+     * <div class="code indent"><pre>/restman/1.0/identityProviders?type=LDAP</pre></div>
      * <p>Returns identity providers of LDAP type</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *

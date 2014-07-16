@@ -60,10 +60,10 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      * <p>Returns a list of assertion security zones. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent">/restman/1.0/assertionSecurityZones?name=com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion</div>
+     * <div class="code indent"><pre>/restman/1.0/assertionSecurityZones?name=com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion</pre></div>
      * <p>Returns assertion security zone of the Jdbc Query Assertion. The name of the assertion security zone is the
      * fully qualified name of the assertion.</p>
-     * <div class="code indent">/restman/1.0/assertionSecurityZones?securityZone.id=0e028eafc5c66c3af755a2e470734948</div>
+     * <div class="code indent"><pre>/restman/1.0/assertionSecurityZones?securityZone.id=0e028eafc5c66c3af755a2e470734948</pre></div>
      * <p>Returns assertion security zones that have security zone ID "0e028eafc5c66c3af755a2e470734948"</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
