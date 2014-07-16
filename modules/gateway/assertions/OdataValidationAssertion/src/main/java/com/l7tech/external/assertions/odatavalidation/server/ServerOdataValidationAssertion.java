@@ -53,42 +53,42 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         switch (requestMethod) {
             case GET:
                 if (!assertion.isReadOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             case POST:
                 if (!assertion.isCreateOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             case PUT:
                 if (!assertion.isUpdateOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             case MERGE:
                 if (!assertion.isMergeOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             case PATCH:
                 if (!assertion.isPartialUpdateOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             case DELETE:
                 if (!assertion.isDeleteOperation()) {
-                    return AssertionStatus.UNAUTHORIZED;
+                    return AssertionStatus.FALSIFIED;
                 }
                 break;
 
             default:
-                return AssertionStatus.UNAUTHORIZED;
+                return AssertionStatus.FALSIFIED;
         }
 
         //get context variable prefix
@@ -122,7 +122,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             metadataEdm = EntityProvider.readMetadata(metadataStream, false);
         } catch (EntityProviderException e) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD,
-                    new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
@@ -145,14 +145,17 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
         // Check Permitted Actions
         if (odataRequestInfo.isMetadataRequest() &&
-                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)) {
+                (null == assertion.getActions() ||
+                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA))) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_SMD);
-            return AssertionStatus.UNAUTHORIZED;
+            return AssertionStatus.FALSIFIED;
         }
+
         if (odataRequestInfo.isValueRequest() &&
-                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)) {
+                (null == assertion.getActions() ||
+                !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE))) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE);
-            return AssertionStatus.UNAUTHORIZED;
+            return AssertionStatus.FALSIFIED;
         }
 
         if (assertion.isValidatePayload()) {

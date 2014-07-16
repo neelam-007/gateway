@@ -579,7 +579,7 @@ public class OdataParserTest {
     
     @Test
     public void testParsePayload_GivenEmptyPayloadWithHttpMethodGET_ParsingSucceeds() throws Exception {
-        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload expected
+        InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload expected
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories(1)/Products", "$filter=length%28Name%29%20gt%204&amp;$format=json");
 
@@ -605,7 +605,7 @@ public class OdataParserTest {
 
     @Test
     public void testParsePayload_GivenEmptyPayloadWithHttpMethodDELETE_ParsingSucceeds() throws Exception {
-        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload expected
+        InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload expected
 
         OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
 
@@ -765,7 +765,7 @@ public class OdataParserTest {
      */
     @Test
     public void testParsePayload_BatchRequest_ParsingFails() throws Exception {
-        InputStream payloadInputStream = new ByteArrayInputStream("".getBytes()); // empty payload is fine - it should not be touched anyway
+        InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload is fine - it should not be touched anyway
 
         OdataRequestInfo requestInfo = parser.parseRequest("/$batch", "");
 

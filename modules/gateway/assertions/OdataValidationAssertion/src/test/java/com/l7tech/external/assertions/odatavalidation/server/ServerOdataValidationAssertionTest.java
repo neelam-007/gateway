@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.EnumSet;
 
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
@@ -336,7 +337,38 @@ public class ServerOdataValidationAssertionTest {
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("odata.query.pathsegments"));
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(false, false);
+        checkAuditPresence(false, false, false, false);
+    }
+
+    /**
+     * A valid Service Metadata Document, no constraints violated, assertion should pass.
+     */
+    @Test
+    public void doCheckRequest_Request$MetadataNotAllowed_AssertionFalsified() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setActions(EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class));
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/$metadata",
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/$metadata");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+
+        // expect the entry name length violation to be audited
+        checkAuditPresence(false, false, true, false);
     }
 
     @Test
@@ -370,7 +402,7 @@ public class ServerOdataValidationAssertionTest {
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("o.query.pathsegments"));
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(false, false);
+        checkAuditPresence(false, false, false, false);
     }
 
     @Test
@@ -423,13 +455,14 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(true, false);
+        checkAuditPresence(true, false, false, false);
     }
 
     /**
      * Checks presence or absence of audits to confirm the expected audits are present/not present.
      */
-    private void checkAuditPresence(boolean invalidServiceMetadataDocument, boolean invalidRequestUri) {
+    private void checkAuditPresence(boolean invalidServiceMetadataDocument, boolean invalidRequestUri,
+                                    boolean metadataRequestBlocked, boolean rawValueRequestBlocked) {
         assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_SMD.getMessage(),
                 invalidServiceMetadataDocument,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_SMD));
@@ -437,6 +470,15 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_URI.getMessage(),
                 invalidRequestUri,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_URI));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_SMD.getMessage(),
+                metadataRequestBlocked,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_SMD));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE.getMessage(),
+                rawValueRequestBlocked,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE));
+
     }
 
     private ServerOdataValidationAssertion createServer(OdataValidationAssertion assertion) {
