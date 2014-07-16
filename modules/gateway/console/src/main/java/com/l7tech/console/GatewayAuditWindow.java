@@ -87,7 +87,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         super(WINDOW_TITLE);
         startConnected = connected;
         ImageIcon imageIcon =
-          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         setIconImage(imageIcon.getImage());
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());

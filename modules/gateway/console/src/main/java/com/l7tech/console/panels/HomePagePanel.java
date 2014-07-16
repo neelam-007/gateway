@@ -57,7 +57,7 @@ public class HomePagePanel extends JPanel {
         pageBanner = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/PageBanner.png"));
         ImageIcon welcomeText = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/WelcomeText.png"));
         ImageIcon tasksBanner = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/TasksBanner.png"));
-        ImageIcon logoSmall = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/LOGOsmall.png"));
+        ImageIcon logoSmall = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/CA_Logo_RGB_72x64.png"));
 
         topTopLabel.setText("");
         topTopLabel.setIcon(pageBanner);

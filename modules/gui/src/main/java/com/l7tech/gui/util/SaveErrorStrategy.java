@@ -48,7 +48,15 @@ public abstract class SaveErrorStrategy {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd 'at' HH:mm:ss z");
 
         sb.append(MessageFormat.format(resources.getString("date.time"), dateFormat.format(new Date())));
-        sb.append(MessageFormat.format(resources.getString("build.info"), BuildInfo.getLongBuildString()));
+
+        String buildInfo = BuildInfo.getLongBuildString();
+        // Tentatively add an if-statement to change the product name to "CA API Gateway" for Gateway Re-branding Phase 1 (Bug SSM-4601).
+        // In future phase, the if-statement should be removed after the field "productName" is changed in BuildInfo.
+        if (buildInfo.startsWith(BuildInfo.getProductName())) {
+            buildInfo = buildInfo.replace(BuildInfo.getProductName(), "CA API Gateway");
+        }
+        sb.append(MessageFormat.format(resources.getString("build.info"), buildInfo));
+
         sb.append(MessageFormat.format( resources.getString( "system.properties" ),
                 SyspropUtil.getProperty( propertyKeys[0] ),
                 SyspropUtil.getProperty( propertyKeys[1] ),
@@ -81,7 +89,7 @@ public abstract class SaveErrorStrategy {
 
     public String getSuggestedFileName() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        return "SecureSpanManager_Error_Report_" + sdf.format(new Date()) + ".txt";
+        return "CA_API_Gateway_Policy_Manager_Error_Report_" + sdf.format(new Date()) + ".txt";
     }
 
     public static class UnableToSaveException extends Exception {

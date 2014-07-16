@@ -68,7 +68,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
         setContentPane(contentPane);
 
         ImageIcon imageIcon =
-          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         setIconImage(imageIcon.getImage());
 
         getRootPane().setDefaultButton(closeButton);

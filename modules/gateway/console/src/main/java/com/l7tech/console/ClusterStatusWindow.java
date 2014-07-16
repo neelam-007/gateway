@@ -100,8 +100,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
      */
     public ClusterStatusWindow(final String title) {
         super(title);
-        ImageIcon imageIcon =
-          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         setIconImage(imageIcon.getImage());
         setBounds(0, 0, 850, 600);
         setJMenuBar(getClusterWindowMenuBar());

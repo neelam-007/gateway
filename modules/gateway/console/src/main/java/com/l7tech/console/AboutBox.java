@@ -23,7 +23,7 @@ import java.util.Properties;
  * @version 1.2
  */
 public class AboutBox extends JDialog implements ActionListener {
-    private static final String LOGO_IMAGE = "splash-screen.png";
+    private static final String LOGO_IMAGE = "CA_Logo_Grey_523x434.png";
     /* this class classloader */
     private final ClassLoader cl = AboutBox.class.getClassLoader();
 
@@ -31,7 +31,7 @@ public class AboutBox extends JDialog implements ActionListener {
     JLabel logoLabel =
       new JLabel(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/" + LOGO_IMAGE)), JLabel.CENTER);
     JLabel resLabel = new JLabel("", JLabel.CENTER);
-    JLabel urlLabel = new JLabel("http://www.layer7tech.com", JLabel.CENTER);
+    JLabel urlLabel = new JLabel("http://www.ca.com", JLabel.CENTER);
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "Policy Manager";
@@ -42,18 +42,18 @@ public class AboutBox extends JDialog implements ActionListener {
       JTable(new MapBackedTableModel("Property Name", "Value", new TreeMap(getWhiteListedProperties())));
 
     private static String[] whitelistPropNames = {
-            "com.l7tech.builddate",
-            "com.l7tech.buildstring",
-            "file.encoding",
-            "inactivity.timeout",
-            "java.vendor",
-            "os.name",
-            "java.runtime.version",
-            "java.version",
-            "user.timezone",
-            "service.url",
-            "os.version",
-            "java.vm.version",
+        "com.l7tech.builddate",
+        "com.l7tech.buildstring",
+        "file.encoding",
+        "inactivity.timeout",
+        "java.vendor",
+        "os.name",
+        "java.runtime.version",
+        "java.version",
+        "user.timezone",
+        "service.url",
+        "os.version",
+        "java.vm.version",
     };
 
     private Properties getWhiteListedProperties() {
@@ -62,6 +62,12 @@ public class AboutBox extends JDialog implements ActionListener {
             String whitelistPropName = whitelistPropNames[i];
             String prop = SyspropUtil.getProperty(whitelistPropName);
             if (prop != null) {
+                // Tentatively add an if-statement to change the product name to "CA API Gateway" for Gateway Re-branding Phase 1 (Bug SSM-4601).
+                // In future phase, the if-statement should be removed after the field "productName" is changed in BuildInfo.
+                if (prop.startsWith(BuildInfo.getProductName())) {
+                    prop = prop.replace(BuildInfo.getProductName(), "CA API Gateway");
+                }
+
                 whitelist.setProperty(whitelistPropName, prop);
             }
         }

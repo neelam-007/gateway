@@ -34,7 +34,7 @@ public class CancelableOperationDialog extends JDialog {
         this.messageLabel.setText(message);
         this.progressBar = progressBar;
         if ( owner==null ) {
-            ImageIcon imageIcon = new ImageIcon( ImageCache.getInstance().getIcon("com/l7tech/console/resources/layer7_logo_small_32x32.png"));
+            ImageIcon imageIcon = new ImageIcon( ImageCache.getInstance().getIcon("com/l7tech/console/resources/CA_Logo_Black_16x16.png"));
             setIconImage(imageIcon.getImage());
         }
     }

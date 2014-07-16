@@ -59,7 +59,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     public DashboardWindow() throws HeadlessException {
         super(_windowResources.getString("window.title"));
 
-        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         setIconImage(imageIcon.getImage());
 
         initMenuBar();

@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class PolicyStepDebugDialog extends JFrame {
     protected static final Logger logger = Logger.getLogger(PolicyStepDebugDialog.class.getName());
 
-    private static final ImageIcon DIALOG_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/layer7_logo_small_32x32.png"));
+    private static final ImageIcon DIALOG_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CA_Logo_Black_16x16.png"));
     private static final ImageIcon POLICY_RESULT_ERROR_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Alert16x16.gif"));
     private static final long MAX_WAIT_TIME_MILLIS = 30000L;
     private static final long REFRESH_TIMER_MILLIS = 1L;

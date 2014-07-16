@@ -82,7 +82,7 @@ public class OAuthInstallerTaskDialog extends BundleInstallerDialog {
     protected void initializeExtraPanel(final BundleInfo bundleInfo, final JPanel extraPanel) {
         if (OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID.equals(bundleInfo.getId())) {
             extraPanel.setLayout(new BoxLayout(extraPanel, BoxLayout.X_AXIS));
-            JCheckBox integrateCheckBox = new JCheckBox("Integrate with the Layer 7 API Portal");
+            JCheckBox integrateCheckBox = new JCheckBox("Integrate with the CA API Portal");
             integrateCheckBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {

@@ -30,7 +30,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
 
     public static final String DEFAULT_HOST = "mail";
     public static final int DEFAULT_PORT = 25;
-    public static final String DEFAULT_SUBJECT = "Layer 7 Gateway Email Alert";
+    public static final String DEFAULT_SUBJECT = "CA API Gateway Email Alert";
     public static final String DEFAULT_MESSAGE = "This is an alert message from a Layer 7 Gateway.";
     public static final String DEFAULT_FROM = "L7SSG@NOMAILBOX";
 

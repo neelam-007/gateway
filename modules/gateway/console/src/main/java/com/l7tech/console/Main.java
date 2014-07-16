@@ -47,7 +47,7 @@ public class Main {
     public void run() {
         try {
             setInitialEnvironment();
-            final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.png");
+            final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/CA_Policy_Manager_Splash.jpg");
             try {
                 screen.splash();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");

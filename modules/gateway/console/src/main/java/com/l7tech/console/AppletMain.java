@@ -390,7 +390,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     @Override
     public String getAppletInfo() {
         return "Title: Policy Manager Applet \n"
-            + "Author: Layer 7 Technologies \n"
+            + "Author: CA Technologies \n"
             + "Applet version of Policy Manager.";
     }
 
@@ -442,7 +442,7 @@ public class AppletMain extends JApplet implements SheetHolder {
                 }
 
                 getContentPane().removeAll();
-                JLabel errorLabel = new JLabel("Layer 7 Technologies - Policy Manager (Error; Reload to restart)");
+                JLabel errorLabel = new JLabel("CA API Gateway - Policy Manager (Error; Reload to restart)");
                 errorLabel.setVerticalAlignment(JLabel.CENTER);
                 getContentPane().add(errorLabel, BorderLayout.CENTER);
                 validate();

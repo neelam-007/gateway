@@ -19,7 +19,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  */
 public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     public static final int DEFAULT_PORT = 162;
-    public static final String DEFAULT_ERROR_MESSAGE = "Layer 7 Gateway SNMP Trap";
+    public static final String DEFAULT_ERROR_MESSAGE = "CA API Gateway SNMP Trap";
 
     private String targetHostname = "";
     private int targetPort = DEFAULT_PORT;

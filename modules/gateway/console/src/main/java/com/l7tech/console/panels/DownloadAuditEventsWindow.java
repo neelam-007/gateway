@@ -123,7 +123,7 @@ public class DownloadAuditEventsWindow extends JFrame {
     private DownloadAuditEventsWindow() {
         super(WINDOW_TITLE_BASE);
 
-        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
         setIconImage(imageIcon.getImage());
 
         final ActionListener l = new ActionListener() {

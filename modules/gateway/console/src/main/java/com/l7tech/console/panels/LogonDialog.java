@@ -173,7 +173,7 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(10, 10, 10, 10);
         contents.add(dialogTitleLabel, constraints);
 
-        Image icon = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        Image icon = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_RGB_72x64.png");
         if (icon != null) {
             ImageIcon imageIcon = new ImageIcon(icon);
             constraints = new GridBagConstraints();

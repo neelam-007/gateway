@@ -75,7 +75,7 @@ public class ManagerAppletFilter implements Filter {
     private static final Map<String,String[]> RESOURCES = Collections.unmodifiableMap( new HashMap<String,String[]>(){
         {
             put( "/ssg/webadmin/favicon.ico", new String[]{"/com/l7tech/server/resources/favicon.ico", "image/png"} );
-            put( "/ssg/webadmin/layer7_logo_small_32x32.png", new String[]{"/com/l7tech/server/resources/layer7_logo_small_32x32.png", "image/png"} );
+            put( "/ssg/webadmin/CA_Logo_Black_16x16.png", new String[]{"/com/l7tech/server/resources/CA_Logo_Black_16x16.png", "image/png"} );
          }
     } );
 

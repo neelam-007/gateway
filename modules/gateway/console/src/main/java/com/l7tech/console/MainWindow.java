@@ -3448,7 +3448,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @throws RuntimeException if the icon resource can't be found
      */
     public static Image getSmallLogoImage() {
-        String path = RESOURCE_PATH + "/layer7_logo_small_32x32.png";
+        String path = RESOURCE_PATH + "/CA_Logo_Black_16x16.png";
         Image icon = ImageCache.getInstance().getIcon(path);
         if (icon == null) throw new RuntimeException("Missing resource: " + path);
         return icon;
