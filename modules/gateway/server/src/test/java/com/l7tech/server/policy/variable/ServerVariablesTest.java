@@ -1011,9 +1011,14 @@ public class ServerVariablesTest {
     @Test
     public void testExpandPasswordOnlyVariable() throws Exception {
         final Audit audit = new LoggingAudit(logger);
-        ServerVariables.setSecurePasswordManager(null);
-        assertEquals("valid secpass reference shall expand to itself if no SecurePasswordManager is available", "${secpass.test1.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
 
+        try {
+            ServerVariables.setSecurePasswordManager( null );
+            ServerVariables.expandPasswordOnlyVariable( audit, "${secpass.test1.plaintext}" );
+            fail( "valid secpass references should hard fail if no secure password manager initialized" );
+        } catch ( IllegalStateException e ) {
+            // Ok
+        }
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
                 new SecurePassword("test1") {
@@ -1068,9 +1073,14 @@ public class ServerVariablesTest {
     @Test
     public void testExpandSinglePasswordOnlyVariable() throws Exception {
         final Audit audit = new LoggingAudit(logger);
-        ServerVariables.setSecurePasswordManager(null);
-        assertEquals("valid secpass reference shall expand to itself if no SecurePasswordManager is available", "${secpass.test1.plaintext}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
 
+        try {
+            ServerVariables.setSecurePasswordManager( null );
+            ServerVariables.expandPasswordOnlyVariable( audit, "${secpass.test1.plaintext}" );
+            fail( "valid secpass references should hard fail if no secure password manager initialized" );
+        } catch ( IllegalStateException e ) {
+            // Ok
+        }
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
                 new SecurePassword("test1") {

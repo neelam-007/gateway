@@ -1278,9 +1278,8 @@ public class ServerVariables {
                 return template;
 
             if (securePasswordManager == null) {
-                // Probably running test code or something
-                audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
-                return template;
+                // Test code may hit this, but this hard check is needed to prevent startup ordering problems from blowing up in production (SSG-8433)
+                throw new IllegalStateException( "Password-only context variable expression cannot be expanded because a secure password manager is not available; failing" );
             }
 
             // Build variable map, permitting only secpass refs
@@ -1357,9 +1356,8 @@ public class ServerVariables {
         }
 
         if (securePasswordManager == null) {
-            // Probably running test code or something
-            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
-            return passwordOrSecPass;
+            // Test code may hit this, but this hard check is needed to prevent startup ordering problems from blowing up in production (SSG-8433)
+            throw new IllegalStateException( "Password-only context variable expression cannot be expanded because a secure password manager is not available; failing" );
         }
 
         String alias = matcher.group(1);
@@ -1392,9 +1390,8 @@ public class ServerVariables {
 
 
         if (securePasswordManager == null) {
-            // Probably running test code or something
-            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
-            return null;
+            // Test code may hit this, but this hard check is needed to prevent startup ordering problems from blowing up in production (SSG-8433)
+            throw new IllegalStateException( "Password-only context variable expression cannot be expanded because a secure password manager is not available; failing" );
         }
 
         SecurePassword secpass = securePasswordManager.findByPrimaryKey(goid);
