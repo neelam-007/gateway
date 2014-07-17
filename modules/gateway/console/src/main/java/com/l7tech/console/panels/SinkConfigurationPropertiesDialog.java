@@ -316,6 +316,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             @Override
             protected void run() {
                 enableDisableMain();
+                inputValidator.validate();
             }
         } );
 
@@ -323,6 +324,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 addFilter();
+                inputValidator.validate();
             }
         }));
 
@@ -334,6 +336,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                         filterList.remove(sel);
                     filtersList.setModel( Utilities.listModel( filterList ) );
                     disableTabsForSSPC();
+                    inputValidator.validate();
                 }
             }
         }));
@@ -352,6 +355,20 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                 return null;
             }
         });
+        //Category filter must be selected
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            public String getValidationError() {
+                boolean found = false;
+                for(FilterInfo fi : filterList){
+                    if(fi.filterTypeId.equals("category")){
+                        found = true;
+                        break;
+                    }
+                }
+                return found ? null : resources.getString("baseSettings.categories.filters.errors.empty");
+            }
+        });
+
         inputValidator.validateWhenDocumentChanges( nameField );
 
         // Description field must not be longer than 1000 characters
