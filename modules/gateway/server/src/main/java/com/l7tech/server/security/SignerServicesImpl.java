@@ -57,7 +57,7 @@ public class SignerServicesImpl implements SignerServices {
             try {
                 ssgKeyEntry = defaultKey.getSslInfo();
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to find Gateway's default SSL key: " + ExceptionUtils.getMessage(e), e);
+                logger.log(Level.WARNING, "Unable to find Gateway's default SSL key: " + ExceptionUtils.getMessage(e));
                 ssgKeyEntry = null;
             }
         } else {
@@ -74,22 +74,27 @@ public class SignerServicesImpl implements SignerServices {
                 try {
                     ssgKeyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, Goid.DEFAULT_GOID);
                 } catch (FindException | KeyStoreException e) {
-                    logger.log(Level.WARNING, "Unable to find Gateway private key: " + ExceptionUtils.getMessage(e), e);
+                    logger.log(Level.WARNING, "Unable to find Gateway private key: " + ExceptionUtils.getMessage(e));
                     ssgKeyEntry = null;
                 }
             } else {
-                Goid keystoreGoid = Goid.parseGoid(keystoreId);
                 // Search in specified keystore.
                 //
                 try {
+                    Goid keystoreGoid = Goid.parseGoid(keystoreId);
+                    boolean matchingKeystoreFound = false;
                     for (SsgKeyFinder ssgKeyFinder : ssgKeyStoreManager.findAll()) {
                         if (keystoreGoid.equals(ssgKeyFinder.getKeyStore().getGoid())) {
+                            matchingKeystoreFound = true;
                             ssgKeyEntry = ssgKeyFinder.getCertificateChain(keyAlias);
                             break;
                         }
                     }
+                    if (!matchingKeystoreFound) {
+                        logger.log(Level.WARNING, "Unable to find Gateway private key: keystore with id " + keystoreId + " not found.");
+                    }
                 } catch (FindException | KeyStoreException e) {
-                    logger.log(Level.WARNING, "Unable to find Gateway private key: " + ExceptionUtils.getMessage(e), e);
+                    logger.log(Level.WARNING, "Unable to find Gateway private key: " + ExceptionUtils.getMessage(e));
                     ssgKeyEntry = null;
                 }
             }
