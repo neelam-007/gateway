@@ -31,11 +31,10 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     public static final String QUERY_SELECT = ".query.select";
     public static final String QUERY_CUSTOMOPTIONS = ".query.customoptions";
     public static final String QUERY_PATHSEGMENTS = ".query.pathsegments";
-
     public static final String QUERY_COUNT = ".query.count";
-    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
 
-    public static enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE }
+    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
+    public enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE }
 
     private String odataMetadataSource;
     private String resourceUrl;
@@ -51,7 +50,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     private boolean mergeOperation = false;
     private boolean deleteOperation = false;
 
-
     public boolean isValidatePayload() {
         return validatePayload;
     }
@@ -59,7 +57,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     public void setValidatePayload(boolean validatePayload) {
         this.validatePayload = validatePayload;
     }
-
 
     public boolean isReadOperation() {
         return readOperation;
@@ -129,8 +126,14 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         return actions;
     }
 
+    public void setActions(EnumSet<ProtectionActions> actions) {
+        this.actions = actions;
+    }
+
     public String getVariablePrefix() {
-        return StringUtils.isBlank(variablePrefix)?DEFAULT_PREFIX:variablePrefix;
+        return StringUtils.isBlank(variablePrefix)
+                ? DEFAULT_PREFIX
+                : variablePrefix;
     }
 
     public void setVariablePrefix(String variablePrefix) {
@@ -157,8 +160,6 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
                 new VariableMetadata(getVariablePrefix() + QUERY_PATHSEGMENTS, false, true, null, false)
         );
     }
-
-    public void setActions(EnumSet<ProtectionActions> acts) { actions = acts; }
 
     //
     // Metadata

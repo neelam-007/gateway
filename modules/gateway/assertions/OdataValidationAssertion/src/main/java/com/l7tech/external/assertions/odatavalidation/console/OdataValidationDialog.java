@@ -4,19 +4,15 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.assertion.AssertionMetadata;
 import org.apache.commons.lang.BooleanUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
+import java.util.*;
+
+import static com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion.ProtectionActions;
 
 /**
  * Copyright: CA Technologies, 2014
@@ -25,10 +21,20 @@ import java.util.EnumSet;
  * @author ymoiseyenko
  */
 public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<OdataValidationAssertion> {
+    private static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection(Arrays.asList(
+            OdataValidationAssertion.QUERY_COUNT,
+            OdataValidationAssertion.QUERY_CUSTOMOPTIONS,
+            OdataValidationAssertion.QUERY_EXPAND,
+            OdataValidationAssertion.QUERY_FILTER,
+            OdataValidationAssertion.QUERY_FORMAT,
+            OdataValidationAssertion.QUERY_INLINECOUNT,
+            OdataValidationAssertion.QUERY_ORDERBY,
+            OdataValidationAssertion.QUERY_PATHSEGMENTS,
+            OdataValidationAssertion.QUERY_SELECT,
+            OdataValidationAssertion.QUERY_SKIP,
+            OdataValidationAssertion.QUERY_TOP));
 
-    private OdataValidationAssertion assertion;
     private JPanel contentPanel;
-//    private JTextField metadataSourceTextField;
     private JCheckBox metadataCheckBox;
     private JCheckBox rawValueCheckBox;
     private JCheckBox getMethodCheckBox;
@@ -38,75 +44,31 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private JCheckBox mergeMethodCheckBox;
     private JCheckBox patchMethodCheckBox;
     private TargetVariablePanel targetVariablePanel;
-    private JLabel metadataSourceLabel;
-    private JButton okButton;
-    private JButton cancelButton;
     private JTextField odataResourceUrl;
-    private JPanel xmlPanel;
     private JLabel resourceUrlLabel;
     private RSyntaxTextArea metadataSource;
     private JCheckBox validatePayload;
+    
+    private InputValidator inputValidator;
 
-    public OdataValidationDialog(final Frame parent, final OdataValidationAssertion assertion) {
-        super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
-        this.assertion = assertion;
+    public OdataValidationDialog(final Window owner, final OdataValidationAssertion assertion) {
+        super(assertion.getClass(), owner, assertion, true);
         initComponents();
     }
 
     protected void initComponents() {
         super.initComponents();
 
-        targetVariablePanel.setDefaultVariableOrPrefix("odata");
-        targetVariablePanel.setSuffixes(new ArrayList<>(Arrays.asList("one", "two", "three")));
-        setContentPane(contentPanel);
-        setModal(true);
-        getRootPane().setDefaultButton(okButton);
-        Utilities.centerOnScreen(this);
-        Utilities.setEscKeyStrokeDisposes(this);
+        targetVariablePanel.setDefaultVariableOrPrefix(OdataValidationAssertion.DEFAULT_PREFIX);
+        targetVariablePanel.setSuffixes(VARIABLE_SUFFIXES);
+        targetVariablePanel.setAcceptEmpty(false);
+        targetVariablePanel.setValueWillBeWritten(true);
 
+        metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
 
-        String firstNonWSChar = assertion.getOdataMetadataSource();
-        if ( firstNonWSChar != null ) {
-            firstNonWSChar = firstNonWSChar.trim();
-        } else {
-            firstNonWSChar = "."; //sentinel -- forces SYNTAX_STYLE_NONE
-        }
-        if ( firstNonWSChar.startsWith("<") ) {
-            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
-        } else if ( firstNonWSChar.startsWith("{") ) {
-            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
-        } else {
-            metadataSource.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
-        }
-
-        InputValidator inputValidator = new InputValidator(this,"Something - in property file");
-        // inputValidator.constrainTextFieldToBeNonEmpty("Meta data source",xmlContainer,null);
+        inputValidator = new InputValidator(this, getTitle());
+        
         inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourceUrl, null);
-
-        inputValidator.attachToButton(okButton, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doOk();
-            }
-        });
-
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doCancel();
-
-            }
-        });
-    }
-
-    private void doCancel() {
-        this.dispose();
-    }
-
-    private void doOk() {
-        getData(assertion);
-
-        this.dispose();
     }
 
     /**
@@ -117,23 +79,24 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      */
     @Override
     public void setData(OdataValidationAssertion assertion) {
-        EnumSet<OdataValidationAssertion.ProtectionActions> availableActions =
-                assertion.getActions() != null
-                        ? assertion.getActions()
-                        : EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
+        EnumSet<ProtectionActions> availableActions = assertion.getActions();
+        metadataCheckBox.setSelected(BooleanUtils.
+                toBoolean(availableActions.contains(ProtectionActions.ALLOW_METADATA)));
+        rawValueCheckBox.setSelected(BooleanUtils.
+                toBoolean(availableActions.contains(ProtectionActions.ALLOW_RAW_VALUE)));
 
         odataResourceUrl.setText(assertion.getResourceUrl());
-        metadataCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA)));
-        rawValueCheckBox.setSelected(BooleanUtils.toBoolean(availableActions.contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE)));
         getMethodCheckBox.setSelected(assertion.isReadOperation());
         postMethodCheckBox.setSelected(assertion.isCreateOperation());
         putMethodCheckBox.setSelected(assertion.isUpdateOperation());
         patchMethodCheckBox.setSelected(assertion.isPartialUpdateOperation());
         mergeMethodCheckBox.setSelected(assertion.isMergeOperation());
+        deleteMethodCheckBox.setSelected(assertion.isDeleteOperation());
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
         validatePayload.setSelected(assertion.isValidatePayload());
+
         if (assertion.getOdataMetadataSource() != null)
-          metadataSource.setText(assertion.getOdataMetadataSource());
+            metadataSource.setText(assertion.getOdataMetadataSource());
     }
 
     /**
@@ -145,13 +108,23 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      */
     @Override
     public OdataValidationAssertion getData(OdataValidationAssertion assertion) throws ValidationException {
-        // assertion.setOdataMetadataSource(metadataSourceTextField.getText());
+        final String error = inputValidator.validate();
+
+        if (null != error) {
+            throw new ValidationException(error);
+        }
+        
         assertion.setResourceUrl(odataResourceUrl.getText());
+        assertion.setVariablePrefix(targetVariablePanel.getVariable());
+        assertion.setOdataMetadataSource(metadataSource.getText());
+        assertion.setValidatePayload(validatePayload.isSelected());
+
         //set actions
-        EnumSet<OdataValidationAssertion.ProtectionActions> tempSet = EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class);
-        setAction(tempSet, metadataCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_METADATA);
-        setAction(tempSet, rawValueCheckBox, OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE);
+        EnumSet<ProtectionActions> tempSet = EnumSet.noneOf(ProtectionActions.class);
+        setAction(tempSet, metadataCheckBox, ProtectionActions.ALLOW_METADATA);
+        setAction(tempSet, rawValueCheckBox, ProtectionActions.ALLOW_RAW_VALUE);
         assertion.setActions(tempSet);
+
         //set operations
         assertion.setReadOperation(getMethodCheckBox.isSelected());
         assertion.setCreateOperation(postMethodCheckBox.isSelected());
@@ -159,15 +132,12 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         assertion.setPartialUpdateOperation(patchMethodCheckBox.isSelected());
         assertion.setMergeOperation(mergeMethodCheckBox.isSelected());
         assertion.setDeleteOperation(deleteMethodCheckBox.isSelected());
-        assertion.setVariablePrefix(targetVariablePanel.getVariable());
-        assertion.setOdataMetadataSource(metadataSource.getText());
-        assertion.setValidatePayload(validatePayload.isSelected());
-        setConfirmed(true);
+
         return assertion;
     }
 
-    private void setAction(EnumSet<OdataValidationAssertion.ProtectionActions> enumSet, JCheckBox control, OdataValidationAssertion.ProtectionActions action) {
-        if ( control.isSelected() ) {
+    private void setAction(EnumSet<ProtectionActions> enumSet, JCheckBox control, ProtectionActions action) {
+        if (control.isSelected()) {
             enumSet.add(action);
         }
     }
