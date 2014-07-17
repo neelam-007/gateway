@@ -686,6 +686,42 @@ public class WorkSpacePanel extends JPanel {
         return alreadyRefreshed;
     }
 
+    /**
+     * Refresh all opened polices containing a policy fragment with a specific policy fragment GUID.
+     *
+     * @param policyFragmentGuid: the policy fragment GUId used to match the opened policy, which contains the policy fragment.
+     */
+    public void refreshPoliciesContainingIncludedFragment(String policyFragmentGuid) {
+        final Component selectedComponent = tabbedPane.getSelectedComponent();
+
+        for  (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            Component component = tabbedPane.getComponentAt(i);
+
+            if (component instanceof PolicyEditorPanel) {
+                try {
+                    String policyXml = WspWriter.getPolicyXml(((PolicyEditorPanel) component).getCurrentRoot().asAssertion());
+                    if (policyXml != null && policyXml.contains(policyFragmentGuid)) {
+                        ((PolicyEditorPanel) component).refreshPolicyEditorPanel();
+                    }
+                } catch (FindException e) {
+                    // Report error, but still continue other tabs refresh
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                        "Cannot retrieve the policy, '" + component.getName() + "'.",
+                        "Refresh Error", JOptionPane.WARNING_MESSAGE, null);
+                } catch (IOException e) {
+                    // Report error, but still continue other tabs refresh
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                        "Cannot parse the policy, '" + component.getName() + "'.",
+                        "Refresh Error", JOptionPane.WARNING_MESSAGE, null);
+                }
+            }
+        }
+
+        if (tabbedPane.getTabCount() > 0 && selectedComponent != null) {
+            tabbedPane.setSelectedComponent(selectedComponent);
+        }
+    }
+
     private Functions.UnaryVoidThrows<PolicyEditorPanel, FindException> reopenPolicyEditorPanel = new Functions.UnaryVoidThrows<PolicyEditorPanel, FindException>() {
         /**
          * Reopen a PolicyEditorPanel for a particular policy version, which may be updated by other manners (e.g., other policy managers)

@@ -8,10 +8,7 @@ import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.ImportPolicyFromUDDIWizard;
 import com.l7tech.console.panels.InformationDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
@@ -893,6 +890,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                     // Copy all policy tab properties for a new policy version
                     copyAllPolicyTabPropertiesBasedOnUI();
+
+                    // If a policy is saved and activated, then update all other opened policies containing the policy fragment.
+                    final EntityWithPolicyNode entityWithPolicyNode = PolicyEditorPanel.this.getPolicyNode();
+                    if (entityWithPolicyNode instanceof PolicyEntityNode) {
+                        try {
+                            TopComponents.getInstance().getCurrentWorkspace().refreshPoliciesContainingIncludedFragment(entityWithPolicyNode.getPolicy().getGuid());
+                        } catch (FindException e1) {
+                            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Refresh Error",
+                                "Cannot find the policy, " + entityWithPolicyNode.getName(), null);
+                        }
+                    }
                 }
             });
 
