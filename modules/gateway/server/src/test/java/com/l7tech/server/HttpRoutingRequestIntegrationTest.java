@@ -172,6 +172,32 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(routedHeaders, "connection", KEEP_ALIVE);
     }
 
+    @BugId("SSG-8918")
+    @Test
+    public void requestPassThroughHeaderRulesContainDuplicates() throws Exception {
+        // headers to pass through
+        final List<HttpPassthroughRule> rules = new ArrayList<>();
+        rules.add(new HttpPassthroughRule("foo", true, "1"));
+        rules.add(new HttpPassthroughRule("foo", true, "2"));
+
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughDuplicateHeaders");
+        routeParams.put(SERVICEURL, "/passThroughDuplicateHeaders");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(createRouteAssertion(ECHO_HEADERS_URL, false, rules))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughDuplicateHeaders"));
+        params.addExtraHeader(new GenericHttpHeader("foo", "shouldBeReplaced"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertHeaderValues(routedHeaders, "foo", "1", "2");
+    }
+
     @Test
     public void customizeRequestHostToPassThrough() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();

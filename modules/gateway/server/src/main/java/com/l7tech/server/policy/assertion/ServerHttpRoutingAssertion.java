@@ -547,7 +547,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     requestMessage,
                     routedRequestParams,
                     context,
-                    url.getHost(),
                     assertion.getRequestHeaderRules(),
                     getAudit(),
                     vars,

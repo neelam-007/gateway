@@ -39,7 +39,6 @@ public class HttpForwardingRuleEnforcer {
      * @param sourceMessage     the sourceMessage
      * @param httpRequestParams Target for HTTP headers
      * @param context           the pec
-     * @param targetDomain      name of domain used for cookie forwarding
      * @param rules             http rules dictating what headers should be forwarded and under which conditions
      * @param auditor           for runtime auditing
      * @param vars              pre-populated map of context variables (pec.getVariableMap) or null
@@ -48,7 +47,6 @@ public class HttpForwardingRuleEnforcer {
     public static void handleRequestHeaders(final Message sourceMessage,
                                             final GenericHttpRequestParams httpRequestParams,
                                             final PolicyEnforcementContext context,
-                                            final String targetDomain,
                                             final HttpPassthroughRuleSet rules,
                                             final Audit auditor,
                                             @Nullable Map<String, ?> vars,
@@ -58,22 +56,18 @@ public class HttpForwardingRuleEnforcer {
             flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
         }
 
-        // do not modify original headers knob
-        final HeadersKnob copy = copyAndFilterNonPassThroughHeaders(sourceMessage.getHeadersKnob());
-        final Set<String> ruleHeaderNames = new HashSet<>();
+        final List<String> cookieHeaders = new ArrayList<>();
         if (!rules.isForwardAll()) {
-            // set custom values
+            final Set<String> processedHeaders = new HashSet<>();
             for (int i = 0; i < rules.getRules().length; i++) {
                 final HttpPassthroughRule rule = rules.getRules()[i];
                 final String ruleName = rule.getName();
                 if (ruleName.isEmpty()) {
                     throw new IOException("HttpPassthroughRule contains an HTTP header with an empty name");
                 }
-                ruleHeaderNames.add(ruleName.toLowerCase());
                 if (rule.isUsesCustomizedValue()) {
                     // set header with custom value
                     String headerValue = rule.getCustomizeValue();
-                    // resolve context variable if applicable
                     if (varNames != null && varNames.length > 0) {
                         if (vars == null) {
                             vars = context.getVariableMap(varNames, auditor);
@@ -83,31 +77,37 @@ public class HttpForwardingRuleEnforcer {
                     if (ruleName.equalsIgnoreCase(HttpConstants.HEADER_HOST)) {
                         // use virtual host - SSG-6543
                         httpRequestParams.setVirtualHost(headerValue);
-                        copy.removeHeader(HttpConstants.HEADER_HOST, HEADER_TYPE_HTTP);
+                        httpRequestParams.removeExtraHeader(HttpConstants.HEADER_HOST);
                         logger.fine("virtual-host override set: " + headerValue);
+                    } else if (ruleName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                        cookieHeaders.addAll(CookieUtils.splitCookieHeader(headerValue));
                     } else {
-                        copy.setHeader(ruleName, headerValue, HEADER_TYPE_HTTP);
+                        writeRequestHeader(ruleName, new String[]{headerValue}, !processedHeaders.contains(ruleName.toLowerCase()), httpRequestParams);
+                    }
+                } else {
+                    final String[] headerValues = sourceMessage.getHeadersKnob().getHeaderValues(ruleName, HEADER_TYPE_HTTP, false);
+                    // use original value(s)
+                    if (ruleName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                        for (final String headerValue : headerValues) {
+                            cookieHeaders.addAll(CookieUtils.splitCookieHeader(headerValue));
+                        }
+                    } else {
+                        writeRequestHeader(ruleName, headerValues, !processedHeaders.contains(ruleName.toLowerCase()), httpRequestParams);
                     }
                 }
+                processedHeaders.add(ruleName.toLowerCase());
             }
-
-            // remove headers that are not in rules
-            for (final String headerName : copy.getHeaderNames(HEADER_TYPE_HTTP)) {
-                if (!ruleHeaderNames.contains(headerName.toLowerCase())) {
-                    copy.removeHeader(headerName, HEADER_TYPE_HTTP);
+        } else {
+            final Set<String> processedHeaders = new HashSet<>();
+            for (final String name : sourceMessage.getHeadersKnob().getHeaderNames(HEADER_TYPE_HTTP, false, false)) {
+                if (!name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
+                    writeRequestHeader(name, sourceMessage.getHeadersKnob().getHeaderValues(name, HEADER_TYPE_HTTP, false), !processedHeaders.contains(name), httpRequestParams);
+                    processedHeaders.add(name);
                 }
             }
+            cookieHeaders.addAll(sourceMessage.getHttpCookiesKnob().getCookiesAsHeaders());
         }
-
-        writeHeaders(copy, httpRequestParams, targetDomain, auditor, rules.isForwardAll() || ruleHeaderNames.contains("cookie"));
-    }
-
-    private static HeadersKnob copyAndFilterNonPassThroughHeaders(final HeadersKnob toCopy) {
-        final HeadersKnob copy = new HeadersKnobSupport();
-        for (final Header header : toCopy.getHeaders(HEADER_TYPE_HTTP, false)) {
-            copy.addHeader(header.getKey(), header.getValue(), HEADER_TYPE_HTTP, header.isPassThrough());
-        }
-        return copy;
+        setCookiesHeader(httpRequestParams, cookieHeaders, auditor);
     }
 
     private static void flushExisting( final String headerName,
@@ -294,9 +294,9 @@ public class HttpForwardingRuleEnforcer {
     /**
      * Filters gateway-specific cookies and strips out all cookie attributes except name=value.
      */
-    private static Collection<String> passableCookieHeaders(HttpCookiesKnob cookiesKnob, Audit auditor) {
+    private static Collection<String> passableCookieHeaders(Collection<String> cookieHeaders, Audit auditor) {
         final List<String> passableCookies = new ArrayList<>();
-        for (final String cookieHeader : cookiesKnob.getCookiesAsHeaders()) {
+        for (final String cookieHeader : cookieHeaders) {
             try {
                 final HttpCookie httpCookie = new HttpCookie(cookieHeader);
                 if (CookieUtils.isPassThroughCookie(httpCookie)) {
@@ -318,49 +318,26 @@ public class HttpForwardingRuleEnforcer {
         return passableCookies;
     }
 
-    /**
-     * @param headersKnob   request header source
-     * @param requestParams request header destination (existing headers may be replaced)
-     * @throws              IOException if a header with an empty name is encountered
-     */
-    private static void writeHeaders(final HeadersKnob headersKnob, final GenericHttpRequestParams requestParams, final String targetDomain, final Audit auditor, final boolean retrieveCookiesFromContext) throws IOException {
-        final List<String> processedHeaders = new ArrayList<>();
-        final HttpCookiesKnob cookiesKnob = new HttpCookiesKnobImpl(headersKnob, HttpConstants.HEADER_COOKIE);
-        boolean cookieAlreadyHandled = false;
-        for (final String name : headersKnob.getHeaderNames(HEADER_TYPE_HTTP)) {
-            if (StringUtils.isNotBlank(name)) {
-                if (name.equalsIgnoreCase(HttpConstants.HEADER_AUTHORIZATION) && requestParams.getPasswordAuthentication() != null) {
-                    logger.fine("not passing through authorization header because credentials are specified for back-end request"); // bug 10795
-                } else if (name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
-                    // special cookie handling
-                    // all cookies are processed in one go (unlike other headers)
-                    if (!cookieAlreadyHandled) {
-                        setCookiesHeader(requestParams, cookiesKnob, auditor);
-                        cookieAlreadyHandled = true;
-                    }
+    private static void writeRequestHeader(final String headerName, final String[] headerValues, final boolean replace, final GenericHttpRequestParams requestParams) throws IOException {
+        if (StringUtils.isBlank(headerName)) {
+            throw new IOException("Encountered header with an empty name");
+        }
+        if (headerName.equalsIgnoreCase(HttpConstants.HEADER_AUTHORIZATION) && requestParams.getPasswordAuthentication() != null) {
+            logger.fine("not passing through authorization header because credentials are specified for back-end request"); // bug 10795
+        } else {
+            for (int i = 0; i < headerValues.length; i++) {
+                final String value = headerValues[i];
+                if (replace && i == 0) {
+                    requestParams.replaceExtraHeader(new GenericHttpHeader(headerName, value));
                 } else {
-                    for (final String value : headersKnob.getHeaderValues(name, HEADER_TYPE_HTTP)) {
-                        if (processedHeaders.contains(name)) {
-                            requestParams.addExtraHeader(new GenericHttpHeader(name, value));
-                        } else {
-                            // only replace existing headers on request params
-                            requestParams.replaceExtraHeader(new GenericHttpHeader(name, value));
-                            processedHeaders.add(name);
-                        }
-                    }
+                    requestParams.addExtraHeader(new GenericHttpHeader(headerName, value));
                 }
-            } else {
-                throw new IOException("HeadersKnob contains a header with an empty name");
             }
         }
-        if (retrieveCookiesFromContext && !cookieAlreadyHandled) {
-            setCookiesHeader(requestParams, cookiesKnob, auditor);
-        }
-
     }
 
-    private static void setCookiesHeader(final GenericHttpRequestParams requestParams, final HttpCookiesKnob cookiesKnob, final Audit auditor) {
-        final Collection<String> result = passableCookieHeaders(cookiesKnob, auditor);
+    private static void setCookiesHeader(final GenericHttpRequestParams requestParams, final Collection<String> cookieHeaders, final Audit auditor) {
+        final Collection<String> result = passableCookieHeaders(cookieHeaders, auditor);
         if (!result.isEmpty()) {
             final String joined = StringUtils.join(result, "; ");
             requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, joined));
