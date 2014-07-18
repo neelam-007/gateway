@@ -169,7 +169,8 @@ public class PolicyHelper {
 
                 for ( final Policy includedPolicy : result.policyFragments.values() ) {
                     if ( referenceFinder.policyManager.findByGuid( includedPolicy.getGuid() ) == null ) {
-                        if ( includedPolicy.getType() != PolicyType.INCLUDE_FRAGMENT ) {
+                        if ( includedPolicy.getType() != PolicyType.INCLUDE_FRAGMENT  &&
+                             includedPolicy.getType() != PolicyType.INTERNAL) {
                             throw new ResourceFactory.ResourceAccessException("Policy include fragment is not of expected type.");
                         }
                         includedPolicy.setGoid( Policy.DEFAULT_GOID );
