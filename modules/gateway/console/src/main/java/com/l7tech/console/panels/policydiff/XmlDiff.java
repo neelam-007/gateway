@@ -68,7 +68,7 @@ public class XmlDiff {
         int maxDepth = SyspropUtil.getInteger(SYSTEM_PROPERTY_MAX_SEARCH_DEPTH, DEFAULT_MAX_SEARCH_DEPTH);
         while ((line1 = br.readLine()) != null) {
 
-            // Find one fully matched line ignoring preceding and trailing whitespace.
+            // Find a fully matched line (not ignoring preceding and trailing whitespace) or a partial match
             idxMatched = -1;
             onePartialMatch = null;
             for (int idx = index2, depth =0; idx < xml2LineVector.size() && depth < maxDepth; idx++, depth++) {
@@ -131,10 +131,8 @@ public class XmlDiff {
         br.close();
 
         // Check if xml2 has some lines left.  If so, add empty strings into xml1 result
-        final int xml1ListSize = leftXmlLineDiffResults.size();
-        final int xml2ListSize = xml2LineVector.size();
-        if (xml1ListSize < xml2ListSize) {
-            for (int i = xml1ListSize; i < xml2ListSize; i++) {
+        if (index2 < xml2LineVector.size()) {
+            for (int i = index2; i < xml2LineVector.size(); i++) {
                 leftXmlLineDiffResults.add(null);
                 rightXmlLineDiffResults.add(new LineDiffResult(i + 1, DiffType.INSERTED, xml2LineVector.get(i)));
                 index2++;
