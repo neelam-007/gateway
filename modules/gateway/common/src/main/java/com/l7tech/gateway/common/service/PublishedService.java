@@ -191,9 +191,10 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
     }
 
     private static SoapVersion guessSoapVersionFromWsdl(Wsdl wsdl) {
- 	    SoapVersion ret = SoapVersion.UNKNOWN;
         if (wsdl == null)
-            return ret;
+            return SoapVersion.UNKNOWN;
+
+        Set<SoapVersion> versions = EnumSet.noneOf( SoapVersion.class );
 
         for(BindingOperation bindingOperation : wsdl.getBindingOperations()) {
 
@@ -202,17 +203,20 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
             while ( eels.hasNext() ) {
                 ee = (ExtensibilityElement)eels.next();
                 if ( ee instanceof SOAPOperation) {
-                    ret = SoapVersion.SOAP_1_1;
-                    break;
+                    versions.add( SoapVersion.SOAP_1_1 );
                 } else if( ee instanceof SOAP12Operation) {
-                    ret = SoapVersion.SOAP_1_2;
+                    versions.add( SoapVersion.SOAP_1_2 );
                     break;
                 }
             }
-            if(ret != SoapVersion.UNKNOWN) {
-                break;
-            }
         }
+
+        SoapVersion ret = SoapVersion.UNKNOWN;
+
+        if ( versions.size() == 1 ) {
+            ret = versions.iterator().next();
+        }
+
         return ret;
     }
 
