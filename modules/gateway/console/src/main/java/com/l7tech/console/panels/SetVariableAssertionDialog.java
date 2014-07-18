@@ -580,7 +580,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
             if(Syntax.isAnyVariableReferenced(text)){
                 _expressionStatusLabel.setIcon(OK_ICON);
-                _expressionStatusLabel.setText("OK");
+                _expressionStatusTextArea.setText("OK");
+                _expressionStatusScrollPane.setBorder(null);
                 _okButton.setEnabled(!readOnly);
                 return;
             }
@@ -590,18 +591,21 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 if(val <= Integer.MAX_VALUE && val >= Integer.MIN_VALUE)
                 {
                     _expressionStatusLabel.setIcon(OK_ICON);
-                    _expressionStatusLabel.setText("OK");
+                    _expressionStatusTextArea.setText("OK");
+                    _expressionStatusScrollPane.setBorder(null);
                     _okButton.setEnabled(!readOnly);
                 }
                 else {
                     _expressionStatusLabel.setIcon(WARNING_ICON);
-                    _expressionStatusLabel.setText("Number out of range");
+                    _expressionStatusTextArea.setText("Number out of range");
+                    _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
                     _okButton.setEnabled(false);
                 }
             } catch (NumberFormatException e) {
                 ok = false;
                 _expressionStatusLabel.setIcon(WARNING_ICON);
-                _expressionStatusLabel.setText("Incorrect syntax");
+                _expressionStatusTextArea.setText("Incorrect syntax");
+                _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
                 _okButton.setEnabled(false);
             }
             return;
