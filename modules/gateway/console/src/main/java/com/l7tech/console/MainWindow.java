@@ -3962,19 +3962,23 @@ public class MainWindow extends JFrame implements SheetHolder {
                 Registry.getDefault().getLicenseManager().setLicense(compositeLicense);
             }
 
-            // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
-            try {
-                TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-                TopComponents.getInstance().getAssertionRegistry().updateCustomAssertions();
-                TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
-                SecurityZoneUtil.flushCachedSecurityZones();
-            } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
-                    ExceptionUtils.getDebugException(e));
-            } catch (FindException e) {
-                log.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".",
-                    ExceptionUtils.getDebugException(e));
+            if (compositeLicense != null && compositeLicense.isFeatureEnabled(ConsoleLicenseManager.SERVICE_ADMIN)) {
+                // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
+                try {
+                    TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                    TopComponents.getInstance().getAssertionRegistry().updateCustomAssertions();
+                    TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
+                        ExceptionUtils.getDebugException(e));
+                } catch (FindException e) {
+                    log.log(Level.WARNING, "Unable to update encapsulated assertions: " + ExceptionUtils.getMessage(e) + ".",
+                        ExceptionUtils.getDebugException(e));
+                }
+            } else {
+                log.log(Level.INFO, "Unable to update assertions because " + ConsoleLicenseManager.SERVICE_ADMIN + " is not licensed.");
             }
+            SecurityZoneUtil.flushCachedSecurityZones();
 
             String nodeName = "";
 
