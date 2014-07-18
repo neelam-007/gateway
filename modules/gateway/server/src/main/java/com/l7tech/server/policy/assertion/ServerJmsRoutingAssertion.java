@@ -529,7 +529,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         }
                         @Override
                         public Goid getServiceGoid() {
-                            return new Goid(0,0);
+                            return null;
                         }
 
                         @Override
@@ -556,14 +556,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     responseMessage.getJmsKnob().getJmsMsgPropMap().clear();
                     responseMessage.getJmsKnob().getJmsMsgPropMap().putAll(outResJmsMsgProps);
 
-                    HeadersKnob responseMessageHeadersKnob = new HeadersKnobSupport();
+                    HeadersKnob responseMessageHeadersKnob = responseMessage.getHeadersKnob();
 
                     for (Map.Entry<String, Object> property : outResJmsMsgProps.entrySet()) {
                         responseMessageHeadersKnob.addHeader(property.getKey(),
                                 property.getValue(), HEADER_TYPE_JMS_PROPERTY);
                     }
-
-                    responseMessage.attachKnob(HeadersKnob.class, responseMessageHeadersKnob);
 
                     context.setRoutingStatus(RoutingStatus.ROUTED);
 
