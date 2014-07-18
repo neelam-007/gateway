@@ -1143,21 +1143,22 @@ public class PolicyHelper {
             }
 
             private String handleReferenceId(PolicyReferenceInstruction instruction) {
-                // map reference id if it smells like an old id
-                if(!ValidationUtils.isValidGoid(instruction.getReferenceId(),false) && ValidationUtils.isValidLong(instruction.getReferenceId(),false,Long.MIN_VALUE,Long.MAX_VALUE))
-                {
-                    if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IdProviderReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,instruction.getReferenceId()).toString();
-                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.FederatedIdProviderReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG,instruction.getReferenceId()).toString();
-                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IncludedPolicyReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.POLICY,instruction.getReferenceId()).toString();
-                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.JMSEndpointReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.JMS_ENDPOINT,instruction.getReferenceId()).toString();
-                    }else if(instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.TrustedCertReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT,instruction.getReferenceId()).toString();
-                    }else if(instruction.getReferenceType().equals("com.l7tech.external.assertions.mqnative.MqNativeExternalReference")){
-                        return GoidUpgradeMapper.mapId(EntityType.SSG_ACTIVE_CONNECTOR,instruction.getReferenceId()).toString();
+                if (ValidationUtils.isValidGoid(instruction.getReferenceId(), false)) {
+                    return instruction.getReferenceId().toLowerCase();
+                } else if (ValidationUtils.isValidLong(instruction.getReferenceId(), false, Long.MIN_VALUE, Long.MAX_VALUE)) {
+                    // map reference id if it smells like an old id
+                    if (instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IdProviderReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG, instruction.getReferenceId()).toString();
+                    } else if (instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.FederatedIdProviderReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.ID_PROVIDER_CONFIG, instruction.getReferenceId()).toString();
+                    } else if (instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.IncludedPolicyReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.POLICY, instruction.getReferenceId()).toString();
+                    } else if (instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.JMSEndpointReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.JMS_ENDPOINT, instruction.getReferenceId()).toString();
+                    } else if (instruction.getReferenceType().equals("com.l7tech.console.policy.exporter.TrustedCertReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.TRUSTED_CERT, instruction.getReferenceId()).toString();
+                    } else if (instruction.getReferenceType().equals("com.l7tech.external.assertions.mqnative.MqNativeExternalReference")) {
+                        return GoidUpgradeMapper.mapId(EntityType.SSG_ACTIVE_CONNECTOR, instruction.getReferenceId()).toString();
                     }
                 }
                 return instruction.getReferenceId();
