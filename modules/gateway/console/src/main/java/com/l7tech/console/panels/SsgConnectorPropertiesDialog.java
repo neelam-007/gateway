@@ -479,7 +479,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             public String getValidationError() {
                 String err = null;
 
-                if (extendedSupportRadioButton.isSelected() && !hardwiredServiceCheckBox.isSelected()) {
+                if (extendedSupportRadioButton.isSelected() &&
+                        (!hardwiredServiceCheckBox.isSelected() ||
+                                null == serviceNameComboBox.getSelectedPublishedService())) {
                     err = "An FTP(S) port must be directly associated with a valid published service " +
                             "to support the extended command set.";
                 }
