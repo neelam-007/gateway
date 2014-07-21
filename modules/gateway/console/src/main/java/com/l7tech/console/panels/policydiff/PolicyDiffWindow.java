@@ -10,6 +10,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -142,30 +143,39 @@ public class PolicyDiffWindow extends JFrame {
     }
 
     /**
-     * Get a proper length of displaying text.  If the given text is too long to fit the content pane, truncate the
-     * middle part of the text and replace the truncated part with "...".
+     * Generate a maximum length of displaying text.  If the width of the given text is greater than maxWidth, truncate
+     * the middle part of the text and replace the truncated part with "...".  If the width of the given text is less than
+     * maxWidth, append whitespaces at the front and the back of the given text to make its length equal to maxWidth.
      *
      * @param text: the text to be processed to get a proper length of displaying text
      * @param label: a JLabel object to hold the proper length of displaying text.
-     * @param contentPane: a content pane, where the label resides
+     * @param maxWidth: the maximum width of the display text in the label
      *
      * @return a displaying text with a proper length to fit the content pane.
      */
-    public static String getDisplayingText(String text, JLabel label, JPanel contentPane) {
-        final int maxWidth = Math.max(contentPane.getPreferredSize().width, contentPane.getSize().width) / 2 - 10;
+    public static String getDisplayingTextInFullSize(final String text, final JLabel label, final int maxWidth) {
         final FontMetrics fontMetrics = label.getFontMetrics(label.getFont());
 
-        int width = Utilities.computeStringWidth(fontMetrics, text);
+        String newText = text;
+        int width = Utilities.computeStringWidth(fontMetrics, newText);
 
-        while (width > maxWidth && text.length() > 4) {
-            if (text.length() > 13) {
-                int middleIdx = text.length() / 2;
-                text = text.substring(0, middleIdx - 5) + "..." + text.substring(middleIdx + 5);
+        if (width < maxWidth) {
+            int whitespaceWidth = Utilities.computeStringWidth(fontMetrics, " ");
+            int numOfWhitespaces = (maxWidth - width) / whitespaceWidth;
+            int numOfLeftWhitespaces = numOfWhitespaces / 2;
+            int numOfRightWhitespaces = numOfWhitespaces - numOfLeftWhitespaces;
+            newText = TextUtils.pad("", numOfLeftWhitespaces) + newText + TextUtils.pad("", numOfRightWhitespaces);
+        } else {
+            while (width > maxWidth && newText.length() > 4) {
+                if (newText.length() > 13) {
+                    int middleIdx = newText.length() / 2;
+                    newText = newText.substring(0, middleIdx - 5) + "..." + newText.substring(middleIdx + 5);
+                }
+                width = Utilities.computeStringWidth(fontMetrics, newText);
             }
-            width = Utilities.computeStringWidth(fontMetrics, text);
         }
 
-        return text;
+        return newText;
     }
 
     /**
@@ -189,8 +199,9 @@ public class PolicyDiffWindow extends JFrame {
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                leftPolicyNameLabel.setText(getDisplayingText(leftPolicyInfo.left, leftPolicyNameLabel, contentPane));
-                rightPolicyNameLabel.setText(getDisplayingText(rightPolicyInfo.left, rightPolicyNameLabel, contentPane));
+                final int width = (contentPane.getSize().width == 0? contentPane.getPreferredSize().width : contentPane.getSize().width) / 2 - 20;
+                leftPolicyNameLabel.setText(getDisplayingTextInFullSize(leftPolicyInfo.left, leftPolicyNameLabel, width));
+                rightPolicyNameLabel.setText(getDisplayingTextInFullSize(rightPolicyInfo.left, rightPolicyNameLabel, width));
             }
         });
 
@@ -237,11 +248,8 @@ public class PolicyDiffWindow extends JFrame {
         leftAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
         rightAssertionNumScrollPane.getVerticalScrollBar().setModel(rightPolicyTreeScrollPane.getVerticalScrollBar().getModel());
 
-        // Initialize the labels showing policy names
-        leftPolicyNameLabel.setText(getDisplayingText(leftPolicyInfo.left, leftPolicyNameLabel, contentPane));
+        // Set two policy name labels' tooltips
         leftPolicyNameLabel.setToolTipText(leftPolicyInfo.left);
-
-        rightPolicyNameLabel.setText(getDisplayingText(rightPolicyInfo.left, rightPolicyNameLabel, contentPane));
         rightPolicyNameLabel.setToolTipText(rightPolicyInfo.left);
 
         leftPolicyTree.setParentScrollPane(leftPolicyTreeScrollPane);

@@ -65,18 +65,17 @@ public class AssertionDiffUI {
         this.parent = parent;
 
         final String nodeNameL = DefaultAssertionPolicyNode.getNameFromMeta(nodeL.asAssertion(), true, false);
-        leftAssertionLabel.setText(getDisplayingText(nodeNameL, leftAssertionLabel, contentPane));
         leftAssertionLabel.setToolTipText(nodeNameL);
 
         final String nodeNameR = DefaultAssertionPolicyNode.getNameFromMeta(nodeR.asAssertion(), true, false);
-        rightAssertionLabel.setText(getDisplayingText(nodeNameR, rightAssertionLabel, contentPane));
         rightAssertionLabel.setToolTipText(nodeNameR);
 
         contentPane.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                leftAssertionLabel.setText(getDisplayingText(nodeNameL, leftAssertionLabel, contentPane));
-                rightAssertionLabel.setText(getDisplayingText(nodeNameR, rightAssertionLabel, contentPane));
+                final int width = (contentPane.getSize().width == 0? contentPane.getPreferredSize().width : contentPane.getSize().width) / 2 - 10;
+                leftAssertionLabel.setText(getDisplayingTextInFullSize(nodeNameL, leftAssertionLabel, width));
+                rightAssertionLabel.setText(getDisplayingTextInFullSize(nodeNameR, rightAssertionLabel, width));
             }
         });
 
