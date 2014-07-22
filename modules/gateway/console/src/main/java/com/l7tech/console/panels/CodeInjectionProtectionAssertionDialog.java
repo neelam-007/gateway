@@ -1,22 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
-import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
-import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * Properties dialog for the Code Injection Protection Assertion.
