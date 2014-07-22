@@ -93,8 +93,19 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
                             CollectionUtils.<String, Object>mapBuilder().put(DependencyAnalyzer.SearchEntityTypeOptionKey, CollectionUtils.list(EntityType.FOLDER)).map());
                     final List<Dependency> dependentObjects = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, true);
                     Collections.reverse(dependentObjects);
+                    final List<Dependency> filteredDependentObjects = Functions.grep(dependentObjects, new Functions.Unary<Boolean, Dependency>() {
+                        @Override
+                        public Boolean call(final Dependency dep) {
+                            return dep.getDependent().getDependencyType().equals(com.l7tech.search.Dependency.DependencyType.FOLDER)||
+                                   dep.getDependent().getDependencyType().equals(com.l7tech.search.Dependency.DependencyType.POLICY)||
+                                    dep.getDependent().getDependencyType().equals(com.l7tech.search.Dependency.DependencyType.POLICY_ALIAS)||
+                                    dep.getDependent().getDependencyType().equals(com.l7tech.search.Dependency.DependencyType.SERVICE)||
+                                    dep.getDependent().getDependencyType().equals(com.l7tech.search.Dependency.DependencyType.SERVICE_ALIAS);
+                        }
+                    });
 
-                    for (final Dependency dependentObject : dependentObjects) {
+
+                    for (final Dependency dependentObject : filteredDependentObjects) {
                         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                         tt.setReadOnly(false);
                         final ResourceFactory.ResourceNotFoundException exception = tt.execute(new TransactionCallback<ResourceFactory.ResourceNotFoundException>() {

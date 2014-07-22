@@ -246,12 +246,27 @@ public class FolderRestEntityResourceTest extends RestEntityTests<Folder, Folder
                 "            </l7:Resource>\n" +
                 "        </l7:Item>\n" +
                 "        <l7:Item>\n" +
+                "            <l7:Name>zone1</l7:Name>\n" +
+                "            <l7:Id>e7f96aeb531dcc79c0dfa699d71496ac</l7:Id>\n" +
+                "            <l7:Type>SECURITY_ZONE</l7:Type>\n" +
+                "            <l7:TimeStamp>2014-07-09T12:01:32.434-07:00</l7:TimeStamp>\n" +
+                "            <l7:Resource>\n" +
+                "                <l7:SecurityZone id=\"e7f96aeb531dcc79c0dfa699d71496ac\" version=\"1\">\n" +
+                "                    <l7:Name>zone1</l7:Name>\n" +
+                "                    <l7:Description>blah</l7:Description>\n" +
+                "                    <l7:PermittedEntityTypes>\n" +
+                "                        <l7:StringValue>ANY</l7:StringValue>\n" +
+                "                    </l7:PermittedEntityTypes>" +
+                "                </l7:SecurityZone>\n" +
+                "            </l7:Resource>\n" +
+                "        </l7:Item>\n" +
+                "        <l7:Item>\n" +
                 "            <l7:Name>and</l7:Name>\n" +
                 "            <l7:Id>e7f96aeb531dcc79c0dfa699d71496bd</l7:Id>\n" +
                 "            <l7:Type>FOLDER</l7:Type>\n" +
                 "            <l7:TimeStamp>2014-07-09T12:01:32.434-07:00</l7:TimeStamp>\n" +
                 "            <l7:Resource>\n" +
-                "                <l7:Folder folderId=\"e7f96aeb531dcc79c0dfa699d714967a\" id=\"e7f96aeb531dcc79c0dfa699d71496bd\" version=\"1\">\n" +
+                "                <l7:Folder folderId=\"e7f96aeb531dcc79c0dfa699d714967a\" id=\"e7f96aeb531dcc79c0dfa699d71496bd\" version=\"1\" securityZoneId=\"e7f96aeb531dcc79c0dfa699d71496ac\">\n" +
                 "                    <l7:Name>and</l7:Name>\n" +
                 "                </l7:Folder>\n" +
                 "            </l7:Resource>\n" +
@@ -383,6 +398,7 @@ public class FolderRestEntityResourceTest extends RestEntityTests<Folder, Folder
                 "        </l7:Properties>\n" +
                 "    </l7:Mapping>\n" +
                 "    <l7:Mapping action=\"NewOrExisting\" srcId=\"e7f96aeb531dcc79c0dfa699d714967a\" srcUri=\"http://ssg82spp.ca.com:8080/restman/1.0/folders/e7f96aeb531dcc79c0dfa699d714967a\" type=\"FOLDER\"/>\n" +
+                "    <l7:Mapping action=\"NewOrExisting\" srcId=\"e7f96aeb531dcc79c0dfa699d71496ac\" srcUri=\"http://ssg82spp.ca.com:8080/restman/1.0/securityZones/e7f96aeb531dcc79c0dfa699d71496ac\" type=\"SECURITY_ZONE\"/>\n" +
                 "    <l7:Mapping action=\"NewOrExisting\" srcId=\"e7f96aeb531dcc79c0dfa699d71496bd\" srcUri=\"http://ssg82spp.ca.com:8080/restman/1.0/folders/e7f96aeb531dcc79c0dfa699d71496bd\" type=\"FOLDER\"/>\n" +
                 "    <l7:Mapping action=\"NewOrExisting\" srcId=\"e7f96aeb531dcc79c0dfa699d71496ff\" srcUri=\"http://ssg82spp.ca.com:8080/restman/1.0/folders/e7f96aeb531dcc79c0dfa699d71496ff\" type=\"FOLDER\"/>\n" +
                 "    <l7:Mapping action=\"NewOrExisting\" srcId=\"e7f96aeb531dcc79c0dfa699d71497b2\" srcUri=\"http://ssg82spp.ca.com:8080/restman/1.0/policies/e7f96aeb531dcc79c0dfa699d71497b2\" type=\"POLICY\"/>\n" +
@@ -401,6 +417,12 @@ public class FolderRestEntityResourceTest extends RestEntityTests<Folder, Folder
 
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
         Assert.assertEquals(204, response.getStatus());
+
+        // check security zone is not deleted
+        response = processRequest("securityZones/e7f96aeb531dcc79c0dfa699d71496ac", HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals(200, response.getStatus());
+
     }
 
 }
