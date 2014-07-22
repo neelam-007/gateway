@@ -80,10 +80,13 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     @Override
     public void setData(OdataValidationAssertion assertion) {
         EnumSet<ProtectionActions> availableActions = assertion.getActions();
-        metadataCheckBox.setSelected(BooleanUtils.
-                toBoolean(availableActions.contains(ProtectionActions.ALLOW_METADATA)));
-        rawValueCheckBox.setSelected(BooleanUtils.
-                toBoolean(availableActions.contains(ProtectionActions.ALLOW_RAW_VALUE)));
+
+        if (null != assertion.getActions()) {
+            metadataCheckBox.setSelected(BooleanUtils.
+                    toBoolean(availableActions.contains(ProtectionActions.ALLOW_METADATA)));
+            rawValueCheckBox.setSelected(BooleanUtils.
+                    toBoolean(availableActions.contains(ProtectionActions.ALLOW_RAW_VALUE)));
+        }
 
         odataResourceUrl.setText(assertion.getResourceUrl());
         getMethodCheckBox.setSelected(assertion.isReadOperation());
