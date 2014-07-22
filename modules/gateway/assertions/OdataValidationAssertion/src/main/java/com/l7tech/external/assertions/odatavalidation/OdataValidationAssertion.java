@@ -176,7 +176,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "OData Validation");
+        meta.put(AssertionMetadata.SHORT_NAME, "Validate OData Request");
         meta.put(AssertionMetadata.LONG_NAME, "Validate OData request against Service Metadata Document");
 
         // Add to palette folder(s) 
@@ -190,7 +190,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME,
                 "com.l7tech.external.assertions.odatavalidation.console.OdataValidationDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "OData Validation Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "OData Request Validation Properties");
 
         // request default feature set name for our class name, since we are a known optional module, that is, we
         // want our required feature set to be "assertion:OdataValidation" rather than "set:modularAssertions"
