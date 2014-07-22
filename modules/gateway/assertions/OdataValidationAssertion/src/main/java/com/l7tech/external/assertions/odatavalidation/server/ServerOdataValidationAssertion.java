@@ -4,6 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -46,8 +47,20 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                                           final AuthenticationContext authContext) throws IOException {
         Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
 
+        if(!msg.isInitialized()) {
+            // Uninitialized target message
+            logAndAudit(AssertionMessages.MESSAGE_NOT_INITIALIZED, targetName);
+            return getBadMessageStatus();
+        }
+        //check if OData request is coming from HTTP
+        HttpServletRequestKnob httpRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
+        if(httpRequestKnob == null) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, targetName + " is not HTTP");
+            return AssertionStatus.FALSIFIED;
+        }
+
         OdataValidationAssertion.OdataOperations requestMethod =
-                OdataValidationAssertion.OdataOperations.valueOf(context.getRequest().getHttpRequestKnob().getMethodAsString());
+                OdataValidationAssertion.OdataOperations.valueOf(httpRequestKnob.getMethodAsString());
 
         // Check HTTP request method is authorized
         switch (requestMethod) {
@@ -162,10 +175,9 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
             final MimeKnob mimeKnob = msg.getKnob(MimeKnob.class);
 
-            if (mimeKnob == null || !msg.isInitialized()) {
-                // Uninitialized target message
-                logAndAudit(AssertionMessages.MESSAGE_NOT_INITIALIZED, targetName);
-                return getBadMessageStatus();
+            if (mimeKnob == null) {
+                logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD, targetName, "payload is empty");
+                return AssertionStatus.FALSIFIED;
             }
 
             //determine content type
@@ -180,7 +192,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             try {
                 //parse the payload
                 parser.parsePayload(requestMethod.toString(), odataRequestInfo, mimeKnob.getEntireMessageBodyAsInputStream(), contentType);
-            } catch (OdataParser.OdataParsingException e) {
+            } catch (OdataParser.OdataParsingException | IOException e) {
                 logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD,
                         new String[]{targetName, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FALSIFIED;

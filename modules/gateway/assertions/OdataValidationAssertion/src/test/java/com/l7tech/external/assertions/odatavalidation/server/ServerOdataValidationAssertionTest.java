@@ -11,10 +11,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.CollectionUtils;
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -337,7 +339,7 @@ public class ServerOdataValidationAssertionTest {
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("odata.query.pathsegments"));
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, false, false);
+        checkAuditPresence(false, false, false, false, false);
     }
 
     /**
@@ -368,7 +370,7 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, status);
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, true, false);
+        checkAuditPresence(false, false, true, false, false);
     }
 
     @Test
@@ -402,7 +404,7 @@ public class ServerOdataValidationAssertionTest {
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("o.query.pathsegments"));
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, false, false);
+        checkAuditPresence(false, false, false, false, false);
     }
 
     @Test
@@ -455,14 +457,53 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
 
         // expect the entry name length violation to be audited
-        checkAuditPresence(true, false, false, false);
+        checkAuditPresence(true, false, false, false, false);
+    }
+
+    @Test
+    public void doCheckRequest_sourceMessageHasNoPayloadWhenPayloadValidationRequested() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setVariablePrefix("o");
+        assertion.setMergeOperation(true);
+        assertion.setValidatePayload(true);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
+                        "MERGE", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories");
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        Assert.assertEquals(AssertionStatus.FALSIFIED, serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
+
+        checkAuditPresence(false,false,false,false,true);
+
+    }
+
+    @Test
+    public void doCheckRequest_sourceMessageIsNotHttp() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        Message request = new Message();
+        request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(new byte[0]));
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST, request);
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        Assert.assertEquals(AssertionStatus.FALSIFIED, serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
+        checkAuditPresence(false, true, false, false, false);
     }
 
     /**
      * Checks presence or absence of audits to confirm the expected audits are present/not present.
      */
     private void checkAuditPresence(boolean invalidServiceMetadataDocument, boolean invalidRequestUri,
-                                    boolean metadataRequestBlocked, boolean rawValueRequestBlocked) {
+                                    boolean metadataRequestBlocked, boolean rawValueRequestBlocked, boolean invalidPayload) {
         assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_SMD.getMessage(),
                 invalidServiceMetadataDocument,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_SMD));
@@ -478,6 +519,8 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE.getMessage(),
                 rawValueRequestBlocked,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD.getMessage(), invalidPayload, testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD));
 
     }
 
