@@ -1,4 +1,4 @@
--- Layer7 Technologies Inc.
+-- CA Technologies
 -- OTK schema version otk2.0
 --
 -- Difference between otk1.0 and otk2.0:

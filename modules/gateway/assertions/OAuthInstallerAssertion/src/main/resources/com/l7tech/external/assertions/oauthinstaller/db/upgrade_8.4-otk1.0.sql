@@ -1,7 +1,7 @@
 --
 -- Script to update mysql otk database from 8.4 (tactical version) to otk1.0
 --
--- Layer 7 Technologies, inc
+-- CA Technologies
 --
 ALTER TABLE oauth_client_key MODIFY COLUMN callback varchar(2048) NOT NULL default 'oob';
 

@@ -1,4 +1,4 @@
--- Layer7 Technologies Inc.
+-- CA Technologies.
 -- OTK schema version otk2.0
 --
 -- Upgrade OTK database schema from otk1.0 to otk2.0

@@ -1,4 +1,4 @@
--- Layer7 Technologies Inc.
+-- CA Technologies
 -- OTK schema version otk2.0 for Oracle
 --
 -- This table holds valid client application values as defined when the application was registered
