@@ -157,7 +157,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         SiteMinderCredentials siteMinderCredentials = new SiteMinderCredentials();
 
         if ( ! (sendBasic || sendCert ) ) {
-            logAndAudit(AssertionMessages.SITEMINDER_WARNING,"Neither Username and Password; or X.509 Certificate Credentials selected to be sent to SiteMinder. No credentials sent.");
+            logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Neither Username and Password; or X.509 Certificate Credentials selected to be sent to SiteMinder. No credentials sent.");
             return siteMinderCredentials;
         }
 
