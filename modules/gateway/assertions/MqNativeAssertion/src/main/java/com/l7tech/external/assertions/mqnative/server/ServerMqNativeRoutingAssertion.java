@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
+import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.headers.MQDataException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -190,37 +191,41 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         // Catcher will log/audit the stack trace
                         throw mqre.getCause() != null ? mqre.getCause() : mqre;
                     }
-                } catch (MQException e) {
-                    if ( mqrc.isMessageSentOrReceived() ) throw e;
-
-                    if(oopses==0){
-                        int attempts = connectionAttempts.incrementAndGet();
-                        iSetAConnectionAttempt = true;
-                        if(attempts>=10){
-                            //10 failed attempts made to make a connection, fail!
-                            logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", getDebugExceptionForExpectedReasonCode(e));
-                            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
-                            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
-                            return AssertionStatus.FALSIFIED;
-                        }
-                    }
-                    if (++oopses < maxOopses) {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugExceptionForExpectedReasonCode(e) );
-                        mqNativeResourceManager.invalidate( cfg );
-                        sleep( retryDelay );
+                } catch (final MQException e) {
+                    if (e.getCompCode() == MQConstants.MQCC_WARNING) {
+                        // success with warning
+                        logAndAudit(MQ_ROUTING_WARNING_STATUS, new String[]{String.valueOf(e.getReason())}, getDebugExceptionForExpectedReasonCode(e));
+                        setCodesOnContext(context, e);
+                        return AssertionStatus.NONE;
                     } else {
-                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
-                        //Create context variables for MQ exception completion and response codes here.
-                        context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
-                        context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
-                        // Catcher will log/audit the stack trace
-                        throw e;
+                        if ( mqrc.isMessageSentOrReceived() ) throw e;
+
+                        if(oopses==0){
+                            int attempts = connectionAttempts.incrementAndGet();
+                            iSetAConnectionAttempt = true;
+                            if(attempts>=10){
+                                //10 failed attempts made to make a connection, fail!
+                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", getDebugExceptionForExpectedReasonCode(e));
+                                setCodesOnContext(context, e);
+                                return AssertionStatus.FALSIFIED;
+                            }
+                        }
+                        if (++oopses < maxOopses) {
+                            logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugExceptionForExpectedReasonCode(e) );
+                            mqNativeResourceManager.invalidate( cfg );
+                            sleep( retryDelay );
+                        } else {
+                            logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
+                            //Create context variables for MQ exception completion and response codes here.
+                            setCodesOnContext(context, e);
+                            // Catcher will log/audit the stack trace
+                            throw e;
+                        }
                     }
                 }
             }
 
-            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, 0);
-            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, 0);
+            setCodesOnContext(context, 0, 0);
             return AssertionStatus.NONE;
 
         } catch ( MqNativeConfigException e ) {
@@ -235,8 +240,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
             return AssertionStatus.FAILED;
         } catch (MQException e ) {
-            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
-            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
+            setCodesOnContext(context, e);
             logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + getMessage( e )},
                     getDebugExceptionForExpectedReasonCode( e ) );
             if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
@@ -295,8 +299,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         private void doException() throws IOException, SAXException, MQException, MqNativeConfigException {
             if ( exception != null) {
                 if ( exception instanceof MQException ) {
-                    context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, ((MQException) exception).completionCode);
-                    context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, ((MQException) exception).reasonCode);
+                    setCodesOnContext(context, ((MQException) exception));
                     throw (MQException) exception;
                 } else if ( exception instanceof MqNativeConfigException ) {
                     throw (MqNativeConfigException) exception;
@@ -847,6 +850,15 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
 
         return config;
+    }
+
+    private void setCodesOnContext(final PolicyEnforcementContext context, final MQException e) {
+        setCodesOnContext(context, e.completionCode, e.reasonCode);
+    }
+
+    private void setCodesOnContext(final PolicyEnforcementContext context, final int completionCode, final int reasonCode) {
+        context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, completionCode);
+        context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, reasonCode);
     }
 
     @Override

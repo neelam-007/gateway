@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
+import com.ibm.mq.constants.MQConstants;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH;
@@ -31,6 +32,7 @@ import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.MockInjector;
+import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -665,6 +667,39 @@ public class ServerMqNativeRoutingAssertionTest {
         MqNativeKnob mqNativeKnob = context.getResponse().getKnob(MqNativeKnob.class);
         MqMessageProxy replyMessage = (MqMessageProxy) mqNativeKnob.getMessage();
         assertEquals("rfh2ReplyValue2", String.valueOf(replyMessage.getPrimaryHeaderValue("folder.rfh2ReplyField2")));
+    }
+
+    @BugId("SSG-8680")
+    @Test
+    public void mqExceptionWarningCompletionStatus() throws Exception {
+        MQMessage mqMessage = createMqMessage();
+        context = makeContext(mqMessage);
+        final MqNativeResourceManager resourceManager = MqNativeResourceManager.getInstance((Config) applicationContext.getBean("config"), new ApplicationEventProxy());
+        final MqNativeResourceManager resourceManagerSpy = spy(resourceManager);
+        doThrow(new MQException("testMessage", "testMessageId", MQConstants.MQRC_PRIORITY_EXCEEDS_MAXIMUM, MQConstants.MQCC_WARNING)).when(resourceManagerSpy).doWithMqResources(any(MqNativeEndpointConfig.class), any(MqNativeResourceManager.MqTaskCallback.class));
+        fixture.setMqNativeResourceManager(resourceManagerSpy);
+
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(context));
+        assertEquals(MQConstants.MQCC_WARNING, context.getVariable("mq.completion.code"));
+        assertEquals(MQConstants.MQRC_PRIORITY_EXCEEDS_MAXIMUM, context.getVariable("mq.reason.code"));
+        // should not retry
+        verify(resourceManagerSpy, times(1)).doWithMqResources(any(MqNativeEndpointConfig.class), any(MqNativeResourceManager.MqTaskCallback.class));
+    }
+
+    @Test
+    public void mqExceptionFailedCompletionStatus() throws Exception {
+        MQMessage mqMessage = createMqMessage();
+        context = makeContext(mqMessage);
+        final MqNativeResourceManager resourceManager = MqNativeResourceManager.getInstance((Config) applicationContext.getBean("config"), new ApplicationEventProxy());
+        final MqNativeResourceManager resourceManagerSpy = spy(resourceManager);
+        doThrow(new MQException("testMessage", "testMessageId", MQConstants.MQRC_PRIORITY_ERROR , MQConstants.MQCC_FAILED)).when(resourceManagerSpy).doWithMqResources(any(MqNativeEndpointConfig.class), any(MqNativeResourceManager.MqTaskCallback.class));
+        fixture.setMqNativeResourceManager(resourceManagerSpy);
+
+        assertEquals(AssertionStatus.SERVER_ERROR, fixture.checkRequest(context));
+        assertEquals(MQConstants.MQCC_FAILED, context.getVariable("mq.completion.code"));
+        assertEquals(MQConstants.MQRC_PRIORITY_ERROR, context.getVariable("mq.reason.code"));
+        // should have retried
+        verify(resourceManagerSpy, times(5)).doWithMqResources(any(MqNativeEndpointConfig.class), any(MqNativeResourceManager.MqTaskCallback.class));
     }
 
     private MQMessage createMqMessage() throws IOException, MQException {

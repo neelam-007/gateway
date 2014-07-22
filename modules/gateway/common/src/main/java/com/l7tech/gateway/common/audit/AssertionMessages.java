@@ -1185,6 +1185,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M MQ_ROUTING_CANT_SET_MSG_DESCRIPTOR       = m(9627, Level.WARNING, "Ignoring invalid message descriptor field: {0}");
     public static final Messages.M MQ_ROUTING_CANT_SET_MSG_PROPERTY         = m(9628, Level.WARNING, "Ignoring invalid message property field: {0}");
     public static final Messages.M MQ_ROUTING_CANT_SET_MSG_HEADER         = m(9629, Level.WARNING, "Ignoring invalid message header field: {0}");
+    public static final Messages.M MQ_ROUTING_WARNING_STATUS         = m(9630, Level.WARNING, "Routing completed with warning status. Reason code: {0}");
 
     public static final Messages.M GENERATE_HASH_VARIABLE_NOT_SET     = m(9635, Level.WARNING, "''{0}'' is not set.");
     public static final Messages.M GENERATE_HASH_UNSUPPORTED_ALGORITHM     = m(9636, Level.WARNING, "Unsupported Algorithm: ''{0}''");
