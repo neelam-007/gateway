@@ -206,7 +206,6 @@ public class PublishedService extends ZoneableNamedEntityImp implements Flushabl
                     versions.add( SoapVersion.SOAP_1_1 );
                 } else if( ee instanceof SOAP12Operation) {
                     versions.add( SoapVersion.SOAP_1_2 );
-                    break;
                 }
             }
         }

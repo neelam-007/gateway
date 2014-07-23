@@ -20,7 +20,7 @@ public class PublishedServiceTest {
     @Before
     public void setup() {
         zone = new SecurityZone();
-        zone.setName("TestZone");
+        zone.setName( "TestZone" );
         s1 = new PublishedService();
         s1.parseWsdlStrategy( wsdlStrategy );
         s2 = new PublishedService();
@@ -30,23 +30,23 @@ public class PublishedServiceTest {
     public void equalsDifferentSecurityZone() {
         s1.setSecurityZone(zone);
         s2.setSecurityZone(null);
-        assertFalse(s1.equals(s2));
-        assertFalse(s2.equals(s1));
+        assertFalse( s1.equals( s2 ) );
+        assertFalse( s2.equals( s1 ) );
     }
 
     @Test
     public void equalsSameSecurityZone() {
         s1.setSecurityZone(zone);
         s2.setSecurityZone(zone);
-        assertTrue(s1.equals(s2));
-        assertTrue(s2.equals(s1));
+        assertTrue( s1.equals( s2 ) );
+        assertTrue( s2.equals( s1 ) );
     }
 
     @Test
     public void testHashCodeDifferentSecurityZone() {
         s1.setSecurityZone(zone);
         s2.setSecurityZone(null);
-        assertFalse(s1.hashCode() == s2.hashCode());
+        assertFalse( s1.hashCode() == s2.hashCode() );
     }
 
     @Test
@@ -58,7 +58,7 @@ public class PublishedServiceTest {
 
     @Test
     public void copyConstructorSetsSecurityZone() {
-        s1.setSecurityZone(zone);
+        s1.setSecurityZone( zone );
         final PublishedService copy = new PublishedService(s1);
         assertEquals(zone, copy.getSecurityZone());
     }
@@ -131,6 +131,24 @@ public class PublishedServiceTest {
         assertEquals( SoapVersion.SOAP_1_2, s1.getSoapVersion() );
     }
 
+    @Test
+    @BugId( "SSM-4081" )
+    public void testGuessSoapVersionWsdl1() throws Exception {
+        s1.setSoapVersion( null );
+        s1.setWsdlXml( WSDL1 );
+        assertNotNull( s1.parsedWsdl() );
+        assertEquals( SoapVersion.UNKNOWN, s1.getSoapVersion() );
+    }
+
+    @Test
+    @BugId( "SSM-4081" )
+    public void testGuessSoapVersionWsdl2() throws Exception {
+        s1.setSoapVersion( null );
+        s1.setWsdlXml( WSDL2 );
+        assertNotNull( s1.parsedWsdl() );
+        assertEquals( SoapVersion.UNKNOWN, s1.getSoapVersion() );
+    }
+
     private static final String WSDL_PREFIX =
         "<definitions name=\"test\" targetNamespace=\"urn:test\"\n" +
         "    xmlns=\"http://schemas.xmlsoap.org/wsdl/\"\n" +
@@ -174,4 +192,154 @@ public class PublishedServiceTest {
                 bindingName, soapVer ) );
     }
 
+    public static final String WSDL1 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsdl:definitions xmlns:s=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" xmlns:mime=\"http://schemas.xmlsoap.org/wsdl/mime/\" xmlns:tns=\"http://www.gwsx.gov.sg/demoL1\" xmlns:s1=\"http://www.gwsx.gov.sg/gwsx/request/audit\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:tm=\"http://microsoft.com/wsdl/mime/textMatching/\" xmlns:http=\"http://schemas.xmlsoap.org/wsdl/http/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" targetNamespace=\"http://www.gwsx.gov.sg/demoL1\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\">\n" +
+                    "  <wsdl:types>\n" +
+                    "    <s:schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.gwsx.gov.sg/demoL1\">\n" +
+                    "      <s:element name=\"HelloWorld\">\n" +
+                    "        <s:complexType/>\n" +
+                    "      </s:element>\n" +
+                    "      <s:element name=\"HelloWorldResponse\">\n" +
+                    "        <s:complexType>\n" +
+                    "          <s:sequence>\n" +
+                    "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"HelloWorldResult\" type=\"s:string\"/>\n" +
+                    "          </s:sequence>\n" +
+                    "        </s:complexType>\n" +
+                    "      </s:element>\n" +
+                    "    </s:schema>\n" +
+                    "    <s:schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.gwsx.gov.sg/gwsx/request/audit\">\n" +
+                    "      <s:element name=\"GWSXHeader\" type=\"s1:GWSXClientRequestHeader\"/>\n" +
+                    "      <s:complexType name=\"GWSXClientRequestHeader\">\n" +
+                    "        <s:annotation>\n" +
+                    "          <s:appinfo>\n" +
+                    "            <keepNamespaceDeclarations>xmlns</keepNamespaceDeclarations>\n" +
+                    "          </s:appinfo>\n" +
+                    "        </s:annotation>\n" +
+                    "        <s:sequence>\n" +
+                    "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"ConsumerTxnID\" type=\"s:string\"/>\n" +
+                    "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"ConsumerApplicationID\" type=\"s:string\"/>\n" +
+                    "        </s:sequence>\n" +
+                    "        <s:anyAttribute/>\n" +
+                    "      </s:complexType>\n" +
+                    "    </s:schema>\n" +
+                    "  </wsdl:types>\n" +
+                    "  <wsdl:message name=\"HelloWorldSoapIn\">\n" +
+                    "    <wsdl:part name=\"parameters\" element=\"tns:HelloWorld\"/>\n" +
+                    "  </wsdl:message>\n" +
+                    "  <wsdl:message name=\"HelloWorldSoapOut\">\n" +
+                    "    <wsdl:part name=\"parameters\" element=\"tns:HelloWorldResponse\"/>\n" +
+                    "  </wsdl:message>\n" +
+                    "  <wsdl:message name=\"HelloWorldGWSXHeader\">\n" +
+                    "    <wsdl:part name=\"GWSXHeader\" element=\"s1:GWSXHeader\"/>\n" +
+                    "  </wsdl:message>\n" +
+                    "  <wsdl:portType name=\"GWSXDemoL1ServiceSoap\">\n" +
+                    "    <wsdl:operation name=\"HelloWorld\">\n" +
+                    "      <wsdl:input message=\"tns:HelloWorldSoapIn\"/>\n" +
+                    "      <wsdl:output message=\"tns:HelloWorldSoapOut\"/>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:portType>\n" +
+                    "  <wsdl:binding name=\"GWSXDemoL1ServiceSoap\" type=\"tns:GWSXDemoL1ServiceSoap\">\n" +
+                    "    <soap:binding transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
+                    "    <wsdl:operation name=\"HelloWorld\">\n" +
+                    "      <soap:operation soapAction=\"http://www.gwsx.gov.sg/demoL1/HelloWorld\" style=\"document\"/>\n" +
+                    "      <wsdl:input>\n" +
+                    "        <soap:body use=\"literal\"/>\n" +
+                    "        <soap:header message=\"tns:HelloWorldGWSXHeader\" part=\"GWSXHeader\" use=\"literal\"/>\n" +
+                    "      </wsdl:input>\n" +
+                    "      <wsdl:output>\n" +
+                    "        <soap:body use=\"literal\"/>\n" +
+                    "      </wsdl:output>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:binding>\n" +
+                    "  <wsdl:binding name=\"GWSXDemoL1ServiceSoap12\" type=\"tns:GWSXDemoL1ServiceSoap\">\n" +
+                    "    <soap12:binding transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
+                    "    <wsdl:operation name=\"HelloWorld\">\n" +
+                    "      <soap12:operation soapAction=\"http://www.gwsx.gov.sg/demoL1/HelloWorld\" style=\"document\"/>\n" +
+                    "      <wsdl:input>\n" +
+                    "        <soap12:body use=\"literal\"/>\n" +
+                    "        <soap12:header message=\"tns:HelloWorldGWSXHeader\" part=\"GWSXHeader\" use=\"literal\"/>\n" +
+                    "      </wsdl:input>\n" +
+                    "      <wsdl:output>\n" +
+                    "        <soap12:body use=\"literal\"/>\n" +
+                    "      </wsdl:output>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:binding>\n" +
+                    "  <wsdl:service name=\"GWSXDemoL1Service\">\n" +
+                    "    <wsdl:port name=\"GWSXDemoL1ServiceSoap\" binding=\"tns:GWSXDemoL1ServiceSoap\">\n" +
+                    "      <soap:address location=\"https://192.168.180.27/GwsxDemoProvider/GWSXDemoL1Service.asmx\"/>\n" +
+                    "    </wsdl:port>\n" +
+                    "    <wsdl:port name=\"GWSXDemoL1ServiceSoap12\" binding=\"tns:GWSXDemoL1ServiceSoap12\">\n" +
+                    "      <soap12:address location=\"https://192.168.180.27/GwsxDemoProvider/GWSXDemoL1Service.asmx\"/>\n" +
+                    "    </wsdl:port>\n" +
+                    "  </wsdl:service>\n" +
+                    "</wsdl:definitions>";
+
+
+    public static final String WSDL2 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsdl:definitions xmlns:s=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" xmlns:mime=\"http://schemas.xmlsoap.org/wsdl/mime/\" xmlns:tns=\"http://www.gwsx.gov.sg/demoL2\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:tm=\"http://microsoft.com/wsdl/mime/textMatching/\" xmlns:http=\"http://schemas.xmlsoap.org/wsdl/http/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" targetNamespace=\"http://www.gwsx.gov.sg/demoL2\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\">\n" +
+                    "  <wsdl:types>\n" +
+                    "    <s:schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.gwsx.gov.sg/demoL2\">\n" +
+                    "      <s:element name=\"EchoString\">\n" +
+                    "        <s:complexType>\n" +
+                    "          <s:sequence>\n" +
+                    "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"original\" type=\"s:string\"/>\n" +
+                    "          </s:sequence>\n" +
+                    "        </s:complexType>\n" +
+                    "      </s:element>\n" +
+                    "      <s:element name=\"EchoStringResponse\">\n" +
+                    "        <s:complexType>\n" +
+                    "          <s:sequence>\n" +
+                    "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"EchoStringResult\" type=\"s:string\"/>\n" +
+                    "          </s:sequence>\n" +
+                    "        </s:complexType>\n" +
+                    "      </s:element>\n" +
+                    "    </s:schema>\n" +
+                    "  </wsdl:types>\n" +
+                    "  <wsdl:message name=\"EchoStringSoapIn\">\n" +
+                    "    <wsdl:part name=\"parameters\" element=\"tns:EchoString\"/>\n" +
+                    "  </wsdl:message>\n" +
+                    "  <wsdl:message name=\"EchoStringSoapOut\">\n" +
+                    "    <wsdl:part name=\"parameters\" element=\"tns:EchoStringResponse\"/>\n" +
+                    "  </wsdl:message>\n" +
+                    "  <wsdl:portType name=\"GWSXDemoL2ServiceSoap\">\n" +
+                    "    <wsdl:operation name=\"EchoString\">\n" +
+                    "      <wsdl:input message=\"tns:EchoStringSoapIn\"/>\n" +
+                    "      <wsdl:output message=\"tns:EchoStringSoapOut\"/>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:portType>\n" +
+                    "  <wsdl:binding name=\"GWSXDemoL2ServiceSoap\" type=\"tns:GWSXDemoL2ServiceSoap\">\n" +
+                    "    <soap:binding transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
+                    "    <wsdl:operation name=\"EchoString\">\n" +
+                    "      <soap:operation soapAction=\"http://www.gwsx.gov.sg/demoL2/EchoString\" style=\"document\"/>\n" +
+                    "      <wsdl:input>\n" +
+                    "        <soap:body use=\"literal\"/>\n" +
+                    "      </wsdl:input>\n" +
+                    "      <wsdl:output>\n" +
+                    "        <soap:body use=\"literal\"/>\n" +
+                    "      </wsdl:output>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:binding>\n" +
+                    "  <wsdl:binding name=\"GWSXDemoL2ServiceSoap12\" type=\"tns:GWSXDemoL2ServiceSoap\">\n" +
+                    "    <soap12:binding transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
+                    "    <wsdl:operation name=\"EchoString\">\n" +
+                    "      <soap12:operation soapAction=\"http://www.gwsx.gov.sg/demoL2/EchoString\" style=\"document\"/>\n" +
+                    "      <wsdl:input>\n" +
+                    "        <soap12:body use=\"literal\"/>\n" +
+                    "      </wsdl:input>\n" +
+                    "      <wsdl:output>\n" +
+                    "        <soap12:body use=\"literal\"/>\n" +
+                    "      </wsdl:output>\n" +
+                    "    </wsdl:operation>\n" +
+                    "  </wsdl:binding>\n" +
+                    "  <wsdl:service name=\"GWSXDemoL2Service\">\n" +
+                    "    <wsdl:port name=\"GWSXDemoL2ServiceSoap\" binding=\"tns:GWSXDemoL2ServiceSoap\">\n" +
+                    "      <soap:address location=\"https://192.168.180.27/GwsxDemoProvider/GWSXDemoL2Service.asmx\"/>\n" +
+                    "    </wsdl:port>\n" +
+                    "    <wsdl:port name=\"GWSXDemoL2ServiceSoap12\" binding=\"tns:GWSXDemoL2ServiceSoap12\">\n" +
+                    "      <soap12:address location=\"https://192.168.180.27/GwsxDemoProvider/GWSXDemoL2Service.asmx\"/>\n" +
+                    "    </wsdl:port>\n" +
+                    "  </wsdl:service>\n" +
+                    "</wsdl:definitions>";
 }
