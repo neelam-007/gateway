@@ -166,7 +166,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         if (odataRequestInfo.isValueRequest() &&
                 (null == assertion.getActions() ||
                 !assertion.getActions().contains(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE))) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE);
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE, path);
             return AssertionStatus.FALSIFIED;
         }
 

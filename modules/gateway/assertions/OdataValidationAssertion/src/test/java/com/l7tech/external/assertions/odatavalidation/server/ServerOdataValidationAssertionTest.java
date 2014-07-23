@@ -375,7 +375,7 @@ public class ServerOdataValidationAssertionTest {
     }
 
     /**
-     * A valid Service Metadata Document, no constraints violated, assertion should pass.
+     * Request the Service Metadata Document when disallowed, assertion should fail.
      */
     @Test
     public void doCheckRequest_Request$MetadataNotAllowed_AssertionFalsified() throws Exception {
@@ -383,7 +383,7 @@ public class ServerOdataValidationAssertionTest {
 
         assertion.setOdataMetadataSource("${fooVar}");
         assertion.setResourceUrl("${urlResource}");
-        assertion.setActions(EnumSet.noneOf(OdataValidationAssertion.ProtectionActions.class));
+        assertion.setActions(EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_RAW_VALUE));
 
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
                 createHttpRequestMessage("http://services.odata.org/OData/OData.svc/$metadata",
@@ -403,6 +403,40 @@ public class ServerOdataValidationAssertionTest {
 
         // expect the entry name length violation to be audited
         checkAuditPresence(false, false, true, false, false, false);
+    }
+
+    /**
+     * Request a raw value when disallowed, assertion should fail.
+     */
+    @Test
+    public void doCheckRequest_Request$valueNotAllowed_AssertionFalsified() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setActions(EnumSet.of(OdataValidationAssertion.ProtectionActions.ALLOW_METADATA));
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Products(1)/Name/$value",
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Products(1)/Name/$value");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+
+        // expect the entry name length violation to be audited
+        checkAuditPresence(false, false, false, true, false, false);
+
+        // ensure the request path is included in the audit
+        assertTrue(testAudit.isAuditPresentContaining("Request for raw value attempted: /Products(1)/Name/$value"));
     }
 
     @Test
@@ -553,13 +587,13 @@ public class ServerOdataValidationAssertionTest {
                 rawValueRequestBlocked,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_REQUEST_MADE_FOR_RAW_VALUE));
 
-        assertEquals(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD.getMessage(),
-                invalidPayload,
-                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD));
-
         assertEquals(AssertionMessages.ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED.getMessage(),
                 forbiddenOperation,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD.getMessage(),
+                invalidPayload,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD));
 
     }
 
