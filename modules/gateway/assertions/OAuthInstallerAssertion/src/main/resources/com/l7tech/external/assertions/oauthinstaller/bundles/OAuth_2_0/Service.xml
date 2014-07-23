@@ -2,7 +2,7 @@
 <enumeration>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7812"
                 version="2">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7812" version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7812" version="2">
             <l7:Name>resource owner password credentials</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -606,7 +606,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a79cb"
                 version="2">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a79cb" version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a79cb" version="2">
             <l7:Name>SAML</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -1642,7 +1642,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7794"
                 version="2">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7794" version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7794" version="2">
             <l7:Name>implicit</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2186,7 +2186,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7890"
                 version="6">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7890" version="6">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7890" version="6">
             <l7:Name>authorization code</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -2920,7 +2920,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a7a0a"
                 version="2">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a7a0a" version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a7a0a" version="2">
             <l7:Name>client credentials</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
@@ -5502,7 +5502,7 @@
     </l7:Service>
     <l7:Service xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="57477c668279c3c8d34da687b89a77d3"
                 version="2">
-        <l7:ServiceDetail folderId="7864d3f60d281f929722cacc8c103cce" id="57477c668279c3c8d34da687b89a77d3" version="2">
+        <l7:ServiceDetail folderId="57477c668279c3c8d34da687b89a75e1" id="57477c668279c3c8d34da687b89a77d3" version="2">
             <l7:Name>REST STS</l7:Name>
             <l7:Enabled>true</l7:Enabled>
             <l7:ServiceMappings>
