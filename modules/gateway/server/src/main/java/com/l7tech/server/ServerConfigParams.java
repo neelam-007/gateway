@@ -206,4 +206,12 @@ public interface ServerConfigParams {
     String PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA = "throughputQuota.max_throughput_quota";
     String PARAM_IO_JMS_CONSUMER_CONNECTIONS = "ioJmsConsumerConnections";
     String PARAM_IO_HTTP_ALLOW_BACKSLASH = "io.httpAllowBackslash";
+
+    // Adding custom assertions system properties
+    String PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE = "custom.assertions.file";
+    String PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY = "custom.assertions.modules";
+    String PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY = "custom.assertions.temp";
+    String PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE = "custom.assertions.rescan.enable";
+    String PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS = "custom.assertions.rescan.millis";
+    String PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE = "custom.assertions.scan.disable";
 }

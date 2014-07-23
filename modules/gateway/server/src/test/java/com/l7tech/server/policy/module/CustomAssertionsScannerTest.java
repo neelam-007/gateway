@@ -2,7 +2,16 @@ package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.ServiceFinder;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.admin.ExtensionInterfaceManager;
+import com.l7tech.server.policy.CustomKeyValueStoreManager;
+import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.test.conditional.ConditionalIgnore;
+import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.test.conditional.RunsOnWindows;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
@@ -11,7 +20,9 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -212,10 +223,11 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         modTmpWorkFolder = getTempFolder(MODULES_WORK_TEMP_DIR_NAME);
 
         // mock config
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
-        Mockito.when(configMock.getProperty("custom.assertions.temp")).thenReturn(modTmpWorkFolder.getAbsolutePath());
-        Mockito.when(configMock.getBooleanProperty(Mockito.eq("custom.assertions.rescan.enabled"), Mockito.anyBoolean())).thenReturn(true);
-        Mockito.when(configMock.getLongProperty(Mockito.eq("custom.assertions.rescan.millis"), Mockito.anyLong())).thenReturn(1000L);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY)).thenReturn(modTmpWorkFolder.getAbsolutePath());
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE), Mockito.anyBoolean())).thenReturn(true);
+        Mockito.when(configMock.getLongProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS), Mockito.anyLong())).thenReturn(1000L);
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE), Mockito.anyBoolean())).thenReturn(false);
 
         // mock getServiceFinder
         Mockito.when(customAssertionCallbacks.getServiceFinder()).thenReturn(serviceFinder);
@@ -248,7 +260,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     @Test
     public void testFeatureDisabled() throws Exception {
         // set modules dir
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(nonDynamicModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(nonDynamicModulesEmptyDir);
 
         // enable scanning
         Mockito.doReturn(true).when(modulesConfig).isScanningEnabled();
@@ -266,7 +278,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
     @Test
     public void testScanningDisabled() throws Exception {
         // set modules dir
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(nonDynamicModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(nonDynamicModulesEmptyDir);
 
         // enable feature
         Mockito.doReturn(true).when(modulesConfig).isFeatureEnabled();
@@ -276,14 +288,88 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
-        Assert.assertFalse("feature disabled, should return false", changesMade);
+        Assert.assertFalse("scanning disabled, should return false", changesMade);
 
         verifyLoadedModules(0, 0);
     }
 
     @Test
+    @ConditionalIgnore(condition = IgnoreOnDaily.class)
+    public void testHotSwapDisabled() throws Exception {
+        // disable hot-swap
+        Mockito.doReturn(false).when(modulesConfig).isHotSwapEnabled();
+        // enable scanning
+        Mockito.doReturn(true).when(modulesConfig).isScanningEnabled();
+        // set scanning interval to each second
+        Mockito.doReturn(1000L).when(modulesConfig).getRescanPeriodMillis();
+        // create a temporary modules folder for this test
+        Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
+        // set the modules folder property to the temporary folder
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
+
+        // initially copy few non-dynamic modules
+        final int numOfFilesToCopy = 3;
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(nonDynamicModulesEmptyDir, "com.l7tech.NonDynamicCustomAssertionTest#.jar")
+                }
+        );
+
+        // mock CustomAssertionsRegistrar
+        final CustomAssertionsRegistrarImpl customAssertionsRegistrar = Mockito.spy(new CustomAssertionsRegistrarImpl(Mockito.mock(ServerAssertionRegistry.class)));
+        customAssertionsRegistrar.setServerConfig(configMock);
+        customAssertionsRegistrar.setExtensionInterfaceManager(Mockito.mock(ExtensionInterfaceManager.class));
+        customAssertionsRegistrar.setSecurePasswordManager(Mockito.mock(SecurePasswordManager.class));
+        customAssertionsRegistrar.setCustomKeyValueStoreManager(Mockito.mock(CustomKeyValueStoreManager.class));
+        customAssertionsRegistrar.setSsgKeyStoreManager(Mockito.mock(SsgKeyStoreManager.class));
+        customAssertionsRegistrar.setDefaultKey(Mockito.mock(DefaultKey.class));
+        // inject our mocked modulesConfig to the custom assertions registrar
+        Mockito.doAnswer(new Answer<CustomAssertionModulesConfig>() {
+            @Override
+            public CustomAssertionModulesConfig answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                return modulesConfig;
+            }
+        }).when(customAssertionsRegistrar).createScannerConfig(Mockito.<Config>any());
+        // inject our mocked assertionsScanner to the custom assertions registrar
+        Mockito.doAnswer(new Answer<CustomAssertionsScanner>() {
+            @Override
+            public CustomAssertionsScanner answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                return assertionsScanner;
+            }
+        }).when(customAssertionsRegistrar).createScanner(Mockito.<CustomAssertionModulesConfig>any(), Mockito.<ScannerCallbacks.CustomAssertion>any());
+
+        // initialize the custom assertions registrar bean
+        // this will initiate one scan
+        customAssertionsRegistrar.afterPropertiesSet();
+
+        // make sure scanModules has been called only once
+        Mockito.verify(assertionsScanner, Mockito.times(1)).scanModules();
+        // verify initial scan (all initial modules should be loaded)
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
+
+        // copy additional dynamic modules
+        copy_all_files(
+                modTmpFolder,
+                numOfFilesToCopy,
+                new CopyData[]{
+                        new CopyData(dynamicModulesEmptyDir, "com.l7tech.DynamicCustomAssertionsTest#.jar")
+                }
+        );
+
+        // let the scanner timer run for 5sec (1sec interval, should count for 4 or 5 more runs)
+        Thread.sleep(5000L);
+
+        // make sure scanModules was not called in these 5sec
+        Mockito.verify(assertionsScanner, Mockito.times(1)).scanModules();
+        // verify that no modules have been loaded, after waiting for 5sec
+        verifyLoadedModules(numOfFilesToCopy, numOfFilesToCopy);
+    }
+
+    @Test
     public void testScanNonDynamicModulesOneTime() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(nonDynamicModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(nonDynamicModulesEmptyDir);
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -302,7 +388,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testScanNonDynamicLifeListenerModulesOneTime() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(nonDynamicLifeListenerModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(nonDynamicLifeListenerModulesEmptyDir);
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -321,7 +407,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testScanDynamicModulesOneTime() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(dynamicModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(dynamicModulesEmptyDir);
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -340,7 +426,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testScanAllBrokenDescriptorModules() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(brokenDescriptorModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(brokenDescriptorModulesEmptyDir);
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -366,7 +452,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -387,7 +473,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -408,7 +494,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -429,7 +515,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -450,7 +536,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -480,7 +566,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // copy couple of non-dynamic lifecycle-listener modules
         final int numOfFilesToCopy = 2;
@@ -583,7 +669,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // copy couple of non-dynamic lifecycle-listener modules
         final int numOfFilesToCopy = 2;
@@ -691,7 +777,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // copy couple of non-dynamic lifecycle-listener modules
         final int numOfFilesToCopy = 2;
@@ -771,7 +857,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // do initial scan on an empty folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -811,7 +897,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // initially copy couple non-dynamic modules
         final int numOfFilesToCopy = 2;
@@ -914,7 +1000,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // copy couple of non-dynamic lifecycle-listener modules
         final int numOfFilesToCopy = 2;
@@ -1022,7 +1108,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // copy couple of non-dynamic lifecycle-listener modules
         final int numOfFilesToCopy = 2;
@@ -1102,7 +1188,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // do initial scan on an empty folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -1132,7 +1218,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // initially copy few non-dynamic modules
         final int numOfFilesToCopy = 3;
@@ -1190,7 +1276,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // initially copy few non-dynamic modules
         final int numOfFilesToCopy = 3;
@@ -1281,7 +1367,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // initially copy few non-dynamic modules
         final int numOfFilesToCopy = 3;
@@ -1376,7 +1462,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         // initially copy few non-dynamic modules
         final int numOfFilesToCopy = 3;
@@ -1453,7 +1539,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         CopyData[] copyDataValues;
         copy_all_files(
@@ -1530,7 +1616,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         CopyData[] copyDataValues;
         copy_all_files(
@@ -1662,7 +1748,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         CopyData[] copyDataValues;
         copy_all_files(
@@ -1763,7 +1849,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
 
     @Test
     public void testScanFailOnLoadModules() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(failedOnLoadModulesEmptyDir);
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(failedOnLoadModulesEmptyDir);
 
         // scan modules folder
         boolean changesMade = assertionsScanner.scanModules();
@@ -1799,7 +1885,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -1859,7 +1945,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -1931,7 +2017,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -2009,7 +2095,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -2065,7 +2151,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,
@@ -2125,7 +2211,7 @@ public class CustomAssertionsScannerTest extends ModulesScannerTestBase {
         // create a temporary modules folder for this test
         Assert.assertNotNull(modTmpFolder = getTempFolder(MODULES_TEMP_DIR_NAME));
         // set the modules folder property to the temporary folder
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn(modTmpFolder.getAbsolutePath());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modTmpFolder.getAbsolutePath());
 
         copy_all_files(
                 modTmpFolder,

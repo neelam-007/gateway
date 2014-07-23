@@ -339,6 +339,25 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
+     * Utility method for creating our {@link CustomAssertionsScanner} instance.<br/>
+     * Useful for unit testing in order to inject mockup scanner.
+     */
+    public CustomAssertionsScanner createScanner(
+            @NotNull final CustomAssertionModulesConfig modulesConfig,
+            @NotNull final ScannerCallbacks.CustomAssertion customAssertionCallbacks
+    ) {
+        return new CustomAssertionsScanner(modulesConfig, customAssertionCallbacks);
+    }
+
+    /**
+     * Utility method for creating our {@link CustomAssertionModulesConfig} instance.<br/>
+     * Useful for unit testing in order to inject mockup scanner config.
+     */
+    public CustomAssertionModulesConfig createScannerConfig(@NotNull final Config config) {
+        return new CustomAssertionModulesConfig(config);
+    }
+
+    /**
      * Perform bean initialization after properties are set.
      */
     @Override
@@ -368,7 +387,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         }
 
         // create custom assertion modules scanner config
-        final CustomAssertionModulesConfig modulesConfig = new CustomAssertionModulesConfig(config);
+        final CustomAssertionModulesConfig modulesConfig = createScannerConfig(config);
 
         // create custom assertion callbacks
         final ScannerCallbacks.CustomAssertion customAssertionCallbacks = new ScannerCallbacks.CustomAssertion() {
@@ -401,7 +420,7 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
         };
 
         // create the custom assertion scanner
-        assertionsScanner = new CustomAssertionsScanner(modulesConfig, customAssertionCallbacks);
+        assertionsScanner = createScanner(modulesConfig, customAssertionCallbacks);
 
         // do initial scan ones, ignoring the result, before starting the timer.
         assertionsScanner.scanModules();

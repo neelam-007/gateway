@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import junit.framework.Assert;
 import org.junit.Before;
@@ -31,53 +32,70 @@ public class CustomAssertionModulesConfigTest {
 
     @Test
     public void testGetCustomAssertionPropertyFileName() throws Exception {
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
         Assert.assertEquals(
-                "should be \"custom.assertions.file\"",
-                modulesConfigSpy.getCustomAssertionPropertyFileName(),
-                "custom_assertions.properties"
+                "should be \"custom_assertions.properties\"",
+                "custom_assertions.properties",
+                modulesConfigSpy.getCustomAssertionPropertyFileName()
         );
 
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("blah-blah");
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("blah-blah");
         Assert.assertEquals(
                 "should be \"blah-blah\"",
-                modulesConfigSpy.getCustomAssertionPropertyFileName(),
-                "blah-blah"
+                "blah-blah",
+                modulesConfigSpy.getCustomAssertionPropertyFileName()
         );
     }
 
     /**
      * {@link com.l7tech.server.policy.module.CustomAssertionModulesConfig#isScanningEnabled() isScanningEnabled}
-     * depends on both <i>custom.assertions.file</i> and <i>custom.assertions.rescan.enabled</i> properties.<br/>
-     * <i>custom.assertions.file</i> <b>must</b> return a non-<code>null</code> value
-     * and <i>custom.assertions.rescan.enabled</i> must return <code>true</code>.
+     * depends on both {@link ServerConfigParams#PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE}
+     * and {@link ServerConfigParams#PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE} properties.<br/>
+     * {@link ServerConfigParams#PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE} <b>must</b> return a non {@code null} value
+     * and {@link ServerConfigParams#PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE} must return {@code true}.
      */
     @Test
     public void testIsScanningEnabled() throws Exception {
         Assert.assertFalse("nothing enabled should be false", modulesConfigSpy.isScanningEnabled());
 
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
-        Assert.assertFalse("custom.assertions.rescan.enabled is not set so false", modulesConfigSpy.isScanningEnabled());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
+        Assert.assertEquals(
+                "\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE + "\" is not set so default value is true",
+                true,
+                modulesConfigSpy.isScanningEnabled()
+        );
 
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn(null);
-        Mockito.when(configMock.getBooleanProperty(Mockito.eq("custom.assertions.rescan.enabled"), Mockito.anyBoolean())).thenReturn(true);
-        Assert.assertFalse("custom.assertions.file is not set, so false", modulesConfigSpy.isScanningEnabled());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn(null);
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE), Mockito.anyBoolean())).thenReturn(false);
+        Assert.assertEquals(
+                "\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE + "\" is not set, so false",
+                false,
+                modulesConfigSpy.isScanningEnabled()
+        );
 
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
-        Mockito.when(configMock.getBooleanProperty(Mockito.eq("custom.assertions.rescan.enabled"), Mockito.anyBoolean())).thenReturn(false);
-        Assert.assertFalse("custom.assertions.rescan.enabled is false so false", modulesConfigSpy.isScanningEnabled());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE), Mockito.anyBoolean())).thenReturn(true);
+        Assert.assertEquals(
+                "\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE + "\" is true, so false",
+                false,
+                modulesConfigSpy.isScanningEnabled()
+        );
 
-        Mockito.when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
-        Mockito.when(configMock.getBooleanProperty(Mockito.eq("custom.assertions.rescan.enabled"), Mockito.anyBoolean())).thenReturn(true);
-        Assert.assertTrue("both are properly set, so true", modulesConfigSpy.isScanningEnabled());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE), Mockito.anyBoolean())).thenReturn(false);
+        Assert.assertEquals(
+                "both are properly set, so true",
+                true,
+                modulesConfigSpy.isScanningEnabled()
+        );
     }
 
     @Test
     public void testGetModuleDir() throws Exception {
-        Assert.assertNull("\"custom.assertions.modules\" not set, so null", modulesConfigSpy.getModuleDir());
+        Assert.assertNull("\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY + "\" not set, so null", modulesConfigSpy.getModuleDir());
 
-        Mockito.when(configMock.getProperty("custom.assertions.modules")).thenReturn("/some/test/folder/path");
-        Assert.assertNotNull("\"custom.assertions.modules\" is set, so non-null", modulesConfigSpy.getModuleDir());
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn("/some/test/folder/path");
+        Assert.assertNotNull("\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY + "\" is set, so non-null", modulesConfigSpy.getModuleDir());
 
         final File modDir = modulesConfigSpy.getModuleDir();
         Assert.assertEquals("/some/test/folder/path".replace('/', File.separatorChar), modDir.getPath());
@@ -85,28 +103,57 @@ public class CustomAssertionModulesConfigTest {
 
     @Test
     public void testGetModulesExt() throws Exception {
-        Assert.assertEquals(modulesConfigSpy.getModulesExt(), Arrays.asList(".jar"));
+        Assert.assertEquals(Arrays.asList(".jar"), modulesConfigSpy.getModulesExt());
     }
 
     @Test
     public void testGetModuleWorkDirectory() throws Exception {
-        Assert.assertNull("\"custom.assertions.temp\" not set, so null", modulesConfigSpy.getModuleWorkDirectory());
+        Assert.assertNull("\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY + "\" not set, so null", modulesConfigSpy.getModuleWorkDirectory());
 
-        Mockito.when(configMock.getProperty("custom.assertions.temp")).thenReturn("/some/test/folder/path");
-        Assert.assertEquals("\"custom.assertions.temp\" is set, so non-null", modulesConfigSpy.getModuleWorkDirectory(), "/some/test/folder/path");
+        Mockito.when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY)).thenReturn("/some/test/folder/path");
+        Assert.assertEquals(
+                "\"" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY + "\" is set, so non-null",
+                "/some/test/folder/path",
+                modulesConfigSpy.getModuleWorkDirectory()
+        );
+    }
+
+    @Test
+    public void testRescanEnabled() throws Exception {
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE), Mockito.anyBoolean())).thenReturn(false);
+        Assert.assertEquals(false, modulesConfigSpy.isHotSwapEnabled());
+
+        Mockito.when(configMock.getBooleanProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE), Mockito.anyBoolean())).thenReturn(true);
+        Assert.assertEquals(true, modulesConfigSpy.isHotSwapEnabled());
     }
 
     @Test
     public void testGetRescanPeriodMillis() throws Exception {
-        Mockito.when(configMock.getLongProperty(Mockito.eq("custom.assertions.rescan.millis"), Mockito.anyLong())).thenReturn(101L);
-        Assert.assertEquals(modulesConfigSpy.getRescanPeriodMillis(), 101L);
+        Mockito.when(configMock.getLongProperty(Mockito.eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS), Mockito.anyLong())).thenReturn(101L);
+        Assert.assertEquals(101L, modulesConfigSpy.getRescanPeriodMillis());
     }
 
     @Test
     public void testIsSupportedLibrary() throws Exception {
-        Assert.assertTrue("jar is supported", modulesConfigSpy.isSupportedLibrary(".jar"));
-        Assert.assertTrue("zip is supported", modulesConfigSpy.isSupportedLibrary(".zip"));
-        Assert.assertFalse("anything other then jar or zip is not supported", modulesConfigSpy.isSupportedLibrary(".war"));
-        Assert.assertFalse("anything other then jar or zip is not supported", modulesConfigSpy.isSupportedLibrary(".aar"));
+        Assert.assertEquals(
+                "jar is supported",
+                true,
+                modulesConfigSpy.isSupportedLibrary(".jar")
+        );
+        Assert.assertEquals(
+                "zip is supported",
+                true,
+                modulesConfigSpy.isSupportedLibrary(".zip")
+        );
+        Assert.assertEquals(
+                "anything other then jar or zip is not supported",
+                false,
+                modulesConfigSpy.isSupportedLibrary(".war")
+        );
+        Assert.assertEquals(
+                "anything other then jar or zip is not supported",
+                false,
+                modulesConfigSpy.isSupportedLibrary(".aar")
+        );
     }
 }

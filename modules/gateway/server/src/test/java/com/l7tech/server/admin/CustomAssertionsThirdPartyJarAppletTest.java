@@ -1,6 +1,7 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
@@ -136,13 +137,16 @@ public class CustomAssertionsThirdPartyJarAppletTest {
 
     @Before
     public void setup() throws Exception {
-        when(configMock.getProperty("custom.assertions.file")).thenReturn("custom_assertions.properties");
-        when(configMock.getProperty("custom.assertions.modules")).thenReturn(modulesDirPath);
-        when(configMock.getProperty("custom.assertions.temp")).thenReturn(modulesTmpDirPath);
+        when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE)).thenReturn("custom_assertions.properties");
+        when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY)).thenReturn(modulesDirPath);
+        when(configMock.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY)).thenReturn(modulesTmpDirPath);
 
-        // enable custom assertion scanner
-        when(configMock.getBooleanProperty(eq("custom.assertions.rescan.enabled"), anyBoolean())).thenReturn(true);
-        when(configMock.getLongProperty(eq("custom.assertions.rescan.millis"), anyLong())).thenReturn(10000L);
+        // enable custom assertions hot-swap
+        when(configMock.getBooleanProperty(eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE), anyBoolean())).thenReturn(true);
+        when(configMock.getLongProperty(eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS), anyLong())).thenReturn(10000L);
+
+        // enable custom assertions scanner
+        when(configMock.getBooleanProperty(eq(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE), anyBoolean())).thenReturn(false);
 
         when(servletContextMock.getAttribute(anyString())).thenReturn(webApplicationContextMock);
         when(filterConfigMock.getServletContext()).thenReturn(servletContextMock);

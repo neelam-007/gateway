@@ -24,6 +24,8 @@ public class ModularAssertionModulesConfig implements ModulesConfig {
     // default value for scanning timer
     private static final int DEFAULT_SCAN_TIME_MILLIS = 4523;
 
+    private static final String PARAM_MODULAR_ASSERTIONS_HOTSWAP_WIN_WORKAROUND_SUFFIX = "com.l7tech.server.hotswap.win.workaround.modular.suffix";
+
     private final ServerConfig config;
     private final LicenseManager licenseManager;
 
@@ -64,7 +66,7 @@ public class ModularAssertionModulesConfig implements ModulesConfig {
 
     @Override
     public String getDisabledSuffix() {
-        return System.getProperty("com.l7tech.server.hotswap.win.workaround.modular.suffix");
+        return System.getProperty(PARAM_MODULAR_ASSERTIONS_HOTSWAP_WIN_WORKAROUND_SUFFIX);
     }
 
     public long getRescanPeriodMillis() {

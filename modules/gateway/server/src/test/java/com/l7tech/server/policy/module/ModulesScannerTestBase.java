@@ -5,6 +5,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
 import junit.framework.Assert;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
 import org.junit.Rule;
 
 import java.io.File;
@@ -17,7 +18,8 @@ import java.util.*;
  * and {@link com.l7tech.server.policy.module.ModularAssertionsScannerTest ModularAssertionsScannerTest}.<br/>
  * Holds shared and utility methods implementation.
  */
-public class ModulesScannerTestBase {
+@Ignore
+public abstract class ModulesScannerTestBase {
 
     /**
      * Declare conditional ignore rule.<br/>

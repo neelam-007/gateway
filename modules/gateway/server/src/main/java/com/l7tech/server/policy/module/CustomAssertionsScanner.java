@@ -636,18 +636,20 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     }
 
     public void startTimer(long rescanMillis) {
-        super.startTimer(
-                rescanMillis,
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // skip while shutting down
-                        if (isShuttingDown) {
-                            return;
+        if (modulesConfig.isHotSwapEnabled()) {
+            super.startTimer(
+                    rescanMillis,
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            // skip while shutting down
+                            if (isShuttingDown) {
+                                return;
+                            }
+                            scanModules();
                         }
-                        scanModules();
-                    }
-                });
+                    });
+        }
     }
 
     @Override

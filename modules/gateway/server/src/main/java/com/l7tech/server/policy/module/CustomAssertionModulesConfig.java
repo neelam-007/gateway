@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.module;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,21 +22,13 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
     private static final String ZIP_EXTENSION = ".zip";
     private static final String LIB_PREFIX = "lib/";
 
-    // Legacy behaviour note:
-    // All 3 values below are hardcoded inside serverconfig.properties, which means they cannot be changed during runtime.
-    // In order to modify the default values, serverconfig.properties needs to be changed, which requires SSG compilation (i.e. new version).
-    private static final String KEY_CONFIG_FILE = "custom.assertions.file";
-    private static final String KEY_CUSTOM_MODULES_TEMP = "custom.assertions.temp";
-    private static final String KEY_CUSTOM_MODULES = "custom.assertions.modules";
+    // default values
+    private static final boolean SCANNER_DISABLE_DEFAULT_VALUE = false;
+    private static final boolean HOTSWAP_ENABLE_DEFAULT_VALUE = true;
+    private static final long HOTSWAP_RESCAN_MILLIS_DEFAULT_VALUE = 4523L;
 
-    // for both properties below:
-    // * systemProperty is enabled, which means that default values can be overridden at runtime from system.properties file.
-    // * clusterProperty is disabled, which means these are not cluster wide properties.
-    private static final String KEY_HOTSWAP_ENABLED = "custom.assertions.rescan.enabled";
-    private static final String KEY_HOTSWAP_RESCAN_MILLIS = "custom.assertions.rescan.millis";
-
-    private static final boolean HOTSWAP_ENABLED_DEFAULT_VALUE = true;
-    private static final long HOTSWAP_RESCAN_MILLIS_DEFAULT_VALUE = 4523;
+    // hot-swap workaround for windows platform.
+    public static final String PARAM_CUSTOM_ASSERTIONS_HOTSWAP_WIN_WORKAROUND_SUFFIX = "com.l7tech.server.hotswap.win.workaround.custom.suffix";
 
     // SSG config object
     private final Config config;
@@ -59,16 +52,17 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
     @Override
     public boolean isScanningEnabled() {
         final String caPropFileName = getCustomAssertionPropertyFileName();
-        return caPropFileName != null && !caPropFileName.isEmpty() &&
-                config.getBooleanProperty(KEY_HOTSWAP_ENABLED, HOTSWAP_ENABLED_DEFAULT_VALUE);
+        return (caPropFileName != null
+                && !caPropFileName.isEmpty()
+                && !config.getBooleanProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE, SCANNER_DISABLE_DEFAULT_VALUE));
     }
 
     @Override
     public File getModuleDir() {
         // read the custom assertions modules installation dir
-        final String moduleDirName = config.getProperty(KEY_CUSTOM_MODULES);
+        final String moduleDirName = config.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY);
         if (moduleDirName == null) {
-            logger.config("'" + KEY_CUSTOM_MODULES + "' not specified");
+            logger.config("'" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY + "' not specified");
             return null;
         }
         return new File(moduleDirName);
@@ -81,28 +75,32 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
 
     @Override
     public String getDisabledSuffix() {
-        return System.getProperty("com.l7tech.server.hotswap.win.workaround.custom.suffix");
+        return System.getProperty(PARAM_CUSTOM_ASSERTIONS_HOTSWAP_WIN_WORKAROUND_SUFFIX);
     }
 
     public String getCustomAssertionPropertyFileName() {
         // read the custom assertion resource properties file
-        final String caPropFileName = config.getProperty(KEY_CONFIG_FILE);
+        final String caPropFileName = config.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE);
         if (caPropFileName == null) {
-            logger.config("'" + KEY_CONFIG_FILE + "' not specified");
+            logger.config("'" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE + "' not specified");
         }
         return caPropFileName;
     }
 
     public String getModuleWorkDirectory() {
-        final String moduleWorkDirectory = config.getProperty(KEY_CUSTOM_MODULES_TEMP);
+        final String moduleWorkDirectory = config.getProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY);
         if (moduleWorkDirectory == null) {
-            logger.config("'" + KEY_CUSTOM_MODULES_TEMP + "' not specified");
+            logger.config("'" + ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_TEMP_DIRECTORY + "' not specified");
         }
         return moduleWorkDirectory;
     }
 
     public long getRescanPeriodMillis() {
-        return config.getLongProperty(KEY_HOTSWAP_RESCAN_MILLIS, HOTSWAP_RESCAN_MILLIS_DEFAULT_VALUE);
+        return config.getLongProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS, HOTSWAP_RESCAN_MILLIS_DEFAULT_VALUE);
+    }
+
+    public boolean isHotSwapEnabled() {
+        return config.getBooleanProperty(ServerConfigParams.PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE, HOTSWAP_ENABLE_DEFAULT_VALUE);
     }
 
     public boolean isSupportedLibrary(@NotNull final String entryNameLowerCase) {
