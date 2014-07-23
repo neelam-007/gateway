@@ -47,71 +47,70 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                                           final AuthenticationContext authContext) throws IOException {
         Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
 
-        if(!msg.isInitialized()) {
+        if (!msg.isInitialized()) {
             // Uninitialized target message
             logAndAudit(AssertionMessages.MESSAGE_NOT_INITIALIZED, targetName);
             return getBadMessageStatus();
         }
-        //check if OData request is coming from HTTP
+
+        // check if OData request is coming from HTTP
         HttpServletRequestKnob httpRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
+
         if(httpRequestKnob == null) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, targetName + " is not HTTP");
             return AssertionStatus.FALSIFIED;
         }
 
-        OdataValidationAssertion.OdataOperations requestMethod =
-                OdataValidationAssertion.OdataOperations.valueOf(httpRequestKnob.getMethodAsString());
+        // get request HTTP method
+        String requestMethod = httpRequestKnob.getMethodAsString();
 
         // Check HTTP request method is authorized
+        boolean forbiddenOperation;
+
         switch (requestMethod) {
-            case GET:
-                if (!assertion.isReadOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "GET":
+                forbiddenOperation = !assertion.isReadOperation();
                 break;
 
-            case POST:
-                if (!assertion.isCreateOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "POST":
+                forbiddenOperation = !assertion.isCreateOperation();
                 break;
 
-            case PUT:
-                if (!assertion.isUpdateOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "PUT":
+                forbiddenOperation = !assertion.isUpdateOperation();
                 break;
 
-            case MERGE:
-                if (!assertion.isMergeOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "MERGE":
+                forbiddenOperation = !assertion.isMergeOperation();
                 break;
 
-            case PATCH:
-                if (!assertion.isPartialUpdateOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "PATCH":
+                forbiddenOperation = !assertion.isPartialUpdateOperation();
                 break;
 
-            case DELETE:
-                if (!assertion.isDeleteOperation()) {
-                    return AssertionStatus.FALSIFIED;
-                }
+            case "DELETE":
+                forbiddenOperation = !assertion.isDeleteOperation();
                 break;
 
             default:
-                return AssertionStatus.FALSIFIED;
+                forbiddenOperation = true;
+        }
+
+        if (forbiddenOperation) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED, requestMethod);
+            return AssertionStatus.FALSIFIED;
         }
 
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
         variablePrefix = !variablePrefix.isEmpty() ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
+
         String metadata = ExpandVariables.process(assertion.getOdataMetadataSource(), varMap, getAudit());
         if (StringUtils.isBlank(metadata)) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_SMD, "Service Metadata Document is blank!");
             return AssertionStatus.FALSIFIED;
         }
+
         String resourceUrl = ExpandVariables.process(assertion.getResourceUrl(), varMap, getAudit());
         if (StringUtils.isBlank(resourceUrl)) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, "Resource URI is blank!");
@@ -176,22 +175,24 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             final MimeKnob mimeKnob = msg.getKnob(MimeKnob.class);
 
             if (mimeKnob == null) {
-                logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD, targetName, "payload is empty");
+                logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD, targetName, "Payload is empty");
                 return AssertionStatus.FALSIFIED;
             }
 
             //determine content type
             String contentType;
             ContentTypeHeader contentTypeHeader = mimeKnob.getOuterContentType();
+
             if (contentTypeHeader != null) {
                 contentType = contentTypeHeader.getType() + "/" + contentTypeHeader.getSubtype();
             } else {
                 contentType = "application/xml"; // this is OData default content type
             }
 
+            // parse the payload
             try {
-                //parse the payload
-                parser.parsePayload(requestMethod.toString(), odataRequestInfo, mimeKnob.getEntireMessageBodyAsInputStream(), contentType);
+                parser.parsePayload(requestMethod, odataRequestInfo,
+                        mimeKnob.getEntireMessageBodyAsInputStream(), contentType);
             } catch (OdataParser.OdataParsingException | IOException e) {
                 logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD,
                         new String[]{targetName, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
