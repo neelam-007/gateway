@@ -435,7 +435,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
         String domain = context.isOverwriteResponseCookieDomain() ? url.getHost() : null;
         String path = context.isOverwriteResponseCookiePath() ? CookieUtils.trimLastSubPath(url.getPath()) : null;
-        List<HttpCookie> cookieValues = new ArrayList<>();
         for (final Header header : headersKnob.getHeaders(HeadersKnob.HEADER_TYPE_HTTP, false)) {
             if (!header.getKey().equalsIgnoreCase(HttpConstants.HEADER_SET_COOKIE)) {
                 passThroughHeaders.add(new Pair(header.getKey(), header.getValue()));
@@ -447,16 +446,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     if(i > 0) sb.append(CookieUtils.ATTRIBUTE_DELIMITER);//append delimiter if the header contains more then one cookie
                     sb.append(CookieUtils.replaceCookieDomainAndPath(cookies.get(i), domain, path));// replace cookie domain and path and join cookies together
                 }
-                //check if the Set-Cookie header with the same value exists
-                String setCookieValue = sb.toString();
-                Pair<String,Object> setCookieHeader = new Pair(header.getKey(), setCookieValue);
-                HttpCookie cookie = getHttpCookieFromHeader(setCookieValue);
-                if(cookie == null || !cookieValues.contains(cookie)) {
-                    passThroughHeaders.add(setCookieHeader);
-                    if(cookie != null) {
-                        cookieValues.add(cookie);//keep track of the same cookies
-                    }
-                }
+                passThroughHeaders.add(new Pair(header.getKey(), sb.toString()));
             }
         }
 

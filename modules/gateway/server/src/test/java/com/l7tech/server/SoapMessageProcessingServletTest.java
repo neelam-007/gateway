@@ -423,8 +423,9 @@ public class SoapMessageProcessingServletTest {
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
+    @BugId("SSG-8490")
     @Test
-    public void contextResponseCookiesUniqueByNameDomainAndPath() throws Exception {
+    public void contextResponseCookiesDuplicateNameDomainAndPath() throws Exception {
         request.setContent("test".getBytes());
         request.setServerName("test.l7tech.com");
         request.setRequestURI("/test");
@@ -441,8 +442,9 @@ public class SoapMessageProcessingServletTest {
         servlet.service(request, response);
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         List cookieHeaders = response.getHeaders("Set-Cookie");
-        assertEquals(1, cookieHeaders.size());
+        assertEquals(2, cookieHeaders.size());
         assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("test=value1; domain=test.l7tech.com; path=/test"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("test=value2; domain=test.l7tech.com; path=/test"));
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 

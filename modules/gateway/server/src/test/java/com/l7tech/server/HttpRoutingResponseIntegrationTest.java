@@ -369,6 +369,26 @@ public class HttpRoutingResponseIntegrationTest extends HttpRoutingIntegrationTe
         assertHeaderValues(responseHeaders, "foo", "1", "2");
     }
 
+    @BugId("SSG-8490")
+    @Test
+    public void responseHeaderRulesContainDuplicateCookies() throws Exception {
+        final List<HttpPassthroughRule> rules = new ArrayList<>();
+        rules.add(new HttpPassthroughRule("Set-Cookie", true, "foo=bar"));
+        rules.add(new HttpPassthroughRule("Set-Cookie", true, "foo=bar"));
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "RouteToEchoHeadersService");
+        routeParams.put(SERVICEURL, "/routeToEchoHeadersService");
+        routeParams.put(SERVICEPOLICY, WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(
+                createResponseRouteAssertion(ECHO_HEADERS_URL, false, rules)))));
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpResponse response = sendRequest(new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/routeToEchoHeadersService")), HttpMethod.GET, null);
+        printResponseDetails(response);
+        assertEquals(200, response.getStatus());
+        final Map<String, Collection<String>> responseHeaders = getResponseHeaders(response);
+        assertHeaderValues(responseHeaders, "Set-Cookie", "foo=bar", "foo=bar");
+    }
+
     @Test
     public void addResponseHeaderUsingAddHeaderAssertion() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();

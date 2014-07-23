@@ -198,6 +198,32 @@ public class HttpRoutingRequestIntegrationTest extends HttpRoutingIntegrationTes
         assertHeaderValues(routedHeaders, "foo", "1", "2");
     }
 
+    @BugId("SSG-8965")
+    @Test
+    public void requestPassThroughHeaderRulesContainDuplicateCookies() throws Exception {
+        // headers to pass through
+        final List<HttpPassthroughRule> rules = new ArrayList<>();
+        rules.add(new HttpPassthroughRule("Cookie", false, null));
+        rules.add(new HttpPassthroughRule("cookie", false, null));
+
+        final Map<String, String> routeParams = new HashMap<>();
+        routeParams.put(SERVICENAME, "PassThroughDuplicateCookies");
+        routeParams.put(SERVICEURL, "/passThroughDuplicateCookies");
+        final String policyXml = WspWriter.getPolicyXml(new AllAssertion(Collections.singletonList(createRouteAssertion(ECHO_HEADERS_URL, false, rules))));
+        routeParams.put(SERVICEPOLICY, policyXml);
+        testLevelCreatedServiceIds.add(createServiceFromTemplate(routeParams));
+
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(new URL("http://" + BASE_URL + ":8080/passThroughDuplicateCookies"));
+        params.addExtraHeader(new GenericHttpHeader("Cookie", "foo=bar"));
+
+        final GenericHttpResponse response = sendRequest(params, HttpMethod.GET, null);
+        assertEquals(200, response.getStatus());
+        final String responseBody = printResponseDetails(response);
+        final Map<String, Collection<String>> routedHeaders = parseHeaders(responseBody);
+        assertEquals(4, routedHeaders.size());
+        assertHeaderValues(routedHeaders, "cookie", "foo=bar; foo=bar");
+    }
+
     @Test
     public void customizeRequestHostToPassThrough() throws Exception {
         final Map<String, String> routeParams = new HashMap<>();

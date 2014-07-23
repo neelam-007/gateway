@@ -348,45 +348,6 @@ public class HttpCookiesKnobImplTest {
     }
 
     @Test
-    public void containsSetCookie() {
-        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
-        setCookieKnob.addCookie(cookie);
-        assertTrue(setCookieKnob.containsCookie("foo", "localhost", "/"));
-        assertFalse(cookieKnob.containsCookie("foo", "localhost", "/"));
-    }
-
-    @Test
-    public void containsSetCookieNullDomain() {
-        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", null, 60, true, "test", false);
-        setCookieKnob.addCookie(cookie);
-        assertTrue(setCookieKnob.containsCookie("foo", null, "/"));
-    }
-
-    @Test
-    public void containsSetCookieNullPath() {
-        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, null, "localhost", 60, true, "test", false);
-        setCookieKnob.addCookie(cookie);
-        assertTrue(setCookieKnob.containsCookie("foo", "localhost", null));
-    }
-
-    @Test
-    public void doesNotContainSetCookie() {
-        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
-        setCookieKnob.addCookie(cookie);
-        assertFalse(setCookieKnob.containsCookie("test", null, null));
-        assertFalse(setCookieKnob.containsCookie("foo", "localhost", null));
-        assertFalse(setCookieKnob.containsCookie("foo", null, "/"));
-    }
-
-    @Test
-    public void containsCookie() {
-        final HttpCookie cookie = new HttpCookie("foo", "bar", 1, "/", "localhost", 60, true, "test", false);
-        cookieKnob.addCookie(cookie);
-        assertTrue(cookieKnob.containsCookie("foo", "localhost", "/"));
-        assertFalse(setCookieKnob.containsCookie("foo", "localhost", "/"));
-    }
-
-    @Test
     public void getCookiesAsHeadersNone() {
         assertTrue(cookieKnob.getCookiesAsHeaders().isEmpty());
     }

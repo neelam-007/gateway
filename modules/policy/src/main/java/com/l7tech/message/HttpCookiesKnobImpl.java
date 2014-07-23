@@ -3,15 +3,15 @@ package com.l7tech.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
-import org.apache.commons.lang.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.common.http.CookieUtils.*;
+import static com.l7tech.common.http.CookieUtils.splitCookieHeader;
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
 /**
@@ -87,18 +87,6 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
         return cookieHeaders;
     }
 
-    @Override
-    public boolean containsCookie(@NotNull final String name, @Nullable final String domain, @Nullable final String path) {
-        boolean found = false;
-        for (final HttpCookie cookie : getCookies()) {
-            if (name.equals(cookie.getCookieName()) && ObjectUtils.equals(domain, cookie.getDomain()) && ObjectUtils.equals(path, cookie.getPath())) {
-                found = true;
-                break;
-            }
-        }
-        return found;
-    }
-
     /**
      * Adds a cookie which is backed by a set-cookie format as this type of header contains all cookie attributes.
      *
@@ -106,7 +94,7 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
      */
     @Override
     public void addCookie(@NotNull final HttpCookie cookie) {
-        if(getCookies().contains(cookie)){
+        if (getCookies().contains(cookie)) {
             deleteCookie(cookie);
         }
         delegate.addHeader(cookieHeaderName, CookieUtils.getSetCookieHeader(cookie), HEADER_TYPE_HTTP);
