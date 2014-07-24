@@ -2,6 +2,7 @@ package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.test.BugId;
 import org.apache.commons.lang.ObjectUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -251,15 +252,14 @@ public class HttpCookiesKnobImplTest {
         assertTrue(containsCookie(cookies, new HttpCookie("2", "two", 1, null, null, -1, false, null, false)));
     }
 
-    /**
-     * Set-Cookie header should not contain multiple cookies.
-     */
     @Test
     public void getCookiesMultipleInSetCookieHeader() {
-        headersKnob.addHeader("Set-Cookie", "1=one; 2=two", HEADER_TYPE_HTTP);
+        headersKnob.addHeader("Set-Cookie", "1=one; domain=localhost; path=/; httpOnly; 2=two;3=three; version=1;domain=localhost; secure", HEADER_TYPE_HTTP);
         final Set<HttpCookie> cookies = setCookieKnob.getCookies();
-        assertEquals(1, cookies.size());
-        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, null, null, -1, false, null, false)));
+        assertEquals(3, cookies.size());
+        assertTrue(containsCookie(cookies, new HttpCookie("1", "one", 0, "/", "localhost", -1, false, null, true)));
+        assertTrue(containsCookie(cookies, new HttpCookie("2", "two", 0, null, null, -1, false, null, false)));
+        assertTrue(containsCookie(cookies, new HttpCookie("3", "three", 1, null, "localhost", -1, true, null, false)));
     }
 
     @Test
@@ -345,6 +345,35 @@ public class HttpCookiesKnobImplTest {
         cookieKnob.deleteCookie(new HttpCookie("foo", "bar", 0, null, null, -1, false, null, false));
         assertEquals(1, setCookieKnob.getCookies().size());
         assertTrue(cookieKnob.getCookies().isEmpty());
+    }
+
+    @BugId("SSG-8981")
+    @Test
+    public void deleteSingleCookieFromMultipleCookieHeader() {
+        headersKnob.addHeader("Cookie", "1=a; test=test; foo=bar", HEADER_TYPE_HTTP);
+        assertEquals(3, cookieKnob.getCookies().size());
+        cookieKnob.deleteCookie(new HttpCookie("test", "test", 0, null, null, -1, false, null, false));
+        assertEquals(2, cookieKnob.getCookies().size());
+        assertEquals("1=a; foo=bar", headersKnob.getHeaderValues("Cookie")[0]);
+    }
+
+    @Test
+    public void deleteSingleCookieFromMultipleCookieHeaderThatContainsInvalidCookie() {
+        headersKnob.addHeader("Cookie", "1=a; test=test; ; foo=bar", HEADER_TYPE_HTTP);
+        assertEquals(3, cookieKnob.getCookies().size());
+        cookieKnob.deleteCookie(new HttpCookie("test", "test", 0, null, null, -1, false, null, false));
+        assertEquals(2, cookieKnob.getCookies().size());
+        assertEquals("1=a; ; foo=bar", headersKnob.getHeaderValues("Cookie")[0]);
+    }
+
+    @BugId("SSG-8981")
+    @Test
+    public void deleteSingleSetCookieFromMultipleSetCookieHeader() {
+        headersKnob.addHeader("Set-Cookie", "1=a; test=test; foo=bar", HEADER_TYPE_HTTP);
+        assertEquals(3, setCookieKnob.getCookies().size());
+        setCookieKnob.deleteCookie(new HttpCookie("test", "test", 0, null, null, -1, false, null, false));
+        assertEquals(2, setCookieKnob.getCookies().size());
+        assertEquals("1=a; foo=bar", headersKnob.getHeaderValues("Set-Cookie")[0]);
     }
 
     @Test

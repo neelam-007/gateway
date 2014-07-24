@@ -3,8 +3,10 @@ package com.l7tech.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,26 +50,13 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
     @Override
     public Set<HttpCookie> getCookies() {
         final Set<HttpCookie> cookies = new LinkedHashSet<>();
-        if (cookieHeaderName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
-            for (final String cookieValue : delegate.getHeaderValues(HttpConstants.HEADER_COOKIE, HEADER_TYPE_HTTP)) {
-                final List<String> singleCookieValues = splitCookieHeader(cookieValue);
-                for (final String singleCookieValue : singleCookieValues) {
-                    try {
-                        cookies.add(new HttpCookie(singleCookieValue));
-                    } catch (final HttpCookie.IllegalFormatException e) {
-                        logger.log(Level.WARNING, "Could not process cookie value: " + cookieValue);
-                    }
-                }
-            }
-        } else {
-            for (final String cookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
+        for (final String cookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
+            final List<String> singleCookieValues = splitCookieHeader(cookieValue);
+            for (final String singleCookieValue : singleCookieValues) {
                 try {
-                    final boolean added = cookies.add(new HttpCookie(cookieValue));
-                    if (!added) {
-                        logger.log(Level.WARNING, "Found duplicate cookie: " + cookieValue);
-                    }
+                    cookies.add(new HttpCookie(singleCookieValue));
                 } catch (final HttpCookie.IllegalFormatException e) {
-                    logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
+                    logger.log(Level.WARNING, "Could not process cookie value: " + cookieValue);
                 }
             }
         }
@@ -107,14 +96,25 @@ public class HttpCookiesKnobImpl implements HttpCookiesKnob {
 
     private void removeMatchingCookieHeaders(final String cookieHeaderName, final HttpCookie cookie) {
         for (final String cookieValue : delegate.getHeaderValues(cookieHeaderName, HEADER_TYPE_HTTP)) {
-            try {
-                final HttpCookie fromHeader = new HttpCookie(cookieValue);
-                if (cookie.getId().equals(fromHeader.getId())) {
-                    delegate.removeHeader(cookieHeaderName, cookieValue, HEADER_TYPE_HTTP);
-                    logger.log(Level.WARNING, "Removed conflicting cookie: " + fromHeader);
+            final List<String> cookies = CookieUtils.splitCookieHeader(cookieValue);
+            final List<String> toRemove = new ArrayList<>();
+            for (final String cookieHeader : cookies) {
+                try {
+                    final HttpCookie fromHeader = new HttpCookie(cookieHeader);
+                    if (cookie.getId().equals(fromHeader.getId())) {
+                        toRemove.add(cookieHeader);
+                    }
+                } catch (final HttpCookie.IllegalFormatException e) {
+                    logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
                 }
-            } catch (final HttpCookie.IllegalFormatException e) {
-                logger.log(Level.WARNING, "Skipping invalid " + cookieHeaderName + " header: " + cookieValue);
+            }
+            if (!toRemove.isEmpty()) {
+                logger.log(Level.INFO, "Removing cookies: " + toRemove);
+                cookies.removeAll(toRemove);
+                delegate.removeHeader(cookieHeaderName, cookieValue, HEADER_TYPE_HTTP);
+                if (!cookies.isEmpty()) {
+                    delegate.addHeader(cookieHeaderName, StringUtils.join(cookies, "; "), HEADER_TYPE_HTTP);
+                }
             }
         }
     }
