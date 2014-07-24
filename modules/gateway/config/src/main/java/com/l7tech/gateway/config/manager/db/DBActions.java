@@ -1464,7 +1464,7 @@ public class DBActions {
         }
     }
 
-    private static final class DBPermission {
+    static final class DBPermission {
         private final DatabaseConfig databaseConfig;
         private final Set<String> hosts;
         private final boolean isGrant;
@@ -1490,8 +1490,8 @@ public class DBActions {
             return (isGrant ? SQL_GRANT_ALL : SQL_REVOKE_ALL) +
                     databaseConfig.getName() + ".* " +
                     (isGrant ? "to " : "from ") +
-                    databaseConfig.getNodeUsername() + "@'" + hostname +
-                    "' identified by '" + databaseConfig.getNodePassword() + "'";
+                    databaseConfig.getNodeUsername() + "@'" + hostname + "'" +
+                    (isGrant ? " identified by '" + databaseConfig.getNodePassword() + "'" : "");
         }
 
         /**
