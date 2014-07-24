@@ -392,6 +392,11 @@ public class WorkSpacePanel extends JPanel {
      * Update policy tabs information such as saving last opened tabs and validating policy tab properties.
      */
     public void updatePolicyTabsProperties() {
+        // If the gateway connection is lost, then do not update anything.
+        if (TopComponents.getInstance().isConnectionLost()) {
+            return;
+        }
+
         validatePolicyTabProperties();
         saveLastOpenedPolicyTabs();
     }
