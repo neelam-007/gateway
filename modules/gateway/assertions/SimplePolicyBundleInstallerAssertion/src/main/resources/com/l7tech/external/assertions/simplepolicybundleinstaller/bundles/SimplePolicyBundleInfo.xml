@@ -1,3 +1,9 @@
 <l7:SimplePolicyBundle xmlns:l7="http://ns.l7tech.com/2013/10/simple-policy-bundle" >
-    <l7:Version>Installer v1</l7:Version>
+    <l7:Version>Simple Installer v2.1</l7:Version>
+    <!--
+    version history:
+       2.1: add prerequisite folder
+       2.0: add encapsulated assertion
+       1.0: initial version (wsman)
+    -->
 </l7:SimplePolicyBundle>

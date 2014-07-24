@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enumeration>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" id="-5002" version="0">
+        <l7:Name>Root Node</l7:Name>
+    </l7:Folder>
+    <l7:Folder xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" folderId="-5002" id="2a1a5fdc-3a29-4481-8c09-43f44d4ee3b9" version="0">
+        <l7:Name>Simple Policy Bundle</l7:Name>
+    </l7:Folder>
+</enumeration>

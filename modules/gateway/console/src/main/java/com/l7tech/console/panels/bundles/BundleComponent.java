@@ -25,6 +25,7 @@ public class BundleComponent extends JPanel{
     private JComboBox<String> availableJdbcConnsComboBox;
     private JButton manageJDBCConnectionsButton;
     private JPanel extraPanel;
+    private Runnable refreshJdbcConnections;
 
     public BundleComponent(BundleInfo bundleInfo) {
         this(bundleInfo.getName(), bundleInfo.getDescription(), bundleInfo.getVersion(), bundleInfo.getJdbcConnectionReferences());
@@ -54,11 +55,17 @@ public class BundleComponent extends JPanel{
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     action.actionPerformed(e);
-                    refreshJdbcConnections();
+
+                    // refresh connections for all bundles (or just this bundle)
+                    if (refreshJdbcConnections != null) {
+                        refreshJdbcConnections.run();
+                    } else {
+                        refreshJdbcConnections();
+                    }
                 }
             });
-            refreshJdbcConnections();
 
+            refreshJdbcConnections();
         } else {
             jdbcPanel.setVisible(false);
         }
@@ -93,6 +100,10 @@ public class BundleComponent extends JPanel{
 
         }
         return returnMap;
+    }
+
+    public void setRefreshJdbcConnections(Runnable refreshJdbcConnections) {
+        this.refreshJdbcConnections = refreshJdbcConnections;
     }
 
     public void refreshJdbcConnections() {

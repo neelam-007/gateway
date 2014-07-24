@@ -135,6 +135,16 @@ public abstract class BundleInstallerDialog extends JDialog {
                 // initialize the bundle component's extra panel as required
                 initializeExtraPanel(bundleInfo, bundleComp.getExtraPanel());
 
+                // refresh connections in all bundles
+                bundleComp.setRefreshJdbcConnections(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (Map.Entry<String, Pair<BundleComponent, BundleInfo>> entry : availableBundles.entrySet()) {
+                            entry.getValue().left.refreshJdbcConnections();
+                        }
+                    }
+                });
+
                 availableBundles.put(bundleInfo.getId(), checkBoxBundleInfoPair);
             }
         } catch (PolicyBundleInstallerException e) {
