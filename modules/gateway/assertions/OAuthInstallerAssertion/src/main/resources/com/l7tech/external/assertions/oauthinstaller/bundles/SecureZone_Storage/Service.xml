@@ -2908,20 +2908,28 @@
                     &lt;L7p:RequireClientAuthentication booleanValue="true"/&gt;
                     &lt;/L7p:SslAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="== The delete task is a time consuming task which will effect the
-                    performance of the OTK in a negative way"/&gt;
+                    &lt;L7p:Comment stringValue="== The delete task is a time consuming task which will effect the performance of the OTK in a negative way"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="== The delete task should be executed via a cron job on the OS command
-                    level"/&gt;
+                    &lt;L7p:Comment stringValue="== The delete task should be executed via a cron job on the OS command level"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:CommentAssertion&gt;
-                    &lt;L7p:Comment stringValue="== If that is possible set the flag 'deleteExpiredTokens' to 'false'
-                    after configuring the cron job"/&gt;
+                    &lt;L7p:Comment stringValue="== If that is possible set the flag 'deleteExpiredTokens' to 'false' after configuring the cron job"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
                     &lt;L7p:SetVariable&gt;
                     &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="deleteExpiredTokens"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="== 'offset' is used when all tokens are requested. No more than 100 rows will be returned as of the given offset value"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:CommentAssertion&gt;
+                    &lt;L7p:Comment stringValue="== The default for offset is 0 and cannot be negative"/&gt;
+                    &lt;/L7p:CommentAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyLm9mZnNldH0="/&gt;
+                    &lt;L7p:VariableToSet stringValue="offset"/&gt;
                     &lt;/L7p:SetVariable&gt;
                     &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
                     &lt;wsp:All wsp:Usage="Required"&gt;
@@ -3265,13 +3273,55 @@
                     &lt;/L7p:item&gt;
                     &lt;/L7p:FieldSpecs&gt;
                     &lt;/L7p:HtmlFormDataAssertion&gt;
+                    &lt;wsp:OneOrMore wsp:Usage="Required"&gt;
+                    &lt;wsp:All wsp:Usage="Required"&gt;
+                    &lt;L7p:ComparisonAssertion&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Expression1 stringValue="${offset}"/&gt;
+                    &lt;L7p:Operator operatorNull="null"/&gt;
+                    &lt;L7p:Predicates predicates="included"&gt;
+                    &lt;L7p:item dataType="included"&gt;
+                    &lt;L7p:Type variableDataType="int"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item binary="included"&gt;
+                    &lt;L7p:CaseSensitive booleanValue="false"/&gt;
+                    &lt;L7p:Operator operator="GT"/&gt;
+                    &lt;L7p:RightValue stringValue="0"/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;/L7p:Predicates&gt;
+                    &lt;/L7p:ComparisonAssertion&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="JHtvZmZzZXR9"/&gt;
+                    &lt;L7p:DataType variableDataType="int"/&gt;
+                    &lt;L7p:VariableToSet stringValue="offset"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;/wsp:All&gt;
+                    &lt;L7p:SetVariable&gt;
+                    &lt;L7p:Base64Expression stringValue="MA=="/&gt;
+                    &lt;L7p:DataType variableDataType="int"/&gt;
+                    &lt;L7p:VariableToSet stringValue="offset"/&gt;
+                    &lt;/L7p:SetVariable&gt;
+                    &lt;L7p:assertionComment&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Invalid offset"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="No offset was given or it was a character. Set to 0"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:assertionComment&gt;
+                    &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConnectionName stringValue="sascha"/&gt;
+                    &lt;L7p:ConvertVariablesToStrings booleanValue="false"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
-                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[select token, secret, expiration,
-                    rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
-                    from oauth_token]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT token, secret, expiration, rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
+                    FROM oauth_token
+                    ORDER BY resource_owner, client_name, created ASC LIMIT 100 OFFSET ${offset}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
