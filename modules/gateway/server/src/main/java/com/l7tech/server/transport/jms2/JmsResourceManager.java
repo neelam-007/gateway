@@ -95,7 +95,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @return The Cached JMS Connection
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
-    private CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
+    protected CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
 
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
         CachedConnection cachedConnection = null;
@@ -254,7 +254,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     // need to store one connection per endpoint
     private final Config config;
-    private final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
+    protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
     private final Timer timer;
     private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0,100) );
     private final AtomicBoolean active = new AtomicBoolean(true);
@@ -358,7 +358,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     /**
      * Cache entry
      */
-    private class CachedConnection {
+    protected class CachedConnection {
         private static final long MAX_CLOSE_CONNECTION_WAIT = 30; //30 seconds
         private final AtomicInteger referenceCount = new AtomicInteger(0);
         private final long createdTime = System.currentTimeMillis();
@@ -369,10 +369,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final String name;
         private final int endpointVersion;
         private final int connectionVersion;
-        private final GenericObjectPool<JmsBag> pool;
+        protected final GenericObjectPool<JmsBag> pool;
         private final JmsEndpointConfig endpointConfig;
 
-        CachedConnection( final JmsEndpointConfig cfg,
+        protected CachedConnection( final JmsEndpointConfig cfg,
                           final JmsBag bag) {
             this.bag = bag;
             this.name = cfg.getJmsEndpointKey().toString();
@@ -451,7 +451,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             }, getSessionPoolSize(),GenericObjectPool.WHEN_EXHAUSTED_BLOCK, getSessionPoolMaxWait(), getMaxSessionIdle());
         }
 
-        private int getSessionPoolSize() {
+        protected int getSessionPoolSize() {
             if  (endpointConfig.getEndpoint().isMessageSource()) {
                 return -1;
             } else {
@@ -460,7 +460,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             }
         }
 
-        private int getMaxSessionIdle() {
+        protected int getMaxSessionIdle() {
             if  (endpointConfig.getEndpoint().isMessageSource()) {
                 return -1;
             } else {
@@ -469,7 +469,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             }
         }
 
-        private long getSessionPoolMaxWait() {
+        protected long getSessionPoolMaxWait() {
             if (endpointConfig.getEndpoint().isMessageSource()) {
                 //The pool is never exhausted, just return a number, it should be ignored.
                 return 0;
@@ -494,7 +494,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
          * @return A JmsBag with JmsSession
          * @throws JmsRuntimeException If error occur when getting the JmsBag
          */
-        public JmsBag borrowJmsBag() throws JmsRuntimeException {
+        public JmsBag borrowJmsBag() throws JmsRuntimeException, NamingException {
 
             touch();
             try {
@@ -502,7 +502,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             } catch (JMSException e) {
                 throw new JmsRuntimeException(e);
             } catch (NamingException e) {
-                throw new JmsRuntimeException(e);
+                throw e;
             } catch (JmsConfigException e) {
                 throw new JmsRuntimeException(e);
             } catch (Exception e) {
@@ -527,11 +527,13 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         /**
          * Caller must hold reference.
          */
-        public void doWithJmsResources( final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException {
+        public void doWithJmsResources( final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException, NamingException {
             JmsBag jmsBag = null;
             try {
                 try {
                     jmsBag = borrowJmsBag();
+                } catch (NamingException e) {
+                    throw e;
                 } catch ( Throwable t ) {
                     throw new JmsRuntimeException(t);
                 }

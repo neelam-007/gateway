@@ -289,7 +289,7 @@ public class JmsEndpointConfig {
             jmsEndpoint.setPassword(overrides.getDestPassword());
     }
 
-    public static final class JmsEndpointKey {
+    public static class JmsEndpointKey {
         private final Goid jmsEndpointGoid;
         private final int jmsEndpointVersion;
         private final Goid jmsConnectionGoid;
