@@ -4,7 +4,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -54,7 +54,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
         }
 
         // check if OData request is coming from HTTP
-        HttpServletRequestKnob httpRequestKnob = msg.getKnob(HttpServletRequestKnob.class);
+        HttpRequestKnob httpRequestKnob = msg.getKnob(HttpRequestKnob.class);
 
         if(httpRequestKnob == null) {
             logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, targetName + " is not HTTP");
@@ -236,7 +236,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             logAndAudit(AssertionMessages.ODATA_VALIDATION_EXPRESSION_ERROR,
                     new String[]{"orderby", ExceptionUtils.getMessage(e.getCause())}, ExceptionUtils.getDebugException(e));
             //set orderby as string
-            context.setVariable(prefix + OdataValidationAssertion.QUERY_FILTER, odataRequestInfo.getOrderByExpressionString());
+            context.setVariable(prefix + OdataValidationAssertion.QUERY_ORDERBY, odataRequestInfo.getOrderByExpressionString());
         }
         //set $expand expression
         final String expand = odataRequestInfo.getExpandExpressionString();

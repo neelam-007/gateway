@@ -363,6 +363,11 @@ public class OdataParserTest {
         assertEquals(0, requestInfo.getCustomQueryOptions().size());
     }
 
+    @Test(expected = OdataParser.OdataParsingException.class)
+    public void testParserRequest_parseDuplicateQueryOptions() throws Exception {
+        parser.parseRequest("/Categories(2)/Name", "$format=json&$format=atom");
+    }
+
     @Test
     public void testParseRequest_GivenValidParametersForSingleEntityPropertyRawValue_ParsingSucceeds() throws Exception {
         OdataRequestInfo requestInfo = parser.parseRequest("/Categories(2)/Name/$value", "");

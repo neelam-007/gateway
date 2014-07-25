@@ -292,7 +292,7 @@ public class OdataParser {
         return odataSegments;
     }
 
-    protected static Map<String, String> extractQueryParameters(final String queryString) throws IOException {
+    protected static Map<String, String> extractQueryParameters(final String queryString) throws IOException, OdataParsingException {
         Map<String, String> queryParametersMap = new HashMap<>();
 
         if (queryString != null && !queryString.isEmpty()) {
@@ -303,10 +303,14 @@ public class OdataParser {
                 int indexOfEqualsSign = param.indexOf("=");
 
                 if (indexOfEqualsSign < 0) {
-                    queryParametersMap.put(param, "");
+                    if(queryParametersMap.put(param, "") != null) {
+                        throw new OdataParsingException("Duplicate query parameter");
+                    }
                 } else {
-                    queryParametersMap.put(param.substring(0, indexOfEqualsSign),
-                            param.substring(indexOfEqualsSign + 1));
+                    if(queryParametersMap.put(param.substring(0, indexOfEqualsSign),
+                            param.substring(indexOfEqualsSign + 1)) != null) {
+                        throw new OdataParsingException("Duplicate query parameter");
+                    }
                 }
             }
         }
@@ -314,7 +318,7 @@ public class OdataParser {
         return queryParametersMap;
     }
 
-    public class OdataParsingException extends Exception {
+    public static class OdataParsingException extends Exception {
         public OdataParsingException(String message) {
             super(message);
         }
