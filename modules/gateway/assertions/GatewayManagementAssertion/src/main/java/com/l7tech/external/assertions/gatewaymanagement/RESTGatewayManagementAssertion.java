@@ -56,9 +56,13 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withVariables(variablePrefix+"."+SUFFIX_ACTION,
+        if( getTarget().equals(TargetMessageType.OTHER)){
+            return super.doGetVariablesUsed().withVariables(
+                variablePrefix+"."+SUFFIX_ACTION,
                 variablePrefix+"."+SUFFIX_URI,
                 variablePrefix+"."+SUFFIX_CONTENT_TYPE);
+        }
+        return super.doGetVariablesUsed();
     }
 
     public static class Validator implements AssertionValidator {

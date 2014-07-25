@@ -3,11 +3,14 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Test;
@@ -18,20 +21,31 @@ import org.springframework.mock.web.MockServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
+import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
 
 public class ServerRESTGatewayManagementAssertionTest {
 
     private String testURI = "resource/selector";
+    private static final Logger logger = Logger.getLogger(ServerRestGatewayManagementAssertionContextVariableTest.class.getName());
+
+    private Audit auditor = new LoggingAudit(logger).getAuditor();
+
     @Test
     public void testContextVariableURI() throws Exception{
         RESTGatewayManagementAssertion ass = new RESTGatewayManagementAssertion();
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("other");
 
         PolicyEnforcementContext pec = getPolicyEnforcementContext( getMockServletRequest(),null);
         pec.setVariable(ass.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI, testURI);
 
-        URI returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec, pec.getRequest(), ass);
+        URI returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec, pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
+        assertEquals(testURI, returnURI.toString());
+
+        pec.setVariable(ass.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI, "/"+testURI);
+        returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec, pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(testURI, returnURI.toString());
     }
 
@@ -46,7 +60,7 @@ public class ServerRESTGatewayManagementAssertionTest {
         PolicyEnforcementContext pec = getPolicyEnforcementContext( servletRequest,null);
         pec.setService(getService(routingURI + "*"));
 
-        URI returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec,pec.getRequest(),ass);
+        URI returnURI =  ServerRESTGatewayManagementAssertion.getURI(pec,pec.getVariableMap(ass.getVariablesUsed(),auditor ),pec.getRequest(),ass);
         assertEquals(testURI, returnURI.toString());
     }
 
@@ -59,6 +73,8 @@ public class ServerRESTGatewayManagementAssertionTest {
     @Test
     public void testContextVariableAction()throws Exception{
         RESTGatewayManagementAssertion ass = new RESTGatewayManagementAssertion();
+        ass.setTarget(TargetMessageType.OTHER);
+        ass.setOtherTargetMessageVariable("other");
 
         // should ignore value from request message
         MockHttpServletRequest servletRequest = getMockServletRequest();
@@ -66,15 +82,15 @@ public class ServerRESTGatewayManagementAssertionTest {
         PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,null );
 
         pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_ACTION, "GET" );
-        HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.GET,method);
 
         pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_ACTION, "DELETE" );
-        method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.DELETE,method);
 
         pec.setVariable(ass.getVariablePrefix()+"."+RESTGatewayManagementAssertion.SUFFIX_ACTION, "POST" );
-        method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.POST,method);
     }
 
@@ -87,17 +103,17 @@ public class ServerRESTGatewayManagementAssertionTest {
         servletRequest.setMethod(HttpMethod.GET.toString());
         PolicyEnforcementContext pec = getPolicyEnforcementContext(servletRequest,null );
 
-        HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        HttpMethod method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.GET,method);
 
         servletRequest.setMethod(HttpMethod.POST.toString());
         pec = getPolicyEnforcementContext(servletRequest,null );
-        method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.POST,method);
 
         servletRequest.setMethod(HttpMethod.DELETE.toString());
         pec = getPolicyEnforcementContext(servletRequest,null );
-        method =  ServerRESTGatewayManagementAssertion.getAction(pec, pec.getRequest(), ass);
+        method =  ServerRESTGatewayManagementAssertion.getAction(pec.getVariableMap(ass.getVariablesUsed(),auditor ), pec.getRequest(), ass);
         assertEquals(HttpMethod.DELETE,method);
     }
 

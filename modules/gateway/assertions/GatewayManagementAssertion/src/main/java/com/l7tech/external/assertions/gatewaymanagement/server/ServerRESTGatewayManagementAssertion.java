@@ -12,7 +12,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,13 +82,15 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         try {
             final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
 
+            Map<String, Object> varMap =  context.getVariableMap(assertion.getVariablesUsed(), getAudit());
+
             // get the uri
-            final URI uri = getURI(context, message, assertion);
-            final URI baseUri = getBaseURI(context, message);
+            final URI uri = getURI(context, varMap, message, assertion);
+            final URI baseUri = getBaseURI(context, message, assertion);
             //The service ID should always be a constant.
             final String serviceId = context.getService().getId();
-            final HttpMethod action = getAction(context, message, assertion);
-            final String contentType = getContentType(context, message);
+            final HttpMethod action = getAction(varMap, message, assertion);
+            final String contentType = getContentType(varMap, message);
 
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -143,73 +146,77 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         return AssertionStatus.FAILED;
     }
 
-    private String getContentType(PolicyEnforcementContext context, Message message) throws IOException {
-        try {
-            return context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE).toString();
-        } catch (NoSuchVariableException e) {
-            if (message.isHttpRequest()) {
-                return message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE);
-            }else{
-                throw new IllegalArgumentException("Content type not found, must be HTTP request or use context variables");
+    private String getContentType(final Map<String, Object> varMap, Message message) throws IOException {
+        if(assertion.getTarget().equals(TargetMessageType.OTHER)){
+            Object var = varMap.get(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE);
+            if(var == null){
+                throw new IllegalArgumentException(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE+" context variable not found.");
             }
+            return var.toString();
+        } else{
+            return message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE);
         }
     }
 
-    protected static HttpMethod getAction(final PolicyEnforcementContext context,
+    protected static HttpMethod getAction(final Map<String, Object> varMap,
                                           final Message message,
                                           final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException {
-        HttpMethod method;
-        try {
-            String actionVar = context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_ACTION).toString();
-            method = HttpMethod.valueOf(actionVar.toUpperCase());
-        } catch (NoSuchVariableException e) {
-            if(message.isHttpRequest()) {
-                method = message.getHttpRequestKnob().getMethod();
-            }else{
-                throw new IllegalArgumentException("Action not found, must be HTTP request or use context variables");
+        if(assertion.getTarget().equals(TargetMessageType.OTHER)){
+            Object var = varMap.get(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_ACTION);
+            if(var == null){
+                throw new IllegalArgumentException(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_ACTION+" context variable not found.");
             }
+            return HttpMethod.valueOf(var.toString().toUpperCase());
+        } else{
+            return message.getHttpRequestKnob().getMethod();
         }
-        if (method == null) {
-            throw new IllegalArgumentException();
-        }
-        return method;
     }
 
     protected static URI getURI(final PolicyEnforcementContext context,
+                                final Map<String, Object> varMap,
                                    final Message message,
                                    final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException, URISyntaxException {
 
-        String uri;
-        try {
-            uri = context.getVariable(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI).toString();
-        } catch (NoSuchVariableException e) {
-            if(message.isHttpRequest()) {
-                String requestURI = message.getHttpRequestKnob().getRequestUri();
-                String baseURI = context.getService().getRoutingUri();
-                Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
-                Matcher matcher = pattern.matcher(requestURI);
-                if (matcher.matches())
-                    uri = matcher.group(1);
-                else
-                    throw new IllegalArgumentException("Could not calculate uri");
-                final String queryString = message.getHttpRequestKnob().getQueryString();
-                if (queryString != null) {
-                    uri += "?" + queryString;
-                }
-            }else{
-                throw new IllegalArgumentException("URI not found, must be HTTP request or use context variables");
+        if(assertion.getTarget().equals(TargetMessageType.OTHER)){
+            Object var = varMap.get(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI);
+            if(var == null){
+                throw new IllegalArgumentException(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_URI + " context variable not found.");
             }
+            String uri = var.toString();
+            // handle extra "/" at beginning
+            if(uri.startsWith("/")){
+                uri = uri.substring(1);
+            }
+
+            return new URI(uri);
+        }else{
+            String uri;
+            String requestURI = message.getHttpRequestKnob().getRequestUri();
+            String baseURI = context.getService().getRoutingUri();
+            Pattern pattern = Pattern.compile(baseURI.replace("*", "(.*)"));
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.matches())
+                uri = matcher.group(1);
+            else
+                throw new IllegalArgumentException("Could not calculate uri");
+            final String queryString = message.getHttpRequestKnob().getQueryString();
+            if (queryString != null) {
+                uri += "?" + queryString;
+            }
+            if (uri == null) {
+                throw new IllegalArgumentException("The uri cannot be null");
+            }
+            return new URI(uri);
         }
-        if (uri == null) {
-            throw new IllegalArgumentException("The uri cannot be null");
-        }
-        return new URI(uri);
+
     }
 
     protected static URI getBaseURI(final PolicyEnforcementContext context,
-                                final Message message) throws IllegalArgumentException, URISyntaxException {
-
-        if(message.isHttpRequest()) {
+                                final Message message,
+                                final RESTGatewayManagementAssertion assertion) throws IllegalArgumentException, URISyntaxException {
+        if(assertion.getTarget().equals(TargetMessageType.OTHER)){
+            return new URI("/");
+        } else{
             String uri = message.getHttpRequestKnob().isSecure() ? "https://" : "http://";
             uri += message.getTcpKnob().getLocalHost();
             uri += ":" + message.getTcpKnob().getLocalPort();
@@ -220,8 +227,6 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
                 throw new IllegalArgumentException("Could not calculate base uri. The service needs to resolve with a wild card (*)");
             }
             return new URI(uri);
-        }else{
-            return new URI("/");
         }
     }
 
