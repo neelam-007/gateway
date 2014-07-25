@@ -57,7 +57,8 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
     @Override
     public String getStepLabel() {
-        return "Unresolved SiteMinder Configuration " + foreignRef.getSiteMinderConfiguration().getName();
+        final SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
+        return "Unresolved SiteMinder Configuration " + config == null ? foreignRef.getRefId() : config.getName();
     }
 
     @Override
@@ -90,8 +91,10 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
         SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
 
-        configurationNameTextField.setText(config.getName());
-        hostNameTextField.setText(config.getHostname());
+        if (config != null) {
+            configurationNameTextField.setText(config.getName());
+            hostNameTextField.setText(config.getHostname());
+        }
 
         // default is delete
         removeRadioButton.setSelected(true);
@@ -137,6 +140,10 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
 
     private void createSiteMinderConfiguration() {
         SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
+        if (config == null) {
+            logger.log(Level.WARNING, "External reference is missing SiteMinderConfiguration");
+            config = new SiteMinderConfiguration();
+        }
         editAndSave(config);
     }
 

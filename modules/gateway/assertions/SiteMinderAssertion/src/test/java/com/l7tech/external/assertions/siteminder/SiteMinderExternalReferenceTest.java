@@ -2,8 +2,10 @@ package com.l7tech.external.assertions.siteminder;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
+import com.l7tech.test.BugId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,9 +17,7 @@ import org.w3c.dom.Element;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.when;
@@ -125,6 +125,23 @@ public class SiteMinderExternalReferenceTest {
     @After
     public void tearDown() throws Exception {
 
+    }
+
+    @BugId("SSG-8969")
+    @Test
+    public void constructorFindException() throws Exception {
+        final Goid goid = new Goid(0, 1);
+        when(mockFinder.findSiteMinderConfigurationByID(goid)).thenThrow(new FindException());
+        final SiteMinderExternalReference ref = new SiteMinderExternalReference(mockFinder, goid);
+        assertEquals(goid.toString(), ref.getRefId());
+        assertNull(ref.getSiteMinderConfiguration());
+    }
+
+    @Test
+    public void constructorNullConfig() throws Exception {
+        final SiteMinderExternalReference ref = new SiteMinderExternalReference(mockFinder, (SiteMinderConfiguration) null);
+        assertNull(ref.getSiteMinderConfiguration());
+        assertNull(ref.getRefId());
     }
 
     @Test

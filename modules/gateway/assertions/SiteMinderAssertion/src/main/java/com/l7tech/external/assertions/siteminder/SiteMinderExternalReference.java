@@ -36,17 +36,19 @@ public class SiteMinderExternalReference extends ExternalReference {
     protected SiteMinderExternalReference(final ExternalReferenceFinder finder, final SiteMinderConfiguration config) {
         super(finder);
         siteMinderConfiguration = config;
-        identifier = siteMinderConfiguration.getGoid();
+        if (config != null) {
+            identifier = siteMinderConfiguration.getGoid();
+        }
     }
 
     protected SiteMinderExternalReference(final ExternalReferenceFinder finder, Goid agentGoid) {
         super(finder);
         try {
             siteMinderConfiguration = getFinder().findSiteMinderConfigurationByID(agentGoid);
-        } catch (FindException e) {
+        } catch (final FindException e) {
             logger.warning("Cannot find the SiteMinder Configuration entity (Goid = " + agentGoid + ").");
         }
-        identifier = siteMinderConfiguration.getGoid();
+        identifier = siteMinderConfiguration == null ? agentGoid : siteMinderConfiguration.getGoid();
     }
 
     @Override
@@ -66,8 +68,8 @@ public class SiteMinderExternalReference extends ExternalReference {
         return identifier != null ? identifier.hashCode() : 0;
     }
 
+    @Nullable
     public SiteMinderConfiguration getSiteMinderConfiguration() {
-
         return siteMinderConfiguration;
     }
 
@@ -75,7 +77,7 @@ public class SiteMinderExternalReference extends ExternalReference {
     public String getRefId() {
         String id = null;
 
-        if ( !identifier.equals(SiteMinderConfiguration.DEFAULT_GOID) ) {
+        if ( identifier != null && !identifier.equals(SiteMinderConfiguration.DEFAULT_GOID) ) {
             id = identifier.toString();
         }
 
