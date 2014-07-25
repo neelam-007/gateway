@@ -2920,7 +2920,6 @@
                     &lt;L7p:Base64Expression stringValue="dHJ1ZQ=="/&gt;
                     &lt;L7p:VariableToSet stringValue="deleteExpiredTokens"/&gt;
                     &lt;/L7p:SetVariable&gt;
-                    &lt;wsp:All wsp:Usage="Required"&gt;
                     &lt;L7p:CommentAssertion&gt;
                     &lt;L7p:Comment stringValue="== 'offset' is used when all tokens are requested. No more than 100 rows will be returned as of the given offset value"/&gt;
                     &lt;/L7p:CommentAssertion&gt;
@@ -3316,7 +3315,7 @@
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:JdbcQuery&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
-                    &lt;L7p:ConnectionName stringValue="sascha"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:ConvertVariablesToStrings booleanValue="false"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT token, secret, expiration, rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created

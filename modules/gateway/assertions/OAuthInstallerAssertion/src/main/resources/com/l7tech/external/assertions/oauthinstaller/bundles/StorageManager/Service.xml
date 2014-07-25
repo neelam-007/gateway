@@ -668,7 +668,7 @@
                     &lt;/L7p:SetVariable&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:HttpRoutingAssertion&gt;
-                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/sascha/oauth/tokenstore/get"/&gt;
+                    &lt;L7p:ProtectedServiceUrl stringValue="${host_oauth_tokenstore_server}/oauth/tokenstore/get"/&gt;
                     &lt;L7p:ProxyPassword stringValueNull="null"/&gt;
                     &lt;L7p:ProxyUsername stringValueNull="null"/&gt;
                     &lt;L7p:RequestHeaderRules httpPassthroughRuleSet="included"&gt;
