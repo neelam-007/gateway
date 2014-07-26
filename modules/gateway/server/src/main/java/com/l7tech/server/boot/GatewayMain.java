@@ -14,12 +14,15 @@ import java.util.logging.Logger;
  * @noinspection UseOfSystemOutOrSystemErr,CallToSystemExit
  */
 public class GatewayMain {
+    private static final String JAXB_CLASS_TAILOR = "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize";
+
     public static void main(String[] args) {
         try {
             if ( System.getProperty("java.util.logging.manager") == null ) {
                 System.setProperty("java.util.logging.manager", GatewayBoot.GatewayLogManager.class.getName());
             }
             configureSecurityManager();
+            configureOtherSystemProperties();
             new GatewayBoot().runUntilShutdown();
             System.exit(0); // force exit even if there are non-daemon threads created by mistake (Bug #4384)
         } catch (Throwable e) {
@@ -37,6 +40,12 @@ public class GatewayMain {
             }
             System.err.println("\n\n\n**** Unable to start the server: " + message + "\n\n\n");
             System.exit(77);
+        }
+    }
+
+    private static void configureOtherSystemProperties() {
+        if ( null == System.getProperty( JAXB_CLASS_TAILOR ) ) {
+            System.setProperty( JAXB_CLASS_TAILOR, "true" );
         }
     }
 

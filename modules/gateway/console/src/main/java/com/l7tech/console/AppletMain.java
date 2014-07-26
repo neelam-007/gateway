@@ -378,6 +378,11 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private static ApplicationContext createApplicationContext() {
+        // Disable ClassTailor optimization for JAXB (SSG-4654)
+        if ( null == SyspropUtil.getProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize" ) ) {
+            SyspropUtil.setProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize", "true" );
+        }
+
         String ctxName = "com/l7tech/console/resources/beans-context.xml";
         String appletName = "com/l7tech/console/resources/beans-applet.xml";
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{appletName, ctxName});

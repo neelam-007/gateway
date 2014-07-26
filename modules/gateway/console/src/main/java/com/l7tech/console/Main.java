@@ -162,6 +162,11 @@ public class Main {
 
         // Set trust manager algorithm for HTTP remoting / RMI
         System.setProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", "L7TA");
+
+        // Disable ClassTailor optimization for JAXB (SSG-4654)
+        if ( null == System.getProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize" ) ) {
+            System.setProperty( "com.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize", "true" );
+        }
     }
 
     /**
