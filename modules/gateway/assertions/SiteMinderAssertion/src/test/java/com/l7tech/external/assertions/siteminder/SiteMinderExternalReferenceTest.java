@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.test.BugId;
+import com.l7tech.util.InvalidDocumentFormatException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,6 +21,7 @@ import java.util.Map;
 import static junit.framework.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -153,6 +155,39 @@ public class SiteMinderExternalReferenceTest {
         assertEquals(REFERENCES_BEGIN + SM_REFERENCE_ELEM_1 + REFERENCES_END, asXml.trim());
     }
 
+    @BugId("SSG-8969")
+    @Test
+    public void serializeToRefElementNullSiteMinderConfig() throws Exception {
+        final Goid goid = new Goid(0, 1);
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:References xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\">\n" +
+                "    <SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "        <GOID>" + goid.toString() + "</GOID>\n" +
+                "    </SiteMinderConfigurationReference>\n" +
+                "</exp:References>";
+        final Element element = XmlUtil.createEmptyDocument("References", "exp", "http://www.layer7tech.com/ws/policy/export").getDocumentElement();
+        when(mockFinder.findSiteMinderConfigurationByID(goid)).thenThrow(new FindException());
+        final SiteMinderExternalReference ref = new SiteMinderExternalReference(mockFinder, goid);
+        ref.serializeToRefElement(element);
+        final String asXml = XmlUtil.nodeToFormattedString(element);
+        assertEquals(expected, asXml.trim());
+    }
+
+    @Test
+    public void serializeToRefElementNullSiteMinderConfigAndIdentifier() throws Exception {
+        final String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<exp:References xmlns:exp=\"http://www.layer7tech.com/ws/policy/export\">\n" +
+                "    <SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "        <GOID>" + SiteMinderConfiguration.DEFAULT_GOID.toString() + "</GOID>\n" +
+                "    </SiteMinderConfigurationReference>\n" +
+                "</exp:References>";
+        final Element element = XmlUtil.createEmptyDocument("References", "exp", "http://www.layer7tech.com/ws/policy/export").getDocumentElement();
+        final SiteMinderExternalReference ref = new SiteMinderExternalReference(mockFinder, (SiteMinderConfiguration) null);
+        ref.serializeToRefElement(element);
+        final String asXml = XmlUtil.nodeToFormattedString(element);
+        assertEquals(expected, asXml.trim());
+    }
+
     @Test
     public void shouldVerifyWhenReferenceFound() throws Exception {
         when(mockFinder.findSiteMinderConfigurationByID(new Goid(SITEMINDER_REF_GOID))).thenReturn(siteMinderConfiguration);
@@ -180,12 +215,71 @@ public class SiteMinderExternalReferenceTest {
         assertEquals("yuri-1251only-native", assertion.getAgentId());
     }
 
+    @BugId("SSG-8969")
+    @Test
+    public void localizeAssertionNullSiteMinderConfig() throws Exception {
+        final Goid foreignGoid = new Goid(0, 1);
+        final SiteMinderExternalReference ref = new SiteMinderExternalReference(mockFinder, foreignGoid);
+        ref.setLocalizeReplace(REPLACE_GOID);
+        final SiteMinderCheckProtectedAssertion assertion = new SiteMinderCheckProtectedAssertion();
+        assertion.setAgentGoid(foreignGoid);
+        final SiteMinderConfiguration replacement = new SiteMinderConfiguration();
+        replacement.setGoid(new Goid(REPLACE_GOID));
+        when(mockFinder.findSiteMinderConfigurationByID(foreignGoid)).thenThrow(new FindException());
+        when(mockFinder.findSiteMinderConfigurationByID(new Goid(REPLACE_GOID))).thenReturn(replacement);
+        assertTrue(ref.localizeAssertion(assertion));
+        assertEquals(REPLACE_GOID, assertion.getAgentGoid().toString());
+        verify(mockFinder).findSiteMinderConfigurationByID(foreignGoid);
+        verify(mockFinder).findSiteMinderConfigurationByID(new Goid(REPLACE_GOID));
+    }
+
     @Test
     public void shouldParseReferenceFromElement() throws Exception {
          SiteMinderExternalReference reference = (SiteMinderExternalReference)SiteMinderExternalReference.parseFromElement(mockFinder, XmlUtil.parse(SM_REFERENCE_ELEM_1).getDocumentElement());
          assert reference != null;
          assertEquals(siteMinderConfiguration, reference.getSiteMinderConfiguration());
          assertEquals(SITEMINDER_REF_GOID, reference.getRefId());
+    }
+
+    @BugId("SSG-8969")
+    @Test
+    public void parseFromElementNoSiteMinderConfig() throws Exception {
+        final Goid goid = new Goid(0, 1);
+        final String noSiteMinderConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "    <GOID>" + goid.toString() + "</GOID>\n" +
+                "</SiteMinderConfigurationReference>";
+        final SiteMinderExternalReference reference = (SiteMinderExternalReference)SiteMinderExternalReference.parseFromElement(mockFinder, XmlUtil.parse(noSiteMinderConfig).getDocumentElement());
+        assertNull(reference.getSiteMinderConfiguration());
+        assertEquals(goid.toString(), reference.getRefId());
+    }
+
+    @Test(expected= InvalidDocumentFormatException.class)
+    public void parseFromElementNoSiteMinderConfigOrGoid() throws Exception {
+        final String noSiteMinderConfigOrGoid = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "</SiteMinderConfigurationReference>";
+        SiteMinderExternalReference.parseFromElement(mockFinder, XmlUtil.parse(noSiteMinderConfigOrGoid).getDocumentElement());
+    }
+
+    @Test(expected= InvalidDocumentFormatException.class)
+    public void parseFromElementNoSiteMinderConfigInvalidGoid() throws Exception {
+        final String invalidGoid = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "    <GOID>abc</GOID>\n" +
+                "</SiteMinderConfigurationReference>";
+        SiteMinderExternalReference.parseFromElement(mockFinder, XmlUtil.parse(invalidGoid).getDocumentElement());
+    }
+
+    @Test(expected= InvalidDocumentFormatException.class)
+    public void parseFromElementNoSiteMinderConfigInvalidGoidXml() throws Exception {
+        final Goid goid = new Goid(0, 1);
+        final String duplicateGoidElements = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+                "    <GOID>" + goid.toString() + "</GOID>\n" +
+                "    <GOID>" + goid.toString() + "</GOID>\n" +
+                "</SiteMinderConfigurationReference>";
+        SiteMinderExternalReference.parseFromElement(mockFinder, XmlUtil.parse(duplicateGoidElements).getDocumentElement());
     }
 
     @Test

@@ -58,7 +58,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
     @Override
     public String getStepLabel() {
         final SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
-        return "Unresolved SiteMinder Configuration " + config == null ? foreignRef.getRefId() : config.getName();
+        return "Unresolved SiteMinder Configuration " + (config == null ? foreignRef.getRefId() : config.getName());
     }
 
     @Override

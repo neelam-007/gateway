@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.siteminder;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -8,6 +9,7 @@ import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
@@ -16,10 +18,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SiteMinderExternalReference extends ExternalReference {
-    private final Logger logger = Logger.getLogger(SiteMinderExternalReference.class.getName());
+    private static final Logger logger = Logger.getLogger(SiteMinderExternalReference.class.getName());
 
     public static final String ELMT_NAME_REF = "SiteMinderConfigurationReference";
     public static final String GOID_EL_NAME = "GOID";
@@ -115,15 +118,14 @@ public class SiteMinderExternalReference extends ExternalReference {
             marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             SiteMinderConfiguration copy = new SiteMinderConfiguration();
-            if (siteMinderConfiguration == null) {
-                return;
+            if (siteMinderConfiguration != null) {
+                copy.copyFrom(siteMinderConfiguration);
+                copy.setSecret(null);
+                copy.setPasswordGoid(null);
+                marshaller.marshal(copy, referenceElement);
             }
-            copy.copyFrom(siteMinderConfiguration);
-            copy.setSecret(null);
-            copy.setPasswordGoid(null);
-            marshaller.marshal(copy, referenceElement);
 
-        } catch (JAXBException e) {
+        } catch (final JAXBException e) {
             throw new IllegalArgumentException("Unable to save SiteMinder configuration reference.");
         }
         referencesParentElement.appendChild(referenceElement);
@@ -163,7 +165,8 @@ public class SiteMinderExternalReference extends ExternalReference {
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof SiteMinderCheckProtectedAssertion) {
                 final SiteMinderCheckProtectedAssertion assertion = (SiteMinderCheckProtectedAssertion) assertionToLocalize;
-                if (assertion.getAgentGoid().equals(siteMinderConfiguration.getGoid())) { // The purpose of "equals" is to find the right assertion and update it using localized value.
+                final Goid agentGoid = assertion.getAgentGoid();
+                if ((siteMinderConfiguration != null && agentGoid.equals(siteMinderConfiguration.getGoid())) || (identifier != null && agentGoid.equals(identifier))) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {
                         if(!locallyMatchingIdentifier.equals(identifier)){
                             try {
@@ -191,6 +194,7 @@ public class SiteMinderExternalReference extends ExternalReference {
         if (!el.getNodeName().equals(ELMT_NAME_REF)) {
             throw new InvalidDocumentFormatException("Expecting element of SiteMinder configuration " + ELMT_NAME_REF);
         }
+        SiteMinderExternalReference ref = null;
         NodeList children = el.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
@@ -200,13 +204,31 @@ public class SiteMinderExternalReference extends ExternalReference {
                     Unmarshaller unmarshaller = context.createUnmarshaller();
                     SiteMinderConfiguration siteMinderConfiguration = (SiteMinderConfiguration) unmarshaller.unmarshal(child);
                     siteMinderConfiguration.setPasswordGoid(null);
-                    return new SiteMinderExternalReference(finder, siteMinderConfiguration);
+                    ref = new SiteMinderExternalReference(finder, siteMinderConfiguration);
 
-                } catch (JAXBException e) {
-                    //ignore
+                } catch (final JAXBException e) {
+                    logger.log(Level.WARNING, "Unable to unmarshal SiteMinderConfiguration: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         }
-        throw new InvalidDocumentFormatException("Unable to load SiteMinder configuration reference.");
+        if (ref == null) {
+            // try to parse the GOID
+            Goid parsedGoid = null;
+            try {
+                final Element goidElem = XmlUtil.findExactlyOneChildElementByName(el, GOID_EL_NAME);
+                if (goidElem != null && goidElem.getTextContent() != null) {
+                    parsedGoid = Goid.parseGoid(goidElem.getTextContent());
+                }
+            } catch (final InvalidDocumentFormatException | IllegalArgumentException e) {
+                logger.log(Level.WARNING, "Unable to parse SiteMinderConfiguration goid: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+            if (parsedGoid != null) {
+                return new SiteMinderExternalReference(finder, parsedGoid);
+            } else {
+                throw new InvalidDocumentFormatException("Unable to load SiteMinder configuration reference.");
+            }
+        } else {
+            return ref;
+        }
     }
 }
