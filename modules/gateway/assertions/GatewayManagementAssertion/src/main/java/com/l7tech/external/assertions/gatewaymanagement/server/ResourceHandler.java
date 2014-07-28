@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.DuplicateResourceAccessException;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -564,6 +565,9 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             }
             setOperationInfo( context, null, ExceptionUtils.getMessage( e ) );
             throw new InvalidRepresentationFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( e ), detail, null, null));
+        } else if ( e instanceof InvalidArgumentException) {
+            setOperationInfo( context, null, ExceptionUtils.getMessage( e ) );
+            throw new InvalidRepresentationFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( e ), InvalidRepresentationFault.Detail.INVALID_VALUES.toString(), null, null));
         } else if ( e instanceof PermissionDeniedException ) {
             String userId = JaasUtils.getCurrentUser()==null ? "<unauthenticated>" : JaasUtils.getCurrentUser().getLogin();
             logger.warning( ExceptionUtils.getMessage(e) + ", for user '"+userId+"'.");

@@ -5207,6 +5207,48 @@ public class ServerGatewayManagementAssertionTest {
 
     }
 
+    @BugId("SSG-9000")
+    @Test
+    public void testCreateGatewayRoleInvalidEntityType() throws Exception {
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/roles</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:RequestEPR/></s:Header><s:Body> "+
+                "            <l7:Role>\n" +
+                "            <l7:name>My Invalid Created Role</l7:name>\n" +
+                "            <l7:userCreated>true</l7:userCreated>\n" +
+                "            <l7:permissions>\n" +
+                "                <l7:permission>\n" +
+                "                    <l7:operationType>CREATE</l7:operationType>\n" +
+                "                    <l7:entityType>INVALID</l7:entityType>\n" +
+                "                </l7:permission>\n" +
+                "                <l7:permission>\n" +
+                "                    <l7:operationType>READ</l7:operationType>\n" +
+                "                    <l7:entityType>INVALID</l7:entityType>\n" +
+                "                </l7:permission>\n" +
+                "                <l7:permission>\n" +
+                "                    <l7:operationType>UPDATE</l7:operationType>\n" +
+                "                    <l7:entityType>INVALID</l7:entityType>\n" +
+                "                </l7:permission>\n" +
+                "                <l7:permission>\n" +
+                "                    <l7:operationType>DELETE</l7:operationType>\n" +
+                "                    <l7:entityType>INVALID</l7:entityType>\n" +
+                "                </l7:permission>\n" +
+                "            </l7:permissions>" +
+                "            <l7:assignments/>\n" +
+                "        </l7:Role>"
+                +"  </s:Body></s:Envelope>";
+
+        final Document result = processRequest("http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", message);
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        Element faultElement = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_SOAP_ENVELOPE, "Fault");
+        Element codeElement = XmlUtil.findExactlyOneChildElementByName(faultElement, NS_SOAP_ENVELOPE, "Code");
+        Element subcodeElement = XmlUtil.findExactlyOneChildElementByName(codeElement, NS_SOAP_ENVELOPE, "Subcode");
+        Element detailElement = XmlUtil.findExactlyOneChildElementByName(faultElement, NS_SOAP_ENVELOPE, "Detail");
+
+        assertTrue("the error message is incorrect", XmlUtil.getTextValue(XmlUtil.findExactlyOneChildElementByName(subcodeElement, NS_SOAP_ENVELOPE, "Value")).contains("InvalidRepresentation"));
+        assertTrue("the error message is incorrect", XmlUtil.getTextValue(XmlUtil.findExactlyOneChildElementByName(detailElement, NS_SOAP_ENVELOPE, "Text")).contains("Unknown entity type: INVALID"));
+
+    }
+
     @Test
     public void testAddAssignmentRole() throws Exception {
         final String message =
