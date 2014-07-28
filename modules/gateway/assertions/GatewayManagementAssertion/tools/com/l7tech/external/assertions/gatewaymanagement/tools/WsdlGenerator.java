@@ -5,42 +5,28 @@ import com.l7tech.external.assertions.gatewaymanagement.server.ResourceHandler;
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.IOUtils;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Result;
 import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Utility to generate the WSDL artifacts for the Gateway Management service.
@@ -75,15 +61,14 @@ public class WsdlGenerator {
         }
 
         // Write XML input for XSL transform
-        final NodeList nodeList = findResourceFactoryClassAttributes();
+        final List<String> factoryClasses = findResourceFactoryClassAttributes();
         PrintWriter out = null;
 
         try {
             out = new PrintWriter( new FileWriter( new File( outputDirectory, "resources.xml" ) ) );
 
             out.println("<resourceFactories namespace=\""+ResourceHandler.MANAGEMENT_NAMESPACE+"\" schemaLocation=\"gateway-management.xsd\" address=\"http://127.0.0.1:8080/wsman\">");
-            for ( int i=0; i<nodeList.getLength(); i++ ) {
-                final String factoryClass = ((Attr)nodeList.item(i)).getValue();
+            for ( final String factoryClass : factoryClasses ) {
                 out.println("<resourceFactory class=\"" + factoryClass + "\">");
 
                 final Class<? extends ResourceFactory> factory = (Class<? extends ResourceFactory>) Class.forName( factoryClass );
@@ -158,7 +143,7 @@ public class WsdlGenerator {
     /**
      *
      */
-    private static NodeList findResourceFactoryClassAttributes() throws IOException, SAXException, XPathExpressionException, ParserConfigurationException {
+    private static List<String> findResourceFactoryClassAttributes() throws IOException, SAXException, XPathExpressionException, ParserConfigurationException {
         final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware( true );
         final DocumentBuilder db = dbf.newDocumentBuilder();        
@@ -185,7 +170,15 @@ public class WsdlGenerator {
                 return null;
             }
         } );
-        return (NodeList) xpath.evaluate("//spr:bean[@id='resourceFactoryRegistry']/spr:constructor-arg/spr:list/spr:bean/@class", beansDoc, XPathConstants.NODESET);
+        final NodeList factoryRefs = (NodeList) xpath.evaluate("//spr:bean[@id='resourceFactoryRegistry']/spr:constructor-arg/spr:list/spr:ref/@local", beansDoc, XPathConstants.NODESET);
+        final List<String> factoryClasses = new ArrayList<>(factoryRefs.getLength());
+        for ( int i=0; i<factoryRefs.getLength(); i++ ) {
+            final String factoryRef = ((Attr) factoryRefs.item(i)).getValue();
+
+            final String factoryClass = (String) xpath.evaluate("//spr:bean[@id='"+factoryRef+"']/@class", beansDoc, XPathConstants.STRING);
+            factoryClasses.add(factoryClass);
+        }
+        return factoryClasses;
     }
 
     /**
