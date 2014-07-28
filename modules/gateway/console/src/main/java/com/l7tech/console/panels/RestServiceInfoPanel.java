@@ -176,8 +176,8 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                 description = "Specify a Service Name, Resource Base URL and optionally overriding the default Gateway URI.  The Gateway URI will mimic the path from the Resource Base URL unless overridden.<br/>" +
                         "<br/>* denotes required fields.<br/>" +
                         "<br/>Example:<br/>" +
-                        "Service Name: Layer7 Search API<br/>" +
-                        "Resource Base URL: http://search.layer7.com<br/>" +
+                        "Service Name: CA Search API<br/>" +
+                        "Resource Base URL: http://search.ca.com<br/>" +
                         "Gateway URI: http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/test/echo/";
             }
             else {
@@ -186,7 +186,7 @@ public class RestServiceInfoPanel extends WizardStepPanel {
                         "<br/>Example:<br/>" +
                         "Location: c:\\services\\wadl\\echo_service.wadl (Windows)<br/>" +
                         "Location: \\wadl\\echo_service.wadl (Unix/Linux)<br/>" +
-                        "Location: http://www.api.layer7.com/services/echo_service.wadl<br/>";
+                        "Location: http://www.api.ca.com/services/echo_service.wadl<br/>";
             }
         }
     }
