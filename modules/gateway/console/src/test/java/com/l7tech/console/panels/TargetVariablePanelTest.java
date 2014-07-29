@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.ResourceBundle;
 
 /**
  * This was created: 12/6/12 as 11:43 AM
@@ -17,7 +16,6 @@ import java.util.ResourceBundle;
 
 @Ignore("Cannot test UI components.")
 public class TargetVariablePanelTest {
-    private static ResourceBundle resources = ResourceBundle.getBundle(TargetVariablePanel.class.getName());
     TargetVariablePanel testPanel;
 
     @Before
@@ -28,7 +26,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testNewVariable() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.f");
         String message = testPanel.getMessage();
@@ -38,7 +36,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariable() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.c");
         String message = testPanel.getMessage();
@@ -48,7 +46,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableDifferentCase() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.D");
         String message = testPanel.getMessage();
@@ -58,7 +56,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableWithSuffix() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"d"});
@@ -69,7 +67,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableWithSuffixExtra() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"d", "z"});
@@ -80,7 +78,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableDifferentCaseWithSuffix() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"D"});
@@ -91,7 +89,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testEmptyAccepted() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("");
         testPanel.setAcceptEmpty(true);
@@ -102,7 +100,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testEmptyNotAccepted() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("");
         testPanel.setAcceptEmpty(false);
@@ -129,7 +127,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testNewVariableReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.f");
         testPanel.setValueWillBeRead(true);
@@ -141,7 +139,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.c");
         testPanel.setValueWillBeRead(true);
@@ -153,7 +151,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableDifferentCaseReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var.D");
         testPanel.setValueWillBeRead(true);
@@ -165,7 +163,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableWithSuffixReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"d"});
@@ -178,7 +176,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableWithSuffixMissingReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"d", "z"});
@@ -191,7 +189,7 @@ public class TargetVariablePanelTest {
 
     @Test
     public void testExistingVariableDifferentCaseWithSuffixReadOnly() {
-        testPanel.setPredecessorVariables(new HashSet<String>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
 
         testPanel.setVariable("my.var");
         testPanel.setSuffixes(new String[]{"D"});
@@ -200,5 +198,16 @@ public class TargetVariablePanelTest {
         String message = testPanel.getMessage();
 
         Assert.assertEquals("Unexpected Message Received", "OK (New Prefix)", message);
+    }
+
+    @Test
+    public void testContextVariableNotAllowed() {
+        testPanel.setPredecessorVariables(new HashSet<>(Arrays.asList(new String[]{"my.var", "my.var.a", "my.var.b", "my.var.c", "my.var.d", "my.var.e"})));
+        testPanel.setAllowContextVariable(false);
+        testPanel.setVariable("${abc}");
+        testPanel.setValueWillBeRead(true);
+        testPanel.setValueWillBeWritten(false);
+        String message = testPanel.getMessage();
+        Assert.assertEquals("Unexpected Message Received", "Invalid Syntax", message);
     }
 }

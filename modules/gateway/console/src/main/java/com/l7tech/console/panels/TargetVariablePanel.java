@@ -37,11 +37,12 @@ public class TargetVariablePanel  extends JPanel {
     private JLabel statusLabel;
 
     private String prefix = "";
-    private Set<String> predecessorVariables = new TreeSet<String>();
+    private Set<String> predecessorVariables = new TreeSet<>();
     private boolean entryValid;
 
-    private final List<String> suffixes = new ArrayList<String>();
+    private final List<String> suffixes = new ArrayList<>();
     private boolean acceptEmpty;
+    private boolean allowContextVariable = true;
     private boolean valueWillBeRead;
     private boolean valueWillBeWritten = true;
     private boolean alwaysPermitSyntax = false;
@@ -147,7 +148,7 @@ public class TargetVariablePanel  extends JPanel {
                 new TreeSet<String>();
 
         // convert all vars to lower
-         predecessorVariables = new TreeSet<String>();
+         predecessorVariables = new TreeSet<>();
 
         for(String var : vars){
             predecessorVariables.add(var.toLowerCase());
@@ -320,6 +321,14 @@ public class TargetVariablePanel  extends JPanel {
             statusLabel.setIcon(OK_ICON);        
             statusLabel.setText(resources.getString("label.ok"));
         }
+        else if (!allowContextVariable && Syntax.getReferencedNames(getSuffix()).length > 0) {
+            entryValid = false;
+            statusLabel.setIcon(WARNING_ICON);
+            statusLabel.setText("Invalid Syntax");
+            validateNameResult = resources.getString("err.msg.contextVarNotAllowed");
+            statusLabel.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
+            prefixOrVariableField.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
+        }
         else if ((validateNameResult = VariableMetadata.validateName(variableName, alwaysPermitSyntax || (valueWillBeRead&&!valueWillBeWritten))) != null) {
             entryValid = false;
             statusLabel.setIcon(WARNING_ICON);        
@@ -381,6 +390,7 @@ public class TargetVariablePanel  extends JPanel {
             }
             statusLabel.setIcon(entryValid ? OK_ICON : WARNING_ICON);
             statusLabel.setText(resources.getString(label));
+            statusLabel.setToolTipText(entryValid ? null : resources.getString(label));
             variableStatus = status;
         }
     }
@@ -517,6 +527,10 @@ public class TargetVariablePanel  extends JPanel {
 
     public void updateStatus() {
         validateFields();
+    }
+
+    public void setAllowContextVariable(final boolean allowContextVariable) {
+        this.allowContextVariable = allowContextVariable;
     }
 }
 

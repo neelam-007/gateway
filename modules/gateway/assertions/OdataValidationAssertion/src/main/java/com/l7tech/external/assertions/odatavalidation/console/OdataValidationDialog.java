@@ -69,6 +69,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
         metadataVariablePanel.setValueWillBeWritten(true);
         metadataVariablePanel.setAcceptEmpty(false);
+        targetVariablePanel.setAllowContextVariable(false);
 
         // HTTP method combo box
         DefaultComboBoxModel<String> httpMethodComboBoxModel = new DefaultComboBoxModel<>();
@@ -89,7 +90,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         });
 
         // prefix for target context variables
-        targetVariablePanel.setDefaultVariableOrPrefix(OdataValidationAssertion.DEFAULT_PREFIX);
         targetVariablePanel.setSuffixes(VARIABLE_SUFFIXES);
         targetVariablePanel.setAcceptEmpty(false);
         targetVariablePanel.setValueWillBeWritten(true);
@@ -104,6 +104,21 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
             public String getValidationError() {
                 if (!metadataVariablePanel.isEntryValid()) {
                    return resources.getString("serviceMetadataInvalidErrMsg");
+                }
+
+                return null;
+            }
+        });
+
+        // validate variable prefix
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(targetVariablePanel) {
+            @Override
+            public String getValidationError() {
+                if (!targetVariablePanel.isEntryValid()) {
+                    return resources.getString("variablePrefixInvalidErrMsg");
+                }
+                else if ((Syntax.getReferencedNames(targetVariablePanel.getSuffix())).length > 0) {
+                    return resources.getString("variablePrefixContainsContextVariableErrMsg");
                 }
 
                 return null;
