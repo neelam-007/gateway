@@ -21,7 +21,6 @@ import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
@@ -327,7 +326,7 @@ public class WorkSpacePanel extends JPanel {
             int totalWidth = SwingUtilities.computeStringWidth(metrics, title + EXTRA_SPACES);
             boolean changed = false;
 
-            while (totalWidth > workspaceWidth && workspaceWidth > 0 && title.length() >= 11) {
+            while (totalWidth > workspaceWidth && workspaceWidth > 0 && title.length() >= 12) {
                 title = TextUtils.truncStringMiddle(title, title.length() - 6); // Truncate 6 characters every time
                 totalWidth = SwingUtilities.computeStringWidth(metrics, title + EXTRA_SPACES);
                 changed = true;
@@ -1214,6 +1213,9 @@ public class WorkSpacePanel extends JPanel {
 
         public void doCloseTab(int index) {
             tabPane.removeTabAt(index);
+
+            // After a tab is closed, move more existing tabs as possible into the visible tab area.
+            displayMorePolicyTabsInVisibleArea();
         }
 
         public void doCloseOthers(int index) {
@@ -1310,6 +1312,50 @@ public class WorkSpacePanel extends JPanel {
             }
             return false;
         }
+    }
+
+    /**
+     * When the tabbed pane uses SCROLL_TAB_LAYOUT, after some policy tabs are closed,
+     * move more existing tabs as possible into the visible tab area for displaying.
+     *
+     * Note: do not call this method, when closeAll and closeOthers actions are performed.
+     */
+    private void displayMorePolicyTabsInVisibleArea() {
+        // If the tab layout is not SCROLL_TAB_LAYOUT or there are not tabs, then no need to do.
+        final int tabLayout = tabbedPane.getTabLayoutPolicy();
+        if (tabLayout != JTabbedPane.SCROLL_TAB_LAYOUT || tabbedPane.getTabCount() == 0) {
+            return;
+        }
+
+        // If both arrow buttons are enabled, then no need to move any tabs.
+        BasicArrowButton leftScrollButton = null, rightScrollButton = null;
+        for (Component component: tabbedPane.getComponents()) {
+            if (component instanceof BasicArrowButton) {
+                if (((BasicArrowButton) component).getDirection() == SwingConstants.WEST) {
+                    leftScrollButton = (BasicArrowButton) component;
+                } else if (((BasicArrowButton) component).getDirection() == SwingConstants.EAST) {
+                    rightScrollButton = (BasicArrowButton) component;
+                }
+            }
+        }
+        if (leftScrollButton != null && rightScrollButton != null && leftScrollButton.isEnabled() && rightScrollButton.isEnabled()) {
+            return;
+        }
+
+        final Component selectedComponent = tabbedPane.getSelectedComponent();
+
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (selectedComponent == null) return;
+
+                tabbedPane.setSelectedIndex(-1);
+                tabbedPane.setSelectedComponent(selectedComponent);
+            }
+        });
     }
 
     /**
@@ -1410,6 +1456,9 @@ public class WorkSpacePanel extends JPanel {
         for (Component component: matchedComponents) {
             tabbedPane.remove(component);
         }
+
+        // After removing tabs, move more existing tabs as possible into the visible tab area.
+        displayMorePolicyTabsInVisibleArea();
     }
 
     /**
