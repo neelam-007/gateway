@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion.OdataMethod;
+
 /**
  * Server side implementation of the OdataValidationAssertion.
  *
@@ -53,21 +55,39 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
             return getBadMessageStatus();
         }
 
-        // check if OData request is coming from HTTP
-        HttpRequestKnob httpRequestKnob = msg.getKnob(HttpRequestKnob.class);
+        // get HTTP method
+        String httpMethod;
 
-        if(httpRequestKnob == null) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_URI, targetName + " is not HTTP");
-            return AssertionStatus.FALSIFIED;
+        if (null == assertion.getHttpMethod() || assertion.getHttpMethod().isEmpty()) { // get method "automatically"
+            HttpRequestKnob httpRequestKnob = msg.getKnob(HttpRequestKnob.class);
+
+            if (httpRequestKnob == null) {
+                logAndAudit(AssertionMessages.ODATA_VALIDATION_MESSAGE_NOT_HTTP_REQUEST, targetName);
+                return AssertionStatus.FAILED;
+            }
+
+            httpMethod = httpRequestKnob.getMethodAsString();
+        } else {
+            httpMethod = ExpandVariables.process(assertion.getHttpMethod(), varMap, getAudit());
         }
 
-        // get request HTTP method
-        String requestMethod = httpRequestKnob.getMethodAsString();
+        if (StringUtils.isBlank(httpMethod)) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_EMPTY_HTTP_METHOD);
+            return AssertionStatus.FAILED;
+        }
 
-        // Check HTTP request method is authorized
+        // check it's a valid OData method
+        try {
+            OdataMethod.valueOf(httpMethod.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_INVALID_HTTP_METHOD, httpMethod);
+            return AssertionStatus.FAILED;
+        }
+
+        // Check HTTP method is authorized
         boolean forbiddenOperation;
 
-        switch (requestMethod) {
+        switch (httpMethod.toUpperCase()) {
             case "GET":
                 forbiddenOperation = !assertion.isReadOperation();
                 break;
@@ -93,17 +113,18 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
                 break;
 
             default:
+                // should never happen
                 forbiddenOperation = true;
         }
 
         if (forbiddenOperation) {
-            logAndAudit(AssertionMessages.ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED, requestMethod);
+            logAndAudit(AssertionMessages.ODATA_VALIDATION_FORBIDDEN_OPERATION_ATTEMPTED, httpMethod);
             return AssertionStatus.FALSIFIED;
         }
 
         //get context variable prefix
         String variablePrefix = ExpandVariables.process(assertion.getVariablePrefix(), varMap, getAudit());
-        variablePrefix = !variablePrefix.isEmpty() ? variablePrefix : OdataValidationAssertion.DEFAULT_PREFIX;
+        variablePrefix = variablePrefix.isEmpty() ? OdataValidationAssertion.DEFAULT_PREFIX : variablePrefix;
 
         String metadata = ExpandVariables.process(assertion.getOdataMetadataSource(), varMap, getAudit());
         if (StringUtils.isBlank(metadata)) {
@@ -191,7 +212,7 @@ public class ServerOdataValidationAssertion extends AbstractMessageTargetableSer
 
             // parse the payload
             try {
-                parser.parsePayload(requestMethod, odataRequestInfo,
+                parser.parsePayload(httpMethod, odataRequestInfo,
                         mimeKnob.getEntireMessageBodyAsInputStream(), contentType);
             } catch (OdataParser.OdataParsingException | IOException e) {
                 logAndAudit(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD,

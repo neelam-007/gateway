@@ -338,8 +338,140 @@ public class ServerOdataValidationAssertionTest {
         assertTrue(pec.getVariable("odata.query.pathsegments") instanceof String[]);
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("odata.query.pathsegments"));
 
-        // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, false, false, false, false);
+        // expect the no audits
+        checkAuditPresence(false, false, false, false, false, false, false, false, false);
+    }
+
+    /**
+     * Valid HTTP method specified in context variable, retrieved successfully.
+     * Test confirms the expected method is retrieved by making that method the only forbidden operation.
+     */
+    @Test
+    public void doCheckRequest_GivenContextVariableWithValidButForbiddenHTTPMethod_AssertionFails() throws Exception {
+        String forbiddenContextVariableMethod = "MERGE";
+
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setHttpMethod("${methodSource}");
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setValidatePayload(false);
+        assertion.setCreateOperation(true);
+        assertion.setReadOperation(true);
+        assertion.setUpdateOperation(true);
+        assertion.setPartialUpdateOperation(true);
+        assertion.setDeleteOperation(true);
+        assertion.setMergeOperation(false); // context variable method is forbidden
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)",
+                        "GET", ODATA_JSON, // method here is irrelevant - should be ignored when one is specified
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("methodSource", forbiddenContextVariableMethod);
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories(1)");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+
+        // expect the forbidden operation be audited
+        checkAuditPresence(false, false, false, false, true, false, false, false, false);
+
+        // ensure the correct method was found
+        assertTrue(testAudit.isAuditPresentContaining("OData request attempted using forbidden operation '" +
+                forbiddenContextVariableMethod + "'."));
+    }
+
+    /**
+     * Invalid HTTP method specified in context variable, method validation fails.
+     */
+    @Test
+    public void doCheckRequest_GivenContextVariableWithInvalidHTTPMethod_AssertionFails() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setHttpMethod("${methodSource}");
+        assertion.setOdataMetadataSource("${fooVar}");
+        assertion.setResourceUrl("${urlResource}");
+        assertion.setValidatePayload(false);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("methodSource", "HEAD"); // invalid HTTP method
+        pec.setVariable("fooVar", METADATA_DOCUMENT_ODATA_V2);
+        pec.setVariable("urlResource", "/Categories(1)/Products");
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FAILED, status);
+
+        // expect the forbidden operation to be audited
+        checkAuditPresence(false, false, false, false, false, false, false, true, false);
+
+        // ensure the correct method was found
+        assertTrue(testAudit.isAuditPresentContaining("Invalid OData HTTP method: 'HEAD'"));
+    }
+
+    /**
+     * HTTP method property set to non-existent context variable, assertion fails.
+     */
+    @Test
+    public void doCheckRequest_GivenNonExistentContextVariableForHTTPMethod_AssertionFails() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setHttpMethod("${method}"); // not defined, so ExpandVariables.process() will return empty string
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FAILED, status);
+
+        // expect the empty HTTP method to be audited
+        checkAuditPresence(false, false, false, false, false, false, false, false, true);
+    }
+
+    /**
+     * HTTP method property set to empty context variable, assertion fails.
+     */
+    @Test
+    public void doCheckRequest_GivenEmptyContextVariableForHTTPMethod_AssertionFails() throws Exception {
+        OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setHttpMethod("${method}");
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST,
+                createHttpRequestMessage("http://services.odata.org/OData/OData.svc/Categories(1)/Products",
+                        "GET", ODATA_JSON,
+                        new ByteArrayInputStream(new byte[0]))
+        );
+
+        pec.setVariable("method", ""); // empty context variable
+
+        ServerOdataValidationAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+
+        assertEquals(AssertionStatus.FAILED, status);
+
+        // expect the empty HTTP method to be audited
+        checkAuditPresence(false, false, false, false, false, false, false, false, true);
     }
 
     /**
@@ -371,7 +503,7 @@ public class ServerOdataValidationAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, status);
 
         // expect the forbidden operation attempt to be audited
-        checkAuditPresence(false, false, false, false, true, false);
+        checkAuditPresence(false, false, false, false, true, false, false, false, false);
     }
 
     /**
@@ -401,8 +533,8 @@ public class ServerOdataValidationAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, status);
 
-        // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, true, false, false, false);
+        // expect the $metadata request violation to be audited
+        checkAuditPresence(false, false, true, false, false, false, false, false, false);
     }
 
     /**
@@ -432,8 +564,8 @@ public class ServerOdataValidationAssertionTest {
 
         assertEquals(AssertionStatus.FALSIFIED, status);
 
-        // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, false, true, false, false);
+        // expect the $value request violation to be audited
+        checkAuditPresence(false, false, false, true, false, false, false, false, false);
 
         // ensure the request path is included in the audit
         assertTrue(testAudit.isAuditPresentContaining("Request for raw value attempted: /Products(1)/Name/$value"));
@@ -469,8 +601,8 @@ public class ServerOdataValidationAssertionTest {
         assertTrue(pec.getVariable("o.query.pathsegments") instanceof String[]);
         assertArrayEquals(new String[]{"Categories(1)", "Products"}, (String[])pec.getVariable("o.query.pathsegments"));
 
-        // expect the entry name length violation to be audited
-        checkAuditPresence(false, false, false, false, false, false);
+        // expect the no audits
+        checkAuditPresence(false, false, false, false, false, false, false, false, false);
     }
 
     @Test
@@ -493,7 +625,7 @@ public class ServerOdataValidationAssertionTest {
         ServerOdataValidationAssertion serverAssertion = createServer(assertion);
 
         assertEquals(AssertionStatus.NONE, serverAssertion.doCheckRequest(pec, pec.getRequest(),assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
-        assertArrayEquals(new String[]{"Categories"}, (String[])pec.getVariable("o.query.pathsegments"));
+        assertArrayEquals(new String[]{"Categories"}, (String[]) pec.getVariable("o.query.pathsegments"));
 
     }
 
@@ -522,8 +654,8 @@ public class ServerOdataValidationAssertionTest {
 
         assertEquals(AssertionStatus.FAILED, status);
 
-        // expect the entry name length violation to be audited
-        checkAuditPresence(true, false, false, false, false, false);
+        // expect bad SMD to be audited
+        checkAuditPresence(true, false, false, false, false, false, false, false, false);
     }
 
     @Test
@@ -548,29 +680,36 @@ public class ServerOdataValidationAssertionTest {
         Assert.assertEquals(AssertionStatus.FALSIFIED, serverAssertion.doCheckRequest(pec, pec.getRequest(),
                 assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
 
-        checkAuditPresence(false, false, false, false, false, true);
+        checkAuditPresence(false, false, false, false, false, true, false, false, false);
 
     }
 
+    /**
+     * HTTP method set to null ("<Automatic>" option), but target message is not HTTP - failure on can't find method.
+     */
     @Test
-    public void doCheckRequest_sourceMessageIsNotHttp() throws Exception {
+    public void doCheckRequest_HTTPMethodAutomaticButTargetMessageIsNotHttp_AssertionFails() throws Exception {
         OdataValidationAssertion assertion = new OdataValidationAssertion();
+        assertion.setHttpMethod(null);  // null is default value; just setting here for illustration
+
         Message request = new Message();
-        request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(new byte[0]));
+        request.initialize(TestStashManagerFactory.getInstance().createStashManager(),
+                ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(new byte[0]));
         PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST, request);
         ServerOdataValidationAssertion serverAssertion = createServer(assertion);
 
-        Assert.assertEquals(AssertionStatus.FALSIFIED, serverAssertion.doCheckRequest(pec, pec.getRequest(),
+        Assert.assertEquals(AssertionStatus.FAILED, serverAssertion.doCheckRequest(pec, pec.getRequest(),
                 assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest())));
-        checkAuditPresence(false, true, false, false, false, false);
+        checkAuditPresence(false, false, false, false, false, false, true, false, false);
     }
 
     /**
      * Checks presence or absence of audits to confirm the expected audits are present/not present.
      */
     private void checkAuditPresence(boolean invalidServiceMetadataDocument, boolean invalidRequestUri,
-                                    boolean metadataRequestBlocked, boolean rawValueRequestBlocked, 
-                                    boolean forbiddenOperation, boolean invalidPayload) {
+                                    boolean metadataRequestBlocked, boolean rawValueRequestBlocked,
+                                    boolean forbiddenOperation, boolean invalidPayload,
+                                    boolean messageNotHttp, boolean httpMethodInvalid, boolean httpMethodEmpty) {
         assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_SMD.getMessage(),
                 invalidServiceMetadataDocument,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_SMD));
@@ -595,6 +734,17 @@ public class ServerOdataValidationAssertionTest {
                 invalidPayload,
                 testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_TARGET_INVALID_PAYLOAD));
 
+        assertEquals(AssertionMessages.ODATA_VALIDATION_MESSAGE_NOT_HTTP_REQUEST.getMessage(),
+                messageNotHttp,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_MESSAGE_NOT_HTTP_REQUEST));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_INVALID_HTTP_METHOD.getMessage(),
+                httpMethodInvalid,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_INVALID_HTTP_METHOD));
+
+        assertEquals(AssertionMessages.ODATA_VALIDATION_EMPTY_HTTP_METHOD.getMessage(),
+                httpMethodEmpty,
+                testAudit.isAuditPresent(AssertionMessages.ODATA_VALIDATION_EMPTY_HTTP_METHOD));
     }
 
     private ServerOdataValidationAssertion createServer(OdataValidationAssertion assertion) {

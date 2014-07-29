@@ -33,11 +33,12 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
     public static final String QUERY_PATHSEGMENTS = ".query.pathsegments";
     public static final String QUERY_COUNT = ".query.count";
 
-    public enum OdataOperations { GET, POST, PUT, DELETE, MERGE, PATCH }
+    public enum OdataMethod { GET, POST, PUT, DELETE, MERGE, PATCH }
     public enum ProtectionActions { ALLOW_METADATA, ALLOW_RAW_VALUE }
 
     private String odataMetadataSource;
     private String resourceUrl;
+    private String httpMethod;
     private String variablePrefix;
     private boolean validatePayload = true;
 
@@ -122,6 +123,14 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
         this.resourceUrl = resourceUrl;
     }
 
+    public String getHttpMethod() {
+        return httpMethod;
+    }
+
+    public void setHttpMethod(String httpMethod) {
+        this.httpMethod = httpMethod;
+    }
+
     public EnumSet<ProtectionActions> getActions() {
         return actions;
     }
@@ -142,7 +151,7 @@ public class OdataValidationAssertion extends MessageTargetableAssertion impleme
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions(odataMetadataSource, resourceUrl, variablePrefix);
+        return super.doGetVariablesUsed().withExpressions(odataMetadataSource, httpMethod, resourceUrl, variablePrefix);
     }
 
     @Override

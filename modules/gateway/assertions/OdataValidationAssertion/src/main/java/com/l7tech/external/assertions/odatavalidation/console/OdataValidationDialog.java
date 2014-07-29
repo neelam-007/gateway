@@ -4,20 +4,17 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.Syntax;
 import org.apache.commons.lang.BooleanUtils;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.text.MessageFormat;
 import java.util.*;
 
+import static com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion.OdataMethod;
 import static com.l7tech.external.assertions.odatavalidation.OdataValidationAssertion.ProtectionActions;
 
 /**
@@ -27,6 +24,8 @@ import static com.l7tech.external.assertions.odatavalidation.OdataValidationAsse
  * @author ymoiseyenko
  */
 public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<OdataValidationAssertion> {
+    private static final ResourceBundle resources = ResourceBundle.getBundle(OdataValidationDialog.class.getName());
+
     private static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection(Arrays.asList(
             OdataValidationAssertion.QUERY_COUNT,
             OdataValidationAssertion.QUERY_CUSTOMOPTIONS,
@@ -40,6 +39,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
             OdataValidationAssertion.QUERY_SKIP,
             OdataValidationAssertion.QUERY_TOP));
 
+    private static final int AUTOMATIC_METHOD_INDEX = 0;
+    private static final String AUTOMATIC_METHOD_LABEL = "<Automatic>";
+
     private JPanel contentPanel;
     private JCheckBox metadataCheckBox;
     private JCheckBox rawValueCheckBox;
@@ -51,10 +53,9 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     private JCheckBox patchMethodCheckBox;
     private TargetVariablePanel targetVariablePanel;
     private JTextField odataResourceUrl;
-    private JLabel resourceUrlLabel;
     private JCheckBox validatePayload;
     private TargetVariablePanel metadataVariablePanel;
-    private JLabel serviceMetadataLabel;
+    private JComboBox<String> httpMethodComboBox;
 
     private InputValidator inputValidator;
 
@@ -68,39 +69,73 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
 
         metadataVariablePanel.setValueWillBeWritten(true);
         metadataVariablePanel.setAcceptEmpty(false);
-/*        metadataVariablePanel.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                enableDisableComponents();
-            }
-        });*/
 
+        // HTTP method combo box
+        DefaultComboBoxModel<String> httpMethodComboBoxModel = new DefaultComboBoxModel<>();
+
+        httpMethodComboBoxModel.insertElementAt(AUTOMATIC_METHOD_LABEL, AUTOMATIC_METHOD_INDEX);
+
+        for (OdataMethod method : OdataMethod.values()) {
+            httpMethodComboBoxModel.addElement(method.toString());
+        }
+
+        httpMethodComboBox.setModel(httpMethodComboBoxModel);
+
+        httpMethodComboBox.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                httpMethodComboBox.getEditor().selectAll();
+            }
+        });
+
+        // prefix for target context variables
         targetVariablePanel.setDefaultVariableOrPrefix(OdataValidationAssertion.DEFAULT_PREFIX);
         targetVariablePanel.setSuffixes(VARIABLE_SUFFIXES);
         targetVariablePanel.setAcceptEmpty(false);
         targetVariablePanel.setValueWillBeWritten(true);
 
-
+        // create validation rules
         inputValidator = new InputValidator(this, getTitle());
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("resourceProperty"), odataResourceUrl, null);
         
-        inputValidator.constrainTextFieldToBeNonEmpty(resourceUrlLabel.getText(), odataResourceUrl, null);
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(!metadataVariablePanel.isEntryValid()) {
-                   return serviceMetadataLabel.getText() + " entry is invalid!";
+                if (!metadataVariablePanel.isEntryValid()) {
+                   return resources.getString("serviceMetadataInvalidErrMsg");
                 }
+
                 return null;
             }
         });
 
+        // validate HTTP method
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(httpMethodComboBox) {
+            @Override
+            public String getValidationError() {
+                String methodSelection = httpMethodComboBox.getSelectedItem().toString();
 
+                if (methodSelection.isEmpty()) {
+                    return resources.getString("httpMethodEmptyErrMsg");
+                }
 
-        inputValidator.attachToButton(getOkButton(), super.createOkAction());
-    }
+                // see if a context variable is present
+                if (Syntax.getReferencedNames(methodSelection).length > 0) {
+                    if (!Syntax.isOnlyASingleVariableReferenced(methodSelection)) {
+                        return resources.getString("httpMethodNotOnlyOneVariableErrMsg");
+                    }
+                } else if (!AUTOMATIC_METHOD_LABEL.equals(methodSelection)) { // if not a context variable or "<Automatic>"
+                    try {
+                        OdataMethod.valueOf(methodSelection); // valid method
+                    } catch (IllegalArgumentException e) {
+                        return MessageFormat.format(resources.getString("httpMethodInvalidErrMsg"), methodSelection);
+                    }
+                }
 
-    private void enableDisableComponents() {
-        getOkButton().setEnabled(metadataVariablePanel.isEntryValid() & targetVariablePanel.isEntryValid());
+                return null;
+            }
+        });
     }
 
     /**
@@ -118,6 +153,20 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
                     toBoolean(availableActions.contains(ProtectionActions.ALLOW_METADATA)));
             rawValueCheckBox.setSelected(BooleanUtils.
                     toBoolean(availableActions.contains(ProtectionActions.ALLOW_RAW_VALUE)));
+        }
+
+        String method = assertion.getHttpMethod();
+
+        if (null == method) {
+            httpMethodComboBox.setSelectedIndex(AUTOMATIC_METHOD_INDEX);
+        } else {
+            try {
+                OdataMethod.valueOf(method); // if it's a valid method, it will already be in the combo box
+                httpMethodComboBox.setSelectedItem(method);
+            } catch (IllegalArgumentException e) {
+                httpMethodComboBox.addItem(method); // need to add the item to the combo box
+                httpMethodComboBox.setSelectedItem(method); // select the inserted item
+            }
         }
 
         odataResourceUrl.setText(assertion.getResourceUrl());
@@ -144,18 +193,31 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
      */
     @Override
     public OdataValidationAssertion getData(OdataValidationAssertion assertion) throws ValidationException {
+        final String error = inputValidator.validate();
+
+        if (null != error) {
+            throw new ValidationException(error);
+        }
+
+        // set HTTP method
+        if (AUTOMATIC_METHOD_LABEL.equals(httpMethodComboBox.getSelectedItem().toString())) {
+            assertion.setHttpMethod(null);
+        } else {
+            assertion.setHttpMethod(httpMethodComboBox.getSelectedItem().toString());
+        }
+        
         assertion.setResourceUrl(odataResourceUrl.getText());
         assertion.setVariablePrefix(targetVariablePanel.getVariable());
         assertion.setOdataMetadataSource(Syntax.SYNTAX_PREFIX + metadataVariablePanel.getVariable() + Syntax.SYNTAX_SUFFIX);
         assertion.setValidatePayload(validatePayload.isSelected());
 
-        //set actions
+        // set actions
         EnumSet<ProtectionActions> tempSet = EnumSet.noneOf(ProtectionActions.class);
         setAction(tempSet, metadataCheckBox, ProtectionActions.ALLOW_METADATA);
         setAction(tempSet, rawValueCheckBox, ProtectionActions.ALLOW_RAW_VALUE);
         assertion.setActions(tempSet);
 
-        //set operations
+        // set operations
         assertion.setReadOperation(getMethodCheckBox.isSelected());
         assertion.setCreateOperation(postMethodCheckBox.isSelected());
         assertion.setUpdateOperation(putMethodCheckBox.isSelected());
@@ -172,12 +234,6 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         }
     }
 
-    @Override
-    protected ActionListener createOkAction() {
-        // returns a no-op action so we can add our own Ok listener
-        return new RunOnChangeListener();
-    }
-
     /**
      * Create a panel to edit the properties of the assertion bean.  This panel does not include any
      * Ok or Cancel buttons.
@@ -188,19 +244,4 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     protected JPanel createPropertyPanel() {
         return contentPanel;
     }
-
-    /*
-     * Validating Field:
-     *
-     * odataServiceRootURL - non-empty, URL or contains a context-variable reference
-     *
-     * metadataSourceTexField - non-empty, context-variable naming a string/message?
-     *
-     * targetVariablePanel1 - non-empty
-     *
-     * HTTP Method check boxes - at least one set
-     *
-     * hide data check boxes (metadata, rawdata) -
-     *
-     */
 }
