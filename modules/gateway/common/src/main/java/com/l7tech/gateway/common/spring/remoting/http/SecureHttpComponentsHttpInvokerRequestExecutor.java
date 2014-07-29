@@ -6,10 +6,20 @@ import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import org.apache.http.*;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.auth.params.AuthPNames;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.AuthPolicy;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpParams;
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.remoting.httpinvoker.AbstractHttpInvokerRequestExecutor;
@@ -22,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -38,7 +50,7 @@ import java.util.zip.GZIPInputStream;
  */
 public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvokerRequestExecutor implements ConfigurableHttpInvokerRequestExecutor {
 
-    private HttpClient httpClient;
+    private DefaultHttpClient httpClient;
 
     //- PUBLIC
 
@@ -49,11 +61,11 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
         this.sessionInfoHolder = new SessionSupport();
     }
 
-    public SecureHttpComponentsHttpInvokerRequestExecutor(HttpClient httpClient) {
+    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClient httpClient) {
         this(httpClient, null);
     }
 
-    public SecureHttpComponentsHttpInvokerRequestExecutor(HttpClient httpClient, String userAgent) {
+    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClient httpClient, String userAgent) {
         this.httpClient = httpClient;
         this.userAgent = userAgent;
         this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
@@ -205,6 +217,7 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
         SecureHttpComponentsClient.setTrustFailureHandler(trustFailureHandler);
         HttpHost hostConfiguration = new HttpHost(info.host, info.port, "https");
         postMethod.addHeader("X-Layer7-SessionId", info.sessionId);
+        configureProxy( httpClient );
         try {
             return httpClient.execute(hostConfiguration, postMethod);
         } catch (SocketTimeoutException ex) {
@@ -250,6 +263,32 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
             // switch in the correct host/port
             Matcher matcher = hostSubstitutionPattern.matcher(url);
             return matcher.replaceFirst("");
+        }
+    }
+
+    private void configureProxy(DefaultHttpClient httpClient) {
+        // TODO support http.nonProxyHosts whitelist of hosts to avoid proxying
+        String proxyHost = SyspropUtil.getProperty( "http.proxyHost" );
+        if (proxyHost == null)
+            return;
+        int proxyPort = SyspropUtil.getInteger("http.proxyPort", 80);
+        HttpHost proxy = new HttpHost( proxyHost, proxyPort );
+
+        HttpParams clientParams = httpClient.getParams();
+        clientParams.setParameter( ConnRoutePNames.DEFAULT_PROXY, proxy);
+
+        String proxyUsername = SyspropUtil.getString("http.proxyUsername", null);
+        String proxyPassword = SyspropUtil.getString("http.proxyPassword", "");
+        if ( proxyUsername != null && proxyUsername.length() > 0 ) {
+            CredentialsProvider proxyCredProvider = new BasicCredentialsProvider();
+
+            List<String> authPref = new ArrayList<>();
+            authPref.add( AuthPolicy.DIGEST );
+            authPref.add( AuthPolicy.BASIC );
+            clientParams.setParameter( AuthPNames.PROXY_AUTH_PREF, authPref );
+            proxyCredProvider.setCredentials( new AuthScope( proxy, AuthScope.ANY_REALM, "basic" ), new UsernamePasswordCredentials( proxyUsername, proxyPassword ) );
+
+            httpClient.setCredentialsProvider(proxyCredProvider);
         }
     }
 }
