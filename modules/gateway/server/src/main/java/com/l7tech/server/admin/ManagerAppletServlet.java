@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class ManagerAppletServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(ManagerAppletServlet.class.getName());
 
-    private static final String PAGE_OPEN = "<html><head><title>TITLE</title><link rel=\"icon\" type=\"image/png\" href=\"favicon.ico\" /></head>\n<body marginheight=\"0\" topmargin=\"0\" vspace=\"0\"\n" +
+    private static final String PAGE_OPEN = "<html><head><title>TITLE</title><link rel=\"icon\" type=\"image/png\" href=\"favicon.png\" /></head>\n<body marginheight=\"0\" topmargin=\"0\" vspace=\"0\"\n" +
             "marginwidth=\"0\" leftmargin=\"0\" hspace=\"0\" style=\"margin:0; padding:0\">";
     private static final String PAGE_CLOSE = "</body></html>";
 
