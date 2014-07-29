@@ -295,12 +295,9 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="278d5" class="org.fife.ui.rsyntaxtextarea.RSyntaxTextArea" binding="_expressionTextArea">
+          <component id="865a3" class="javax.swing.JTextArea" binding="_expressionTextArea" custom-create="true">
             <constraints/>
-            <properties>
-              <whitespaceVisible value="true"/>
-              <wrapStyleWord value="false"/>
-            </properties>
+            <properties/>
           </component>
         </children>
       </scrollpane>

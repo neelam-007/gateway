@@ -3,15 +3,13 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.*;
 import com.l7tech.util.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
@@ -65,7 +63,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel _mainPanel;
     private JComboBox<DataTypeComboBoxItem> _dataTypeComboBox;
     private JLabel nonExpressionInputStatusLabel;
-    private RSyntaxTextArea _expressionTextArea;
     private JRadioButton _crlfRadioButton;
     private JRadioButton _crRadioButton;
     private JRadioButton _lfRadioButton;
@@ -86,6 +83,22 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField datePreviewTextField;
     private JLabel datePreviewLabel;
     private JLabel dateOffsetStatusLabel;
+    private JScrollPane expressionScrollPane;
+
+    // custom create
+    private JTextArea _expressionTextArea;
+    private void createUIComponents() {
+        _expressionTextArea = new RSyntaxTextArea();
+
+        Utilities.attachClipboardKeyboardShortcuts( _expressionTextArea );
+        ActionMap am = _expressionTextArea.getActionMap();
+        am.put( "paste-from-clipboard", ClipboardActions.getPasteAction() );
+        am.put( "copy-to-clipboard", ClipboardActions.getCopyAction() );
+        am.put( "cut-to-clipboard", ClipboardActions.getCutAction() );
+        am.put( "paste", ClipboardActions.getPasteAction() );
+        am.put( "copy", ClipboardActions.getCopyAction() );
+        am.put( "cut", ClipboardActions.getCutAction() );
+    }
 
     private final boolean readOnly;
     private boolean _assertionModified;
@@ -410,20 +423,23 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         datePreviewTextField.setVisible(isDateSelected);
         dateOffsetStatusLabel.setVisible(isDateSelected);
 
-        String syntax = SyntaxConstants.SYNTAX_STYLE_NONE;
-        if ( _contentTypeComboBox.isVisible() ) {
+        if ( _expressionTextArea instanceof RSyntaxTextArea ) {
+            RSyntaxTextArea rsTextArea = (RSyntaxTextArea) _expressionTextArea;
+            String syntax = SyntaxConstants.SYNTAX_STYLE_NONE;
+            if ( _contentTypeComboBox.isVisible() ) {
 
-            Object ctypeObj = _contentTypeComboBox.getSelectedItem();
-            if ( ctypeObj != null ) {
-                ContentTypeHeader ctype = ContentTypeHeader.create( ctypeObj.toString() );
-                if ( ctype.isXml() ) {
-                    syntax = SyntaxConstants.SYNTAX_STYLE_XML;
-                } else if ( ctype.isJson() ) {
-                    syntax = SyntaxConstants.SYNTAX_STYLE_JSON;
+                Object ctypeObj = _contentTypeComboBox.getSelectedItem();
+                if ( ctypeObj != null ) {
+                    ContentTypeHeader ctype = ContentTypeHeader.create( ctypeObj.toString() );
+                    if ( ctype.isXml() ) {
+                        syntax = SyntaxConstants.SYNTAX_STYLE_XML;
+                    } else if ( ctype.isJson() ) {
+                        syntax = SyntaxConstants.SYNTAX_STYLE_JSON;
+                    }
                 }
             }
+            rsTextArea.setSyntaxEditingStyle( syntax );
         }
-        _expressionTextArea.setSyntaxEditingStyle( syntax );
     }
 
     /**
