@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.util.CollectionUtils;
-import org.apache.http.entity.ContentType;
 import org.junit.*;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
@@ -83,8 +82,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable, new Message())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath+ securePassword.getId())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
         RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables);
         logger.info(response.toString());
@@ -111,8 +109,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,var)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.POST.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.POST.getProtocolName()).map();
 
         RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
 
@@ -138,8 +135,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,var)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath + goid.toString())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.PUT.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.PUT.getProtocolName()).map();
 
 
         RestResponse response = processRequest(securePasswordBasePath + goid.toString(),"", HttpMethod.PUT, null,"",contextVariables);
@@ -159,8 +155,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,new Message())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath + securePassword.getId())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
         RestResponse responseGet = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.GET, null, "", contextVariables);
         Assert.assertEquals(AssertionStatus.NONE, responseGet.getAssertionStatus());
         final StreamSource source = new StreamSource(new StringReader(responseGet.getBody()));
@@ -172,8 +167,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,var)
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath + entityGot.getId())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.PUT.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.PUT.getProtocolName()).map();
 
         // update
         entityGot.setName("Updated name");
@@ -196,8 +190,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable, new Message())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath + securePassword.getId())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.DELETE.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.DELETE.getProtocolName()).map();
 
 
         RestResponse response = processRequest(securePasswordBasePath + securePassword.getId(), null, HttpMethod.DELETE, null, "", contextVariables);
@@ -214,8 +207,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable, new Message())
                         .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
         RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.GET, null, "", contextVariables);
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
@@ -240,8 +232,7 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
         Map<String,Object> contextVariables =
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,var)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName())
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
 
         RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
 
@@ -261,33 +252,10 @@ public class ServerRestGatewayManagementAssertionContextVariableTest extends Ser
         Map<String,Object> contextVariables =
                 CollectionUtils.<String,Object>mapBuilder()
                         .put(targetVariable,var)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE,ContentType.APPLICATION_XML.toString()).map();
+                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath).map();
 
         RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
 
         Assert.assertEquals(AssertionStatus.FAILED, response.getAssertionStatus());
-    }
-
-    @Test
-    public void createEntityTestNoContentTypeFail() throws Exception {
-
-        StoredPasswordMO createObject = securePasswordResourceFactory.asResource(securePassword);
-        createObject.setId(null);
-        createObject.setName("New name");
-        createObject.setPassword(securePasswordManagerStub.encryptPassword("password".toCharArray()));
-
-        final Message var = new Message();
-        var.initialize( ManagedObjectFactory.write(createObject));
-        Map<String,Object> contextVariables =
-                CollectionUtils.<String,Object>mapBuilder()
-                        .put(targetVariable,var)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_URI,securePasswordBasePath)
-                        .put("restGatewayMan."+RESTGatewayManagementAssertion.SUFFIX_ACTION,HttpMethod.GET.getProtocolName()).map();
-
-        RestResponse response = processRequest(securePasswordBasePath, null, HttpMethod.POST, null,"",contextVariables);
-
-        Assert.assertEquals(AssertionStatus.FAILED, response.getAssertionStatus());
-
     }
 }

@@ -23,7 +23,6 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
 
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_URI = "uri";
-    public static final String SUFFIX_CONTENT_TYPE = "contentType";
 
     @Override
     public AssertionMetadata meta() {
@@ -59,8 +58,7 @@ public class RESTGatewayManagementAssertion extends MessageTargetableAssertion {
         if( getTarget().equals(TargetMessageType.OTHER)){
             return super.doGetVariablesUsed().withVariables(
                 variablePrefix+"."+SUFFIX_ACTION,
-                variablePrefix+"."+SUFFIX_URI,
-                variablePrefix+"."+SUFFIX_CONTENT_TYPE);
+                variablePrefix+"."+SUFFIX_URI);
         }
         return super.doGetVariablesUsed();
     }

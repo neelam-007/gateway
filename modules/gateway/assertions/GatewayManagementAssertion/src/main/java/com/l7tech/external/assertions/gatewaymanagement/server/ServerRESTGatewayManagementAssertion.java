@@ -90,7 +90,7 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
             //The service ID should always be a constant.
             final String serviceId = context.getService().getId();
             final HttpMethod action = getAction(varMap, message, assertion);
-            final String contentType = getContentType(varMap, message);
+            final String contentType = getContentType( message);
 
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -146,13 +146,9 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
         return AssertionStatus.FAILED;
     }
 
-    private String getContentType(final Map<String, Object> varMap, Message message) throws IOException {
+    private String getContentType( Message message) throws IOException {
         if(assertion.getTarget().equals(TargetMessageType.OTHER)){
-            Object var = varMap.get(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE);
-            if(var == null){
-                throw new IllegalArgumentException(assertion.getVariablePrefix() + "." + RESTGatewayManagementAssertion.SUFFIX_CONTENT_TYPE+" context variable not found.");
-            }
-            return var.toString();
+            return message.getMimeKnob().getOuterContentType().getFullValue();
         } else{
             return message.getHttpRequestKnob().getHeaderSingleValue(HttpHeaders.CONTENT_TYPE);
         }
