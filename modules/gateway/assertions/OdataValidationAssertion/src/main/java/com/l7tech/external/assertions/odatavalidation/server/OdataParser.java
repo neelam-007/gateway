@@ -85,7 +85,7 @@ public class OdataParser {
      * @param requestInfo the information about the request the payload came with
      * @param payload the payload of the request, to be validated
      * @param payloadContentType the content type of the payload
-     * @return OdataPayloadInfo describing the payload, or null if the payload is empty
+     * @return OdataPayloadInfo describing the payload, or null if the payload is empty or parsing not supported
      * @throws OdataParsingException if the payload could not be read, is malformed, or does not match the request
      * details; if the method is not supported for the given request type; or if parsing fails for any other reason
      */
@@ -100,8 +100,6 @@ public class OdataParser {
             } catch (IOException e) {
                 throw new OdataParsingException("Payload could not be read: " + ExceptionUtils.getMessage(e), e);
             }
-
-            return null;
         }
 
         boolean media = false;
@@ -123,21 +121,20 @@ public class OdataParser {
                 case URI16:     // count single entity
                 case URI50A:    // count of link to single entity
                 case URI50B:    // count of links to multiple entities
-                    throw new OdataParsingException("HTTP method '" + method + "' invalid for the requested resource.");
+                    if (!"GET".equals(method)) {
+                        throw new OdataParsingException("HTTP method '" + method + 
+                                "' invalid for the requested resource.");
+                    }
 
-                // service operations - only take GET and POST requests, but payload can't be validated
+                // function imports - payload can't be validated
                 case URI10:     // function import returning single entity
                 case URI11:     // function import returning collection of complex type
                 case URI12:     // function import returning single complex property
                 case URI13:     // function import returning collection of primitives
                 case URI14:     // function import returning single primitive property
-                    if ("POST".equals(method)) {
-                        return null;  // we don't know what the payload might be, so we can't parse it
-                    }
+                    return null;    // we don't know what the payload might be, so we can't parse it
 
-                    throw new OdataParsingException("HTTP method '" + method + "' invalid for the requested resource.");
-
-                // batch operation
+                // batch operation - no support
                 case URI9:
                     throw new OdataParsingException("Parsing of Batch Requests not supported.");
 
@@ -145,6 +142,8 @@ public class OdataParser {
                 case URI1:
                 case URI6B:
                     switch (method) {
+                        case "GET":
+                            return null;
                         case "POST":
                             if (requestInfo.getTargetEntitySet().getEntityType().hasStream()) {  // creating a media resource
                                 // no need to use EntityProvider.readBinary() - it doesn't do any validation
@@ -161,9 +160,12 @@ public class OdataParser {
 
                     break;
 
-                // update an entity
+                // a specific entity
                 case URI2:
                     switch (method) {
+                        case "GET":
+                        case "DELETE":
+                            return null;
                         case "PUT":
                         case "PATCH":
                         case "MERGE":
@@ -180,6 +182,8 @@ public class OdataParser {
                 // update complex property
                 case URI3:
                     switch (method) {
+                        case "GET":
+                            return null;
                         case "PUT":
                         case "PATCH":
                         case "MERGE":
@@ -197,6 +201,8 @@ public class OdataParser {
                 case URI4:
                 case URI5:
                     switch (method) {
+                        case "GET":
+                            return null;
                         case "PUT":
                         case "PATCH":
                         case "MERGE":
@@ -209,6 +215,13 @@ public class OdataParser {
                             }
 
                             break;
+                        case "DELETE":
+                            if (requestInfo.isValueRequest()) {
+                                return null;
+                            } else {
+                                throw new OdataParsingException("HTTP method '" + method +
+                                        "' invalid for the requested resource.");
+                            }
                         default:
                             throw new OdataParsingException("HTTP method '" + method +
                                     "' invalid for the requested resource.");
@@ -219,6 +232,9 @@ public class OdataParser {
                 // update link to a single entity
                 case URI7A:
                     switch (method) {
+                        case "GET":
+                        case "DELETE":
+                            return null;
                         case "PUT":
                         case "PATCH":
                         case "MERGE":
@@ -235,6 +251,8 @@ public class OdataParser {
                 // update link to multiple entities
                 case URI7B:
                     switch (method) {
+                        case "GET":
+                            return null;
                         case "POST":
                             links.addAll(EntityProvider.readLinks(payloadContentType,
                                     requestInfo.getTargetEntitySet(), payload));
@@ -249,6 +267,9 @@ public class OdataParser {
                 // update entity media resource
                 case URI17:
                     switch (method) {
+                        case "GET":
+                        case "DELETE":
+                            return null;
                         case "PUT":
                             // no need to use EntityProvider.readBinary() - it doesn't do any validation
                             media = true;

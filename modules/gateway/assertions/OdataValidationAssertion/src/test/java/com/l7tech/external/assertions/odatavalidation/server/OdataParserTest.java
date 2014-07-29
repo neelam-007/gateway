@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.odatavalidation.server;
 
+import com.l7tech.test.BugId;
 import org.apache.olingo.odata2.api.edm.Edm;
 import org.apache.olingo.odata2.api.ep.EntityProvider;
 import org.apache.olingo.odata2.api.ep.EntityProviderException;
@@ -612,11 +613,43 @@ public class OdataParserTest {
     public void testParsePayload_GivenEmptyPayloadWithHttpMethodDELETE_ParsingSucceeds() throws Exception {
         InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload expected
 
-        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Supplier", "");
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products(1)/Name/$value", "");
 
         OdataPayloadInfo payloadInfo = parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
 
         assertNull(payloadInfo);
+    }
+
+    @BugId("SSG-8940")
+    @Test
+    public void testParsePayload_GivenHttpMethodDELETEForMetadata_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload expected
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/$metadata", "");
+
+        try {
+            parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("HTTP method 'DELETE' invalid for the requested resource.", e.getMessage());
+        }
+    }
+
+    @BugId("SSG-8997")
+    @Test
+    public void testParsePayload_GivenEmptyPayloadWithHttpMethodDELETEForResourceSet_ParsingFails() throws Exception {
+        InputStream payloadInputStream = new ByteArrayInputStream(new byte[0]); // empty payload expected
+
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "");
+
+        try {
+            parser.parsePayload(DELETE, requestInfo, payloadInputStream, "application/json");
+
+            fail("Expected OdataParsingException");
+        } catch (OdataParser.OdataParsingException e) {
+            assertEquals("HTTP method 'DELETE' invalid for the requested resource.", e.getMessage());
+        }
     }
 
     @Test
