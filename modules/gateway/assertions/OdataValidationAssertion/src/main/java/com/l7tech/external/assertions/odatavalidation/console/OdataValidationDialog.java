@@ -67,7 +67,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
     protected void initComponents() {
         super.initComponents();
 
-        metadataVariablePanel.setValueWillBeWritten(true);
+        metadataVariablePanel.setValueWillBeWritten(false);
         metadataVariablePanel.setAcceptEmpty(false);
         targetVariablePanel.setAllowContextVariable(false);
 
