@@ -41,7 +41,7 @@ public class DependencyResource {
     }
 
     /**
-     * Returns the list of dependencies for this entity
+     * Returns the list of dependencies for this entity.
      *
      * @return The list of dependencies.
      * @throws FindException
@@ -53,6 +53,8 @@ public class DependencyResource {
         rbacAccessService.validateFullAdministrator();
         final DependencySearchResults dependencySearchResults = dependencyAnalyzer.getDependencies(entityHeader, CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map());
         DependencyListMO dependencyListMO = transformer.convertToMO(dependencySearchResults);
+        //hide the dependency search options, it is not usable in version 1.0 of the api
+        dependencyListMO.setOptions(null);
         return new ItemBuilder<>(transformer.convertToItem(dependencyListMO))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();

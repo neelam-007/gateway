@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * Assertion Security Zones entities are used to apply security zones to assertions. By default, assertions do not have
- * a security zone applied to them.
+ * a security zone assigned to them.
  */
 @Provider
 @Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + AssertionSecurityZoneResource.activeConnectors_URI)
@@ -68,7 +68,7 @@ public class AssertionSecurityZoneResource implements URLAccessible<AssertionSec
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
-     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order           Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                        ascending if not specified
      * @param names           Name filter
      * @param securityZoneIds Security zone ID filter. To list all assertions with no security zones applied use the

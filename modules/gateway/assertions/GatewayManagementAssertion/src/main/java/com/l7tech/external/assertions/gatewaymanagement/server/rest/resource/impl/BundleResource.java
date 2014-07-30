@@ -82,7 +82,7 @@ public class BundleResource {
     }
 
     /**
-     * Returns the bundle for the given resources.
+     * Returns the bundle for the given resources. This API call is capable of returning a bundle created from multiple resources.
      *
      * @param defaultAction                      Default bundling action. By default this is NewOrExisting
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by

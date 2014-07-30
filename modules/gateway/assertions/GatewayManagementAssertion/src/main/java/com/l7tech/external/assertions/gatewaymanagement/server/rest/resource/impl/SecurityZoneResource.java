@@ -73,12 +73,12 @@ public class SecurityZoneResource extends RestEntityResource<SecurityZoneMO, Sec
      * <p>Returns a list of security zones. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent"><pre>/restman/1.0/activeConnectors?name=MySecurityZone</pre></div>
+     * <div class="code indent"><pre>/restman/1.0/securityZones?name=MySecurityZone</pre></div>
      * <p>Returns security zone with name "MySecurityZone".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort  Key to sort the list by
-     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *              ascending if not specified
      * @param names Name filter
      * @return A list of security zones. If the list is empty then no security zones were found.

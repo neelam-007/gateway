@@ -88,24 +88,24 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * <div class="code">
      * <pre>
      * &lt;l7:PrivateKeyCreationContext xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
-     * &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
-     * &lt;l7:Properties&gt;
-     * &lt;l7:Property key=&quot;signatureHashAlgorithm&quot;&gt;
-     * &lt;l7:StringValue&gt;SHA384&lt;/l7:StringValue&gt;
-     * &lt;/l7:Property&gt;
-     * &lt;l7:Property key=&quot;rsaKeySize&quot;&gt;
-     * &lt;l7:IntegerValue&gt;516&lt;/l7:IntegerValue&gt;
-     * &lt;/l7:Property&gt;
-     * &lt;l7:Property key=&quot;ecName&quot;&gt;
-     * &lt;l7:StringValue&gt;secp384r1&lt;/l7:StringValue&gt;
-     * &lt;/l7:Property&gt;
-     * &lt;l7:Property key=&quot;daysUntilExpiry&quot;&gt;
-     * &lt;l7:IntegerValue&gt;2&lt;/l7:IntegerValue&gt;
-     * &lt;/l7:Property&gt;
-     * &lt;l7:Property key=&quot;caCapable&quot;&gt;
-     * &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
-     * &lt;/l7:Property&gt;
-     * &lt;/l7:Properties&gt;
+     *     &lt;l7:Dn&gt;CN=srcAlias&lt;/l7:Dn&gt;
+     *     &lt;l7:Properties&gt;
+     *         &lt;l7:Property key=&quot;signatureHashAlgorithm&quot;&gt;
+     *             &lt;l7:StringValue&gt;SHA384&lt;/l7:StringValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;rsaKeySize&quot;&gt;
+     *             &lt;l7:IntegerValue&gt;516&lt;/l7:IntegerValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;ecName&quot;&gt;
+     *             &lt;l7:StringValue&gt;secp384r1&lt;/l7:StringValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;daysUntilExpiry&quot;&gt;
+     *             &lt;l7:IntegerValue&gt;2&lt;/l7:IntegerValue&gt;
+     *         &lt;/l7:Property&gt;
+     *         &lt;l7:Property key=&quot;caCapable&quot;&gt;
+     *             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
+     *         &lt;/l7:Property&gt;
+     *     &lt;/l7:Properties&gt;
      * &lt;/l7:PrivateKeyCreationContext&gt;
      * </pre>
      * </div>
@@ -148,7 +148,7 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort    Key to sort the list by
-     * @param order   Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order   Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                ascending if not specified
      * @param aliases Alias filter
      * @return A list of private keys. If the list is empty then no private keys were found.

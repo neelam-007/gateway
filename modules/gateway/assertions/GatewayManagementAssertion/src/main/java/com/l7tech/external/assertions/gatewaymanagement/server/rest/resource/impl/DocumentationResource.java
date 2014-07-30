@@ -70,6 +70,7 @@ public class DocumentationResource {
             String responseDocument = TemplateDocument
                     .replace("$#{title}", DocumentationPagesAndTitles.get(resource))
                     .replace("$#{content}", readResourceAsString(resource))
+                    .replaceAll("\\$#\\{scheme\\}", uriInfo.getBaseUri().getScheme())
                     .replaceAll("\\$#\\{host\\}", uriInfo.getBaseUri().getHost())
                     .replaceAll("\\$#\\{port\\}", String.valueOf(uriInfo.getBaseUri().getPort()))
                     .replaceAll("\\$#\\{service-url\\}", uriInfo.getBaseUri().getPath().substring(1, uriInfo.getBaseUri().getPath().length() - 1));

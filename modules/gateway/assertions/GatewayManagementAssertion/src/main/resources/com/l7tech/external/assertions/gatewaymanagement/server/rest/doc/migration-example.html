@@ -1,5 +1,5 @@
 <div>
-    <h2>Example Bundle Migration</h2>
+    <h1>Migration Example</h1>
     <p>This bundle migration example will work through the following work flow:</p>
     <ol>
         <li>Migrating from a development Gateway to a new production Gateway.</li>
@@ -12,12 +12,12 @@
         <li>A secure password: "LocalhostDBPassword"</li>
         <li>A JDBC connection to the local database. It used the password from above via a context variable.</li>
         <li>A policy fragment that uses the JDBC Connection via a JDBC Query Assertion.</li>
-        <li>An Encapsulated Assertion that uses the policy fragment above</li>
+        <li>An Encapsulated Assertion that uses the policy fragment above.</li>
         <li>A service that uses the Encapsulated Assertion above.</li>
         <li>A folder containing the service from above.</li>
     </ul>
     <h3>Exporting the Migration Bundle</h3>
-    <p>To create the migration bundle we will export the folder from above. In order to export the folder we first need to get it's id. In order to do that send a request to list folders and filter by the folder name, "Migration":</p>
+    <p>To create the migration bundle we will export the folder from above. In order to export the folder we first need to get its id. In order to do that send a request to list folders and filter by the folder name, "Migration":</p>
     <table cellpadding="0" cellspacing="0" class="api-example">
         <caption>List folders with name "Migration"</caption>
         <tbody>
@@ -26,7 +26,7 @@
         </tr>
         <tr>
             <td>Uri</td>
-            <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration">https://$#{host}:$#{port}/$#{service-url}/1.0/folders=Migration</a></div></td>
+            <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration</a></div></td>
         </tr>
         <tr><td>Http Method</td>
             <td>GET</td>
@@ -45,14 +45,14 @@
         &lt;l7:Name&gt;FOLDER List&lt;/l7:Name&gt;
         &lt;l7:Type&gt;List&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-07-14T15:53:10.941-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration&quot;/&gt;
-        &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=Migration&quot;/&gt;
+        &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
         &lt;l7:Item&gt;
             &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
             &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d736&lt;/l7:Id&gt;
             &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
             &lt;l7:TimeStamp&gt;2014-07-14T15:53:10.941-07:00&lt;/l7:TimeStamp&gt;
-            &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot;/&gt;
+            &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot;/&gt;
             &lt;l7:Resource&gt;
                 &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;6b52de26ef82cc4df397d1909490d736&quot; version=&quot;0&quot;&gt;
                     &lt;l7:Name&gt;Migration&lt;/l7:Name&gt;
@@ -74,7 +74,7 @@
     </tr>
     <tr>
         <td>Uri</td>
-        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
+        <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
     </tr>
     <tr><td>Http Method</td>
         <td>GET</td>
@@ -93,7 +93,7 @@
         &lt;l7:Name&gt;Bundle&lt;/l7:Name&gt;
         &lt;l7:Type&gt;BUNDLE&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-07-14T16:01:51.399-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Bundle&gt;
                 &lt;l7:References&gt;
@@ -301,25 +301,25 @@
                     &lt;/l7:Item&gt;
                 &lt;/l7:References&gt;
                 &lt;l7:Mappings&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
                 &lt;/l7:Mappings&gt;
             &lt;/l7:Bundle&gt;
         &lt;/l7:Resource&gt;
@@ -332,7 +332,7 @@
     <h3>Importing the Migration Bundle</h3>
     <p>If we try to import this bundle as is it will fail with the following mapping:</p>
     <div class="code"><pre>
-    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
         &lt;l7:Properties&gt;
             &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
                 &lt;l7:StringValue&gt;Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=null, id=6b52de26ef82cc4df397d1909490d7ee, description=null, type = SECURE_PASSWORD&lt;/l7:StringValue&gt;
@@ -343,7 +343,7 @@
         &lt;/l7:Properties&gt;
     &lt;/l7:Mapping&gt;
         </pre></div>
-    <p>We can solve this by either creating a password on the production Gateway and mapping to it. Create one on the Production Gateway using the API with the same ID as the one on the development gateway:</p>
+    <p>We can solve this by either creating a password on the production Gateway and mapping to it. Create one on the Production Gateway using the API with the same ID as the one on the development Gateway:</p>
     <table cellpadding="0" cellspacing="0" class="api-example">
         <caption>Create secure password with id</caption>
         <tbody>
@@ -352,7 +352,7 @@
         </tr>
         <tr>
             <td>Uri</td>
-            <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee">https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee</a></div></td>
+            <td><div class="code"><a href="https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee">https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee</a></div></td>
         </tr>
         <tr>
             <td>Http Method</td>
@@ -402,16 +402,16 @@
         &lt;l7:Id&gt;6b52de26ef82cc4df397d1909490d7ee&lt;/l7:Id&gt;
         &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-07-14T17:16:05.337-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot;/&gt;
-        &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/template&quot;/&gt;
-        &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot;/&gt;
+        &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://productionGateway/restman/1.0/passwords/template&quot;/&gt;
+        &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://productionGateway/restman/1.0/passwords&quot;/&gt;
     &lt;/l7:Item&gt;
                     </pre></div>
             </td>
         </tr>
         </tbody>
     </table>
-    <p>One the password is created you can import the bundle:</p>
+    <p>Once the password is created you can import the bundle:</p>
     <table cellpadding="0" cellspacing="0" class="api-example">
     <caption>Importing bundle</caption>
     <tbody>
@@ -420,7 +420,7 @@
     </tr>
     <tr>
         <td>Uri</td>
-        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle</a></div></td>
+        <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle</a></div></td>
     </tr>
     <tr>
         <td>Http Method</td>
@@ -641,25 +641,25 @@
                     &lt;/l7:Item&gt;
                 &lt;/l7:References&gt;
                 &lt;l7:Mappings&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
                 &lt;/l7:Mappings&gt;
             &lt;/l7:Bundle&gt;
                     </pre></div>
@@ -682,24 +682,24 @@
         &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://productionGateway/restman/1.0/bundle/&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Mappings&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
                 &lt;/l7:Mapping&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;/&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://productionGateway/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://productionGateway/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://productionGateway/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://productionGateway/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://productionGateway/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://productionGateway/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://productionGateway/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;CreatedNew&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://productionGateway/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
             &lt;/l7:Mappings&gt;
         &lt;/l7:Resource&gt;
     &lt;/l7:Item&gt;
@@ -708,10 +708,10 @@
     </tr>
     </tbody>
     </table>
-    <p>The production Gateway should now have the same folder, service, encapsulated assertion, policy jdbc connection and secure password that the development gateway has.</p>
+    <p>The production Gateway should now have the same folder, service, encapsulated assertion, policy JDBC connection and secure password that the development Gateway has.</p>
     <h3>Exporting the Updated Migration Bundle</h3>
     <p>Assume that there was some development on the SimpleService that was exported above from the development Gateway. Some authentication security is added to restrict usage of the service. The Require SSL assertion is added and a simple service user must be authenticated using Basic http credentials.</p>
-    <p>Export the bundle from the development gateway again, but this time with default action NewOrUpdate. This will change the mapping so that it will update existing entities on the production gateway when it is importing them.</p>
+    <p>Export the bundle from the development Gateway again, but this time with default action NewOrUpdate. This will change the mapping so that it will update existing entities on the production Gateway when it is importing them.</p>
     <table cellpadding="0" cellspacing="0" class="api-example">
     <caption>Export bundle of folder "6b52de26ef82cc4df397d1909490d736" with default action NewOrUpdate</caption>
     <tbody>
@@ -720,7 +720,7 @@
     </tr>
     <tr>
         <td>Uri</td>
-        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
+        <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736</a></div></td>
     </tr>
     <tr><td>Http Method</td>
         <td>GET</td>
@@ -739,7 +739,7 @@
         &lt;l7:Name&gt;Bundle&lt;/l7:Name&gt;
         &lt;l7:Type&gt;BUNDLE&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-07-14T17:20:53.700-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://10.242.14.142:8443/restman/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&amp;amp;defaultAction=NewOrUpdate&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=6b52de26ef82cc4df397d1909490d736&amp;amp;defaultAction=NewOrUpdate&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Bundle&gt;
                 &lt;l7:References&gt;
@@ -984,39 +984,39 @@
                     &lt;/l7:Item&gt;
                 &lt;/l7:References&gt;
                 &lt;l7:Mappings&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+                    &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
                         &lt;l7:Properties&gt;
                             &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                                 &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                             &lt;/l7:Property&gt;
                         &lt;/l7:Properties&gt;
                     &lt;/l7:Mapping&gt;
-                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
                 &lt;/l7:Mappings&gt;
             &lt;/l7:Bundle&gt;
         &lt;/l7:Resource&gt;
@@ -1026,9 +1026,9 @@
     </tr>
     </tbody>
     </table>
-    <p>If we try and import the bundle as is above it will fail because it expects the simple service user to exist on the target gateway. The following mapping is returned:</p>
+    <p>If we try and import the bundle as is above it will fail because it expects the simple service user to exist on the target Gateway. The following mapping is returned:</p>
     <div class="code"><pre>
-    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+    &lt;l7:Mapping action=&quot;NewOrExisting&quot; errorType=&quot;TargetNotFound&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://productionGateway/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
         &lt;l7:Properties&gt;
             &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
                 &lt;l7:StringValue&gt;Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=SimpleServiceUser, id=a71d2733b59a6360e8134b6e32c1fb6b, description=null, type = USER&lt;/l7:StringValue&gt;
@@ -1039,7 +1039,7 @@
         &lt;/l7:Properties&gt;
     &lt;/l7:Mapping&gt;
         </pre></div>
-    <p>Create a user on the production gateway in the internal identity provider called "ProductionSimpleServiceUser". Map the Simple service user by name to the "ProductionSimpleServiceUser" and import the bundle:</p>
+    <p>Create a user on the production Gateway in the internal identity provider called "ProductionSimpleServiceUser". Map the Simple service user by name to the "ProductionSimpleServiceUser" and import the bundle:</p>
     <table cellpadding="0" cellspacing="0" class="api-example">
     <caption>Importing bundle 2</caption>
     <tbody>
@@ -1048,7 +1048,7 @@
     </tr>
     <tr>
         <td>Uri</td>
-        <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/bundle">https://$#{host}:$#{port}/$#{service-url}/1.0/bundle</a></div></td>
+        <td><div class="code"><a href="https://productionGateway/restman/1.0/bundle">https://productionGateway/restman/1.0/bundle</a></div></td>
     </tr>
     <tr>
         <td>Http Method</td>
@@ -1305,31 +1305,31 @@
             &lt;/l7:Item&gt;
         &lt;/l7:References&gt;
         &lt;l7:Mappings&gt;
-            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                 &lt;l7:Properties&gt;
                     &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                         &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                     &lt;/l7:Property&gt;
                 &lt;/l7:Properties&gt;
             &lt;/l7:Mapping&gt;
-            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
                 &lt;l7:Properties&gt;
                     &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                         &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                     &lt;/l7:Property&gt;
                 &lt;/l7:Properties&gt;
             &lt;/l7:Mapping&gt;
-            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
                 &lt;l7:Properties&gt;
                     &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                         &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                     &lt;/l7:Property&gt;
                 &lt;/l7:Properties&gt;
             &lt;/l7:Mapping&gt;
-            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
+            &lt;l7:Mapping action=&quot;NewOrExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; type=&quot;USER&quot;&gt;
                 &lt;l7:Properties&gt;
                     &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                         &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
@@ -1342,8 +1342,8 @@
                     &lt;/l7:Property&gt;
                 &lt;/l7:Properties&gt;
             &lt;/l7:Mapping&gt;
-            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+            &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
         &lt;/l7:Mappings&gt;
     &lt;/l7:Bundle&gt;
                     </pre></div>
@@ -1363,34 +1363,34 @@
         &lt;l7:Name&gt;Bundle mappings&lt;/l7:Name&gt;
         &lt;l7:Type&gt;BUNDLE MAPPINGS&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-07-14T17:29:32.042-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/bundle/&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://productionGateway/restman/1.0/bundle/&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Mappings&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000ffffffffffffec76&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot; targetId=&quot;0000000000000000ffffffffffffec76&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/0000000000000000ffffffffffffec76&quot; type=&quot;FOLDER&quot;&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
                 &lt;/l7:Mapping&gt;
-                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d736&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d736&quot; targetUri=&quot;https://productionGateway/restman/1.0/folders/6b52de26ef82cc4df397d1909490d736&quot; type=&quot;FOLDER&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7ee&quot; targetUri=&quot;https://productionGateway/restman/1.0/passwords/6b52de26ef82cc4df397d1909490d7ee&quot; type=&quot;SECURE_PASSWORD&quot;&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
                 &lt;/l7:Mapping&gt;
-                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; targetId=&quot;0000000000000000fffffffffffffffe&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7d9&quot; targetUri=&quot;https://productionGateway/restman/1.0/jdbcConnections/6b52de26ef82cc4df397d1909490d7d9&quot; type=&quot;JDBC_CONNECTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d7bf&quot; targetUri=&quot;https://productionGateway/restman/1.0/policies/6b52de26ef82cc4df397d1909490d7bf&quot; type=&quot;POLICY&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;0000000000000000fffffffffffffffe&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; targetId=&quot;0000000000000000fffffffffffffffe&quot; targetUri=&quot;https://productionGateway/restman/1.0/identityProviders/0000000000000000fffffffffffffffe&quot; type=&quot;ID_PROVIDER_CONFIG&quot;&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;FailOnNew&quot;&gt;
                             &lt;l7:BooleanValue&gt;true&lt;/l7:BooleanValue&gt;
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
                 &lt;/l7:Mapping&gt;
-                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; targetId=&quot;959c06d8af08a8cb2a568915e0314d89&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/959c06d8af08a8cb2a568915e0314d89&quot; type=&quot;USER&quot;&gt;
+                &lt;l7:Mapping action=&quot;NewOrExisting&quot; actionTaken=&quot;UsedExisting&quot; srcId=&quot;a71d2733b59a6360e8134b6e32c1fb6b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/identityProviders/0000000000000000fffffffffffffffe/users/a71d2733b59a6360e8134b6e32c1fb6b&quot; targetId=&quot;959c06d8af08a8cb2a568915e0314d89&quot; targetUri=&quot;https://productionGateway/restman/1.0/identityProviders/0000000000000000fffffffffffffffe/users/959c06d8af08a8cb2a568915e0314d89&quot; type=&quot;USER&quot;&gt;
                     &lt;l7:Properties&gt;
                         &lt;l7:Property key=&quot;MapTo&quot;&gt;
                             &lt;l7:StringValue&gt;ProductionSimpleServiceUser&lt;/l7:StringValue&gt;
@@ -1403,8 +1403,8 @@
                         &lt;/l7:Property&gt;
                     &lt;/l7:Properties&gt;
                 &lt;/l7:Mapping&gt;
-                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
-                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;https://10.242.14.142:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://vkazakovssgnewgateway.ca.com:8443/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d802&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d802&quot; targetUri=&quot;https://productionGateway/restman/1.0/encapsulatedAssertions/6b52de26ef82cc4df397d1909490d802&quot; type=&quot;ENCAPSULATED_ASSERTION&quot;/&gt;
+                &lt;l7:Mapping action=&quot;NewOrUpdate&quot; actionTaken=&quot;UpdatedExisting&quot; srcId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; srcUri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; targetId=&quot;6b52de26ef82cc4df397d1909490d77b&quot; targetUri=&quot;https://productionGateway/restman/1.0/services/6b52de26ef82cc4df397d1909490d77b&quot; type=&quot;SERVICE&quot;/&gt;
             &lt;/l7:Mappings&gt;
         &lt;/l7:Resource&gt;
     &lt;/l7:Item&gt;
@@ -1413,6 +1413,6 @@
     </tr>
     </tbody>
     </table>
-    <p>The service in now updated on the target gateway to match the one from the development gateway, except it used the "ProductionSimpleServiceUser" instead.</p>    
+    <p>The service is now updated on the target Gateway to match the one from the development Gateway, except it uses the "ProductionSimpleServiceUser" instead.</p>
 </div>
     

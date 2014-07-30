@@ -1,16 +1,17 @@
     <div>
+        <h1>Getting Started</h1>
         <h2>Making a REST API call</h2>
         <p>The simplest way to get started is by making an actual API call. For example, to list all the services on your Gateway:</p>
-        <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/services">https://$#{host}:$#{port}/$#{service-url}/1.0/services</a></p>
+        <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services</a></p>
         <p>The above link makes a REST API call to list all the services in the Gateway.</p>
         <h3>The URL</h3>
         <p>All the available API calls have a similar URL format:</p>
         <p class="code indent italicize">https://[gateway-host]/[restman-service]/[api-version]/[api-resource]</p>
         <table class="properties-table" cellpadding="0" cellspacing="0">
-            <tr><td class="italicize">[gateway-host]</td><td>Host and port of the Gateway</td></tr>
-            <tr><td class="italicize">[restman-service]</td><td>Published URI of the REST management service. Default is "restman"</td></tr>
-            <tr><td class="italicize">[api-version]</td><td>Version of the API that you are accessing; all API calls require an API version. Current version is 1.0</td></tr>
-            <tr><td class="italicize">[api-resource]</td><td>Resource being accessed. This can either map to an actual resource available on the Gateway, like a policy or JDBC Connection, or it can reference an available service, like the migration service</td></tr>
+            <tr><td class="italicize">[gateway-host]</td><td>Host and port of the Gateway.</td></tr>
+            <tr><td class="italicize">[restman-service]</td><td>Published URI of the REST management service. Default is "restman".</td></tr>
+            <tr><td class="italicize">[api-version]</td><td>Version of the API that you are accessing; all API calls require an API version. Current version is 1.0.</td></tr>
+            <tr><td class="italicize">[api-resource]</td><td>Resource being accessed. This can either map to an actual resource available on the Gateway, like a policy or JDBC connection, or it can reference an available service, like the migration service.</td></tr>
         </table>
         <h3>The Response</h3>
         <p>All API calls will return the results wrapped. The wrapper will be either a l7:List or l7:Item. These are both based on the same underlying object and so they both will have:</p>
@@ -29,9 +30,9 @@
             <li>Select <strong>Tasks</strong> -> <strong>Publish Internal Service</strong> from the main menu (on the browser client, from the Manage menu). The Publish Internal Service Wizard appears.</li>
             <li>Choose "Gateway REST Management Service" from the drop-down list as the service to publish.</li>
             <li>Optionally, change the routing URI if necessary. Note that the routing URI should always end with a "/*"</li>
-            <li>Click [Finish] to publish the internal service. This will create a new service in the root folder called "Gateway REST Management Service".</li>
+            <li>Click <strong>[Finish]</strong> to publish the internal service. This will create a new service in the root folder called "Gateway REST Management Service".</li>
         </ol>
-        <h3>Setup Using Auto-Provisioning</h3>
+        <h3>Set Up Using Auto-Provisioning</h3>
         <p>The Gateway REST Management service can be installed automatically on a new Gateway using the auto-provisioning service.</p>
         <p>A Gateway can automatically install an internal service on startup if it is licensed and there are no other services installed (as would be the case for a new Gateway). This is done by providing a file in a folder on the Gateway machine specifying the internal service to install. By default, running this command on the Gateway should set it up:</p>
         <p class="code indent"><strong>touch /opt/SecureSpan/Gateway/node/default/etc/bootstrap/services/restman</strong></p>
@@ -39,7 +40,7 @@
         <p>Most of the entities support the same set of similar operations. These include the basic CRUD (Create, Read, Update and Delete) operations, Listing/Searching operations, and retrieving template (example) entities. The general use case for these operations is described below.</p>
         <h3>Listing and Searching Entities</h3>
         <p>You can list all entities of a given type by making a GET request to that entity's URI. For example, to list all Folders on the Gateway, make a request to:</p>
-        <p class="code indent"><a>https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></p>
+        <p class="code indent"><a>$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></p>
         <table cellpadding="0" cellspacing="0" class="api-example">
             <caption>Listing Example</caption>
             <tbody>
@@ -48,7 +49,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -67,15 +68,15 @@
     &lt;l7:Name&gt;FOLDER list&lt;/l7:Name&gt;
     &lt;l7:Type&gt;List&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T15:27:30.386-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
     &lt;l7:Item&gt;
         &lt;l7:Name&gt;Root Node&lt;/l7:Name&gt;
         &lt;l7:Id&gt;0000000000000000ffffffffffffec76&lt;/l7:Id&gt;
         &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-04-24T15:27:30.384-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Folder id=&quot;0000000000000000ffffffffffffec76&quot; version=&quot;0&quot;&gt;
                 &lt;l7:Name&gt;Root Node&lt;/l7:Name&gt;
@@ -87,7 +88,7 @@
         &lt;l7:Id&gt;78457446b2cea4de5244873fe56a9f31&lt;/l7:Id&gt;
         &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-04-24T15:27:30.385-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/78457446b2cea4de5244873fe56a9f31&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/78457446b2cea4de5244873fe56a9f31&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Folder folderId=&quot;0000000000000000ffffffffffffec76&quot; id=&quot;78457446b2cea4de5244873fe56a9f31&quot; version=&quot;0&quot;&gt;
                 &lt;l7:Name&gt;test&lt;/l7:Name&gt;
@@ -105,7 +106,7 @@
             <li>Root Node: This is the root folder.</li>
             <li>My Services</li>
         </ul>
-        <p>The listing API call can also be used for searching and sorting entities. For example, many entities have a name and in most cases you can find an entity by its name using the listing API call and providing a name parameter. For example, you can find the folder named "My Services" using the following API call:</p>
+        <p>The listing API call can also be used for searching and sorting entities. For example, many entities have a name and in most cases you can find an entity by its name using the listing API call and providing a name parameter. Specifically, you can find the folder named "My Services" using the following API call:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
             <caption>Listing Example 2</caption>
             <tbody>
@@ -114,7 +115,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services">https://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders?name=My%20Services</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -133,15 +134,15 @@
     &lt;l7:Name&gt;FOLDER list&lt;/l7:Name&gt;
     &lt;l7:Type&gt;List&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T15:27:30.386-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
     &lt;l7:Item&gt;
         &lt;l7:Name&gt;Root Node&lt;/l7:Name&gt;
         &lt;l7:Id&gt;0000000000000000ffffffffffffec76&lt;/l7:Id&gt;
         &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
         &lt;l7:TimeStamp&gt;2014-04-24T15:27:30.384-07:00&lt;/l7:TimeStamp&gt;
-        &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
+        &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
         &lt;l7:Resource&gt;
             &lt;l7:Folder id=&quot;0000000000000000ffffffffffffec76&quot; version=&quot;0&quot;&gt;
                 &lt;l7:Name&gt;Root Node&lt;/l7:Name&gt;
@@ -155,10 +156,10 @@
             </tbody>
         </table>
         <p>The returned message is very similar to the one returned when listing all folders, however only the folder with the name "My Services" is returned. You can specify multiple search parameters to create more complex searches. For example, to list all enabled Gateway connectors using the HTTP or FTP protocols:</p>
-        <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP">https://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP</a></p>
-        <p>Listing results can also be sorted and ordered using the "sort" and "order" query parameters. Refer to the <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/rest.wadl">WADL</a> or the <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/restDoc.html">Resources</a> to find what you can sort and search by for an entity. For example, use this to sort all email listener in descending order by their host name:</p>
-        <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc">https://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc</a></p>
-        <p>If the returned list does not contain any items, then none could be found with the specified search fields or you do not have the correct permissions to view the items. See <a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html">https://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html</a> for more info on authentication and permissions.</p>
+        <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/ssgconnectors?enabled=true&amp;protocol=HTTP&amp;protocol=FTP</a></p>
+        <p>Listing results can also be sorted and ordered using the "sort" and "order" query parameters. Refer to the <a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/rest.wadl">WADL</a> or the <a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/restDoc.html">Resources</a> to find what you can sort and search by for an entity. For example, use this to sort all email listeners in descending order by their host name:</p>
+        <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/emailListeners?sort=host&amp;order=desc</a></p>
+        <p>If the returned list does not contain any items, then none could be found with the specified search fields or you do not have the correct permissions to view the items. See <a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/authentication.html</a> for more information on authentication and permissions.</p>
         <h3>Retrieving an Entity</h3>
         <p>An individual entity can be returned by using its ID. For example you can retrieve the secure password with ID "b0f109679d51ca3d3be3f08a13052f72" by making the following API call:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
@@ -169,7 +170,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72">https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -189,9 +190,9 @@
     &lt;l7:Id&gt;b0f109679d51ca3d3be3f08a13052f72&lt;/l7:Id&gt;
     &lt;l7:Type&gt;SECURE_PASSWORD&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:12:44.383-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/passwords/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/passwords&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/b0f109679d51ca3d3be3f08a13052f72&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/passwords&quot;/&gt;
     &lt;l7:Resource&gt;
         &lt;l7:StoredPassword id=&quot;b0f109679d51ca3d3be3f08a13052f72&quot; version=&quot;1&quot;&gt;
             &lt;l7:Name&gt;MySecurePassword&lt;/l7:Name&gt;
@@ -218,7 +219,7 @@
             </tbody>
         </table>
         <h3>Creating an Entity</h3>
-        <p>In order to create an entity, you POST the entity description to the entity's uri. All properties that are not in the entity description will be set to null. The following example shows how to create a new folder.</p>
+        <p>In order to create an entity, send a POST request, with message body containing the entity description, to the entity's uri. All properties that are not in the entity description will be set to null. The following example shows how to create a new folder.</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
             <caption>Creating Example 1</caption>
             <tbody>
@@ -227,7 +228,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders">https://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders</a></div></td>
             </tr>
             <tr>
                 <td>Http Method</td>
@@ -263,9 +264,11 @@
     &lt;l7:Id&gt;b0f109679d51ca3d3be3f08a1305300c&lt;/l7:Id&gt;
     &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:24:48.353-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;dependencies&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/f2b947580bc1fc646dda444f577d546c/dependencies&quot;/&gt;
+    &lt;l7:Link rel=&quot;parentFolder&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
 &lt;/l7:Item&gt;
 				</pre></div>
                 </td>
@@ -274,7 +277,7 @@
         </table>
         <p>You can create an entity with a specific ID by using the PUT HTTP method. See below for more details.</p>
         <h3>Updating an Entity</h3>
-        <p>In order to update an entity, you PUT the entity description to the entity's uri. All properties that are not in the entity description will be set to null. For example, to update the folder created above and change its name:</p>
+        <p>In order to update an entity, send a PUT request with the entity description to the entity's uri. All properties that are not in the entity description will be set to null. For example, to update the folder created above and change its name:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
             <caption>Updating Example</caption>
             <tbody>
@@ -283,7 +286,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>PUT</td>
@@ -321,9 +324,11 @@
     &lt;l7:Id&gt;b0f109679d51ca3d3be3f08a1305300c&lt;/l7:Id&gt;
     &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:31:05.844-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;dependencies&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a1305300c/dependencies&quot;/&gt;
+    &lt;l7:Link rel=&quot;parentFolder&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
 &lt;/l7:Item&gt;
 				</pre></div>
                 </td>
@@ -339,7 +344,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf">https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>PUT</td>
@@ -374,16 +379,18 @@
     &lt;l7:Id&gt;b0f109679d51ca3d3be3f08a130530bf&lt;/l7:Id&gt;
     &lt;l7:Type&gt;FOLDER&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:34:48.521-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf&quot;/&gt;
+    &lt;l7:Link rel=&quot;template&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders&quot;/&gt;
+    &lt;l7:Link rel=&quot;dependencies&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/b0f109679d51ca3d3be3f08a130530bf/dependencies&quot;/&gt;
+    &lt;l7:Link rel=&quot;parentFolder&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/folders/0000000000000000ffffffffffffec76&quot;/&gt;
 &lt;/l7:Item&gt;
 				</pre></div>
                 </td>
             </tr>
             </tbody>
         </table>
-        <p>Note that when updating an entity, all properties of that entity must be specified--even those that are not changing; otherwise, they will be set to null.</p>
+        <p>Note that when updating an entity, all properties of that entity must be specified, even those that are not changing, otherwise they will be set to null.</p>
         <h3>Deleting an Entity</h3>
         <p>An entity can be deleted by sending a DELETE request to that entity's URI. For example, to delete a policy with ID "b0f109679d51ca3d3be3f08a130531a0" send the following request:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
@@ -394,7 +401,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0">https://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/policies/b0f109679d51ca3d3be3f08a130531a0</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>DELETE</td>
@@ -416,7 +423,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template">https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -435,9 +442,8 @@
     &lt;l7:Name&gt;CLUSTER_PROPERTY Template&lt;/l7:Name&gt;
     &lt;l7:Type&gt;CLUSTER_PROPERTY&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:44:56.440-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;template&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template&quot;/&gt;
-    &lt;l7:Link rel=&quot;list&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties/template&quot;/&gt;
+    &lt;l7:Link rel=&quot;list&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/clusterProperties&quot;/&gt;
     &lt;l7:Resource&gt;
         &lt;l7:ClusterProperty&gt;
             &lt;l7:Name&gt;Template Cluster Property Name&lt;/l7:Name&gt;
@@ -452,7 +458,7 @@
         </table>
         <h2>Other Operations</h2>
         <h3>Dependency Analysis</h3>
-        <p>Entities depend on each other in many different ways. For example, a service may require a secure password and a JDBC connection.</p>
+        <p>Entities may depend on each other in many different ways. For example, a service may require a secure password and a JDBC connection.</p>
         <p>You can view the dependencies for a service, folder, policy, or encapsulated assertion by using the dependency analysis sub-resource.</p>
         <p>For example, to display all the dependencies for a service, make the following API call:</p>
         <table cellpadding="0" cellspacing="0" class="api-example">
@@ -463,7 +469,7 @@
             </tr>
             <tr>
                 <td>Uri</td>
-                <td><div class="code"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies">https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies</a></div></td>
+                <td><div class="code"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies</a></div></td>
             </tr>
             <tr><td>Http Method</td>
                 <td>GET</td>
@@ -479,17 +485,12 @@
 				<pre>
 &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
 &lt;l7:Item xmlns:l7=&quot;http://ns.l7tech.com/2010/04/gateway-management&quot;&gt;
-    &lt;l7:Name&gt;null dependencies&lt;/l7:Name&gt;
-    &lt;l7:Type&gt;Dependency&lt;/l7:Type&gt;
+    &lt;l7:Name&gt;MyService dependencies&lt;/l7:Name&gt;
+    &lt;l7:Type&gt;DEPENDENCY&lt;/l7:Type&gt;
     &lt;l7:TimeStamp&gt;2014-04-24T16:59:14.373-07:00&lt;/l7:TimeStamp&gt;
-    &lt;l7:Link rel=&quot;self&quot; uri=&quot;https://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies&quot;/&gt;
+    &lt;l7:Link rel=&quot;self&quot; uri=&quot;$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/services/b0f109679d51ca3d3be3f08a13053261/dependencies&quot;/&gt;
     &lt;l7:Resource&gt;
         &lt;l7:DependencyList&gt;
-            &lt;l7:Options&gt;
-                &lt;l7:Property key=&quot;returnAssertionsAsDependencies&quot;&gt;
-                    &lt;l7:BooleanValue&gt;false&lt;/l7:BooleanValue&gt;
-                &lt;/l7:Property&gt;
-            &lt;/l7:Options&gt;
             &lt;l7:Reference&gt;
                 &lt;l7:Name&gt;LookupInDatabase&lt;/l7:Name&gt;
                 &lt;l7:Id&gt;b0f109679d51ca3d3be3f08a13053261&lt;/l7:Id&gt;
@@ -544,6 +545,6 @@
             <tr><td>Dependencies</td><td>A list of the direct dependencies for this entity</td></tr>
         </table>
         <h3>Migration</h3>
-        <p>The Migration resource can be used to migrate folders, services, and policies between Gateways. For more information about using the Migration resource:</p>
-        <p class="code indent"><a href="https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html">https://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html</a></p>
+        <p>The Migration resource can be used to migrate folders, services, and policies between Gateways. For more information about using the Migration resource see:</p>
+        <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/migration.html</a></p>
     </div>

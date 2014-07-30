@@ -58,7 +58,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort     Key to sort the list by
-     * @param order    Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order    Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                 ascending if not specified
      * @param ids      Id filter
      * @param active   Active filter
@@ -108,7 +108,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @GET
     @Path("{versionNumber}")
-    public Item<PolicyVersionMO> get(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
+    public Item<PolicyVersionMO> getVersion(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
         return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
     }
@@ -129,12 +129,12 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      * Sets the comment on a specific policy version.
      *
      * @param versionNumber Version of the policy version to set the comment on.
-     * @param comment       Comment to set on the policy version. This will override any existing comment
+     * @param comment       Comment to set on the policy version. This will override any existing comment.
      * @return A reference to the updated policy version
      */
     @PUT
     @Path("{versionNumber}/comment")
-    public Item<PolicyVersionMO> setComment(@PathParam("versionNumber") @NotEmpty final Long versionNumber, @Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
+    public Item<PolicyVersionMO> setVersionComment(@PathParam("versionNumber") @NotEmpty final Long versionNumber, @Nullable final String comment) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.updateComment(serviceOrPolicyId, versionNumber, comment);
         final PolicyVersionMO policyVersion = policyVersionRestResourceFactory.getPolicyVersion(serviceOrPolicyId, versionNumber);
         return RestEntityResourceUtils.createGetResponseItem(policyVersion, transformer, this);
@@ -161,7 +161,7 @@ public class PolicyVersionResource implements URLAccessible<PolicyVersionMO> {
      */
     @POST
     @Path("{versionNumber}/activate")
-    public void activate(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
+    public void activateVersion(@PathParam("versionNumber") @NotEmpty final Long versionNumber) throws ResourceFactory.ResourceNotFoundException {
         policyVersionRestResourceFactory.activate(serviceOrPolicyId, versionNumber);
     }
 

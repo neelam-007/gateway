@@ -78,7 +78,7 @@ public class SiteMinderConfigurationResource extends RestEntityResource<SiteMind
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
-     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order           Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                        ascending if not specified
      * @param names           Name filter
      * @param enabled         Enabled filter

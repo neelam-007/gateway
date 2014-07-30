@@ -76,14 +76,14 @@ public class SecurePasswordResource extends RestEntityResource<StoredPasswordMO,
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
      * <div class="code indent"><pre>/restman/1.0/passwords?name=MyPassword</pre></div>
-     * <p>Returns secure password with name "MySFTPPollingListener".</p>
+     * <p>Returns secure password with name "MyPassword".</p>
      * <div class="code indent"><pre>/restman/1.0/passwords?type=Password&name=MyPassword&name=MyOtherPassword</pre></div>
      * <p>Returns secure password of Password type with name either "MyPassword" or
      * "MyOtherPassword"</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort  Key to sort the list by
-     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *              ascending if not specified
      * @param names Name filter
      * @param types Type filter

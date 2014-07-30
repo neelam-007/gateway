@@ -76,12 +76,12 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      * <p>Returns a list of folders. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent"><pre>/restman/1.0/activeConnectors?name=MyFolder</pre></div>
+     * <div class="code indent"><pre>/restman/1.0/folders?name=MyFolder</pre></div>
      * <p>Returns folder with name "MyFolder".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
-     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order           Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                        ascending if not specified
      * @param names           Name filter
      * @param parentFolderIds The parent folder filter
@@ -126,7 +126,7 @@ public class FolderResource extends DependentRestEntityResource<FolderMO, Folder
      */
     @PUT
     @Path("{id}")
-    public Response update(FolderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    public Response createOrUpdate(FolderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, id);
     }
 

@@ -75,12 +75,12 @@ public class PolicyAliasResource extends RestEntityResource<PolicyAliasMO, Polic
      * <p>Returns a list of policy aliases. Can optionally sort the resulting list in ascending or
      * descending order. Other params given will be used as search values.</p>
      * <p class="italicize">Examples:</p>
-     * <div class="code indent"><pre>/restman/1.0/policyAliases?policyIds=26df9b0abc4dd6780fd9da5929cde13e</pre></div>
+     * <div class="code indent"><pre>/restman/1.0/policyAliases?policy.id=26df9b0abc4dd6780fd9da5929cde13e</pre></div>
      * <p>Returns policy aliases for policy with ID "26df9b0abc4dd6780fd9da5929cde13e".</p>
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
-     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order           Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                        ascending if not specified
      * @param policyIds       Policy id filter
      * @param folderIds       Folder id filter

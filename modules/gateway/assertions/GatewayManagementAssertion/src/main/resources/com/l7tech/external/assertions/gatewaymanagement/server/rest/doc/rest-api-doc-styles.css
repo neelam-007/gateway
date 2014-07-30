@@ -34,7 +34,7 @@
     border-bottom: solid #808080 1px;
 }
 
-#rest-api-docs .api-call .api-call-content {
+#rest-api-docs .api-call .api-call-content, #rest-api-docs .api-call .api-call-content .request-body, #rest-api-docs .api-call .api-call-content .response-body {
     padding-left: 20px;
 }
 
@@ -52,22 +52,24 @@
     width: 100%;
 }
 
-#rest-api-docs .api-call .request .params-table tr th, .api-call .request .params-table tr td {
+#rest-api-docs .api-call .request .params-table tr th, #rest-api-docs .api-call .request .params-table tr td {
     border: solid lightgrey 1px;
 }
 
 .api-call .request .params-table tr td {
     font-size: small;
+    padding: 2px 3px;
 }
 
 #rest-api-docs .api-call .request .params-table caption {
     text-align: left;
     font-weight: bold;
     color: #666666;
+    padding-bottom: 3px;
 }
 
 #rest-api-docs .api-call .request .params-table tr th {
-    background-color: lightgreen;
+    background-color: #BAD7AB;
 }
 
 #rest-api-docs .api-call .request .params-table td.params-type-title {
@@ -81,11 +83,34 @@
     margin: 0px;
 }
 
+#rest-api-docs .api-call table.body-info-table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 15px 0 0 0;
+    width: 100%;
+}
+
+#rest-api-docs .api-call .body-info-table tr td {
+    border: solid lightgrey 1px;
+}
+
+#rest-api-docs .api-call .body-info-table tr td:first-child {
+    width: 150px;
+}
+
 #rest-api-docs .api-call .body-info {
     font-weight: bold;
     color: darkgreen;
 }
 
-#rest-api-docs .api-call .body-doc, #rest-api-docs .api-call .response-doc {
-    padding-top: 15px;
+#rest-api-docs .api-call .api-call-content .request-title, #rest-api-docs .api-call .api-call-content .response-title {
+    font-size: 1.1em;
+    color: darkgreen;
+    margin: 20px 0 10px;
+}
+
+#rest-api-docs .api-call .api-call-content .body-title {
+    color: #666666;
+    font-size: 1.0em;
+    margin: 20px 0 10px;
 }

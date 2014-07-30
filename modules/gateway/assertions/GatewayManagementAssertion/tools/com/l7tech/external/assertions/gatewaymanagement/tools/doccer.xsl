@@ -13,7 +13,7 @@
     <!-- matches the root application -->
     <xsl:template match="wadl:application">
         <div id="rest-api-docs">
-            <h2>Resources</h2>
+            <h1>Resources</h1>
             <xsl:call-template name="table-of-contents"/>
             <xsl:apply-templates select="wadl:resources/wadl:resource">
                 <!-- order by the resource name -->
@@ -90,7 +90,7 @@
         <xsl:param name="path-params"/>
         <!-- collect any params-->
         <xsl:variable name="path-params-updated">
-            <xsl:value-of select="$path-params"/>
+            <xsl:copy-of select="$path-params"/>
             <xsl:apply-templates select="wadl:param[@style='template']"/>
         </xsl:variable>
         <!-- Update the path and delegate to the method template. -->
@@ -117,20 +117,49 @@
                     <xsl:apply-templates select="wadl:doc"/>
                 </div>
                 <div class="request">
-                    <h5>Request</h5>
-                    <div class="resource-path">
-                        <xsl:value-of select="concat(@name, ' ', $path)"/>
+                    <h5 class="request-title">Request</h5>
+                    <div class="request-body">
+                        <div class="resource-path">
+                            <xsl:value-of select="concat(@name, ' ', $path)"/>
+                        </div>
+                        <xsl:if test="wadl:request/wadl:param or $path-params != ''">
+                            <xsl:if test="wadl:request/wadl:param[@style='template'] or $path-params != ''">
+                                <table class="params-table" cellpadding="0" cellspacing="0">
+                                    <caption>Path Parameters</caption>
+                                    <tr>
+                                        <th>Param</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                    <xsl:if test="$path-params != ''">
+                                        <xsl:copy-of select="$path-params"/>
+                                    </xsl:if>
+                                    <xsl:if test="wadl:request/wadl:param[@style='template']">
+                                        <xsl:apply-templates select="wadl:request/wadl:param[@style='template']"/>
+                                    </xsl:if>
+                                </table>
+                            </xsl:if>
+                            <xsl:if test="wadl:request/wadl:param[@style='query']">
+                                <table class="params-table" cellpadding="0" cellspacing="0">
+                                    <caption>Query Parameters</caption>
+                                    <tr>
+                                        <th>Param</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                    <xsl:apply-templates select="wadl:request/wadl:param[@style='query']"/>
+                                </table>
+                            </xsl:if>
+                        </xsl:if>
+                        <xsl:apply-templates select="wadl:request/wadl:representation"/>
                     </div>
-                    <xsl:apply-templates select="wadl:request">
-                        <xsl:with-param name="path-params" select="$path-params"/>
-                    </xsl:apply-templates>
                 </div>
                 <xsl:if test="wadl:response">
                     <xsl:apply-templates select="wadl:response"/>
                 </xsl:if>
                 <xsl:if test="not(wadl:response)">
-                    <h5>Response</h5>
-                    <div>No Response Body</div>
+                    <h5 class="response-title">Response</h5>
+                    <div class="response-body">No Response Body</div>
                 </xsl:if>
             </div>
         </div>
@@ -143,52 +172,30 @@
         </xsl:if>
     </xsl:template>
 
-    <!-- outputs the request info and creates the parameter table -->
-    <xsl:template match="wadl:request">
-        <xsl:param name="path-params"/>
-        <xsl:if test="wadl:param or $path-params">
-            <table class="params-table" cellpadding="0" cellspacing="0">
-                <caption>Parameters</caption>
-                <tr>
-                    <th>Param</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                </tr>
-                <xsl:if test="wadl:param[@style='template'] or $path-params">
-                    <tr>
-                        <td colspan="3" class="params-type-title">Path Params</td>
-                    </tr>
-                    <xsl:copy-of select="$path-params"/>
-                </xsl:if>
-                <xsl:if test="wadl:param[@style='query']">
-                    <tr>
-                        <td colspan="3" class="params-type-title">Query Params</td>
-                    </tr>
-                    <xsl:apply-templates select="wadl:param[@style='query']"/>
-                </xsl:if>
-            </table>
-        </xsl:if>
-        <xsl:apply-templates select="wadl:representation"/>
-    </xsl:template>
-
     <xsl:template match="wadl:representation">
-        <h6>Body</h6>
-        <xsl:if test="@element">
-            <div>
-                <span class="body-info">Element: </span>
-                <xsl:apply-templates select="@element"/>
-            </div>
-        </xsl:if>
-        <xsl:if test="@mediaType">
-            <div>
-                <span class="body-info">Content-Type: </span>
-                <xsl:apply-templates select="@mediaType"/>
-            </div>
-        </xsl:if>
-        <xsl:if test="wadl:doc">
+        <xsl:param name="body-doc"/>
+        <h6 class="body-title">Body</h6>
+        <xsl:if test="wadl:doc or $body-doc">
             <div class="body-doc">
+                <xsl:copy-of select="$body-doc"/>
                 <xsl:apply-templates select="wadl:doc"/>
             </div>
+        </xsl:if>
+        <xsl:if test="@element or @mediaType">
+            <table class="body-info-table">
+                <xsl:if test="@element">
+                    <tr>
+                        <td class="body-info">Element</td>
+                        <td><xsl:apply-templates select="@element"/></td>
+                    </tr>
+                </xsl:if>
+                <xsl:if test="@mediaType">
+                    <tr>
+                        <td class="body-info">Content-Type</td>
+                        <td><xsl:apply-templates select="@mediaType"/></td>
+                    </tr>
+                </xsl:if>
+            </table>
         </xsl:if>
     </xsl:template>
 
@@ -219,10 +226,19 @@
     </xsl:template>
 
     <xsl:template match="wadl:response">
-        <h5>Response</h5>
-        <xsl:apply-templates select="wadl:representation"/>
-        <div class="response-doc">
-            <xsl:apply-templates select="wadl:doc"/>
-        </div>
+        <h5 class="response-title">Response</h5>
+        <xsl:if test="wadl:representation or wadl:doc">
+            <div class="response-body">
+                <xsl:apply-templates select="wadl:representation">
+                    <xsl:with-param name="body-doc" select="wadl:doc"/>
+                </xsl:apply-templates>
+                <xsl:if test="not(wadl:representation)">
+                    <h6 class="body-title">Body</h6>
+                    <div class="body-doc">
+                        <xsl:apply-templates select="wadl:doc"/>
+                    </div>
+                </xsl:if>
+            </div>
+        </xsl:if>
     </xsl:template>
 </xsl:stylesheet>

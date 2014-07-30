@@ -57,8 +57,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @return The user resource for handling user requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/" + UserResource.USERS_URI)
-    public UserResource users(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    @Path("{identityProviderID}/" + UserResource.USERS_URI)
+    public UserResource users(@PathParam("identityProviderID") String id) throws ResourceFactory.ResourceNotFoundException {
         return resourceContext.initResource(new UserResource(resolveId(id)));
     }
 
@@ -69,8 +69,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @return The group resource for handling group requests.
      * @throws com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.ResourceNotFoundException
      */
-    @Path("{id}/" + GroupResource.GROUPS_URI)
-    public GroupResource groups(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    @Path("{identityProviderID}/" + GroupResource.GROUPS_URI)
+    public GroupResource groups(@PathParam("identityProviderID") String id) throws ResourceFactory.ResourceNotFoundException {
         return resourceContext.initResource(new GroupResource(resolveId(id)));
     }
 
@@ -95,8 +95,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
-    @Path("{id}")
-    public Item<IdentityProviderMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    @Path("{identityProviderID}")
+    public Item<IdentityProviderMO> get(@PathParam("identityProviderID") String id) throws ResourceFactory.ResourceNotFoundException {
         return super.get(resolveId(id));
     }
 
@@ -111,7 +111,7 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort            Key to sort the list by
-     * @param order           Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order           Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *                        ascending if not specified
      * @param names           Name filter
      * @param types           Type filter
@@ -188,8 +188,8 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    @Path("{id}")
-    public Response createOrUpdate(IdentityProviderMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
+    @Path("{identityProviderID}")
+    public Response createOrUpdate(IdentityProviderMO resource, @PathParam("identityProviderID") String id) throws ResourceFactory.ResourceFactoryException {
         return super.update(resource, resolveId(id));
     }
 
@@ -200,9 +200,9 @@ public class IdentityProviderResource extends RestEntityResource<IdentityProvide
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
-    @Path("{id}")
+    @Path("{identityProviderID}")
     @Override
-    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+    public void delete(@PathParam("identityProviderID") String id) throws ResourceFactory.ResourceNotFoundException {
         super.delete(resolveId(id));
     }
 

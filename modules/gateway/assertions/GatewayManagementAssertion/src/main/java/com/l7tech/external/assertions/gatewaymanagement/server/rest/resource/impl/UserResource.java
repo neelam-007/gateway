@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * A user represents a user identity in an identity provider. When no identity provider is specified in the url then
- * the internal identity provider is assumed. Users can only be created and updated in the internal identity provider..
+ * the internal identity provider is assumed. Users can only be created and updated in the internal identity provider.
  */
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + UserResource.USERS_URI)
@@ -74,14 +74,14 @@ public class UserResource implements URLAccessible<UserMO> {
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort   Key to sort the list by.
-     * @param order  Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order  Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *               ascending if not specified
      * @param logins Login filter
      * @return A list of groups. If the list is empty then no groups were found.
      */
     @SuppressWarnings("unchecked")
     @GET
-    public ItemsList<UserMO> list(
+    public ItemsList<UserMO> listUsers(
             @QueryParam("sort") @ChoiceParam({"id", "login"}) String sort,
             @QueryParam("order") @ChoiceParam({"asc", "desc"}) String order,
             @QueryParam("login") List<String> logins) throws ResourceFactory.ResourceNotFoundException {
@@ -109,7 +109,7 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ResourceFactory.InvalidResourceException
      */
     @POST
-    public Response create(UserMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public Response createUser(UserMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         userRestResourceFactory.createResource(providerId, resource);
         return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, true);
     }
@@ -122,8 +122,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
-    @Path("{id}")
-    public Item<UserMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
+    @Path("{userID}")
+    public Item<UserMO> getUser(@PathParam("userID") String id) throws ResourceFactory.ResourceNotFoundException, FindException, ResourceFactory.InvalidResourceException {
         UserMO user = userRestResourceFactory.getResource(providerId, id);
         return RestEntityResourceUtils.createGetResponseItem(user, transformer, this);
     }
@@ -138,14 +138,14 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ResourceFactory.InvalidResourceException
      */
     @PUT
-    @Path("{id}")
-    public Response update(UserMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    @Path("{userID}")
+    public Response updateUser(UserMO resource, @PathParam("userID") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         userRestResourceFactory.updateResource(providerId, id, resource);
         return RestEntityResourceUtils.createCreateOrUpdatedResponseItem(resource, transformer, this, false);
     }
 
     /**
-     * Change this users password
+     * Change this user's password
      *
      * @param id       The ID of the user
      * @param password The new password
@@ -156,8 +156,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws FindException
      */
     @PUT
-    @Path("{id}/password")
-    public Item<UserMO> changePassword(@PathParam("id") String id, String password, @QueryParam("format") @DefaultValue("plain") String format) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
+    @Path("{userID}/password")
+    public Item<UserMO> changeUserPassword(@PathParam("userID") String id, String password, @QueryParam("format") @DefaultValue("plain") String format) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, FindException {
         userRestResourceFactory.changePassword(providerId, id, password, format);
         UserMO user = userRestResourceFactory.getResource(providerId, id);
         return RestEntityResourceUtils.createGetResponseItem(user, transformer, this);
@@ -170,8 +170,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @DELETE
-    @Path("{id}")
-    public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    @Path("{userID}")
+    public void deleteUser(@PathParam("userID") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         userRestResourceFactory.deleteResource(providerId, id);
     }
 
@@ -186,8 +186,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws FindException
      */
     @PUT
-    @Path("{id}/certificate")
-    public Item<CertificateData> setCertificate(@PathParam("id") String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+    @Path("{userID}/certificate")
+    public Item<CertificateData> setUserCertificate(@PathParam("userID") String id, CertificateData certificateData) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
         X509Certificate cert = userRestResourceFactory.setCertificate(providerId, id, certificateData);
         CertificateData certificateDataOut = certTransformer.getCertData(cert);
         return new ItemBuilder<CertificateData>(certificateDataOut.getSubjectName() + " Certificate Data", id, getResourceType() + "CertificateData")
@@ -207,8 +207,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ObjectModelException
      */
     @GET
-    @Path("{id}/certificate")
-    public Item<CertificateData> getCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+    @Path("{userID}/certificate")
+    public Item<CertificateData> getUserCertificate(@PathParam("userID") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
         X509Certificate cert = userRestResourceFactory.getCertificate(providerId, id);
         CertificateData certificateData = certTransformer.getCertData(cert);
         return new ItemBuilder<CertificateData>(certificateData.getSubjectName() + " Certificate Data", id, getResourceType() + "CertificateData")
@@ -226,8 +226,8 @@ public class UserResource implements URLAccessible<UserMO> {
      * @throws ObjectModelException
      */
     @DELETE
-    @Path("{id}/certificate")
-    public void deleteCertificate(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
+    @Path("{userID}/certificate")
+    public void deleteUserCertificate(@PathParam("userID") String id) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException, ObjectModelException {
         userRestResourceFactory.revokeCertificate(providerId, id);
     }
 
@@ -239,7 +239,7 @@ public class UserResource implements URLAccessible<UserMO> {
      */
     @GET
     @Path("template")
-    public Item<UserMO> template() {
+    public Item<UserMO> templateUser() {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(providerId);
         userMO.setLogin("Login");

@@ -73,7 +73,7 @@ public class GroupResource implements URLAccessible<GroupMO> {
      * <p>If a parameter is not a valid search value a bad request error will be returned.</p>
      *
      * @param sort  Key to sort the list by.
-     * @param order Sort order for the list; 'true'=ascending, 'false'=descending; defaults to
+     * @param order Sort order for the list; 'asc'=ascending, 'desc'=descending; defaults to
      *              ascending if not specified
      * @param names Name filter
      * @return A list of groups. If the list is empty then no groups were found.
@@ -103,8 +103,8 @@ public class GroupResource implements URLAccessible<GroupMO> {
      * @throws ResourceFactory.ResourceNotFoundException
      */
     @GET
-    @Path("{id}")
-    public Item<GroupMO> getGroup(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
+    @Path("{groupID}")
+    public Item<GroupMO> getGroup(@PathParam("groupID") String id) throws ResourceFactory.ResourceNotFoundException, FindException {
         GroupMO group = groupRestResourceFactory.getResource(providerId, id);
         return RestEntityResourceUtils.createGetResponseItem(group, transformer, this);
     }
