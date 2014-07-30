@@ -122,6 +122,13 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
         final String rightComment = comment.getAssertionComment(Assertion.Comment.RIGHT_COMMENT);
         final boolean hasRight = rightComment != null && !rightComment.trim().isEmpty() && maxRhsComment > 0;
 
+        boolean usesHtml = false;
+        if ( displayText.toLowerCase().startsWith( "<html>" ) ) {
+            // Remove <html> tag from start of display text.  We'll add back one of our own if appropriate.
+            displayText = displayText.substring( "<html>".length() );
+            usesHtml = true;
+        }
+
         StringBuilder builder = decorateComment? new StringBuilder("<html>") : new StringBuilder();
         if (hasLeft) {
             final String stringToDisplay;
@@ -139,8 +146,10 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             }
         }
 
-        // just in case there's html tags in the display text
-        displayText = TextUtils.escapeHtmlSpecialCharacters(displayText);
+        if ( !usesHtml ) {
+            // just in case there's html tags in the display text
+            displayText = TextUtils.escapeHtmlSpecialCharacters( displayText );
+        }
         builder.append(displayText);
 
         if (hasRight) {
