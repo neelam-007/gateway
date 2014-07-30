@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocumentResources;
@@ -21,6 +22,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -45,6 +47,19 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
                     new GatewayManagementModuleLifecycle(context);
             gatewayManagementModuleLifecycle.initialize();
             instance = gatewayManagementModuleLifecycle;
+
+            // Need to pre cache the Jaxb context. If it is already loaded this will do nothing.
+            // If the context does not get loaded on gateway startup then it will fail to properly load when the service is executed.
+            final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                //Set the context class loaded this way. It will force it to use the ModularAssertionClassLoader
+                Thread.currentThread().setContextClassLoader(GatewayManagementAssertion.class.getClassLoader());
+                MarshallingUtils.getJAXBContext();
+            } catch (JAXBException e) {
+                logger.log( Level.WARNING, "Gateway management module failed to properly load the JAXBContext: " + e.getMessage(), e);
+            } finally {
+                Thread.currentThread().setContextClassLoader(contextClassLoader);
+            }
         }
     }
 
