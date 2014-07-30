@@ -185,6 +185,7 @@ public class OdataValidationDialog extends AssertionPropertiesOkCancelSupport<Od
         }
 
         odataResourceUrl.setText(assertion.getResourceUrl());
+        odataResourceUrl.setCaretPosition( 0 );
         getMethodCheckBox.setSelected(assertion.isReadOperation());
         postMethodCheckBox.setSelected(assertion.isCreateOperation());
         putMethodCheckBox.setSelected(assertion.isUpdateOperation());
