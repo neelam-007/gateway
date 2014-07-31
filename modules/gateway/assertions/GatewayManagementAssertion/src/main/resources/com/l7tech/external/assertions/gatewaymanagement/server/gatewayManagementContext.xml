@@ -197,7 +197,12 @@
     </bean>
     <bean id="encapsulatedAssertionResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.EncapsulatedAssertionResourceFactory" parent="resourceFactoryParent">
         <constructor-arg index="3" ref="encapsulatedAssertionConfigManager"/>
-        <constructor-arg index="4" ref="policyManager"/>
+        <constructor-arg index="4">
+            <bean class="com.l7tech.server.policy.VersioningPolicyManager">
+                <constructor-arg index="0" ref="policyManager"/>
+                <constructor-arg index="1" ref="policyVersionManager"/>
+            </bean>
+        </constructor-arg>
         <constructor-arg index="5" ref="encapsulatedAssertionHelper"/>
         <constructor-arg index="6" ref="policyHelper"/>
         <constructor-arg index="7" ref="securityZoneManager"/>
