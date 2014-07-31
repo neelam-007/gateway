@@ -622,10 +622,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             char[] password = pw.getPassword();
             UsernamePasswordCredentials creds =  new UsernamePasswordCredentials(username, new String(password));
             client.getCredentialsProvider().setCredentials(AuthScope.ANY, creds);
-
-            if (params.isPreemptiveAuthentication()) {
-                //set preemptive authentication
-                clientParams.setParameter(ClientPNames.HANDLE_AUTHENTICATION, false);
+            if(params.isPreemptiveAuthentication()) { //set preemptive authentication
                 // Create AuthCache instance
                 AuthCache authCache = new BasicAuthCache();
                 // Generate BASIC scheme object and add it to the local auth cache
@@ -635,7 +632,6 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 // Add AuthCache to the execution context
                 state.setAttribute(ClientContext.AUTH_CACHE, authCache);
             }
-
             clientParams.setParameter(AuthPNames.CREDENTIAL_CHARSET, ConfigFactory.getProperty(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
         } else if ( !proxyConfigured ) {
             client.getCredentialsProvider().clear();
