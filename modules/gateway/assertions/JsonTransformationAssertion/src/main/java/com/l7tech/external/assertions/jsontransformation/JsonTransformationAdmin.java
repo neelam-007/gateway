@@ -11,7 +11,7 @@ public interface JsonTransformationAdmin {
     @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     public String testTransform(String input, JsonTransformationAssertion.Transformation transformation,
                                 JsonTransformationAssertion.TransformationConvention convention,
-                                String rootTag, boolean prettyPrint, boolean asArray) throws JsonTransformationTestException;
+                                String rootTag, boolean prettyPrint, boolean asArray, boolean useNumbers) throws JsonTransformationTestException;
 
     static public class JsonTransformationTestException extends Exception {
 

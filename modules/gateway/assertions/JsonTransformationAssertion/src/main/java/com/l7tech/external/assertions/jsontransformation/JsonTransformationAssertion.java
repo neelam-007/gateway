@@ -45,6 +45,8 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     private boolean arrayForm;
 
+    private boolean useNumbersWhenPossible = false;
+
     private TransformationConvention convention = TransformationConvention.STANDARD;
 
     public JsonTransformationAssertion() {
@@ -100,6 +102,14 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public void setArrayForm(final boolean arrayForm) {
         this.arrayForm = arrayForm;
+    }
+
+    public boolean isUseNumbersWhenPossible() {
+        return useNumbersWhenPossible;
+    }
+
+    public void setUseNumbersWhenPossible( boolean useNumbersWhenPossible ) {
+        this.useNumbersWhenPossible = useNumbersWhenPossible;
     }
 
     @Override

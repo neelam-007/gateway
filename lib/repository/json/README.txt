@@ -35,3 +35,7 @@ When transforming XML to JSON.  The library will attempt to convert numeric valu
 the existing code only check the first character or the first two character if the first is a minus sign.
 
 based on the client's requirement, they like to preserve the leading 0, as such, we will be removing the numeric value conversion bit.
+
+IMPORTANT NOTE:  The ServerJsonTransformationAssertion currently (as of Icefish) uses the -l7p2 jar but it currently bypasses the org.json.XML
+class in favor of its own private modified version CustomizedJsonXml which fixes a few more bugs (as noted in its header) and makes the
+number output behavior configurable.

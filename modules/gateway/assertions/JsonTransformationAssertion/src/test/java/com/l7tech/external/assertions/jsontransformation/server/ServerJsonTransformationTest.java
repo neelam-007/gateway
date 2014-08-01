@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.Charsets;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Assert;
@@ -22,7 +23,12 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.ByteArrayInputStream;
+import java.nio.ByteBuffer;
 import java.util.*;
+
+import static com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion.Transformation.XML_to_JSON;
+import static com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion.TransformationConvention.STANDARD;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test the JsonTransformationAssertion.
@@ -160,7 +166,7 @@ public class ServerJsonTransformationTest {
 
         AssertionStatus result = sjta.checkRequest(context);
 
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
@@ -186,7 +192,7 @@ public class ServerJsonTransformationTest {
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
         AssertionStatus result = sjta.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         // do XML->JSON
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("target"));
@@ -195,11 +201,11 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
         ServerJsonTransformationAssertion sjta1 = buildServerAssertion(assertion);
         result = sjta1.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         Object outputObj = context.getVariable("target");
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
-        Assert.assertEquals(EXPECTED_JSON_ROUNDTRIP, mapObj.toString());
+        Assert.assertEquals( EXPECTED_JSON_ROUNDTRIP, mapObj.toString() );
     }
 
     private void assertJsonData(Map jsonMap) {
@@ -227,7 +233,7 @@ public class ServerJsonTransformationTest {
 
         AssertionStatus result = sjta.checkRequest(context);
 
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
@@ -251,13 +257,13 @@ public class ServerJsonTransformationTest {
 
         AssertionStatus result = sjta.checkRequest(context);
 
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
         List arrayObject = (List) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         JSONArray actualArray = new JSONArray(arrayObject);
         JSONArray expectedArray = new JSONArray(EXPECTED_XHTML_JSONML);
-        Assert.assertEquals(expectedArray.toString(), actualArray.toString());
+        Assert.assertEquals( expectedArray.toString(), actualArray.toString() );
 
     }
 
@@ -269,7 +275,7 @@ public class ServerJsonTransformationTest {
         Object o = ((ArrayList) childNodes).get(0);
         Assert.assertTrue(o instanceof Map);
         Map m = (Map) o;
-        Assert.assertEquals("soapenv:Header", m.get("tagName"));
+        Assert.assertEquals( "soapenv:Header", m.get( "tagName" ) );
     }
 
     @Test
@@ -290,7 +296,7 @@ public class ServerJsonTransformationTest {
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
         AssertionStatus result = sjta.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         // do XML->JSONML
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("target"));
@@ -300,7 +306,7 @@ public class ServerJsonTransformationTest {
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
         ServerJsonTransformationAssertion sjta1 = buildServerAssertion(assertion);
         result = sjta1.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         Object outputObj = context.getVariable("target");
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
@@ -325,7 +331,7 @@ public class ServerJsonTransformationTest {
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
         AssertionStatus result = sjta.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         //JSONML TO XML
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("target"));
@@ -335,7 +341,7 @@ public class ServerJsonTransformationTest {
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
         ServerJsonTransformationAssertion sjta1 = buildServerAssertion(assertion);
         result = sjta1.checkRequest(context);
-        Assert.assertEquals(result, AssertionStatus.NONE);
+        Assert.assertEquals( result, AssertionStatus.NONE );
 
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
@@ -343,7 +349,7 @@ public class ServerJsonTransformationTest {
         XmlKnob knob = ((Message) outputObj).getXmlKnob();
         Document document = knob.getDocumentReadOnly();
 
-        Assert.assertEquals("soapenv:Envelope", document.getDocumentElement().getTagName());
+        Assert.assertEquals( "soapenv:Envelope", document.getDocumentElement().getTagName() );
         //soap env namespaces...
         NamedNodeMap envAttrs = document.getDocumentElement().getAttributes();
         for (int i = 0; i < envAttrs.getLength(); ++i) {
@@ -353,10 +359,10 @@ public class ServerJsonTransformationTest {
 
             String expectedValue = EXPECTED_XML_NAMESPACES.get(nodeName);
             Assert.assertTrue(expectedValue != null);
-            Assert.assertEquals(expectedValue, nodeValue);
+            Assert.assertEquals( expectedValue, nodeValue );
         }
         Node delay = document.getElementsByTagName("delay").item(0);
-        Assert.assertEquals("foobar!", delay.getFirstChild().getNodeValue());
+        Assert.assertEquals( "foobar!", delay.getFirstChild().getNodeValue() );
     }
 
     @Test
@@ -405,11 +411,170 @@ public class ServerJsonTransformationTest {
             String uglyJSON = ServerJsonTransformationAssertion.doTransformation(xmlStr,
                     JsonTransformationAssertion.Transformation.XML_to_JSON,
                     JsonTransformationAssertion.TransformationConvention.STANDARD,
-                    "test", false, false);
-            Assert.assertEquals(uglyJSON, EXPECTED_UGLY_JSON);
+                    "test", false, false, false);
+            Assert.assertEquals( uglyJSON, EXPECTED_UGLY_JSON );
         } catch (JSONException e) {
             Assert.fail("Error testing testJsonPrettyPrint(): " + e.getMessage());
         }
     }
+
+    @Test
+    public void testXmlToJsonNumericValues() throws Exception {
+        // Basic sanity checks
+        assertQuoted( true, "" );
+        assertQuoted( true, "-" );
+        assertQuoted( true, "a" );
+        assertQuoted( false, "0" );
+        assertQuoted( true, "-0" );
+        assertQuoted( false, "-1" );
+        assertQuoted( false, "1" );
+        assertQuoted( false, "123" );
+        assertQuoted( false, "-123" );
+        assertQuoted( true, "NaN" );
+        assertQuoted( true, "Infinity" );
+        assertQuoted( true, "-Infinity" );
+
+        // Leading zeroes require quoting
+        assertQuoted( true, "0123" );
+        assertQuoted( true, "00123" );
+        assertQuoted( true, "00447809598454" );
+
+        // Leading and trailing whitespace is eaten during the conversion
+        assertEquals( "1", valueAsJson( "   1   ", true ) );
+
+        // Long values should convert as numbers
+        assertQuoted( false, "9223372036854775807" ); // Long.MAX_VALUE
+        assertQuoted( false, "-9223372036854775808" ); // Long.MIN_VALUE
+
+        // Too large integer must be converted as a string
+        assertQuoted( true, "9223372036854775808" );  // MAX_VALUE + 1
+        assertQuoted( true, "-9223372036854775809" ); // MIN_VALUE - 1
+
+        // Double precision literals should convert as numbers
+        assertQuoted( false, "2.2250738585072014E-308" ); // Double.MIN_NORMAL
+        assertQuoted( false, "3.231973937965903E109" );
+        assertQuoted( false, "-6.512791530968047E-264" );
+        assertQuoted( false, "4.571666488570002E-56" );
+        assertQuoted( false, "3.0824318140031153E-282" );
+        assertQuoted( false, "3.56537449002E295" );
+        assertQuoted( false, "2234.5432" );
+        assertQuoted( false, "-8234144573352565" );
+        assertQuoted( false, "-8.23414457335256" );
+        assertQuoted( false, "-823.4144573352565" );
+
+        // High magnitude exponents
+        assertQuoted( false, "-1.94193840957016E307" );
+        assertQuoted( false, "1.94193840957016E307" );
+        assertQuoted( false, "-1.94193840957016E-309" );
+        assertQuoted( false, "1.94193840957016E-309" );
+
+        // Subnormal representation
+        assertQuoted( false, "2.2E-322" );
+        assertQuoted( false, "-2.2E-322" );
+
+        // Leading or trailing zeroes on mantissa or exponent require quoting
+        assertQuoted( true, "03.231973937965903E109" );
+        assertQuoted( true, "-6.512791530968047E-064" );
+        assertQuoted( true, "0.071666488570002E-56" );
+        assertQuoted( true, "3.0824318140031153E-0082" );
+
+        // CVE-2010-4476 DBL_MIN parsing bug -- WARNING: Attempting to parse this string as a double causes older JVMs to infinite loop
+        assertQuoted( true, "2.2250738585072012E-308" );
+
+        // If exponent magnitude exceeds what can be represented by Double, convert as string
+        assertQuoted( true, "-1.94193840957016E308" );
+        assertQuoted( true, "1.94193840957016E308" );
+        assertQuoted( true, "2.2E-323" );
+        assertQuoted( true, "-2.2E-323" );
+
+        // If mantissa precision exceeds what can be represented by Double, convert as string
+        assertQuoted( true,  "7.4190590630331777E177" );
+        assertQuoted( true,  "73498567342362346.523562356" );
+
+        // Conservative string-representation-preserving quoting of values that would be altered by a parseDouble() -> toString() round trip
+        assertQuoted( true, "-823414457.3352" );          // would be changed into exponent notation
+        assertQuoted( true, "-82341445733525.65" );       // would be changed into exponent notation
+        assertQuoted( true, "-823414457335256.5" );       // would be changed into exponent notation
+        assertQuoted( true, "3.0824318140031153e-282" );  // would have lowercase "e" changed to "E"
+        assertQuoted( true, "-5.553308173443313e230" );   // would have lowercase "e" changed to "E"
+        assertQuoted( true, "0.0" );                      // would be changed to "0"
+        assertQuoted( true, "-0.0" );                     // would be changed to "-0"
+    }
+
+    @Test
+    public void testRandomlyGeneratedDoubles() throws Exception {
+        Random rand = new Random( 8484L );
+        byte[] b = new byte[ 8 ];
+        for ( int i = 0; i < 1000; ++i ) {
+            rand.nextBytes( b );
+            double d = ByteBuffer.wrap( b ).getDouble();
+            String s = Double.toString( d );
+
+            if ( "NaN".equals( s ) ) {
+                assertQuoted( true, s );
+                continue;
+            }
+
+            // Should not be quoted as it is valid output from Double.toString()
+            try {
+                assertQuoted( false, s );
+            } catch ( Exception e ) {
+                throw new AssertionError( "Failed on value: " + s + ": " + e.getMessage(), e );
+            }
+        }
+
+    }
+
+    // Assert whether a value converted to JSON with useNumbers==true gets converted as a number or a quoted string
+    private void assertQuoted( boolean shouldBeQuoted, String origValue ) throws Exception {
+        if ( shouldBeQuoted ) {
+            assertEquals( "\"" + origValue + "\"", valueAsJson( origValue, true ) );
+        } else {
+            assertEquals( origValue, valueAsJson( origValue, true ) );
+        }
+    }
+
+    private String valueAsJson( String value, boolean useNumbers ) throws Exception {
+        String json = convert( "<a>" + value + "</a>", XML_to_JSON, STANDARD, useNumbers );
+        return json.split( ":|\\}" )[1];
+    }
+
+    @Test
+    public void testNumbersAlwaysQuoted() throws Exception {
+        // When useNumbers == false, numeric values are always quoted even if the quotes could safely be emitted
+        assertEquals( "\"0\"", valueAsJson( "0", false ) );
+        assertEquals( "\"123\"", valueAsJson( "123", false ) );
+        assertEquals( "\"-9223372036854775808\"", valueAsJson( "-9223372036854775808", false ) );
+        assertEquals( "\"9223372036854775808\"", valueAsJson( "9223372036854775808", false ) );
+        assertEquals( "\"-9223372036854775809\"", valueAsJson( "-9223372036854775809", false ) );
+        assertEquals( "\"4.571666488570002E-56\"", valueAsJson( "4.571666488570002E-56", false ) );
+    }
+
+    private String convert( String input,
+                            JsonTransformationAssertion.Transformation transform,
+                            JsonTransformationAssertion.TransformationConvention convention,
+                            boolean useNumbers ) throws Exception {
+        PolicyEnforcementContext context = getContext();
+
+        JsonTransformationAssertion ass = new JsonTransformationAssertion();
+        ass.setDestinationMessageTarget( new MessageTargetableSupport( "output" ) );
+        ass.setOtherTargetMessageVariable( "input" );
+        ass.setTarget( TargetMessageType.OTHER );
+        ass.setTransformation( transform );
+        ass.setConvention( convention );
+        ass.setUseNumbersWhenPossible( useNumbers );
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("input"), false);
+        xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(input.getBytes()));
+
+        ServerJsonTransformationAssertion sass = buildServerAssertion(ass);
+        AssertionStatus result = sass.checkRequest(context);
+
+        assertEquals( result, AssertionStatus.NONE );
+        Message output = (Message)context.getVariable("output");
+
+        byte[] outBytes = output.getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan( 1000000 );
+        return new String( outBytes, Charsets.UTF8 );
+    }
+
 
 }

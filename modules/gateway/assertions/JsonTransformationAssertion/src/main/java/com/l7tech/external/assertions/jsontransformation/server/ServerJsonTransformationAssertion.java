@@ -59,7 +59,7 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             if (assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
                 String sourceString = getFirstPartString(sourceMessage);
                 targetValue = doTransformation(sourceString, assertion.getTransformation(),
-                        assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint(), assertion.isArrayForm());
+                        assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint(), assertion.isArrayForm(), assertion.isUseNumbersWhenPossible());
             } else {
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
@@ -75,7 +75,7 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
                 }
                 String source = getFirstPartString(sourceMessage);
                 targetValue = doTransformation(source, assertion.getTransformation(), assertion.getConvention(),
-                        rootTag, assertion.isPrettyPrint(), assertion.isArrayForm());
+                        rootTag, assertion.isPrettyPrint(), assertion.isArrayForm(), assertion.isUseNumbersWhenPossible());
 
                 Document document = XmlUtil.stringToDocument(targetValue);
                 targetValue = assertion.isPrettyPrint() ? XmlUtil.nodeToFormattedString(document) : XmlUtil.nodeToString(document);
@@ -113,7 +113,7 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
 
     public static String doTransformation(String sourceString, JsonTransformationAssertion.Transformation transformation,
                                           JsonTransformationAssertion.TransformationConvention convention,
-                                          String rootTag, boolean prettyPrint, boolean asArray) throws JSONException {
+                                          String rootTag, boolean prettyPrint, boolean asArray, boolean useNumbers) throws JSONException {
         JSONObject jsonObject;
     	String targetValue = "";
         String source = sourceString == null ? "" : sourceString.trim();
@@ -124,7 +124,9 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
     	if (transformation.equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
             // Source is XML, so get a JSONObject from XML class
             if(convention.equals(JsonTransformationAssertion.TransformationConvention.STANDARD)){
-                jsonObject = XML.toJSONObject(source);
+                CustomizedJsonXml jsonToXml = new CustomizedJsonXml();
+                jsonToXml.setUseNumbersWhenPossible( useNumbers );
+                jsonObject = jsonToXml.toJSONObject( source );
                 targetValue = prettyPrint ? jsonObject.toString(JsonStringIndent) : jsonObject.toString();
             }
             else if(convention.equals(JsonTransformationAssertion.TransformationConvention.JSONML)){
