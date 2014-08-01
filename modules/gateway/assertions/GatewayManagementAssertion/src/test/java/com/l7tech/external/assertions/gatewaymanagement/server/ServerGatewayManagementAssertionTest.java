@@ -4608,7 +4608,7 @@ public class ServerGatewayManagementAssertionTest {
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass", message );
 
         final Element soapBody = SoapUtil.getBodyElement(result);
-        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "EncapsulatedAssertionImportResult");
 
         EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0001");
@@ -4791,7 +4791,7 @@ public class ServerGatewayManagementAssertionTest {
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass", message );
 
         final Element soapBody = SoapUtil.getBodyElement(result);
-        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "EncapsulatedAssertionImportResult");
 
         EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0002");
@@ -4887,7 +4887,7 @@ public class ServerGatewayManagementAssertionTest {
         final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions/ImportEncass", message );
 
         final Element soapBody = SoapUtil.getBodyElement(result);
-        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PolicyImportResult");
+        XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "EncapsulatedAssertionImportResult");
 
         EncapsulatedAssertionConfigManagerStub encassManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManagerStub.class);
         EncapsulatedAssertionConfig encapsulatedAssertionConfig = encassManager.findByGuid("ABCD-0002");

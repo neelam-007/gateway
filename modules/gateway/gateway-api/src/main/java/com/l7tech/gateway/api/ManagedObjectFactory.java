@@ -232,6 +232,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new EncapsulatedAssertionImportResult instance.
+     *
+     * @return The new instance.
+     */
+    public static EncapsulatedAssertionImportResult createEncapsulatedAssertionImportResult() {
+        return new EncapsulatedAssertionImportResult();
+    }
+
+    /**
      * Create a new PolicyImportResult instance.
      *
      * @return The new instance.

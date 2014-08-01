@@ -57,16 +57,16 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
      * @throws InvalidResourceException
      */
     @ResourceMethod(name="ImportEncass", selectors=true, resource=true)
-    public PolicyImportResult importEncass( final Map<String,String> selectorMap,
+    public EncapsulatedAssertionImportResult importEncass( final Map<String,String> selectorMap,
                                             final EncassImportContext resource ) throws ResourceNotFoundException, InvalidResourceException {
-        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException,PolicyImportResult>>(){
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException,EncapsulatedAssertionImportResult>>(){
             @Override
-            public E2<ResourceNotFoundException, InvalidResourceException,PolicyImportResult> execute() throws ObjectModelException {
+            public E2<ResourceNotFoundException, InvalidResourceException, EncapsulatedAssertionImportResult> execute() throws ObjectModelException {
                 try {
                     //extract the encass from the resource
                     EncapsulatedAssertionConfig encass = EncapsulatedAssertionHelper.importFromNode(resource, true);
                     final Policy policy;
-                    final PolicyImportResult result;
+                    final PolicyImportResult policyImportResult;
 
                     //check if selectors are provided
                     if(selectorMap != null && !selectorMap.isEmpty()) {
@@ -80,7 +80,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                         //use the existing encassed policy
                         policy = encass.getPolicy();
                         policyHelper.checkPolicyAssertionAccess( policy );
-                        result = policyHelper.importPolicy( policy, resource );
+                        policyImportResult = policyHelper.importPolicy( policy, resource );
                     } else {
                         //import into a new encass
                         //check if an encass with the same name or guid exists
@@ -104,7 +104,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                                     }
                                     //create a new policy and import into it.
                                     policy = new Policy(PolicyType.INCLUDE_FRAGMENT, policyReferenceInstructions.getMappedName(), "", false);
-                                    result = policyHelper.importPolicy( policy, resource );
+                                    policyImportResult = policyHelper.importPolicy( policy, resource );
                                     UUID guid = UUID.randomUUID();
                                     policy.setGuid(guid.toString());
                                     policyManager.save(policy);
@@ -119,7 +119,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                             //There is no existing policy with the same name or guid so create a new one.
                             policy = new Policy(PolicyType.INCLUDE_FRAGMENT, encass.getPolicy().getName(), "", false);
                             policy.setGuid(encass.getPolicy().getGuid());
-                            result = policyHelper.importPolicy( policy, resource );
+                            policyImportResult = policyHelper.importPolicy( policy, resource );
                             policyManager.save(policy);
                         }
                     }
@@ -132,6 +132,12 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                     } else {
                         encapsulatedAssertionConfigManager.update( encass );
                     }
+
+                    final EncapsulatedAssertionImportResult result = ManagedObjectFactory.createEncapsulatedAssertionImportResult();
+                    result.setImportedEncapsulatedAssertion(asResource(encass));
+                    result.setImportedPolicyReferences(policyImportResult.getImportedPolicyReferences());
+                    result.setWarnings(policyImportResult.getWarnings());
+
                     //return the result
                     return right2( result );
                 } catch ( ResourceNotFoundException e ) {
