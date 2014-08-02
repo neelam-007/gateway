@@ -215,6 +215,8 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
 
         put(POLICY_ADVICE_INSTANCE, null); // installed by ConsoleAssertionRegistry because it relies on console classes
 
+        put(POLICY_VALIDATION_ADVICE_ENABLED, true);
+
         put(POLICY_VALIDATOR_CLASSNAME, new MetadataFinder() {
             @Override
             public Object get(AssertionMetadata meta, String key) {
