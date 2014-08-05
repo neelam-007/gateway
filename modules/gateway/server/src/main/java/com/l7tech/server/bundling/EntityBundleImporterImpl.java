@@ -178,6 +178,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         break;
                                     }
                                     case AlwaysCreateNew: {
+                                        //This is always create new so in the case that there is an existing entity and the GUID's match we need to generate a new GUID for the newly imported entity.
+                                        if(entity != null && entity.getEntity() instanceof GuidEntity && ((GuidEntity)entity.getEntity()).getGuid() != null && ((GuidEntity)entity.getEntity()).getGuid().equals(((GuidEntity)existingEntity).getGuid())){
+                                            ((GuidEntity)entity.getEntity()).setGuid(UUID.randomUUID().toString());
+                                        }
                                         final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
