@@ -134,7 +134,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                     }
 
                     final EncapsulatedAssertionImportResult result = ManagedObjectFactory.createEncapsulatedAssertionImportResult();
-                    result.setImportedEncapsulatedAssertion(asResource(encass));
+                    result.setImportedEncapsulatedAssertion(identify(asResource(encass), encass));
                     result.setImportedPolicyReferences(policyImportResult.getImportedPolicyReferences());
                     result.setWarnings(policyImportResult.getWarnings());
 
