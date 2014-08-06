@@ -912,6 +912,11 @@ public class WorkSpacePanel extends JPanel {
         private final MouseTabListener mouseTabListener = new MouseTabListener(TabbedPane.this);
 
         private final TabbedPaneUI multiTabbedPaneUI = new WindowsTabbedPaneUI() {
+            @Override
+            protected MouseListener createMouseListener() {
+                return mouseTabListener;
+            }
+
             // Paint the close icon (similar to a close button) used to close a policy tab
             @Override
             protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect, Rectangle textRect) {
@@ -927,7 +932,6 @@ public class WorkSpacePanel extends JPanel {
         };
 
         public TabbedPane() {
-            addMouseListener(mouseTabListener);
             setUI(multiTabbedPaneUI);
 
             final int tabLayout = getPolicyTabsLayoutFromPreferences();
@@ -942,8 +946,11 @@ public class WorkSpacePanel extends JPanel {
             // new TabbedPaneUI object and force to use our own TabbedPane UI object, multiTabbedPaneUI.
             // We passed the testing for this bug on a WebEX, which will change Look and Feel.  Also we tested it by
             // directly change the windows Look and Feel.
-
-            super.setUI(multiTabbedPaneUI);
+            if (multiTabbedPaneUI == null) {
+                super.setUI(ui);
+            } else {
+                super.setUI(multiTabbedPaneUI);
+            }
         }
 
         public MouseTabListener getMouseTabListener() {
