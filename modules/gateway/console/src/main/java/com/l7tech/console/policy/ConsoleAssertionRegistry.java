@@ -128,6 +128,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
         long startTime = System.currentTimeMillis();
         for (Assertion prototype : modulePrototypes)
             unregisterAssertion(prototype);
+        modulePrototypes.clear();
         if (!TopComponents.getInstance().isApplet())
             CustomAssertionRMIClassLoaderSpi.resetRemoteClassLoader();
         moduleNameByBasePackage.clear();

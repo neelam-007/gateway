@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
+import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.util.Refreshable;
@@ -25,6 +26,7 @@ import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -35,6 +37,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -69,6 +72,26 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         initialize();
         getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
+    }
+
+    /**
+     * Removes all TreeSelectionListener instances that appear to belong to classes loaded from modular assertions.
+     * <p/>
+     * This prevents a leak due to a common idiom of (primary bundle-installation-related) modular assertion actions registering
+     * such listeners that then never get released. (SSM-4715)
+     */
+    public void removeAllModularAssertionListeners() {
+        ConsoleAssertionRegistry assReg = TopComponents.getInstance().getAssertionRegistry();
+
+        TreeSelectionListener[] listeners = listenerList.getListeners( TreeSelectionListener.class );
+        for ( TreeSelectionListener listener : listeners ) {
+            Package pack = listener.getClass().getPackage();
+            String module = assReg.getModuleNameMatchingPackage( pack.getName() );
+            if ( module != null ) {
+                log.fine( "Removing ServicesAndPoliciesTree TreeSelectionListener of type " + listener.getClass() + " from module " + module );
+                removeTreeSelectionListener( listener );
+            }
+        }
     }
 
     /**

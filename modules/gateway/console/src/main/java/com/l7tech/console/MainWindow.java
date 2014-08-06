@@ -3965,6 +3965,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             if (compositeLicense != null && compositeLicense.isFeatureEnabled(ConsoleLicenseManager.SERVICE_ADMIN)) {
                 // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
                 try {
+                    ServicesAndPoliciesTree spt = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    if ( null != spt )
+                        spt.removeAllModularAssertionListeners();
                     TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
                     TopComponents.getInstance().getAssertionRegistry().updateCustomAssertions();
                     TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();

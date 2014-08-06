@@ -2,19 +2,21 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.exporter.PolicyExporter;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -26,6 +28,16 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
     public static final String REFRESH_POLICY_TEMPLATES = "Refresh Policy Templates";
+
+    private static final WeakHashMap<AbstractTreeNode,Object> instances = new WeakHashMap<>();
+    private static final PropertyChangeListener RELOAD_CHILDREN_LISTENER = new PropertyChangeListener() {
+        @Override
+        public void propertyChange( PropertyChangeEvent evt ) {
+            for ( AbstractTreeNode node : instances.keySet() ) {
+                node.reloadChildren();
+            }
+        }
+    };
 
     /**
      * The entity name comparator
@@ -49,14 +61,13 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
         super(NAME, "policies", TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
 
         // Add a refresh property.  If users change policy xml file names in the local directory, ".l7tech/policy.templates",
-        // after Refresh clicked or F5 pressed, these policy templates will be reloaded in the assertion palette panel.
+        // after Refresh clicked or F5 pressed, these policy templates will be reloaded in the assertion palette panel. (SSM-1632)
+        // We use a static listener to avoid leaks due to retaining palette nodes, which retain assertion prototype instances,
+        // which prevents modular assertion class loaders from unloading, which leaks tons of permgen. (SSM-4715)
+        instances.put( this, null );
         JTree paletteTree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
-        paletteTree.addPropertyChangeListener(REFRESH_POLICY_TEMPLATES, new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                reloadChildren();
-            }
-        });
+        paletteTree.removePropertyChangeListener( REFRESH_POLICY_TEMPLATES, RELOAD_CHILDREN_LISTENER );
+        paletteTree.addPropertyChangeListener( REFRESH_POLICY_TEMPLATES, RELOAD_CHILDREN_LISTENER );
     }
 
     @Override
