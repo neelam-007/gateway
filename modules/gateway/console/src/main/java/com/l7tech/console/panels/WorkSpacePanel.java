@@ -810,7 +810,6 @@ public class WorkSpacePanel extends JPanel {
                       SwingUtilities.invokeLater(new Runnable() {
                           public void run() {
                               SwingUtilities.updateComponentTreeUI(WorkSpacePanel.this);
-
                           }
                       });
                   }
@@ -912,29 +911,39 @@ public class WorkSpacePanel extends JPanel {
         private final EventListenerList listenerList = new WeakEventListenerList();
         private final MouseTabListener mouseTabListener = new MouseTabListener(TabbedPane.this);
 
+        private final TabbedPaneUI multiTabbedPaneUI = new WindowsTabbedPaneUI() {
+            // Paint the close icon (similar to a close button) used to close a policy tab
+            @Override
+            protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect, Rectangle textRect) {
+                super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
+
+                final Rectangle tabRect = rects[tabIndex];
+                closeTabIcon.paintIcon(
+                    tabPane, g,
+                    (tabRect.x + tabRect.width - closeTabIcon.getIconWidth() - CLOSE_TAB_ICON_RIGHT_GAP_WIDTH), // X coordinate
+                    (tabRect.y + (tabRect.height - closeTabIcon.getIconHeight()) / 2)                           // Y coordinate
+                );
+            }
+        };
+
         public TabbedPane() {
-            setUI(new WindowsTabbedPaneUI() {
-                @Override
-                protected MouseListener createMouseListener() {
-                    return mouseTabListener;
-                }
-
-                // Paint the close icon (similar to a close button) used to close a policy tab
-                @Override
-                protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect, Rectangle textRect) {
-                    super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
-
-                    final Rectangle tabRect = rects[tabIndex];
-                    closeTabIcon.paintIcon(
-                        tabPane, g,
-                        (tabRect.x + tabRect.width - closeTabIcon.getIconWidth() - CLOSE_TAB_ICON_RIGHT_GAP_WIDTH), // X coordinate
-                        (tabRect.y + (tabRect.height - closeTabIcon.getIconHeight()) / 2)                           // Y coordinate
-                    );
-                }
-            });
+            addMouseListener(mouseTabListener);
+            setUI(multiTabbedPaneUI);
 
             final int tabLayout = getPolicyTabsLayoutFromPreferences();
             setTabLayoutPolicy(tabLayout);
+        }
+
+        @Override
+        public void setUI(TabbedPaneUI ui) {
+            // Related bug: SSM-4714, https://jira.l7tech.com:8443/browse/SSM-4714
+            // For some reasons such as change the windows Look and Feel, the TabbedPane UI will be re-assigned by
+            // a new TabbedPaneUI object, which does not have our customized tab rendering function.  So we ignore the
+            // new TabbedPaneUI object and force to use our own TabbedPane UI object, multiTabbedPaneUI.
+            // We passed the testing for this bug on a WebEX, which will change Look and Feel.  Also we tested it by
+            // directly change the windows Look and Feel.
+
+            super.setUI(multiTabbedPaneUI);
         }
 
         public MouseTabListener getMouseTabListener() {
