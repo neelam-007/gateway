@@ -79,8 +79,9 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                         encass = existingEncass;
                         //use the existing encassed policy
                         policy = encass.getPolicy();
-                        policyHelper.checkPolicyAssertionAccess( policy );
+                        checkPermitted(OperationType.UPDATE, null, policy);
                         policyImportResult = policyHelper.importPolicy( policy, resource );
+                        policyHelper.checkPolicyAssertionAccess( policy );
                     } else {
                         //import into a new encass
                         //check if an encass with the same name or guid exists
@@ -93,6 +94,7 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                             throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "EncapsulatedAssertion is missing Policy element");
                         }
 
+                        checkPermitted(OperationType.CREATE, null, encass);
                         // Get any provided PolicyReferenceInstruction
                         PolicyReferenceInstruction policyReferenceInstructions = findPolicyReferenceInstructions(resource.getPolicyReferenceInstructions(), encass.getPolicy().getGuid());
                         if(policyReferenceInstructions!=null) {
@@ -104,7 +106,9 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                                     }
                                     //create a new policy and import into it.
                                     policy = new Policy(PolicyType.INCLUDE_FRAGMENT, policyReferenceInstructions.getMappedName(), "", false);
+                                    checkPermitted(OperationType.CREATE, null, policy);
                                     policyImportResult = policyHelper.importPolicy( policy, resource );
+                                    policyHelper.checkPolicyAssertionAccess( policy );
                                     UUID guid = UUID.randomUUID();
                                     policy.setGuid(guid.toString());
                                     policyManager.save(policy);
@@ -119,7 +123,9 @@ public class EncapsulatedAssertionResourceFactory extends SecurityZoneableEntity
                             //There is no existing policy with the same name or guid so create a new one.
                             policy = new Policy(PolicyType.INCLUDE_FRAGMENT, encass.getPolicy().getName(), "", false);
                             policy.setGuid(encass.getPolicy().getGuid());
+                            checkPermitted(OperationType.CREATE, null, policy);
                             policyImportResult = policyHelper.importPolicy( policy, resource );
+                            policyHelper.checkPolicyAssertionAccess( policy );
                             policyManager.save(policy);
                         }
                     }
