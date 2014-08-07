@@ -174,14 +174,17 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             authContext.getAuthSuccessCacheTime(),
             authContext.getAuthFailureCacheTime()
         );
-        if (authResult == null) {
+        if (authResult == null || authResult.getUser() == null) {
             logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), "User not found for credentials");
             return authFailed(pc, null);
         }
 
         if ( authResult.isCertSignedByStaleCA() && isRequest() ) {
-            HeadersKnob hrk = context.getResponse().getKnob(HeadersKnob.class);
-            hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE, HeadersKnob.HEADER_TYPE_HTTP);
+            HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
+            if(headersKnob != null) {
+                headersKnob.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                        SecureSpanConstants.CERT_STALE, HeadersKnob.HEADER_TYPE_HTTP);
+            }
         }
 
         User user = authResult.getUser();
