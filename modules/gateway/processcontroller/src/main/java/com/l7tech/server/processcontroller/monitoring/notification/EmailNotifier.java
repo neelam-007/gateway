@@ -170,7 +170,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         message.addRecipients(javax.mail.Message.RecipientType.BCC, bccAddresses);
         message.setFrom(fromAddress);
         message.setSentDate(new java.util.Date());
-        message.setSubject(rule.getSubject());
+        message.setSubject( sanitizeSubject( rule.getSubject() ) );
         message.setText(body);
         message.saveChanges();
 
@@ -180,6 +180,11 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         final String pass = authInfo == null ? null : new String(authInfo.getPassword());
         tr.connect(rule.getSmtpHost(), rule.getPort(), username, pass);
         tr.sendMessage(message, recipients);
+    }
+
+    private String sanitizeSubject( String subject ) {
+        // Remove all carriage returns and line feeds from subject
+        return subject == null ? "" : subject.replace( "\015", "" ).replace( "\012", "" );
     }
 
     @Override

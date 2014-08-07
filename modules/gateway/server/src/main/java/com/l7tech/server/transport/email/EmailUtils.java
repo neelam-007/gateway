@@ -127,13 +127,18 @@ public class EmailUtils {
         message.addRecipients(javax.mail.Message.RecipientType.BCC, emailMessage.getBccAddresses());
         message.setFrom(emailMessage.getFromAddress());
         message.setSentDate(new java.util.Date());
-        message.setSubject(emailMessage.getSubject());
+        message.setSubject( sanitizeSubject( emailMessage.getSubject() ) );
         message.setText(emailMessage.getMessage());
         message.saveChanges();
 
         Transport tr = session.getTransport(emailConfig.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
         tr.connect(emailConfig.getHost(), emailConfig.getPort(), emailConfig.getAuthUsername(), emailConfig.getAuthPassword());
         tr.sendMessage(message, emailMessage.getAllRecipients());
+    }
+
+    public static String sanitizeSubject( String subject ) {
+        // Remove all carriage returns and line feeds from subject
+        return subject == null ? "" : subject.replace( "\015", "" ).replace( "\012", "" );
     }
 
     /**

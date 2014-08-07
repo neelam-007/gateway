@@ -201,7 +201,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
 
         if(assertion.isTestBean()){
             //This is a test, set all the expanded values back on the bean so the TestCase will not fail
-            assertion.setSubject(subject);
+            assertion.setSubject( EmailUtils.sanitizeSubject( subject ) );
             assertion.setSmtpPort(portNum);
             assertion.setSmtpHost(host);
             assertion.setAuthUsername(userName);
@@ -277,7 +277,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         message.addRecipients(javax.mail.Message.RecipientType.BCC, bccAddresses);
         message.setFrom(fromAddress);
         message.setSentDate(new java.util.Date());
-        message.setSubject(subject);
+        message.setSubject( EmailUtils.sanitizeSubject( subject ) );
         message.setText(body);
         message.saveChanges();
 
