@@ -30,7 +30,4 @@
   <library name="javax.persistence.persistence-api" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
   <library name="javax.servlet.servlet-api" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
 
-  <!-- Wicket -->
-  <library name="org.apache.wicket.wicket" javadoc-url="http://wicket.apache.org/docs/1.4/"/>
-
 </layer7-project-info>
