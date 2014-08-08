@@ -173,16 +173,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, activate, versionComment);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, activate, versionComment, false);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
-                                        //This is always create new so in the case that there is an existing entity and the GUID's match we need to generate a new GUID for the newly imported entity.
-                                        if(entity != null && entity.getEntity() instanceof GuidEntity && ((GuidEntity)entity.getEntity()).getGuid() != null && ((GuidEntity)entity.getEntity()).getGuid().equals(((GuidEntity)existingEntity).getGuid())){
-                                            ((GuidEntity)entity.getEntity()).setGuid(UUID.randomUUID().toString());
-                                        }
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment);
+                                        //SSG-9047 This is always create new so in the case that there is an existing entity and the GUID's match we need to generate a new GUID for the newly imported entity.
+                                        final boolean resetGuid = entity != null && entity.getEntity() instanceof GuidEntity && ((GuidEntity) entity.getEntity()).getGuid() != null && ((GuidEntity) entity.getEntity()).getGuid().equals(((GuidEntity) existingEntity).getGuid());
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment, resetGuid);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -204,7 +202,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity based on the one in the bundle
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getGoid(), mapping, resourceMapping, null, activate, versionComment);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getGoid(), mapping, resourceMapping, null, activate, versionComment, false);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -469,7 +467,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                                 @NotNull final Map<EntityHeader, EntityHeader> resourceMapping,
                                                 @Nullable final Entity existingEntity,
                                                 final boolean activate,
-                                                @Nullable final String versionComment) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
+                                                @Nullable final String versionComment,
+                                                final boolean resetGuid) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
         if (entityContainer == null) {
             throw new IncorrectMappingInstructionsException(mapping, "Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
         }
@@ -481,6 +480,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
         //create the original entity header
         final EntityHeader originalHeader = EntityHeaderUtils.fromEntity(entityContainer.getEntity());
+
+        //see SSG-9047
+        if(resetGuid) {
+            ((GuidEntity)entityContainer.getEntity()).setGuid(UUID.randomUUID().toString());
+        }
 
         //if it is a mapping by name and the mapped name is set it should be preserved here. Or if the mapped GUID is set it should be preserved.
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {

@@ -1041,8 +1041,8 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
             Assert.assertNotNull(dependencies);
             Assert.assertEquals(2, dependencies.size());
-            Assert.assertNotNull(getDependency(dependencies, createdEncassPolicy.getId()));
-            Assert.assertNotNull(getDependency(dependencies, createdEncass.getId()));
+            Assert.assertNotNull(getDependency(dependencies, encassPolicyItem.getId()));
+            Assert.assertNotNull(getDependency(dependencies, encassMapping.getTargetId()));
 
             mappingsToClean = mappings;
 
