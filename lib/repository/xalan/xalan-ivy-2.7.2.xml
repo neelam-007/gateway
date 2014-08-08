@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0">
+<ivy-module version="2.0">
 	<info organisation="xalan"
 		module="xalan"
-		revision="2.7.1"
+		revision="2.7.2"
 		status="release"
-		publication="20080707125710"
+		publication="20140807162150"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
-		<conf name="compile" extends="default" visibility="public"/>
 	</configurations>
 	<publications>
 		<artifact name="xalan" type="jar" ext="jar" conf="default"/>
