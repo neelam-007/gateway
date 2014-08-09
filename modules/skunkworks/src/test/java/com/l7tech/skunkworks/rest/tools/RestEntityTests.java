@@ -300,7 +300,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
             Assert.assertEquals("Id's don't match", getId(mo), item.getId());
             Assert.assertEquals("Type is incorrect", getType(), item.getType());
-            Assert.assertEquals("Type is incorrect", getExpectedTitle(getId(mo)), item.getName());
+            Assert.assertEquals("Name is incorrect", getExpectedTitle(getId(mo)), item.getName());
             Assert.assertNotNull("TimeStamp must always be present", item.getDate());
 
             Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);

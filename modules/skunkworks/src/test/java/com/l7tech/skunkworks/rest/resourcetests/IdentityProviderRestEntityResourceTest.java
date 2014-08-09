@@ -291,6 +291,19 @@ public class IdentityProviderRestEntityResourceTest extends RestEntityTests<Iden
         detailsBindOnly.setBindPatternSuffix(identityProviderConfig.getBindPatternSuffix());
         identityProviderMOs.add(identityProviderMO);
 
+        PolicyBackedIdentityProviderConfig policyBackedIdentityProviderConfig = (PolicyBackedIdentityProviderConfig)this.identityProviderConfigs.get(3);
+        identityProviderMO = ManagedObjectFactory.createIdentityProvider();
+        identityProviderMO.setId(policyBackedIdentityProviderConfig.getId());
+        identityProviderMO.setName(policyBackedIdentityProviderConfig.getName() + " Updated");
+        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.POLICY_BACKED);
+        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("adminEnabled", false)
+                .map());
+        IdentityProviderMO.PolicyBackedIdentityProviderDetail policyBackedIdentityProviderDetail = identityProviderMO.getPolicyBackedIdentityProviderDetail();
+        policyBackedIdentityProviderDetail.setAuthenticationPolicyId(new Goid(789, 123).toString());
+        policyBackedIdentityProviderDetail.setDefaultRoleAssignmentId(new Goid(555, 666).toString());
+        identityProviderMOs.add(identityProviderMO);
+
         return identityProviderMOs;
     }
 

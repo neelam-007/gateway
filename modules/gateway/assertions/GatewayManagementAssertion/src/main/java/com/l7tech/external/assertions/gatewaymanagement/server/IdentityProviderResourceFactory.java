@@ -142,6 +142,8 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
                 case 4:
                     updateEntity( (BindOnlyLdapIdentityProviderConfig)oldEntity, (BindOnlyLdapIdentityProviderConfig)newEntity );
                     break;
+                case 5:
+                    updateEntity( (PolicyBackedIdentityProviderConfig)oldEntity, (PolicyBackedIdentityProviderConfig)newEntity );
             }
             // Update common configuration, only one property is currently updatable for internal providers
             oldEntity.setCertificateValidationType( newEntity.getCertificateValidationType() );
@@ -572,6 +574,13 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
         oldConfig.setClientAuthEnabled( newConfig.isClientAuthEnabled() );
         oldConfig.setKeyAlias( newConfig.getKeyAlias() );
         oldConfig.setKeystoreId( newConfig.getKeystoreId() );
+    }
+
+    private void updateEntity( final PolicyBackedIdentityProviderConfig oldConfig,
+                               final PolicyBackedIdentityProviderConfig newConfig ) {
+        updateBaseConfig( oldConfig, newConfig );
+        oldConfig.setDefaultRoleId( newConfig.getDefaultRoleId() );
+        oldConfig.setPolicyId( newConfig.getPolicyId() );
     }
 
     /**
