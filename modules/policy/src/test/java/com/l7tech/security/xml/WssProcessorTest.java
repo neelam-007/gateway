@@ -28,8 +28,9 @@ import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVersion;
-import org.jcp.xml.dsig.internal.dom.DOMReference;
-import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
+import org.apache.jcp.xml.dsig.internal.dom.DOMReference;
+import org.apache.jcp.xml.dsig.internal.dom.DOMSubTreeData;
+import org.apache.jcp.xml.dsig.internal.dom.XMLDSigRI;
 import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,6 +49,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
@@ -1100,8 +1102,8 @@ public class WssProcessorTest {
         Element sechdr = SoapUtil.getSecurityElement(doc);
         Element signature = XmlUtil.findOnlyOneChildElementByName(sechdr, "http://www.w3.org/2000/09/xmldsig#", "Signature");
 
-        XMLSignatureFactory sigfac = XMLSignatureFactory.getInstance();
-        X509Certificate ncesCert = CertUtils.decodeCert(HexUtils.decodeBase64(SIGNED_WITH_NCES_CERT, true));
+        XMLSignatureFactory sigfac = XMLSignatureFactory.getInstance( "DOM", new XMLDSigRI() );
+        X509Certificate ncesCert = CertUtils.decodeCert( HexUtils.decodeBase64( SIGNED_WITH_NCES_CERT, true ) );
         XMLSignature sig = sigfac.unmarshalXMLSignature(new DOMStructure(signature));
         DOMValidateContext vc = new DOMValidateContext(ncesCert.getPublicKey(), doc);
 

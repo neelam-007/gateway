@@ -18,7 +18,7 @@
         <dependency name="layer7-kerberos" rev="latest.integration" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
         <dependency name="layer7-json" rev="latest.integration" conf="core"/>
-        <dependency org="org.apache.santuario" name="xmlsec" rev="1.4.7" force="true" conf="core"/>
+        <dependency org="org.apache.santuario" name="xmlsec" rev="1.5.7" force="true" conf="core"/>
         <!-- Needed when tarari is used -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" conf="optional,test"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
