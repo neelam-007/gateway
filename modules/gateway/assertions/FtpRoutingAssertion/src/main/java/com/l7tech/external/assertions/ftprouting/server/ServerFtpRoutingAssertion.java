@@ -110,7 +110,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     variableExpander, assertion.getSecurity());
         } catch (FtpException e) {
             logAndAudit(FTP_ROUTING_CONNECTION_ERROR,
-                    new String[] {e.getMessage()}, getDebugException(e));
+                    new String[] {ExceptionUtils.getMessageWithCause(e)}, getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
