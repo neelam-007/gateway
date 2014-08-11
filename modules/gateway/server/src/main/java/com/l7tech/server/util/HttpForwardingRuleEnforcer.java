@@ -56,6 +56,11 @@ public class HttpForwardingRuleEnforcer {
             flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
         }
 
+        //copy existing params so they are not substituted
+        GenericHttpRequestParams tempRequestParams = new GenericHttpRequestParams(httpRequestParams);
+
+        tempRequestParams.setExtraHeaders(new HttpHeader[0]); //Set empty headers
+
         final List<String> cookieHeaders = new ArrayList<>();
         if (!rules.isForwardAll()) {
             final Set<String> processedHeaders = new HashSet<>();
@@ -77,12 +82,12 @@ public class HttpForwardingRuleEnforcer {
                     if (ruleName.equalsIgnoreCase(HttpConstants.HEADER_HOST)) {
                         // use virtual host - SSG-6543
                         httpRequestParams.setVirtualHost(headerValue);
-                        httpRequestParams.removeExtraHeader(HttpConstants.HEADER_HOST);
+                        tempRequestParams.removeExtraHeader(HttpConstants.HEADER_HOST);
                         logger.fine("virtual-host override set: " + headerValue);
                     } else if (ruleName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
                         cookieHeaders.addAll(CookieUtils.splitCookieHeader(headerValue));
                     } else {
-                        writeRequestHeader(ruleName, new String[]{headerValue}, !processedHeaders.contains(ruleName.toLowerCase()), httpRequestParams);
+                        writeRequestHeader(ruleName, new String[]{headerValue}, !processedHeaders.contains(ruleName.toLowerCase()), tempRequestParams);
                     }
                 } else {
                     final String[] headerValues = sourceMessage.getHeadersKnob().getHeaderValues(ruleName, HEADER_TYPE_HTTP, false);
@@ -92,7 +97,7 @@ public class HttpForwardingRuleEnforcer {
                             cookieHeaders.addAll(CookieUtils.splitCookieHeader(headerValue));
                         }
                     } else {
-                        writeRequestHeader(ruleName, headerValues, !processedHeaders.contains(ruleName.toLowerCase()), httpRequestParams);
+                        writeRequestHeader(ruleName, headerValues, !processedHeaders.contains(ruleName.toLowerCase()), tempRequestParams);
                     }
                 }
                 processedHeaders.add(ruleName.toLowerCase());
@@ -101,13 +106,17 @@ public class HttpForwardingRuleEnforcer {
             final Set<String> processedHeaders = new HashSet<>();
             for (final String name : sourceMessage.getHeadersKnob().getHeaderNames(HEADER_TYPE_HTTP, false, false)) {
                 if (!name.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
-                    writeRequestHeader(name, sourceMessage.getHeadersKnob().getHeaderValues(name, HEADER_TYPE_HTTP, false), !processedHeaders.contains(name), httpRequestParams);
+                    writeRequestHeader(name, sourceMessage.getHeadersKnob().getHeaderValues(name, HEADER_TYPE_HTTP, false), !processedHeaders.contains(name), tempRequestParams);
                     processedHeaders.add(name);
                 }
             }
             cookieHeaders.addAll(sourceMessage.getHttpCookiesKnob().getCookiesAsHeaders());
         }
-        setCookiesHeader(httpRequestParams, cookieHeaders, auditor);
+        setCookiesHeader(tempRequestParams, cookieHeaders, auditor);
+        //copy extra headers from temp request params
+        for(HttpHeader header : tempRequestParams.getExtraHeaders()) {
+            httpRequestParams.addExtraHeader(header);
+        }
     }
 
     private static void flushExisting( final String headerName,
@@ -120,15 +129,6 @@ public class HttpForwardingRuleEnforcer {
                 iterator.remove();
             }
         }
-    }
-
-    public static class Param {
-        Param( final String name, final String value) {
-            this.name = name;
-            this.value = value;
-        }
-        public final String name;
-        public final String value;
     }
 
     public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
@@ -341,6 +341,15 @@ public class HttpForwardingRuleEnforcer {
         if (!result.isEmpty()) {
             final String joined = StringUtils.join(result, "; ");
             requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, joined));
+        }
+    }
+
+    public static class Param {
+        public final String name;
+        public final String value;
+        Param( final String name, final String value) {
+            this.name = name;
+            this.value = value;
         }
     }
 }

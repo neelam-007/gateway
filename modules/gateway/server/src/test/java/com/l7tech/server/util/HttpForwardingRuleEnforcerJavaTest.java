@@ -112,36 +112,38 @@ public class HttpForwardingRuleEnforcerJavaTest {
     }
 
     @Test
-    public void existingRequestHeaderReplaced() throws Exception {
-        requestParams.addExtraHeader(new GenericHttpHeader("foo", "shouldBeReplaced"));
+    public void existingRequestHeaderNotReplaced() throws Exception {
+        requestParams.addExtraHeader(new GenericHttpHeader("foo", "shouldNotBeReplaced"));
         request.getHeadersKnob().addHeader("foo", "bar", HEADER_TYPE_HTTP);
         request.getHeadersKnob().addHeader("foo", "bar2", HEADER_TYPE_HTTP);
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, ruleSet, audit, null, null);
         final List<HttpHeader> extraHeaders = requestParams.getExtraHeaders();
         final Map<String, List<String>> headersMap = generateHeadersMap(extraHeaders);
         assertEquals(1, headersMap.size());
-        assertEquals(2, headersMap.get("foo").size());
+        assertEquals(3, headersMap.get("foo").size());
+        assertTrue(headersMap.get("foo").contains("shouldNotBeReplaced"));
         assertTrue(headersMap.get("foo").contains("bar"));
         assertTrue(headersMap.get("foo").contains("bar2"));
     }
 
     @Test
-    public void existingRequestHeaderReplacedCaseInsensitive() throws Exception {
-        requestParams.addExtraHeader(new GenericHttpHeader("FOO", "shouldBeReplaced"));
+    public void existingRequestHeaderNotReplacedCaseInsensitive() throws Exception {
+        requestParams.addExtraHeader(new GenericHttpHeader("FOO", "shouldNotBeReplaced"));
         request.getHeadersKnob().addHeader("foo", "bar", HEADER_TYPE_HTTP);
         request.getHeadersKnob().addHeader("foo", "bar2", HEADER_TYPE_HTTP);
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, ruleSet, audit, null, null);
         final List<HttpHeader> extraHeaders = requestParams.getExtraHeaders();
         final Map<String, List<String>> headersMap = generateHeadersMap(extraHeaders);
-        assertEquals(1, headersMap.size());
+        assertEquals(2, headersMap.size());
         assertEquals(2, headersMap.get("foo").size());
+        assertTrue(headersMap.get("FOO").contains("shouldNotBeReplaced"));
         assertTrue(headersMap.get("foo").contains("bar"));
         assertTrue(headersMap.get("foo").contains("bar2"));
     }
 
     @Test
-    public void existingRequestHeaderReplacedByRule() throws Exception {
-        requestParams.addExtraHeader(new GenericHttpHeader("FOO", "shouldBeReplaced"));
+    public void existingRequestHeaderNotReplacedByRule() throws Exception {
+        requestParams.addExtraHeader(new GenericHttpHeader("FOO", "shouldNotBeReplaced"));
         request.getHeadersKnob().addHeader("foo", "bar", HEADER_TYPE_HTTP);
         rules.add(new HttpPassthroughRule("foo", true, "bar2"));
         rules.add(new HttpPassthroughRule("foo", false, null));
@@ -150,10 +152,11 @@ public class HttpForwardingRuleEnforcerJavaTest {
         HttpForwardingRuleEnforcer.handleRequestHeaders(request, requestParams, context, ruleSet, audit, null, null);
         final List<HttpHeader> extraHeaders = requestParams.getExtraHeaders();
         final Map<String, List<String>> headersMap = generateHeadersMap(extraHeaders);
-        assertEquals(1, headersMap.size());
+        assertEquals(2, headersMap.size());
         assertEquals(2, headersMap.get("foo").size());
-        assertTrue(headersMap.get("foo").contains("bar"));
+        assertTrue(headersMap.get("FOO").contains("shouldNotBeReplaced"));
         assertTrue(headersMap.get("foo").contains("bar2"));
+        assertTrue(headersMap.get("foo").contains("bar"));
     }
 
     @Test
