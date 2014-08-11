@@ -317,19 +317,21 @@ public class OdataParser {
         Map<String, String> queryParametersMap = new HashMap<>();
 
         if (queryString != null && !queryString.isEmpty()) {
-            // decode the query string and split it on ampersands
-            List<String> queryParameters = Arrays.asList(HexUtils.urlDecode(queryString).split("\\u0026"));
+            // split the query string on ampersands (before decoding, to avoid problems with ampersands in values)
+            String[] queryParameters = queryString.split("\\u0026");
 
             for (String param : queryParameters) {
-                int indexOfEqualsSign = param.indexOf("=");
+                String decodedParam = HexUtils.urlDecode(param);
+
+                int indexOfEqualsSign = decodedParam.indexOf("=");
 
                 if (indexOfEqualsSign < 0) {
-                    if(queryParametersMap.put(param, "") != null) {
+                    if(queryParametersMap.put(decodedParam, "") != null) {
                         throw new OdataParsingException("Duplicate query parameter");
                     }
                 } else {
-                    if(queryParametersMap.put(param.substring(0, indexOfEqualsSign),
-                            param.substring(indexOfEqualsSign + 1)) != null) {
+                    if(queryParametersMap.put(decodedParam.substring(0, indexOfEqualsSign),
+                            decodedParam.substring(indexOfEqualsSign + 1)) != null) {
                         throw new OdataParsingException("Duplicate query parameter");
                     }
                 }

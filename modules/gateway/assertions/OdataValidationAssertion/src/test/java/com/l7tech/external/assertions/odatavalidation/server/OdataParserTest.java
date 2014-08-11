@@ -449,7 +449,34 @@ public class OdataParserTest {
     }
 
     /**
-     * In this test, the System Query Option '$top' has been misspelled and should not be recognized.
+     * In this test, the System Query Option '$filter' has been poorly formatted and should be rejected.
+     */
+    @Test
+    public void testParseRequest_GivenPoorlyFormedFilterExpression_ParsingFails() throws Exception {
+        OdataRequestInfo requestInfo = parser.parseRequest("/Products", "$filter=Name eq 'R%26D'");
+
+        assertFalse(requestInfo.isMetadataRequest());
+        assertFalse(requestInfo.isValueRequest());
+        assertFalse(requestInfo.isServiceDocumentRequest());
+        assertFalse(requestInfo.isCount());
+
+        assertNotNull(requestInfo.getExpandNavigationProperties());
+        assertEquals(null, requestInfo.getExpandExpressionString());
+        assertNotNull(requestInfo.getFilterExpression());
+        assertEquals("Name eq 'R&D'", requestInfo.getFilterExpressionString());
+        assertEquals(null, requestInfo.getFormat());
+        assertEquals("none", requestInfo.getInlineCount());
+        assertEquals(null, requestInfo.getOrderByExpression());
+        assertEquals(null, requestInfo.getOrderByExpressionString());
+        assertEquals(null, requestInfo.getSelectExpressionString());
+        assertEquals(0, requestInfo.getSelectItemList().size());
+        assertEquals(null, requestInfo.getSkip());
+        assertEquals(null, requestInfo.getTop());
+        assertEquals(0, requestInfo.getCustomQueryOptions().size());
+    }
+
+    /**
+     * In this test, the System Query Option '$orderby' refers to a non-existent property and should be rejected.
      */
     @Test
     public void testParseRequest_GivenPoorlyFormedOrderByExpression_ParsingFails() {
