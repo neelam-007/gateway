@@ -581,6 +581,7 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
         updateBaseConfig( oldConfig, newConfig );
         oldConfig.setDefaultRoleId( newConfig.getDefaultRoleId() );
         oldConfig.setPolicyId( newConfig.getPolicyId() );
+        oldConfig.setAdminEnabled(newConfig.isAdminEnabled());
     }
 
     /**

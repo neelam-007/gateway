@@ -297,7 +297,7 @@ public class IdentityProviderRestEntityResourceTest extends RestEntityTests<Iden
         identityProviderMO.setName(policyBackedIdentityProviderConfig.getName() + " Updated");
         identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.POLICY_BACKED);
         identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
-                .put("adminEnabled", false)
+                .put("adminEnabled", !policyBackedIdentityProviderConfig.isAdminEnabled())
                 .map());
         IdentityProviderMO.PolicyBackedIdentityProviderDetail policyBackedIdentityProviderDetail = identityProviderMO.getPolicyBackedIdentityProviderDetail();
         policyBackedIdentityProviderDetail.setAuthenticationPolicyId(new Goid(789, 123).toString());
