@@ -228,31 +228,21 @@ public class DebugManagerImpl implements ApplicationEventPublisherAware, DebugMa
 
     @Override
     public void onMessageArrived(@NotNull PolicyEnforcementContext pec, @NotNull Goid policyGoid) {
-        lock.lock();
-        try {
-            DebugContext debugContext = waitingForMsg.remove(policyGoid);
-            if (debugContext != null) {
-                debugContext.onMessageArrived(pec);
-            }
-        } finally {
-            lock.unlock();
+        DebugContext debugContext = waitingForMsg.remove(policyGoid);
+        if (debugContext != null) {
+            debugContext.onMessageArrived(pec);
         }
     }
 
     @Override
     public void onMessageFinished(@NotNull PolicyEnforcementContext pec, @Nullable AssertionStatus status) {
-        lock.lock();
-        try {
-            DebugContext debugContext = pec.getDebugContext();
-            if (debugContext != null) {
-                // Call DebugContext#onMessageFinished() prior to calling stopDebug().
-                // stopDebug() will reset the current line member variable of debug context.
-                //
-                debugContext.onMessageFinished(pec, status);
-                this.stopDebug(debugContext.getTaskId());
-            }
-        } finally {
-            lock.unlock();
+        DebugContext debugContext = pec.getDebugContext();
+        if (debugContext != null) {
+            // Call DebugContext#onMessageFinished() prior to calling stopDebug().
+            // stopDebug() will reset the current line member variable of debug context.
+            //
+            debugContext.onMessageFinished(pec, status);
+            this.stopDebug(debugContext.getTaskId());
         }
     }
 
