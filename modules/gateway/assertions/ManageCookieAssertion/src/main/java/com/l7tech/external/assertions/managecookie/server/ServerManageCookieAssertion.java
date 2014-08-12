@@ -225,7 +225,7 @@ public class ServerManageCookieAssertion extends AbstractMessageTargetableServer
             } else if (attributeName.equals(HTTP_ONLY)) {
                 attributeValue = String.valueOf(existingCookie.isHttpOnly());
             } else if (attributeName.equals(EXPIRES)) {
-                attributeValue = String.valueOf(existingCookie.getExpires());
+                attributeValue = existingCookie.getExpires();
             } else {
                 logger.log(Level.WARNING, "Unknown cookie attribute: " + attributeName);
             }

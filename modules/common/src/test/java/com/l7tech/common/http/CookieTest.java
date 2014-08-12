@@ -477,4 +477,11 @@ public class CookieTest {
     public void parseCookieEmpty() throws Exception {
         new HttpCookie("");
     }
+
+    @BugId("SSG-9076")
+    @Test
+    public void constructorVersion0WithComment() {
+        final HttpCookie cookie = new HttpCookie("foo", "bar", 0, null, null, -1, false, "test", false, null);
+        assertEquals("test", cookie.getComment());
+    }
 }

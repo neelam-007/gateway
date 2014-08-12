@@ -220,12 +220,7 @@ public class HttpCookie {
         this.fullValue = null;
         this.maxAge = maxAge;
         this.expires = expires;
-        if(version==0) {
-            this.comment = null;
-        }
-        else {
-            this.comment = comment;
-        }
+        this.comment = comment;
         this.secure = secure;
         this.httpOnly = httpOnly;
         this.createdTime = System.currentTimeMillis();
