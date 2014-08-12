@@ -3314,6 +3314,18 @@
                     &lt;/L7p:assertionComment&gt;
                     &lt;/wsp:OneOrMore&gt;
                     &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="MySQL"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Disable if an Oracle database is used"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:ConvertVariablesToStrings booleanValue="false"/&gt;
@@ -3322,11 +3334,36 @@
                     FROM oauth_token
                     ORDER BY resource_owner, client_name, created ASC LIMIT 100 OFFSET ${offset}]]&gt;&lt;/L7p:SqlQuery&gt;
                     &lt;/L7p:JdbcQuery&gt;
+                    &lt;L7p:JdbcQuery&gt;
+                    &lt;L7p:AssertionComment assertionComment="included"&gt;
+                    &lt;L7p:Properties mapValue="included"&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="LEFT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Oracle"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                    &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
+                    &lt;L7p:value stringValue="Enable if a Oracle database is used. Verify that the correct JDBC connection name is selected"/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;/L7p:Properties&gt;
+                    &lt;/L7p:AssertionComment&gt;
+                    &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
+                    &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
+                    &lt;L7p:ConvertVariablesToStrings booleanValue="false"/&gt;
+                    &lt;L7p:MaxRecords intValue="10000"/&gt;
+                    &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT token, secret, expiration, rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
+                    FROM (
+                    SELECT /*+ FIRST_ROWS(100) */ oauth_token.*, ROWNUM rnum
+                    FROM ( 	SELECT * FROM oauth_token
+                    ORDER BY resource_owner, client_name, created ASC ) oauth_token
+                    WHERE ROWNUM &lt;= (100+${offset})
+                    ) WHERE rnum  &gt; ${offset}]]&gt;&lt;/L7p:SqlQuery&gt;
+                    &lt;/L7p:JdbcQuery&gt;
                     &lt;L7p:assertionComment&gt;
                     &lt;L7p:Properties mapValue="included"&gt;
                     &lt;L7p:entry&gt;
                     &lt;L7p:key stringValue="RIGHT.COMMENT"/&gt;
-                    &lt;L7p:value stringValue="all access_token values "/&gt;
+                    &lt;L7p:value stringValue="all access_token values"/&gt;
                     &lt;/L7p:entry&gt;
                     &lt;/L7p:Properties&gt;
                     &lt;/L7p:assertionComment&gt;
