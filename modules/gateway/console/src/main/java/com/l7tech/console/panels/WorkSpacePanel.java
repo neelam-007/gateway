@@ -37,6 +37,7 @@ import com.l7tech.util.TextUtils;
 import com.sun.java.swing.plaf.windows.WindowsTabbedPaneUI;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
@@ -291,7 +292,7 @@ public class WorkSpacePanel extends JPanel {
             tabTitleLabel.setText(title);
 
             // Check if the new title has a valid width for displaying
-            validateTabTitleLength(title);
+            validateTabTitleLength(getWorkspaceWidth(), title);
         }
 
         JComponent getComponent() {
@@ -311,7 +312,7 @@ public class WorkSpacePanel extends JPanel {
             add(new JLabel(EXTRA_SPACES)); // Add one other label holding some extra spaces, where the close-tab icon will be painted if the policy tab is very short.
 
             // This method should be called after tabTitleLabel is initialized.
-            validateTabTitleLength(title);
+            validateTabTitleLength(getWorkspaceWidth(), title);
         }
 
         /**
@@ -320,8 +321,7 @@ public class WorkSpacePanel extends JPanel {
          *
          * Then use the truncated title to set the policy tab title.
          */
-        private void validateTabTitleLength(String title) {
-            final int workspaceWidth = getWorkspaceWidth();
+        private void validateTabTitleLength(final int workspaceWidth, String title) {
             final FontMetrics metrics = tabTitleLabel.getFontMetrics(tabTitleLabel.getFont());
             int totalWidth = SwingUtilities.computeStringWidth(metrics, title + EXTRA_SPACES);
             boolean changed = false;
@@ -819,14 +819,32 @@ public class WorkSpacePanel extends JPanel {
         UIManager.addPropertyChangeListener(l);
 
         // Add a listener on workspace size, so redraw all tab titles if the workspace is resized.
+        // When the window is resized, the method componentResized will be called tons of times, which causes the redrawing
+        // to produce a painting delay issue (Bug SSM-4711 https://jira.l7tech.com:8443/browse/SSM-4711). To avoid componentResized()
+        // to be called many times, use a timer to control the redrawing task frequency by applying a delay, 500 ms.
+        final Timer timer = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final int workspaceWidth = getWorkspaceWidth();
+                Component component;
+
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    component = tabbedPane.getComponentAt(i);
+                    if (component instanceof PolicyEditorPanel) {
+                        ((TabTitleComponentPanel) tabbedPane.getTabComponentAt(i)).validateTabTitleLength(workspaceWidth, component.getName());
+                    }
+                }
+            }
+        });
+        timer.setRepeats(false);
+
         this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                    final Component component = tabbedPane.getComponentAt(i);
-                    if (component instanceof PolicyEditorPanel) {
-                        ((PolicyEditorPanel) component).updateHeadings();
-                    }
+                if (timer.isRunning()) {
+                    timer.restart();
+                } else {
+                    timer.start();
                 }
             }
         });
