@@ -1,6 +1,7 @@
 package com.l7tech.xml.xslt;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.test.BugId;
 import org.junit.Test;
 
 import java.text.ParseException;
@@ -31,6 +32,15 @@ public class XsltUtilTest {
         "    </xsl:copy>\n" +
         "  </xsl:template>\n" +
         "</xsl:stylesheet>";
+
+    private static final String XHTML_XSL =
+            "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                    "  <xsl:output method=\"html\"/>\n" +
+                    "  <xsl:template match=\"/*\">\n" +
+                    "    <th colspan=\"2\"/>\n" +
+                    "  </xsl:template>\n" +
+                    "</xsl:stylesheet>";
+
 
     @Test
     public void testGetVariablesUsedByStylesheetXS20() throws Exception {
@@ -72,4 +82,9 @@ public class XsltUtilTest {
         XsltUtil.checkXsltSyntax(XmlUtil.stringAsDocument(TEST_XSLT_20.replace("xsl:copy", "xsl:floppy")), "2.0", null);
     }
 
+    @Test
+    @BugId( "SSG-9081" )
+    public void testXhtmlAttributeOutput() throws Exception {
+        XsltUtil.getVariablesUsedByStylesheet( XHTML_XSL, "1.0" );
+    }
 }

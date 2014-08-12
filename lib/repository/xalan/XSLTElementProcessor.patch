@@ -1,0 +1,43 @@
+*** XSLTElementProcessor.java.ORIG	2014-08-12 14:48:05.000000000 -0700
+--- XSLTElementProcessor.java	2014-08-12 14:52:14.000000000 -0700
+***************
+*** 341,353 ****
+--- 341,358 ----
+          if(handler.getStylesheetProcessor()==null)
+              System.out.println("stylesheet processor null");
+          if(attrDef.getName().compareTo("*")==0 && handler.getStylesheetProcessor().isSecureProcessing())
+          {
++           boolean specialOrNonLiteral = !( target instanceof ElemLiteralResult ) || isSpecialNamespace( ( ( (ElemLiteralResult) target ).getNamespace() ) );
++           if ( ( specialOrNonLiteral || isSpecialNamespace( attrUri ) ) ) {
+              //foreign attributes are not allowed in secure processing mode
+              // Then barf, because this element does not allow this attribute.
+              handler.error(XSLTErrorResources.ER_ATTR_NOT_ALLOWED, new Object[]{attributes.getQName(i), rawName}, null);//"\""+attributes.getQName(i)+"\""
+              //+ " attribute is not allowed on the " + rawName
+              // + " element!", null);
++           } else {
++             // FALLTHROUGH and ignore it
++           }
+          }
+          else
+          {
+  
+***************
+*** 392,399 ****
+--- 397,413 ----
+      }
+  
+      return undefines;
+    }
++ 
++   private boolean isSpecialNamespace( String ns ) {
++     // Check if the specified namespace URI is one that indicates an attribute or element might have a special meaning for Xalan
++     // We will reject the Saxon internal namespace as well, just in case
++     return "http://xml.apache.org/xalan".equals( ns ) ||
++            "http://xml.apache.org/xslt".equals( ns ) ||
++            "http://icl.com/saxon".equals( ns ) ||
++            "http://www.w3.org/1999/XSL/Transform".equals( ns );
++   }
+  }
+  
+  
+  
