@@ -51,6 +51,7 @@ import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
+import javax.imageio.ImageIO;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.Timer;
@@ -3413,11 +3414,25 @@ public class MainWindow extends JFrame implements SheetHolder {
         setName("MainWindow");
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
-        Image icon = getSmallLogoImage();
-        ImageIcon imageIcon = new ImageIcon(icon);
-        setIconImage(imageIcon.getImage());
-        DialogDisplayer.setDefaultFrameIcon(new ImageIcon(icon));
-        DialogDisplayer.setDefaultWindowImages(Arrays.asList(icon));
+
+        String imagePath = null;
+        try {
+            final ClassLoader classLoader = getClass().getClassLoader();
+            imagePath = RESOURCE_PATH + "/CA_Logo_Black_16x16.png";
+            final Image smallIcon = ImageIO.read(classLoader.getResource(imagePath));
+            imagePath = RESOURCE_PATH + "/CA_Logo_Black_32x32.png";
+            final Image largeIcon = ImageIO.read(classLoader.getResource(imagePath));
+
+            final ImageIcon smallImageIcon = new ImageIcon(smallIcon);
+            final ImageIcon largeImageIcon = new ImageIcon(largeIcon);
+            setIconImages(Arrays.asList(smallImageIcon.getImage(), largeImageIcon.getImage()));
+
+            DialogDisplayer.setDefaultFrameIcon(new ImageIcon(smallIcon));
+            DialogDisplayer.setDefaultWindowImages(Arrays.asList(largeIcon, smallIcon));
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to load image resource: " + imagePath);
+        }
+
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(getFrameContentPane(), BorderLayout.CENTER);
