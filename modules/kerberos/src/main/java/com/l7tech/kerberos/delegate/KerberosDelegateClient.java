@@ -384,7 +384,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service on behalf of a user.
      * @throws KerberosException
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final KerberosTicket kerberosTicket)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String keyTabPrincipal, final Object kerberosTicket)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -433,7 +433,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return a service ticket that can be used to call the target service
      * @throws KerberosException when the kerberos authentication or service ticket provisioning fails
      */
-    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final KerberosTicket additionalTicket)
+    public KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipalName, final String accountName, final String accountPasswd, final Object additionalTicket)
             throws KerberosException {
         KerberosServiceTicket ticket;
         LoginContext loginContext = null;
@@ -589,7 +589,7 @@ public class KerberosDelegateClient extends KerberosClient {
      * @return The Delegated service ticket for the target service on behalf of a user.
      * @throws KerberosException
      */
-    private KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipal, final Subject subject, final KerberosTicket additionalTicket) throws PrivilegedActionException {
+    private KerberosServiceTicket getKerberosProxyServiceTicket(final String servicePrincipal, final Subject subject, final Object additionalTicket) throws PrivilegedActionException {
 
         KerberosServiceTicket ticket = Subject.doAs(subject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
             @Override
@@ -714,6 +714,31 @@ public class KerberosDelegateClient extends KerberosClient {
         }
         return kerberosTicket;
 
+    }
+
+    /**
+     * Populate the TGS_REQ message, send to KDC, and retrieve the Service Ticket
+     *
+     * @param tgt The TGT
+     * @param servicePrincipalName The target service principal name
+     * @param o The forwardable service ticket
+     * @return The service ticket as Credentials on behalf of the user
+     * @throws KrbException
+     * @throws IOException
+     */
+    protected KerberosTicket getS4U2ProxyTicket(KerberosTicket tgt, String servicePrincipalName, Object o) throws KrbException, IOException {
+        if(o instanceof KerberosTicket) {
+            return getS4U2ProxyTicket(tgt, servicePrincipalName, (KerberosTicket) o);
+        }
+        else if (o instanceof Ticket) {
+            //this is the case of constrained proxy
+            PrincipalName sname = new PrincipalName(servicePrincipalName);
+            Ticket serviceTicket = (Ticket)o;
+            Ticket[] tickets = new Ticket[] {serviceTicket};
+            DelegateKrbTgsReq req = new DelegateKrbTgsReq(Krb5Util.ticketToCreds(tgt), sname, tickets);
+            return Krb5Util.credsToTicket(req.getCreds());
+        }
+        throw new KrbException("Invalid Kerberos ticket type");
     }
 
 }

@@ -50,10 +50,8 @@ import java.util.logging.Logger;
 public class ServerKerberosAuthenticationAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerKerberosAuthenticationAssertionTest.class.getName());
-    static byte[] TEST_BYTES = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
-
     private static final String SSG_PRINCIPAL = "ssg1test";
-
+    static byte[] TEST_BYTES = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
     @Mock
     KerberosDelegateClient mockDelegateClient;
 
@@ -260,14 +258,15 @@ public class ServerKerberosAuthenticationAssertionTest {
         assertion.setS4U2Proxy(true);
         assertion.setKrbUseGatewayKeytab(true);
 
-        KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES), null, null, mock(Ticket.class));
+        final Ticket mockTicket = mock(Ticket.class);
+        KerberosServiceTicket testTicket = new KerberosServiceTicket("http/client@DOMAIN.COM","http/service@DOMAIN.COM", null, 0, new KerberosGSSAPReqTicket(TEST_BYTES), null, null, mockTicket);
         SecurityToken token = new HttpNegotiateToken(testTicket);
 
         LoginCredentials pc = LoginCredentials.makeLoginCredentials(token, Assertion.class);
         List<LoginCredentials> credentialsList = Arrays.asList(new LoginCredentials[]{pc});
         when(mockAuthenticationContext.getCredentials()).thenReturn(credentialsList);
 
-        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), testTicket.getDelegatedKerberosTicket())).thenReturn(testTicket);
+        when(mockDelegateClient.getKerberosProxyServiceTicket(assertion.getServicePrincipalName(), fixture.getServicePrincipal(assertion.getRealm()), mockTicket)).thenReturn(testTicket);
 
         Map<String,Object> variableMap = new HashMap<String, Object>();
 

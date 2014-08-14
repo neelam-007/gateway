@@ -27,9 +27,9 @@ import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
+import sun.security.krb5.internal.Ticket;
 
 import javax.inject.Inject;
-import javax.security.auth.kerberos.KerberosTicket;
 import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
@@ -51,6 +51,14 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
     public ServerKerberosAuthenticationAssertion(final KerberosAuthenticationAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
+    }
+
+    protected static boolean containRealm(final String spn) {
+        Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(spn);
+        if(m.find()) {
+            return m.groupCount() == 4 && StringUtils.isNotEmpty(m.group(4));
+        }
+        return false;
     }
 
     @Override
@@ -88,7 +96,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
             userRealm = ExpandVariables.process(assertion.getUserRealm(), variableMap, getAudit());
         }
         String krbServiceAccount = !assertion.isKrbUseGatewayKeytab()?ExpandVariables.process(assertion.getKrbConfiguredAccount(), variableMap, getAudit()):null;
-        
+
         String svcPrincipal = null;
         KerberosServiceTicket kerberosServiceTicket = null;
 
@@ -183,7 +191,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
                     return AssertionStatus.FALSIFIED;
                 }
 
-                KerberosTicket serviceTicket = kst.getDelegatedKerberosTicket();
+                Ticket serviceTicket = kst.getServiceTicket();
 
                 if (assertion.isKrbUseGatewayKeytab()) {
                     svcPrincipal = getServicePrincipal(realm);
@@ -234,14 +242,6 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
         logAndAudit(AssertionMessages.KA_ADDED_KERBEROS_CREDENTIALS, kerberosServiceTicket.getServicePrincipalName(), kerberosServiceTicket.getClientPrincipalName());
 
         return status;
-    }
-
-    protected static boolean containRealm(final String spn) {
-        Matcher m = KerberosAuthenticationAssertion.spnPattern.matcher(spn);
-        if(m.find()) {
-            return m.groupCount() == 4 && StringUtils.isNotEmpty(m.group(4));
-        }
-        return false;
     }
 
     protected String getServicePrincipal(String realm) throws KerberosException {
