@@ -2,6 +2,7 @@ package com.l7tech.console.panels.licensing;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -154,19 +155,33 @@ public class ManageLicensesDialog extends JDialog {
     private void installLicense() {
         WorkSpacePanel workSpace = TopComponents.getInstance().getCurrentWorkspace();
 
-        // if any editor tabs are open, warn the user that they are about to be closed and allow cancellation
-        if (workSpace.getTabbedPane().getTabCount() > 0) {
-            int confirmResult = JOptionPane.showConfirmDialog(ManageLicensesDialog.this,
-                    RESOURCES.getString("dialog.install.warnCloseTabs.message"),
-                    RESOURCES.getString("dialog.install.warnCloseTabs.title"),
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
+        // if any policy editor tabs are open, warn the user that they are about to be closed and allow cancellation
+        WorkSpacePanel.TabbedPane tabbedPane = workSpace.getTabbedPane();
 
-            if (JOptionPane.OK_OPTION != confirmResult) {
-                return;
+        if (tabbedPane.getTabCount() > 0) {
+            boolean oneTimeWarningShown = false;
+
+            for (int i = tabbedPane.getTabCount() - 1; i >= 0; i--) {
+                Component component = tabbedPane.getComponentAt(i);
+
+                if (component instanceof PolicyEditorPanel) {
+                    if (!oneTimeWarningShown) {
+                        int confirmResult = JOptionPane.showConfirmDialog(ManageLicensesDialog.this,
+                                RESOURCES.getString("dialog.install.warnCloseTabs.message"),
+                                RESOURCES.getString("dialog.install.warnCloseTabs.title"),
+                                JOptionPane.OK_CANCEL_OPTION,
+                                JOptionPane.WARNING_MESSAGE);
+
+                        oneTimeWarningShown = true;
+
+                        if (JOptionPane.OK_OPTION != confirmResult) {
+                            return;
+                        }
+                    }
+
+                    tabbedPane.removeTabAt(i);
+                }
             }
-
-            workSpace.clearWorkspaceUnvetoable();
         }
 
         String licenseXml;
