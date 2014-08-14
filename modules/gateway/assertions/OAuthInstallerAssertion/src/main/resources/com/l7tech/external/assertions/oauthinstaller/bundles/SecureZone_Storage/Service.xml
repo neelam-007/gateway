@@ -3350,6 +3350,7 @@
                     &lt;L7p:AssertionFailureEnabled booleanValue="false"/&gt;
                     &lt;L7p:ConnectionName stringValue="OAuth"/&gt;
                     &lt;L7p:ConvertVariablesToStrings booleanValue="false"/&gt;
+                    &lt;L7p:Enabled booleanValue="false"/&gt;
                     &lt;L7p:MaxRecords intValue="10000"/&gt;
                     &lt;L7p:SqlQuery stringValueReference="inline"&gt;&lt;![CDATA[SELECT token, secret, expiration, rtoken, rexpiration, scope, resource_owner, client_name, client_key, status, created
                     FROM (
