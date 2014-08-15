@@ -50,7 +50,7 @@ public class XsltUtil {
             }
         } );
 
-        final DOMSource source = new DOMSource(XmlUtil.parse(new StringReader(xslSrc), false));
+        final Source source = new StreamSource( new StringReader( xslSrc ) );
         return getVariablesUsedByTemplates(compileStylesheet(tf, source));
     }
 
@@ -164,7 +164,7 @@ public class XsltUtil {
                 return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
             }
         } );
-        final DOMSource source = new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false));
+        final Source source = new StreamSource( new StringReader( XmlUtil.nodeToString( doc) ) );
         compileStylesheet(tf, source);
     }
 }

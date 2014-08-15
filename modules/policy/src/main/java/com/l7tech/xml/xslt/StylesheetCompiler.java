@@ -16,6 +16,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
@@ -82,7 +83,7 @@ public class StylesheetCompiler {
             TransformerFactory transfactory = XsltUtil.createTransformerFactory(xsltVersion, true);
 
             // create the XSL transform template
-            Templates result = transfactory.newTemplates(new DOMSource(document));
+            Templates result = transfactory.newTemplates( new StreamSource( new StringReader( XmlUtil.nodeToString( document ) ) ) );
             if (result == null) {
                 throw (ParseException)new ParseException("Unable to parse stylesheet: transformer factory returned null", 0);
             }

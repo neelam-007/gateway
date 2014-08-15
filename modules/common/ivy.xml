@@ -23,8 +23,8 @@
         <dependency org="javax.mail" name="mail" rev="1.4.5" force="true" conf="core"/>
         <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1" force="true" conf="core"/>
         <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
-        <dependency org="xalan" name="xalan" rev="2.7.1" force="true" conf="core"/>
-        <dependency org="xalan" name="xalan-serializer" rev="2.7.1" force="true" conf="core"/>
+        <dependency org="xalan" name="xalan" rev="2.7.2" force="true" conf="core"/>
+        <dependency org="xalan" name="xalan-serializer" rev="2.7.2" force="true" conf="core"/>
         <dependency org="xerces" name="xercesImpl" rev="2.11.0" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.1" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
