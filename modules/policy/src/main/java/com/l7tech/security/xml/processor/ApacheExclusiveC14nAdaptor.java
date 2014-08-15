@@ -139,6 +139,16 @@ public class ApacheExclusiveC14nAdaptor extends Transform implements Canonicaliz
                 org.apache.xml.security.Init.init();
 
                 Document doc = XmlUtil.stringAsDocument(MINIMAL_SIGNED_XML);
+
+                NodeList allElements = doc.getElementsByTagName( "*" );
+                for ( int i = 0; i < allElements.getLength(); i++ ) {
+                    final Element elem = (Element) allElements.item( i );
+                    String id = elem.getAttribute( "wsu:Id" );
+                    if ( id != null && id.length() > 0 ) {
+                        elem.setIdAttribute( "wsu:Id", true );
+                    }
+                }
+
                 final Element sechdr = SoapUtil.getSecurityElement(doc);
                 final Element bst = DomUtils.findOnlyOneChildElementByName(sechdr, SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken");
                 final Element signature = DomUtils.findOnlyOneChildElementByName(sechdr, SoapUtil.DIGSIG_URI, "Signature");

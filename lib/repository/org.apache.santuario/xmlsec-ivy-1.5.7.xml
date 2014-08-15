@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.apache.santuario"
+		module="xmlsec"
+		revision="1.5.7"
+		status="release"
+		publication="20140808160442"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="xmlsec" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>
