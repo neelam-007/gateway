@@ -391,7 +391,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         final byte[] responseData = os.toByteArray();
         if ( managementResponse.getHeader() != null && managementResponse.getAction() != null ) {
             response.initialize(
-                    ContentTypeHeader.parseValue(ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action="+managementResponse.getAction()), 
+                    ContentTypeHeader.parseValue(ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action=\"" + managementResponse.getAction() + "\""),
                     responseData );
         } else {
             response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, responseData );
