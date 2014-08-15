@@ -1666,7 +1666,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-1.1-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-2.0-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-xenc-xmldsig-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/xercesImpl-2.11.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/xercesImpl-2.11.0-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xml-apis-1.4.01.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlbeans-2.5.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlpad-3.7.jar"/>

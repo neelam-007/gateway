@@ -25,7 +25,7 @@
         <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
         <dependency org="xalan" name="xalan" rev="2.7.2" force="true" conf="core"/>
         <dependency org="xalan" name="xalan-serializer" rev="2.7.2" force="true" conf="core"/>
-        <dependency org="xerces" name="xercesImpl" rev="2.11.0" force="true" conf="core"/>
+        <dependency org="xerces" name="xercesImpl" rev="2.11.0-l7p1" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.1" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
         <dependency org="com.google.mockwebserver" name="mockwebserver" rev="20130505" force="true" conf="core"/>

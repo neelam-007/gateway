@@ -27,6 +27,6 @@
         <artifact name="nekohtml" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
     </publications>
     <dependencies>
-        <dependency org="xerces" name="xercesImpl" rev="2.11.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+        <dependency org="xerces" name="xercesImpl" rev="2.11.0-l7p1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
     </dependencies>
 </ivy-module>
