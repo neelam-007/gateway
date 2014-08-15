@@ -1,5 +1,5 @@
-*** XSLTElementProcessor.java.ORIG	2014-08-12 17:35:58.000000000 -0700
---- XSLTElementProcessor.java	2014-08-12 17:40:54.000000000 -0700
+*** XSLTElementProcessor.java.ORIG	2014-08-13 16:28:57.000000000 -0700
+--- XSLTElementProcessor.java	2014-08-13 16:34:15.000000000 -0700
 ***************
 *** 26,33 ****
 --- 26,34 ----
@@ -13,7 +13,7 @@
   import org.xml.sax.Attributes;
   import org.xml.sax.InputSource;
 ***************
-*** 339,353 ****
+*** 339,347 ****
         {
           //handle secure processing
           if(handler.getStylesheetProcessor()==null)
@@ -23,65 +23,51 @@
               //foreign attributes are not allowed in secure processing mode
               // Then barf, because this element does not allow this attribute.
               handler.error(XSLTErrorResources.ER_ATTR_NOT_ALLOWED, new Object[]{attributes.getQName(i), rawName}, null);//"\""+attributes.getQName(i)+"\""
-              //+ " attribute is not allowed on the " + rawName
-              // + " element!", null);
-          }
-          else
-          {
-  
---- 340,362 ----
+--- 340,356 ----
         {
           //handle secure processing
           if(handler.getStylesheetProcessor()==null)
               System.out.println("stylesheet processor null");
-!         if ( !ALLOW_ATTRIBUTES_IN_SECURE_MODE && handler.getStylesheetProcessor().isSecureProcessing() && attrDef.getName().compareTo( "*" ) == 0 )
+! 
+!         boolean namespaceDecl = org.apache.xalan.templates.Constants.S_XMLNAMESPACEURI.equals( attrUri ) ||
+!                         "http://www.w3.org/2000/xmlns/".equals( attrUri );
+! 
+!         boolean specialOrNonLiteral = !( target instanceof ElemLiteralResult ) ||
+!                         isSpecialNamespace( ( ( (ElemLiteralResult) target ).getNamespace() ) );
+! 
+!         if ( !ALLOW_ATTRIBUTES_IN_SECURE_MODE && handler.getStylesheetProcessor().isSecureProcessing() && attrDef.getName().compareTo( "*" ) == 0
+!              && !namespaceDecl && ( specialOrNonLiteral || isSpecialNamespace( attrUri ) ) )
           {
-+           boolean namespaceDecl = org.apache.xalan.templates.Constants.S_XMLNAMESPACEURI.equals( attrUri ) ||
-+                           "http://www.w3.org/2000/xmlns/".equals( attrUri );
-+           boolean specialOrNonLiteral = !( target instanceof ElemLiteralResult ) ||
-+                           isSpecialNamespace( ( ( (ElemLiteralResult) target ).getNamespace() ) );
-+           if ( !namespaceDecl && ( specialOrNonLiteral || isSpecialNamespace( attrUri ) ) ) {
               //foreign attributes are not allowed in secure processing mode
               // Then barf, because this element does not allow this attribute.
               handler.error(XSLTErrorResources.ER_ATTR_NOT_ALLOWED, new Object[]{attributes.getQName(i), rawName}, null);//"\""+attributes.getQName(i)+"\""
-              //+ " attribute is not allowed on the " + rawName
-              // + " element!", null);
-+           } else {
-+             // FALLTHROUGH and ignore it
-+           }
-          }
-          else
-          {
-  
 ***************
-*** 392,399 ****
---- 401,429 ----
+*** 392,396 ****
+--- 401,427 ----
       }
   
       return undefines;
     }
 + 
-+   private boolean isSpecialNamespace( String ns ) {
-+     // Check if the specified namespace URI is one that indicates an attribute or element might have a special meaning for Xalan
-+     // We will reject the Saxon internal namespace as well, just in case
-+     return "http://xml.apache.org/xalan".equals( ns ) ||
-+            "http://xml.apache.org/xslt".equals( ns ) ||
-+            "http://icl.com/saxon".equals( ns ) ||
-+            "http://www.w3.org/1999/XSL/Transform".equals( ns );
-+   }
-+ 
-+   private static final String PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE = "com.l7tech.org.apache.xalan.processor.allowAttributesInSecureMode";
-+   private static final boolean ALLOW_ATTRIBUTES_IN_SECURE_MODE;
-+   static {
-+     boolean b = false;
-+     try {
-+       b = Boolean.getBoolean( PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE );
-+     } catch ( Exception e ) {
-+       // FALLTHROUGH and use default
++     private boolean isSpecialNamespace( String ns ) {
++         // Check if the specified namespace URI is one that indicates an attribute or element might have a special meaning for Xalan
++         // We will reject the Saxon internal namespace as well, just in case
++         return "http://xml.apache.org/xalan".equals( ns ) ||
++                 "http://xml.apache.org/xslt".equals( ns ) ||
++                 "http://icl.com/saxon".equals( ns ) ||
++                 "http://www.w3.org/1999/XSL/Transform".equals( ns );
 +     }
-+     ALLOW_ATTRIBUTES_IN_SECURE_MODE = b;
-+   }
++ 
++     private static final String PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE = "com.l7tech.org.apache.xalan.processor.allowAttributesInSecureMode";
++     private static final boolean ALLOW_ATTRIBUTES_IN_SECURE_MODE;
++     static {
++         boolean b = false;
++         try {
++             b = Boolean.getBoolean( PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE );
++         } catch ( Exception e ) {
++             // FALLTHROUGH and use default
++         }
++         ALLOW_ATTRIBUTES_IN_SECURE_MODE = b;
++     }
++ 
   }
-  
-  
-  

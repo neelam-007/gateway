@@ -28,6 +28,7 @@ import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
@@ -532,5 +533,35 @@ public class XslTransformationTest {
 
         assertEquals("New msg 1", context.getVariable("pfx.messages.first"));
         assertEquals("New msg 2", context.getVariable("pfx.messages.last"));
+    }
+
+    @BugId( "SSG-9081" )
+    @Test
+    public void testTransformEmitsXhtmlWithAttributes() throws Exception {
+        // Stock Xalan 2.7.2 has a problem with XHTML attributes when processing in secure mode.
+        // One of our attempts to fix this "worked" but had the side effect of stripping the attributes
+        // out of the output completely.  This unit test checks this.
+
+        XslTransformation assertion = new XslTransformation();
+        assertion.setTarget(TargetMessageType.REQUEST);
+        AssertionResourceInfo ri = new StaticResourceInfo(
+                "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                "  <xsl:output method=\"html\"/>\n" +
+                "  <xsl:template match=\"/*\">\n" +
+                "    <th colspan=\"2\"/>\n" +
+                "  </xsl:template>\n" +
+                "</xsl:stylesheet>" );
+        assertion.setResourceInfo(ri);
+        assertion.setXsltVersion( "1.0" );
+        ServerAssertion sa = new TestStaticOnlyServerXslTransformation(assertion);
+
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        AssertionStatus result = sa.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        String output = new String( IOUtils.slurpStream( context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream() ), Charsets.UTF8 );
+        assertEquals( "<th colspan=\"2\"></th>\n", output );
     }
 }
