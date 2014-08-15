@@ -337,7 +337,7 @@
         <include name="**/xss4j*.jar"/>
         <include name="**/log4j-1.2.17.jar"/>
         <include name="**/bcprov*.jar"/>
-        <include name="**/xalan-2.7.2.jar"/>
+        <include name="**/xalan-2.7.2-l7p1.jar"/>
         <include name="**/xalan-serializer-2.7.2.jar"/>
         <include name="**/saaj-api.jar"/>
         <include name="**/saaj-impl.jar"/>
@@ -1661,7 +1661,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/whirlycache-1.0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/wsdl4j-1.6.2-l7p3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/xalan-2.7.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/xalan-2.7.2-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xalan-serializer-2.7.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-1.1-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xbean-saml-2.0-1.0.jar"/>
