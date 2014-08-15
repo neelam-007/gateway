@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.test.BugId;
 import org.junit.Test;
 
+import javax.xml.transform.TransformerException;
 import java.text.ParseException;
 import java.util.List;
 
@@ -86,5 +87,36 @@ public class XsltUtilTest {
     @BugId( "SSG-9081" )
     public void testXhtmlAttributeOutput() throws Exception {
         XsltUtil.getVariablesUsedByStylesheet( XHTML_XSL, "1.0" );
+    }
+
+    @Test( expected = ParseException.class )
+    @BugId( "SSG-9081" )
+    public void testXhtmlAttributeOutput_unsafeGlobalAttrNamespace() throws Exception {
+        XsltUtil.getVariablesUsedByStylesheet(
+                "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                "  <xsl:output method=\"html\"/>\n" +
+                "  <xsl:template match=\"/*\">\n" +
+                "    <th foo:colspan=\"2\" xmlns:foo=\"http://xml.apache.org/xalan\"/>\n" +
+                "  </xsl:template>\n" +
+                "</xsl:stylesheet>", "1.0" );
+    }
+
+    @Test
+    @BugId( "SSG-9081" )
+    public void testXhtmlAttributeOutputXS20() throws Exception {
+        XsltUtil.getVariablesUsedByStylesheet( XHTML_XSL, "2.0" );
+    }
+
+    // Saxon does not care about global attributes in the Xalan namespace so this is OK
+    @Test
+    @BugId( "SSG-9081" )
+    public void testXhtmlAttributeOutput_unsafeGlobalAttrNamespaceXS20() throws Exception {
+        XsltUtil.getVariablesUsedByStylesheet(
+                "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                        "  <xsl:output method=\"html\"/>\n" +
+                        "  <xsl:template match=\"/*\">\n" +
+                        "    <th foo:colspan=\"2\" xmlns:foo=\"http://xml.apache.org/xalan\"/>\n" +
+                        "  </xsl:template>\n" +
+                        "</xsl:stylesheet>", "2.0" );
     }
 }

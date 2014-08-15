@@ -1,14 +1,46 @@
-*** XSLTElementProcessor.java.ORIG	2014-08-12 14:48:05.000000000 -0700
---- XSLTElementProcessor.java	2014-08-12 14:52:14.000000000 -0700
+*** XSLTElementProcessor.java.ORIG	2014-08-12 17:35:58.000000000 -0700
+--- XSLTElementProcessor.java	2014-08-12 17:40:54.000000000 -0700
 ***************
-*** 341,353 ****
---- 341,358 ----
+*** 26,33 ****
+--- 26,34 ----
+  import javax.xml.transform.TransformerException;
+  
+  import org.apache.xalan.res.XSLMessages;
+  import org.apache.xalan.res.XSLTErrorResources;
++ import org.apache.xalan.templates.ElemLiteralResult;
+  import org.apache.xalan.templates.ElemTemplateElement;
+  import org.apache.xml.utils.IntStack;
+  import org.xml.sax.Attributes;
+  import org.xml.sax.InputSource;
+***************
+*** 339,353 ****
+        {
+          //handle secure processing
           if(handler.getStylesheetProcessor()==null)
               System.out.println("stylesheet processor null");
-          if(attrDef.getName().compareTo("*")==0 && handler.getStylesheetProcessor().isSecureProcessing())
+!         if(attrDef.getName().compareTo("*")==0 && handler.getStylesheetProcessor().isSecureProcessing())
           {
-+           boolean specialOrNonLiteral = !( target instanceof ElemLiteralResult ) || isSpecialNamespace( ( ( (ElemLiteralResult) target ).getNamespace() ) );
-+           if ( ( specialOrNonLiteral || isSpecialNamespace( attrUri ) ) ) {
+              //foreign attributes are not allowed in secure processing mode
+              // Then barf, because this element does not allow this attribute.
+              handler.error(XSLTErrorResources.ER_ATTR_NOT_ALLOWED, new Object[]{attributes.getQName(i), rawName}, null);//"\""+attributes.getQName(i)+"\""
+              //+ " attribute is not allowed on the " + rawName
+              // + " element!", null);
+          }
+          else
+          {
+  
+--- 340,362 ----
+        {
+          //handle secure processing
+          if(handler.getStylesheetProcessor()==null)
+              System.out.println("stylesheet processor null");
+!         if ( !ALLOW_ATTRIBUTES_IN_SECURE_MODE && handler.getStylesheetProcessor().isSecureProcessing() && attrDef.getName().compareTo( "*" ) == 0 )
+          {
++           boolean namespaceDecl = org.apache.xalan.templates.Constants.S_XMLNAMESPACEURI.equals( attrUri ) ||
++                           "http://www.w3.org/2000/xmlns/".equals( attrUri );
++           boolean specialOrNonLiteral = !( target instanceof ElemLiteralResult ) ||
++                           isSpecialNamespace( ( ( (ElemLiteralResult) target ).getNamespace() ) );
++           if ( !namespaceDecl && ( specialOrNonLiteral || isSpecialNamespace( attrUri ) ) ) {
               //foreign attributes are not allowed in secure processing mode
               // Then barf, because this element does not allow this attribute.
               handler.error(XSLTErrorResources.ER_ATTR_NOT_ALLOWED, new Object[]{attributes.getQName(i), rawName}, null);//"\""+attributes.getQName(i)+"\""
@@ -23,7 +55,7 @@
   
 ***************
 *** 392,399 ****
---- 397,413 ----
+--- 401,429 ----
       }
   
       return undefines;
@@ -36,6 +68,18 @@
 +            "http://xml.apache.org/xslt".equals( ns ) ||
 +            "http://icl.com/saxon".equals( ns ) ||
 +            "http://www.w3.org/1999/XSL/Transform".equals( ns );
++   }
++ 
++   private static final String PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE = "com.l7tech.org.apache.xalan.processor.allowAttributesInSecureMode";
++   private static final boolean ALLOW_ATTRIBUTES_IN_SECURE_MODE;
++   static {
++     boolean b = false;
++     try {
++       b = Boolean.getBoolean( PROP_ALLOW_ATTRIBUTES_IN_SECURE_MODE );
++     } catch ( Exception e ) {
++       // FALLTHROUGH and use default
++     }
++     ALLOW_ATTRIBUTES_IN_SECURE_MODE = b;
 +   }
   }
   
