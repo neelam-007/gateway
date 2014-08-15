@@ -1,0 +1,6 @@
+This patch is for tomcat-6.0.41 and can be found at http://svn.apache.org/repos/asf/tomcat/tc6.0.x/tags/TOMCAT_6_0_41.
+
+BUG - SSG-9059 Icefish: Upgrade Tomcat from 6.0.35 to 6.0.41
+-------------------------------------------------------------------------
+
+This patch includes changes from coyote-6.0.35-l7p1.patch and coyote-6.0.35-l7p2.patch.
