@@ -1,7 +1,0 @@
-This patch is for tomcat-6.0.35 and can be found at http://svn.apache.org/repos/asf/tomcat/tc6.0.x/tags/TOMCAT_6_0_35.
-
-BUG - SSG-4953 HttpCookie missing HttpOnly attribute
--------------------------------------------------------------------------
-
-The response addCookieInternal method hard-codes httpOnly to false. This patch changes the addCookieInternal method to
-set the httpOnly attribute based on the incoming cookie's httpOnly attribute.

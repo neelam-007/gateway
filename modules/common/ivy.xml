@@ -22,6 +22,7 @@
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="javax.mail" name="mail" rev="1.4.5" force="true" conf="core"/>
         <dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1" force="true" conf="core"/>
+        <dependency org="javax.servlet" name="servlet-api-resources" rev="2.5" force="true" conf="core"/>
         <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
         <dependency org="xalan" name="xalan" rev="2.7.2" force="true" conf="core"/>
         <dependency org="xalan" name="xalan-serializer" rev="2.7.2" force="true" conf="core"/>
