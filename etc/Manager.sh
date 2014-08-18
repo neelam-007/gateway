@@ -26,7 +26,7 @@ extra="
 -Duser.country=US
 "
 
-if [ `uname` -eq Darwin ]; then
+if [ `uname` = Darwin ]; then
   extra="$extra -Xdock:name=\"SecureSpan Manager\" -Dapple.laf.useScreenMenuBar=true "
 fi
 
