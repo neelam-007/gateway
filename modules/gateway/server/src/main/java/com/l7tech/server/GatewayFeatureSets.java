@@ -1204,12 +1204,13 @@ public class GatewayFeatureSets {
         /**
          * Mobile Access Gateway
          *
-         * Applicable as of MAG 2.0.1.
+         * Applicable as of MAG 2.2.
          */
         GatewayFeatureSet mobileFeaturePack = fsp(PROFILE_MOBILE_EXTENSION,
                 "Mobile Access Gateway",
                 "Includes series of assertions required to support existing and future Mobile Access Gateway " +
                         "functionality (requires SOA Gateway license as base)",
+                mass("assertion:MAGInstaller"),
                 csrSignerAssertions,
                 jsonWebTokenAssertions,
                 openIDConnectAssertions,
