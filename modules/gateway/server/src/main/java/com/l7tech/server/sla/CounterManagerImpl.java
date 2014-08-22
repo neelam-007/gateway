@@ -8,10 +8,7 @@ package com.l7tech.server.sla;
 
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.Background;
-import com.l7tech.util.Either;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -31,6 +28,7 @@ import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -65,6 +63,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     private Map<String, Counter> readCounters = new HashMap<String, Counter>();
 
     private final PlatformTransactionManager transactionManager;
+
+    static TimeSource timeSource = new TimeSource();
 
     public CounterManagerImpl(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
@@ -326,7 +326,7 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                                 dbcnt.setCurrentHourCounter(0);
                                 dbcnt.setCurrentDayCounter(0);
                                 dbcnt.setCurrentMonthCounter(0);
-                                dbcnt.setLastUpdate(Calendar.getInstance().getTime().getTime());
+                                dbcnt.setLastUpdate( timeSource.currentTimeMillis() );
 
                                 // put new value in database
                                 recordNewCounterValue(connection, counterName, dbcnt);

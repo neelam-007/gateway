@@ -2,6 +2,7 @@ package com.l7tech.server.sla;
 
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.PlatformTransactionManagerStub;
+import com.l7tech.util.TestTimeSource;
 import org.hibernate.SessionFactory;
 import org.hibernate.classic.Session;
 import org.hibernate.jdbc.Work;
@@ -46,6 +47,8 @@ public class CounterManagerImplTest {
     CounterManager counterManager;
     HibernateTemplate template;
 
+    TestTimeSource timeSource;
+
     /**
      * The set up method that is run before each test case. This method is responsible for the set up
      * of test data and objects so that the tests are running appropriately under the right circumstances/situation.
@@ -53,6 +56,11 @@ public class CounterManagerImplTest {
     @Before
     public void setUp() {
         PlatformTransactionManagerStub stubTransactionManager = new PlatformTransactionManagerStub();
+
+        // Ensure sure test doesn't start immediately before a time period rollover
+        long now = (System.currentTimeMillis() / 1000L ) * 1000L + 10;
+        timeSource = new TestTimeSource( now, 10L );
+        CounterManagerImpl.timeSource = timeSource;
 
         session = mock(Session.class);
         sessionFactory = mock(SessionFactory.class);
