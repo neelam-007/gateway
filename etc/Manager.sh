@@ -27,7 +27,7 @@ extra="
 "
 
 if [ `uname` = Darwin ]; then
-  extra="$extra -Xdock:name=\"SecureSpan Manager\" -Dapple.laf.useScreenMenuBar=true "
+  extra="$extra -Xdock:name=PolicyManager -Dapple.laf.useScreenMenuBar=true "
 fi
 
 run="-jar Manager.jar";
