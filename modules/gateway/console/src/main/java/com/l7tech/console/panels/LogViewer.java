@@ -89,6 +89,8 @@ public class LogViewer extends JFrame {
 
     private long lastReadByte = 0L;
     private long lastReadTime = 0L;
+    //this is used to keep track of the last query time sent. it is used to make sure it is not sent again
+    private long lastQueryTime = -1L;
 
     /**
      * Create a log window for the given node.
@@ -649,18 +651,27 @@ public class LogViewer extends JFrame {
                     while(!done && !cancelled.get()){
                         LogSinkData logData;
                         try {
-                            LogSinkQuery query = new LogSinkQuery(tail> 0,lastReadTime,startByte);
-                            logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file, query );
-                            if(logData == null){
-                                DialogDisplayer.showMessageDialog(LogViewer.this, null,
-                                        resources.getString("load.error"), null);
-                                break;
+                            if (lastQueryTime >= lastReadTime) {
+                                return null; // if the last query time is greater then or equal to the last read time then it means a log sink is likely in progress.
+                            } else {
+                                LogSinkQuery query = new LogSinkQuery(tail > 0, lastReadTime, startByte);
+                                lastQueryTime = lastReadTime;
+                                logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(), sinkId, file, query);
+                                if (logData == null) {
+                                    DialogDisplayer.showMessageDialog(LogViewer.this, null,
+                                            resources.getString("load.error"), null);
+                                    break;
+                                }
+                                fileSize = logData.getFileSize();
+                                lastReadTime = logData.getTimeRead();
                             }
-                            fileSize = logData.getFileSize();
-                            lastReadTime = logData.getTimeRead();
                         } catch ( FindException e ) {
+                            lastQueryTime = -1L;
                             ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log data" );
                             break;
+                        } catch ( Throwable t) {
+                            lastQueryTime = -1L;
+                            throw t;
                         }
                         inStream =  new GZIPInputStream(new ByteArrayInputStream(logData.getData()),8192);
                         dis = new InputStreamReader(inStream);
@@ -674,7 +685,7 @@ public class LogViewer extends JFrame {
                             hasReload = hasReload || reloadFile;
                         }
                         int size = 0;
-                        while (!eof && !cancelled.get()) {
+                        while (!eof) {
 
                             eol = false;
                             while(!eol && !eof){
@@ -775,7 +786,7 @@ public class LogViewer extends JFrame {
         }
 
         private void updateLastUpdatedText() {
-            Date date = new Date(System.currentTimeMillis());
+            Date date = new Date(lastReadTime);
             SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
