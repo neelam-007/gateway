@@ -91,6 +91,7 @@ public class LogViewer extends JFrame {
     private long lastReadTime = 0L;
     //this is used to keep track of the last query time sent. it is used to make sure it is not sent again
     private long lastQueryTime = -1L;
+    private LogSinkAdmin logSinkAdmin;
 
     /**
      * Create a log window for the given node.
@@ -104,6 +105,8 @@ public class LogViewer extends JFrame {
         this.clusterNodeInfo = clusterNodeInfo;
         this.sinkId  = sinkId;
         this.file = file;
+
+        logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
 
         initialize();
         loadLogs(false);
@@ -352,6 +355,9 @@ public class LogViewer extends JFrame {
 
     @Override
     public void dispose() {
+        if(logsRefreshTimer != null) {
+            logsRefreshTimer.stop();
+        }
         if(workerReference.get()!=null)
             workerReference.get().cancel();
         super.dispose();
@@ -571,7 +577,7 @@ public class LogViewer extends JFrame {
 
         cancelButton.setEnabled(tail<0); // not enable cancel button when in 'tail' mode
         final LogWorker infoWorker = new LogWorker(
-                Registry.getDefault().getLogSinkAdmin(),
+                logSinkAdmin,
                 tail, isAutoRefresh,logList.getSelectedValues());
 
         workerReference.set(infoWorker);
