@@ -791,8 +791,12 @@ public class SinkManagerImpl
         if(logToConsole && handler == null){
             //if logging to the console is enforced and the root handle has not been set then create a new one.
             handler = new ConsoleMessageSink.L7ConsoleHandler();
-            //Add the Logs category here as well. Otherwise not much will be logged to the console
-            configuration.setCategories(SinkConfiguration.CATEGORY_AUDITS + "," + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
+
+            String extraCats = SyspropUtil.getString( JdkLogConfig.PARAM_LOG_TO_CONSOLE_EXTRA_CATEGORIES, "" );
+            if ( extraCats != null && !extraCats.isEmpty() ) {
+                //Add the Logs category here as well. Otherwise not much will be logged to the console
+                configuration.setCategories( extraCats );
+            }
         }
         //create the console message sink
         ConsoleMessageSink sink = new ConsoleMessageSink( configuration, handler );

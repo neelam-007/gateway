@@ -26,6 +26,13 @@ public class JdkLogConfig {
     public static final String PARAM_LOG_TO_CONSOLE = "com.l7tech.server.log.console";
 
     /**
+     * Extra categories to enable on the console logger.
+     * Comma-separated list, eg "AUDIT,LOG"
+     * Ignored unless PARAM_LOG_TO_CONSOLE is enabled.
+     */
+    public static final String PARAM_LOG_TO_CONSOLE_EXTRA_CATEGORIES = "com.l7tech.server.log.console.extraCats";
+
+    /**
      * System properties that can be used to customize the log settings. Note that these are only
      * applicable the first time a new installation is run so there should be no reason to use.
      */
