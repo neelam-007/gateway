@@ -40,6 +40,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
     private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
     private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
+    static boolean ENABLE_MULTIPART_PROCESSING = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.enableMultipartProcessing", true );
 
     /**
      * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage
@@ -105,7 +106,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             this.outerContentType = outerContentType;
             this.stashManager = stashManager;
 
-            if (outerContentType.isMultipart()) {
+            if ( ENABLE_MULTIPART_PROCESSING && outerContentType.isMultipart() ) {
                 // Multipart message.  Prepare the first part for reading.
                 String start = outerContentType.hasParams() ? outerContentType.getParam("start") : null;
                 if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");

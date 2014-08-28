@@ -1,5 +1,6 @@
 package com.l7tech.common.mime;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
@@ -10,6 +11,7 @@ import com.l7tech.util.*;
 
 import static com.l7tech.util.CollectionUtils.list;
 
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.io.*;
@@ -829,11 +831,81 @@ public class MimeBodyTest {
                 result.toLowerCase().contains("content-length:"));
     }
 
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryNoPreambleBaseline() throws Exception {
+        MimeBody mm = makeMessage( MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( 3, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR() throws Exception {
+        try {
+            MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+            mm.getEntireMessageBodyLength();
+
+            fail( "Expected excption not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble.)" );
+        } catch ( IOException e ) {
+            assertTrue( e.getMessage().contains( "Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part." ) );
+        }
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksLF() throws Exception {
+        try {
+            MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+            mm.getEntireMessageBodyLength();
+
+            fail( "Expected excption not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble.)" );
+        } catch ( IOException e ) {
+            assertTrue( e.getMessage().contains( "Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part." ) );
+        }
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR_noStart() throws Exception {
+        MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format)",
+                2, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksLF_noStart() throws Exception {
+        MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format)",
+                2, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR_multipartModeDisabled() throws Exception {
+        try {
+            MimeBody.ENABLE_MULTIPART_PROCESSING = false;
+
+            MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+            mm.getEntireMessageBodyLength();
+            assertEquals( 1, mm.getNumPartsKnown() );
+            assertFalse( mm.isMultipart() );
+
+        } finally {
+            MimeBody.ENABLE_MULTIPART_PROCESSING = true;
+        }
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";
-    public static final String MESS_CONTENT_TYPE = "multipart/related; type=\"text/xml\"; boundary=\"" +
-            MESS_BOUNDARY+ "\"; start=\"-76394136.15558\"";
+    public static final String MESS_CONTENT_TYPE_NO_START = "multipart/related; type=\"text/xml\"; boundary=\"" +
+            MESS_BOUNDARY+ "\"";
+    public static final String MESS_CONTENT_TYPE = MESS_CONTENT_TYPE_NO_START + "; start=\"-76394136.15558\"";
+
     public static final String MESS_PAYLOAD_NS = "urn:EchoAttachmentsService";
     public static final String SOAP = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
@@ -882,6 +954,30 @@ public class MimeBodyTest {
              RUBY +
             "\r\n" +
             "------=Part_-763936460.407197826076299--\r\n";
+
+    public static final String MESS_NO_PREAMBLE = "------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: text/xml; charset=utf-8\r\n" +
+            "Content-ID: -76394136.15558\r\n" +
+            "\r\n" +
+            SOAP +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "Content-ID: <-76392836.15558>\r\n" +
+            "\r\n" +
+            RUBY +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "Content-ID: <-76392836.15559>\r\n" +
+            "\r\n" +
+            RUBY +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299--\r\n";
+
 
     public static final String MESS_NONXML_CONTENT_TYPE = "multipart/related; type=\"application/x-rubything\"; boundary=\"" +
             MESS_BOUNDARY+ "\"; start=\"-76394136.15558\"";
