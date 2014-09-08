@@ -184,7 +184,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
                 } catch (JMSException e) {
-                    if ( jrc.isMessageSent() ) throw e;
+                    if ( jrc.isMessageSent()) {
+                        throw e;
+                    }
+
+                    if( e.getLinkedException() != null && e.getLinkedException() instanceof ClassCastException) {
+                        return AssertionStatus.FAILED;
+                    }
 
                     if (++oopses < maxOopses) {
                         if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
@@ -352,16 +358,36 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 final Map<String, Object> outboundRequestProps = new HashMap<>();
                 enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
 
-                for (String name : outboundRequestProps.keySet()) {
+                for (Map.Entry<String,Object> entry : outboundRequestProps.entrySet()) {
                     try {
-                        jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
+                        if(JmsUtil.isJmsHeader(entry.getKey())) {
+                            //Set JMS Header defined in the context that might override the default value
+                            Object value = null;
+                            if((entry.getKey().equals(JmsUtil.JMS_REPLY_TO) || entry.getKey().equals(JmsUtil.JMS_DESTINATION)) && entry.getValue() instanceof String) {
+                                value = JmsUtil.cast( jndiContextProvider.lookup((String)entry.getValue()), Destination.class);
+                            }
+                            else {
+                                value = entry.getValue();
+                            }
+                            JmsUtil.setJmsHeader(jmsOutboundRequest, new Pair<>(entry.getKey(), value));
+                        }
+                        else {
+                            //set JMS properties
+                            jmsOutboundRequest.setObjectProperty(entry.getKey(), entry.getValue());
+                        }
                     } catch ( MessageFormatException e ) {
                         if ( e.getErrorCode() != null && e.getErrorCode().startsWith("MQ") ) {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {entry.getKey(), entry.getValue().toString(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                         } else {
                             logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
                         }
+                    } catch (JMSException je) {
+                        if(JmsUtil.getCause(je) instanceof ClassCastException) {
+                            logAndAudit(AssertionMessages.JMS_ROUTING_INCOMPATIBLE_JMS_PROPERTY_TYPE, new String[] {entry.getKey()}, ExceptionUtils.getDebugException(je));
+                        }
+                        throw je;
                     }
+
                 }
 
                 boolean processReply = context.isReplyExpected() && jmsInboundDestination != null;

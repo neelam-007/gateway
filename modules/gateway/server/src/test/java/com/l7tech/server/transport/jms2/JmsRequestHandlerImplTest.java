@@ -14,10 +14,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.transport.jms.JmsMessageTestUtility;
-import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsRuntimeException;
-import com.l7tech.server.transport.jms.TextMessageStub;
+import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
@@ -31,8 +28,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 
-import javax.jms.JMSException;
+import javax.jms.Destination;
 import javax.jms.Session;
+import javax.naming.Context;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,6 +41,8 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JmsRequestHandlerImplTest {
+    private static final String NEW_CORRELATION_ID = "12345";
+
     private JmsRequestHandlerImpl handler;
     private Properties connectionProperties;
     private TextMessageStub jmsRequest;
@@ -66,6 +66,10 @@ public class JmsRequestHandlerImplTest {
     private JmsEndpoint endpoint;
     @Mock
     private Session session;
+    @Mock
+    private Context jndiContext;
+    @Mock
+    private javax.jms.MessageProducer mockProducer;
 
     @Before
     public void setup() throws Exception {
@@ -75,7 +79,7 @@ public class JmsRequestHandlerImplTest {
         when(applicationContext.getBean("stashManagerFactory", StashManagerFactory.class))
                 .thenReturn(TestStashManagerFactory.getInstance());
 
-        handler = new JmsRequestHandlerImpl(applicationContext);
+        handler = spy(new JmsRequestHandlerImpl(applicationContext));
         connectionProperties = new Properties();
 
         jmsRequest = new TextMessageStub();
@@ -123,6 +127,7 @@ public class JmsRequestHandlerImplTest {
         handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
 
         assertNotNull(jmsKnobRef.get());
+        assertEquals(10, jmsKnobRef.get().getHeaderNames().length);
         JmsMessageTestUtility.assertDefaultHeadersPresent(jmsKnobRef.get());
 
         HeadersKnob headersKnob = headersKnobRef.get();
@@ -145,10 +150,13 @@ public class JmsRequestHandlerImplTest {
      */
     @Test
     public void onMessageSetsResponseJmsPropertyHeadersOnJmsResponse() throws Exception {
+        Destination replyDestination = new DestinationStub("replyDestination");
         mockJmsEndpoint();
+        when(endpointConfig.getResponseDestination(jmsRequest, jndiContext)).thenReturn(replyDestination);
 
         when(jmsBag.getSession()).thenReturn(session);
         when(session.createTextMessage()).thenReturn(jmsResponse);
+        when(jmsBag.getJndiContext()).thenReturn(jndiContext);
 
         when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
             @Override
@@ -170,6 +178,8 @@ public class JmsRequestHandlerImplTest {
                 return AssertionStatus.NONE;
             }
         });
+        doNothing().when(mockProducer).send(any(javax.jms.Message.class), anyInt(), anyInt(), anyLong());
+        when(handler.getMessageProducer(replyDestination, session)).thenReturn(mockProducer);
 
         handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
 
@@ -184,6 +194,56 @@ public class JmsRequestHandlerImplTest {
         assertEquals("prop1", name);
         assertEquals("val1", value);
         assertFalse(e.hasMoreElements());
+
+        assertEquals(JmsMessageTestUtility.DELIVERYMODE, jmsResponse.getJMSDeliveryMode());
+        assertEquals(JmsMessageTestUtility.PRIORITY, jmsResponse.getJMSPriority());
+        assertEquals(JmsMessageTestUtility.EXPIRATION, jmsResponse.getJMSExpiration());
+        assertEquals(JmsMessageTestUtility.CORRELATIONID, jmsResponse.getJMSCorrelationID());
+    }
+
+    @Test
+    public void onMessageSetsResponseJmsHeadersOnJmsResponse() throws Exception {
+        Destination replyDestination = new DestinationStub("replyDestination");
+        mockJmsEndpoint();
+        when(endpointConfig.getResponseDestination(jmsRequest, jndiContext)).thenReturn(replyDestination);
+
+        when(jmsBag.getSession()).thenReturn(session);
+        when(session.createTextMessage()).thenReturn(jmsResponse);
+        when(jmsBag.getJndiContext()).thenReturn(jndiContext);
+
+        when(messageProcessor.processMessage(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable {
+                final PolicyEnforcementContext policyContext = (PolicyEnforcementContext) invocation.getArguments()[0];
+
+                setContextSoapFaultLevel(policyContext, SoapFaultLevel.GENERIC_FAULT); // no jmsResponse needed
+
+                Message response = policyContext.getOrCreateTargetMessage(new MessageTargetableSupport(TargetMessageType.RESPONSE), false);
+                response.initialize(ContentTypeHeader.XML_DEFAULT, new byte[0]);
+
+                // add JMS Standard Header to Response HeadersKnob
+                HeadersKnob headersKnob = new HeadersKnobSupport();
+                response.attachKnob(HeadersKnob.class, headersKnob);
+                headersKnob.addHeader("JMSCorrelationID", NEW_CORRELATION_ID, HEADER_TYPE_JMS_PROPERTY);
+
+                policyContext.setRoutingStatus(RoutingStatus.ROUTED);
+
+                return AssertionStatus.NONE;
+            }
+        });
+        doNothing().when(mockProducer).send(any(javax.jms.Message.class), anyInt(), anyInt(), anyLong());
+        when(handler.getMessageProducer(replyDestination, session)).thenReturn(mockProducer);
+
+        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
+        //no properties added to the jms response
+        Enumeration e = jmsResponse.getPropertyNames();
+        assertFalse(e.hasMoreElements());
+
+        assertEquals(NEW_CORRELATION_ID, jmsResponse.getJMSCorrelationID());
+
+        assertEquals(JmsMessageTestUtility.DELIVERYMODE, jmsResponse.getJMSDeliveryMode());
+        assertEquals(JmsMessageTestUtility.PRIORITY, jmsResponse.getJMSPriority());
+        assertEquals(JmsMessageTestUtility.EXPIRATION, jmsResponse.getJMSExpiration());
     }
 
     @Test(expected = JmsRuntimeException.class)

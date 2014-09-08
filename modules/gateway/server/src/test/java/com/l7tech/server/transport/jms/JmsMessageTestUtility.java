@@ -1,9 +1,6 @@
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.message.JmsKnob;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import com.l7tech.message.HasHeaders;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -44,9 +41,8 @@ public final class JmsMessageTestUtility {
         message.setJMSRedelivered(redelivered);
     }
 
-    public static void assertDefaultHeadersPresent(final JmsKnob jmsKnob) {
-        final String[] headerNames = jmsKnob.getHeaderNames();
-        assertEquals(10, headerNames.length);
+    public static void assertDefaultHeadersPresent(final HasHeaders hasHeadersKnob) {
+        final String[] headerNames = hasHeadersKnob.getHeaderNames();
         final List<String> headerNamesAsList = Arrays.asList(headerNames);
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_DESTINATION));
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_DELIVERY_MODE));
@@ -58,15 +54,15 @@ public final class JmsMessageTestUtility {
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_REPLY_TO));
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_TYPE));
         assertTrue(headerNamesAsList.contains(JmsUtil.JMS_REDELIVERED));
-        assertEquals(DESTINATION, jmsKnob.getHeaderValues(JmsUtil.JMS_DESTINATION)[0]);
-        assertEquals(JmsUtil.DELIVERY_MODE_NON_PERSISTENT, jmsKnob.getHeaderValues(JmsUtil.JMS_DELIVERY_MODE)[0]);
-        assertEquals(String.valueOf(EXPIRATION), jmsKnob.getHeaderValues(JmsUtil.JMS_EXPIRATION)[0]);
-        assertEquals(String.valueOf(PRIORITY), jmsKnob.getHeaderValues(JmsUtil.JMS_PRIORITY)[0]);
-        assertEquals(MESSAGEID, jmsKnob.getHeaderValues(JmsUtil.JMS_MESSAGE_ID)[0]);
-        assertEquals(String.valueOf(TIMESTAMP), jmsKnob.getHeaderValues(JmsUtil.JMS_TIMESTAMP)[0]);
-        assertEquals(CORRELATIONID, jmsKnob.getHeaderValues(JmsUtil.JMS_CORRELATION_ID)[0]);
-        assertEquals(REPLYTO, jmsKnob.getHeaderValues(JmsUtil.JMS_REPLY_TO)[0]);
-        assertEquals(TYPE, jmsKnob.getHeaderValues(JmsUtil.JMS_TYPE)[0]);
-        assertEquals(String.valueOf(REDELIVERED), jmsKnob.getHeaderValues(JmsUtil.JMS_REDELIVERED)[0]);
+        assertEquals(DESTINATION, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_DESTINATION)[0]);
+        assertEquals(JmsUtil.DELIVERY_MODE_NON_PERSISTENT, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_DELIVERY_MODE)[0]);
+        assertEquals(String.valueOf(EXPIRATION), hasHeadersKnob.getHeaderValues(JmsUtil.JMS_EXPIRATION)[0]);
+        assertEquals(String.valueOf(PRIORITY), hasHeadersKnob.getHeaderValues(JmsUtil.JMS_PRIORITY)[0]);
+        assertEquals(MESSAGEID, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_MESSAGE_ID)[0]);
+        assertEquals(String.valueOf(TIMESTAMP), hasHeadersKnob.getHeaderValues(JmsUtil.JMS_TIMESTAMP)[0]);
+        assertEquals(CORRELATIONID, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_CORRELATION_ID)[0]);
+        assertEquals(REPLYTO, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_REPLY_TO)[0]);
+        assertEquals(TYPE, hasHeadersKnob.getHeaderValues(JmsUtil.JMS_TYPE)[0]);
+        assertEquals(String.valueOf(REDELIVERED), hasHeadersKnob.getHeaderValues(JmsUtil.JMS_REDELIVERED)[0]);
     }
 }

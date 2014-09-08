@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import javax.jms.*;
 import javax.jms.Message;
+import javax.naming.Context;
 import javax.naming.NamingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -330,21 +331,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         // Propagation rules have already been enforced in the knob by the JMS routing assertion.
                         final HeadersKnob responseMessageHeadersKnob = context.getResponse().getKnob(HeadersKnob.class);
 
-                        if (responseMessageHeadersKnob != null) {
-                            Collection<Header> headers = responseMessageHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
-
-                            HashMap<String, Object> propertyMap = new HashMap<>();
-
-                            for (Header header : headers) {
-                                propertyMap.put(header.getKey(), header.getValue());
-                            }
-
-                            for (String key : propertyMap.keySet()) {
-                                jmsResponse.setObjectProperty(key, propertyMap.get(key));
-                            }
-                        }
-
-                        responseSuccess = sendResponse(jmsRequest, jmsResponse, bag, endpointCfg);
+                        responseSuccess = sendResponse(jmsRequest, jmsResponse, bag, endpointCfg, responseMessageHeadersKnob);
                     } else { // is stealth mode
                         responseSuccess = true;
                     }
@@ -456,10 +443,12 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private boolean sendResponse( final Message jmsRequestMsg,
                                   final Message jmsResponseMsg,
                                   final JmsBag bag,
-                                  final JmsEndpointConfig endpointCfg ) {
+                                  final JmsEndpointConfig endpointCfg,
+                                  final HeadersKnob headersKnob) {
         boolean sent = false;
         try {
-            final Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, bag.getJndiContext());
+            final Context jndiContext = bag.getJndiContext();
+            final Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, jndiContext);
             if ( jmsReplyDest == null ) {
                 _logger.fine( "No response will be sent!" );
             } else {
@@ -467,13 +456,38 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 // bug #5415 - we will close the MessageProducer only after a transaction is committed
                 final Session session = bag.getSession();
-                responseProducer = JmsUtil.createMessageProducer( session, jmsReplyDest );
+                responseProducer = getMessageProducer(jmsReplyDest, session);
 
+                jmsResponseMsg.setJMSDeliveryMode(jmsRequestMsg.getJMSDeliveryMode());
+                jmsResponseMsg.setJMSPriority(jmsRequestMsg.getJMSPriority());
+                jmsResponseMsg.setJMSExpiration(jmsRequestMsg.getJMSExpiration());
                 final String newCorrId = endpointCfg.getEndpoint().isUseMessageIdForCorrelation() ?
                         jmsRequestMsg.getJMSMessageID() :
                         jmsRequestMsg.getJMSCorrelationID();
                 jmsResponseMsg.setJMSCorrelationID(newCorrId);
-                responseProducer.send( jmsResponseMsg, jmsRequestMsg.getJMSDeliveryMode(), jmsRequestMsg.getJMSPriority(), jmsRequestMsg.getJMSExpiration() );
+
+                if (headersKnob != null) {
+                    Collection<Header> headers = headersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
+
+                    for (Header header : headers) {
+                        if(JmsUtil.isJmsHeader(header.getKey())) { //JMS headers are set differently
+                            //Set JMS Header defined in the context that might override the default value
+                            Object value = null;
+                            if((header.getKey().equals(JmsUtil.JMS_REPLY_TO) || header.getKey().equals(JmsUtil.JMS_DESTINATION)) && header.getValue() instanceof String) {
+                                value = JmsUtil.cast( jndiContext.lookup((String)header.getValue()), Destination.class);
+                            }
+                            else {
+                                value = header.getValue();
+                            }
+                            JmsUtil.setJmsHeader(jmsResponseMsg, new Pair<>(header.getKey(), value));
+                        }
+                        else {
+                            jmsResponseMsg.setObjectProperty(header.getKey(), header.getValue());
+                        }
+                    }
+                }
+
+                responseProducer.send( jmsResponseMsg, jmsResponseMsg.getJMSDeliveryMode(), jmsResponseMsg.getJMSPriority(), jmsResponseMsg.getJMSExpiration() );
                 _logger.fine( "Sent response to " + jmsReplyDest );
             }
             sent = true;
@@ -485,6 +499,10 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             _logger.log(Level.WARNING, "Error trying to lookup the destination endpoint from preset reply-to queue name: " + JmsUtil.getJNDIErrorMessage( e ), logException );
         }
         return sent;
+    }
+
+    protected MessageProducer getMessageProducer(Destination jmsReplyDest, Session session) throws JMSException {
+        return JmsUtil.createMessageProducer(session, jmsReplyDest);
     }
 
     private boolean sendFailureRequest( final Message message,

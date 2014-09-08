@@ -7,6 +7,8 @@ import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 
 import javax.jms.*;
 import javax.naming.*;
@@ -45,7 +47,7 @@ public class JmsUtil {
     public static final boolean detectTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.detectJmsTypes", true );
     public static final boolean useTopicTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
-    private static enum TYPE {QUEUE, TOPIC, UNKNOWN};
+    private static enum TYPE {QUEUE, TOPIC, UNKNOWN}
 
     private static ClassLoader contextClassLoader;
 
@@ -323,11 +325,11 @@ public class JmsUtil {
         TYPE type = getType(session, destination);
 
         if ( detectTypes && type == TYPE.QUEUE ) {
-            consumer = ((QueueSession)session).createReceiver( (Queue)destination, selector );
+            consumer = ((QueueSession)session).createReceiver((Queue) destination, selector);
         } else if ( detectTypes && useTopicTypes && type == TYPE.TOPIC ) {
-            consumer = ((TopicSession)session).createSubscriber( (Topic)destination, selector, false );
+            consumer = ((TopicSession)session).createSubscriber((Topic) destination, selector, false);
         } else {
-            consumer = session.createConsumer( destination, selector );
+            consumer = session.createConsumer(destination, selector);
         }
 
         return consumer;
@@ -396,7 +398,6 @@ public class JmsUtil {
         return type;
     }
 
-
     /**
      * Cast the given (possibly remote) object to the given class.
      *
@@ -464,7 +465,8 @@ public class JmsUtil {
             if ( isJmsException &&
                  ( cause instanceof UnknownHostException ||
                    cause instanceof SocketException ||
-                   cause instanceof SocketTimeoutException ) )  {
+                   cause instanceof SocketTimeoutException ||
+                   cause instanceof ClassCastException ) )  {
                 expected = true;
             }
         }
@@ -567,7 +569,7 @@ public class JmsUtil {
 
         if ( exception.getResolvedName() != null ) {
             builder.append( ", resolved name: " );
-            builder.append( exception.getResolvedName() );
+            builder.append(exception.getResolvedName());
         }
 
         if ( exception.getRemainingName() != null ) {
@@ -575,7 +577,7 @@ public class JmsUtil {
             builder.append( exception.getRemainingName() );
         }
 
-        appendCauses( exception, builder );
+        appendCauses(exception, builder);
 
         return builder.toString();
     }
@@ -630,6 +632,81 @@ public class JmsUtil {
         return headers;
     }
 
+    public static boolean isJmsHeader(String name) {
+        return name.equals(JMS_CORRELATION_ID) ||
+                name.equals(JMS_DELIVERY_MODE) ||
+                name.equals(JMS_DESTINATION) ||
+                name.equals(JMS_EXPIRATION) ||
+                name.equals(JMS_MESSAGE_ID) ||
+                name.equals(JMS_PRIORITY) ||
+                name.equals(JMS_REDELIVERED) ||
+                name.equals(JMS_REPLY_TO) ||
+                name.equals(JMS_TIMESTAMP) ||
+                name.equals(JMS_TYPE);
+    }
+
+    public static void setJmsHeader(final Message jmsMessage, Pair<String, Object> entry) throws JMSException {
+        if (entry.getValue() == null) throw new JMSException("Value is null");
+
+        try {
+            if (entry.getKey().equals(JMS_DESTINATION)) {
+                jmsMessage.setJMSDestination((Destination) entry.getValue());
+            } else if (entry.getKey().equals(JMS_DELIVERY_MODE)) {
+                jmsMessage.setJMSDeliveryMode(getInt(entry.getValue()));
+            } else if (entry.getKey().equals(JMS_EXPIRATION)) {
+                jmsMessage.setJMSExpiration(getLong(entry.getValue()));
+            } else if (entry.getKey().equals(JMS_PRIORITY)) {
+                jmsMessage.setJMSPriority(getInt(entry.getValue()));
+            } else if (entry.getKey().equals(JMS_MESSAGE_ID)) {
+                jmsMessage.setJMSMessageID((String) entry.getValue());
+            } else if (entry.getKey().equals(JMS_TIMESTAMP)) {
+                jmsMessage.setJMSTimestamp(getLong(entry.getValue()));
+            } else if (entry.getKey().equals(JMS_CORRELATION_ID)) {
+                jmsMessage.setJMSCorrelationID((String)entry.getValue());
+            } else if (entry.getKey().equals(JMS_REPLY_TO)) {
+                jmsMessage.setJMSReplyTo((Destination) entry.getValue());
+            } else if (entry.getKey().equals(JMS_TYPE)) {
+                jmsMessage.setJMSType((String) entry.getValue());
+            } else if (entry.getKey().equals(JMS_REDELIVERED)) {
+                jmsMessage.setJMSRedelivered(entry.getValue() instanceof Boolean ? (Boolean) entry.getValue() : Boolean.valueOf((String) entry.getValue()));
+            }
+        } catch (Exception e) {
+            JMSException je = new JMSException("Error setting JMS Header " + entry.getKey());
+            je.setLinkedException(e);
+            throw je;
+        }
+    }
+
+    private static Long getLong(Object value) throws Exception {
+        return getNumber(value, new Functions.Unary<Long, Object>() {
+                    @Override
+                    public Long call(Object o) {
+                        return o instanceof Number ? (Long) o : null;
+                    }
+                },
+                new Functions.Unary<Long, Object>() {
+                    @Override
+                    public Long call(Object o) {
+                        return Long.parseLong((String) o);
+                    }
+                });
+    }
+
+    private static Integer getInt(Object value) throws Exception {
+        return getNumber(value, new Functions.Unary<Integer, Object>() {
+                    @Override
+                    public Integer call(Object o) {
+                        return o instanceof Number ? (Integer) o : null;
+                    }
+                },
+                new Functions.Unary<Integer, Object>() {
+                    @Override
+                    public Integer call(Object o) {
+                        return Integer.parseInt((String) o);
+                    }
+                });
+    }
+
     private static String expandPassword( final String passwordExpression ) throws JmsConfigException {
         try {
             return passwordExpression == null ?
@@ -648,5 +725,16 @@ public class JmsUtil {
             builder.append( ExceptionUtils.getMessage( cause ) );
             cause = getCause( cause );
         }
+    }
+
+    private static <V extends Number> V getNumber(Object obj, Functions.Unary<V, Object> f1, Functions.Unary<V, Object> f2) throws Exception {
+        V value = f1.call(obj);
+        if(value != null) {
+            value = (V)obj;
+        }
+        else {
+            value = f2.call(obj);
+        }
+        return value;
     }
 }

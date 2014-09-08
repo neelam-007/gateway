@@ -1,11 +1,15 @@
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.jms.JMSException;
+import javax.jms.Message;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.l7tech.server.transport.jms.JmsMessageTestUtility.*;
@@ -138,5 +142,98 @@ public class JmsUtilTest {
         jmsRequest.setThrowExceptionForHeaders(true);
 
         JmsUtil.getJmsHeaders(jmsRequest);
+    }
+
+    @Test
+    public void setJmsHeadersTest() throws Exception {
+        Message jmsMsg = new TextMessageStub();
+        Map<String, Object> jmsHeaderMap = new HashMap<>();
+        jmsHeaderMap.put(JmsUtil.JMS_CORRELATION_ID, CORRELATIONID);
+        jmsHeaderMap.put(JmsUtil.JMS_DELIVERY_MODE, DELIVERYMODE);
+        jmsHeaderMap.put(JmsUtil.JMS_DESTINATION, new DestinationStub(DESTINATION));
+        jmsHeaderMap.put(JmsUtil.JMS_EXPIRATION, EXPIRATION);
+        jmsHeaderMap.put(JmsUtil.JMS_MESSAGE_ID, MESSAGEID);
+        jmsHeaderMap.put(JmsUtil.JMS_PRIORITY, PRIORITY);
+        jmsHeaderMap.put(JmsUtil.JMS_REDELIVERED, REDELIVERED);
+        jmsHeaderMap.put(JmsUtil.JMS_REPLY_TO, new DestinationStub(REPLYTO));
+        jmsHeaderMap.put(JmsUtil.JMS_TIMESTAMP, TIMESTAMP);
+        jmsHeaderMap.put(JmsUtil.JMS_TYPE, TYPE);
+        setJmsHeaders(jmsMsg, jmsHeaderMap);
+        assertEquals(CORRELATIONID,jmsMsg.getJMSCorrelationID());
+        assertEquals(DELIVERYMODE, jmsMsg.getJMSDeliveryMode());
+        assertEquals(DESTINATION, jmsMsg.getJMSDestination().toString());
+        assertEquals(EXPIRATION, jmsMsg.getJMSExpiration());
+        assertEquals(MESSAGEID, jmsMsg.getJMSMessageID());
+        assertEquals(PRIORITY, jmsMsg.getJMSPriority());
+        assertEquals(REDELIVERED, jmsMsg.getJMSRedelivered());
+        assertEquals(REPLYTO, jmsMsg.getJMSReplyTo().toString());
+        assertEquals(TIMESTAMP, jmsMsg.getJMSTimestamp());
+        assertEquals(TYPE, jmsMsg.getJMSType());
+    }
+
+    @Test
+    public void setJmsExpirationHeader_stringValue() throws Exception {
+        Message msg = new TextMessageStub();
+        Map<String, Object> headerMap = new HashMap<>();
+        headerMap.put(JmsUtil.JMS_EXPIRATION, "1234");
+        headerMap.put(JmsUtil.JMS_DELIVERY_MODE, "1");
+        headerMap.put(JmsUtil.JMS_PRIORITY, "0");
+        headerMap.put(JmsUtil.JMS_TIMESTAMP, "12345667790");
+        headerMap.put(JmsUtil.JMS_REDELIVERED, "true");
+        setJmsHeaders(msg, headerMap);
+        assertEquals(1234L, msg.getJMSExpiration());
+        assertEquals(1, msg.getJMSDeliveryMode());
+        assertEquals(0, msg.getJMSPriority());
+        assertEquals(12345667790L, msg.getJMSTimestamp());
+        assertTrue(msg.getJMSRedelivered());
+    }
+
+
+    @Test
+    public void setJmsExpirationHeader_wrongType() throws Exception {
+        Message msg = new TextMessageStub();
+        Map<String, Object> headerMap = new LinkedHashMap<>();
+        headerMap.put(JmsUtil.JMS_EXPIRATION, new Object());
+        try {
+            setJmsHeaders(msg, headerMap);
+            fail("Should throw ClassCastException");
+        } catch (JMSException e) {
+            assertTrue(e.getLinkedException() instanceof ClassCastException);
+        }
+    }
+
+    @Test(expected = JMSException.class)
+    public void setJmsDestination_wrongType() throws Exception {
+        Message msg = new TextMessageStub();
+        Map<String, Object> headerMap = new HashMap<>();
+        headerMap.put(JmsUtil.JMS_DESTINATION, "invalidDestination");
+        setJmsHeaders(msg, headerMap);
+    }
+
+    @Test
+    public void setJmsCorrelationID_wrongType() throws Exception {
+        Message msg = new TextMessageStub();
+        Map<String, Object> headerMap = new HashMap<>();
+        headerMap.put(JmsUtil.JMS_CORRELATION_ID, new Object());
+        try {
+            setJmsHeaders(msg, headerMap);
+        } catch (JMSException e) {
+            assertTrue(e.getLinkedException() instanceof ClassCastException);
+        }
+    }
+
+    @Test (expected = JMSException.class)
+    public void setJmsCorrelationID_nullValue() throws Exception {
+        Message msg = new TextMessageStub();
+        Map<String, Object> headerMap = new HashMap<>();
+        String sNull = null;
+        headerMap.put(JmsUtil.JMS_CORRELATION_ID, sNull);
+        setJmsHeaders(msg, headerMap);
+    }
+
+    private void setJmsHeaders(Message jmsMsg, Map<String, Object> jmsHeaderMap) throws JMSException {
+        for(Map.Entry<String, Object> entry : jmsHeaderMap.entrySet()) {
+            JmsUtil.setJmsHeader(jmsMsg, new Pair<>(entry.getKey(), entry.getValue()));
+        }
     }
 }

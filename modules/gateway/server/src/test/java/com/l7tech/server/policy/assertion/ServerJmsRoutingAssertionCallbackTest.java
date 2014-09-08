@@ -16,6 +16,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsMessageTestUtility;
+import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms.TextMessageStub;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
@@ -139,6 +140,29 @@ public class ServerJmsRoutingAssertionCallbackTest{
     }
 
     @Test
+    public void callbackGetsJmsHeadersFromHeadersKnobOnRequest() throws JMSException {
+        // add test properties to Request message HeadersKnob
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>(JmsUtil.JMS_CORRELATION_ID, "1234"), new Pair<>(JmsUtil.JMS_DELIVERY_MODE, "1"));
+
+        HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
+
+        for (Pair<String, String> property : testProperties) {
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+        }
+
+        request.attachKnob(HeadersKnob.class, requestHeadersKnob);
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+
+        callback.doWork(bag, contextProvider);
+
+        assertEquals("1234", jmsRequest.getJMSCorrelationID());
+        assertEquals(1, jmsRequest.getJMSDeliveryMode());
+        assertFalse(jmsRequest.getPropertyNames().hasMoreElements());
+    }
+
+    @Test
     public void callbackSetsJmsPropertiesInJmsKnobAndHeadersKnobOnResponse() throws JMSException {
         // add test properties to jmsResponse message
         final List<Pair<String, String>> testProperties =
@@ -177,6 +201,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
         callback.doWork(bag, contextProvider);
 
         assertEquals(RoutingStatus.ROUTED, policyContext.getRoutingStatus());
+        assertEquals(10, policyContext.getResponse().getJmsKnob().getHeaderNames().length);
         JmsMessageTestUtility.assertDefaultHeadersPresent(policyContext.getResponse().getJmsKnob());
     }
 
