@@ -328,7 +328,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             }
             methodParams.setParameter(ClientPNames.VIRTUAL_HOST, httpHost);
         }
-
+        methodParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, clientParams.getIntParameter(CoreConnectionPNames.SO_TIMEOUT, timeout));
         final Long contentLen = params.getContentLength();
         if ( ( httpMethod instanceof HttpEntityEnclosingRequestBase ) && contentLen != null ) {
             if (contentLen > (long) Integer.MAX_VALUE )
@@ -493,7 +493,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                 } catch (UnsupportedTlsVersionsException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" +  " from " + httpMethod.getURI() + ": " + ExceptionUtils.getMessage(e), e);
                 } catch ( SocketTimeoutException e){
-                    throw new GenericHttpException("Unable to obtain HTTP response" +" from " + httpMethod.getURI() + ": " + ExceptionUtils.getMessageWithCause(e) + ". Timed out at "+ method.getParams().getLongParameter(CoreConnectionPNames.SO_TIMEOUT, 0L) +"ms", e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" +" from " + httpMethod.getURI() + ": " + ExceptionUtils.getMessageWithCause(e) + ". Timed out at "+ method.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, 0) +"ms", e);
                 } catch (ClientProtocolException e) {
                     String error = ValidationUtils.isValidUriString(targetUrl.getFile());
                     if (error == null) error = "";
