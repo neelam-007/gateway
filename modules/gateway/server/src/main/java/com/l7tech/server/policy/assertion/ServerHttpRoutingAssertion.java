@@ -492,23 +492,21 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         if (assertion.getRequestMsgSrc() != null) {
             logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
-            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
+            return new Pair<>(HttpMethod.POST, null);
         }
 
         if (!context.getRequest().isHttpRequest()) {
             logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_NON_HTTP);
-            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
+            return new Pair<>(HttpMethod.POST, null);
         }
 
         final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
         final HttpMethod requestMethod = httpRequestKnob.getMethod();
         if (requestMethod == null) {
             logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
-            return new Pair<HttpMethod, String>(HttpMethod.POST, null);
+            return new Pair<>(HttpMethod.POST, null);
         }
-        if (requestMethod.isFollowRedirects() && !assertion.isForceIncludeRequestBody())
-            routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-        return new Pair<HttpMethod, String>(requestMethod, httpRequestKnob.getMethodAsString());
+        return new Pair<>(requestMethod, httpRequestKnob.getMethodAsString());
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
@@ -584,6 +582,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final Pair<HttpMethod,String> methodPair = methodFromRequest(context, vars, routedRequestParams);
             final HttpMethod method = methodPair.left;
             routedRequestParams.setMethodAsString(methodPair.right);
+            if (method.isFollowRedirects() && !assertion.isForceIncludeRequestBody()) {
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+            }
 
             // dont add content-type for get and deletes
             if (routedRequestParams.needsRequestBody(method)) {

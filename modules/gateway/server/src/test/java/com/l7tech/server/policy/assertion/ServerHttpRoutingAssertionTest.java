@@ -46,7 +46,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -1274,5 +1276,67 @@ public class ServerHttpRoutingAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, assertionStatus);
         assertTrue(response.isInitialized());
+    }
+
+    @Test
+    public void followRedirectsForGetRequest() throws Exception {
+        final HttpRoutingAssertion route = new HttpRoutingAssertion();
+        route.setProtectedServiceUrl("http://localhost:17380/testurl");
+        // route method is auto-detected
+        route.setHttpMethod(null);
+        route.setFollowRedirects(true);
+
+        final Message getRequest = new Message();
+        final MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.setMethod("GET");
+        getRequest.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        final List<HttpHeader> responseHeaders = new ArrayList<>();
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain"));
+        when(mockHttpResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new HttpHeader[responseHeaders.size()])));
+
+        when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable {
+                final GenericHttpRequestParams params = (GenericHttpRequestParams) invocation.getArguments()[1];
+                // ensure follow redirects is set on params
+                assertTrue(params.isFollowRedirects());
+                return mockHttpRequest;
+            }
+        });
+
+        final ServerHttpRoutingAssertion serverRoute = new ServerHttpRoutingAssertion(route, mockApplicationContext);
+        assertEquals(AssertionStatus.NONE, serverRoute.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(getRequest, new Message())));
+    }
+
+    @BugId("SSG-8905")
+    @Test
+    public void followRedirectsForForcedGetRequest() throws Exception {
+        final HttpRoutingAssertion forcedGetRoute = new HttpRoutingAssertion();
+        forcedGetRoute.setProtectedServiceUrl("http://localhost:17380/testurl");
+        forcedGetRoute.setHttpMethod(HttpMethod.GET);
+        forcedGetRoute.setFollowRedirects(true);
+
+        final Message getRequest = new Message();
+        final MockHttpServletRequest mockRequest = new MockHttpServletRequest();
+        mockRequest.setMethod("GET");
+        getRequest.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        final List<HttpHeader> responseHeaders = new ArrayList<>();
+        responseHeaders.add(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain"));
+        when(mockHttpResponse.getHeaders()).thenReturn(new GenericHttpHeaders(responseHeaders.toArray(new HttpHeader[responseHeaders.size()])));
+
+        when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable {
+                final GenericHttpRequestParams params = (GenericHttpRequestParams) invocation.getArguments()[1];
+                // ensure follow redirects is set on params
+                assertTrue(params.isFollowRedirects());
+                return mockHttpRequest;
+            }
+        });
+
+        final ServerHttpRoutingAssertion serverRoute = new ServerHttpRoutingAssertion(forcedGetRoute, mockApplicationContext);
+        assertEquals(AssertionStatus.NONE, serverRoute.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(getRequest, new Message())));
     }
 }
