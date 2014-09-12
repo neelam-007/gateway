@@ -38,7 +38,7 @@ public class NodeConfigurationManager {
 
     private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
     private static final File nodesDir = new File(gatewayDir, "node");
-    private static final String sqlPath = "../config/etc/sql/ssg.sql";
+    private static final String dbxmlPath = "../config/etc/db/ssg.xml";
     private static final String configPath = "{0}/etc/conf";
     private static final String varPath = "{0}/var";
 
@@ -321,7 +321,7 @@ public class NodeConfigurationManager {
             hosts.add( databaseConfig.some().getHost() );
             if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
 
-            String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
+            String pathToSqlScript = MessageFormat.format(dbxmlPath, nodeName );
 
             DBActions.DBActionsResult res = dbActions.createDb(localConfig.some(), hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
             if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {

@@ -51,6 +51,13 @@
 
     <target name="task-init">
         <!--
+          Adds ivy ant schema
+        -->
+        <taskdef resource="org/apache/ivy/ant/antlib.xml"
+                 uri="antlib:org.apache.ivy.ant" classpath="lib/tools/ivy-2.2.0.jar">
+        </taskdef>
+
+        <!--
           Task definition for Pack 200
         -->
         <taskdef name="pack200"
@@ -1238,7 +1245,7 @@
     <target name="clean" depends="init-core,clean.test,clean-modules" description="Delete all build output.">
         <delete dir="${dist.dir}"/>
         <delete dir="${doc.root}"/>
-        <delete dir="${build.dir}"/>
+        <delete dir="${build.dir}" failonerror="false"/>
         <delete dir="${build.rpm}"/>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
@@ -1430,7 +1437,7 @@
         <fail unless="module">module is a required property (the module to package)</fail>
 
         <!-- Create build list for required 1.5 modules -->
-        <ivy:buildlist leaf="${module}" reference="module-build-path-single" onMissingDescriptor="skip" onlydirectdep="true">
+        <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip" onlydirectdep="true">
             <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
 
@@ -1534,6 +1541,22 @@
         <touch file="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services/wsman"/>
 
         <echo level="info">Finished copying gateway bootstrap files</echo>
+    </target>
+
+    <target name="skunkworks" description="Copies modular assertion files to skunkworks directory" depends="init,init-install-macros">
+
+        <property name="dev.deploy.modules" value="${dev.deploy.dir}/Gateway/runtime/modules/assertions/"/>
+        <property name="dev.skunkworks.modules" value="${src.root}/modules/skunkworks/build/modules"/>
+
+        <echo level="info">Creating skunkworks modules folder</echo>
+        <mkdir dir="${dev.skunkworks.modules}"/>
+
+        <echo level="info">Copying assertions</echo>
+        <copy todir="${dev.skunkworks.modules}">
+            <fileset dir="${dev.deploy.modules}"/>
+        </copy>
+
+        <echo level="info">Finished copying files</echo>
     </target>
 
     <!--
@@ -3166,6 +3189,7 @@
                 <mkdir dir="@{dir}/${install.src.ssg.calibs}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.caconf}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.sql}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.liquibase}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
 
@@ -3233,6 +3257,13 @@
                     </fileset>
                 </copy>
 
+                <copy todir="@{dir}/${install.src.ssg.liquibase}">
+                    <fileset dir="${src.root}/etc/db/liquibase">
+                        <include name="ssg*.xml"/>
+                        <include name="upgrade*.xml"/>
+                    </fileset>
+                </copy>
+
                 <!-- profile files -->
                 <copy todir="@{dir}/${install.src.ssg.profilebase}">
                     <fileset dir="${src.root}/etc">
@@ -3260,6 +3291,7 @@
                         <include name="gateway.sh"/>
                         <include name="setup.sh"/>
                         <include name="upgrade.sh"/>
+                        <include name="dbtool.sh"/>
                     </fileset>
                 </copy>
 

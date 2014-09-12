@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -69,6 +70,7 @@ public class DependencyIdentityTest extends DependencyTestBase {
 
         //create a policy for policyBack id provider.
         policyBackedIdentityProviderPolicy = new Policy(PolicyType.IDENTITY_PROVIDER_POLICY, "PolicyBackedIdProviderPolicy", "", false);
+        policyBackedIdentityProviderPolicy.setGuid(UUID.randomUUID().toString());
         policyManager.save(policyBackedIdentityProviderPolicy);
 
         //create role

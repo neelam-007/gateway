@@ -98,7 +98,7 @@ class DatabaseRestorer {
         try {
             res = dbAction.createDb(dbConfig,
                     null,
-                    new File(ssgHome, ImportExportUtilities.SSG_SQL).getAbsolutePath(),
+                    new File(ssgHome, ImportExportUtilities.SSG_DB_XML).getAbsolutePath(),
                     overwriteDb);
             switch(res.getStatus()){
                 case ALREADY_EXISTS:

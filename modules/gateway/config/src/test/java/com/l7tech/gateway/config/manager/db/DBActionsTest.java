@@ -6,6 +6,7 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.SyspropUtil;
 import org.junit.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,7 +86,7 @@ public class DBActionsTest {
             System.out.println("Upgrading " + dbName + versionName + " from " + dbVersion + " to " + currentVersion);
             DBActions.DBActionsResult upgradeStatus;
             try {
-                upgradeStatus = dbActions.upgradeDbSchema(getDatabaseConfig(dbName + versionName), false, dbVersion, currentVersion, getSchemaPath(), null);
+                upgradeStatus = dbActions.upgradeDbSchema(getDatabaseConfig(dbName + versionName), false, new File(getSchemaPath()).getParentFile().getPath(), "", null);
                 Assert.assertEquals("Failed upgrade procedure. upgradeStatus != success [" + upgradeStatus.getErrorMessage() + "]", 
                                     DBActions.StatusType.SUCCESS, upgradeStatus.getStatus());
                 dbVersion = dbActions.checkDbVersion(getDatabaseConfig(dbName + versionName));

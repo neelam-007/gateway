@@ -106,6 +106,9 @@
         <!-- SSH Dependencies -->
         <dependency org="jsch" name="jsch" rev="0.1.49" force="true" conf="core"/>
 
+        <!-- Liquibase -->
+        <dependency org="liquibase" name="liquibase" rev="3.2.2" force="true" conf="core"/>
+
         <!-- Optional dependencies -->
         <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>

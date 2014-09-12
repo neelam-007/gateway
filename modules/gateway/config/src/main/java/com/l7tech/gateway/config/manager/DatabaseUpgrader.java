@@ -1,30 +1,20 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.config.client.options.OptionType;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.db.DBActionsListener;
-import com.l7tech.config.client.options.OptionType;
-import com.l7tech.util.TextUtils;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.util.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Console;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.PasswordAuthentication;
+import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.PasswordAuthentication;
-import java.net.NetworkInterface;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * Prompts the user to confirm database upgrade.
@@ -192,7 +182,7 @@ public class DatabaseUpgrader {
                 System.out.println();
                 System.out.println("Performing database upgrade:");
                 System.out.println();
-                dba.upgradeDb( localConfig, "etc/sql/ssg.sql", swVersion, consoleLoggingListener );
+                dba.upgradeDb( localConfig, "etc/sql", "etc/db", swVersion, consoleLoggingListener );
             } else {
                 System.out.println("Database upgrade is required, but was declined.");
             }

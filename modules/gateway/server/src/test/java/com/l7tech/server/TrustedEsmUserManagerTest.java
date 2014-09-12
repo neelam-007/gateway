@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -36,6 +37,7 @@ public class TrustedEsmUserManagerTest extends EntityManagerTest {
         TrustedCert trustedCert = new TrustedCert();
         trustedCert.setName("test");
         trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.SPECIFIED);
+        trustedCert.setCertificate(TestDocuments.getWssInteropAliceCert());
         trustedCert.setGoid(trustedCertManager.save(trustedCert));
 
         trustedEsm.setTrustedCert(trustedCert);

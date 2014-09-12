@@ -56,6 +56,7 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
                         "</wsp:Policy>",
                 false
         );
+        policy.setGuid(UUID.randomUUID().toString());
         policyManager.save(policy);
 
         policyVersions.add(policyVersionManager.checkpointPolicy(policy, true, true));
@@ -243,7 +244,7 @@ public class PolicyVersionRestEntityResourceTest extends RestEntityTestBase {
                         "</wsp:Policy>",
                 false
         );
-
+        servicePolicy.setGuid(UUID.randomUUID().toString());
         policyManager.save(servicePolicy);
 
         PolicyVersion servicePolicyVersion = policyVersionManager.checkpointPolicy(servicePolicy, true, true);

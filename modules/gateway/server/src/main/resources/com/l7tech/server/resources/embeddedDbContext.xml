@@ -30,18 +30,9 @@
                 <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
                 <bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
                 <!--
-                  List of SQL script resources to run when database is created.
+                  Liquibase script resource to run when database is created.
                 -->
-                <list>
-                    <value>classpath:/com/l7tech/server/resources/ssg_embedded.sql</value>
-                    <value>file:${com.l7tech.server.varDirectory}/derby.sql</value>
-                </list>
-                <!--
-                  List of SQL script resources to run when database already exists.
-                -->
-                <list>
-                    <value>file:${com.l7tech.server.varDirectory}/db/update.sql</value>
-                </list>
+                <value type="java.lang.String">${com.l7tech.server.home}/../../config/etc/db/ssg.xml</value>
             </list>
         </property>
     </bean>
@@ -79,6 +70,9 @@
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1">
             <value>com/l7tech/server/resources/derby</value>
+        </constructor-arg>
+        <constructor-arg index="2">
+            <value>${com.l7tech.server.varDirectory}/db/ssgdb</value>
         </constructor-arg>
         <property name="dataSource" ref="embeddedDataSource"/>
     </bean>

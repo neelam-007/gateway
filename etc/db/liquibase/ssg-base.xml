@@ -1,0 +1,3142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <!-- The goid type is different in derby and mysql -->
+    <property name="goid.type" value="BINARY(16)" dbms="mysql"/>
+    <property name="goid.type" value="CHAR(16) FOR BIT DATA" dbms="derby"/>
+    <!-- The MEDIUMTEXT text size in mysql is MEDIUMTEXT 16777215 but in derby CLOB(2147483647) is used instead -->
+    <property name="mediumtext.type" value="MEDIUMTEXT" dbms="mysql"/>
+    <property name="mediumtext.type" value="CLOB(2147483647)" dbms="derby"/>
+    <property name="mediumblob.type" value="MEDIUMBLOB" dbms="mysql"/>
+    <property name="mediumblob.type" value="BLOB(2147483647)" dbms="derby"/>
+    <property name="tinyint.type" value="TINYINT(1)" dbms="mysql"/>
+    <property name="tinyint.type" value="SMALLINT" dbms="derby"/>
+    <property name="xml.column.name" value="xml" dbms="mysql"/>
+    <property name="xml.column.name" value='"xml"' dbms="derby"/>
+    <property name="index.varchar.column.size.limit" value="(250)" dbms="mysql"/>
+    <property name="index.varchar.column.size.limit" value="" dbms="derby"/>
+    <property name="properties.column.name" value="properties" dbms="mysql"/>
+    <property name="properties.column.name" value="PROPERTIES" dbms="derby"/>
+    <property name="alias.column.name" value="alias" dbms="mysql"/>
+    <property name="alias.column.name" value="ALIAS" dbms="derby"/>
+    <changeSet author="liquibase-docs" id="createProcedure-toGoid">
+        <comment>Create the toGoid function. This makes it easier to create goid's from a high and low number. This returns the goid as a binary(16)</comment>
+        <createProcedure dbms="mysql"
+                         procedureName="toGoid">
+            CREATE FUNCTION toGoid (prefix bigint, suffix bigint)
+            RETURNS binary(16) DETERMINISTIC
+            begin
+            if suffix is null then RETURN null;
+            else RETURN concat(lpad(char(prefix >> 32, prefix),8,'\0'),lpad(char(suffix >> 32, suffix),8,'\0'));
+            end if;
+            end;
+        </createProcedure>
+        <createProcedure dbms="derby"
+                         procedureName="toGoid" >
+            CREATE FUNCTION toGoid(high bigint, low bigint) RETURNS char(16) for bit data
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.toGoid'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-goidToString">
+        <comment>Create the toGoid function. This makes it easier to create goid's from a high and low number. This returns the goid as a binary(16)</comment>
+        <createProcedure dbms="mysql"
+                         procedureName="goidToString">
+            CREATE FUNCTION goidToString(goid binary(16)) RETURNS CHAR(32) DETERMINISTIC
+            RETURN lower(hex(goid));
+        </createProcedure>
+        <createProcedure dbms="derby"
+                         procedureName="goidToString">
+            CREATE FUNCTION goidToString(bytes char(16) for bit data) RETURNS CHAR(32)
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.goidToString'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-nexthi">
+        <comment>Create "sequence" function for next_hi value. NOTE that the function is safe when either row based or statement based replication is in use.</comment>
+        <createProcedure dbms="mysql"
+                         procedureName="next_hi">
+            CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
+            BEGIN
+            UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);
+            RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
+            END
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-randomLong">
+        <comment>returns a random long using our random long utils</comment>
+        <createProcedure dbms="derby"
+                         procedureName="randomLong">
+            CREATE FUNCTION randomLong() RETURNS bigint
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLong'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-ifNull">
+        <comment>returns the first parameter if it is not null otherwise returns the second parameter.</comment>
+        <createProcedure dbms="derby"
+                         procedureName="ifNull">
+            CREATE FUNCTION ifNull(v1 VARCHAR(128), v2 VARCHAR(128)) RETURNS VARCHAR(128)
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.ifNull'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-getVariable">
+        <comment>returns a variable set using the set variable procedure</comment>
+        <createProcedure dbms="derby"
+                         procedureName="getVariable">
+            CREATE FUNCTION getVariable(keyParam CHAR(128)) RETURNS CHAR(128)
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.getVariable'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-setVariable">
+        <comment>sets a variable that can be retrieved using the get variable procedure</comment>
+        <createProcedure dbms="derby"
+                         procedureName="setVariable">
+            CREATE procedure setVariable(keyParam CHAR(128), valueParam CHAR(128))
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.setVariable'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="liquibase-docs" id="createProcedure-randomLongNotReserved">
+        <comment>returns a random long using our random long utils. This long is guaranteed to not be 0</comment>
+        <createProcedure dbms="derby"
+                         procedureName="randomLongNotReserved">
+            CREATE FUNCTION randomLongNotReserved() RETURNS bigint
+            PARAMETER STYLE JAVA NO SQL LANGUAGE JAVA
+            EXTERNAL NAME 'com.l7tech.server.upgrade.DerbyFunctions.randomLongNotReserved'
+        </createProcedure>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-1">
+        <createTable tableName="active_connector">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hardwired_service_goid" type="${goid.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-2">
+        <createTable tableName="active_connector_property">
+            <column name="connector_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-3">
+        <createTable tableName="assertion_access">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-4">
+        <createTable tableName="audit_admin">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_class" type="VARCHAR(1024)"/>
+            <column name="entity_id" type="${goid.type}"/>
+            <column name="action" type="CHAR(1)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-5">
+        <createTable tableName="audit_detail">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="audit_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="component_id" type="INT(10)"/>
+            <column name="ordinal" type="INT(10)"/>
+            <column name="message_id" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="exception_message" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-6">
+        <createTable tableName="audit_detail_params">
+            <column name="audit_detail_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="position" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-7">
+        <createTable tableName="audit_main">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nodeid" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="audit_level" type="VARCHAR(12)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="message" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(39)"/>
+            <column name="user_name" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(255)"/>
+            <column name="provider_goid" type="${goid.type}"/>
+            <column name="signature" type="VARCHAR(1024)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-8">
+        <createTable tableName="audit_message">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="request_id" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_goid" type="${goid.type}"/>
+            <column name="operation_name" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="authenticated" type="${tinyint.type}"/>
+            <column name="authenticationType" type="INT(10)"/>
+            <column name="request_length" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="response_length" type="INT(10)"/>
+            <column name="request_zipxml" type="${mediumblob.type}"/>
+            <column name="response_zipxml" type="${mediumblob.type}"/>
+            <column name="response_status" type="INT(10)"/>
+            <column name="routing_latency" type="INT(10)"/>
+            <column name="mapping_values_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-9">
+        <createTable tableName="audit_system">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="component_id" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-10">
+        <createTable tableName="client_cert">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)"/>
+            <column name="login" type="VARCHAR(255)"/>
+            <column name="cert" type="${mediumtext.type}"/>
+            <column name="reset_counter" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="thumbprint_sha1" type="VARCHAR(64)"/>
+            <column name="ski" type="VARCHAR(64)"/>
+            <column name="subject_dn" type="VARCHAR(2048)"/>
+            <column name="issuer_dn" type="VARCHAR(2048)"/>
+            <column name="serial" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-11">
+        <createTable tableName="cluster_info">
+            <column name="nodeid" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mac" type="VARCHAR(18)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="VARCHAR(39)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="esm_address" type="VARCHAR(39)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="multicast_address" type="VARCHAR(39)"/>
+            <column name="uptime" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="avgload" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statustimestamp" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-12">
+        <createTable tableName="cluster_master">
+            <column name="nodeid" type="VARCHAR(32)"/>
+            <column name="touched_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-13">
+        <createTable tableName="cluster_properties">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="propkey" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="propvalue" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-14">
+        <createTable tableName="connector">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="port" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="http" name="scheme" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="endpoints" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="secure" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="client_auth" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="keystore_goid" type="${goid.type}"/>
+            <column name="key_alias" type="VARCHAR(255)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-15">
+        <createTable tableName="connector_property">
+            <column name="connector_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-16">
+        <createTable tableName="counters">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="countername" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="cnt_sec" type="BIGINT(19)"/>
+            <column defaultValueNumeric="0" name="cnt_min" type="BIGINT(19)"/>
+            <column defaultValueNumeric="0" name="cnt_hr" type="BIGINT(19)"/>
+            <column defaultValueNumeric="0" name="cnt_day" type="BIGINT(19)"/>
+            <column defaultValueNumeric="0" name="cnt_mnt" type="BIGINT(19)"/>
+            <column defaultValueNumeric="0" name="last_update" type="BIGINT(19)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-17">
+        <createTable tableName="custom_key_value_store">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumblob.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-18">
+        <createTable tableName="email_listener">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="host" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="port" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="server_type" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="use_ssl" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="delete_on_receive" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="folder" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="poll_interval" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="active" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-19">
+        <createTable tableName="email_listener_state">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="owner_node_id" type="VARCHAR(36)"/>
+            <column name="last_poll_time" type="BIGINT(19)"/>
+            <column name="last_message_id" type="BIGINT(19)"/>
+            <column name="email_listener_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-20">
+        <createTable tableName="encapsulated_assertion">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="guid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-21">
+        <createTable tableName="encapsulated_assertion_argument">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="encapsulated_assertion_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="argument_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="argument_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gui_prompt" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gui_label" type="VARCHAR(255)"/>
+            <column name="ordinal" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-22">
+        <createTable tableName="encapsulated_assertion_property">
+            <column name="encapsulated_assertion_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-23">
+        <createTable tableName="encapsulated_assertion_result">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="encapsulated_assertion_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="result_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="result_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-24">
+        <createTable tableName="fed_group">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-25">
+        <createTable tableName="fed_group_virtual">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${mediumtext.type}"/>
+            <column name="x509_subject_dn_pattern" type="VARCHAR(1024)"/>
+            <column name="saml_email_pattern" type="VARCHAR(128)"/>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-26">
+        <createTable tableName="fed_user">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subject_dn" type="VARCHAR(1024)"/>
+            <column name="email" type="VARCHAR(128)"/>
+            <column name="login" type="VARCHAR(255)"/>
+            <column name="first_name" type="VARCHAR(32)"/>
+            <column name="last_name" type="VARCHAR(32)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-27">
+        <createTable tableName="fed_user_group">
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fed_user_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fed_group_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-28">
+        <createTable tableName="firewall_rule">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ordinal" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-29">
+        <createTable tableName="firewall_rule_property">
+            <column name="firewall_rule_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-30">
+        <createTable tableName="folder">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_folder_goid" type="${goid.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-31">
+        <createTable tableName="generic_entity">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="description" type="${mediumtext.type}"/>
+            <column name="classname" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="enabled" type="${tinyint.type}"/>
+            <column name="value_xml" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-32">
+        <createTable tableName="goid_upgrade_map">
+            <column name="prefix" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="table_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-34">
+        <createTable tableName="http_configuration">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="host" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="port" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protocol" type="VARCHAR(255)"/>
+            <column name="path" type="VARCHAR(4096)"/>
+            <column name="username" type="VARCHAR(255)"/>
+            <column name="password_goid" type="${goid.type}"/>
+            <column name="ntlm_host" type="VARCHAR(128)"/>
+            <column name="ntlm_domain" type="VARCHAR(255)"/>
+            <column name="tls_version" type="VARCHAR(8)"/>
+            <column defaultValue="DEFAULT" name="tls_key_use" type="VARCHAR(255)"/>
+            <column defaultValueComputed="X'0000000000000000FFFFFFFFFFFFFFFF'" name="tls_keystore_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tls_key_alias" type="VARCHAR(255)"/>
+            <column name="tls_cipher_suites" type="VARCHAR(4096)"/>
+            <column defaultValueNumeric="-1" name="timeout_connect" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="-1" name="timeout_read" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="follow_redirects" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="DEFAULT" name="proxy_use" type="VARCHAR(255)"/>
+            <column name="proxy_host" type="VARCHAR(128)"/>
+            <column defaultValueNumeric="0" name="proxy_port" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="proxy_username" type="VARCHAR(255)"/>
+            <column name="proxy_password_goid" type="${goid.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-35">
+        <createTable tableName="identity_provider">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)"/>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${mediumtext.type}"/>
+            <column name="type" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-36">
+        <createTable tableName="internal_group">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${mediumtext.type}"/>
+            <column defaultValueNumeric="1" name="enabled" type="${tinyint.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-37">
+        <createTable tableName="internal_user">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)"/>
+            <column name="login" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="digest" type="VARCHAR(32)"/>
+            <column name="first_name" type="VARCHAR(32)"/>
+            <column name="last_name" type="VARCHAR(32)"/>
+            <column name="email" type="VARCHAR(128)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="expiration" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="password_expiry" type="BIGINT(19)"/>
+            <column defaultValueNumeric="1" name="change_password" type="${tinyint.type}"/>
+            <column defaultValueNumeric="1" name="enabled" type="${tinyint.type}"/>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-38">
+        <createTable tableName="internal_user_group">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="internal_group" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subgroup_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-39">
+        <createTable tableName="jdbc_connection">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="driver_class" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="jdbc_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="3" name="min_pool_size" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="15" name="max_pool_size" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="additional_properties" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-40">
+        <createTable tableName="jms_connection">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="jndi_url" type="VARCHAR(255)"/>
+            <column name="factory_classname" type="VARCHAR(1024)"/>
+            <column defaultValue="" name="destination_factory_url" type="VARCHAR(4096)"/>
+            <column defaultValue="" name="queue_factory_url" type="VARCHAR(255)"/>
+            <column defaultValue="" name="topic_factory_url" type="VARCHAR(255)"/>
+            <column defaultValue="" name="username" type="VARCHAR(255)"/>
+            <column defaultValue="" name="password" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="is_template" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="provider_type" type="VARCHAR(255)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-41">
+        <createTable tableName="jms_endpoint">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="connection_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="destination_type" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="destination_name" type="VARCHAR(128)"/>
+            <column name="failure_destination_name" type="VARCHAR(128)"/>
+            <column name="acknowledgement_type" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="reply_type" type="INT(10)"/>
+            <column name="reply_to_queue_name" type="VARCHAR(128)"/>
+            <column defaultValueNumeric="0" name="disabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="" name="username" type="VARCHAR(255)"/>
+            <column defaultValue="" name="password" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="1" name="max_concurrent_requests" type="INT(10)"/>
+            <column defaultValueNumeric="0" name="is_message_source" type="TINYINT(3)"/>
+            <column defaultValueNumeric="0" name="is_template" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="outbound_message_type" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="use_message_id_for_correlation" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="-1" name="request_max_size" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-42">
+        <createTable tableName="keystore_file">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="format" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="databytes" type="${mediumblob.type}"/>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-43">
+        <createTable tableName="keystore_key_metadata">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="keystore_file_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${alias.column.name}" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-44">
+        <createTable tableName="license_document">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contents" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-45">
+        <createTable tableName="logon_info">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="login" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="fail_count" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_attempted" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_activity" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="ACTIVE" name="state" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-46">
+        <createTable tableName="message_context_mapping_keys">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="digested" type="CHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mapping1_type" type="VARCHAR(36)"/>
+            <column name="mapping1_key" type="VARCHAR(128)"/>
+            <column name="mapping2_type" type="VARCHAR(36)"/>
+            <column name="mapping2_key" type="VARCHAR(128)"/>
+            <column name="mapping3_type" type="VARCHAR(36)"/>
+            <column name="mapping3_key" type="VARCHAR(128)"/>
+            <column name="mapping4_type" type="VARCHAR(36)"/>
+            <column name="mapping4_key" type="VARCHAR(128)"/>
+            <column name="mapping5_type" type="VARCHAR(36)"/>
+            <column name="mapping5_key" type="VARCHAR(128)"/>
+            <column name="create_time" type="BIGINT(19)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-47">
+        <createTable tableName="message_context_mapping_values">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="digested" type="CHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mapping_keys_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="auth_user_provider_id" type="${goid.type}"/>
+            <column name="auth_user_id" type="VARCHAR(255)"/>
+            <column name="auth_user_unique_id" type="VARCHAR(255)"/>
+            <column name="service_operation" type="VARCHAR(255)"/>
+            <column name="mapping1_value" type="VARCHAR(255)"/>
+            <column name="mapping2_value" type="VARCHAR(255)"/>
+            <column name="mapping3_value" type="VARCHAR(255)"/>
+            <column name="mapping4_value" type="VARCHAR(255)"/>
+            <column name="mapping5_value" type="VARCHAR(255)"/>
+            <column name="create_time" type="BIGINT(19)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-48">
+        <createTable tableName="message_id">
+            <column name="messageid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-49">
+        <createTable tableName="password_history">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="internal_user_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_changed" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prev_password" type="VARCHAR(256)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-50">
+        <createTable tableName="password_policy">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="internal_identity_provider_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-51">
+        <createTable tableName="policy">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name='${xml.column.name}' type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="soap" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="guid" type="CHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="internal_tag" type="VARCHAR(64)"/>
+            <column name="folder_goid" type="${goid.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-52">
+        <createTable tableName="policy_alias">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="folder_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-53">
+        <createTable tableName="policy_version">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="policy_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ordinal" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_provider_goid" type="${goid.type}"/>
+            <column name="user_login" type="VARCHAR(255)"/>
+            <column name="active" type="${tinyint.type}"/>
+            <column name='${xml.column.name}' type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-54">
+        <createTable tableName="published_service">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_xml" type="${mediumtext.type}"/>
+            <column name="policy_goid" type="${goid.type}"/>
+            <column name="wsdl_url" type="VARCHAR(4096)"/>
+            <column name="wsdl_xml" type="${mediumtext.type}"/>
+            <column defaultValueNumeric="0" name="disabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="soap" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="internal" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="routing_uri" type="VARCHAR(255)"/>
+            <column name="default_routing_url" type="VARCHAR(4096)"/>
+            <column name="http_methods" type="${mediumtext.type}"/>
+            <column defaultValueNumeric="0" name="lax_resolution" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="wss_processing" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="tracing" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="folder_goid" type="${goid.type}"/>
+            <column defaultValue="UNKNOWN" name="soap_version" type="VARCHAR(255)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-55">
+        <createTable tableName="published_service_alias">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="folder_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-56">
+        <createTable tableName="rbac_assignment">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identity_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-57">
+        <createTable tableName="rbac_permission">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_goid" type="${goid.type}"/>
+            <column name="operation_type" type="VARCHAR(16)"/>
+            <column name="other_operation" type="VARCHAR(255)"/>
+            <column name="entity_type" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-58">
+        <createTable tableName="rbac_predicate">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="permission_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-59">
+        <createTable tableName="rbac_predicate_attribute">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attribute" type="VARCHAR(255)"/>
+            <column name="value" type="VARCHAR(4096)"/>
+            <column name="mode" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-60">
+        <createTable tableName="rbac_predicate_entityfolder">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-61">
+        <createTable tableName="rbac_predicate_folder">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="folder_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transitive" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-62">
+        <createTable tableName="rbac_predicate_oid">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-63">
+        <createTable tableName="rbac_predicate_security_zone">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-64">
+        <createTable tableName="rbac_role">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)"/>
+            <column name="tag" type="VARCHAR(36)"/>
+            <column name="entity_type" type="VARCHAR(255)"/>
+            <column name="entity_goid" type="${goid.type}"/>
+            <column name="description" type="${mediumtext.type}"/>
+            <column defaultValueNumeric="0" name="user_created" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-65">
+        <createTable tableName="replication_status">
+            <column name="objectid" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="sequence" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="updated" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nodeid" type="VARCHAR(32)"/>
+            <column defaultValueNumeric="0" name="delay" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-66">
+        <createTable tableName="resolution_configuration">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="path_required" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="path_case_sensitive" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="use_url_header" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="use_service_oid" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="use_soap_action" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="use_soap_namespace" type="TINYINT(3)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-67">
+        <createTable tableName="resource_entry">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(2048)"/>
+            <column name="uri" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uri_hash" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_type" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resource_key1" type="VARCHAR(4096)"/>
+            <column name="resource_key2" type="VARCHAR(4096)"/>
+            <column name="resource_key3" type="VARCHAR(4096)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-68">
+        <createTable tableName="revocation_check_policy">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)"/>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revocation_policy_xml" type="${mediumtext.type}"/>
+            <column defaultValueNumeric="0" name="default_policy" type="TINYINT(3)"/>
+            <column defaultValueNumeric="0" name="default_success" type="TINYINT(3)"/>
+            <column defaultValueNumeric="0" name="continue_server_unavailable" type="TINYINT(3)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-69">
+        <createTable tableName="sample_messages">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name='${xml.column.name}' type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="operation_name" type="VARCHAR(255)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-70">
+        <createTable tableName="secure_password">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(256)"/>
+            <column defaultValueNumeric="0" name="usage_from_variable" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="encoded_password" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="last_update" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="PASSWORD" name="type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-71">
+        <createTable tableName="security_zone">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_types" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-72">
+        <createTable tableName="service_documents">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uri" type="${mediumtext.type}"/>
+            <column name="type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_type" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-73">
+        <createTable tableName="service_metrics">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nodeid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resolution" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="period_start" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="interval_size" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attempted" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="authorized" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="back_min" type="INT(10)"/>
+            <column name="back_max" type="INT(10)"/>
+            <column name="back_sum" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="front_min" type="INT(10)"/>
+            <column name="front_max" type="INT(10)"/>
+            <column name="front_sum" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_state" type="VARCHAR(16)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-74">
+        <createTable tableName="service_metrics_details">
+            <column name="service_metrics_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="mapping_values_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attempted" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="authorized" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="back_min" type="INT(10)"/>
+            <column name="back_max" type="INT(10)"/>
+            <column name="back_sum" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="front_min" type="INT(10)"/>
+            <column name="front_max" type="INT(10)"/>
+            <column name="front_sum" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-75">
+        <createTable tableName="service_usage">
+            <column name="serviceid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nodeid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requestnr" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="authorizedreqnr" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completedreqnr" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-76">
+        <createTable tableName="shared_keys">
+            <column name="encodingid" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="b64edval" type="VARCHAR(2048)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-77">
+        <createTable tableName="sink_config">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${mediumtext.type}"/>
+            <column defaultValue="FILE" name="type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="INFO" name="severity" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="categories" type="${mediumtext.type}"/>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-78">
+        <createTable tableName="siteminder_configuration">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="secret" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="ipcheck" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="update_sso_token" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hostname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="fipsmode" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="host_configuration" type="VARCHAR(256)"/>
+            <column name="user_name" type="VARCHAR(256)"/>
+            <column name="password_goid" type="${goid.type}"/>
+            <column defaultValueNumeric="0" name="noncluster_failover" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="50" name="cluster_threshold" type="INT(10)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-79">
+        <createTable tableName="siteminder_configuration_property">
+            <column name="siteminder_configuration_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-80">
+        <createTable tableName="ssg_version">
+            <column name="current_version" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-81">
+        <createTable tableName="trusted_cert">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subject_dn" type="VARCHAR(2048)"/>
+            <column name="cert_base64" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="trusted_for_ssl" type="${tinyint.type}"/>
+            <column defaultValueNumeric="0" name="trusted_for_client" type="${tinyint.type}"/>
+            <column defaultValueNumeric="0" name="trusted_for_server" type="${tinyint.type}"/>
+            <column defaultValueNumeric="0" name="trusted_for_saml" type="${tinyint.type}"/>
+            <column defaultValueNumeric="0" name="trusted_as_saml_attesting_entity" type="${tinyint.type}"/>
+            <column defaultValueNumeric="0" name="verify_hostname" type="${tinyint.type}"/>
+            <column name="thumbprint_sha1" type="VARCHAR(64)"/>
+            <column name="ski" type="VARCHAR(64)"/>
+            <column defaultValueNumeric="1" name="trust_anchor" type="TINYINT(3)"/>
+            <column defaultValue="USE_DEFAULT" name="revocation_type" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revocation_check_policy_goid" type="${goid.type}"/>
+            <column name="issuer_dn" type="VARCHAR(2048)"/>
+            <column name="serial" type="VARCHAR(1024)"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-82">
+        <createTable tableName="trusted_esm">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="trusted_cert_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-83">
+        <createTable tableName="trusted_esm_user">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="trusted_esm_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="esm_user_id" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="esm_user_display_name" type="VARCHAR(128)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-84">
+        <createTable tableName="uddi_business_service_status">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_registry_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_policy_publish_url" type="VARCHAR(4096)"/>
+            <column name="uddi_policy_url" type="VARCHAR(4096)"/>
+            <column name="uddi_policy_tmodel_key" type="VARCHAR(255)"/>
+            <column name="policy_status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_metrics_tmodel_key" type="VARCHAR(255)"/>
+            <column name="metrics_reference_status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-85">
+        <createTable tableName="uddi_proxied_service">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_proxied_service_info_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_service_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_service_namespace" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-86">
+        <createTable tableName="uddi_proxied_service_info">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_registry_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_business_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_business_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="update_proxy_on_local_change" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="remove_other_bindings" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="created_from_existing" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="metrics_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_full" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_inlined" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="publish_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_hash" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-87">
+        <createTable tableName="uddi_publish_status">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_proxied_service_info_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="publish_status" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="fail_count" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-88">
+        <createTable tableName="uddi_registries">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="registry_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="base_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inquiry_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="publish_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subscription_url" type="VARCHAR(4096)"/>
+            <column defaultValueNumeric="0" name="client_auth" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="keystore_goid" type="${goid.type}"/>
+            <column name="key_alias" type="VARCHAR(255)"/>
+            <column name="user_name" type="VARCHAR(255)"/>
+            <column name="password" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="metrics_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="metrics_publish_frequency" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="monitoring_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="subscribe_for_notifications" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="monitor_frequency" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-89">
+        <createTable tableName="uddi_registry_subscription">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_registry_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_subscription_key" type="VARCHAR(255)"/>
+            <column name="uddi_subscription_expiry_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_subscription_notified_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_subscription_check_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-90">
+        <createTable tableName="uddi_service_control">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="uddi_registry_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_business_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_business_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_service_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_port_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_port_binding" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wsdl_port_binding_namespace" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="under_uddi_control" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="monitoring_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="update_wsdl_on_change" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="disable_service_on_change" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="metrics_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_enabled" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_full" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="publish_wspolicy_inlined" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="has_had_endpoints_removed" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="has_been_overwritten" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-91">
+        <createTable tableName="uddi_service_control_monitor_runtime">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uddi_service_control_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_uddi_modified_timestamp" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="access_point_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-92">
+        <createTable tableName="wsdm_subscription">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uuid" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="callback_url" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reference_parameters" type="${mediumtext.type}"/>
+            <column name="published_service_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="esm_service_goid" type="${goid.type}" defaultValueComputed="X'0000000000000000FFFFFFFFFFFFFFFF'">
+                <constraints nullable="false"/>
+            </column>
+            <column name="termination_time" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="topic" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notification_policy_guid" type="CHAR(36)"/>
+            <column name="last_notification" type="BIGINT(19)"/>
+            <column name="owner_node_id" type="VARCHAR(64)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-93">
+        <createTable tableName="wssc_session">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="session_key_hash" type="VARCHAR(128)"/>
+            <column defaultValueNumeric="0" name="inbound" type="${tinyint.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="identifier" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_url" type="VARCHAR(4096)"/>
+            <column name="encrypted_key" type="VARCHAR(4096)"/>
+            <column name="created" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires" type="BIGINT(19)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_login" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="namespace" type="VARCHAR(4096)"/>
+            <column name="token" type="${mediumtext.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-348"  dbms="mysql">
+        <createTable tableName="hibernate_unique_key">
+            <column name="next_hi" type="INT(11)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-94">
+        <addPrimaryKey columnNames="goid" tableName="active_connector"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-95">
+        <addPrimaryKey columnNames="goid" tableName="assertion_access"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-96">
+        <addPrimaryKey columnNames="goid" tableName="audit_admin"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-97">
+        <addPrimaryKey columnNames="goid" tableName="audit_detail"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-98">
+        <addPrimaryKey columnNames="audit_detail_goid, position" tableName="audit_detail_params"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-99">
+        <addPrimaryKey columnNames="goid" tableName="audit_main"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-100">
+        <addPrimaryKey columnNames="goid" tableName="audit_message"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-101">
+        <addPrimaryKey columnNames="goid" tableName="audit_system"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-102">
+        <addPrimaryKey columnNames="goid" tableName="client_cert"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-103">
+        <addPrimaryKey columnNames="nodeid" tableName="cluster_info"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-104">
+        <addPrimaryKey columnNames="goid" tableName="cluster_properties"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-105">
+        <addPrimaryKey columnNames="goid" tableName="connector"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-106">
+        <addPrimaryKey columnNames="goid" tableName="counters"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-107">
+        <addPrimaryKey columnNames="goid" tableName="custom_key_value_store"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-108">
+        <addPrimaryKey columnNames="goid" tableName="email_listener"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-109">
+        <addPrimaryKey columnNames="goid" tableName="email_listener_state"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-110">
+        <addPrimaryKey columnNames="goid" tableName="encapsulated_assertion"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-111">
+        <addPrimaryKey columnNames="goid" tableName="encapsulated_assertion_argument"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-112">
+        <addPrimaryKey columnNames="goid" tableName="encapsulated_assertion_result"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-113">
+        <addPrimaryKey columnNames="goid" tableName="fed_group"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-114">
+        <addPrimaryKey columnNames="goid" tableName="fed_group_virtual"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-115">
+        <addPrimaryKey columnNames="goid" tableName="fed_user"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-116">
+        <addPrimaryKey columnNames="provider_goid, fed_user_goid, fed_group_goid" tableName="fed_user_group"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-117">
+        <addPrimaryKey columnNames="goid" tableName="firewall_rule"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-118">
+        <addPrimaryKey columnNames="goid" tableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-119">
+        <addPrimaryKey columnNames="goid" tableName="generic_entity"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-120">
+        <addPrimaryKey columnNames="prefix, table_name" tableName="goid_upgrade_map"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-121">
+        <addPrimaryKey columnNames="goid" tableName="http_configuration"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-122">
+        <addPrimaryKey columnNames="goid" tableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-123">
+        <addPrimaryKey columnNames="goid" tableName="internal_group"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-124">
+        <addPrimaryKey columnNames="goid" tableName="internal_user"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-125">
+        <addPrimaryKey columnNames="goid" tableName="internal_user_group"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-126">
+        <addPrimaryKey columnNames="goid" tableName="jdbc_connection"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-127">
+        <addPrimaryKey columnNames="goid" tableName="jms_connection"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-128">
+        <addPrimaryKey columnNames="goid" tableName="jms_endpoint"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-129">
+        <addPrimaryKey columnNames="goid" tableName="keystore_file"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-130">
+        <addPrimaryKey columnNames="goid" tableName="keystore_key_metadata"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-131">
+        <addPrimaryKey columnNames="goid" tableName="license_document"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-132">
+        <addPrimaryKey columnNames="goid" tableName="logon_info"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-133">
+        <addPrimaryKey columnNames="goid" tableName="message_context_mapping_keys"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-134">
+        <addPrimaryKey columnNames="goid" tableName="message_context_mapping_values"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-135">
+        <addPrimaryKey columnNames="messageid" tableName="message_id"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-136">
+        <addPrimaryKey columnNames="goid" tableName="password_history"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-137">
+        <addPrimaryKey columnNames="goid" tableName="password_policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-138">
+        <addPrimaryKey columnNames="goid" tableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-139">
+        <addPrimaryKey columnNames="goid" tableName="policy_version"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-140">
+        <addPrimaryKey columnNames="goid" tableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-140-1">
+        <addPrimaryKey columnNames="goid" tableName="published_service_alias"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-141">
+        <addPrimaryKey columnNames="goid" tableName="rbac_assignment"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-142">
+        <addPrimaryKey columnNames="goid" tableName="rbac_permission"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-143">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-144">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate_attribute"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-145">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate_entityfolder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-146">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate_folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-147">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate_oid"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-148">
+        <addPrimaryKey columnNames="goid" tableName="rbac_predicate_security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-149">
+        <addPrimaryKey columnNames="goid" tableName="rbac_role"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-150">
+        <addPrimaryKey columnNames="objectid" tableName="replication_status"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-151">
+        <addPrimaryKey columnNames="goid" tableName="resolution_configuration"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-152">
+        <addPrimaryKey columnNames="goid" tableName="resource_entry"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-153">
+        <addPrimaryKey columnNames="goid" tableName="revocation_check_policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-154">
+        <addPrimaryKey columnNames="goid" tableName="sample_messages"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-155">
+        <addPrimaryKey columnNames="goid" tableName="secure_password"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-156">
+        <addPrimaryKey columnNames="goid" tableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-157">
+        <addPrimaryKey columnNames="goid" tableName="service_documents"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-158">
+        <addPrimaryKey columnNames="goid" tableName="service_metrics"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-159">
+        <addPrimaryKey columnNames="service_metrics_goid, mapping_values_goid" tableName="service_metrics_details"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-160">
+        <addPrimaryKey columnNames="serviceid, nodeid" tableName="service_usage"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-161">
+        <addPrimaryKey columnNames="encodingid" tableName="shared_keys"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-162">
+        <addPrimaryKey columnNames="goid" tableName="sink_config"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-163">
+        <addPrimaryKey columnNames="goid" tableName="siteminder_configuration"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-164">
+        <addPrimaryKey columnNames="goid" tableName="trusted_cert"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-165">
+        <addPrimaryKey columnNames="goid" tableName="trusted_esm"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-166">
+        <addPrimaryKey columnNames="goid" tableName="trusted_esm_user"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-167">
+        <addPrimaryKey columnNames="goid" tableName="uddi_business_service_status"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-168">
+        <addPrimaryKey columnNames="goid" tableName="uddi_proxied_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-169">
+        <addPrimaryKey columnNames="goid" tableName="uddi_proxied_service_info"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-170">
+        <addPrimaryKey columnNames="goid" tableName="uddi_publish_status"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-171">
+        <addPrimaryKey columnNames="goid" tableName="uddi_registries"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-172">
+        <addPrimaryKey columnNames="goid" tableName="uddi_registry_subscription"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-173">
+        <addPrimaryKey columnNames="goid" tableName="uddi_service_control"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-174">
+        <addPrimaryKey columnNames="goid" tableName="uddi_service_control_monitor_runtime"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-175">
+        <addPrimaryKey columnNames="goid" tableName="wsdm_subscription"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-176">
+        <addPrimaryKey columnNames="goid" tableName="wssc_session"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-176-1">
+        <addPrimaryKey columnNames="siteminder_configuration_goid,name" tableName="siteminder_configuration_property"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-176-2">
+        <addPrimaryKey columnNames="connector_goid, name" tableName="active_connector_property"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-176-3">
+        <addPrimaryKey columnNames="connector_goid, name" tableName="connector_property"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-176-4">
+        <addPrimaryKey columnNames="goid" tableName="policy_alias"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-181">
+        <addUniqueConstraint tableName="policy" columnNames="guid" constraintName="i_guid"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-177">
+        <createIndex indexName="countername" tableName="counters" unique="true">
+            <column name="countername"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-178">
+        <createIndex indexName="folder_goid" tableName="published_service_alias" unique="true">
+            <column name="folder_goid"/>
+            <column name="published_service_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-179">
+        <createIndex indexName="g_idx" tableName="internal_group" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-180">
+        <createIndex indexName="i_classname_name" tableName="generic_entity" unique="true">
+            <column name="classname${index.varchar.column.size.limit}"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-183">
+        <createIndex indexName="i_ks_alias" tableName="keystore_key_metadata" unique="true">
+            <column name="keystore_file_goid"/>
+            <column name="${alias.column.name}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-184">
+        <createIndex indexName="i_name" tableName="policy" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-186">
+        <createIndex indexName="i_policy_ordinal" tableName="policy_version" unique="true">
+            <column name="policy_goid"/>
+            <column name="ordinal"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-187">
+        <createIndex indexName="i_trusted_cert_thumb" tableName="trusted_cert" unique="true">
+            <column name="thumbprint_sha1"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-189">
+        <createIndex indexName="ipnm_idx" tableName="identity_provider" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-190">
+        <createIndex indexName="l_idx" tableName="internal_user" unique="true">
+            <column name="login"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-191">
+        <createIndex indexName="name" tableName="keystore_file" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-192">
+        <createIndex indexName="nodeid" tableName="service_metrics" unique="true">
+            <column name="nodeid"/>
+            <column name="published_service_goid"/>
+            <column name="resolution"/>
+            <column name="period_start"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-193">
+        <createIndex indexName="propkey" tableName="cluster_properties" unique="true">
+            <column name="propkey"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-194">
+        <createIndex indexName="published_service_goid" tableName="uddi_proxied_service_info" unique="true">
+            <column name="published_service_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-195">
+        <createIndex indexName="rc_name_idx" tableName="resolution_configuration" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-196">
+        <createIndex indexName="rcp_name_idx" tableName="revocation_check_policy" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-197">
+        <createIndex indexName="rduh_idx" tableName="resource_entry" unique="true">
+            <column name="uri_hash"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-198">
+        <createIndex indexName="session_key_hash" tableName="wssc_session" unique="true">
+            <column name="session_key_hash"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-199">
+        <createIndex indexName="idx_uddi_publish_status_uddi_proxied_service_info_goid" tableName="uddi_publish_status" unique="true">
+            <column name="uddi_proxied_service_info_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-200">
+        <createIndex indexName="uddi_registry_goid" tableName="uddi_registry_subscription" unique="true">
+            <column name="uddi_registry_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-201">
+        <createIndex indexName="uddi_service_control_goid" tableName="uddi_service_control_monitor_runtime" unique="true">
+            <column name="uddi_service_control_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-202">
+        <createIndex indexName="uddi_service_key" tableName="uddi_proxied_service" unique="true">
+            <column name="uddi_service_key"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-203">
+        <createIndex indexName="unique_assignment" tableName="rbac_assignment" unique="true">
+            <column name="provider_goid"/>
+            <column name="role_goid"/>
+            <column name="identity_id"/>
+            <column name="entity_type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-204">
+        <createIndex indexName="unique_provider_login" tableName="logon_info" unique="true">
+            <column name="provider_goid"/>
+            <column name="login"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-205">
+        <createIndex indexName="uuid" tableName="wsdm_subscription" unique="true">
+            <column name="uuid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-294">
+        <createIndex indexName="message_context_mapping_keys_digested" tableName="message_context_mapping_keys" unique="false">
+            <column name="digested"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-295">
+        <createIndex indexName="message_context_mapping_values_digested" tableName="message_context_mapping_values" unique="false">
+            <column name="digested"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-296">
+        <createIndex indexName="policy_alias_folder_goid_policy_goid" tableName="policy_alias" unique="true">
+            <column name="folder_goid"/>
+            <column name="policy_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-297">
+        <createIndex indexName="i_email" tableName="fed_user" unique="false">
+            <column name="email"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-298">
+        <createIndex indexName="i_guid" tableName="encapsulated_assertion" unique="true">
+            <column name="guid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-299">
+        <createIndex indexName="client_cert_i_issuer_dn" tableName="client_cert" unique="false">
+            <column name="issuer_dn${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-300">
+        <createIndex indexName="trusted_cert_i_issuer_dn" tableName="trusted_cert" unique="false">
+            <column name="issuer_dn${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-301">
+        <createIndex indexName="i_login" tableName="fed_user" unique="false">
+            <column name="login"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-302">
+        <createIndex indexName="assertion_access_i_name" tableName="assertion_access" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-303">
+        <createIndex indexName="fed_group_i_name" tableName="fed_group" unique="true">
+            <column name="provider_goid"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-304">
+        <createIndex indexName="fed_group_virtual_i_name" tableName="fed_group_virtual" unique="true">
+            <column name="provider_goid"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-305">
+        <createIndex indexName="fed_user_i_name" tableName="fed_user" unique="true">
+            <column name="provider_goid"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-306">
+        <createIndex indexName="i_operation_name" tableName="sample_messages" unique="false">
+            <column name="operation_name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-307">
+        <createIndex indexName="fed_group_i_provider_goid" tableName="fed_group" unique="false">
+            <column name="provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-308">
+        <createIndex indexName="fed_group_virtual_i_provider_goid" tableName="fed_group_virtual" unique="false">
+            <column name="provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-309">
+        <createIndex indexName="fed_user_i_provider_goid" tableName="fed_user" unique="false">
+            <column name="provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-310">
+        <createIndex indexName="i_rbacassign_uid" tableName="rbac_assignment" unique="false">
+            <column name="identity_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-310-1">
+        <createIndex indexName="i_rbacassign_pid" tableName="rbac_assignment" unique="false">
+            <column name="provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-311">
+        <createIndex indexName="i_rbacrole_egoid" tableName="rbac_role" unique="false">
+            <column name="entity_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-312">
+        <createIndex indexName="i_rbacrole_etype" tableName="rbac_role" unique="false">
+            <column name="entity_type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-313">
+        <createIndex indexName="i_saml_email_pattern" tableName="fed_group_virtual" unique="false">
+            <column name="saml_email_pattern"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-314">
+        <createIndex indexName="i_sd_service_type" tableName="service_documents" unique="false">
+            <column name="service_goid"/>
+            <column name="type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-315">
+        <createIndex indexName="client_cert_i_ski" tableName="client_cert" unique="false">
+            <column name="ski"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-316">
+        <createIndex indexName="trusted_cert_i_ski" tableName="trusted_cert" unique="false">
+            <column name="ski"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-317">
+        <createIndex indexName="i_sm_nodeid" tableName="service_metrics" unique="false">
+            <column name="nodeid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-318">
+        <createIndex indexName="i_sm_pstart" tableName="service_metrics" unique="false">
+            <column name="period_start"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-319">
+        <createIndex indexName="i_sm_servicegoid" tableName="service_metrics" unique="false">
+            <column name="published_service_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-320">
+        <createIndex indexName="client_cert_i_subject_dn" tableName="client_cert" unique="false">
+            <column name="subject_dn${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-321">
+        <createIndex indexName="fed_user_i_subject_dn" tableName="fed_user" unique="false">
+            <column name="subject_dn${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-322">
+        <createIndex indexName="i_subject_dn" tableName="trusted_cert" unique="false">
+            <column name="subject_dn${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-323">
+        <createIndex indexName="i_client_cert_thumb" tableName="client_cert" unique="false">
+            <column name="thumbprint_sha1"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-324">
+        <createIndex indexName="i_x509_subject_dn_pattern" tableName="fed_group_virtual" unique="false">
+            <column name="x509_subject_dn_pattern${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-325">
+        <createIndex indexName="idx_action" tableName="audit_system" unique="false">
+            <column name="action"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-326">
+        <createIndex indexName="idx_class" tableName="audit_admin" unique="false">
+            <column name="entity_class${index.varchar.column.size.limit}"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-327">
+        <createIndex indexName="audit_detail_idx_component_id" tableName="audit_detail" unique="false">
+            <column name="component_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-327-1">
+        <createIndex indexName="idx_audit_goid" tableName="audit_detail" unique="false">
+            <column name="audit_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-328">
+        <createIndex indexName="audit_system_idx_component_id" tableName="audit_system" unique="false">
+            <column name="component_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-329">
+        <createIndex indexName="idx_ip_address" tableName="audit_main" unique="false">
+            <column name="ip_address"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-330">
+        <createIndex indexName="idx_oid" tableName="audit_admin" unique="false">
+            <column name="entity_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-331">
+        <createIndex indexName="idx_prov_user" tableName="audit_main" unique="false">
+            <column name="provider_goid"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-332">
+        <createIndex indexName="idx_request_id" tableName="audit_message" unique="false">
+            <column name="request_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-333">
+        <createIndex indexName="idx_service_oid" tableName="audit_message" unique="false">
+            <column name="service_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-334">
+        <createIndex indexName="idx_status" tableName="audit_message" unique="false">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-335">
+        <createIndex indexName="idx_time" tableName="audit_main" unique="false">
+            <column name="time"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-336">
+        <createIndex indexName="internal_group" tableName="internal_user_group" unique="false">
+            <column name="internal_group"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-337">
+        <createIndex indexName="custom_key_value_store_name" tableName="custom_key_value_store" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-338">
+        <createIndex indexName="jdbc_connection_name" tableName="jdbc_connection" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-339">
+        <createIndex indexName="rbac_role_name" tableName="rbac_role" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-340">
+        <createIndex indexName="secure_password_name" tableName="secure_password" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-341">
+        <createIndex indexName="siteminder_configuration_name" tableName="siteminder_configuration" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-341-a">
+        <comment>This table incorrectly has 2 indexes on the name column in 82</comment>
+        <createIndex indexName="siteminder_configuration_name2" tableName="siteminder_configuration" unique="false">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-342">
+        <createIndex indexName="uddi_registries_name" tableName="uddi_registries" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-343">
+        <createIndex indexName="policy_type" tableName="policy" unique="false">
+            <column name="policy_type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-344">
+        <createIndex indexName="provider_goid" tableName="internal_user_group" unique="false">
+            <column name="provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-345">
+        <createIndex indexName="subgroup_id" tableName="internal_user_group" unique="false">
+            <column name="subgroup_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-346">
+        <createIndex indexName="idx_uddi_proxied_service_uddi_proxied_service_info_goid" tableName="uddi_proxied_service" unique="true">
+            <column name="uddi_proxied_service_info_goid"/>
+            <column name="wsdl_service_name"/>
+            <column name="wsdl_service_namespace"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-347">
+        <createIndex indexName="idx_email_listener_state_email_listener_goid" tableName="email_listener_state" unique="true">
+            <column name="email_listener_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-347-1">
+        <createIndex indexName="user_goid" tableName="internal_user_group" unique="false">
+            <column name="user_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-347-2">
+        <createIndex indexName="internal_identity_provider_goid" tableName="password_policy" unique="true">
+            <column name="internal_identity_provider_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-185">
+        <createIndex indexName="i_name_parent" tableName="folder" unique="true">
+            <column name="name"/>
+            <column name="parent_folder_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-182">
+        <createIndex indexName="i_identity" tableName="client_cert" unique="true">
+            <column name="provider"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-245-1">
+        <createIndex indexName="policy_goid" tableName="policy_version" unique="false">
+            <column name="policy_goid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-245-2">
+        <createIndex indexName="idx_security_zone_name" tableName="security_zone" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-206">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="active_connector" constraintName="active_conn_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-207">
+        <addForeignKeyConstraint baseColumnNames="connector_goid" baseTableName="active_connector_property" constraintName="active_connector_property_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="active_connector"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-208">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="assertion_access" constraintName="assertion_access_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-209">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="audit_admin" constraintName="audit_admin_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="audit_main"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-210">
+        <addForeignKeyConstraint baseColumnNames="audit_goid" baseTableName="audit_detail" constraintName="audit_detail_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="audit_main"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-211">
+        <addForeignKeyConstraint baseColumnNames="audit_detail_goid" baseTableName="audit_detail_params" constraintName="audit_detail_params_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="audit_detail"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-212">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="audit_message" constraintName="audit_message_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="audit_main"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-213">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="audit_system" constraintName="audit_system_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="audit_main"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-214">
+        <addForeignKeyConstraint baseColumnNames="provider" baseTableName="client_cert" constraintName="client_cert_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-215">
+        <addForeignKeyConstraint baseColumnNames="connector_goid" baseTableName="connector_property" constraintName="connector_property_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="connector"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-216">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="connector" constraintName="connector_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-217">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="email_listener" constraintName="email_listener_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-218">
+        <addForeignKeyConstraint baseColumnNames="encapsulated_assertion_goid" baseTableName="encapsulated_assertion_argument" constraintName="encapsulated_assertion_argument_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="encapsulated_assertion"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-219">
+        <addForeignKeyConstraint baseColumnNames="policy_goid" baseTableName="encapsulated_assertion" constraintName="encapsulated_assertion_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-220">
+        <addForeignKeyConstraint baseColumnNames="encapsulated_assertion_goid" baseTableName="encapsulated_assertion_property" constraintName="encapsulated_assertion_property_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="encapsulated_assertion"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-221">
+        <addForeignKeyConstraint baseColumnNames="encapsulated_assertion_goid" baseTableName="encapsulated_assertion_result" constraintName="encapsulated_assertion_result_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="encapsulated_assertion"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-222">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="encapsulated_assertion" constraintName="encass_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-223">
+        <addForeignKeyConstraint baseColumnNames="firewall_rule_goid" baseTableName="firewall_rule_property" constraintName="firewall_rule_property_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="firewall_rule"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-224">
+        <addForeignKeyConstraint baseColumnNames="parent_folder_goid" baseTableName="folder" constraintName="folder_parent_folder" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-225">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="folder" constraintName="folder_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-226">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="http_configuration" constraintName="http_config_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-227">
+        <addForeignKeyConstraint baseColumnNames="password_goid" baseTableName="http_configuration" constraintName="http_configuration_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="secure_password"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-228">
+        <addForeignKeyConstraint baseColumnNames="proxy_password_goid" baseTableName="http_configuration" constraintName="http_configuration_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="secure_password"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-229">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="identity_provider" constraintName="identity_provider_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-230">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="jdbc_connection" constraintName="jdbc_connection_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-231">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="jms_connection" constraintName="jms_conn_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-232">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="jms_endpoint" constraintName="jms_endpoint_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-233">
+        <addForeignKeyConstraint baseColumnNames="keystore_file_goid" baseTableName="keystore_key_metadata" constraintName="keystore_key_metadata_keystore_file" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="keystore_file"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-234">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="keystore_key_metadata" constraintName="keystore_key_metadata_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-235">
+        <addForeignKeyConstraint baseColumnNames="provider_goid" baseTableName="logon_info" constraintName="logon_info_provider" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-236">
+        <addForeignKeyConstraint baseColumnNames="mapping_values_goid" baseTableName="audit_message" constraintName="message_context_mapping" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="message_context_mapping_values"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-237">
+        <addForeignKeyConstraint baseColumnNames="mapping_keys_goid" baseTableName="message_context_mapping_values" constraintName="message_context_mapping_values_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="message_context_mapping_keys"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-238">
+        <addForeignKeyConstraint baseColumnNames="internal_user_goid" baseTableName="password_history" constraintName="password_history_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="internal_user"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-239">
+        <addForeignKeyConstraint baseColumnNames="internal_identity_provider_goid" baseTableName="password_policy" constraintName="password_policy_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-240">
+        <addForeignKeyConstraint baseColumnNames="policy_goid" baseTableName="policy_alias" constraintName="policy_alias_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-241">
+        <addForeignKeyConstraint baseColumnNames="folder_goid" baseTableName="policy_alias" constraintName="policy_alias_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-242">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="policy_alias" constraintName="policy_alias_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-243">
+        <addForeignKeyConstraint baseColumnNames="folder_goid" baseTableName="policy" constraintName="policy_folder" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-244">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="policy" constraintName="policy_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-245">
+        <addForeignKeyConstraint baseColumnNames="policy_goid" baseTableName="policy_version" constraintName="policy_version_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-246">
+        <addForeignKeyConstraint baseColumnNames="published_service_goid" baseTableName="published_service_alias" constraintName="published_service_alias_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-247">
+        <addForeignKeyConstraint baseColumnNames="folder_goid" baseTableName="published_service_alias" constraintName="published_service_alias_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-248">
+        <addForeignKeyConstraint baseColumnNames="folder_goid" baseTableName="published_service" constraintName="published_service_folder" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-249">
+        <addForeignKeyConstraint baseColumnNames="policy_goid" baseTableName="published_service" constraintName="published_service_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-250">
+        <addForeignKeyConstraint baseColumnNames="role_goid" baseTableName="rbac_assignment" constraintName="rbac_assignment_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_role"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-251">
+        <addForeignKeyConstraint baseColumnNames="provider_goid" baseTableName="rbac_assignment" constraintName="rbac_assignment_provider" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-252">
+        <addForeignKeyConstraint baseColumnNames="role_goid" baseTableName="rbac_permission" constraintName="rbac_permission_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_role"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-253">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="rbac_predicate_attribute" constraintName="rbac_predicate_attribute_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-254">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="rbac_predicate_entityfolder" constraintName="rbac_predicate_entityfolder_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-255">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="rbac_predicate_folder" constraintName="rbac_predicate_folder_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-256">
+        <addForeignKeyConstraint baseColumnNames="folder_goid" baseTableName="rbac_predicate_folder" constraintName="rbac_predicate_folder_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="folder"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-257">
+        <addForeignKeyConstraint baseColumnNames="permission_goid" baseTableName="rbac_predicate" constraintName="rbac_predicate_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_permission"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-258">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="rbac_predicate_oid" constraintName="rbac_predicate_oid_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-259">
+        <addForeignKeyConstraint baseColumnNames="goid" baseTableName="rbac_predicate_security_zone" constraintName="rbac_predicate_security_zone_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="rbac_predicate"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-260">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="rbac_predicate_security_zone" constraintName="rbac_predicate_security_zone_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-261">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="revocation_check_policy" constraintName="rcp_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-262">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="resource_entry" constraintName="resource_entry_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-263">
+        <addForeignKeyConstraint baseColumnNames="published_service_goid" baseTableName="sample_messages" constraintName="sample_messages_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-264">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="sample_messages" constraintName="sample_msg_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-265">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="secure_password" constraintName="secure_password_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-266">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="published_service_alias" constraintName="service_alias_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-267">
+        <addForeignKeyConstraint baseColumnNames="service_goid" baseTableName="service_documents" constraintName="service_documents_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-268">
+        <addForeignKeyConstraint baseColumnNames="mapping_values_goid" baseTableName="service_metrics_details" constraintName="service_metrics_details_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="message_context_mapping_values"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-269">
+        <addForeignKeyConstraint baseColumnNames="service_metrics_goid" baseTableName="service_metrics_details" constraintName="service_metrics_goid" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="service_metrics"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-270">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="published_service" constraintName="service_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-271">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="sink_config" constraintName="sink_config_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-272">
+        <addForeignKeyConstraint baseColumnNames="password_goid" baseTableName="siteminder_configuration" constraintName="siteminder_configuration_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="secure_password"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-273">
+        <addForeignKeyConstraint baseColumnNames="siteminder_configuration_goid" baseTableName="siteminder_configuration_property" constraintName="siteminder_configuration_property_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="siteminder_configuration"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-274">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="siteminder_configuration" constraintName="siteminder_configuration_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-275">
+        <addForeignKeyConstraint baseColumnNames="revocation_check_policy_goid" baseTableName="trusted_cert" constraintName="trusted_cert_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="revocation_check_policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-276">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="trusted_cert" constraintName="trusted_cert_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-277">
+        <addForeignKeyConstraint baseColumnNames="trusted_cert_goid" baseTableName="trusted_esm" constraintName="trusted_esm_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="trusted_cert"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-278">
+        <addForeignKeyConstraint baseColumnNames="trusted_esm_goid" baseTableName="trusted_esm_user" constraintName="trusted_esm_user_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="trusted_esm"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-279">
+        <addForeignKeyConstraint baseColumnNames="provider_goid" baseTableName="trusted_esm_user" constraintName="trusted_esm_user_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-280">
+        <addForeignKeyConstraint baseColumnNames="published_service_goid" baseTableName="uddi_business_service_status" constraintName="uddi_business_service_status_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-281">
+        <addForeignKeyConstraint baseColumnNames="uddi_registry_goid" baseTableName="uddi_business_service_status" constraintName="uddi_business_service_status_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_registries"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-282">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="uddi_proxied_service_info" constraintName="uddi_prox_svc_info_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-283">
+        <addForeignKeyConstraint baseColumnNames="uddi_proxied_service_info_goid" baseTableName="uddi_proxied_service" constraintName="uddi_proxied_service_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_proxied_service_info"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-284">
+        <addForeignKeyConstraint baseColumnNames="published_service_goid" baseTableName="uddi_proxied_service_info" constraintName="uddi_proxied_service_info_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-285">
+        <addForeignKeyConstraint baseColumnNames="uddi_registry_goid" baseTableName="uddi_proxied_service_info" constraintName="uddi_proxied_service_info_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_registries"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-286">
+        <addForeignKeyConstraint baseColumnNames="uddi_proxied_service_info_goid" baseTableName="uddi_publish_status" constraintName="uddi_publish_status_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_proxied_service_info"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-287">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="uddi_registries" constraintName="uddi_reg_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-288">
+        <addForeignKeyConstraint baseColumnNames="uddi_registry_goid" baseTableName="uddi_registry_subscription" constraintName="uddi_registry_subscription_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_registries"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-289">
+        <addForeignKeyConstraint baseColumnNames="published_service_goid" baseTableName="uddi_service_control" constraintName="uddi_service_control_published_service_goid" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="published_service"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-290">
+        <addForeignKeyConstraint baseColumnNames="uddi_registry_goid" baseTableName="uddi_service_control" constraintName="uddi_service_control_ibfk_2" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_registries"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-291">
+        <addForeignKeyConstraint baseColumnNames="uddi_service_control_goid" baseTableName="uddi_service_control_monitor_runtime" constraintName="uddi_service_control_monitor_runtime_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="uddi_service_control"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-292">
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="uddi_service_control" constraintName="uddi_svc_ctrl_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-293">
+        <addForeignKeyConstraint baseColumnNames="notification_policy_guid" baseTableName="wsdm_subscription" constraintName="wsdm_subscription_ibfk_1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="guid" referencedTableName="policy"/>
+    </changeSet>
+    <changeSet author="vkazakov (generated)" id="1408665452836-293-1">
+        <addForeignKeyConstraint baseColumnNames="email_listener_goid" baseTableName="email_listener_state" constraintName="fk_email_listener_state_email_listener_goid" deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="email_listener"/>
+    </changeSet>
+</databaseChangeLog>

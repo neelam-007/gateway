@@ -1,9 +1,14 @@
 package com.l7tech.server.util;
 
 import com.l7tech.util.*;
+import liquibase.Liquibase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.FileSystemResourceAccessor;
 import org.springframework.core.io.Resource;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
@@ -138,8 +143,7 @@ public class DerbyDbHelper {
      */
     public static void testDataSource( final DataSource dataSource,
                                        final Config config,
-                                       final Resource[] createScripts,
-                                       final Resource[] updateScripts ) {
+                                       final String createScript ) {
         Connection connection = null;
 
         boolean created = true;
@@ -157,12 +161,14 @@ public class DerbyDbHelper {
             }
 
             if ( created ) {
-                runScripts( connection, createScripts, false );
-            } else if ( config.getBooleanProperty("em.server.db.updates", false) || SyspropUtil.getBoolean("com.l7tech.server.db.updates", false) ) {
-                runScripts( connection, updateScripts, config.getBooleanProperty( "em.server.db.updatesDeleted", true ) );
+                File dbCreateScriptFile = new File(createScript);
+                Liquibase liquibase = new Liquibase(dbCreateScriptFile.getName(), new FileSystemResourceAccessor(dbCreateScriptFile.getParentFile().getPath()), new JdbcConnection(connection));
+                liquibase.update("");
             }
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );
+        } catch (LiquibaseException e) {
+            throw new RuntimeException( "Could create database.", e );
         } finally {
             ResourceUtils.closeQuietly(connection);
         }
