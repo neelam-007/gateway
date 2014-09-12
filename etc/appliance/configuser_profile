@@ -1217,6 +1217,7 @@ isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
+        [ -s /etc/motd ] && [ -r /etc/motd ] && echo "$(cat /etc/motd)" && echo
         echo "Welcome to the SecureSpan Gateway - $(cat /etc/issue | head -1 | cut -d" " -f4 | sed 's/^v/ Version /')"
         echo
         echo "This user account allows you to configure the appliance"
