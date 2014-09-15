@@ -899,6 +899,24 @@ public class MimeBodyTest {
         }
     }
 
+    @BugId("SSG-8887")
+    @Test
+    public void noPreamble() throws Exception {
+        final MimeBody mimeBody = makeMessage(MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0);
+        final InputStream inputStream = mimeBody.getEntireMessageBodyAsInputStream(false);
+        assertEquals(MESS_NO_PREAMBLE, new String(IOUtils.slurpStream(inputStream)));
+        assertEquals(MESS_NO_PREAMBLE.length(), mimeBody.getEntireMessageBodyLength());
+    }
+
+    @Test
+    public void preambleRemoved() throws Exception {
+        final MimeBody mimeBody = makeMessage(MESS, MESS_CONTENT_TYPE_NO_START, 0);
+        final InputStream inputStream = mimeBody.getEntireMessageBodyAsInputStream(false);
+        final String withoutPreamble = MESS.substring(PREAMBLE.length(), MESS.length());
+        assertEquals(withoutPreamble, new String(IOUtils.slurpStream(inputStream)));
+        assertEquals(withoutPreamble.length(), mimeBody.getEntireMessageBodyLength());
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";
@@ -939,7 +957,8 @@ public class MimeBodyTest {
             "\n" +
             "\n";
 
-    public static final String MESS = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n------=Part_-763936460.407197826076299\r\n" +
+    private static final String PREAMBLE = "PREAMBLE GARBAGE\r\nBLAH BLAH BLAH\r\n";
+    public static final String MESS = PREAMBLE + "------=Part_-763936460.407197826076299\r\n" +
             "Content-Transfer-Encoding: 8bit\r\n" +
             "Content-Type: text/xml; charset=utf-8\r\n" +
             "Content-ID: -76394136.15558\r\n" +

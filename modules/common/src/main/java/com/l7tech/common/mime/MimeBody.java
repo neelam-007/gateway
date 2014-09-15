@@ -493,7 +493,12 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
                     if (!sentNextPartOpeningBoundary) {
                         sentNextPartOpeningBoundary = true;
-                        return new ByteArrayInputStream(("\r\n--" + boundaryStr + "\r\n").getBytes());
+                        final StringBuilder openBoundary = new StringBuilder();
+                        if (nextPart != 0) {
+                            openBoundary.append("\r\n");
+                        }
+                        openBoundary.append("--" + boundaryStr + "\r\n");
+                        return new ByteArrayInputStream(openBoundary.toString().getBytes());
                     }
 
                     if (!sentNextPartHeaders) {
@@ -643,8 +648,12 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
             // if only streaming validated parts then count only those lengths (and the first part)
             if (len==0 || !streamValidatedOnly || partInfo.isValidated()) {
-                // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
-                len += 2 + boundary.length + 2;
+                if (len > 0) {
+                    // CRLF occurs before each boundary except the first
+                    len += 2;
+                }
+                // boundary (which includes initial 2 dashes) + CRLF
+                len += boundary.length + 2;
                 len += partInfo.getHeaders().getSerializedLength();
                 long bodylen = partInfo.getActualContentLength();
                 if (bodylen < 0)
