@@ -21,6 +21,7 @@ public class ContentTypeAssertionDialog extends AssertionPropertiesOkCancelSuppo
     private JRadioButton validateRadioButton;
     private JRadioButton changeRadioButton;
     private JTextField contentTypeField;
+    private JCheckBox reInitializeMessageCheckBox;
 
     private RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
         @Override
@@ -41,6 +42,7 @@ public class ContentTypeAssertionDialog extends AssertionPropertiesOkCancelSuppo
         changeRadioButton.setSelected(assertion.isChangeContentType());
         validateRadioButton.setSelected(!assertion.isChangeContentType());
         contentTypeField.setText(assertion.getNewContentTypeValue());
+        reInitializeMessageCheckBox.setSelected(assertion.isReinitializeMessage());
         enableDisable();
     }
 
@@ -59,6 +61,7 @@ public class ContentTypeAssertionDialog extends AssertionPropertiesOkCancelSuppo
                 throw new ValidationException(ExceptionUtils.getMessage(e));
             }
         }
+        assertion.setReinitializeMessage(reInitializeMessageCheckBox.isSelected());
         return assertion;
     }
 
@@ -66,14 +69,17 @@ public class ContentTypeAssertionDialog extends AssertionPropertiesOkCancelSuppo
     protected JPanel createPropertyPanel() {
         Utilities.enableGrayOnDisabled(contentTypeField);
         Utilities.enableGrayOnDisabled(messagePartField);
+        Utilities.enableGrayOnDisabled(reInitializeMessageCheckBox);
         messagePartCheckBox.addActionListener(changeListener);
         changeRadioButton.addActionListener(changeListener);
         validateRadioButton.addActionListener(changeListener);
+        reInitializeMessageCheckBox.addActionListener(changeListener);
         return mainPanel;
     }
 
     private void enableDisable() {
         contentTypeField.setEnabled(changeRadioButton.isSelected());
+        reInitializeMessageCheckBox.setEnabled(changeRadioButton.isSelected());
         messagePartField.setEnabled(messagePartCheckBox.isSelected());
     }
 

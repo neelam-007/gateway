@@ -2,28 +2,48 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for ServerContentTypeAssertion.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class ServerContentTypeAssertionTest {
     ContentTypeAssertion ass = new ContentTypeAssertion();
     Message request;
     PolicyEnforcementContext context;
+    @Mock
+    private ApplicationContext applicationContext;
+    @Mock
+    private StashManagerFactory stashManagerFactory;
+
+    @Before
+    public void setup() {
+        when(applicationContext.getBean("stashManagerFactory", StashManagerFactory.class)).thenReturn(stashManagerFactory);
+        when(stashManagerFactory.createStashManager()).thenReturn(new ByteArrayStashManager());
+    }
 
     @Test
     public void testValidateSuccess() throws Exception {
@@ -145,6 +165,71 @@ public class ServerContentTypeAssertionTest {
         assertEquals("application/x-changed", request.getMimeKnob().getPart(1).getContentType().getFullValue());
     }
 
+    @BugId("SSG-8316")
+    @Test
+    public void changeContentTypeAndReinitialize() throws Exception {
+        final String contentType = "multipart/form-data; boundary=simple";
+        final String multipartMessage = "--simple\r\n" +
+                "Content-Disposition: form-data; name=\"foo\"\r\n" +
+                "\r\n" +
+                "bar\r\n" +
+                "--simple\r\n" +
+                "Content-Disposition: form-data; name=\"test\"\r\n" +
+                "\r\n" +
+                "test\r\n" +
+                "--simple--";
+        request = new Message();
+        request.initialize(ContentTypeHeader.TEXT_DEFAULT, multipartMessage.getBytes(), 0);
+        // message should be treated as one part due to content type
+        assertEquals(1, countParts(request));
+        context(request);
+        ass.setChangeContentType(true);
+        ass.setReinitializeMessage(true);
+        ass.setNewContentTypeValue(contentType);
+
+        assertEquals(AssertionStatus.NONE, sass().checkRequest(context));
+        assertEquals(contentType, request.getMimeKnob().getOuterContentType().getFullValue());
+        // reinitialized message should now be 2 parts
+        assertEquals(2, countParts(request));
+    }
+
+    @Test
+    public void changeContentTypeDoNotReinitialize() throws Exception {
+        final String contentType = "multipart/form-data; boundary=simple";
+        final String multipartMessage = "--simple\r\n" +
+                "Content-Disposition: form-data; name=\"foo\"\r\n" +
+                "\r\n" +
+                "bar\r\n" +
+                "--simple\r\n" +
+                "Content-Disposition: form-data; name=\"test\"\r\n" +
+                "\r\n" +
+                "test\r\n" +
+                "--simple--";
+        request = new Message();
+        request.initialize(ContentTypeHeader.TEXT_DEFAULT, multipartMessage.getBytes(), 0);
+        // message should be treated as one part due to content type
+        assertEquals(1, countParts(request));
+        context(request);
+        ass.setChangeContentType(true);
+        ass.setReinitializeMessage(false);
+        ass.setNewContentTypeValue(contentType);
+
+        assertEquals(AssertionStatus.NONE, sass().checkRequest(context));
+        assertEquals(contentType, request.getMimeKnob().getOuterContentType().getFullValue());
+        // message should still be treated as one part because it was not reinitialized
+        assertEquals(1, countParts(request));
+    }
+
+    private int countParts(final Message message) throws Exception {
+        int count = 0;
+        final PartIterator iterator = message.getMimeKnob().getParts();
+        while (iterator.hasNext()) {
+            count++;
+            iterator.next();
+        }
+        return count;
+    }
+
     private PolicyEnforcementContext context(Message request) throws IOException {
         return context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
     }
@@ -154,7 +239,7 @@ public class ServerContentTypeAssertionTest {
     }
 
     private ServerContentTypeAssertion sass() throws PolicyAssertionException {
-        return new ServerContentTypeAssertion(ass);
+        return new ServerContentTypeAssertion(ass, applicationContext);
     }
 
     private Message multireq() throws IOException {

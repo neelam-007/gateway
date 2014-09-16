@@ -10,6 +10,7 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
     private String newContentTypeValue;
     private boolean messagePart;
     private String messagePartNum = "1";
+    private boolean reinitializeMessage;
 
     public boolean isChangeContentType() {
         return changeContentType;
@@ -41,6 +42,20 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
 
     public void setMessagePartNum(String messagePartNum) {
         this.messagePartNum = messagePartNum;
+    }
+
+    /**
+     * @return true if the message should be re-initialized after the content-type is changed.
+     */
+    public boolean isReinitializeMessage() {
+        return reinitializeMessage;
+    }
+
+    /**
+     * @param reinitializeMessage true if the message should be re-initialized after a content-type change.
+     */
+    public void setReinitializeMessage(final boolean reinitializeMessage) {
+        this.reinitializeMessage = reinitializeMessage;
     }
 
     @Override

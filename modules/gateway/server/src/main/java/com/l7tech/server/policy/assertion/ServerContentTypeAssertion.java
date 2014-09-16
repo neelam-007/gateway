@@ -9,10 +9,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
@@ -25,10 +27,11 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
     private final Integer fixedMessagePartNum;
     private final ContentTypeHeader fixedContentType;
     private final String[] varsUsed;
+    private final StashManagerFactory stashManagerFactory;
 
-    public ServerContentTypeAssertion(final ContentTypeAssertion assertion) throws PolicyAssertionException {
+    public ServerContentTypeAssertion(final ContentTypeAssertion assertion, final ApplicationContext springContext ) throws PolicyAssertionException {
         super(assertion);
-
+        stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
         if (assertion.isChangeContentType() && Syntax.getReferencedNames(assertion.getNewContentTypeValue()).length < 1) {
             fixedContentType = ContentTypeHeader.create(assertion.getNewContentTypeValue());
         } else {
@@ -67,11 +70,16 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
                 final int partNum = getMessagePartNum(varMap);
                 PartInfo partInfo = message.getMimeKnob().getPart(partNum);
                 partInfo.setContentType(ctype);
-                return AssertionStatus.NONE;
             } else {
                 message.getMimeKnob().setOuterContentType(ctype);
-                return AssertionStatus.NONE;
             }
+
+            if (assertion.isReinitializeMessage()) {
+                message.initialize(stashManagerFactory.createStashManager(), ctype, message.getMimeKnob().getEntireMessageBodyAsInputStream());
+            }
+
+            return AssertionStatus.NONE;
+
         } catch (NoSuchPartException e) {
             logAndAudit(AssertionMessages.NO_SUCH_PART, messageDescription, assertion.getMessagePartNum());
             return AssertionStatus.FAILED;
