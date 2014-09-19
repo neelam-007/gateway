@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.gui.util.ImageCache;
 
@@ -101,8 +102,12 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
      */
     private String getNodeName(AssertionTreeNode node) {
         if (policyVersion != null) {
-            String nameFromMetaWithDecoration = DefaultAssertionPolicyNode.getNameFromMeta(node.asAssertion(), true, false);
-            return DefaultAssertionPolicyNode.addCommentToDisplayTextByPolicyVersion(node.asAssertion(), nameFromMetaWithDecoration, policyVersion);
+            // Get node name. Pass in decorate = false, so that it won't be decorated and comments won't be added.
+            String name = node.getName(false);
+            // Decorate without adding comments.
+            name = AssertionUtils.decorateName(node.asAssertion(), name);
+            // Add comment based on policy version.
+            return DefaultAssertionPolicyNode.addCommentToDisplayTextByPolicyVersion(node.asAssertion(), name, policyVersion);
         } else {
             return node.getName();
         }
