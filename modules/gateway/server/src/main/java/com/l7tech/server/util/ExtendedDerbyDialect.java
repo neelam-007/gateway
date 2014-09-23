@@ -10,14 +10,6 @@ import java.sql.Types;
  * http://opensource.atlassian.com/projects/hibernate/browse/HHH-6205
  */
 public class ExtendedDerbyDialect extends DerbyDialect {
-    @Override
-    public String getQuerySequencesString() {
-        if ( supportsSequences() ) {
-            return "select sequencename from sys.syssequences";
-        } else {
-            return null;
-        }
-    }
 
     @Override
     public String getSelectClauseNullString(int sqlType) {

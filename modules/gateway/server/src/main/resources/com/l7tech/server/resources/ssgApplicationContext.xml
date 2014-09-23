@@ -2509,8 +2509,6 @@
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
-    <bean id="entityManagementContextProvider" class="com.l7tech.server.EntityManagementContextProvider"/>
-
     <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" >
         <property name="config" ref="serverConfig" />
     </bean>
