@@ -3622,4 +3622,35 @@
             <arg line="build"/>
         </java>
     </target>
+
+    <target name="updatedb">
+        <path id="liquibase.classpath">
+            <fileset dir="lib/repository/liquibase">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="lib/repository/mysql">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+
+        <!-- adding liquibase task -->
+        <taskdef resource="liquibasetasks.properties">
+            <classpath refid="liquibase.classpath"/>
+        </taskdef>
+
+        <property name="database.driver" value="com.mysql.jdbc.Driver"/>
+        <property name="database.name" value="ssg"/>
+        <property name="database.user" value="gateway"/>
+        <property name="database.password" value="7layer"/>
+
+        <updateDatabase
+                changeLogFile="etc/db/liquibase/ssg.xml"
+                driver="${database.driver}"
+                url="jdbc:mysql://localhost:3306/${database.name}"
+                username="${database.user}"
+                password="${database.password}"
+                dropFirst="false"
+                classpathref="liquibase.classpath"
+                />
+    </target>
 </project>
