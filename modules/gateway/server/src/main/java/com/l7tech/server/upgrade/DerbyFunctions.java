@@ -6,7 +6,7 @@ import com.l7tech.util.RandomUtil;
 import java.util.HashMap;
 
 /**
- * These are functions that are called from derby. See the ssg_embedded.sql functions
+ * These are functions that are called from derby. See ssg.xml
  *
  * @author Victor Kazakov
  */

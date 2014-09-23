@@ -46,6 +46,9 @@
         <dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
         <dependency org="org.scribe" name="scribe" rev="1.3.1" force="true" conf="core"/>
 
+        <!-- Liquibase -->
+        <dependency org="liquibase" name="liquibase" rev="3.2.2" force="true" conf="core"/>
+
         <dependency org="commons-httpclient" name="commons-httpclient" rev="3.1" force="true" conf="core">
             <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>

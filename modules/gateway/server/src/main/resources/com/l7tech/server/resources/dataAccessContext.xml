@@ -206,4 +206,9 @@
     <!-- Override updateSchema with any schema updates that need to be performed -->
     <bean id="updateSchema" class="com.l7tech.server.util.NoOpSchemaUpdater"/>
 
+    <!-- creates a liquibase manager that can be used to manage the ssg database. -->
+    <bean id="liquibaseManager" class="com.l7tech.server.management.db.LiquibaseDBManager">
+        <constructor-arg index="0" value="${com.l7tech.server.dbScriptsDirectory}" />
+    </bean>
+
 </beans>

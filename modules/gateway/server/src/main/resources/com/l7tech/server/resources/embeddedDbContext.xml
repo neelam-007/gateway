@@ -4,15 +4,9 @@
 -->
 <!--suppress SpringModelInspection -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation= "http://www.springframework.org/schema/beans
-                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-                            http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
-                            http://www.springframework.org/schema/tx
-                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
     <bean id="embeddedDBCreationDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="${com.l7tech.server.varDirectory}/db/ssgdb"/>
@@ -23,16 +17,11 @@
     <bean id="createEmbeddedDB"
           class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
-                  value="com.l7tech.server.util.DerbyDbHelper.testDataSource"/>
+                  value="com.l7tech.server.util.DerbyDbHelper.ensureDataSource"/>
         <property name="arguments">
             <list>
                 <ref local="embeddedDBCreationDataSource"/>
-                <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
-                <bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
-                <!--
-                  Liquibase script resource to run when database is created.
-                -->
-                <value type="java.lang.String">${com.l7tech.server.home}/../../config/etc/db/ssg.xml</value>
+                <ref bean="liquibaseManager"/>
             </list>
         </property>
     </bean>
@@ -46,20 +35,6 @@
     <alias name="embeddedDataSource" alias="secondaryDbDataSource"/>
     <alias name="embeddedDataSource" alias="lazyDataSource"/>
 
-    <bean id="dataSourceExplorer" class="com.l7tech.server.util.DataSourceExplorer">
-        <constructor-arg ref="embeddedDataSource"/>
-    </bean>
-
-    <bean id="schemaExport" class="com.l7tech.server.util.DbSchemaExport" init-method="init" depends-on="sessionFactory">
-        <constructor-arg index="0">
-           <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                <property name="targetObject" ref="&amp;sessionFactory"/>
-                <property name="targetMethod" value="getConfiguration"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg index="1" value="${com.l7tech.server.varDirectory}/db/ssg.sql"/>
-    </bean>
-
     <bean id="serviceMetricsServices" class="com.l7tech.server.service.DisabledServiceMetricsServices"/>
 
     <bean id="auditExporterDbDialect" class="com.l7tech.server.audit.AuditExporterImpl$Dialect" factory-method="valueOf">
@@ -71,9 +46,7 @@
         <constructor-arg index="1">
             <value>com/l7tech/server/resources/derby</value>
         </constructor-arg>
-        <constructor-arg index="2">
-            <value>${com.l7tech.server.varDirectory}/db/ssgdb</value>
-        </constructor-arg>
+        <constructor-arg index="2" ref="liquibaseManager" />
         <property name="dataSource" ref="embeddedDataSource"/>
     </bean>
 

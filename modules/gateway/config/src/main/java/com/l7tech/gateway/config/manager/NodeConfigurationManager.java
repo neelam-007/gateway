@@ -38,7 +38,7 @@ public class NodeConfigurationManager {
 
     private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
     private static final File nodesDir = new File(gatewayDir, "node");
-    private static final String dbxmlPath = "../config/etc/db/ssg.xml";
+    private static final String dbxmlPath = "../config/etc/db";
     private static final String configPath = "{0}/etc/conf";
     private static final String varPath = "{0}/var";
 
@@ -422,7 +422,7 @@ public class NodeConfigurationManager {
         hosts.add( databaseConfig.getHost() );
         if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
 
-        if ( !dbActions.dropDatabase( localConfig, hosts, true, revokeGrants, null) ) {
+        if ( !dbActions.dropDatabase( localConfig, hosts, true, revokeGrants) ) {
             throw new CausedIOException(MessageFormat.format("Cannot delete database ''{0}'' on ''{1}''.", databaseConfig.getName(), databaseConfig.getHost()));
         }
     }

@@ -115,7 +115,7 @@ changeLogFileName=$(basename ${changeLogFile})
 changeLogFileDir=$(dirname ${changeLogFile})
 
 pushd $changeLogFileDir > /dev/null
-liquibaseOut=$( ${SSG_JAVA_HOME}/bin/java -jar ${LIQUIBASE_JAR} --classpath=${DB_JAR} --driver=${DB_DRIVER} --changeLogFile=${changeLogFileName} --url=${url} --username=${username} --password=${password} ${command} 2>&1 )
+liquibaseOut=$( "${SSG_JAVA_HOME}/bin/java" -jar ${LIQUIBASE_JAR} --classpath=${DB_JAR} --driver=${DB_DRIVER} --changeLogFile=${changeLogFileName} --url=${url} --username=${username} --password=${password} ${command} 2>&1 )
 popd > /dev/null
 
 echo "${liquibaseOut}"

@@ -6,7 +6,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.db.DbCompareTestUtils;
+import com.l7tech.server.management.db.DbCompareTestUtils;
 import liquibase.Liquibase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
@@ -45,22 +45,23 @@ public class DatabaseUpgradeTest {
     @Rule
     public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
-    private String HOST_NAME = DBCredentials.MYSQL_HOST;
-    private int PORT = DBCredentials.MYSQL_PORT;
-    private String DB_USER_NAME = "gateway";
-    private String DB_USER_PASSWORD = "7layer";
-    private String ADMIN_USER_NAME = DBCredentials.MYSQL_ROOT_USER;
-    private String ADMIN_USER_PASSWORD = DBCredentials.MYSQL_ROOT_PASSWORD;
+    private static final String HOST_NAME = DBCredentials.MYSQL_HOST;
+    private static final int PORT = DBCredentials.MYSQL_PORT;
+    private static final String DB_USER_NAME = "gateway";
+    private static final String DB_USER_PASSWORD = "7layer";
+    private static final String ADMIN_USER_NAME = DBCredentials.MYSQL_ROOT_USER;
+    private static final String ADMIN_USER_PASSWORD = DBCredentials.MYSQL_ROOT_PASSWORD;
 
-    private String NEW_DB_NAME = "mysql_database_upgrade_test__new_db_test";
-    private String OLD_DB_NAME = "mysql_database_upgrade_test__old_db_test";
+    private static final String NEW_DB_NAME = "mysql_database_upgrade_test__new_db_test";
+    private static final String OLD_DB_NAME = "mysql_database_upgrade_test__old_db_test";
 
-    private Set<String> hosts = CollectionUtils.set("localhost");
+    private static final Set<String> hosts = CollectionUtils.set("localhost");
 
     DBActions dbActions = new DBActions();
 
     DatabaseConfig newDBConfig;
     DatabaseConfig oldDBConfig;
+    private String currentVersion;
 
     @Before
     public void before() throws IOException, SQLException, ParserConfigurationException, SAXException, XPathExpressionException, LiquibaseException {
@@ -72,33 +73,36 @@ public class DatabaseUpgradeTest {
         oldDBConfig = new DatabaseConfig(newDBConfig);
         oldDBConfig.setName(OLD_DB_NAME);
 
-        dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
-        dbActions.dropDatabase(oldDBConfig, hosts, true, true, null);
+        dbActions.dropDatabase(newDBConfig, hosts, true, true);
+        dbActions.dropDatabase(oldDBConfig, hosts, true, true);
 
-        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/liquibase/ssg.xml", false);
+        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/liquibase", false);
         Assert.assertEquals("Could not create mysql new database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
 
-        results = dbActions.createDb(oldDBConfig, hosts, "etc/db/liquibase/ssg-8.2.00.xml", false);
-        Assert.assertEquals("Could not create mysql upgraded database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
+        currentVersion = dbActions.checkDbVersion(newDBConfig);
+
+        dbActions.createDatabaseWithGrants(dbActions.getConnection(oldDBConfig, true), oldDBConfig, hosts);
+        Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor("etc/db/liquibase"), new JdbcConnection(dbActions.getConnection(oldDBConfig, true, false)));
+        liquibase.update("");
     }
 
 
     @After
     public void after(){
-        dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
-        dbActions.dropDatabase(oldDBConfig, hosts, true, true, null);
+        dbActions.dropDatabase(newDBConfig, hosts, true, true);
+        dbActions.dropDatabase(oldDBConfig, hosts, true, true);
     }
 
     @Test
     public void compareNewToUpgradedDatabase() throws SQLException, IOException {
-        DBActions.DBActionsResult result = dbActions.upgradeDbSchema(oldDBConfig, true, "etc/db/mysql", "etc/db/liquibase", null);
-        Assert.assertEquals("Could not upgrade mysql database: " + result.getErrorMessage(), DBActions.StatusType.SUCCESS, result.getStatus());
+        boolean result = dbActions.upgradeDb(oldDBConfig, "etc/db/mysql", "etc/db/liquibase", currentVersion, null);
+        Assert.assertTrue("Could not upgrade mysql database", result);
 
         DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, true, false), dbActions.getConnection(oldDBConfig, true, false));
     }
 
     @Test
-    public void testRollback() throws SQLException, LiquibaseException, IOException, XPathExpressionException, ParserConfigurationException, SAXException {
+    public void testRollback() throws SQLException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, LiquibaseException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -114,14 +118,14 @@ public class DatabaseUpgradeTest {
 
         DatabaseConfig rollbackDBConfig = new DatabaseConfig(oldDBConfig);
         rollbackDBConfig.setName("RolbackDBTest");
-        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true, null);
-        DBActions.DBActionsResult results = dbActions.createDb(rollbackDBConfig, hosts, "etc/db/liquibase/ssg-8.2.00.xml", false);
-        Assert.assertEquals("Could not create mysql upgraded database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
-
+        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true);
+        dbActions.createDatabaseWithGrants(dbActions.getConnection(rollbackDBConfig, true), rollbackDBConfig, hosts);
+        Liquibase liquibase = new Liquibase("etc/db/liquibase/ssg-8.2.00.xml", new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(rollbackDBConfig, true, false)));
+        liquibase.update("");
 
         for (String upgradeXML : upgradeXMLs) {
             //upgrade and rollback
-            Liquibase liquibase = new Liquibase("etc/db/liquibase/" + upgradeXML, new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(rollbackDBConfig, true, false)));
+            liquibase = new Liquibase("etc/db/liquibase/" + upgradeXML, new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(rollbackDBConfig, true, false)));
             liquibase.tag(upgradeXML);
             liquibase.update("");
             liquibase.rollback(upgradeXML, "");
@@ -134,7 +138,7 @@ public class DatabaseUpgradeTest {
             liquibase.update("");
         }
 
-        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true, null);
+        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true);
 
     }
 

@@ -1,14 +1,13 @@
 package com.l7tech.server.util;
 
-import com.l7tech.util.*;
-import liquibase.Liquibase;
-import liquibase.database.jvm.JdbcConnection;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.server.management.db.LiquibaseDBManager;
 import liquibase.exception.LiquibaseException;
-import liquibase.resource.FileSystemResourceAccessor;
 import org.springframework.core.io.Resource;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
@@ -131,8 +130,8 @@ public class DerbyDbHelper {
     }
 
 
-        /**
-     * Test the given datasource.
+    /**
+     * Ensures the given datasource exists, if it does not it is created (with the current schema).
      *
      * <p>This will cause failure of the server if the database cannot be accessed.</p>
      *
@@ -141,9 +140,9 @@ public class DerbyDbHelper {
      *
      * @param dataSource The datasource to test
      */
-    public static void testDataSource( final DataSource dataSource,
-                                       final Config config,
-                                       final String createScript ) {
+    @SuppressWarnings("UnusedDeclaration") //This is referenced in embeddedDBContext.xml
+    public static void ensureDataSource(final DataSource dataSource,
+                                        final LiquibaseDBManager dbManager) {
         Connection connection = null;
 
         boolean created = true;
@@ -161,9 +160,9 @@ public class DerbyDbHelper {
             }
 
             if ( created ) {
-                File dbCreateScriptFile = new File(createScript);
-                Liquibase liquibase = new Liquibase(dbCreateScriptFile.getName(), new FileSystemResourceAccessor(dbCreateScriptFile.getParentFile().getPath()), new JdbcConnection(connection));
-                liquibase.update("");
+                //create the new schema
+                dbManager.ensureSchema(connection);
+                connection.commit();
             }
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );

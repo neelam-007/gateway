@@ -84,7 +84,7 @@ public class ImportExportUtilities {
     static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
     private static final String FTP_PROTOCOL = "ftp://";
 
-    public static final String SSG_DB_XML = "/config/etc/db/ssg.xml";
+    public static final String SSG_DB_SCHEMA_FOLDER = "/config/etc/db";
 
     /**
      * If system property com.l7tech.config.backup.localDbOnly is set to false, then any host is ok, otherwise

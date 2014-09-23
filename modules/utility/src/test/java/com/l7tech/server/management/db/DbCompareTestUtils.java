@@ -1,4 +1,4 @@
-package com.l7tech.util.db;
+package com.l7tech.server.management.db;
 
 import com.l7tech.util.*;
 import org.junit.Assert;

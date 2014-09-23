@@ -52,9 +52,9 @@ public class BackupRestoreDatabaseTest {
         newDBConfig.setDatabaseAdminUsername(ADMIN_USER_NAME);
         newDBConfig.setDatabaseAdminPassword(ADMIN_USER_PASSWORD);
 
-        dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
+        dbActions.dropDatabase(newDBConfig, hosts, true, true);
 
-        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/liquibase/ssg.xml", false);
+        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/liquibase", false);
         Assert.assertEquals("Could not create mysql backup_restore_db database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
 
         db_version = dbActions.checkDbVersion(newDBConfig);
@@ -80,7 +80,7 @@ public class BackupRestoreDatabaseTest {
         SyspropUtil.clearProperty("com.l7tech.util.buildVersion");
         SyspropUtil.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
 
-        dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
+        dbActions.dropDatabase(newDBConfig, hosts, true, true);
     }
 
     @AfterClass
