@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -505,9 +506,13 @@ public class PrivateKeyRestEntityResourceTest extends RestEntityTests<SsgKeyEntr
         Assert.assertTrue(export.getPkcs12Data().length > 0);
 
         //test that the key is ok
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
-        Assert.assertTrue(ks.containsAlias(alias));
+        try {
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(new ByteArrayInputStream(export.getPkcs12Data()), password.toCharArray());
+            Assert.assertTrue(ks.containsAlias(alias));
+        } catch (IOException e) {
+            throw new IOException("Exception caused by Pkcs12Data: " + response.getBody(), e);
+        }
     }
 
     @Test
