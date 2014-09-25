@@ -40,11 +40,10 @@ public class HeaderDecorator extends MqMessageDecorator {
         MQMessage mqMessage = super.decorate();
 
         boolean isPassThroughMessageHeader = true;
-        MqNativeMessageHeaderType headerType = null;
 
         Map<String, Object> headerOverrides = new LinkedHashMap<>();
 
-        headerType = MqNativeMessageHeaderType.fromValue(getOutboundHeaderAttribute(MD_FORMAT));
+        MqNativeMessageHeaderType headerType = MqNativeMessageHeaderType.fromValue(getOutboundHeaderAttribute(MD_FORMAT));
 
         //Determine request or response
         if (assertion != null) {
@@ -65,14 +64,16 @@ public class HeaderDecorator extends MqMessageDecorator {
         //put override values
         headerOverrides.putAll(getOutboundHeaderAttributes(PREFIX));
 
-        MqNativeHeaderHandler handler = null;
+        MqNativeHeaderHandler handler;
 
         //PassThrough without override and without type conversion
         if (isPassThroughMessageHeader &&
-                (headerOverrides == null || headerOverrides.isEmpty()) &&
+                headerOverrides.isEmpty() &&
                 (headerType == MqNativeMessageHeaderType.ORIGINAL || headerType == source.getPrimaryType())) {
             handler = new MqNativeHeaderHandler(source.getPrimaryType());
-            mqMessage.format = handler.getMessageHeaderFormat();
+            if (handler.getMessageHeaderFormat() != null) {
+                mqMessage.format = handler.getMessageHeaderFormat();
+            }
             source.getHeaders().write(mqMessage);
             return mqMessage;
         }
@@ -96,8 +97,8 @@ public class HeaderDecorator extends MqMessageDecorator {
             }
         }
 
-        if (headerOverrides != null && !headerOverrides.isEmpty()) {
-            Map<String, Object> convertedProperties = new LinkedHashMap<String, Object>(headerOverrides.size());
+        if (!headerOverrides.isEmpty()) {
+            Map<String, Object> convertedProperties = new LinkedHashMap<>(headerOverrides.size());
             for (Map.Entry<String, Object> entry : headerOverrides.entrySet()) {
                 String name = entry.getKey();
                 Object value = entry.getValue();
@@ -114,7 +115,9 @@ public class HeaderDecorator extends MqMessageDecorator {
             handler.applyHeaderValuesToMessage(convertedProperties);
         }
         Object header = handler.getHeader();
-        mqMessage.format = handler.getMessageHeaderFormat();
+        if (handler.getMessageHeaderFormat() != null) {
+            mqMessage.format = handler.getMessageHeaderFormat();
+        }
         MQHeaderList newHeaderList = new MQHeaderList();
         if (header != null) {
             newHeaderList.add(header);

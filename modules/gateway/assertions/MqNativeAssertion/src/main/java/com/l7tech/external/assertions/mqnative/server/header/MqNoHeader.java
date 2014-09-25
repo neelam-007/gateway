@@ -5,15 +5,13 @@ import com.ibm.mq.MQException;
 import java.io.IOException;
 import java.util.*;
 
-import static com.ibm.mq.constants.CMQC.MQFMT_NONE;
-
 public class MqNoHeader implements MqNativeHeaderAdaptor {
 
     public MqNoHeader() {
     }
 
     public String getMessageFormat() {
-        return MQFMT_NONE;
+        return null;
     }
 
     @Override
