@@ -21,10 +21,13 @@ import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -279,12 +282,14 @@ public class AuditFilterPolicyManager {
                     }
                 }
             });
-            result = handle.checkRequest(finalCtx);
-        } catch (RuntimeException e) {
-            return handlePolicyException(e, policyType);
-        } catch (IOException e) {
-            return handlePolicyException(e, policyType);
-        } catch (PolicyAssertionException e) {
+
+            result = AuditContextFactory.doWithCustomAuditContext( AuditContextFactory.createLogOnlyAuditContext(), new Callable<AssertionStatus>() {
+                @Override
+                public AssertionStatus call() throws Exception {
+                    return handle.checkRequest( finalCtx );
+                }
+            } );
+        } catch (Exception e) {
             return handlePolicyException(e, policyType);
         } finally {
             ResourceUtils.closeQuietly(pec);

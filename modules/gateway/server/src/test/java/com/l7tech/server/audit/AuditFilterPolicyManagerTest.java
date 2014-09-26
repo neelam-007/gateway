@@ -6,10 +6,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.Component;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -23,6 +20,7 @@ import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import org.junit.Assert;
@@ -35,6 +33,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class AuditFilterPolicyManagerTest {
@@ -212,6 +211,45 @@ public class AuditFilterPolicyManagerTest {
         Assert.assertNull("responseXml should be null",  record.getResponseXml());
     }
 
+    @Test
+    @BugId( "SSG-9233" )
+    public void testBug_FilterPolicyMustRunWithOwnAuditContext() throws Exception {
+        updatePolicyXml(policyToTryAndDoAuditing);
+        final String requestXml = "<xml>test</xml>";
+        final Message requestMsg = new Message();
+        requestMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
+        final Message responseMsg = new Message();
+        responseMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
+
+        final boolean[] sawAuditAttempt = { false };
+
+        AuditContext alwaysFailsAuditContext = new AuditContextStub() {
+            @Override
+            public void addDetail( AuditDetail detail, Object source ) {
+                sawAuditAttempt[0] = true;
+                throw new IllegalStateException( "You can't use this audit context -- it is the one we are in the middle of flushing! Make your own" );
+            }
+
+            @Override
+            public void addDetail( AuditDetailEvent.AuditDetailWithInfo detailWithInfo ) {
+                sawAuditAttempt[0] = true;
+                throw new IllegalStateException( "You can't use this audit context -- it is the one we are in the middle of flushing! Make your own" );
+            }
+        };
+        AuditContextFactory.doWithCustomAuditContext( alwaysFailsAuditContext, new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                filterPolicyManager.filterAuditRecord( record, context, auditLogListener, new AuditLogFormatter() );
+                return null;
+            }
+        } );
+        Assert.assertFalse( "The AMF policy attempted to use the audit context we were in the process of flushing.  It needs to create a new log only audit context of its own", sawAuditAttempt[0] );
+        Assert.assertEquals("Invalid AMF output for request", successAMFOutput, record.getRequestXml());
+        Assert.assertEquals("Invalid AMF output for response", successAMFOutput, record.getResponseXml());
+
+    }
+
     // - PRIVATE
     
     private static final String successPolicyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -240,6 +278,29 @@ public class AuditFilterPolicyManagerTest {
             "                </L7p:Namespaces>\n" +
             "            </L7p:XpathExpression>\n" +
             "        </L7p:RequestXpathAssertion>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String policyToTryAndDoAuditing = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:RequestXpathAssertion>\n" +
+            "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
+            "                <L7p:Expression stringValue=\"/*\"/>\n" +
+            "                <L7p:Namespaces mapValue=\"included\">\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"s\"/>\n" +
+            "                        <L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                </L7p:Namespaces>\n" +
+            "            </L7p:XpathExpression>\n" +
+            "        </L7p:RequestXpathAssertion>\n" +
+            "        <L7p:SetVariable>\n" +
+            "            <L7p:Base64Expression stringValue=\"PG91dHB1dD5BTUYgb3V0cHV0PC9vdXRwdXQ+\"/>\n" +
+            "            <L7p:ContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+            "            <L7p:DataType variableDataType=\"message\"/>\n" +
+            "            <L7p:VariableToSet stringValue=\"request\"/>\n" +
+            "        </L7p:SetVariable>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
