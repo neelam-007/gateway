@@ -509,7 +509,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         byteLimitPanel.setValue( assertion.getResponseSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes() );
 
-        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[] {ANY_TLS_VERSION, "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" } ) );
+        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[] {ANY_TLS_VERSION, "SSLv3", "TLSv1,SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2" } ) );
         tlsVersionComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
             @Override
             public String call( final Object protocol ) {
@@ -520,7 +520,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.addRule(new InputValidator.ComponentValidationRule(tlsVersionComboBox) {
             @Override
             public String getValidationError() {
-                final Object version = tlsVersionComboBox.getSelectedItem();
+                Object version = tlsVersionComboBox.getSelectedItem();
+                if ( version.toString().endsWith( ",SSLv2Hello" ) ) {
+                    String[] protos = version.toString().split( "," );
+                    if ( protos.length != 2 )
+                        return "The selected TLS version is not available with the Gateway's current security provider configuration.";
+                    version = protos[0];
+                }
                 return version == null || ANY_TLS_VERSION.equals(version) || CipherSuiteGuiUtil.isSupportedTlsVersion(version)
                         ? null
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";

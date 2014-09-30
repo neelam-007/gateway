@@ -78,7 +78,7 @@ public class SSLServerSocketFactoryWrapper extends SSLServerSocketFactory {
                         try {
                             sslSocket.setEnabledProtocols( tlsVersions );
                         } catch (IllegalArgumentException e) {
-                            throw new UnsupportedTlsVersionsException("Specified TLS version is not availble in the current configuration: " + ExceptionUtils.getMessage( e ), e);
+                            throw new UnsupportedTlsVersionsException("Specified TLS version is not available in the current configuration: " + ExceptionUtils.getMessage( e ), e);
                         }
                     }
                     if ( tlsCipherSuites != null )

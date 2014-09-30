@@ -22,6 +22,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.DefaultStashManagerFactory;
@@ -47,6 +48,7 @@ import java.io.InputStream;
 import java.net.*;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -139,7 +141,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey");
                 keyManagers = ku.getSslKeyManagers();
             }
-            sslContext = SSLContext.getInstance("TLS");
+
+            // HACK: If SSLv2Hello requested, can't use SSL-J; have to use SunJSSE instead
+            Provider tlsProvider = null;
+            if ( assertion.getTlsVersion() != null && assertion.getTlsVersion().contains( "SSLv2Hello" ) ) {
+                tlsProvider = JceProvider.getInstance().getProviderFor( "SSLContext.TLSv1" );
+            }
+            sslContext = tlsProvider == null
+                    ? SSLContext.getInstance( "TLS" )
+                    : SSLContext.getInstance( "TLS", tlsProvider );
 
             final Goid[] tlsTrustedCertOids = assertion.getTlsTrustedCertGoids();
             Set<Goid> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Goid>(Arrays.asList(tlsTrustedCertOids));
