@@ -155,6 +155,8 @@ public class ManagerAppletFilter implements Filter {
             hreq.setCharacterEncoding( "UTF-8" );
         }
 
+        hresp.setHeader( "X-Frame-Options", "DENY" );
+
         Auditor auditor = new Auditor(this, applicationContext, logger);
 
         PolicyEnforcementContext context = null;

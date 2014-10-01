@@ -78,6 +78,7 @@ public class ManagerAppletServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             HttpTransportModule.requireEndpoint(req, SsgConnector.Endpoint.ADMIN_APPLET);
+            resp.setHeader( "X-Frame-Options", "DENY" );
             super.service(req, resp);
         } catch (ListenerException e) {
             resp.sendError(404, "Service unavailable on this port");
