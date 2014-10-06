@@ -213,7 +213,7 @@ public class SiteMinderRegisterConfigDialog extends JDialog {
         Registry reg = Registry.getDefault();
 
         if (!reg.isAdminContextPresent()) {
-            logger.warning("Cannot get SiteMinder Configuration Admin due to no Admin Context present.");
+            logger.warning("Cannot get CA Single Sign-On Configuration Admin due to no Admin Context present.");
             return null;
         }
 

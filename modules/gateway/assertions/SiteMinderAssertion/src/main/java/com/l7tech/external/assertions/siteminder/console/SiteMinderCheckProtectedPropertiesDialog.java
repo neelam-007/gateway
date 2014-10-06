@@ -79,9 +79,9 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
             @Override
             public String getValidationError() {
                 if (StringUtils.isBlank(prefixTargetVariablePanel.getVariable())) {
-                    return "SiteMinder Variable Prefix must not be empty!";
+                    return "CA Single Sign-On Variable Prefix must not be empty!";
                 } else if(!VariableMetadata.isNameValid(prefixTargetVariablePanel.getVariable())) {
-                    return "SiteMinder Variable Prefix must have valid name";
+                    return "CA Single Sign-On Variable Prefix must have valid name";
                 }
 
                 return null;

@@ -22,7 +22,7 @@ public class SiteMinderExternalReferenceFactory extends ExternalReferenceFactory
     @Override
     public ExternalReference createExternalReference(ExternalReferenceFinder finder, Assertion assertion) {
         if (!(assertion instanceof SiteMinderCheckProtectedAssertion)) {
-            throw new IllegalArgumentException("The assertion is not a SiteMinder Check Protected Assertion.");
+            throw new IllegalArgumentException("The assertion is not a CA Single Sign-On Check Protected Assertion.");
         }
         return new SiteMinderExternalReference(finder, ((SiteMinderCheckProtectedAssertion) assertion).getAgentGoid());
     }

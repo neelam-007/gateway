@@ -126,7 +126,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Check if Resource is protected against CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.LONG_NAME, "Check if Resource is protected against CA Single Sign-On Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -145,7 +145,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         // that is, we want our required feature set to be "assertion:SiteMinder" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.siteminder.console.SiteMinderCheckProtectedPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SiteMinder Check Protected Resource Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "CA Single Sign-On Check Protected Resource Properties");
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.siteminder.server.SiteMinderModuleLoadListener" );
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -243,7 +243,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    private final static String baseName = "Check Protected Resource Against SiteMinder";
+    private final static String baseName = "Check Protected Resource Against CA Single Sign-On";
     private static final int MAX_DISPLAY_LENGTH = 120;
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderCheckProtectedAssertion>(){

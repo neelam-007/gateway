@@ -262,7 +262,7 @@ public abstract class SiteMinderUtil {
             tmpDir = FileUtils.createTempDirectory(TEMP_DIR, null, null, false);
             String smHostConfig = tmpDir.getAbsolutePath() + File.separator + "smHost.conf";
 
-            logger.log(Level.FINE, "registering SiteMinder agent...");
+            logger.log(Level.FINE, "registering CA Single Sign-On agent...");
 
             String sdkPath = ConfigFactory.getProperty(SYSPROP_SDK_PATH, DEFAULT_SDK_PATH);
 

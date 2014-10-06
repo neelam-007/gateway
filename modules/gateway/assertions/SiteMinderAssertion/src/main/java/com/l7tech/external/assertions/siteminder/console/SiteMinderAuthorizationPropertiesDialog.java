@@ -67,7 +67,7 @@ public class SiteMinderAuthorizationPropertiesDialog extends AssertionProperties
         useSSOTokenFromContextVariableRadioButton.addActionListener(buttonSwitchListener);
         setSiteMinderCookieCheckBox.addActionListener(buttonSwitchListener);
 
-        inputValidator.addRule(createTargetVariablePanelValidationRule("SiteMinder Variable Prefix",
+        inputValidator.addRule(createTargetVariablePanelValidationRule("CA Single Sign-On Variable Prefix",
                 siteminderPrefixVariablePanel));
 
         inputValidator.addRule(createTargetVariablePanelValidationRule("SSO Token Context Variable",

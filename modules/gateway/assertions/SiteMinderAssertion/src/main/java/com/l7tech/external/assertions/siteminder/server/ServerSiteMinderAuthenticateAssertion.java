@@ -69,14 +69,14 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             try {
                 smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
             } catch (NoSuchVariableException e) {
-                final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
+                final String msg = "No CA Single Sign-On context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
                 logger.log(Level.SEVERE, msg, ExceptionUtils.getDebugException(e));
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
                 return AssertionStatus.FALSIFIED;
             }
 
             if(smContext.getAgent() == null) {
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -84,18 +84,18 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);
             int result = hla.processAuthenticationRequest(credentials, getClientIp(message, smContext), ssoToken, smContext);
             if(result == SM_YES) {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), ssoToken != null? "Authenticated via SSO Token: " + ssoToken:"Authenticated credentials: " + credentials);
                 addAuthenticatedUserToContext(authContext, smContext);
                 status = AssertionStatus.NONE;
             }
             else {
-                logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to authenticate user using" + (ssoToken != null? " SSO Token:" + ssoToken: " credentials: " + credentials));
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to authenticate user using" + (ssoToken != null? " SSO Token:" + ssoToken: " credentials: " + credentials));
             }
 
             populateContextVariables(context, varPrefix, smContext);
 
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return AssertionStatus.FAILED;//something really bad happened
         }
 
@@ -157,7 +157,8 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
         SiteMinderCredentials siteMinderCredentials = new SiteMinderCredentials();
 
         if ( ! (sendBasic || sendCert ) ) {
-            logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Neither Username and Password; or X.509 Certificate Credentials selected to be sent to SiteMinder. No credentials sent.");
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME),
+                    "Neither Username and Password; or X.509 Certificate Credentials selected to be sent to CA Single Sign-On. No credentials sent.");
             return siteMinderCredentials;
         }
 
@@ -182,7 +183,7 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
             }
 
         } catch ( CertificateEncodingException e ) {
-            logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to decode client certificate for login credentials.");
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to decode client certificate for login credentials.");
             logger.log(Level.WARNING, "Certificate retrieve from Policy Context improperly encoded.", ExceptionUtils.getDebugException(e));
         }
 

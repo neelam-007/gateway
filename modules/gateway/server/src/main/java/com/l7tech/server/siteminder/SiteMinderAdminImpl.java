@@ -118,7 +118,8 @@ public class SiteMinderAdminImpl extends AsyncAdminMethodsImpl implements SiteMi
                             siteMinderConfiguration.getHostConfiguration(),
                             SiteMinderFipsModeOption.getByCode(siteMinderConfiguration.getFipsmode()));
                 } catch (IOException e) {
-                    final String msg = "Unable to register SiteMinder configuration. Check connection with policy server";
+                    final String msg =
+                            "Unable to register CA Single Sign-On configuration. Check connection with policy server";
                     logger.log(Level.WARNING, msg + " " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     throw e;
                 }

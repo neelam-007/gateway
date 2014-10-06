@@ -325,7 +325,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                         properties.put(RESOURCES.getString("property.cluster.server.connection.step"), String.valueOf(CLUSTER_SERVER_CONN_STEP));
                         properties.put(RESOURCES.getString("property.cluster.server.timeout"), String.valueOf(newHost.getRequestTimeout()));
                     } else {
-                        logger.log(Level.WARNING, "Unexpected number of SiteMinder Cluster Properties returned: " + newHost.getPolicyServer());
+                        logger.log(Level.WARNING, "Unexpected number of CA Single Sign-On Cluster Properties returned: " + newHost.getPolicyServer());
                     }
 
                     clusterSettingsMap.clear();
@@ -551,7 +551,8 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
                     valid = true;
                 }
             } catch (FindException e) {
-                String errorMessage = "Error checking for duplicate SiteMinder Configuration names: " + e.getMessage();
+                String errorMessage =
+                        "Error checking for duplicate CA Single Sign-On Configuration names: " + e.getMessage();
 
                 logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
 
@@ -562,7 +563,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         } else {
             DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
-                    "Error checking for duplicate SiteMinder Configuration names: Disconnected from gateway.",
+                    "Error checking for duplicate CA Single Sign-On Configuration names: Disconnected from gateway.",
                     RESOURCES.getString("dialog.title.error.saving.config"),
                     JOptionPane.ERROR_MESSAGE, null);
         }
@@ -605,7 +606,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
             }
         } else {
             DialogDisplayer.showMessageDialog(SiteMinderConfigPropertiesDialog.this,
-                    "Error validating SiteMinder Configuration: Disconnected from gateway.",
+                    "Error validating CA Single Sign-On Configuration: Disconnected from gateway.",
                     RESOURCES.getString("dialog.title.error.saving.config"),
                     JOptionPane.ERROR_MESSAGE, null);
         }
@@ -617,7 +618,7 @@ public class SiteMinderConfigPropertiesDialog extends JDialog {
         Registry reg = Registry.getDefault();
 
         if (!reg.isAdminContextPresent()) {
-            logger.warning("Cannot get SiteMinder Configuration Admin due to no Admin Context present.");
+            logger.warning("Cannot get CA Single Sign-On Configuration Admin due to no Admin Context present.");
             return null;
         }
 

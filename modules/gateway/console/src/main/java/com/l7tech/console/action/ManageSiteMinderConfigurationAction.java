@@ -23,12 +23,12 @@ public class ManageSiteMinderConfigurationAction extends SecureAction {
 
     @Override
     public String getName() {
-        return "Manage SiteMinder Configurations";
+        return "Manage CA Single Sign-On Configurations";
     }
 
     @Override
     public String getDescription() {
-        return "Create, edit, and remove SiteMinder Configurations";
+        return "Create, edit, and remove CA Single Sign-On Configurations";
     }
 
     @Override
@@ -46,7 +46,7 @@ public class ManageSiteMinderConfigurationAction extends SecureAction {
             DialogDisplayer.display(configurationWindow);
         } else {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    "Cannot find SiteMinder SDK!", "SiteMinder Error", JOptionPane.ERROR_MESSAGE, null);
+                    "Cannot find CA Single Sign-On SDK!", "CA Single Sign-On Error", JOptionPane.ERROR_MESSAGE, null);
         }
     }
 

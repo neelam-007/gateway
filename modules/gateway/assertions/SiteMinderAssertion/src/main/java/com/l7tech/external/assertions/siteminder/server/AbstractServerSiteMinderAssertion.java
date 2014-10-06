@@ -51,13 +51,13 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
                 context.setAgent(manager.getSiteMinderLowLevelAgent(agentGoid));
             }
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder agent API exception occurred, agent Goid=" + agentGoid);
-            throw new PolicyAssertionException(assertion, "SiteMinder agent API exception", ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "CA Single Sign-On agent API exception occurred, agent Goid=" + agentGoid);
+            throw new PolicyAssertionException(assertion, "CA Single Sign-On agent API exception", ExceptionUtils.getDebugException(e));
         } catch (FindException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find SiteMinder agent configuration, agent Goid=" + agentGoid);
-            throw new PolicyAssertionException(assertion, "No SiteMinder agent configuration", ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to find CA Single Sign-On agent configuration, agent Goid=" + agentGoid);
+            throw new PolicyAssertionException(assertion, "No CA Single Sign-On agent configuration", ExceptionUtils.getDebugException(e));
         } catch (IllegalStateException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return false;
         }
         return true;
@@ -70,7 +70,7 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
     protected String getClientIp(Message target, SiteMinderContext context) throws PolicyAssertionException{
         String address = null;
         if(context == null) {
-            throw new PolicyAssertionException(assertion, "SiteMinder context is null");//this should never happen
+            throw new PolicyAssertionException(assertion, "CA Single Sign-On context is null");//this should never happen
         }
         //first check the context if we have the user IP set
         if(StringUtils.isNotBlank(context.getSourceIpAddress())){
@@ -85,7 +85,7 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
                 context.setSourceIpAddress(address);
             }
             else {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Client IP address is null!");
             }
         }
 
@@ -94,8 +94,8 @@ public abstract class AbstractServerSiteMinderAssertion<AT extends Assertion & M
 
     protected void checkSiteMinderEnabled() throws  PolicyAssertionException {
         if(!ConfigFactory.getBooleanProperty(SYSTEM_PROPERTY_SITEMINDER_ENABLED, false)) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SiteMinder SDK is not installed or misconfigured! Assertion failed");
-            throw new PolicyAssertionException(assertion, "SiteMinder SDK not installed or misconfigured!");
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "CA Single Sign-On SDK is not installed or misconfigured! Assertion failed");
+            throw new PolicyAssertionException(assertion, "CA Single Sign-On SDK not installed or misconfigured!");
         }
     }
 }

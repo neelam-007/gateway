@@ -75,7 +75,7 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
     public SiteMinderConfiguration fromResource(Object resource, boolean strict) throws InvalidResourceException {
 
         if ( !(resource instanceof SiteMinderConfigurationMO) )
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected SiteMinder configuration");
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected CA Single Sign-On configuration");
 
         final SiteMinderConfigurationMO smResource = (SiteMinderConfigurationMO) resource;
 

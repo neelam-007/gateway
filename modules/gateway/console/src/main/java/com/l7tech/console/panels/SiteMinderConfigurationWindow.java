@@ -124,7 +124,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
             try {
                 configurationList = admin.getAllSiteMinderConfigurations();
             } catch (FindException ex) {
-                logger.warning("Cannot find SiteMinder Configurations.");
+                logger.warning("Cannot find CA Single Sign-On Configurations.");
             }
             Collections.sort(configurationList);
         }
@@ -174,7 +174,7 @@ public class SiteMinderConfigurationWindow extends JDialog {
             try {
                 admin.deleteSiteMinderConfiguration(configuration);
             } catch (DeleteException ex) {
-                logger.warning("Cannot delete the SiteMinder configuration " + configuration.getName());
+                logger.warning("Cannot delete the CA Single Sign-On configuration " + configuration.getName());
                 return;
             }
         }

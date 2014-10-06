@@ -27,7 +27,7 @@ public class SiteMinderHighLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
+        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         // The realmDef object will contain the realm handle for the resource if the resource is protected.
         ResourceContextDef resCtxDef = new ResourceContextDef(smAgentName, "", resource, action);
@@ -44,7 +44,8 @@ public class SiteMinderHighLevelAgent {
         buildAuthenticationSchemes(context, realmDef.credentials);
 
         if (!isProtected) {
-            logger.log(Level.INFO,"The resource/action '" + resource + "/" + action + "' is not protected by SiteMinder. Access cannot be authorized.");
+            logger.log(Level.INFO,"The resource/action '" + resource + "/" + action +
+                    "' is not protected by CA Single Sign-On. Access cannot be authorized.");
             return false;
         }
 
@@ -119,7 +120,7 @@ public class SiteMinderHighLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
+        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         return agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
 
@@ -145,7 +146,7 @@ public class SiteMinderHighLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find SiteMinder Agent");
+        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         // check for some kind of credential
         UserCredentials userCreds;

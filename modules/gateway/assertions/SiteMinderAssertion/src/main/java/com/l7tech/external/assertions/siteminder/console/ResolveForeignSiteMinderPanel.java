@@ -58,7 +58,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
     @Override
     public String getStepLabel() {
         final SiteMinderConfiguration config = foreignRef.getSiteMinderConfiguration();
-        return "Unresolved SiteMinder Configuration " + (config == null ? foreignRef.getRefId() : config.getName());
+        return "Unresolved CA Single Sign-On Configuration " + (config == null ? foreignRef.getRefId() : config.getName());
     }
 
     @Override
@@ -213,7 +213,7 @@ public class ResolveForeignSiteMinderPanel extends WizardStepPanel {
     private SiteMinderAdmin getSiteMinderAdmin() {
         Registry registry = Registry.getDefault();
         if (!registry.isAdminContextPresent()) {
-            logger.warning("Cannot get SiteMinder Configuration Admin due to no Admin Context present.");
+            logger.warning("Cannot get CA Single Sign-On Configuration Admin due to no Admin Context present.");
             return null;
         }
         return registry.getSiteMinderConfigurationAdmin();

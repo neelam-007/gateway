@@ -129,7 +129,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Authenticate user against CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.LONG_NAME, "Authenticate user against CA Single Sign-On Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -246,7 +246,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         return false;
     }
 
-    private final static String baseName = "Authenticate Against SiteMinder";
+    private final static String baseName = "Authenticate Against CA Single Sign-On";
     private static final int MAX_DISPLAY_LENGTH = 80;
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderAuthenticateAssertion>(){

@@ -126,7 +126,7 @@ public class SiteMinderExternalReference extends ExternalReference {
             }
 
         } catch (final JAXBException e) {
-            throw new IllegalArgumentException("Unable to save SiteMinder configuration reference.");
+            throw new IllegalArgumentException("Unable to save CA Single Sign-On configuration reference.");
         }
         referencesParentElement.appendChild(referenceElement);
     }
@@ -175,7 +175,7 @@ public class SiteMinderExternalReference extends ExternalReference {
                                 assertion.setAgentGoid(config.getGoid());
                                 assertion.setAgentId(config.getName());
                             } catch (FindException e) {
-                                logger.info("Unable to find SiteMinder Configuration.");
+                                logger.info("Unable to find CA Single Sign-On Configuration.");
                             }
                         }
                     } else if (localizeType == LocalizeAction.DELETE) {
@@ -192,7 +192,7 @@ public class SiteMinderExternalReference extends ExternalReference {
 
         // make sure passed element has correct connectorName
         if (!el.getNodeName().equals(ELMT_NAME_REF)) {
-            throw new InvalidDocumentFormatException("Expecting element of SiteMinder configuration " + ELMT_NAME_REF);
+            throw new InvalidDocumentFormatException("Expecting element of CA Single Sign-On configuration " + ELMT_NAME_REF);
         }
         SiteMinderExternalReference ref = null;
         NodeList children = el.getChildNodes();
@@ -225,7 +225,7 @@ public class SiteMinderExternalReference extends ExternalReference {
             if (parsedGoid != null) {
                 return new SiteMinderExternalReference(finder, parsedGoid);
             } else {
-                throw new InvalidDocumentFormatException("Unable to load SiteMinder configuration reference.");
+                throw new InvalidDocumentFormatException("Unable to load CA Single Sign-On configuration reference.");
             }
         } else {
             return ref;

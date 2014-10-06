@@ -784,7 +784,7 @@ public class GatewayFeatureSets {
                 mass("assertion:ManageApiKey"));
 
         GatewayFeatureSet siteMinderAssertions = fsr("set:SiteMinder:Assertions",
-                "The necessary assertions to enable CA SiteMinder integration",
+                "The necessary assertions to enable CA Single Sign-On integration",
                 mass("assertion:SiteMinderCheckProtected"),
                 mass("assertion:SiteMinderAuthenticate"),
                 mass("assertion:SiteMinderAuthorize"));

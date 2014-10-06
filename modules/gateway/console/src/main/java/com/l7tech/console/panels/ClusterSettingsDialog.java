@@ -12,11 +12,9 @@ import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 /**
- * Created with IntelliJ IDEA.
  * User: nilic
  * Date: 7/23/13
  * Time: 2:38 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ClusterSettingsDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.SiteMinderConfigClusterSettings");

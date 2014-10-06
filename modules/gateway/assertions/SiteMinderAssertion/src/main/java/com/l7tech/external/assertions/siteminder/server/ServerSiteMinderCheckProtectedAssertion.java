@@ -61,8 +61,9 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         try {
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
         } catch (NoSuchVariableException e) {
-            final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context. Creating an empty one";
-            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
+            final String msg = "No CA Single Sign-On context variable ${" + varPrefix + "." +
+                    SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context. Creating an empty one";
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
             logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
             smContext = new SiteMinderContext();
         }
@@ -81,16 +82,16 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         try {
             //check if protected and return AssertionStatus.NONE if it is
             if(hla.checkProtected(getClientIp(message, smContext), smAgentName, resource, action, smContext)) {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is protected");
                 status = AssertionStatus.NONE;
             }
             else {
-                logAndAudit(AssertionMessages.SITEMINDER_WARNING,(String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is not protected!");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING,(String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "The resource " + resource + " is not protected!");
             }
             populateContextVariables(context, varPrefix, smContext);
 
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return AssertionStatus.FAILED;//something really bad happened
         }
 

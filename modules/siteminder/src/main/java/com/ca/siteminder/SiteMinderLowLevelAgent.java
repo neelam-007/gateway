@@ -35,7 +35,7 @@ public class SiteMinderLowLevelAgent {
 
     public SiteMinderLowLevelAgent(SiteMinderConfig config) throws SiteMinderApiClassException {
         agentConfig = config;
-        if(!initialize()) throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API");
+        if(!initialize()) throw new SiteMinderApiClassException("Unable to initialize CA Single Sign-On Agent API");
     }
 
 
@@ -107,7 +107,7 @@ public class SiteMinderLowLevelAgent {
                     case AgentAPI.NOCONNECTION:
                     case AgentAPI.TIMEOUT:
                     case AgentAPI.FAILURE:
-                        logger.log(Level.SEVERE, "Unable to connect to the SiteMinder Policy Server.");
+                        logger.log(Level.SEVERE, "Unable to connect to the CA Single Sign-On Policy Server.");
                         initialized = false;
                         break;
                     case AgentAPI.INVALID_MGMTCTXDEF:
@@ -124,16 +124,17 @@ public class SiteMinderLowLevelAgent {
             }
             else {
                 if(retCode == AgentAPI.NOCONNECTION) {
-                    logger.log(Level.SEVERE, "The SiteMinder Agent " + agentConfig.getHostname() + " cannot connect to the Policy Server");
+                    logger.log(Level.SEVERE, "The CA Single Sign-On Agent " + agentConfig.getHostname() +
+                            " cannot connect to the Policy Server");
                 }
                 else {
-                    logger.log(Level.SEVERE, "The SiteMinder Agent hostname and/or the secret is incorrect.");
+                    logger.log(Level.SEVERE, "The CA Single Sign-On Agent hostname and/or the secret is incorrect.");
                 }
             }
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed initialization", e);
-            throw new SiteMinderApiClassException("Unable to initialize SiteMinder Agent API", e);
+            throw new SiteMinderApiClassException("Unable to initialize CA Single Sign-On Agent API", e);
         }
 
         return initialized;
@@ -180,7 +181,7 @@ public class SiteMinderLowLevelAgent {
 
 
         if (retCode != AgentAPI.YES) {
-            logger.log(Level.FINE, "SiteMinder authorization attempt: User: '" + userCreds.name + "' Resource: '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "' Access Mode: '" + SiteMinderUtil.safeNull(resCtxDef.action) + "'");
+            logger.log(Level.FINE, "CA Single Sign-On authorization attempt: User: '" + userCreds.name + "' Resource: '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "' Access Mode: '" + SiteMinderUtil.safeNull(resCtxDef.action) + "'");
             attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
 
         }
@@ -246,7 +247,7 @@ public class SiteMinderLowLevelAgent {
             storeDecodedAttributes(attributes, attrList);
 
             if (result != AgentAPI.SUCCESS) {
-                logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
+                logger.log(Level.FINE, "CA Single Sign-On authorization attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
                 return result;
             }
 
@@ -268,7 +269,7 @@ public class SiteMinderLowLevelAgent {
             logger.log(Level.FINE, "Authorized - against" + " resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "'SSO token : " + context.getSsoToken());
         }
         else {
-            logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
+            logger.log(Level.FINE, "CA Single Sign-On authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
         }
         // add sessionDef reason code
         attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sd)));
@@ -374,7 +375,7 @@ public class SiteMinderLowLevelAgent {
             if (result == AgentAPI.FAILURE) {
                 logger.log(Level.WARNING, "Unable to decode the token - invalid SSO token!");
             } else {
-                logger.log(Level.FINE, "SiteMinder validate session attempt - Unable to connect to the SiteMinder Policy for decoding the SSO token." + ssoToken);
+                logger.log(Level.FINE, "CA Single Sign-On validate session attempt - Unable to connect to the CA Single Sign-On Policy for decoding the SSO token." + ssoToken);
             }
             return result;
         }
@@ -396,7 +397,7 @@ public class SiteMinderLowLevelAgent {
         storeAttributes(attributes, attrList);//Populate context variable even if apiLogin failed
 
         if (result != AgentAPI.YES) {
-            logger.log(Level.FINE, "SiteMinder authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
+            logger.log(Level.FINE, "CA Single Sign-On authorization attempt - Unauthorized session = '" + ssoToken + "', resource '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "', result code '" + result + "'.");
             attributes.add(new Pair<String, Object>(SiteMinderAgentConstants.SESS_DEF_REASON, getSessionDefReasonCodeAsString(sessionDef)));
             if (result == AgentAPI.NO) {//should we also check the reason code as well?
                 logger.log(Level.WARNING,"Session Cookie expired!");
@@ -631,9 +632,9 @@ public class SiteMinderLowLevelAgent {
         } else if(errCode == AgentAPI.INVALID_REALMDEF) {
             return "The Realm Definition is invalid.";
         } else if(errCode == AgentAPI.TIMEOUT) {
-            return "SiteMinder Policy Server timed out.";
+            return "CA Single Sign-On Policy Server timed out.";
         } else if(errCode == AgentAPI.FAILURE) {
-            return "Request to SiteMinder Policy Server failed.";
+            return "Request to CA Single Sign-On Policy Server failed.";
         }
         else {
             return null;

@@ -1266,9 +1266,9 @@ public class AssertionMessages extends Messages {
     public static final M ENCASS_INVALID_BACKING_POLICY = m(10050, Level.WARNING, "Underlying policy fragment is invalid for Encapsulated Assertion: {0}");
 
     //SiteMinder Assertion
-    public static final M SITEMINDER_ERROR = m(10100, Level.WARNING, "{0} assertion: SiteMinder Policy Server Error: {1}");
-    public static final M SITEMINDER_FINE = m(10101, Level.FINE, "SiteMinder {0} assertion: {1}");
-    public static final M SITEMINDER_WARNING = m(10102, Level.WARNING, "SiteMinder {0} assertion: {1}");
+    public static final M SINGLE_SIGN_ON_ERROR = m(10100, Level.WARNING, "{0} assertion: CA Single Sign-On Policy Server Error: {1}");
+    public static final M SINGLE_SIGN_ON_FINE = m(10101, Level.FINE, "CA Single Sign-On {0} assertion: {1}");
+    public static final M SINGLE_SIGN_ON_WARNING = m(10102, Level.WARNING, "CA Single Sign-On {0} assertion: {1}");
 
     //Radius Assertion
     public static final M RADIUS_AUTH_ERROR = m(10200, Level.WARNING, "Radius Server Error: {0}");

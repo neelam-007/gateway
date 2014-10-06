@@ -52,7 +52,7 @@ public class SiteMinderConfigurationManagerImpl
             SiteMinderConfiguration c = findByPrimaryKey(goid);
             if (c != null) {
                 if (!c.isEnabled()) {
-                    throw new IllegalStateException("SiteMinder Configuration: " + c.getName() + " is disabled.");
+                    throw new IllegalStateException("CA Single Sign-On Configuration: " + c.getName() + " is disabled.");
                 }
                 try {
                     agent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(c));

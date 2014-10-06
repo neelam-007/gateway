@@ -183,7 +183,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements MessageTa
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "Authorize user via CA SiteMinder Policy Server");
+        meta.put(AssertionMetadata.LONG_NAME, "Authorize user via CA Single Sign-On Policy Server");
 
         // Add to palette folder
         //   accessControl,
@@ -298,7 +298,7 @@ public class SiteMinderAuthorizeAssertion extends Assertion implements MessageTa
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    private final static String baseName = "Authorize via SiteMinder";
+    private final static String baseName = "Authorize via CA Single Sign-On";
     private static final int MAX_DISPLAY_LENGTH = 80;
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderAuthorizeAssertion>(){

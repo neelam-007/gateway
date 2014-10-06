@@ -67,14 +67,14 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
         try {
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
         } catch (NoSuchVariableException e) {
-            final String msg = "No SiteMinder context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
+            final String msg = "No CA Single Sign-On context variable ${" + varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT + "} found in the Policy Enforcement Context";
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), msg);
             logger.log(Level.SEVERE, msg, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FALSIFIED;
         }
 
         if(smContext.getAgent() == null) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null!");
             return AssertionStatus.FALSIFIED;
         }
 
@@ -92,16 +92,16 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
                 /////////////////////////////////////////////////////////////////////////////////////////////
                 if (!setSessionCookie(context, smContext, variableMap)) return AssertionStatus.FALSIFIED;
                 ////////////////////////////////////////////////////////////////////////////////////////////
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is authorized");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is authorized");
                 status = AssertionStatus.NONE;
             }
             else {
-                logAndAudit(AssertionMessages.SITEMINDER_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is not authorized!");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_WARNING, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "SM Sessions " + ssoToken + " is not authorized!");
             }
             populateContextVariables(context, varPrefix, smContext);
 
         } catch (SiteMinderApiClassException e) {
-            logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), e.getMessage());
             return AssertionStatus.FAILED;//something really bad happened
         }
 
@@ -125,11 +125,12 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
             String ssoCookie = smContext.getSsoToken();
 
             if (StringUtils.isBlank(ssoCookie)) {
-                logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "SMSESSION cookie is blank! Cookie is not set");
                 return false;
             }
 
-            logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Adding the SiteMinder SSO cookie to the response. Cookie is '" + ssoCookie + "'");
+            logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME),
+                    "Adding the CA Single Sign-On SSO cookie to the response. Cookie is '" + ssoCookie + "'");
 
             //get cookie params  directly from assertion
             String domain = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieDomain(), varMap, getAudit());
@@ -141,7 +142,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
                 try {
                     iVer = Integer.parseInt(version);
                 } catch (NumberFormatException nfe) {
-                    logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Version was set in the context but was not a number: " + version);
+                    logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Version was set in the context but was not a number: " + version);
                 }
             }
             String maxAge = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieMaxAge(), varMap, getAudit());
@@ -150,7 +151,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
                 try {
                     iMaxAge = Integer.parseInt(maxAge);
                 } catch (NumberFormatException nfe) {
-                    logAndAudit(AssertionMessages.SITEMINDER_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Max Age was set in the context but was not a number: " + maxAge);
+                    logAndAudit(AssertionMessages.SINGLE_SIGN_ON_FINE, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Max Age was set in the context but was not a number: " + maxAge);
                 }
             }
             String comment = SiteMinderAssertionUtil.extractContextVarValue(assertion.getCookieComment(), varMap, getAudit());
@@ -162,7 +163,7 @@ public class ServerSiteMinderAuthorizeAssertion extends AbstractServerSiteMinder
                 response.getHttpCookiesKnob().addCookie(cookie);
                 result = true;
             } else {
-                logAndAudit(AssertionMessages.SITEMINDER_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to set Http Cookie: response is not HTTP type");
+                logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String) assertion.meta().get(AssertionMetadata.SHORT_NAME), "Unable to set Http Cookie: response is not HTTP type");
             }
         }
 

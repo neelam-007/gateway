@@ -21,7 +21,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="SiteMinder Variable Prefix: *"/>
+              <text value="CA Single Sign-On Variable Prefix: *"/>
             </properties>
           </component>
           <component id="10181" class="com.l7tech.console.panels.TargetVariablePanel" binding="siteminderPrefixVariablePanel">
@@ -58,7 +58,7 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="Use SSO Token from SiteMinder Context"/>
+                  <text value="Use SSO Token from CA Single Sign-On Context"/>
                 </properties>
               </component>
               <component id="253a3" class="javax.swing.JRadioButton" binding="useSSOTokenFromContextVariableRadioButton">
@@ -190,7 +190,7 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Set SiteMinder Cookie:"/>
+              <text value="Set CA Single Sign-On Cookie:"/>
             </properties>
           </component>
           <component id="96f30" class="javax.swing.JTextField" binding="cookieNameTextField">
