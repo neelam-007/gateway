@@ -50,6 +50,7 @@ public @interface Dependency {
         CLUSTER_PROPERTY(EntityType.CLUSTER_PROPERTY),
         ID_PROVIDER_CONFIG(EntityType.ID_PROVIDER_CONFIG),
         JMS_ENDPOINT(EntityType.JMS_ENDPOINT),
+//        JMS_CONNECTION(EntityType.JMS_CONNECTION),
         SSG_ACTIVE_CONNECTOR(EntityType.SSG_ACTIVE_CONNECTOR),
         SSG_PRIVATE_KEY(EntityType.SSG_KEY_ENTRY),
         SSG_CONNECTOR(EntityType.SSG_CONNECTOR),
@@ -64,7 +65,9 @@ public @interface Dependency {
         RESOURCE_ENTRY(EntityType.RESOURCE_ENTRY),
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
         CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
-        RBAC_ROLE(EntityType.RBAC_ROLE);
+        RBAC_ROLE(EntityType.RBAC_ROLE),
+        EMAIL_LISTENER(EntityType.EMAIL_LISTENER);
+//        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;
 

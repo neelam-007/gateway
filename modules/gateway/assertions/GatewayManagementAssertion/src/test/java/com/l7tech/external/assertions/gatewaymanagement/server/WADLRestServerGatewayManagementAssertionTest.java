@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import org.junit.*;
 
 import java.util.logging.Logger;
@@ -35,8 +36,17 @@ public class WADLRestServerGatewayManagementAssertionTest extends ServerRestGate
      */
     @Test
     public void getRestWadlTest() throws Exception {
-        RestResponse response = processRequest("rest.wadl", HttpMethod.GET, null, "");
+        for (RestManVersion restManVersion : RestManVersion.values()){
+            RestResponse response = processRequest("rest.wadl?version="+restManVersion.getStringRepresentation(), HttpMethod.GET, null, "");
+            logger.info(response.toString());
+            Assert.assertEquals(200, response.getStatus());
+        }
+    }
+
+    @Test
+    public void getBadVersionTest() throws Exception {
+        RestResponse response = processRequest("rest.wadl?version=", HttpMethod.GET, null, "");
         logger.info(response.toString());
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals(404, response.getStatus());
     }
 }

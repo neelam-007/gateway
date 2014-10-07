@@ -8,6 +8,9 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
@@ -27,6 +30,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -70,18 +74,6 @@ public class BundleResource {
     }
 
     /**
-     * This method is not Implemented yet. This is meant to return a bundle of the full gateway.
-     *
-     * @return The bundle of the full gateway
-     */
-    //@GET
-    public Item exportGateway() {
-        rbacAccessService.validateFullAdministrator();
-        //TODO: need a way to export the entire gateway as a bundle
-        return new ItemBuilder<Bundle>("Bundle", "BUNDLE").build();
-    }
-
-    /**
      * Returns the bundle for the given resources. This API call is capable of returning a bundle created from multiple resources.
      *
      * @param defaultAction                      Default bundling action. By default this is NewOrExisting
@@ -90,6 +82,7 @@ public class BundleResource {
      * @param folderIds                          Folders to export
      * @param serviceIds                         Services to export
      * @param policyIds                          Policies to export
+     * @param fullGateway                        True to export the full gateway, false otherwise.
      * @return The bundle for the resources
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -100,11 +93,13 @@ public class BundleResource {
                                      @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
                                      @QueryParam("folder") List<String> folderIds,
                                      @QueryParam("service") List<String> serviceIds,
-                                     @QueryParam("policy") List<String> policyIds) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                     @QueryParam("policy") List<String> policyIds,
+                                     @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all"));
 
         //validate that something is being exported
-        if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty()) {
+        if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty() && !fullGateway) {
             throw new InvalidArgumentException("Must specify at least one folder, service or policy to export");
         }
 
@@ -118,6 +113,10 @@ public class BundleResource {
         }
         for (String policyId : policyIds) {
             entityHeaders.add(new EntityHeader(policyId, EntityType.POLICY, null, null));
+        }
+
+        if(fullGateway && !entityHeaders.isEmpty()) {
+            throw new InvalidArgumentException("If specifying full gateway export (all=true) do not give any other entity id's");
         }
 
         return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))

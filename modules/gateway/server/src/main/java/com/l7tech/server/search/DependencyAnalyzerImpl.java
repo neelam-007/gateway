@@ -1,10 +1,31 @@
 package com.l7tech.server.search;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.resources.HttpConfiguration;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.internal.InternalGroup;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.*;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
@@ -33,7 +54,44 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     private EntityCrud entityCrud;
 
     @Inject
+    private FolderManager folderManager;
+
+    @Inject
     private DependencyProcessorStore processorStore;
+
+    private static final List<Class<? extends Entity>> entityClasses = Arrays.asList(
+            //Omit policy version for now.
+            //folders need to be done first to ensure folder order.
+            Folder.class,
+            SsgActiveConnector.class,
+            AssertionAccess.class,
+            TrustedCert.class,
+            ClusterProperty.class,
+            CustomKeyValueStore.class,
+//            ServiceDocument.class,
+            EmailListener.class,
+            EncapsulatedAssertionConfig.class,
+            GenericEntity.class,
+            HttpConfiguration.class,
+            IdentityProviderConfig.class,
+            InterfaceTag.class,
+            JdbcConnection.class,
+//            JmsConnection.class,
+            JmsEndpoint.class,
+            SsgConnector.class,
+            PolicyAlias.class,
+            Policy.class,
+            SsgKeyEntry.class,
+            RevocationCheckPolicy.class,
+            PublishedService.class,
+            Role.class,
+            SiteMinderConfiguration.class,
+            SecurePassword.class,
+            SecurityZone.class,
+            PublishedServiceAlias.class,
+            InternalUser.class,
+            InternalGroup.class
+    );
 
     /**
      * {@inheritDoc}
@@ -74,21 +132,65 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     @NotNull
     @Override
     public List<DependencySearchResults> getDependencies(@NotNull final List<EntityHeader> entityHeaders, @NotNull final Map<String, Object> searchOptions) throws FindException, CannotRetrieveDependenciesException {
-        logger.log(Level.FINE, "Finding dependencies for {0}", entityHeaders);
+        logger.log(Level.FINE, "Finding dependencies for {0}", entityHeaders.isEmpty() ? "full gateway" : entityHeaders);
 
-        //Load the entities from the given entity headers.
-        final ArrayList<Entity> entities = new ArrayList<>(entityHeaders.size());
-        for (final EntityHeader entityHeader : entityHeaders) {
-            final Entity entity = entityCrud.find(entityHeader);
-            if (entity == null) {
-                throw new ObjectNotFoundException("Could not find Entity with header: " + entityHeader.toStringVerbose());
-            }
-            entities.add(entity);
+        final List<List<EntityHeader>> headerLists;
+        if (entityHeaders.isEmpty()) {
+            headerLists = loadAllGatewayEntities();
+        } else {
+            headerLists = new ArrayList<>();
+            headerLists.add(entityHeaders);
         }
 
         //create a new dependency finder to perform the search
         final DependencyFinder dependencyFinder = new DependencyFinder(searchOptions, processorStore);
-        return dependencyFinder.process(entities);
+        final List<DependencySearchResults> results = new ArrayList<>();
+
+        //Load the entities from the given entity headers.
+        for (final List<EntityHeader> headerList : headerLists) {
+            final ArrayList<Entity> entities = new ArrayList<>(headerList.size());
+            for (final EntityHeader entityHeader : headerList) {
+                final Entity entity = entityCrud.find(entityHeader);
+                if (entity == null) {
+                    throw new ObjectNotFoundException("Could not find Entity with header: " + entityHeader.toStringVerbose());
+                }
+                entities.add(entity);
+            }
+            results.addAll(dependencyFinder.process(entities));
+        }
+        return results;
+    }
+
+    /**
+     * This will return a set lists of all entity headers for each entity type.
+     *
+     * @return The list of all entity headers.
+     * @throws FindException
+     */
+    private List<List<EntityHeader>> loadAllGatewayEntities() throws FindException {
+        final List<List<EntityHeader>> headerLists = new ArrayList<>();
+        for (final Class<? extends Entity> entityClass : entityClasses) {
+            final EntityHeaderSet<EntityHeader> entityHeaders;
+            if(Policy.class.equals(entityClass)) {
+                //exclude private service policies
+                entityHeaders = Functions.reduce(entityCrud.findAll(entityClass), new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, EntityHeader>() {
+                    @Override
+                    public EntityHeaderSet<EntityHeader> call(EntityHeaderSet<EntityHeader> objects, EntityHeader entityHeader) {
+                        if (!PolicyType.PRIVATE_SERVICE.equals(((PolicyHeader) entityHeader).getPolicyType())) {
+                            objects.add(entityHeader);
+                        }
+                        return objects;
+                    }
+                });
+            } else if(Folder.class.equals(entityClass)) {
+                //folders only need to include the root folder.
+                entityHeaders = new EntityHeaderSet<>(EntityHeaderUtils.fromEntity(folderManager.findRootFolder()));
+            } else {
+                entityHeaders = entityCrud.findAll(entityClass);
+            }
+            headerLists.add(new ArrayList<>(entityHeaders));
+        }
+        return headerLists;
     }
 
     /**

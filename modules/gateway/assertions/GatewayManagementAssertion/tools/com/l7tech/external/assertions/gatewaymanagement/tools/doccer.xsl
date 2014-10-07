@@ -72,6 +72,11 @@
                 <xsl:call-template name="extract-name"/>
             </h3>
             <div class="resource-content">
+                <xsl:if test="wadl:doc[@title='since']">
+                    <div>
+                        Since: <xsl:value-of select="wadl:doc[@title='since']" disable-output-escaping="yes"/>
+                    </div>
+                </xsl:if>
                 <div class="doc">
                     <xsl:apply-templates select="wadl:doc"/>
                 </div>
@@ -113,6 +118,11 @@
                 </xsl:call-template>
             </h3>
             <div class="api-call-content">
+                <xsl:if test="wadl:doc[@title='since']">
+                    <div>
+                        Since: <xsl:value-of select="wadl:doc[@title='since']" disable-output-escaping="yes"/>
+                    </div>
+                </xsl:if>
                 <div class="doc">
                     <xsl:apply-templates select="wadl:doc"/>
                 </div>
@@ -145,6 +155,8 @@
                                     <tr>
                                         <th>Param</th>
                                         <th>Type</th>
+                                        <th>Default</th>
+                                        <th>Since</th>
                                         <th>Description</th>
                                     </tr>
                                     <xsl:apply-templates select="wadl:request/wadl:param[@style='query']"/>
@@ -167,7 +179,7 @@
 
     <!-- outputs documentation -->
     <xsl:template match="wadl:doc">
-        <xsl:if test="not(starts-with(@title, 'title'))">
+        <xsl:if test="not(starts-with(@title, 'title')) and not(starts-with(@title, 'since'))">
             <xsl:value-of select="text()" disable-output-escaping="yes"/>
         </xsl:if>
     </xsl:template>
@@ -219,6 +231,16 @@
                     <xsl:value-of select="substring-after(@type,':')"/>
                 </xsl:if>
             </td>
+            <xsl:if test="@style='query'">
+                <td>
+                    <xsl:value-of select="@default"/>
+                </td>
+            </xsl:if>
+            <xsl:if test="@style='query'">
+                <td>
+                    <xsl:value-of select="wadl:doc[@title='since']" disable-output-escaping="yes"/>
+                </td>
+            </xsl:if>
             <td>
                 <xsl:apply-templates select="wadl:doc"/>
             </td>

@@ -87,7 +87,7 @@ public class InternalGroupManagerImpl
 
     @Override
     protected IdentityHeader newHeader( final InternalGroup entity ) {
-        return new IdentityHeader(getProviderGoid(), entity.getGoid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion(), entity.isEnabled());
+        return new IdentityHeader(identityProvider != null ? getProviderGoid() : entity.getProviderId(), entity.getGoid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion(), entity.isEnabled());
     }
 
     @Override

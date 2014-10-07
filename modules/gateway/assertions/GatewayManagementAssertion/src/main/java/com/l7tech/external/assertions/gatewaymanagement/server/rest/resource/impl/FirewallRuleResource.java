@@ -2,9 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.FirewallRuleAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.FirewallRuleTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.rest.SpringBean;
@@ -21,6 +19,7 @@ import java.util.List;
  * A firewall rule is a rule to accept or redirect traffic.  This is only available on hardware installations.
  */
 
+@Since(RestManVersion.VERSION_1_0_1)
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + FirewallRuleResource.firewallRule_URI)
 @Singleton

@@ -645,7 +645,7 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
             final SsgKeyEntry keyEntry;
             try {
                 if (Goid.isDefault(keyHeader.getKeystoreId())) {
-                    if (keyHeader.getAlias() == null) {
+                    if (keyHeader.getAlias() == null || "<Default SSL Key>".equals(keyHeader.getAlias())) {
                         //if the keystore id is default and the alias is null then use the default key.
                         try {
                             keyEntry = defaultKey.getSslInfo();

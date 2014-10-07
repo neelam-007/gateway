@@ -222,7 +222,7 @@ public class PolicyResourceFactory extends SecurityZoneableEntityManagerResource
                 policyDetail.setPolicyType( PolicyDetail.PolicyType.ID_PROVIDER );
                 break;
             default:
-                throw new ResourceAccessException( "Access of unsupported policy type." );
+                throw new ResourceAccessException( "Access of unsupported policy type: " + policy.getType() );
         }
         policyDetail.setProperties( getProperties( policy, Policy.class ) );
 

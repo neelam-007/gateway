@@ -1,7 +1,10 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
-import com.sun.research.ws.wadl.Application;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
+import com.l7tech.util.Functions;
+import com.sun.research.ws.wadl.*;
 import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
+import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.model.ExtendedResource;
 import org.glassfish.jersey.server.wadl.WadlApplicationContext;
 
@@ -16,6 +19,8 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.Marshaller;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This is a custom wadl creator. This is used so that we can control the namespaces added to the wadl document.
@@ -30,13 +35,33 @@ public class WadlGeneratorResource {
 
     @Produces({"application/vnd.sun.wadl+xml", "application/xml"})
     @GET
-    public synchronized Response getWadl(@Context UriInfo uriInfo) {
+    public synchronized Response getWadl(@Context UriInfo uriInfo, @Context ContainerRequest containerRequest) {
+        //get the current version
+        final RestManVersion currentVersion;
+        if (containerRequest.getProperty("RestManVersion") != null && containerRequest.getProperty("RestManVersion") instanceof RestManVersion) {
+            currentVersion = (RestManVersion) containerRequest.getProperty("RestManVersion");
+        } else {
+            currentVersion = RestManVersion.VERSION_1_0;
+        }
+
         try {
             //create the wadl
             Application application = wadlContext.getApplication(uriInfo, false).getApplication();
 
             // Remove the jersey forced application docs
             application.getDoc().clear();
+
+            //filter out things from newer versions
+            for (final Resources resources : application.getResources()) {
+                for (final Iterator<Resource> resourceIterator = resources.getResource().iterator(); resourceIterator.hasNext(); ) {
+                    final Resource resource = resourceIterator.next();
+                    if (!supportsVersion(currentVersion, resource.getDoc())) {
+                        resourceIterator.remove();
+                    } else {
+                        filterResourceMethods(currentVersion, resource);
+                    }
+                }
+            }
 
             //marshal the wadl to xml
             byte[] wadlXmlRepresentation;
@@ -76,6 +101,50 @@ public class WadlGeneratorResource {
             return Response.ok(new ByteArrayInputStream(wadlXmlRepresentation)).build();
         } catch (Exception e) {
             throw new ProcessingException("Error generating /application.wadl.", e);
+        }
+    }
+
+    /**
+     * Checks the list of docs to see if they contain the introduced 'since' version. And checks if this version is supported by the current version
+     * @param currentVersion The current version
+     * @param docs The list of docs to look for the 'since' version in
+     * @return true if the version is supported false otherwise
+     */
+    private boolean supportsVersion(final RestManVersion currentVersion, final List<Doc> docs) {
+        final Doc sinceDoc = Functions.grepFirst(docs, new Functions.Unary<Boolean, Doc>() {
+            @Override
+            public Boolean call(Doc doc) {
+                return "since".equals(doc.getTitle());
+            }
+        });
+        final RestManVersion restManVersion = sinceDoc == null ? null : RestManVersion.fromString((String) sinceDoc.getContent().get(0));
+        return restManVersion == null || currentVersion.compareTo(restManVersion) >= 0;
+    }
+
+    /**
+     * Filters resource methods and sub resources removing versions that are not supported.
+     * @param currentVersion The current version
+     * @param resource The resource to filter
+     */
+    private void filterResourceMethods(RestManVersion currentVersion, Resource resource) {
+        for (final Iterator<Object> methodOrResourceIterator = resource.getMethodOrResource().iterator(); methodOrResourceIterator.hasNext(); ) {
+            final  Object methodOrResource = methodOrResourceIterator.next();
+            if (methodOrResource instanceof Resource) {
+                if (supportsVersion(currentVersion, ((Resource) methodOrResource).getDoc())) {
+                    filterResourceMethods(currentVersion, (Resource) methodOrResource);
+                }
+            } else if (methodOrResource instanceof Method) {
+                if (!supportsVersion(currentVersion, ((Method) methodOrResource).getDoc())) {
+                    methodOrResourceIterator.remove();
+                } else if (((Method) methodOrResource).getRequest() != null && ((Method) methodOrResource).getRequest().getParam() != null) {
+                    for (final Iterator<Param> paramIterator = ((Method) methodOrResource).getRequest().getParam().iterator(); paramIterator.hasNext(); ) {
+                        final Param param = paramIterator.next();
+                        if (!supportsVersion(currentVersion, param.getDoc())) {
+                            paramIterator.remove();
+                        }
+                    }
+                }
+            }
         }
     }
 }

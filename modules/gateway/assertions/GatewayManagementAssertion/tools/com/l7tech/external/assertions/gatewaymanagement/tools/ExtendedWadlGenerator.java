@@ -1,10 +1,13 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.Since;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.WadlResource;
 import com.l7tech.util.Functions;
 import com.sun.research.ws.wadl.*;
 import org.apache.commons.lang.WordUtils;
+import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.internal.LocalizationMessages;
 import org.glassfish.jersey.server.model.Parameter;
 import org.glassfish.jersey.server.model.ResourceMethod;
@@ -13,10 +16,12 @@ import org.glassfish.jersey.server.wadl.internal.ApplicationDescription;
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.ResourceDocAccessor;
 import org.glassfish.jersey.server.wadl.internal.generators.resourcedoc.model.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.InputSource;
 
 import javax.inject.Provider;
 import javax.validation.constraints.Pattern;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -39,6 +44,9 @@ import java.util.List;
 public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.WadlGenerator {
     @Context
     private Provider<SAXParserFactory> saxFactoryProvider;
+
+    @Context
+    private ContainerRequest containerRequest;
 
     private WadlGenerator delegate;
     private InputStream resourceDocStream;
@@ -118,23 +126,34 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
         for (Class<?> resourceClass : r.getHandlerClasses()) {
             //Create title from resource class name. Only use class name from our resources
             if ("com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl".equals(resourceClass.getPackage().getName())) {
-                final Doc doc = new Doc();
-                doc.setTitle("title-src");
-                //Remove the last 'Resource' from the name. Most class names are '<Entity>Resource' so the resource part is unneeded
-                //Then split the name
-                doc.getContent().add(splitCamelCase((resourceClass.getSimpleName().replaceAll("Resource$", ""))));
-                resource.getDoc().add(doc);
-            }
-            //Find title from javaDocs
-            final ClassDocType classDoc = resourceDocAccessor.getClassDoc(resourceClass);
-            if (classDoc != null && !classDoc.getAny().isEmpty()) {
-                for (Object any : classDoc.getAny()) {
-                    if (any instanceof ResourceDocProperty && "title".equals(((ResourceDocProperty) any).getName())) {
-                        final Doc doc = new Doc();
-                        doc.setTitle("title-javadoc");
-                        doc.getContent().add(((ResourceDocProperty) any).getValue());
-                        resource.getDoc().add(doc);
+                {
+                    final Doc doc = new Doc();
+                    doc.setTitle("title-src");
+                    //Remove the last 'Resource' from the name. Most class names are '<Entity>Resource' so the resource part is unneeded
+                    //Then split the name
+                    doc.getContent().add(splitCamelCase((resourceClass.getSimpleName().replaceAll("Resource$", ""))));
+                    resource.getDoc().add(doc);
+                }
+                //Find title from javaDocs
+                final ClassDocType classDoc = resourceDocAccessor.getClassDoc(resourceClass);
+                if (classDoc != null && !classDoc.getAny().isEmpty()) {
+                    for (Object any : classDoc.getAny()) {
+                        if (any instanceof ResourceDocProperty && "title".equals(((ResourceDocProperty) any).getName())) {
+                            final Doc doc = new Doc();
+                            doc.setTitle("title-javadoc");
+                            doc.getContent().add(((ResourceDocProperty) any).getValue());
+                            resource.getDoc().add(doc);
+                        }
                     }
+                }
+
+                //add the since annotation value to the docs
+                if (resourceClass.getAnnotation(Since.class) != null) {
+                    Since sinceParam = resourceClass.getAnnotation(Since.class);
+                    final Doc doc = new Doc();
+                    doc.setTitle("since");
+                    doc.getContent().add(sinceParam.value().getStringRepresentation());
+                    resource.getDoc().add(doc);
                 }
             }
         }
@@ -165,6 +184,15 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
                     method.getDoc().add(doc);
                 }
             }
+        }
+
+        //add the since annotation value to the docs
+        if (realMethod.getAnnotation(Since.class) != null) {
+            Since sinceParam = realMethod.getAnnotation(Since.class);
+            final Doc doc = new Doc();
+            doc.setTitle("since");
+            doc.getContent().add(sinceParam.value().getStringRepresentation());
+            method.getDoc().add(doc);
         }
         return method;
     }
@@ -322,8 +350,22 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
                     return option;
                 }
             }));
+        } else if (p.getAnnotation(Since.class) != null) {
+            //add the since annotation value to the docs
+            Since sinceParam = p.getAnnotation(Since.class);
+            Doc doc = new Doc();
+            doc.setTitle("since");
+            doc.getContent().add(sinceParam.value().getStringRepresentation());
+            param.getDoc().add(doc);
+        } else if (wadlRequestVersionAtLeast(RestManVersion.VERSION_1_0_1) && p.getAnnotation(DefaultValue.class) != null) {
+            DefaultValue defaultValueParam = p.getAnnotation(DefaultValue.class);
+            param.setDefault(defaultValueParam.value());
         }
         return param;
+    }
+
+    private boolean wadlRequestVersionAtLeast(@Nullable RestManVersion version) {
+        return version == null || (containerRequest.getProperty("RestManVersion") != null && containerRequest.getProperty("RestManVersion") instanceof RestManVersion && version.compareTo((RestManVersion)containerRequest.getProperty("RestManVersion")) <= 0);
     }
 
     @Override

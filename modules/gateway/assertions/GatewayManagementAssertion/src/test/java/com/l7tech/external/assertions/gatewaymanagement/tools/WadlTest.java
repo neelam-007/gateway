@@ -1,10 +1,14 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
+import com.l7tech.util.Functions;
 import com.sun.research.ws.wadl.*;
 import junit.framework.Assert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -12,14 +16,33 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
+@RunWith(Parameterized.class)
 public class WadlTest {
+
+    private final RestManVersion version;
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Functions.map(Arrays.asList(RestManVersion.values()), new Functions.Unary<Object[], RestManVersion>() {
+            @Override
+            public Object[] call(RestManVersion version) {
+                return new Object[]{version};
+            }
+        });
+    }
+
+    public WadlTest(RestManVersion version){
+        this.version = version;
+    }
 
     @Test
     public void test() throws IOException, JAXBException {
-        InputStream wadlStream = RestEntityResource.class.getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/restAPI.wadl");
+        InputStream wadlStream = RestEntityResource.class.getResourceAsStream("/com/l7tech/external/assertions/gatewaymanagement/server/rest/resource/restAPI_"+version.getStringRepresentation()+".wadl");
 
         JAXBContext context = JAXBContext.newInstance(Application.class);
         final StreamSource source = new StreamSource(wadlStream);
@@ -88,8 +111,8 @@ public class WadlTest {
     private void validateDoc(String errorMessage, @NotNull Pattern docTitle, List<Doc> docs) {
         Assert.assertNotNull(errorMessage, docs);
         Assert.assertTrue(errorMessage, !docs.isEmpty());
-        for(Doc doc : docs) {
-            if(doc.getTitle() != null && docTitle.matcher(doc.getTitle()).matches()) {
+        for (Doc doc : docs) {
+            if (doc.getTitle() != null && docTitle.matcher(doc.getTitle()).matches()) {
                 Assert.assertNotNull(errorMessage, docs.get(0).getContent());
                 Assert.assertTrue(errorMessage, !docs.get(0).getContent().isEmpty());
                 Assert.assertNotNull(errorMessage, docs.get(0).getContent().get(0));

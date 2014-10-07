@@ -33,7 +33,7 @@ public class BundleExporter {
      * Creates a bundle export given the export options
      *
      * @param bundleExportOptions A map of export options. Can be null to use the defaults
-     * @param headers             The list of headers to create the export from.
+     * @param headers             The list of headers to create the export from. If the headers list is empty the full gateway will be exported.
      * @return The bundle generated from the headers given
      * @throws FindException
      */

@@ -465,6 +465,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.REVOCATION_CHECK_POLICY"/></key>
                     <bean class="com.l7tech.server.search.processors.RevocationCheckPolicyDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/></key>
+                    <bean class="com.l7tech.server.search.processors.SsgKeyEntryDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>

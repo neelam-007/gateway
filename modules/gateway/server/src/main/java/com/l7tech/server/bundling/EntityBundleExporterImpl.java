@@ -49,11 +49,12 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
      * the bundle.
      *
      * @param bundleExportProperties Properties to export the bundle with.
-     * @param headers                The entity headers to export
+     * @param headers                The entity headers to export. If the headers list is empty the full gateway will be exported.
      * @return The entity bundle containing all entities in the bundle and the mappings required to import them.
      * @throws FindException
      */
     @NotNull
+    @Override
     public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         //find the dependencies for the headers
         final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
@@ -67,7 +68,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             //for each dependent object add a reference and mapping entry to the bundle.
             if (dependentObject.getDependent() instanceof DependentEntity) {
                 //checks if this dependent is a folder and is a folder that was requested for export (in the list of entity headers)
-                if (!Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeRequestFolderOption, IncludeRequestFolder))
+                if (headers.length > 0
+                        && !Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeRequestFolderOption, IncludeRequestFolder))
                         && EntityType.FOLDER.equals(((DependentEntity) dependentObject.getDependent()).getEntityHeader().getType())
                         && Functions.exists(Arrays.asList(headers), new Functions.Unary<Boolean, EntityHeader>() {
                     @Override

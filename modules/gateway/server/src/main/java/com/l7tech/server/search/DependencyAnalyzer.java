@@ -86,7 +86,7 @@ public interface DependencyAnalyzer {
      * Returns the list of dependencies for the given entities. This is the same as calling {@link
      * #getDependencies(java.util.List, java.util.Map)} with an empty map for search options, implying default options
      *
-     * @param entityHeaders The list of entity headers to get dependencies for.
+     * @param entityHeaders The list of entity headers to get dependencies for. If the headers list is empty the full gateway dependencies will be returned.
      * @return The list of dependency search results. This list will be the same size as the entity headers list.
      * @throws FindException This is thrown if an entity cannot be found by the entity managers.
      */
@@ -96,7 +96,7 @@ public interface DependencyAnalyzer {
     /**
      * Returns the list of dependencies for the given entities.
      *
-     * @param entityHeaders The list of entity headers to get dependencies for.
+     * @param entityHeaders The list of entity headers to get dependencies for. If the headers list is empty the full gateway dependencies will be returned.
      * @param searchOptions The search options. These can be used to customize the search. It can be used to specify
      *                      that some entities can be ignored, or to make it so that individual assertions are returned
      *                      as dependencies.

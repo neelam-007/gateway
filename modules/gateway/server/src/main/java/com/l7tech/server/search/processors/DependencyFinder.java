@@ -241,11 +241,12 @@ public class DependencyFinder {
      */
     @Nullable
     private Dependency getFoundDependenciesForObject(@NotNull final Object dependent) {
+        final DependentObject dependentObject = createDependentObject(dependent);
         return Functions.grepFirst(dependenciesFound, new Functions.Unary<Boolean, Dependency>() {
             @Override
             public Boolean call(Dependency dependency) {
                 //return true if the dependency is for the same entity as the one we are searching for.
-                return dependency.getDependent().equals(createDependentObject(dependent));
+                return dependency.getDependent().equals(dependentObject);
             }
         });
     }

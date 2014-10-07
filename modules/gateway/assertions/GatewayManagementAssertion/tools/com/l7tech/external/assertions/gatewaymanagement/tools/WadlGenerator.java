@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.tools;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestManVersion;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DocumentationResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.SchemaResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.WadlResource;
@@ -55,11 +56,13 @@ public class WadlGenerator {
 
         RestAgent restAgent = buildRestAgent(classes);
 
-        RestResponse response = restAgent.handleRequest(null, URI.create(WadlResource.GATEWAY_URL), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, null);
+        for(RestManVersion version : RestManVersion.values()) {
+            RestResponse response = restAgent.handleRequest(null, URI.create(WadlResource.GATEWAY_URL), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, CollectionUtils.MapBuilder.<String, Object>builder().put("RestManVersion", version).map());
 
-        File wadlFile = new File(args[0] + "/restAPI.wadl");
+            File wadlFile = new File(args[0] + "/restAPI_"+version.getStringRepresentation()+".wadl");
 
-        IOUtils.copyStream(response.getInputStream(), new FileOutputStream(wadlFile));
+            IOUtils.copyStream(response.getInputStream(), new FileOutputStream(wadlFile));
+        }
     }
 
     private static RestAgent buildRestAgent(final List<String> classes) throws ClassNotFoundException {
