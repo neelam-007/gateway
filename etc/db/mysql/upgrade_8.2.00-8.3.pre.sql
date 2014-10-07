@@ -63,7 +63,7 @@ AlTER TABLE generic_entity MODIFY classname varchar(1024) NOT NULL;
 ALTER TABLE generic_entity ADD UNIQUE KEY i_classname_name (classname(255), name);
 
 -- Update tls_keystore_goid default to be a proper hex value
-AlTER TABLE http_configuration MODIFY tls_keystore_goid binary(16) NOT NULL DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF';
+AlTER TABLE http_configuration MODIFY tls_keystore_goid binary(16) NOT NULL DEFAULT X'00000000000000000000000000000000';
 -- update to match larger derby size
 AlTER TABLE http_configuration MODIFY protocol varchar(255);
 AlTER TABLE http_configuration MODIFY proxy_use varchar(255) DEFAULT 'DEFAULT';

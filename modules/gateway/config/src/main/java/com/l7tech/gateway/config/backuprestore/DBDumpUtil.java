@@ -1,16 +1,16 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.*;
 import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.*;
 
 import java.io.*;
 import java.sql.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.zip.GZIPOutputStream;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -219,6 +219,7 @@ class DBDumpUtil {
                 // The below replacement is needed because mysql will return a default byte value as the actual byte string.
                 // In the create table statement we need it to be a hex string.
                 s = s.replace("DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0��������'", "DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF'");
+                s = s.replace("DEFAULT '\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", "DEFAULT X'00000000000000000000000000000000'");
                 s = s.replace("binary(16) NOT NULL DEFAULT '0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0'", "binary(16) NOT NULL DEFAULT 0");
                 mainOutput.write((s + ";\n").getBytes());
             }

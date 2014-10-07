@@ -726,7 +726,7 @@
             <column name="ntlm_domain" type="VARCHAR(255)"/>
             <column name="tls_version" type="VARCHAR(8)"/>
             <column defaultValue="DEFAULT" name="tls_key_use" type="VARCHAR(255)"/>
-            <column defaultValueComputed="X'0000000000000000FFFFFFFFFFFFFFFF'" name="tls_keystore_goid" type="${goid.type}">
+            <column defaultValueComputed="X'00000000000000000000000000000000'" name="tls_keystore_goid" type="${goid.type}">
                 <constraints nullable="false"/>
             </column>
             <column name="tls_key_alias" type="VARCHAR(255)"/>

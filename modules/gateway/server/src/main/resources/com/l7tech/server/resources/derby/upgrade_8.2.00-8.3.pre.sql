@@ -207,7 +207,7 @@ ALTER TABLE generic_entity DROP COLUMN name_backup;
 CREATE UNIQUE INDEX idx_generic_entity_classname_name ON generic_entity(classname, name);
 
 -- Update http_configuration table
-ALTER TABLE http_configuration ALTER COLUMN tls_keystore_goid DEFAULT X'0000000000000000FFFFFFFFFFFFFFFF';
+ALTER TABLE http_configuration ALTER COLUMN tls_keystore_goid DEFAULT X'00000000000000000000000000000000';
 ALTER TABLE http_configuration ALTER COLUMN timeout_connect DEFAULT -1;
 ALTER TABLE http_configuration ALTER COLUMN follow_redirects DEFAULT 0;
 ALTER TABLE http_configuration ALTER COLUMN port DEFAULT 0;
