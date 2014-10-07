@@ -7,6 +7,7 @@ import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.server.management.db.DbCompareTestUtils;
+import com.l7tech.util.ResourceUtils;
 import liquibase.Liquibase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
@@ -23,6 +24,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.*;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -104,17 +106,7 @@ public class DatabaseUpgradeTest {
     @Test
     public void testRollback() throws SQLException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, LiquibaseException {
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse("etc/db/liquibase/ssg-upgrade.xml");
-        XPathFactory xPathfactory = XPathFactory.newInstance();
-        XPath xpath = xPathfactory.newXPath();
-        XPathExpression expr = xpath.compile("/databaseChangeLog/include[@file]");
-        NodeList filesNodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-        List<String> upgradeXMLs = new ArrayList<>();
-        for (int i = 0; i < filesNodes.getLength(); i++) {
-            upgradeXMLs.add(filesNodes.item(i).getAttributes().getNamedItem("file").getNodeValue());
-        }
+        List<String> upgradeXMLs = getUpgradeFiles();
 
         DatabaseConfig rollbackDBConfig = new DatabaseConfig(oldDBConfig);
         rollbackDBConfig.setName("RolbackDBTest");
@@ -140,6 +132,38 @@ public class DatabaseUpgradeTest {
 
         dbActions.dropDatabase(rollbackDBConfig, hosts, true, true);
 
+    }
+
+    @Test
+    public void testTags() throws SQLException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, LiquibaseException {
+        List<String> upgradeXMLs = getUpgradeFiles();
+        //upgrade and rollback
+        Connection connection = dbActions.getConnection(newDBConfig, true, false);
+        try {
+            Liquibase liquibase = new Liquibase("", new FileSystemResourceAccessor(), new JdbcConnection(connection));
+            for (String upgradeXML : upgradeXMLs) {
+                String version = upgradeXML.substring(8, upgradeXML.length() - 4);
+                boolean tag = liquibase.getDatabase().doesTagExist("version_" + version);
+                Assert.assertTrue("Missing version tag for version: " + version, tag);
+            }
+        } finally {
+            ResourceUtils.closeQuietly(connection);
+        }
+    }
+
+    private List<String> getUpgradeFiles() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse("etc/db/liquibase/ssg-upgrade.xml");
+        XPathFactory xPathfactory = XPathFactory.newInstance();
+        XPath xpath = xPathfactory.newXPath();
+        XPathExpression expr = xpath.compile("/databaseChangeLog/include[@file]");
+        NodeList filesNodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+        List<String> upgradeXMLs = new ArrayList<>();
+        for (int i = 0; i < filesNodes.getLength(); i++) {
+            upgradeXMLs.add(filesNodes.item(i).getAttributes().getNamedItem("file").getNodeValue());
+        }
+        return upgradeXMLs;
     }
 
     @Test
