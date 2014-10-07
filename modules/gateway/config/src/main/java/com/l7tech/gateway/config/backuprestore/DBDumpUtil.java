@@ -335,6 +335,11 @@ class DBDumpUtil {
                     }
                     if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
                     break;
+                case Types.TIMESTAMP: //used in liquibase changeloglock table
+                    final Date value = resultSet.getDate(i);
+                    insertStatementToRecord.append(resultSet.wasNull() ? "NULL" : "FROM_UNIXTIME(" + (value.getTime()/1000) + ")");
+                    if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
+                    break;
                 default:
                     logger.severe("unexpected java.sql.Type value " + colType);
                     throw new RuntimeException("unhandled column type: " + colType);

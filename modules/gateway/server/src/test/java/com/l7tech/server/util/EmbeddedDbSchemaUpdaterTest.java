@@ -115,11 +115,11 @@ public class EmbeddedDbSchemaUpdaterTest {
     private class TestableEmbeddedDbSchemaUpdater extends EmbeddedDbSchemaUpdater {
 
         public TestableEmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String upgradeScriptDirectory) throws IOException {
-            super(transactionManager, upgradeScriptDirectory);
+            super(transactionManager, upgradeScriptDirectory, "etc/db/liquibase/");
         }
 
         @Override
-        String getProductVersion() {
+        protected String getProductVersion() {
             return softwareVersion;
         }
     }

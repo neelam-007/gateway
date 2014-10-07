@@ -1,0 +1,2693 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet id="create-admin-role" author="vkazakov">
+        <comment>Create the Administrator role</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -100)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Administrator"/>
+            <column name="tag" value="ADMIN"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have full access to the gateway."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -101)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ANY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -102)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ANY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -103)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ANY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -104)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ANY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -105)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="log-viewer"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -106)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="debugger"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+    </changeSet>
+    <changeSet id="assign-administrator-role" author="vkazakov">
+        <comment>Assign Administrator role to existing admin user</comment>
+        <insert tableName="rbac_assignment">
+            <column name="goid" valueComputed="toGoid(0, -105)"/>
+            <column name="provider_goid" valueComputed="toGoid(0,-2)"/>
+            <column name="role_goid" valueComputed="toGoid(0, -100)"/>
+            <column name="identity_id" valueComputed="goidToString(toGoid(0,3))"/>
+            <column name="entity_type" value="User"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-operator-role" author="vkazakov">
+        <comment>Create the Operator role</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -150)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Operator"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have read only access to the gateway."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -151)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -150)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ANY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -152)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -150)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="log-viewer"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-internal-users-and-groups-role" author="vkazakov">
+        <comment>Create the Manage Internal Users and Groups role</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0,-200)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Internal Users and Groups"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-201)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -202)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -201)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -202)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -203)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -200)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -204)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -203)"/>
+        </insert>
+        <insert tableName="rbac_predicate_oid">
+            <column name="goid" valueComputed="toGoid(0, -204)"/>
+            <column name="entity_id" valueComputed="goidToString(toGoid(0,-2))"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-205)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -206)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -205)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -206)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-207)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -208)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -207)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -208)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-209)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -210)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -209)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -210)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-211)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -212)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -211)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -212)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-213)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -214)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -213)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -214)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-215)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -216)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -215)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -216)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-217)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-200)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -218)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -217)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -218)"/>
+            <column name="attribute" value="providerId"/>
+            <column name="value" valueComputed="goidToString(toGoid(0,-2))"/>
+            <column name="mode" value="eq"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-publish-external-identity-providers-role" author="vkazakov">
+        <comment>Create the Publish External Identity Providers role</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0,-250)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Publish External Identity Providers"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to create new external identity providers."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-251)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -252)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -251)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -252)"/>
+            <column name="attribute" value="typeVal"/>
+            <column name="value" value="2"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -253)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -254)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -253)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -254)"/>
+            <column name="attribute" value="typeVal"/>
+            <column name="value" value="3"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -258)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -259)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -258)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -259)"/>
+            <column name="attribute" value="typeVal"/>
+            <column name="value" value="4"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -255)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="TRUSTED_CERT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -256)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEYSTORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -257)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-search-users-and-groups-role" author="vkazakov">
+        <comment>Search Users and Groups</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -300)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Search Users and Groups"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have permission to search and view users and groups in all identity providers."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -301)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -300)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -302)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -300)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -303)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -300)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-publish-webservices-role" author="vkazakov">
+        <comment>Publish Webservices</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -350)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Publish Webservices"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to publish new web services."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -351)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -352)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -353)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -354)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -355)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_TEMPLATE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -356)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -357)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -358)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="HTTP_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -359)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -360)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ASSERTION_ACCESS"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-webservices-role" author="vkazakov">
+        <comment>Manage Webservices</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -400)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="name" value="Manage Webservices"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to publish new services and edit existing ones."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -401)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -402)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="GROUP"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -403)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -404)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -405)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -406)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -407)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -408)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -409)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_USAGE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -410)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="METRICS_BIN"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -411)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="AUDIT_MESSAGE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -412)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -413)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -414)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_TEMPLATE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -415)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -416)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -417)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -418)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -419)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -420)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -421)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -422)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -423)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -424)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -425)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -426)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -427)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -428)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_ALIAS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -429)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -430)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_PROXIED_SERVICE_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -431)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_PROXIED_SERVICE_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -432)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_PROXIED_SERVICE_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -433)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_PROXIED_SERVICE_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -434)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_SERVICE_CONTROL"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -435)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_SERVICE_CONTROL"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -436)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_SERVICE_CONTROL"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -437)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_SERVICE_CONTROL"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -438)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -439)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="HTTP_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -440)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -441)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -442)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ASSERTION_ACCESS"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -443)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -400)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="debugger"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-view-audit-records-role" author="vkazakov">
+        <comment>View Audit Records</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -450)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="View Audit Records"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to view audits in the manager."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -451)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -450)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -452)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -450)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="AUDIT_RECORD"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-view-service-metrics-role" author="vkazakov">
+        <comment>View Audit Records</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -500)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="View Service Metrics"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to monitor service metrics in the manager."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -501)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="METRICS_BIN"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -502)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -503)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -504)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE_USAGE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -505)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-cluster-status-role" author="vkazakov">
+        <comment>Manage Cluster Status</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -550)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Cluster Status"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete cluster status information."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -551)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -550)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -552)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -550)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -553)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -550)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -554)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -550)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="METRICS_BIN"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-certificates-role" author="vkazakov">
+        <comment>Manage Certificates (truststore)</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -600)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Certificates (truststore)"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -601)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="TRUSTED_CERT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -602)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="TRUSTED_CERT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -603)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="TRUSTED_CERT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -604)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="TRUSTED_CERT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -605)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="REVOCATION_CHECK_POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -606)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="REVOCATION_CHECK_POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -607)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="REVOCATION_CHECK_POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -608)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -600)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="REVOCATION_CHECK_POLICY"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-message-destinations-role" author="vkazakov">
+        <comment>Manage Message Destinations</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -650)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Message Destinations"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete message destinations."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -651)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -652)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -653)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -654)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -655)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -656)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -657)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -658)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -659)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -660)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEYSTORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -661)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -662)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_ACTIVE_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -663)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -662)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -663)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="MqNative"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -664)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_ACTIVE_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -665)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -664)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -665)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="MqNative"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -666)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_ACTIVE_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -667)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -666)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -667)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="MqNative"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -668)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_ACTIVE_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -669)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -668)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -669)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="MqNative"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -670)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-cluster-properties-role" author="vkazakov">
+        <comment>Manage Cluster Properties</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -700)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Cluster Properties"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete cluster properties."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -701)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -700)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -702)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -700)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -703)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -700)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -704)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -700)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-listen-ports-role" author="vkazakov">
+        <comment>Manage Listen Ports</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -750)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Listen Ports"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete Gateway listen ports (HTTP(S) and FTP(S)) and to list published services."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -751)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -752)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -750)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -753)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -750)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -754)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -750)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -755)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -750)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-log-sinks-role" author="vkazakov">
+        <comment>Manage Log Sinks</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -800)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Log Sinks"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete log sinks."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -801)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -802)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -803)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -804)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -805)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -806)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="log-viewer"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -807)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_CONNECTOR"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -808)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -809)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FOLDER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -810)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JMS_ENDPOINT"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -811)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="USER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -812)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -813)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -814)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -800)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="EMAIL_LISTENER"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-gateway-maintenance-role" author="vkazakov">
+        <comment>Create the Gateway Maintenance role</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0,-850)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Gateway Maintenance"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to perform Gateway maintenance tasks."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-851)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-850)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -852)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -851)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -852)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="audit.archiver.ftp.config"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-853)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-850)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -854)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -853)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -854)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="audit.archiver.ftp.config"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-855)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-850)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -856)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -855)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -856)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="audit.archiver.ftp.config"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0,-857)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0,-850)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="AUDIT_RECORD"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-email-listeners-role" author="vkazakov">
+        <comment>Manage Email Listeners</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -900)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Email Listeners"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete email listeners."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -901)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -900)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="EMAIL_LISTENER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -902)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -900)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="EMAIL_LISTENER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -903)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -900)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="EMAIL_LISTENER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -904)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -900)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="EMAIL_LISTENER"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -905)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -900)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-jdbc-connections-role" author="vkazakov">
+        <comment>Manage JDBC Connections</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -950)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage JDBC Connections"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete JDBC connections."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -951)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -950)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -952)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -950)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -953)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -950)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -954)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -950)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="JDBC_CONNECTION"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-uddi-registries-role" author="vkazakov">
+        <comment>Manage UDDI Registries</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage UDDI Registries"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1001)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1002)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1003)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1004)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="UDDI_REGISTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1005)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1000)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVICE"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-secure-passwords-role" author="vkazakov">
+        <comment>Manage Secure Passwords</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1050)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Secure Passwords"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete any stored password."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1051)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1050)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1052)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1050)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1053)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1050)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1054)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1050)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-private-keys-role" author="vkazakov">
+        <comment>Manage Private Keys</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="version" valueNumeric="1"/>
+            <column name="name" value="Manage Private Keys"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users in this role have the ability to read, create, update, and delete private keys, as well as the ability to change the designated special-purpose keys (eg, the SSL or CA key)."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1101)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1102)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1103)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1104)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1105)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1106)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1107)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEY_ENTRY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1108)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1109)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1110)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1111)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1112)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEYSTORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1113)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1114)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SSG_KEYSTORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1115)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1116)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1117)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1118)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1119)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1120)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1121)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1122)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1100)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1101)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1101)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1103)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1103)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1105)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1105)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1108)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1108)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1109)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1109)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1110)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1110)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1111)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1111)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1113)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1113)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1115)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1115)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1116)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1116)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1117)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1117)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1118)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1118)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1119)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1119)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1120)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1120)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1121)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1121)"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1122)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1122)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1101)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultSsl.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1103)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultCa.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1105)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultSsl.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1108)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultCa.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1109)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultSsl.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1110)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultCa.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1111)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultSsl.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1113)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.defaultCa.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1115)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditViewer.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1116)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditViewer.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1117)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditViewer.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1118)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditViewer.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1119)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditSigning.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1120)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditSigning.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1121)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditSigning.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1122)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="keyStore.auditSigning.alias"/>
+            <column name="mode" value="eq"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-password-policies-role" author="vkazakov">
+        <comment>Manage Password Policies</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1150)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Password Policies"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1151)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1150)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="PASSWORD_POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1153)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1150)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="PASSWORD_POLICY"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1155)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1150)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-invoke-audit-viewer-policy-role" author="vkazakov">
+        <comment>Invoke Audit Viewer Policy</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1200)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Invoke Audit Viewer Policy"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)"/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1201)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1200)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="audit-viewer policy"/>
+            <column name="entity_type" value="AUDIT_RECORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1202)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1200)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="AUDIT_RECORD"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1203)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1200)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-administrative-accounts-configuration-role" author="vkazakov">
+        <comment>Manage Administrative Accounts Configuration</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Administrative Accounts Configuration"/>
+            <column name="tag"/>
+            <column name="entity_type"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1251)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1252)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1251)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1252)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.maxAllowableAttempts"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1253)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1254)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1253)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1254)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.lockoutTime"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1255)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1256)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1255)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1256)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.sessionExpiry"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1257)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1258)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1257)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1258)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.inactivityPeriod"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1259)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1260)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1259)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1260)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.maxAllowableAttempts"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1261)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1262)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1261)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1262)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.lockoutTime"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1263)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1264)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1263)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1264)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.sessionExpiry"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1265)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1266)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1265)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1266)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.inactivityPeriod"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1267)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1268)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1267)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1268)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.maxAllowableAttempts"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1269)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1270)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1269)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1270)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.lockoutTime"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1271)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1272)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1271)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1272)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.sessionExpiry"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1273)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1250)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_PROPERTY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1274)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1273)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1274)"/>
+            <column name="attribute" value="name"/>
+            <column name="value" value="logon.inactivityPeriod"/>
+            <column name="mode" value="eq"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-view-ssg-log-sink-role" author="vkazakov">
+        <comment>View ssg Log Sink (#-1,300)</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1300)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="View ssg Log Sink (#-1,300)"/>
+            <column name="tag"/>
+            <column name="entity_type" value="LOG_SINK"/>
+            <column name="entity_goid" valueComputed="toGoid(0, -810)"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read the log sink and any associated log files."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1301)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1300)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1301)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1301)"/>
+        </insert>
+        <insert tableName="rbac_predicate_oid">
+            <column name="goid" valueComputed="toGoid(0, -1301)"/>
+            <column name="entity_id" valueComputed="goidToString(toGoid(0, -810))"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1302)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1300)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1303)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1300)"/>
+            <column name="operation_type" value="OTHER"/>
+            <column name="other_operation" value="log-viewer"/>
+            <column name="entity_type" value="LOG_SINK"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-encapsulated-assertions-role" author="vkazakov">
+        <comment>Manage Encapsulated Assertions</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Encapsulated Assertions"/>
+            <column name="tag"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to create/read/update/delete encapsulated assertions."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1351)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1352)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1353)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1354)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ENCAPSULATED_ASSERTION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1355)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="POLICY"/>
+        </insert>
+        <insert tableName="rbac_predicate">
+            <column name="goid" valueComputed="toGoid(0, -1356)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="permission_goid" valueComputed="toGoid(0, -1355)"/>
+        </insert>
+        <insert tableName="rbac_predicate_attribute">
+            <column name="goid" valueComputed="toGoid(0, -1356)"/>
+            <column name="attribute" value="type"/>
+            <column name="value" value="Included Policy Fragment"/>
+            <column name="mode" value="eq"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1356)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1350)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="ASSERTION_ACCESS"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-custom-key-value-store-role" author="vkazakov">
+        <comment>Manage Custom Key Value Store</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1450)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Custom Key Value Store"/>
+            <column name="tag"/>
+            <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update, and delete key values from custom key value store."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1451)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1450)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1452)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1450)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1453)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1450)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1454)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1450)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-firewall-rules-role" author="vkazakov">
+        <comment>Manage Firewall Rules</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1400)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Firewall Rules"/>
+            <column name="tag"/>
+            <column name="entity_type" value="FIREWALL_RULE"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete Firewall rules."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1275)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1400)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FIREWALL_RULE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1276)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1400)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FIREWALL_RULE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1277)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1400)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FIREWALL_RULE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1278)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1400)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="FIREWALL_RULE"/>
+        </insert>
+    </changeSet>
+    <changeSet id="create-manage-siteminder-configuration-role" author="vkazakov">
+        <comment>Manage SiteMinder Configuration</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage SiteMinder Configuration"/>
+            <column name="tag"/>
+            <column name="entity_type" value="SITEMINDER_CONFIGURATION"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1501)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SITEMINDER_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1502)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SITEMINDER_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1503)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SITEMINDER_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1504)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SITEMINDER_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1505)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1500)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

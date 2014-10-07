@@ -635,9 +635,8 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             Mapping serviceAliasMapping = mappings.getContent().getMappings().get(3);
             Assert.assertEquals(EntityType.SERVICE_ALIAS.toString(), serviceAliasMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, serviceAliasMapping.getAction());
-            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, serviceAliasMapping.getActionTaken());
+            Assert.assertEquals(Mapping.ErrorType.InvalidResource, serviceAliasMapping.getErrorType());
             Assert.assertEquals(serviceAliasItem.getId(), serviceAliasMapping.getSrcId());
-            Assert.assertEquals(serviceAliasMapping.getSrcId(), serviceAliasMapping.getTargetId());
         }finally{
             mappingsToClean = null;
         }
@@ -781,14 +780,15 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
             Assert.assertEquals(0, dependencies.getContent().getDependencies().size());
 
         }finally{
+            response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+
             response = getTargetEnvironment().processRequest("services/" + serviceCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/" + folderCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkDeleteResponse(response);
 
-            response = getTargetEnvironment().processRequest("serviceAliases/" + serviceAliasCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
         }
     }
 }

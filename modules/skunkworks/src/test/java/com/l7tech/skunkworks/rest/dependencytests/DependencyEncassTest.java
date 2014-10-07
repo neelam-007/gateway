@@ -67,6 +67,7 @@ public class DependencyEncassTest extends DependencyTestBase{
                         "</wsp:Policy>";
 
         encassPolicy.setXml(policyXml);
+        encassPolicy.setGuid(UUID.randomUUID().toString());
         encassPolicy.setGoid(policyManager.save(encassPolicy));
 
         // create encass config

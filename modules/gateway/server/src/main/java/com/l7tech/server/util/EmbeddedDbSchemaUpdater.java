@@ -2,7 +2,12 @@ package com.l7tech.server.util;
 
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.DbUpgradeUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
+import liquibase.Liquibase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.FileSystemResourceAccessor;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.Resource;
@@ -16,9 +21,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +36,8 @@ import java.util.logging.Logger;
  */
 public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpdater {
     private static final Logger logger = Logger.getLogger(EmbeddedDbSchemaUpdater.class.getName());
+    private String JavelinPreVersion = "8.3.pre";
+    private String liquibaseScriptsFolder;
 
     /**
      * Only valid upgrade scripts in the given directory will be used.
@@ -35,7 +46,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
      * @param resourceDirectory the resource directory which contains the upgrade scripts.
      * @throws IOException
      */
-    public EmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String resourceDirectory) throws IOException {
+    public EmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String resourceDirectory, @NotNull final String liquibaseScriptsFolder) throws IOException {
         this.transactionManager = transactionManager;
         try {
             final Resource[] resources = new PathMatchingResourcePatternResolver().getResources(resourceDirectory + "/*.sql");
@@ -59,6 +70,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
         } catch (final FileNotFoundException e) {
             throw new IllegalArgumentException(resourceDirectory + " does not exist.");
         }
+        this.liquibaseScriptsFolder = liquibaseScriptsFolder;
     }
 
     /**
@@ -73,33 +85,59 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
      */
     @Override
     public void ensureCurrentSchema() throws SchemaException {
+        final String newVersion = getProductVersion();
+        if (StringUtils.isBlank(newVersion)) {
+            throw new SchemaException("Error reading current build version");
+        }
+        final AtomicReference<String> dbVersion = new AtomicReference<>();
         final JdbcTemplate jdbcTemplate = getJdbcTemplate();
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
-                final String newVersion = getProductVersion();
-                if (StringUtils.isBlank(newVersion)) {
-                    throw new SchemaException("Error reading current build version");
-                }
                 final Connection connection = getConnection();
-                String dbVersion = DbUpgradeUtil.checkVersionFromDatabaseVersion(connection);
-                if (StringUtils.isBlank(dbVersion)) {
+                dbVersion.set(DbUpgradeUtil.checkVersionFromDatabaseVersion(connection));
+                if (StringUtils.isBlank(dbVersion.get())) {
                     throw new SchemaException("Error reading current version from database");
                 }
-                while (!dbVersion.equals(newVersion)) {
-                    final Triple<String, Resource,Resource> upgradeInfo = upgradeMap.get(dbVersion);
+                while (!dbVersion.get().equals(newVersion)) {
+                    if(JavelinPreVersion.equals(dbVersion.get())){
+                        break;
+                        //need to do liquibase upgrade
+                    }
+                    final Triple<String, Resource,Resource> upgradeInfo = upgradeMap.get(dbVersion.get());
                     if (upgradeInfo == null) {
-                        final String msg = "No upgrade path from \"" + dbVersion + "\" to \"" + newVersion + "\"";
+                        final String msg = "No upgrade path from \"" + dbVersion.get() + "\" to \"" + newVersion + "\"";
                         logger.warning(msg);
                         throw new SchemaException(msg);
                     } else {
-                        upgradeSingleVersion(dbVersion, upgradeInfo, jdbcTemplate);
-                        dbVersion = DbUpgradeUtil.checkVersionFromDatabaseVersion(connection);
+                        upgradeSingleVersion(dbVersion.get(), upgradeInfo, jdbcTemplate);
+                        dbVersion.set(DbUpgradeUtil.checkVersionFromDatabaseVersion(connection));
                     }
                 }
                 releaseConnection(connection);
             }
         });
+
+        if(!dbVersion.get().equals(newVersion)) {
+            new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                @Override
+                protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                    final Connection connection = getConnection();
+                    try {
+                        //perform liquibase upgrade
+                        Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor(liquibaseScriptsFolder), new JdbcConnection(connection));
+                        liquibase.changeLogSync("");
+                        liquibase = new Liquibase("ssg.xml", new FileSystemResourceAccessor(liquibaseScriptsFolder), new JdbcConnection(connection));
+                        liquibase.update("");
+                    } catch (LiquibaseException e) {
+                        String msg = "Could not apply liquibase upgrade: " + ExceptionUtils.getMessage(e);
+                        logger.warning(msg);
+                        throw new SchemaException(msg);
+                    }
+                    releaseConnection(connection);
+                }
+            });
+        }
     }
 
     /**
@@ -160,7 +198,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
     /**
      * Overridden in unit tests.
      */
-    String getProductVersion() {
+    protected String getProductVersion() {
         return BuildInfo.getFormalProductVersion();
     }
 

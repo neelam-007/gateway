@@ -6,6 +6,7 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import org.jboss.util.file.FilenameSuffixFilter;
 import org.junit.*;
 
 import java.io.File;
@@ -53,7 +54,7 @@ public class BackupRestoreDatabaseTest {
 
         dbActions.dropDatabase(newDBConfig, hosts, true, true, null);
 
-        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/mysql/ssg.sql", false);
+        DBActions.DBActionsResult results = dbActions.createDb(newDBConfig, hosts, "etc/db/liquibase/ssg.xml", false);
         Assert.assertEquals("Could not create mysql backup_restore_db database: " + results.getErrorMessage(), DBActions.StatusType.SUCCESS, results.getStatus());
 
         db_version = dbActions.checkDbVersion(newDBConfig);
@@ -124,9 +125,12 @@ public class BackupRestoreDatabaseTest {
 
         ImportExportUtilities.copyDir(configSrc, configDest);
 
-        File ssgSqlDir = new File(configDest, "etc/sql");
-        ssgSqlDir.mkdirs();
-        FileUtils.copyFile(new File("etc/db/mysql/ssg.sql"), new File(ssgSqlDir, "ssg.sql"));
+        File ssgLiquibaseDir = new File(configDest, "etc/db");
+        ssgLiquibaseDir.mkdirs();
+        File liquibaseLocalDir = new File("etc/db/liquibase");
+        for(File liquibaseFile : liquibaseLocalDir.listFiles(new FilenameSuffixFilter(".xml"))){
+            FileUtils.copyFile(liquibaseFile, new File(ssgLiquibaseDir, liquibaseFile.getName()));
+        }
 
         final File osFile = createPretendOsFile();
         //config/backup/cfg/backup_manifest

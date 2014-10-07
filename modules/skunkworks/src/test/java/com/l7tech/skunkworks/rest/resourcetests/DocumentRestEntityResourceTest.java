@@ -21,6 +21,8 @@ import org.junit.Before;
 import java.net.URLEncoder;
 import java.util.*;
 
+import static com.l7tech.gateway.common.resources.ResourceType.XML_SCHEMA;
+
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class DocumentRestEntityResourceTest extends RestEntityTests<ResourceEntry, ResourceDocumentMO> {
     private ResourceEntryManager resourceEntryManager;
@@ -42,6 +44,7 @@ public class DocumentRestEntityResourceTest extends RestEntityTests<ResourceEntr
         resourceEntry.setContent("MyResourceContent");
         resourceEntry.setType(ResourceType.XML_SCHEMA);
         resourceEntry.setUri("MyURI");
+        resourceEntry.setContentType(XML_SCHEMA.getMimeType());
 
         resourceEntryManager.save(resourceEntry);
 

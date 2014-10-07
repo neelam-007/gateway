@@ -1,19 +1,24 @@
 package com.l7tech.gateway.config.manager.db;
 
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.*;
+import liquibase.Liquibase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.LiquibaseException;
+import liquibase.resource.FileSystemResourceAccessor;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
+import java.net.UnknownHostException;
 import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.net.PasswordAuthentication;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.logging.Logger;
 
 /**
  * Various DB manipulaton and checking methods used by the configuration wizard. Can probably be made more generic to be
@@ -66,6 +71,7 @@ public class DBActions {
     private int lo = MAX_LOW + 1;
 
     private static final String DB_NAME_VAR = "<db_name>";
+    private static final String JavelinPreVersion = "8.3.pre";
 
     //
     // CONSTRUCTOR
@@ -133,16 +139,30 @@ public class DBActions {
                     //we should overwrite the db
                     dropDatabase( conn, config.getName(), false );
                     createDatabaseWithGrants( conn, config, hosts );
-                    createTables( config, dbCreateScript );
-                    return new DBActionsResult(StatusType.SUCCESS);
                 } else {
                     return new DBActionsResult(StatusType.ALREADY_EXISTS);
                 }
             } else {
                 createDatabaseWithGrants( conn, config, hosts );
-                createTables( config, dbCreateScript );
-                return new DBActionsResult(StatusType.SUCCESS);
             }
+            if(dbCreateScript.endsWith(".sql")){
+                createTables( config, dbCreateScript );
+            } else if(dbCreateScript.endsWith(".xml")) {
+                File dbCreateScriptFile = new File(dbCreateScript);
+                try(Connection dbConn = getConnection(config, false)) {
+                    Liquibase liquibase = new Liquibase(dbCreateScriptFile.getName(), new FileSystemResourceAccessor(dbCreateScriptFile.getParentFile().getPath()), new JdbcConnection(dbConn));
+                    liquibase.update("");
+                }
+            } else {
+                String msg = "The database create script should be either '.sql' or liquibase '.xml'";
+                logger.warning("Could not create database. An exception occurred: " + msg);
+                return new DBActionsResult(StatusType.ERROR, msg, null);
+            }
+            return new DBActionsResult(StatusType.SUCCESS);
+        } catch (LiquibaseException e) {
+            final String msg = ExceptionUtils.getMessage(e);
+            logger.warning("Could not create database. An exception occurred: " + msg);
+            return new DBActionsResult(StatusType.ERROR, msg, e);
         } catch (SQLException e) {
             final String msg = ExceptionUtils.getMessage(e);
             logger.warning("Could not create database. An exception occurred: " + msg);
@@ -155,16 +175,19 @@ public class DBActions {
 
     public DBActionsResult upgradeDbSchema(DatabaseConfig databaseConfig,
                                            boolean useAdminConnection,
-                                           String oldVersion,
-                                           String newVersion,
-                                           String schemaFilePath,
+                                           String databaseSpecificScriptsFolder,
+                                           String liquibaseUpgradeFolder,
                                            final DBActionsListener ui) throws IOException {
-        File file = new File(schemaFilePath);
-        if ( !file.isFile() ) {
-            throw new FileNotFoundException("File not found '"+schemaFilePath+"'.");
+        File dbScriptsFolder = new File(databaseSpecificScriptsFolder);
+        File liquibaseScriptsFolder = new File(liquibaseUpgradeFolder);
+        if ( dbScriptsFolder.isFile() ) {
+            throw new FileNotFoundException("File not found '"+databaseSpecificScriptsFolder+"'.");
+        }
+        if ( liquibaseScriptsFolder.isFile() ) {
+            throw new FileNotFoundException("File not found '"+liquibaseUpgradeFolder+"'.");
         }
 
-        Map<String, String[]> upgradeMap = DbUpgradeUtil.buildUpgradeMap(file.getParentFile());
+        Map<String, String[]> upgradeMap = DbUpgradeUtil.buildUpgradeMap(dbScriptsFolder);
 
         Connection conn = null;
         Statement stmt = null;
@@ -173,11 +196,17 @@ public class DBActions {
         try {
             String databaseName = databaseConfig.getName();
             conn = getConnection(databaseConfig, useAdminConnection, false);
+            String oldVersion = checkDbVersion(conn);
+
             stmt = conn.createStatement();
-            while (!oldVersion.equals(newVersion)) {
+            while (!JavelinPreVersion.equals(oldVersion)) {
+                if(JavelinPreVersion.equals(oldVersion)){
+                    break;
+                    //need to do liquibase upgrade
+                }
                 String[] upgradeInfo = upgradeMap.get(oldVersion);
                 if (upgradeInfo == null) {
-                    String msg = "No upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"";
+                    String msg = "No upgrade path from \"" + oldVersion + "\"";
                     logger.warning(msg);
                     return new DBActionsResult(StatusType.CANNOT_UPGRADE, msg, null);
                 } else {
@@ -248,10 +277,18 @@ public class DBActions {
                     oldVersion = checkDbVersion(conn);
                 }
             }
+            //perform liquibase upgrade
+            Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor(liquibaseScriptsFolder.getPath()), new JdbcConnection(conn));
+            liquibase.changeLogSync("");
+            liquibase = new Liquibase("ssg.xml", new FileSystemResourceAccessor(liquibaseScriptsFolder.getPath()), new JdbcConnection(conn));
+            liquibase.update("");
             return new DBActionsResult(StatusType.SUCCESS);
         } catch (SQLException e) {
             logger.log( Level.WARNING, "Error during upgrade.", e );
             return new DBActionsResult(determineErrorStatus(e.getSQLState()), ExceptionUtils.getMessage(e), e);
+        } catch (LiquibaseException e) {
+            logger.log( Level.WARNING, "Error during upgrade.", e );
+            return new DBActionsResult(StatusType.ERROR, ExceptionUtils.getMessage(e), e);
         } finally {
             ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
@@ -261,212 +298,11 @@ public class DBActions {
         }
     }
 
-    public boolean doCreateDb(DatabaseConfig config, Set<String> hosts, String schemaFilePath, boolean overwriteDb, DBActionsListener ui) {
-        DatabaseConfig databaseConfig = new DatabaseConfig( config );
-        String pUsername = databaseConfig.getDatabaseAdminUsername();
-        String pPassword = databaseConfig.getDatabaseAdminPassword();
-
-        //check if the root username is "" or null, or the password is null. Password is allowed to be "", if there isn't a password
-        while (StringUtils.isEmpty(pUsername) || pPassword == null) {
-            if (ui != null) {
-                String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
-                PasswordAuthentication passwordCreds = ui.getPrivelegedCredentials(
-                    "Please enter the credentials for the root database user (needed to create a database)",
-                    "Please enter the username for the root database user (needed to create a database): [" + defaultUserName + "] ",
-                    "Please enter the password for the root database user: ",
-                    defaultUserName);
-
-                if (passwordCreds == null) {
-                    return false;
-                } else {
-                    pUsername = passwordCreds.getUserName();
-                    pPassword = new String(passwordCreds.getPassword());
-                }
-            }
-        }
-
-        databaseConfig.setDatabaseAdminUsername( pUsername );
-        databaseConfig.setDatabaseAdminPassword( pPassword );
-
-        String errorMsg;
-        boolean isOk = false;
-
-        DBActionsResult result;
-        try {
-            logger.info("Attempting to create a new database (" + databaseConfig.getHost() + "/" + databaseConfig.getName() + ") using privileged user \"" + pUsername + "\"");
-
-            result = createDb(databaseConfig, hosts, schemaFilePath, overwriteDb);
-
-            final StatusType status = result.getStatus();
-            if ( status == StatusType.SUCCESS) {
-                isOk = true;
-                if (ui != null)
-                    ui.showSuccess("Database Successfully Created\n");
-            } else {
-                switch (status) {
-                    case UNKNOWNHOST_FAILURE:
-                        errorMsg = "Could not connect to the host: \"" +  databaseConfig.getHost() + "\". Please check the hostname and try again.";
-                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                        logger.warning(errorMsg);
-                        if (ui != null) ui.showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                    case AUTHORIZATION_FAILURE:
-                        errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
-                                pUsername + "\". Perhaps the password is wrong. Please retry.";
-                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                        logger.warning(errorMsg);
-                        if (ui != null) ui.showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                    case ALREADY_EXISTS:
-                        logger.warning("The database named \"" +  databaseConfig.getName() + "\" already exists");
-                        if (ui != null) {
-                            if (ui.getOverwriteConfirmationFromUser(databaseConfig.getName())) {
-                                logger.info("creating new database (overwriting existing one)");
-                                logger.warning("The database will be overwritten");
-                                isOk = doCreateDb(databaseConfig, hosts, schemaFilePath, true, ui);
-                            }
-                        } else {
-                            isOk = false;
-                        }
-                        break;
-                    case UNKNOWN_FAILURE:
-                    default:
-                        errorMsg = GENERIC_DBCREATE_ERROR_MSG + ": " + result.getErrorMessage();
-                        logger.warning(errorMsg);
-                        if (ui != null) ui.showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                }
-            }
-        } catch (IOException e) {
-            errorMsg = "Could not create the database because there was an error while reading the file \"" + schemaFilePath + "\"." +
-                    " The error was: " + ExceptionUtils.getMessage(e);
-            logger.warning(errorMsg);
-            if (ui != null) ui.showErrorMessage(errorMsg);
-            isOk = false;
-        }
-
-        return isOk;
-    }
-
     private String hidepass(String password) {
         // We will only indicate whether or not the password is empty here.
         // To avoid leaking information about the length we won't just mask the characters;
         // to avoid misleadingly implying an incorrect length, we won't just write asterixes
         return password == null || password.length() < 1 ? "<empty>" : "<not shown>";
-    }
-
-    public boolean doExistingDb(DatabaseConfig config, String schemaFilePath, String currentVersion, DBActionsListener ui) {
-        String errorMsg;
-        boolean isOk;
-
-        DatabaseConfig databaseConfig = new DatabaseConfig(config);
-        String hostname = databaseConfig.getHost();
-        String dbName = databaseConfig.getName();
-        String username = databaseConfig.getNodeUsername();
-        String password = databaseConfig.getNodePassword();
-        String privUsername = databaseConfig.getDatabaseAdminUsername();
-        String privPassword = databaseConfig.getDatabaseAdminPassword();
-
-        logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password " + username + "/" + hidepass(password));
-
-        DBActions.DBActionsResult status = checkExistingDb(databaseConfig);
-        if (status.getStatus() == StatusType.SUCCESS) {
-            logger.info(CONNECTION_SUCCESSFUL_MSG);
-
-            logger.info("Now Checking database version.");
-            String dbVersion = checkDbVersion(databaseConfig);
-            if ( dbVersion == null || DB_VERSION_UNKNOWN.equals(dbVersion)) {
-                errorMsg = "The " + dbName + " database does not appear to be a valid Gateway database.";
-                logger.warning(errorMsg);
-                if (ui != null) ui.showErrorMessage(errorMsg);
-                isOk = false;
-            } else {
-                if (dbVersion.equals(currentVersion)) {
-                    logger.info("Database version is correct (" + dbVersion + ")");
-                    if (ui != null) ui.hideErrorMessage();
-                    isOk = true;
-                }
-                else {
-                    errorMsg = "The current database version (" + dbVersion+ ") is incorrect (needs to be " + currentVersion + ") and needs to be upgraded" ;
-                    logger.warning(errorMsg);
-                    boolean shouldUpgrade = false;
-                    if (ui != null) {
-                        String msg = "The \"" + dbName + "\" database appears to be a " + dbVersion + " database and needs to be upgraded to " + currentVersion + "\n" +
-                            "Would you like to attempt an upgrade?";
-                        shouldUpgrade = ui.getGenericUserConfirmation(msg);
-                    }
-                    if (shouldUpgrade) {
-                        try {
-                            PasswordAuthentication creds = null;
-                            if (StringUtils.isEmpty(privUsername) || StringUtils.isEmpty(privPassword)) {
-                                creds = ui.getPrivelegedCredentials(
-                                        "Please enter the credentials for the root database user (needed to upgrade the database)",
-                                        "Please enter the username for the root database user (needed to upgrade the database): [root]",
-                                        "Please enter the password for root database user (needed to upgrade the database): ", "root");
-                            }
-                            if (creds == null) return false;
-
-                            privUsername = creds.getUserName();
-                            config.setDatabaseAdminUsername(privUsername);
-
-                            privPassword = new String(creds.getPassword());
-                            config.setDatabaseAdminPassword(privPassword);
-
-                            isOk = doDbUpgrade(config, schemaFilePath, currentVersion, dbVersion, ui);
-                            if (isOk) ui.showSuccess("The database was successfully upgraded\n");
-                        } catch (IOException e) {
-                            errorMsg = "There was an error while attempting to upgrade the database";
-                            logger.severe(errorMsg);
-                            logger.severe(ExceptionUtils.getMessage(e));
-                            ui.showErrorMessage(errorMsg);
-                            isOk = true;
-                        }
-                    } else {
-                        if (ui != null) ui.showErrorMessage("The database must be a correct version before proceeding.");
-                        isOk = false;
-                    }
-                }
-            }
-        } else {
-            switch (status.getStatus()) {
-                case UNKNOWNHOST_FAILURE:
-                    errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                    logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                    logger.warning(errorMsg);
-                    if (ui != null) ui.showErrorMessage(errorMsg);
-                    isOk = false;
-                    break;
-                case AUTHORIZATION_FAILURE:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = MessageFormat.format("There was a connection error when attempting to connect to the database \"{0}\" using the username \"{1}\". " +
-                            "Perhaps the password is wrong. Either the username and/or password is incorrect, or the database \"{2}\" does not exist.",
-                            dbName, username, dbName);
-                    if (ui != null) ui.showErrorMessage(errorMsg);
-                    logger.warning("There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
-                            username + "\" and password \"" + password + "\".");
-                    isOk = false;
-                    break;
-                case UNKNOWNDB_FAILURE:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = "Could not connect to the database \"" + dbName + "\". The database does not exist or the user \"" + username + "\" does not have permission to access it." +
-                            "Please check your input and try again.";
-                    if (ui != null) ui.showErrorMessage(errorMsg);
-                    logger.warning("Could not connect to the database \"" + dbName + "\". The database does not exist.");
-                    isOk = false;
-                    break;
-                default:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = GENERIC_DBCONNECT_ERROR_MSG;
-                    if (ui != null) ui.showErrorMessage(errorMsg);
-                    logger.warning("There was an unknown error while attempting to connect to the database.");
-                    isOk = false;
-                    break;
-            }
-        }
-        return isOk;
     }
 
     /**
@@ -600,13 +436,15 @@ public class DBActions {
      * Upgrade a database to the current version.
      *
      * @param config         The configuration for the database (admin creds required)
-     * @param schemaFilePath The path to the ssg.sql file
+     * @param databaseSpecificScriptsFolder The folder holding the mysql upgrade scripts.
+     * @param liquibaseUpgradeFolder
      * @param currentVersion The software version
      * @param ui             The listener for any feedback
      * @throws IOException   If an error occurs
      */
     public boolean upgradeDb( final DatabaseConfig config,
-                              final String schemaFilePath,
+                              final String databaseSpecificScriptsFolder,
+                              final String liquibaseUpgradeFolder,
                               final String currentVersion,
                               final DBActionsListener ui ) throws IOException {
         boolean success = false;
@@ -637,7 +475,7 @@ public class DBActions {
                 }
                 else {
                     try {
-                        success = doDbUpgrade(config, schemaFilePath, currentVersion, dbVersion, ui);
+                        success = doDbUpgrade(config, databaseSpecificScriptsFolder, liquibaseUpgradeFolder, ui);
                         if (success && ui != null) ui.showSuccess("The database was successfully upgraded\n");
                     } catch (IOException e) {
                         String errorMsg = "There was an error while attempting to upgrade the database";
@@ -1039,12 +877,12 @@ public class DBActions {
         return MessageFormat.format( urlPattern, InetAddressUtil.getHostForUrl(hostname), Integer.toString(port), dbName );
     }
 
-    private boolean doDbUpgrade(DatabaseConfig databaseConfig, String schemaFilePath, String currentVersion, String dbVersion, DBActionsListener ui) throws IOException {
+    private boolean doDbUpgrade(DatabaseConfig databaseConfig, String databaseSpecificScriptsFolder, String liquibaseUpgradeFolder, DBActionsListener ui) throws IOException {
         boolean isOk;
 
         if (ui != null) ui.showSuccess("Testing the upgrade on a test database ... " + EOL_CHAR);
 
-        DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(databaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
+        DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(databaseConfig, databaseSpecificScriptsFolder, liquibaseUpgradeFolder, ui);
         if (testUpgradeResult.getStatus() != StatusType.SUCCESS) {
             String msg = "The database was not upgraded due to the following reasons:\n\n" + testUpgradeResult.getErrorMessage() + "\n\n" +
                     "No changes have been made to the database. Please correct the problem and try again.";
@@ -1053,7 +891,7 @@ public class DBActions {
             isOk = false;
         } else {
             logger.info("Attempting to upgrade the existing database \"" + databaseConfig.getName()+ "\"");
-            DBActionsResult upgradeResult = upgradeDbSchema(databaseConfig, false, dbVersion, currentVersion, schemaFilePath, ui);
+            DBActionsResult upgradeResult = upgradeDbSchema(databaseConfig, false, databaseSpecificScriptsFolder, liquibaseUpgradeFolder, ui);
             String msg;
             switch (upgradeResult.getStatus()) {
                 case SUCCESS:
@@ -1084,7 +922,7 @@ public class DBActions {
         return isOk;
     }
 
-    private DBActionsResult testDbUpgrade(DatabaseConfig databaseConfig, String schemaFilePath, String dbVersion, String currentVersion, DBActionsListener ui) throws IOException {
+    private DBActionsResult testDbUpgrade(DatabaseConfig databaseConfig, String databaseSpecificScriptsFolder, String liquibaseUpgradeFolder, DBActionsListener ui) throws IOException {
         DatabaseConfig testDatabaseConfig = new DatabaseConfig( databaseConfig );
         testDatabaseConfig.setName(databaseConfig.getName() + "_testUpgrade");
         try {
@@ -1094,7 +932,7 @@ public class DBActions {
             copyDatabase(databaseConfig, testDatabaseConfig, true, ui);
             if (ui != null) ui.showSuccess("The test database was created." + EOL_CHAR);
             if (ui != null) ui.showSuccess("Upgrading the test database. This may take a few minutes." + EOL_CHAR);
-            DBActionsResult upgradeResult  = upgradeDbSchema(testDatabaseConfig, true, dbVersion, currentVersion, schemaFilePath, ui);
+            DBActionsResult upgradeResult  = upgradeDbSchema(testDatabaseConfig, true, databaseSpecificScriptsFolder, liquibaseUpgradeFolder, ui);
             if (upgradeResult.getStatus() != StatusType.SUCCESS) {
                 return new DBActionsResult(StatusType.CANNOT_UPGRADE, upgradeResult.getErrorMessage(), null);
             } else {
