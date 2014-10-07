@@ -6,6 +6,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.FileSystemResourceAccessor;
+import liquibase.servicelocator.ServiceLocator;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,6 +45,9 @@ public class LiquibaseDBManager {
         if (!liquibaseSchemaFolder.exists() || !liquibaseSchemaFolder.isDirectory()) {
             throw new RuntimeException("Could not find liquibase folder: " + liquibaseSchemaFolder);
         }
+
+        //Add this package so that out custom logger gets used by liquibase.
+        ServiceLocator.getInstance().addPackageToScan("com.l7tech.server.management.db");
     }
 
     /**
