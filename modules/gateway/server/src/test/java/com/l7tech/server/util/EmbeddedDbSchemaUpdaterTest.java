@@ -1,9 +1,13 @@
 package com.l7tech.server.util;
 
+import com.l7tech.server.management.db.LiquibaseDBManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
@@ -18,11 +22,15 @@ import static org.junit.Assert.fail;
 /**
  * Integration test for EmbeddedDbSchemaUpdater which uses an in-memory derby database.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class EmbeddedDbSchemaUpdaterTest {
     private TestableEmbeddedDbSchemaUpdater updater;
     private PlatformTransactionManager transactionManager;
     private EmbeddedDatabase database;
     private String softwareVersion;
+
+    @Mock
+    private LiquibaseDBManager liquibaseDBManager;
 
     @Before
     public void setup() throws IOException {
@@ -31,7 +39,7 @@ public class EmbeddedDbSchemaUpdaterTest {
         transactionManager = new DataSourceTransactionManager(database);
         updater = new TestableEmbeddedDbSchemaUpdater(transactionManager, "com/l7tech/server/util/db/derby");
         updater.setDataSource(database);
-        softwareVersion = "3.2.0";
+        softwareVersion = "8.3.pre";
     }
 
     @After
@@ -48,16 +56,7 @@ public class EmbeddedDbSchemaUpdaterTest {
     public void ensureCurrentSchema() {
         assertEquals("1.0.0", getDbVersion());
         updater.ensureCurrentSchema();
-        assertEquals("3.2.0", getDbVersion());
-    }
-
-    @Test
-    public void ensureCurrentSchemaUpgradeNotRequired() {
-        softwareVersion = "1.0.0";
-        assertEquals("1.0.0", getDbVersion());
-        updater.ensureCurrentSchema();
-        // should not have been updated
-        assertEquals("1.0.0", getDbVersion());
+        assertEquals("8.3.pre", getDbVersion());
     }
 
     @Test(expected = SchemaUpdater.SchemaException.class)
@@ -115,7 +114,7 @@ public class EmbeddedDbSchemaUpdaterTest {
     private class TestableEmbeddedDbSchemaUpdater extends EmbeddedDbSchemaUpdater {
 
         public TestableEmbeddedDbSchemaUpdater(@NotNull final PlatformTransactionManager transactionManager, @NotNull final String upgradeScriptDirectory) throws IOException {
-            super(transactionManager, upgradeScriptDirectory, "etc/db/liquibase/");
+            super(transactionManager, upgradeScriptDirectory, liquibaseDBManager);
         }
 
         @Override

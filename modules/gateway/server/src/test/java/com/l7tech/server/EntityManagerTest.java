@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.util.FileUtils;
 import com.l7tech.util.SyspropUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -14,9 +13,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.io.IOException;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"/com/l7tech/server/resources/testEmbeddedDbContext.xml",
         "/com/l7tech/server/resources/testManagerContext.xml",
@@ -25,9 +21,14 @@ import java.io.IOException;
 @Transactional
 @Ignore
 public abstract class EntityManagerTest {
+    {
+        //this is needed to
+        SyspropUtil.setProperty("com.l7tech.server.dbScriptsDirectory", "etc/db/liquibase");
+    }
     @Autowired
     protected ApplicationContext applicationContext;
     protected Session session;
+
 
     @Before
     public void initSession() {

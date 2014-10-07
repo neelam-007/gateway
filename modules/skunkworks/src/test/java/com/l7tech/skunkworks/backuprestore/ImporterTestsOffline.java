@@ -75,9 +75,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -112,9 +112,9 @@ public class ImporterTestsOffline {
         if (!projectSqlFile.exists() || projectSqlFile.isDirectory())
             throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -150,9 +150,9 @@ public class ImporterTestsOffline {
         if (!projectSqlFile.exists() || projectSqlFile.isDirectory())
             throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -189,9 +189,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -223,9 +223,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -265,9 +265,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -307,9 +307,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -352,9 +352,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -401,9 +401,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -455,9 +455,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);
@@ -694,9 +694,9 @@ public class ImporterTestsOffline {
         final File projectSqlFile = new File("etc/db/liquibase/ssg.xml");
         if(!projectSqlFile.exists() || projectSqlFile.isDirectory()) throw new RuntimeException("Cannot run without ssg.xml");
 
-        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_XML));
+        final File sqlDir = new File(tmpSsgHome, ImportExportUtilities.getDirPart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         FileUtils.ensurePath(sqlDir);
-        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_XML));
+        final File ssgSql = new File(sqlDir, ImportExportUtilities.getFilePart(ImportExportUtilities.SSG_DB_SCHEMA_FOLDER));
         ssgSql.createNewFile();
 
         FileUtils.copyFile(projectSqlFile, ssgSql);

@@ -67,6 +67,7 @@ public class DatabaseBasedRestManagementEnvironment {
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "modules/skunkworks/build/modules");
+        SyspropUtil.setProperty("com.l7tech.server.dbScriptsDirectory", "etc/db/liquibase");
 
         applicationContext = new ClassPathXmlApplicationContext(
                 "/com/l7tech/server/resources/testEmbeddedDbContext.xml",

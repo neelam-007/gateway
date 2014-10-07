@@ -98,7 +98,7 @@ class DatabaseRestorer {
         try {
             res = dbAction.createDb(dbConfig,
                     null,
-                    new File(ssgHome, ImportExportUtilities.SSG_DB_XML).getAbsolutePath(),
+                    new File(ssgHome, ImportExportUtilities.SSG_DB_SCHEMA_FOLDER).getAbsolutePath(),
                     overwriteDb);
             switch(res.getStatus()){
                 case ALREADY_EXISTS:
@@ -112,7 +112,7 @@ class DatabaseRestorer {
                             ((res.getErrorMessage() != null) ? res.getErrorMessage() : ""));    
             }
         } catch (IOException e) {
-            throw new RestoreImpl.RestoreException("Could not read ssg.sql: " + e.getMessage() );
+            throw new RestoreImpl.RestoreException("Could not read ssg.xml: " + e.getMessage() );
         }
         return true;
     }
