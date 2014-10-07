@@ -55,3 +55,4 @@ ErrorResponse
 UserMO
 PasswordFormatted
 GroupMO
+FirewallRuleMO

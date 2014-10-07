@@ -267,7 +267,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     @Override
     public String getHardwareCapability(String capability) {
-        return null;
+        return "true";
     }
 
     @Override

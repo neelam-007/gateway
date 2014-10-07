@@ -29,6 +29,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = ResourceDocumentMO.class),
             @XmlElementRef(type = EmailListenerMO.class),
             @XmlElementRef(type = EncapsulatedAssertionMO.class),
+            @XmlElementRef(type = FirewallRuleMO.class),
             @XmlElementRef(type = FolderMO.class),
             @XmlElementRef(type = GenericEntityMO.class),
             @XmlElementRef(type = HttpConfigurationMO.class),

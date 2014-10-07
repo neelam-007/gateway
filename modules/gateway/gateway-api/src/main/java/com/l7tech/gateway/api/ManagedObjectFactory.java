@@ -559,6 +559,16 @@ public class ManagedObjectFactory {
         return new PasswordFormatted();
     }
 
+
+    /**
+     * Create a new FirewallRuleMO instance.
+     *
+     * @return The new instance
+     */
+    public static FirewallRuleMO createFirewallRuleMO() {
+        return new FirewallRuleMO();
+    }
+
     /**
      * Read a managed object from the given data.
      *
@@ -630,46 +640,6 @@ public class ManagedObjectFactory {
         return MarshallingUtils.getJAXBContext();
     }
 
-    public static Class[] getAllManagedObjectClasses(){
-        return new Class[]{
-                ClusterPropertyMO.class,
-                CustomKeyValueStoreMO.class,
-                EncapsulatedAssertionMO.class,
-                FolderMO.class,
-                GenericEntityMO.class,
-                IdentityProviderMO.class,
-                InterfaceTagMO.class,
-                JDBCConnectionMO.class,
-                JMSDestinationMO.class,
-                ListenPortMO.class,
-                ServiceAliasMO.class,
-                PolicyAliasMO.class,
-                PolicyMO.class,
-                PrivateKeyMO.class,
-                ResourceDocumentMO.class,
-                RevocationCheckingPolicyMO.class,
-                ServiceMO.class,
-                StoredPasswordMO.class,
-                TrustedCertificateMO.class,
-                CustomKeyValueStoreMO.class,
-                ActiveConnectorMO.class,
-                SecurityZoneMO.class,
-                SiteMinderConfigurationMO.class,
-                AssertionSecurityZoneMO.class,
-                HttpConfigurationMO.class,
-                RbacRoleMO.class,
-                RbacRoleAssignmentMO.class,
-                RbacRolePermissionMO.class,
-                RbacRolePredicateMO.class,
-                DependencyListMO.class,
-                DependencyMO.class,
-                Item.class,
-                ItemsList.class,
-                Mapping.class,
-                Link.class,
-                PolicyVersionMO.class
-        };
-    }
 
     public static DependencyListMO createDependencyListMO() {
         return new DependencyListMO();

@@ -741,4 +741,12 @@
         <constructor-arg ref="auditFactory"/>
     </bean>
 
+    <bean id="ssgFirewallRuleManager" class="com.l7tech.server.transport.firewall.SsgFirewallRulesManagerStub">
+        <constructor-arg>
+            <list />
+        </constructor-arg>
+    </bean>
+
+    <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub"/>
+
 </beans>

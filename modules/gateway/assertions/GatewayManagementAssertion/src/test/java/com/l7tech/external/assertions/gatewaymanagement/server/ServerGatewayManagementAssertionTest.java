@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdminStub;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -81,6 +82,7 @@ import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
 import com.l7tech.server.transport.SsgConnectorManagerStub;
 import com.l7tech.server.transport.email.EmailListenerManagerStub;
+import com.l7tech.server.transport.firewall.SsgFirewallRulesManagerStub;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
@@ -5597,6 +5599,9 @@ public class ServerGatewayManagementAssertionTest {
 
         applicationContext.getBeanFactory().registerSingleton("auditRecordManager", new AuditRecordManagerStub());
         applicationContext.getBeanFactory().registerSingleton("uddiServiceControlManager", new UDDIServiceControlManagerStub());
+
+        applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
 
         applicationContext.refresh();
 
