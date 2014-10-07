@@ -12,9 +12,6 @@
             </update>
         </rollback>
     </changeSet>
-    <changeSet id="tag_8.3.00" author="vkazakov">
-        <tagDatabase tag="version_8.3.00"/>
-    </changeSet>
     <changeSet id="remove_next_hi_function" author="vkazakov">
         <sql dbms="mysql">DROP FUNCTION next_hi</sql>
         <rollback>

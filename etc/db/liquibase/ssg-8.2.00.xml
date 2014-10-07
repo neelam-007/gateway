@@ -5,7 +5,4 @@
     <include file="ssg-base.xml" relativeToChangelogFile="true"/>
     <include file="ssg-data.xml" relativeToChangelogFile="true"/>
     <include file="ssg-data-roles.xml" relativeToChangelogFile="true"/>
-    <changeSet id="tag_8.3.pre" author="vkazakov">
-        <tagDatabase tag="version_8.3.pre"/>
-    </changeSet>
 </databaseChangeLog>

@@ -2,12 +2,11 @@ package com.l7tech.skunkworks.db;
 
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.db.DbCompareTestUtils;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.ConditionalIgnoreRule;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.server.management.db.DbCompareTestUtils;
-import com.l7tech.util.ResourceUtils;
 import liquibase.Liquibase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
@@ -15,21 +14,14 @@ import liquibase.resource.FileSystemResourceAccessor;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -101,69 +93,6 @@ public class DatabaseUpgradeTest {
         Assert.assertTrue("Could not upgrade mysql database", result);
 
         DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(newDBConfig, true, false), dbActions.getConnection(oldDBConfig, true, false));
-    }
-
-    @Test
-    public void testRollback() throws SQLException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, LiquibaseException {
-
-        List<String> upgradeXMLs = getUpgradeFiles();
-
-        DatabaseConfig rollbackDBConfig = new DatabaseConfig(oldDBConfig);
-        rollbackDBConfig.setName("RolbackDBTest");
-        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true);
-        dbActions.createDatabaseWithGrants(dbActions.getConnection(rollbackDBConfig, true), rollbackDBConfig, hosts);
-        Liquibase liquibase = new Liquibase("etc/db/liquibase/ssg-8.2.00.xml", new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(rollbackDBConfig, true, false)));
-        liquibase.update("");
-
-        for (String upgradeXML : upgradeXMLs) {
-            //upgrade and rollback
-            liquibase = new Liquibase("etc/db/liquibase/" + upgradeXML, new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(rollbackDBConfig, true, false)));
-            liquibase.tag(upgradeXML);
-            liquibase.update("");
-            liquibase.rollback(upgradeXML, "");
-
-            DbCompareTestUtils.compareNewToUpgradedDatabase(dbActions.getConnection(oldDBConfig, true, false), dbActions.getConnection(rollbackDBConfig, true, false));
-
-            liquibase.update("");
-
-            liquibase = new Liquibase("etc/db/liquibase/" + upgradeXML, new FileSystemResourceAccessor(), new JdbcConnection(dbActions.getConnection(oldDBConfig, true, false)));
-            liquibase.update("");
-        }
-
-        dbActions.dropDatabase(rollbackDBConfig, hosts, true, true);
-
-    }
-
-    @Test
-    public void testTags() throws SQLException, IOException, XPathExpressionException, ParserConfigurationException, SAXException, LiquibaseException {
-        List<String> upgradeXMLs = getUpgradeFiles();
-        //upgrade and rollback
-        Connection connection = dbActions.getConnection(newDBConfig, true, false);
-        try {
-            Liquibase liquibase = new Liquibase("", new FileSystemResourceAccessor(), new JdbcConnection(connection));
-            for (String upgradeXML : upgradeXMLs) {
-                String version = upgradeXML.substring(8, upgradeXML.length() - 4);
-                boolean tag = liquibase.getDatabase().doesTagExist("version_" + version);
-                Assert.assertTrue("Missing version tag for version: " + version, tag);
-            }
-        } finally {
-            ResourceUtils.closeQuietly(connection);
-        }
-    }
-
-    private List<String> getUpgradeFiles() throws ParserConfigurationException, SAXException, IOException, XPathExpressionException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse("etc/db/liquibase/ssg-upgrade.xml");
-        XPathFactory xPathfactory = XPathFactory.newInstance();
-        XPath xpath = xPathfactory.newXPath();
-        XPathExpression expr = xpath.compile("/databaseChangeLog/include[@file]");
-        NodeList filesNodes = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-        List<String> upgradeXMLs = new ArrayList<>();
-        for (int i = 0; i < filesNodes.getLength(); i++) {
-            upgradeXMLs.add(filesNodes.item(i).getAttributes().getNamedItem("file").getNodeValue());
-        }
-        return upgradeXMLs;
     }
 
     @Test
