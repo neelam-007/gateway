@@ -15,4 +15,30 @@
     <changeSet id="tag_8.3.00" author="vkazakov">
         <tagDatabase tag="version_8.3.00"/>
     </changeSet>
+    <changeSet id="remove_next_hi_function" author="vkazakov">
+        <sql dbms="mysql">DROP FUNCTION next_hi</sql>
+        <rollback>
+            <createProcedure dbms="mysql"
+                             procedureName="next_hi">
+                CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
+                BEGIN
+                UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);
+                RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
+                END
+            </createProcedure>
+        </rollback>
+    </changeSet>
+    <changeSet id="remove_hibernate_unique_key_table" author="vkazakov" dbms="mysql">
+        <dropTable tableName="hibernate_unique_key"/>
+        <rollback>
+            <createTable tableName="hibernate_unique_key">
+                <column name="next_hi" type="INT(11)">
+                    <constraints nullable="true"/>
+                </column>
+            </createTable>
+            <insert tableName="hibernate_unique_key">
+                <column name="next_hi" valueNumeric="1"/>
+            </insert>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

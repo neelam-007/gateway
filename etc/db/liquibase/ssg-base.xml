@@ -1333,7 +1333,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="vkazakov (generated)" id="1408665452836-65">
+    <changeSet author="vkazakov (generated)" id="1408665452836-65" dbms="mysql">
         <createTable tableName="replication_status">
             <column name="objectid" type="BIGINT(19)">
                 <constraints nullable="false"/>
@@ -2314,7 +2314,7 @@
     <changeSet author="vkazakov (generated)" id="1408665452836-149">
         <addPrimaryKey columnNames="goid" tableName="rbac_role"/>
     </changeSet>
-    <changeSet author="vkazakov (generated)" id="1408665452836-150">
+    <changeSet author="vkazakov (generated)" id="1408665452836-150" dbms="mysql">
         <addPrimaryKey columnNames="objectid" tableName="replication_status"/>
     </changeSet>
     <changeSet author="vkazakov (generated)" id="1408665452836-151">

@@ -84,7 +84,7 @@ public class DatabaseUpgradeTest {
         currentVersion = dbActions.checkDbVersion(newDBConfig);
 
         dbActions.createDatabaseWithGrants(dbActions.getConnection(oldDBConfig, true), oldDBConfig, hosts);
-        Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor("etc/db/liquibase"), new JdbcConnection(dbActions.getConnection(oldDBConfig, true, false)));
+        Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor("etc/db/liquibase"), new JdbcConnection(dbActions.getConnection(oldDBConfig, false, false)));
         liquibase.update("");
     }
 

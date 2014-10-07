@@ -822,14 +822,3 @@ ALTER TABLE wssc_session ADD COLUMN session_key_hash varchar(128);
 UPDATE wssc_session SET session_key_hash = session_key_hash_backup;
 ALTER TABLE wssc_session DROP COLUMN session_key_hash_backup;
 CREATE UNIQUE INDEX idx_wssc_session_session_key_hash ON wssc_session(session_key_hash);
-
-CREATE TABLE replication_status (
-  objectid bigint NOT NULL,
-  sequence bigint NOT NULL DEFAULT 1,
-  updated bigint NOT NULL DEFAULT 0,
-  nodeid varchar(32),
-  delay bigint NOT NULL DEFAULT 0,
-  PRIMARY KEY (objectid)
-);
-
-INSERT INTO replication_status (objectid, nodeid) values (1, null);

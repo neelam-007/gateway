@@ -5,15 +5,11 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.util.RandomUtil;
 import org.hibernate.HibernateException;
-import org.hibernate.MappingException;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.dialect.Dialect;
 import org.hibernate.engine.SessionImplementor;
 import org.hibernate.id.IdentifierGenerator;
 import org.hibernate.id.IdentityGenerator;
-import org.hibernate.id.SequenceHiLoGenerator;
 import org.hibernate.id.factory.DefaultIdentifierGeneratorFactory;
-import org.hibernate.type.Type;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 
@@ -21,7 +17,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -46,18 +41,6 @@ public class ConfiguredSessionFactoryBean extends AnnotationSessionFactoryBean {
         }
 
         return configuration;
-    }
-
-    /**
-     * Extension of SequenceHiLoGenerator with customized default configuration
-     */
-    public static final class ConfiguredHiLoGenerator extends SequenceHiLoGenerator {
-        @Override
-        public void configure( final Type type, final Properties params, final Dialect dialect ) throws MappingException {
-            if ( !params.containsKey( MAX_LO ) ) params.setProperty( MAX_LO, "32767" );
-
-            super.configure( type, params, dialect );
-        }
     }
 
     /**
