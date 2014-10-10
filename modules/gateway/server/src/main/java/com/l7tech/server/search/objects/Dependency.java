@@ -14,8 +14,8 @@ import java.util.List;
 public class Dependency {
 
     @NotNull
-    private final DependentObject dependent;
-    private List<Dependency> dependencies;
+    protected final DependentObject dependent;
+    protected List<Dependency> dependencies;
 
     /**
      * Creates a new dependency object for the given dependent. The objects dependencies will be set to null.

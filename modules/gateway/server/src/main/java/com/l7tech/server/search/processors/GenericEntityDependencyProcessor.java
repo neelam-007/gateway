@@ -57,13 +57,16 @@ public class GenericEntityDependencyProcessor extends DefaultDependencyProcessor
 
     @NotNull
     @Override
-    public List<GenericEntity> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
-        final List<GenericEntity> entitiesList = super.find(searchValue, dependencyType, searchValueType);
+    public List<DependencyFinder.FindResults<GenericEntity>> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+        final List<DependencyFinder.FindResults<GenericEntity>> entitiesList = super.find(searchValue, dependencyType, searchValueType);
         //need to up cast the generic entities to the concrete versions.
-        return Functions.map(entitiesList, new Functions.UnaryThrows<GenericEntity, GenericEntity, FindException>() {
+        return Functions.map(entitiesList, new Functions.UnaryThrows<DependencyFinder.FindResults<GenericEntity>, DependencyFinder.FindResults<GenericEntity>, FindException>() {
             @Override
-            public GenericEntity call(final GenericEntity genericEntity) throws FindException {
-                return getConcreteGenericEntity(genericEntity);
+            public DependencyFinder.FindResults<GenericEntity> call(final DependencyFinder.FindResults<GenericEntity> genericEntity) throws FindException {
+                if(genericEntity.hasEntity()) {
+                    return DependencyFinder.FindResults.<GenericEntity>create(getConcreteGenericEntity(genericEntity.getEntity()), null);
+                }
+                return genericEntity;
             }
         });
     }

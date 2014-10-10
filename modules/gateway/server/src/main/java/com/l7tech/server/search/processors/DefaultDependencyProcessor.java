@@ -79,7 +79,7 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
                     public void process(@NotNull final UsesPrivateKeys usesPrivateKeys, @NotNull final SsgKeyHeader ssgKeyHeader) throws CannotRetrieveDependenciesException, FindException {
                         //find and process ssg key store dependencies.
                         final Entity keyEntry = loadEntity(ssgKeyHeader);
-                        final Dependency dependency = finder.getDependency(keyEntry);
+                        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create( keyEntry, ssgKeyHeader));
                         if (dependency != null && !dependencies.contains(dependency)) {
                             dependencies.add(dependency);
                         }
@@ -128,19 +128,19 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
      * @param annotation        The @Dependency annotation describing how to handle the method return value.
      * @param methodReturnValue The method return value to reteive the dependency from.
      * @param finder            The dependency finder to use.
-     * @return The list of dependencies that are represented by this method return value.
+     * @return The list of dependency search results that are represented by this method return value.
      * @throws FindException                       This is thrown if an entity could not be found.
      * @throws CannotRetrieveDependenciesException This is thrown if the {@link com.l7tech.search.Dependency} annotation
      *                                             is not properly used.
      */
     @NotNull
-    private static List<Object> getDependenciesFromMethodReturnValue(@Nullable final com.l7tech.search.Dependency annotation, @NotNull final Object methodReturnValue, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, FindException {
+    private static List<DependencyFinder.FindResults> getDependenciesFromMethodReturnValue(@Nullable final com.l7tech.search.Dependency annotation, @NotNull final Object methodReturnValue, @NotNull final DependencyFinder finder) throws CannotRetrieveDependenciesException, FindException {
         if (annotation != null) {
             final Object returnObject = processMethodReturnValue(annotation, methodReturnValue);
             //If the dependency annotation is specified use the finder to retrieve the entity.
-            return returnObject == null ? Collections.emptyList() : finder.retrieveObjects(returnObject, annotation.type(), annotation.methodReturnType());
+            return returnObject == null ? Collections.<DependencyFinder.FindResults>emptyList() : finder.retrieveObjects(returnObject, annotation.type(), annotation.methodReturnType());
         }
-        return Arrays.asList(methodReturnValue);
+        return Arrays.asList(DependencyFinder.FindResults.create(methodReturnValue,null));
     }
 
     /**
@@ -192,12 +192,12 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
      * @param searchValue     The search value that should uniquely identify the entity.
      * @param dependencyType  The type of dependency that is to be found
      * @param searchValueType The search value type.
-     * @return The entities found
+     * @return The dependency entities search reuslts found
      * @throws FindException This is thrown if the entity could not be found.
      */
     @NotNull
     @Override
-    public List<O> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<DependencyFinder.FindResults<O>> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
             case GOID: {
                 final List<EntityHeader> headers;
@@ -206,12 +206,13 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
                 } catch (CannotRetrieveDependenciesException e) {
                     throw new FindException("Cannot find " + dependencyType.getEntityType(), e);
                 }
-                return Functions.map(headers, new Functions.UnaryThrows<O, EntityHeader, FindException>() {
+                return Functions.map(headers, new Functions.UnaryThrows<DependencyFinder.FindResults<O>, EntityHeader, FindException>() {
                     @Override
-                    public O call(final EntityHeader entityHeader) throws FindException {
+                    public DependencyFinder.FindResults<O> call(final EntityHeader entityHeader) throws FindException {
                         try {
                             //noinspection unchecked
-                            return (O) loadEntity(entityHeader);
+                            O entity = (O) loadEntity(entityHeader);
+                            return DependencyFinder.FindResults.<O>create(entity,entityHeader) ;
                         } catch (ClassCastException e) {
                             throw new FindException("Cannot find " + dependencyType.getEntityType() + ". Entity cannot be cast to correct type: " + searchValue.getClass(), e);
                         }
@@ -221,7 +222,7 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
             case ENTITY:
                 if (searchValue instanceof Entity) {
                     try {
-                        return Arrays.asList((O) searchValue);
+                        return Arrays.<DependencyFinder.FindResults<O>>asList(DependencyFinder.FindResults.<O>create((O) searchValue, null));
                     } catch (ClassCastException e) {
                         throw new FindException("Cannot find " + dependencyType.getEntityType() + ". Method return type cannot be cast to correct type: " + searchValue.getClass(), e);
                     }
@@ -231,7 +232,8 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
             case ENTITY_HEADER:
                 if (searchValue instanceof EntityHeader) {
                     try {
-                        return Arrays.asList((O) loadEntity((EntityHeader) searchValue));
+                        O entity = (O) loadEntity((EntityHeader) searchValue);
+                        return Arrays.<DependencyFinder.FindResults<O>>asList(DependencyFinder.FindResults.<O>create(entity,(EntityHeader) searchValue));
                     } catch (ClassCastException e) {
                         throw new FindException("Cannot find " + dependencyType.getEntityType() + ". Entity cannot be cast to correct type: " + searchValue.getClass(), e);
                     }
@@ -658,8 +660,12 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
                     }
                 } else {
                     //This is when both the keyStore and alias as specified. Doing it this way instead of 'keyStoreManager.lookupKeyByKeyAlias(keyHeader.getAlias(), keyHeader.getKeystoreId())' strictly enforces that the key is found in a specific keystore
-                    final SsgKeyFinder ssgKeyFinder = keyStoreManager.findByPrimaryKey(keyHeader.getKeystoreId());
-                    keyEntry = ssgKeyFinder.getCertificateChain(keyHeader.getAlias());
+                    try{
+                        final SsgKeyFinder ssgKeyFinder = keyStoreManager.findByPrimaryKey(keyHeader.getKeystoreId());
+                        keyEntry = ssgKeyFinder.getCertificateChain(keyHeader.getAlias());
+                    }catch (ObjectNotFoundException e){
+                        return null;
+                    }
                 }
             } catch (KeyStoreException e) {
                 throw new FindException("Exception finding SsgKeyEntry", e);

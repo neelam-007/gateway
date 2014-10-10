@@ -7,10 +7,7 @@ import com.l7tech.gateway.common.entity.EntitiesResolver;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.password.SecurePassword;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
@@ -20,6 +17,7 @@ import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.BrokenDependency;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependentAssertion;
 import com.l7tech.server.search.objects.DependentObject;
@@ -92,7 +90,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                 .build();
         for (final EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
             final Entity entity = loadEntity(header);
-            Dependency dependency = finder.getDependency(entity);
+            Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(entity, header ));
             if (dependency != null && !dependencies.contains(dependency)) {
                 dependencies.add(dependency);
             }
@@ -110,7 +108,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
 
                     // try to get cluster property reference
                     final ClusterProperty property = clusterPropertyManager.findByUniqueName(cpName);
-                    final Dependency dependency = finder.getDependency(property);
+                    final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(property, new EntityHeader(Goid.DEFAULT_GOID,EntityType.CLUSTER_PROPERTY,cpName,null)));
                     if (dependency != null && !dependencies.contains(dependency)) {
                         dependencies.add(dependency);
                     }
@@ -120,7 +118,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                     if (matcher.matches()) {
                         final String alias = matcher.group(1);
                         final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
-                        final Dependency dependency = finder.getDependency(securePassword);
+                        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(securePassword, new EntityHeader(Goid.DEFAULT_GOID,EntityType.SECURE_PASSWORD,alias,null)));
                         if (dependency != null && !dependencies.contains(dependency)) {
                             dependencies.add(dependency);
                         }
@@ -135,9 +133,10 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                 final String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
                 //Passing null as the resource type should be ok as resources as unique by uri anyways.
                 final ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
-                final Dependency dependency = finder.getDependency(resourceEntry);
+                final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(resourceEntry, new EntityHeader(Goid.DEFAULT_GOID,EntityType.RESOURCE_ENTRY,uri,null)));
                 if (dependency != null && !dependencies.contains(dependency))
                     dependencies.add(dependency);
+
             }
         }
 
@@ -145,10 +144,20 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         if (assertion instanceof PrivateKeyable) {
             final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
             if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
-                final Entity keyEntry = loadEntity(new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias()));
-                final Dependency dependency = finder.getDependency(keyEntry);
-                if (dependency != null && !dependencies.contains(dependency))
-                    dependencies.add(dependency);
+                SsgKeyHeader keyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
+                try {
+                    final Entity keyEntry = loadEntity(keyHeader);
+                    if(keyEntry == null){
+                        dependencies.add(new BrokenDependency(keyHeader));
+                    }else {
+                        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, keyHeader));
+                        if (dependency != null && !dependencies.contains(dependency))
+                            dependencies.add(dependency);
+                    }
+
+                } catch ( FindException e){
+                    dependencies.add(new BrokenDependency(keyHeader));
+                }
             }
         }
 
@@ -172,7 +181,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
      */
     @NotNull
     @Override
-    public List<A> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) {
+    public List<DependencyFinder.FindResults<A>> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) {
         throw new UnsupportedOperationException("Assertions cannot be loaded as entities");
     }
 

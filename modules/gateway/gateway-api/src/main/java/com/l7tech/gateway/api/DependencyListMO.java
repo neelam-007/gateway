@@ -13,7 +13,7 @@ import java.util.Map;
  * @author Victor Kazakov
  */
 @XmlRootElement(name = "DependencyList")
-@XmlType(propOrder = {"options", "searchObjectItem", "dependencies"})
+@XmlType(propOrder = {"options", "searchObjectItem", "dependencies", "missingDependencies"})
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class DependencyListMO  {
 
@@ -22,6 +22,7 @@ public class DependencyListMO  {
     private Map<String,Object> options;
     private DependencyMO searchObjectItem;
     private List<DependencyMO> dependencies;
+    private List<DependencyMO> missingDependencies;
 
     @XmlElement(name = "Options")
     @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
@@ -50,5 +51,15 @@ public class DependencyListMO  {
 
     public void setDependencies(List<DependencyMO> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    @XmlElement(name = "MissingDependency")
+    @XmlElementWrapper(name = "MissingDependencies")
+    public List<DependencyMO> getMissingDependencies() {
+        return missingDependencies;
+    }
+
+    public void setMissingDependencies(List<DependencyMO> missingDependencies) {
+        this.missingDependencies = missingDependencies;
     }
 }

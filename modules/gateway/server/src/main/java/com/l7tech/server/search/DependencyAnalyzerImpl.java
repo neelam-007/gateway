@@ -28,9 +28,7 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.search.objects.*;
 import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.server.search.processors.DependencyProcessorStore;
 import com.l7tech.util.Functions;
@@ -148,13 +146,13 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
         //Load the entities from the given entity headers.
         for (final List<EntityHeader> headerList : headerLists) {
-            final ArrayList<Entity> entities = new ArrayList<>(headerList.size());
+            final ArrayList<DependencyFinder.FindResults> entities = new ArrayList<>(entityHeaders.size());
             for (final EntityHeader entityHeader : headerList) {
                 final Entity entity = entityCrud.find(entityHeader);
                 if (entity == null) {
                     throw new ObjectNotFoundException("Could not find Entity with header: " + entityHeader.toStringVerbose());
                 }
-                entities.add(entity);
+                entities.add(DependencyFinder.FindResults.create(entity, entityHeader));
             }
             results.addAll(dependencyFinder.process(entities));
         }
@@ -358,7 +356,11 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         });
         //if it has not been added then add it.
         if (dependency == null) {
-            dependency = new Dependency(dependent);
+            if(dependent instanceof BrokenDependentEntity){
+                dependency = new BrokenDependency( (BrokenDependentEntity)dependent );
+            }else {
+                dependency = new Dependency(dependent);
+            }
             //add the immediate dependencies to the dependency
             final ArrayList<Dependency> immediateDependencies = new ArrayList<>();
             if (dependencies != null && !dependencies.isEmpty()) {

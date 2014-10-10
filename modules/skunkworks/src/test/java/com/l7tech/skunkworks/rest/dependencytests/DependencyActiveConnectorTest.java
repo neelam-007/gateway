@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -142,6 +143,52 @@ public class DependencyActiveConnectorTest extends DependencyTestBase{
                 assertEquals(2, mqDep.getDependencies().size());
                 assertNotNull( "Missing dependency:"+securePassword.getId(), getDependency(mqDep.getDependencies(),securePassword.getId()));
                 assertNotNull( "Missing dependency:"+securityZone.getId(), getDependency(mqDep.getDependencies(),securityZone.getId()));
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(mqNative.getGoid().getLow(),mqNative.getGoid().getHi());
+        final String brokenReferenceName = "brokenReferenceName";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:MqNativeRouting>\n" +
+                        "            <L7p:RequestMessageAdvancedProperties mapValueNull=\"null\"/>\n" +
+                        "            <L7p:RequestMqNativeMessagePropertyRuleSet mappingRuleSet=\"included\"/>\n" +
+                        "            <L7p:ResponseMessageAdvancedProperties mapValueNull=\"null\"/>\n" +
+                        "            <L7p:ResponseMqNativeMessagePropertyRuleSet mappingRuleSet=\"included\"/>\n" +
+                        "            <L7p:ResponseTarget MessageTarget=\"included\">\n" +
+                        "                <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "            </L7p:ResponseTarget>\n" +
+                        "            <L7p:SsgActiveConnectorGoid goidValue=\""+brokenReferenceGoid.toString()+"\"/>\n" +
+                        "            <L7p:SsgActiveConnectorId goidValue=\""+brokenReferenceGoid.toString()+"\"/>\n" +
+                        "            <L7p:SsgActiveConnectorName stringValue=\""+ brokenReferenceName +"\"/>\n" +
+                        "        </L7p:MqNativeRouting>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>\n";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals("Test Policy dependencies", dependencyItem.getName());
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                assertNotNull(brokenDep);
+                assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceName, brokenDep.getName());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
             }
         });
     }

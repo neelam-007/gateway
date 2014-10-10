@@ -54,7 +54,7 @@ public final class AssertionDependencyProcessor<A extends Assertion> implements 
 
     @NotNull
     @Override
-    public List<A> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<DependencyFinder.FindResults<A>> find(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         throw new UnsupportedOperationException("Assertions cannot be loaded as entities");
     }
 

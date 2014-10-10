@@ -1,13 +1,12 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.DependencyListMO;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -18,10 +17,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
@@ -169,6 +165,7 @@ public class DependencyJmsTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(0,dependencyAnalysisMO.getMissingDependencies().size());
 
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
                 verifyItem(dep,jmsEndpoint);
@@ -210,6 +207,7 @@ public class DependencyJmsTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
                 assertEquals(2,dependencyAnalysisMO.getDependencies().size());
+                assertEquals(0,dependencyAnalysisMO.getMissingDependencies().size());
 
                 DependencyMO dep  = getDependency(dependencyAnalysisMO, EntityType.JMS_ENDPOINT);
                 verifyItem(dep,jmsEndpoint1);
@@ -257,6 +255,7 @@ public class DependencyJmsTest extends DependencyTestBase{
                 assertNotNull(dependencyItem.getContent().getDependencies());
                 DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
 
+                assertEquals(0,dependencyAnalysisMO.getMissingDependencies().size());
                 assertEquals(3,dependencyAnalysisMO.getDependencies().size());
                 DependencyMO dep  = getDependency(dependencyAnalysisMO,EntityType.JMS_ENDPOINT);
                 verifyItem(dep, jmsEndpointTemplate);
@@ -274,6 +273,46 @@ public class DependencyJmsTest extends DependencyTestBase{
                 assertEquals(securityZone.getId(), securityZoneDep.getId());
                 assertEquals(securityZone.getName(), securityZoneDep.getName());
                 assertEquals(EntityType.SECURITY_ZONE.toString(), securityZoneDep.getType());
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(jmsEndpoint.getGoid().getLow(),jmsEndpoint.getGoid().getHi());
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:JmsRoutingAssertion>\n" +
+                        "            <L7p:EndpointName stringValue=\"name\"/>\n" +
+                        "            <L7p:EndpointOid goidValue=\""+ brokenReferenceGoid +"\"/>\n" +
+                        "            <L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+                        "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+                        "            </L7p:RequestJmsMessagePropertyRuleSet>\n" +
+                        "            <L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+                        "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+                        "            </L7p:ResponseJmsMessagePropertyRuleSet>\n" +
+                        "        </L7p:JmsRoutingAssertion>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.JMS_ENDPOINT.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
             }
         });
     }

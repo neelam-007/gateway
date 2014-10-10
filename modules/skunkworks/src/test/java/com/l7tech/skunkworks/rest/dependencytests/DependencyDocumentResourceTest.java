@@ -118,4 +118,40 @@ public class DependencyDocumentResourceTest extends DependencyTestBase{
         });
     }
 
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final String brokenReferenceUri = resourceEntry.getUri()+"brokenReference";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:SchemaValidation>\n" +
+                        "            <L7p:ResourceInfo globalResourceInfo=\"included\">\n" +
+                        "                <L7p:Id stringValue=\""+brokenReferenceUri+"\"/>\n" +
+                        "            </L7p:ResourceInfo>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:SchemaValidation>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                assertNotNull(brokenDep);
+                assertEquals(EntityType.RESOURCE_ENTRY.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceUri, brokenDep.getName());
+            }
+        });
+    }
+
 }

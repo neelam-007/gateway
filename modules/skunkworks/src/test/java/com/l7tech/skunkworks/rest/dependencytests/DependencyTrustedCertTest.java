@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.cert.TrustedCert;
@@ -523,6 +524,101 @@ public class DependencyTrustedCertTest extends DependencyTestBase{
                 assertEquals(EntityType.TRUSTED_CERT.toString(), cert.getType());
                 verifyItem(cert, trustedCertWithRevocationPolicySigner);
 
+            }
+        });
+    }
+
+    @Test
+    public void brokenRevocationCheckPolicyReferenceTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(trustedCertWithRevocationPolicy.getGoid().getLow(),trustedCertWithRevocationPolicy.getGoid().getHi());
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:WsSecurity>\n" +
+                        "            <L7p:RecipientTrustedCertificateGoid goidValue=\""+brokenReferenceGoid+"\"/>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:WsSecurity>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.TRUSTED_CERT.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceByNameTest() throws Exception {
+
+        final String brokenReferenceName = "brokenReference";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:WsSecurity>\n" +
+                        "            <L7p:RecipientTrustedCertificateName stringValue=\""+brokenReferenceName+"\"/>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:WsSecurity>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceByIdTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(trustedCert.getGoid().getLow(),trustedCert.getGoid().getHi());
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:WsSecurity>\n" +
+                        "            <L7p:RecipientTrustedCertificateGoid goidValue=\""+brokenReferenceGoid+"\"/>\n" +
+                        "            <L7p:Target target=\"RESPONSE\"/>\n" +
+                        "        </L7p:WsSecurity>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.TRUSTED_CERT.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
             }
         });
     }

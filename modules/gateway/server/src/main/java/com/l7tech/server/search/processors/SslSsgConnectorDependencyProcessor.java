@@ -23,7 +23,7 @@ public class SslSsgConnectorDependencyProcessor implements DependencyProcessor<S
     @NotNull
     public List<Dependency> findDependencies(@NotNull final SsgConnector connector, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         //add the ssg private key as a dependency
-        final List<Object> dependentEntities = finder.retrieveObjects(getSsgKeyHeader(connector), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
+        final List<DependencyFinder.FindResults> dependentEntities = finder.retrieveObjects(getSsgKeyHeader(connector), com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY, com.l7tech.search.Dependency.MethodReturnType.ENTITY_HEADER);
         return finder.getDependenciesFromObjects(connector, finder, dependentEntities);
     }
 

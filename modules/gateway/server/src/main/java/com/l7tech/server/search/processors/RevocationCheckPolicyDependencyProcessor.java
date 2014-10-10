@@ -31,18 +31,18 @@ public class RevocationCheckPolicyDependencyProcessor extends DefaultDependencyP
     public List<Dependency> findDependencies(@NotNull final RevocationCheckPolicy object, @NotNull final DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
         final List<Dependency> dependencies = super.findDependencies(object,finder);
 
-        final List<TrustedCert> certs = new ArrayList<>();
+        final List<DependencyFinder.FindResults> certs = new ArrayList<>();
 
         for(RevocationCheckPolicyItem item: object.getRevocationCheckItems()){
-            certs.addAll(Functions.map(item.getTrustedSigners(),new Functions.UnaryThrows<TrustedCert, Goid, FindException>() {
+            certs.addAll(Functions.map(item.getTrustedSigners(),new Functions.UnaryThrows<DependencyFinder.FindResults, Goid, FindException>() {
                 @Override
-                public TrustedCert call(final Goid goid) throws FindException {
-                    return trustedCertManager.findByPrimaryKey(goid);
+                public DependencyFinder.FindResults call(final Goid goid) throws FindException {
+                    return DependencyFinder.FindResults.create(trustedCertManager.findByPrimaryKey(goid), new EntityHeader(goid,EntityType.TRUSTED_CERT,null,null));
                 }
             }));
         }
         if (!certs.isEmpty()) {
-            dependencies.addAll(finder.getDependenciesFromObjects(object, finder, CollectionUtils.<Object>toList(certs)));
+            dependencies.addAll(finder.getDependenciesFromObjects(object, finder, certs));
         }
 
         return dependencies;

@@ -7,10 +7,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.search.Dependencies;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.search.objects.*;
 import com.l7tech.util.CollectionUtils;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -27,10 +24,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This was created: 6/11/13 as 10:30 AM
- *
- * @author Victor Kazakov
- */
+* This was created: 6/11/13 as 10:30 AM
+*
+* @author Victor Kazakov
+*/
 @SuppressWarnings({"unchecked", "UnusedDeclaration"})
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultDependencyProcessorTest {
@@ -132,12 +129,12 @@ public class DefaultDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(GOID, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<DependencyFinder.FindResults> entities = processor.find(GOID, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(1, entities.size());
-        Assert.assertEquals(GOID, Goid.parseGoid(entities.get(0).getId()));
+        Assert.assertEquals(GOID, Goid.parseGoid(((Entity)entities.get(0).getEntity()).getId()));
     }
 
     @Test
@@ -161,12 +158,12 @@ public class DefaultDependencyProcessorTest {
             }
         });
 
-        List<Entity> entities = processor.find(GOID_STR, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<DependencyFinder.FindResults> entities = processor.find(GOID_STR, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(1, entities.size());
-        Assert.assertEquals(GOID_STR, entities.get(0).getId());
+        Assert.assertEquals(GOID_STR, ((Entity)entities.get(0).getEntity()).getId());
     }
 
     @Test
@@ -194,14 +191,14 @@ public class DefaultDependencyProcessorTest {
             });
         }
 
-        List<Entity> entities = processor.find(goids, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
+        List<DependencyFinder.FindResults> entities = processor.find(goids, com.l7tech.search.Dependency.DependencyType.ANY, com.l7tech.search.Dependency.MethodReturnType.GOID);
 
         Mockito.verify(entityCrud, new Times(3)).find(Matchers.any(EntityHeader.class));
         Assert.assertNotNull(entities);
         Assert.assertEquals(3, entities.size());
-        Assert.assertEquals(goids[0], Goid.parseGoid(entities.get(0).getId()));
-        Assert.assertEquals(goids[1], Goid.parseGoid(entities.get(1).getId()));
-        Assert.assertEquals(goids[2], Goid.parseGoid(entities.get(2).getId()));
+        Assert.assertEquals(goids[0], Goid.parseGoid(((Entity)entities.get(0).getEntity()).getId()));
+        Assert.assertEquals(goids[1], Goid.parseGoid(((Entity)entities.get(1).getEntity()).getId()));
+        Assert.assertEquals(goids[2], Goid.parseGoid(((Entity)entities.get(2).getEntity()).getId()));
     }
 
     @Test
@@ -238,14 +235,16 @@ public class DefaultDependencyProcessorTest {
             }
         }, dependencyFinder);
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(1)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
-        Assert.assertEquals(1, dependencies.size());
+        Assert.assertEquals(2, dependencies.size());
         Assert.assertNotNull(dependencies.get(0));
         Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getEntityHeader().getStrId());
+        Assert.assertNotNull(dependencies.get(1));
+        Assert.assertEquals(oid, ((DependentEntity) dependencies.get(1).getDependent()).getEntityHeader().getStrId());
     }
 
     @Test
@@ -272,9 +271,9 @@ public class DefaultDependencyProcessorTest {
             }
         }, dependencyFinder);
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(1)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(1)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
@@ -299,7 +298,7 @@ public class DefaultDependencyProcessorTest {
             }
         };
 
-        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<Entity>asList(new Entity() {
+        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<DependencyFinder.FindResults>asList(DependencyFinder.FindResults.create(new Entity() {
             @Override
             public String getId() {
                 return oid;
@@ -309,12 +308,12 @@ public class DefaultDependencyProcessorTest {
             public Object getHelper() {
                 return helper;
             }
-        }));
+        },null)));
         List<Dependency> dependencies = rtn.get(0).getDependencies();
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
@@ -328,7 +327,7 @@ public class DefaultDependencyProcessorTest {
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
 
-        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<Entity>asList(new Entity() {
+        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<DependencyFinder.FindResults>asList(DependencyFinder.FindResults.create(new Entity() {
             public static final String PROPERTY_KEY = "My.Property.key";
 
             @Override
@@ -342,12 +341,12 @@ public class DefaultDependencyProcessorTest {
                     return returnedEntity;
                 return null;
             }
-        }));
+        },null)));
         List<Dependency> dependencies = rtn.get(0).getDependencies();
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
@@ -361,7 +360,7 @@ public class DefaultDependencyProcessorTest {
 
         final Entity returnedEntity = new EmptyEntity("MyEntity");
 
-        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<Entity>asList(new Entity() {
+        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<DependencyFinder.FindResults>asList(DependencyFinder.FindResults.create(new Entity() {
             public static final String PROPERTY_KEY = "My.Property.key";
 
             @Override
@@ -373,12 +372,12 @@ public class DefaultDependencyProcessorTest {
             public Map<String, Object> getProperties() {
                 return CollectionUtils.MapBuilder.<String, Object>builder().put(PROPERTY_KEY, returnedEntity).map();
             }
-        }));
+        },null)));
         List<Dependency> dependencies = rtn.get(0).getDependencies();
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(2)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(1, dependencies.size());
@@ -394,7 +393,7 @@ public class DefaultDependencyProcessorTest {
         final Entity returnedEntity = new EmptyEntity(names.get(0));
         final Entity returnedEntity2 = new EmptyEntity(names.get(1));
 
-        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<Entity>asList(new Entity() {
+        List<DependencySearchResults> rtn = dependencyFinder.process(Arrays.<DependencyFinder.FindResults>asList(DependencyFinder.FindResults.create(new Entity() {
             public static final String PROPERTY_KEY = "My.Property.key";
             public static final String PROPERTY_KEY2 = "My.Property.key2";
 
@@ -410,12 +409,12 @@ public class DefaultDependencyProcessorTest {
             public Map<String, Object> getProperties() {
                 return CollectionUtils.MapBuilder.<String, Object>builder().put(PROPERTY_KEY, returnedEntity).put(PROPERTY_KEY2, returnedEntity2).map();
             }
-        }));
+        },null)));
         List<Dependency> dependencies = rtn.get(0).getDependencies();
 
-        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(returnedEntity));
+        Mockito.verify(dependencyFinder).getDependency(Matchers.eq(DependencyFinder.FindResults.create(returnedEntity,null)));
 
-        Mockito.verify(dependencyFinder, new Times(3)).getDependency(Matchers.any(Entity.class));
+        Mockito.verify(dependencyFinder, new Times(3)).getDependency(Matchers.any(DependencyFinder.FindResults.class));
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(2, dependencies.size());

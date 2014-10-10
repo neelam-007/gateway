@@ -1,7 +1,10 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -27,11 +30,11 @@ public class SecurePasswordDependencyProcessor extends DefaultDependencyProcesso
     private SecurePasswordManager securePasswordManager;
 
     @NotNull
-    public List<SecurePassword> find(@NotNull final Object searchValue, @NotNull final Dependency.DependencyType dependencyType, @NotNull final Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<DependencyFinder.FindResults<SecurePassword>> find(@NotNull final Object searchValue, @NotNull final Dependency.DependencyType dependencyType, @NotNull final Dependency.MethodReturnType searchValueType) throws FindException {
         switch (searchValueType) {
             case NAME: {
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName((String) searchValue);
-                return securePassword != null ? Arrays.asList(securePassword) : Collections.<SecurePassword>emptyList();
+                return Arrays.<DependencyFinder.FindResults<SecurePassword>>asList(DependencyFinder.FindResults.<SecurePassword>create(securePassword, new EntityHeader(Goid.DEFAULT_GOID, EntityType.SECURE_PASSWORD,(String)searchValue,null)));
             }
             case VARIABLE: {
                 final Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher((String) searchValue);
@@ -43,7 +46,7 @@ public class SecurePasswordDependencyProcessor extends DefaultDependencyProcesso
                 assert alias != null; // enforced by regex
                 assert alias.length() > 0; // enforced by regex
                 final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
-                return securePassword != null ? Arrays.asList(securePassword) : Collections.<SecurePassword>emptyList();
+                return securePassword != null ? Arrays.<DependencyFinder.FindResults<SecurePassword>>asList(DependencyFinder.FindResults.<SecurePassword>create(securePassword,null)) : Collections.<DependencyFinder.FindResults<SecurePassword>>emptyList();
             }
             default:
                 return super.find(searchValue, dependencyType, searchValueType);

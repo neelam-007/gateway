@@ -10,7 +10,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -33,7 +33,12 @@ public class AssertionLookupTrustedCertificateProcessor implements DependencyPro
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         if (!certificates.isEmpty()) {
-            dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.<Object>toList(certificates)));
+            dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, Functions.map(certificates, new Functions.Unary<DependencyFinder.FindResults, TrustedCert>() {
+                @Override
+                public DependencyFinder.FindResults call(TrustedCert trustedCert) {
+                    return DependencyFinder.FindResults.create(trustedCert,null);
+                }
+            })));
         }
         return dependencies;
     }

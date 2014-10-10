@@ -14,6 +14,7 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.BrokenDependency;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
@@ -66,7 +67,30 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
 
         for (final Dependency dependentObject : dependentObjects) {
             //for each dependent object add a reference and mapping entry to the bundle.
-            if (dependentObject.getDependent() instanceof DependentEntity) {
+            if(dependentObject instanceof BrokenDependency){
+                // create a map only dependency for a broken dependency
+                EntityHeader header = ((DependentEntity) dependentObject.getDependent()).getEntityHeader();
+                // include as much info for the missing entity as possible
+                EntityMappingInstructions.TargetMapping targetMapping = null;
+                if( header.getGoid() == null || Goid.isDefault(header.getGoid())){
+                    if (header instanceof GuidEntityHeader) {
+                        targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, ((GuidEntityHeader) header).getGuid());
+                    } else if (header.getName() != null) {
+                        targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, header.getName());
+                    }
+                }
+                final EntityMappingInstructions brokenMapping = new EntityMappingInstructions(
+                        header,
+                        targetMapping,
+                        EntityMappingInstructions.MappingAction.Ignore,
+                        false,
+                        false);
+
+                if( !mappings.contains(brokenMapping) ) {
+                    mappings.add(brokenMapping);
+                }
+            }
+            else if (dependentObject.getDependent() instanceof DependentEntity) {
                 //checks if this dependent is a folder and is a folder that was requested for export (in the list of entity headers)
                 if (headers.length > 0
                         && !Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeRequestFolderOption, IncludeRequestFolder))

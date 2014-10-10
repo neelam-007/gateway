@@ -143,6 +143,12 @@ public class WadlGeneratorResource {
                             paramIterator.remove();
                         }
                     }
+                    //remove request if it is empty
+                    if((((Method) methodOrResource).getRequest().getRepresentation() == null || ((Method) methodOrResource).getRequest().getRepresentation().isEmpty())
+                            && (((Method) methodOrResource).getRequest().getParam() == null || ((Method) methodOrResource).getRequest().getParam().isEmpty())
+                            && (((Method) methodOrResource).getRequest().getDoc() == null || ((Method) methodOrResource).getRequest().getDoc().isEmpty())) {
+                        ((Method) methodOrResource).setRequest(null);
+                    }
                 }
             }
         }

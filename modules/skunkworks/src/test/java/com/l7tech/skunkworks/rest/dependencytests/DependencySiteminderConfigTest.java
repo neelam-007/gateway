@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -15,10 +16,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
@@ -130,6 +128,44 @@ public class DependencySiteminderConfigTest extends DependencyTestBase{
                 assertEquals(EntityType.SECURITY_ZONE.toString(), zoneDep.getType());
                 assertEquals(securityZone.getId(), zoneDep.getId());
                 assertEquals(securityZone.getName(), zoneDep.getName());
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(siteMinderConfiguration.getGoid().getLow(),siteMinderConfiguration.getGoid().getHi());
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:SiteMinderCheckProtected>\n" +
+                        "            <L7p:AgentGoid goidValue=\""+ brokenReferenceGoid +"\"/>\n" +
+                        "            <L7p:AgentId goidValue=\""+ brokenReferenceGoid +"\"/>\n" +
+                        "            <L7p:ProtectedResource stringValue=\"protected resource\"/>\n" +
+                        "            <L7p:Action stringValue=\"GET\"/>\n" +
+                        "            <L7p:Prefix stringValue=\"prefix\"/>\n" +
+                        "        </L7p:SiteMinderCheckProtected>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>\n";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
             }
         });
     }

@@ -40,12 +40,17 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
         dependencyAnalysisMO.setSearchObjectItem( toDependencyManagedObject(dependencySearchResults.getDependent(), dependencySearchResults.getDependencies()));
-        dependencyAnalysisMO.setDependencies(Functions.map(dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, false), new Functions.Unary<DependencyMO, Dependency>() {
-            @Override
-            public DependencyMO call(Dependency dependency) {
-                return toManagedObject(dependency);
+        List<Dependency> dependencyList = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, false);
+        dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
+        dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
+        for(Dependency dependency: dependencyList){
+            if(dependency instanceof BrokenDependency){
+                dependencyAnalysisMO.getMissingDependencies().add(toManagedObject(dependency));
+            }else{
+                dependencyAnalysisMO.getDependencies().add(toManagedObject(dependency));
             }
-        }));
+        }
+
         return dependencyAnalysisMO;
     }
 
@@ -114,6 +119,18 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
     private Item toReference(DependentObject dependent) {
         if (dependent instanceof DependentAssertion) {
             return new ItemBuilder<>(dependent.getName(), null, "Assertion").build();
+        } else if (dependent instanceof BrokenDependentEntity) {
+            EntityHeader header = ((BrokenDependentEntity) dependent).getEntityHeader();
+            if(header.getName() == null ) {
+                return new ItemBuilder<>(header.getStrId(), header.getStrId(), header.getType().name())
+                        .build();
+            }
+            if(header.getStrId() == null ) {
+                return new ItemBuilder<>(header.getName(), header.getName(), header.getType().name())
+                        .build();
+            }
+            return new ItemBuilder<>(header.getName(), header.getStrId(), header.getType().name())
+                    .build();
         } else if (dependent instanceof DependentEntity) {
             return buildReferenceFromEntityHeader(((DependentEntity) dependent).getEntityHeader());
         } else {

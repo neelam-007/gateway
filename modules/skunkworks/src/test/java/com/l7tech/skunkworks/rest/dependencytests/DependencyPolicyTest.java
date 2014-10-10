@@ -339,4 +339,43 @@ public class DependencyPolicyTest extends DependencyTestBase {
             }
         });
     }
+
+    @Test
+    public void brokenPolicyReferenceTest() throws Exception {
+
+        final String brokenReferenceGuid = UUID.randomUUID().toString();
+        final String brokenReferenceName = "brokenReferenceName";
+
+        final String policyXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AuditDetailAssertion>\n" +
+                        "            <L7p:Detail stringValue=\"HI\"/>\n" +
+                        "        </L7p:AuditDetailAssertion>\n" +
+                        "        <L7p:Include>\n" +
+                        "            <L7p:PolicyGuid stringValue=\"" + brokenReferenceGuid + "\"/>\n" +
+                        "            <L7p:PolicyName stringValue=\"" + brokenReferenceName + "\"/>\n" +
+                        "        </L7p:Include>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(policyXml, new Functions.UnaryVoid<Item<DependencyListMO>>() {
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.POLICY.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceName, brokenDep.getName());
+            }
+        });
+
+    }
 }

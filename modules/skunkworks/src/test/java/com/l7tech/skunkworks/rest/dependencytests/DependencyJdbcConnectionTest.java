@@ -15,10 +15,7 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
@@ -174,4 +171,39 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
         });
     }
 
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final String brokenReferenceName = "brokenReference";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:JdbcQuery>\n" +
+                        "        <L7p:ConnectionName stringValue=\""+ brokenReferenceName +"\"/>\n" +
+                        "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
+                        "            <L7p:SqlQuery stringValue=\"select * from blah\"/>\n" +
+                        "        </L7p:JdbcQuery>\n" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.JDBC_CONNECTION.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceName, brokenDep.getName());
+            }
+        });
+
+    }
 }

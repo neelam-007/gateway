@@ -194,6 +194,6 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         Assert.assertNotNull(result);
         Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
-        Assert.assertEquals(2, result.getDependencies().size());
+        Assert.assertEquals(3, result.getDependencies().size());
     }
 }

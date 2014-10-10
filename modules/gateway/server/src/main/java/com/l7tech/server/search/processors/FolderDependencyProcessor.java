@@ -78,7 +78,7 @@ public class FolderDependencyProcessor extends DefaultDependencyProcessor<Folder
         //finds children of this folder
         for (final HasFolder child : hasFolders) {
             if (child.getFolder() != null && Goid.equals(folder.getGoid(), child.getFolder().getGoid())) {
-                final Dependency dependency = finder.getDependency(child);
+                final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(child,null));
                 if (dependency != null)
                     dependencies.add(dependency);
             }
@@ -86,7 +86,7 @@ public class FolderDependencyProcessor extends DefaultDependencyProcessor<Folder
 
         //Get the security zone dependency
         final SecurityZone securityZone = folder.getSecurityZone();
-        final Dependency securityZoneDependency = finder.getDependency(securityZone);
+        final Dependency securityZoneDependency = finder.getDependency(DependencyFinder.FindResults.create(securityZone,null));
         if (securityZoneDependency != null) {
             dependencies.add(securityZoneDependency);
         }

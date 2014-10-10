@@ -9,17 +9,16 @@ import java.util.List;
 
 interface InternalDependencyProcessor<O> extends DependencyProcessor<O> {
     /**
-     * Returns an entity given a search value and the dependency info.
+     * Returns either the entities or the headers describing the entities given a search value and the dependency info.
      *
      * @param searchValue     The search value that should uniquely identify the entity.
      * @param dependencyType  The type of dependency that is object is.
      * @param searchValueType The type of value the search value is.
-     * @return The Entity specified by the given search value. This can return null if the search value references a
-     * null entity
+     * @return The the entities or the headers describing the entities specified by the given search value.
      * @throws FindException This is thrown if the entity cannot be found
      */
     @NotNull
-    public List<O> find(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException;
+    public List<DependencyFinder.FindResults<O>> find(@NotNull Object searchValue, @NotNull com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException;
 
     /**
      * Creates a DependentObject given an instance of the dependent.

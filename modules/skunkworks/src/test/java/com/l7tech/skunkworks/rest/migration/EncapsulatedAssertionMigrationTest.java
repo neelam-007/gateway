@@ -1055,4 +1055,135 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             assertOkDeleteResponse(response);
         }
     }
+
+    @Test
+    public void testBrokenEncapsulatedPolicyReferenceExport() throws Exception {
+
+        //create encass policy
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("Encass Policy 1");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:AuditDetailAssertion>\n" +
+                "            <L7p:Detail stringValue=\"HI\"/>\n" +
+                "        </L7p:AuditDetailAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n");
+
+        RestResponse response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkCreatedResponse(response);
+        Item<PolicyMO> createdEncassPolicy = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        createdEncassPolicy.setContent(policyMO);
+
+        // create encass config
+        EncapsulatedAssertionMO encassMO = ManagedObjectFactory.createEncapsulatedAssertion();
+        encassMO.setName("Encass 1");
+        encassMO.setGuid(UUID.randomUUID().toString());
+        encassMO.setProperties(new HashMap<String,String>());
+        encassMO.setPolicyReference(new ManagedObjectReference(PolicyMO.class, createdEncassPolicy.getId()));
+        response = getSourceEnvironment().processRequest("encapsulatedAssertions/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(encassMO)));
+        assertOkCreatedResponse(response);
+        Item<EncapsulatedAssertionMO> createdEncass = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        createdEncass.setContent(encassMO);
+
+        //create policy to use encass
+        policyMO = ManagedObjectFactory.createPolicy();
+        policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("Policy 2");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:Encapsulated>\n" +
+                "            <L7p:Enabled booleanValue=\"true\"/>\n" +
+                "            <L7p:EncapsulatedAssertionConfigGuid stringValue=\"" + encassMO.getGuid() + "\"/>\n" +
+                "            <L7p:Detail EncapsulatedAssertionConfigName=\"" + encassMO.getName() + "\"/>\n" +
+                "        </L7p:Encapsulated>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n");
+
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+        assertOkCreatedResponse(response);
+        Item<PolicyMO>  createdPolicy = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        createdPolicy.setContent(policyMO);
+
+        // delete encass
+        response = getSourceEnvironment().processRequest("encapsulatedAssertions/" + createdEncass.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+        assertOkDeleteResponse(response);
+        // delete backing policy
+        response = getSourceEnvironment().processRequest("policies/" + createdEncassPolicy.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
+        assertOkDeleteResponse(response);
+
+        try{
+            response = getSourceEnvironment().processRequest("bundle/policy/" + createdPolicy.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 1 items. A policy", 1, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 mappings. Root folder,a policy,an encass", 3, bundleItem.getContent().getMappings().size());
+
+            List<Item> references = bundleItem.getContent().getReferences();
+            Item policyReference = references.get(0);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyReference.getType());
+            Assert.assertEquals(createdPolicy.getId(), policyReference.getId());
+
+            List<Mapping> mappings = bundleItem.getContent().getMappings();
+
+            Mapping encassMapping = mappings.get(0);
+            Assert.assertEquals(EntityType.ENCAPSULATED_ASSERTION.toString(), encassMapping.getType());
+            Assert.assertEquals(Mapping.Action.Ignore, encassMapping.getAction());
+            Assert.assertNull( encassMapping.getSrcId());
+            Assert.assertNull( encassMapping.getSrcUri());
+            Assert.assertEquals("guid", encassMapping.getProperty("MapBy"));
+            Assert.assertEquals(encassMO.getGuid(), encassMapping.getProperty("MapTo"));
+
+            Mapping rootFolderMapping = mappings.get(1);
+            Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, rootFolderMapping.getAction());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getSrcId());
+
+            Mapping encassPolicyMapping = mappings.get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), encassPolicyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, encassPolicyMapping.getAction());
+            Assert.assertEquals(createdPolicy.getId(), encassPolicyMapping.getSrcId());
+
+        }finally{
+
+            // clean up
+            response = getSourceEnvironment().processRequest("policies/"+ createdPolicy.getId(), HttpMethod.DELETE, null, "");
+            assertOkDeleteResponse(response);
+        }
+
+
+
+    }
 }

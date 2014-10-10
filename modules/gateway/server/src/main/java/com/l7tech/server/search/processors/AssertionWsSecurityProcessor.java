@@ -9,6 +9,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.BrokenDependency;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +36,15 @@ public class AssertionWsSecurityProcessor implements DependencyProcessor<WsSecur
 
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         if (certificate != null) {
-            dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.<Object>list(certificate)));
+            dependencies.addAll(finder.getDependenciesFromObjects(assertion, finder, CollectionUtils.list(DependencyFinder.FindResults.create(certificate,null))));
+        }else{
+            if(assertion.getRecipientTrustedCertificateGoid() == null) {
+                dependencies.add(new BrokenDependency(
+                        new EntityHeader((String) null, EntityType.TRUSTED_CERT, assertion.getRecipientTrustedCertificateName(), null)));
+            }else{
+                dependencies.add(new BrokenDependency(
+                        new EntityHeader(assertion.getRecipientTrustedCertificateGoid(), EntityType.TRUSTED_CERT, assertion.getRecipientTrustedCertificateName(), null)));
+            }
         }
         return dependencies;
     }

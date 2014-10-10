@@ -8,11 +8,10 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.Dependency;
-import com.l7tech.server.search.objects.DependencySearchResults;
-import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.server.search.objects.DependentObject;
+import com.l7tech.server.search.objects.*;
+import com.l7tech.util.Either;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,22 +58,25 @@ public class DependencyFinder {
      * @throws FindException This is thrown if there was an error retrieving an entity.
      */
     @NotNull
-    public synchronized List<DependencySearchResults> process(@NotNull final List<Entity> entities) throws FindException, CannotRetrieveDependenciesException {
+    public synchronized List<DependencySearchResults> process(@NotNull final List<FindResults> entities) throws FindException, CannotRetrieveDependenciesException {
         //get the search depth from the options
         final int originalSearchDepth = getOption(DependencyAnalyzer.SearchDepthOptionKey, Integer.class, -1);
         final ArrayList<DependencySearchResults> results = new ArrayList<>(entities.size());
-        for (@NotNull final Entity entity : entities) {
-            //reset the search depth
-            searchDepth = originalSearchDepth;
-            //retrieve the dependency object for the entity
-            final Dependency dependency = getDependency(entity);
-            if (dependency != null) {
-                //create the dependencySearchResults object
-                results.add(new DependencySearchResults(dependency.getDependent(), dependency.getDependencies(), searchOptions));
-            } else {
-                //if the dependency is null add a null search result to the list to keep the lengths consistent.
-                // The dependency will be null if the entity is null, or if the entity is in the ignored list
-                results.add(null);
+        for (@NotNull final FindResults entity : entities) {
+            // only an entity can have a dependency
+            if(entity.hasEntity()) {
+                //reset the search depth
+                searchDepth = originalSearchDepth;
+                //retrieve the dependency object for the entity
+                final Dependency dependency = getDependency(entity);
+                if (dependency != null) {
+                    //create the dependencySearchResults object
+                    results.add(new DependencySearchResults(dependency.getDependent(), dependency.getDependencies(), searchOptions));
+                } else {
+                    //if the dependency is null add a null search result to the list to keep the lengths consistent.
+                    // The dependency will be null if the entity is null, or if the entity is in the ignored list
+                    results.add(null);
+                }
             }
         }
         return results;
@@ -103,19 +105,24 @@ public class DependencyFinder {
      * to be ignored, or if the given dependent is null.
      */
     @Nullable
-    Dependency getDependency(@Nullable final Object dependent) throws FindException, CannotRetrieveDependenciesException {
+    Dependency getDependency(@NotNull final FindResults dependent) throws FindException, CannotRetrieveDependenciesException {
         //return null if the dependent is null.
-        if (dependent == null) {
+        if (!dependent.isSome()) {
             return null;
         }
+
+        // create broken dependency if entity is not found
+        if (dependent.hasEntityHeader()) {
+            return new BrokenDependency(dependent.getEntityHeader());
+        }
         //Checks if the dependencies for this dependent has already been found.
-        final Dependency dependencyFound = getFoundDependenciesForObject(dependent);
+        final Dependency dependencyFound = getFoundDependenciesForObject(dependent.getEntity());
         //If it has already been found return it.
         if (dependencyFound != null) {
             return dependencyFound;
         }
         //Creates a dependency for this object. This will create a new dependency object that does not have its dependencies set yet.
-        final Dependency dependency = new Dependency(createDependentObject(dependent));
+        final Dependency dependency = new Dependency(createDependentObject(dependent.getEntity()));
 
         //get the list of id's to ignore
         final List ignoreIds = getOption(DependencyAnalyzer.IgnoreSearchOptionKey, List.class, (List) Collections.emptyList());
@@ -132,7 +139,7 @@ public class DependencyFinder {
             //decrement the search depth.
             searchDepth--;
             //If the depth is non 0 then find the dependencies for the given entity.
-            dependency.setDependencies(getDependencies(dependent));
+            dependency.setDependencies(getDependencies(dependent.getEntity()));
         }
         return dependency;
     }
@@ -194,7 +201,7 @@ public class DependencyFinder {
     }
 
     /**
-     * Retrieves a objects given a search value and information about the search value.
+     * Retrieves either the objects or the headers describing the objects given a search value and information about the search value.
      *
      * @param searchValue     The search value to search for the dependency by
      * @param dependencyType  The type of dependency that is to be found
@@ -202,7 +209,7 @@ public class DependencyFinder {
      * @return This is the list of objects found using the search value.
      */
     @NotNull
-    public List<Object> retrieveObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
+    public List<FindResults> retrieveObjects(@NotNull final Object searchValue, @NotNull final com.l7tech.search.Dependency.DependencyType dependencyType, @NotNull final com.l7tech.search.Dependency.MethodReturnType searchValueType) throws FindException {
         final InternalDependencyProcessor processor;
         //Finds the correct processor to use to retrieve the entity
         if (com.l7tech.search.Dependency.MethodReturnType.ENTITY.equals(searchValueType)) {
@@ -263,10 +270,10 @@ public class DependencyFinder {
      * @throws FindException This is thrown if there was an error finding a dependent object.
      */
     @NotNull
-    public List<Dependency> getDependenciesFromObjects(@NotNull final Object object, @NotNull final DependencyFinder finder, @NotNull final List<Object> dependentObjects) throws FindException, CannotRetrieveDependenciesException {
+    public List<Dependency> getDependenciesFromObjects(@NotNull final Object object, @NotNull final DependencyFinder finder, @NotNull final List<FindResults> dependentObjects) throws FindException, CannotRetrieveDependenciesException {
         final ArrayList<Dependency> dependencies = new ArrayList<>();
         //if a dependency if found then search for its dependencies and add it to the set of dependencies found
-        for (final Object obj : dependentObjects) {
+        for (final FindResults obj : dependentObjects) {
             //Making sure an entity does not depend on itself
             if (!object.equals(obj)) {
                 final Dependency dependency = finder.getDependency(obj);
@@ -298,5 +305,63 @@ public class DependencyFinder {
         }
         // use the processor to retrieve the entity using the search value.
         return processor.createDependentObjects(searchValue, dependencyType, searchValueType);
+    }
+
+    static public class FindResults<O> extends Option<Either<O,EntityHeader>>
+    {
+        /**
+         * Constructs the dependent search result object
+         * @param entityHeader  header describing the dependent entity
+         * @param entity    the dependent that is found
+         * @return the dependent search result object
+         */
+        static public<O> FindResults create(O entity, EntityHeader entityHeader){
+            if(entity != null){
+                return new FindResults(Either.<O,EntityHeader>left(entity));
+            }else if(entityHeader != null){
+                return new FindResults(Either.<O,EntityHeader>right(entityHeader));
+            }
+            return new FindResults(null);
+        }
+
+        FindResults(Either<O, EntityHeader> value) {
+            super(value);
+        }
+
+        /**
+         * @return true if this has a value
+         */
+        @Override
+        public boolean isSome() {
+            return super.isSome();
+        }
+
+        /**
+         * @return True if an entity is found
+         */
+        public boolean hasEntity(){
+            return isSome() && some().isLeft();
+        }
+
+        /**
+         * @return the entity found, null if not found
+         */
+        public O getEntity(){
+            return isSome() ? some().left(): null;
+        }
+
+        /**
+         * @return has header describing the dependent entity
+         */
+        public boolean hasEntityHeader(){
+            return isSome() && some().isRight();
+        }
+
+        /**
+         * @return the header describing the dependent entity
+         */
+        public EntityHeader getEntityHeader(){
+            return isSome() ? some().right(): null;
+        }
     }
 }

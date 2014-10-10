@@ -1,8 +1,6 @@
 package com.l7tech.skunkworks.rest.dependencytests;
 
-import com.l7tech.gateway.api.DependencyListMO;
-import com.l7tech.gateway.api.DependencyMO;
-import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -139,6 +137,43 @@ public class DependencyEncassTest extends DependencyTestBase{
 
             }
         });
+    }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final String brokenReferenceGuid = UUID.randomUUID().toString();
+        final String brokenReferenceName = "brokenReferenceName";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:Encapsulated>\n" +
+                        "            <L7p:EncapsulatedAssertionConfigGuid stringValue=\""+ brokenReferenceGuid +"\"/>\n" +
+                        "            <L7p:EncapsulatedAssertionConfigName stringValue=\""+ brokenReferenceName +"\"/>\n" +
+                        "        </L7p:Encapsulated>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO encassDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                assertNotNull(encassDep);
+                assertEquals(EntityType.ENCAPSULATED_ASSERTION.toString(), encassDep.getType());
+                assertEquals(brokenReferenceName, encassDep.getName());
+
+            }
+        });
+
     }
 
     @Test

@@ -75,7 +75,7 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(@NotNull SsgActiveConnector activeConnector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-                    final List<Object> dependentEntities;
+                    final List<DependencyFinder.FindResults> dependentEntities;
                     //add the password as a dependency
                     if (activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID) != null) {
                         dependentEntities = finder.retrieveObjects(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, activeConnector.getProperty(SsgActiveConnector.PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID);

@@ -3,8 +3,10 @@ package com.l7tech.server.search.processors;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -37,8 +39,9 @@ public class IdentityProviderProcessor extends DefaultDependencyProcessor<Identi
             final Map<String, String> ntlmProperties = ((LdapIdentityProviderConfig) identityProviderConfig).getNtlmAuthenticationProviderProperties();
             if (Boolean.parseBoolean(ntlmProperties.get("enabled"))) {
                 final String passwordGOID = ntlmProperties.get("service.passwordOid");
-                final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, passwordGOID));
-                final Dependency dependency = finder.getDependency(securePassword);
+                final Goid passwordId = GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, passwordGOID);
+                final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(passwordId);
+                final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(securePassword, new EntityHeader(passwordId,EntityType.SECURE_PASSWORD,null,null)));
                 if (dependency != null)
                     dependencies.add(dependency);
             }

@@ -59,7 +59,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
         while (assit.hasNext()) {
             final Assertion currentAssertion = (Assertion) assit.next();
             if (assertionsAsDependencies) {
-                final Dependency dependency = processor.getDependency(currentAssertion);
+                final Dependency dependency = processor.getDependency(DependencyFinder.FindResults.create(currentAssertion,null));
                 if (dependency != null) {
                     dependencies.add(dependency);
                 }
@@ -77,7 +77,7 @@ public class PolicyDependencyProcessor extends DefaultDependencyProcessor<Policy
         }
 
         final SecurityZone securityZone = policy.getSecurityZone();
-        final Dependency securityZoneDependency = processor.getDependency(securityZone);
+        final Dependency securityZoneDependency = processor.getDependency(DependencyFinder.FindResults.create(securityZone, null));
         if (securityZoneDependency != null && !dependencies.contains(securityZoneDependency))
             dependencies.add(securityZoneDependency);
 

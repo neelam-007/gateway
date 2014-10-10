@@ -5,6 +5,7 @@ import com.l7tech.gateway.api.DependencyListMO;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -536,6 +537,49 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
             }
         });
     }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final Goid brokenReferenceGoid = new Goid(securePassword.getGoid().getLow(),securePassword.getGoid().getHi());
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:SshRouteAssertion>\n" +
+                        "            <L7p:CommandTypeVariableName stringValue=\"\"/>\n" +
+                        "            <L7p:CredentialsSourceSpecified booleanValue=\"true\"/>\n" +
+                        "            <L7p:Directory stringValue=\"wage\"/>\n" +
+                        "            <L7p:DownloadContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+                        "            <L7p:FileName stringValue=\"eawg\"/>\n" +
+                        "            <L7p:Host stringValue=\"agwe\"/>\n" +
+                        "            <L7p:NewFileName stringValue=\"\"/>\n" +
+                        "            <L7p:PasswordGoid goidValue=\""+brokenReferenceGoid.toString()+"\"/>\n" +
+                        "            <L7p:Username stringValue=\"awge\"/>\n" +
+                        "        </L7p:SshRouteAssertion>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0,dependencyAnalysisMO.getDependencies().size());
+
+                Assert.assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.SECURE_PASSWORD.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceGoid.toString(), brokenDep.getId());
+
+            }
+        });
+    }
+
 
     protected void verifyItem(DependencyMO item, SecurePassword secPassword ){
         assertEquals(secPassword.getId(), item.getId());

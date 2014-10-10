@@ -10,10 +10,7 @@ import com.l7tech.skunkworks.rest.tools.DependencyTestBase;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.Functions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.logging.Logger;
 
@@ -102,6 +99,39 @@ public class DependencyClusterPropertyTest extends DependencyTestBase{
             @Override
             public void call(Item<DependencyListMO> dependencyItem) {
                 assertNull(getDependency(dependencyItem.getContent(),EntityType.CLUSTER_PROPERTY));
+            }
+        });
+    }
+
+    @Test
+    public void brokenReferenceTest() throws Exception {
+
+        final String brokenReferenceName = "brokenReference";
+
+        final String assXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                        "    <wsp:All wsp:Usage=\"Required\">\n" +
+                        "        <L7p:AuditDetailAssertion>\n" +
+                        "            <L7p:Detail stringValue=\"${gateway."+brokenReferenceName+"}\"/>\n" +
+                        "        </L7p:AuditDetailAssertion>" +
+                        "    </wsp:All>\n" +
+                        "</wsp:Policy>";
+
+        TestPolicyDependency(assXml, new Functions.UnaryVoid<Item<DependencyListMO>>(){
+
+            @Override
+            public void call(Item<DependencyListMO> dependencyItem) {
+                assertNotNull(dependencyItem.getContent().getDependencies());
+                DependencyListMO dependencyAnalysisMO = dependencyItem.getContent();
+                assertEquals(0, dependencyAnalysisMO.getDependencies().size());
+
+                assertNotNull(dependencyItem.getContent().getMissingDependencies());
+                assertEquals(1, dependencyAnalysisMO.getMissingDependencies().size());
+                DependencyMO brokenDep  = dependencyAnalysisMO.getMissingDependencies().get(0);
+                Assert.assertNotNull(brokenDep);
+                assertEquals(EntityType.CLUSTER_PROPERTY.toString(), brokenDep.getType());
+                assertEquals(brokenReferenceName, brokenDep.getName());
             }
         });
     }

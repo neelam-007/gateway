@@ -53,7 +53,7 @@ public class SshServerModuleLoadListener {
                 @Override
                 @NotNull
                 public List<Dependency> findDependencies(@NotNull SsgConnector connector, @NotNull DependencyFinder finder) throws FindException, CannotRetrieveDependenciesException {
-                    List<Object> dependentEntities = new ArrayList<>();
+                    List<DependencyFinder.FindResults> dependentEntities = new ArrayList<>();
                     //adds the ssh password as a dependency if one is defined.
                     if (connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY) != null) {
                         dependentEntities.addAll(finder.retrieveObjects(GoidUpgradeMapper.mapId(EntityType.SECURE_PASSWORD, connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY)), com.l7tech.search.Dependency.DependencyType.SECURE_PASSWORD, com.l7tech.search.Dependency.MethodReturnType.GOID));
