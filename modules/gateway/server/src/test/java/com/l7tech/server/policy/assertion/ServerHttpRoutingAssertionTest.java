@@ -713,6 +713,7 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals( "Bearer myspecialtoken", authHeaderValue[0]);
     }
 
+
     private PolicyEnforcementContext createAuthHeaderSnaggingTestPec( HttpRoutingAssertion hra, ApplicationContext appContext, final String[] authHeaderValueCollector ) {
         return createTestPolicyEnforcementContext(200, hra, appContext, new MockGenericHttpClient.CreateRequestListener() {
                 @Override
@@ -1339,4 +1340,146 @@ public class ServerHttpRoutingAssertionTest {
         final ServerHttpRoutingAssertion serverRoute = new ServerHttpRoutingAssertion(forcedGetRoute, mockApplicationContext);
         assertEquals(AssertionStatus.NONE, serverRoute.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(getRequest, new Message())));
     }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingWithNoBodyContentTypeHeader_overrideContentType() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverrideContentTypeHeader1" );
+        hra.setOverrideContentType(true);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
+                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP)},
+                new String[] {"text/html"}, true);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingNoContentTypeHeader() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverrideContentTypeHeader2" );
+        hra.setOverrideContentType(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT", null, new String[] {ContentTypeHeader.XML_DEFAULT.getFullValue()}, false);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingWithContentTypeHeaderNoPassThrough_overrideContentType() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverridetContentTypeHeader3" );
+        hra.setOverrideContentType(true);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
+                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP, false)},
+                new String[] {"text/html"}, false);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingNoContentTypeHeader_overrideContentType() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverridetContentTypeHeader4" );
+        hra.setOverrideContentType(true);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
+                new Header[] {new Header("My-Type", "blah", HeadersKnob.HEADER_TYPE_HTTP)}, new String[0], false);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingWithContentTypeHeader_duplicate() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverridetContentTypeHeader5" );
+        hra.setOverrideContentType(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "POST",
+                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP)},
+                new String[] {"text/html", ContentTypeHeader.XML_DEFAULT.getFullValue()}, false);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("SSG-9355")
+    @Test
+    public void testRoutingNoContentTypeHeader_GET() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl( "http://localhost:17380/tesOverridetContentTypeHeader2" );
+        hra.setOverrideContentType(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "GET", null, new String[0], false);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    private PolicyEnforcementContext createContentTypeTestPec(HttpRoutingAssertion hra, ApplicationContext appContext, String method, final Header[] contentTypeHeaders, final String[] contentTypeHeaderValueCollector, boolean nobody) throws Exception {
+        // Configure to combine passthrough
+        hra.setPassthroughHttpAuthentication(true);
+        hra.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        Message request = nobody? new Message() : new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.setMethod(method);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        if(contentTypeHeaders != null) {
+            for (Header header : contentTypeHeaders) {
+                request.getHeadersKnob().addHeader(header.getKey(), header.getValue(), header.getType(), header.isPassThrough());
+            }
+        }
+
+        final String body = "<bar/>";
+        Message response = new Message(XmlUtil.stringAsDocument(body));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, null, ContentTypeHeader.XML_DEFAULT, (long)body.length(), body.getBytes());
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                List<String> headerValList = new ArrayList<>();
+                for (HttpHeader head : params.getExtraHeaders()) {
+                    if (HttpConstants.HEADER_CONTENT_TYPE.equalsIgnoreCase(head.getName())) {
+                        headerValList.add(head.getFullValue());
+                    }
+                }
+                Collections.sort(headerValList);//always have predictable order
+                assertArrayEquals(contentTypeHeaderValueCollector, headerValList.toArray(new String[0]));
+                return null;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        return pec;
+
+    }
+
 }

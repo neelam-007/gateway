@@ -485,7 +485,7 @@
               </vspacer>
             </children>
           </grid>
-          <grid id="d579d" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="d579d" layout-manager="GridLayoutManager" row-count="8" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="6" left="6" bottom="6" right="6"/>
             <constraints>
               <tabbedpane title="HTTP"/>
@@ -524,7 +524,7 @@
               </grid>
               <vspacer id="f9783">
                 <constraints>
-                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                 </constraints>
               </vspacer>
               <component id="3149b" class="javax.swing.JCheckBox" binding="forceIncludeRequestBodyCheckBox" default-binding="true">
@@ -538,7 +538,7 @@
               </component>
               <component id="fb814" class="javax.swing.JButton" binding="customizeFormPostParamsButton">
                 <constraints>
-                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="customFormPostButton.text"/>
@@ -546,7 +546,7 @@
               </component>
               <hspacer id="ec2e3">
                 <constraints>
-                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
               </hspacer>
               <component id="176af" class="javax.swing.JCheckBox" binding="gzipCheckBox">
@@ -572,6 +572,14 @@
                 </constraints>
                 <properties>
                   <text value="Follow Redirects"/>
+                </properties>
+              </component>
+              <component id="3c270" class="javax.swing.JCheckBox" binding="overrideContentTypeCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Override Content-Type header values"/>
                 </properties>
               </component>
             </children>

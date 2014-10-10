@@ -121,6 +121,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     private boolean forceIncludeRequestBody = false;
     private String httpMethodAsString;
+    private boolean overrideContentType = false;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -812,6 +813,14 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public void setUseKeepAlives(boolean useKeepAlives) {
         this.useKeepAlives = useKeepAlives;
+    }
+
+    public boolean isOverrideContentType() {
+        return overrideContentType;
+    }
+
+    public void setOverrideContentType(boolean overrideContentType) {
+        this.overrideContentType = overrideContentType;
     }
 
     final static String baseName = "Route via HTTP(S)";

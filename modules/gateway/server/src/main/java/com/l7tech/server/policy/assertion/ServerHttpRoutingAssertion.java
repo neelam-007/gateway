@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.*;
@@ -73,6 +72,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
+
+    private static final boolean doNotForwardContentType = HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(HttpConstants.HEADER_CONTENT_TYPE.toLowerCase());
 
     private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
@@ -596,10 +597,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
             }
 
-            // dont add content-type for get and deletes
-            if (routedRequestParams.needsRequestBody(method)) {
-                final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
+            //
+            if(assertion.isOverrideContentType() && doNotForwardContentType) {
+                addContentTypeFromRequest(requestMessage, routedRequestParams);
+            }
+            else {
+                // dont add content-type for get and deletes
+                if (routedRequestParams.needsRequestBody(method)) {
+                    final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
+                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
+                }
             }
             if ( ConfigFactory.getBooleanProperty( "ioHttpUseExpectContinue", false ) ) {
                 routedRequestParams.setUseExpectContinue(true);
@@ -808,6 +815,17 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    private void addContentTypeFromRequest(Message requestMessage, GenericHttpRequestParams routedRequestParams) {
+        Collection<Header> headers = requestMessage.getHeadersKnob().getHeaders(HttpConstants.HEADER_CONTENT_TYPE, HeadersKnob.HEADER_TYPE_HTTP);
+        if(headers != null) {
+            for (Header header : headers) {
+                if(!header.isPassThrough()) { //only add Content-Type headers that are not passthrough
+                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, (String) header.getValue()));
+                }
+            }
+        }
     }
 
     private GenericHttpRequestParams.HttpVersion getHttpVersion(){

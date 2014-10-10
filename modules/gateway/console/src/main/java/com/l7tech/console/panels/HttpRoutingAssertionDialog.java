@@ -153,6 +153,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JLabel destinationStatusLabel;
     private JLabel sourceStatusLabel;
     private JScrollPane urlErrorScrollPane;
+    private JCheckBox overrideContentTypeCheckBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -1026,6 +1027,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setForceIncludeRequestBody(forceIncludeRequestBodyCheckBox.isSelected());
 
+        assertion.setOverrideContentType(overrideContentTypeCheckBox.isSelected());
+
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
             assertion.setProxyHost(proxyHostField.getText());
@@ -1188,6 +1191,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         useKeepalivesCheckBox.setSelected(assertion.isUseKeepAlives());
 
         forceIncludeRequestBodyCheckBox.setSelected(assertion.isForceIncludeRequestBody());
+
+        overrideContentTypeCheckBox.setSelected(assertion.isOverrideContentType());
 
         String host = assertion.getProxyHost();
         if (host == null || host.trim().length() < 1) {
