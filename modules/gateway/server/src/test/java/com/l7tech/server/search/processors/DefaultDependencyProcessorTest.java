@@ -9,6 +9,7 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.*;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Assert;
@@ -241,10 +242,19 @@ public class DefaultDependencyProcessorTest {
 
         Assert.assertNotNull(dependencies);
         Assert.assertEquals(2, dependencies.size());
-        Assert.assertNotNull(dependencies.get(0));
-        Assert.assertEquals(returnedEntity.getId(), ((DependentEntity) dependencies.get(0).getDependent()).getEntityHeader().getStrId());
-        Assert.assertNotNull(dependencies.get(1));
-        Assert.assertEquals(oid, ((DependentEntity) dependencies.get(1).getDependent()).getEntityHeader().getStrId());
+        Assert.assertNotNull(Functions.grepFirst(dependencies, new Functions.Unary<Boolean, Dependency>() {
+            @Override
+            public Boolean call(Dependency dependency) {
+                return returnedEntity.getId().equals(((DependentEntity) dependency.getDependent()).getEntityHeader().getStrId());
+            }
+        }));
+
+        Assert.assertNotNull(Functions.grepFirst(dependencies, new Functions.Unary<Boolean, Dependency>() {
+            @Override
+            public Boolean call(Dependency dependency) {
+                return oid.equals(((DependentEntity) dependency.getDependent()).getEntityHeader().getStrId());
+            }
+        }));
     }
 
     @Test
