@@ -135,6 +135,9 @@ public class MqNativePropertiesDialog extends JDialog {
     private JCheckBox useConcurrencyCheckBox;
     private JLabel concurrentListenerSizeLabel;
     private SecurityZoneWidget zoneControl;
+    private JTextField connectPoolMaxActive;
+    private JTextField connectPoolMaxIdle;
+    private JTextField connectPoolMaxWait;
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -650,6 +653,10 @@ public class MqNativePropertiesDialog extends JDialog {
             queueNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME));
             mqConnectionName.setText(mqNativeActiveConnector.getName());
 
+            connectPoolMaxActive.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE));
+            connectPoolMaxIdle.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE));
+            connectPoolMaxWait.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT));
+
             final boolean isInbound = mqNativeActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND );
             inboundRadioButton.setSelected(isInbound);
             outboundRadioButton.setSelected(!isInbound);
@@ -1028,6 +1035,11 @@ public class MqNativePropertiesDialog extends JDialog {
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL, channelTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME, queueManagerNameTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, queueNameTextBox.getText());
+
+        // Set connection pool properties
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE, connectPoolMaxActive.getText().isEmpty() ? "8" : connectPoolMaxActive.getText());
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE, connectPoolMaxIdle.getText().isEmpty() ? "-1" : connectPoolMaxIdle.getText());
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT, connectPoolMaxWait.getText().isEmpty() ? "8" : connectPoolMaxWait.getText());
 
         //Set security info
         boolean isCredentialsRequired = credentialsAreRequiredToCheckBox.isSelected();

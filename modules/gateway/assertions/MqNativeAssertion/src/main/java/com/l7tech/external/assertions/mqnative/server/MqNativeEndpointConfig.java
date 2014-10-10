@@ -34,6 +34,9 @@ class MqNativeEndpointConfig {
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
     private final Nullary<Either<MqNativeConfigException,Hashtable>> queueManagerProperties;
+    private final int connectionPoolMaxActive;
+    private final long connectionPoolMaxWait;
+    private final int connectionPoolMaxIdle;
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
@@ -51,6 +54,9 @@ class MqNativeEndpointConfig {
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
         this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
+        this.connectionPoolMaxActive = connector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE, 8);
+        this.connectionPoolMaxWait = connector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT, -1);
+        this.connectionPoolMaxIdle = connector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE, 8);
     }
 
     boolean isDynamic() {
@@ -205,5 +211,17 @@ class MqNativeEndpointConfig {
                 }
             }
         };
+    }
+
+    public int getConnectionPoolMaxActive() {
+        return connectionPoolMaxActive;
+    }
+
+    public long getConnectionPoolMaxWait() {
+        return connectionPoolMaxWait;
+    }
+
+    public int getConnectionPoolMaxIdle() {
+        return connectionPoolMaxIdle;
     }
 }

@@ -34,6 +34,8 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,9 +76,10 @@ public class ServerMqNativeRoutingAssertionTest {
     private PolicyEnforcementContext context;
     private ServerMqNativeRoutingAssertion fixture;
     private GenericApplicationContext applicationContext;
-    private Stack requestQ;
+    // static final is needed for requestQ to workaround a potential bug in Mockito where it is operating on a different
+    // copy inside the mocked method MQQueue.put().
+    private static final Stack requestQ = new Stack();
     private static final Logger logger = Logger.getLogger(ServerMqNativeRoutingAssertionTest.class.getName());
-    private static final Audit audit = new LoggingAudit(logger);
 
     @Mock
     private MQQueueManager mqQueueManager;
@@ -87,9 +90,6 @@ public class ServerMqNativeRoutingAssertionTest {
 
     @Before
     public void init() throws Exception {
-
-        requestQ = new Stack();
-
         //Prepare the ServerMqNativeRoutingAssertion
         applicationContext = new GenericApplicationContext();
         ConstructorArgumentValues cavs = new ConstructorArgumentValues();
@@ -167,15 +167,53 @@ public class ServerMqNativeRoutingAssertionTest {
 
         MqNativeResourceManager resourceManager = MqNativeResourceManager.getInstance((Config) applicationContext.getBean("config"), new ApplicationEventProxy());
 
-        MqNativeResourceManager resourceManagerSpy = spy(resourceManager);
+        final PoolableCachedConnectionFactory poolableCachedConnectionFactory = new PoolableCachedConnectionFactory(mqQueueManager);
+        final PoolableCachedConnectionFactory poolableCachedConnectionFactorySpy = spy(poolableCachedConnectionFactory);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws MQException {
+                MqNativeCachedConnectionPool.CachedConnection newConnection =
+                        new MqNativeCachedConnectionPool.CachedConnection(mqQueueManager, "TEST", 1);
+                return newConnection;
+            }
+        }).when(poolableCachedConnectionFactorySpy).makeObject();
+
+        final MqNativeResourceManager resourceManagerSpy = spy(resourceManager);
         doAnswer(new Answer() {
             public Object answer(InvocationOnMock invocation) throws MQException {
+                final MqNativeEndpointConfig mqCfg = (MqNativeEndpointConfig) invocation.getArguments()[0];
+                final MqNativeEndpointConfig.MqNativeEndpointKey key = mqCfg.getMqEndpointKey();
 
-                MqNativeResourceManager.CachedConnection cachedConnection =
-                        new MqNativeResourceManager.CachedConnection((MqNativeEndpointConfig) invocation.getArguments()[0], mqQueueManager);
-                return cachedConnection;
+                try {
+                    final MqNativeCachedConnectionPool newConn = new MqNativeCachedConnectionPool();
+                    poolableCachedConnectionFactorySpy.setMqNativeEndpointConfig(mqCfg);
+
+                    GenericObjectPool<MqNativeCachedConnectionPool.CachedConnection> cachedConnections =
+                            new GenericObjectPool<>(poolableCachedConnectionFactorySpy,
+                            mqCfg.getConnectionPoolMaxActive(), GenericObjectPool.WHEN_EXHAUSTED_BLOCK,
+                            mqCfg.getConnectionPoolMaxWait(), mqCfg.getConnectionPoolMaxIdle());
+
+                    newConn.setCachedConnections(cachedConnections);
+
+                    newConn.ref(); // referenced by caller
+
+                    // server config controlled connection pool props -- may not need this
+                    if (resourceManagerSpy.getCacheConfigReference().get().getMaximumSize() > 0) {
+                        newConn.ref(); // referenced from cache
+
+                        // replace connection if the endpoint already exists
+                        final MqNativeCachedConnectionPool existingConn = resourceManagerSpy.getConnectionHolder().put(key, newConn);
+                        if (existingConn != null) {
+                            existingConn.unRef(); // clear cache reference
+                        }
+                    }
+
+                    return newConn;
+                } catch (Throwable me) {
+                    throw new MqNativeRuntimeException(me);
+                }
             }
-        }).when(resourceManagerSpy).newConnection(any(MqNativeEndpointConfig.class));
+        }).when(resourceManagerSpy).newConnectionPool(any(MqNativeEndpointConfig.class));
 
         fixture.setMqNativeResourceManager(resourceManagerSpy);
 
@@ -195,6 +233,11 @@ public class ServerMqNativeRoutingAssertionTest {
         MessageSelector.registerSelector(MqNativeRoutingAssertion.MQ,
                 new MqNativeModuleLoadListener.MqNativeHeaderSelector(MqNativeRoutingAssertion.MQ + ".", true,
                 Arrays.<Class<? extends HasHeaders>>asList(MqNativeKnob.class)));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        requestQ.clear();
     }
 
     private PolicyEnforcementContext makeContext(MQMessage mqMessage) throws IOException, MQDataException, MQException {
