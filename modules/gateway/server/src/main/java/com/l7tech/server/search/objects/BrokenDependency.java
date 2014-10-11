@@ -42,27 +42,13 @@ public class BrokenDependency extends Dependency {
     }
 
     /**
-     * A broken dependency should never have dependencies.  This does nothing.
+     * A broken dependency should never have dependencies.
      */
     @Override
     public void setDependencies(@NotNull List<Dependency> dependencies) {
-        // do nothing
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Dependency that = (Dependency) o;
-
-        if (!dependent.equals(that.dependent)) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return dependent.hashCode();
+        // this should not happen
+        if(!dependencies.isEmpty()) {
+            throw new IllegalStateException("Broken dependency should never have dependencies");
+        }
     }
 }

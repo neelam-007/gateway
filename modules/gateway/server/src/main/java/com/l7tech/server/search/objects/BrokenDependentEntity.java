@@ -20,32 +20,4 @@ public class BrokenDependentEntity extends DependentEntity {
         super(entityHeader.getStrId(), entityHeader);
         this.entityHeader = entityHeader;
     }
-
-    /**
-     * @return The dependent entity Header.
-     */
-    @NotNull
-    public EntityHeader getEntityHeader() {
-        return entityHeader;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        BrokenDependentEntity that = (BrokenDependentEntity) o;
-
-        if (!entityHeader.equals(that.entityHeader)) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + entityHeader.hashCode();
-        return result;
-    }
 }

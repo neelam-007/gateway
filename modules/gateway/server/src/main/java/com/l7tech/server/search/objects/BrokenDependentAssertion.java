@@ -23,28 +23,4 @@ public class BrokenDependentAssertion<A extends Assertion> extends DependentObje
         this.assertionClass = assertionClass;
     }
 
-    /**
-     * Returns the assertion class
-     *
-     * @return the assertion class
-     */
-    @NotNull
-    public Class<A> getAssertionClass() {
-        return assertionClass;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        // An assertion dependent object must not equal another.
-        // If they are equal we will assume that their dependencies are the same, but we don't have enough information here to know if this is true so just return false
-        // For example two assertions can be the same type (assertion class) but they can have different dependencies
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + assertionClass.hashCode();
-        return result;
-    }
 }

@@ -121,6 +121,14 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
             return new ItemBuilder<>(dependent.getName(), null, "Assertion").build();
         } else if (dependent instanceof BrokenDependentEntity) {
             EntityHeader header = ((BrokenDependentEntity) dependent).getEntityHeader();
+            if( header.getName() == null && header.getStrId() == null ){
+                // if no name and id, use GUID
+                if(header instanceof GuidEntityHeader ) {
+                    return new ItemBuilder<>(((GuidEntityHeader) header).getGuid(), ((GuidEntityHeader) header).getGuid(), header.getType().name())
+                            .build();
+                }
+                throw new IllegalArgumentException("Unknown dependent: " + header.toStringVerbose());
+            }
             if(header.getName() == null ) {
                 return new ItemBuilder<>(header.getStrId(), header.getStrId(), header.getType().name())
                         .build();

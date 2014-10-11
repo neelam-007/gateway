@@ -135,7 +135,6 @@ public class BundleResource {
      *                                           bundle or just its contents.
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
      *                                           default.
-     * @param failOnMissingDependencies          not used
      * @return The bundle for the resource
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -149,8 +148,7 @@ public class BundleResource {
                                                           @QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
                                                           @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
                                                           @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
-                                                          @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
-                                                          @QueryParam("failOnMissingDependencies") @DefaultValue("true") @Since(RestManVersion.VERSION_1_0_1) Boolean failOnMissingDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                                          @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
