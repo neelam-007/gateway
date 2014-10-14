@@ -64,7 +64,7 @@ public class SampleMessageMO extends ElementExtendableAccessibleObject {
      *
      * @return The xml (may be null)
      */
-    @XmlElement(name="Operation", required=true)
+    @XmlElement(name="Operation")
     public String getOperation() {
         return operation;
     }

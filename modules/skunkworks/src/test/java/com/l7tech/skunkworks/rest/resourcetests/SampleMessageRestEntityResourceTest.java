@@ -67,7 +67,7 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
         sampleMessageManager.save(sampleMessage);
         messages.add(sampleMessage);
 
-        sampleMessage = new SampleMessage(services.get(1).getGoid(), "message 3", "getCCC", "<xml/>");
+        sampleMessage = new SampleMessage(services.get(1).getGoid(), "message 3", null, "<xml/>");
         sampleMessageManager.save(sampleMessage);
         messages.add(sampleMessage);
 
@@ -103,7 +103,6 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
         SampleMessageMO sampleMessage = ManagedObjectFactory.createSampleMessageMO();
         sampleMessage.setId(getGoid().toString());
         sampleMessage.setName("Test Sample Message created");
-        sampleMessage.setOperation("operationTest");
         sampleMessage.setServiceId(services.get(0).getId());
         sampleMessage.setXml("<stuff/>");
 
