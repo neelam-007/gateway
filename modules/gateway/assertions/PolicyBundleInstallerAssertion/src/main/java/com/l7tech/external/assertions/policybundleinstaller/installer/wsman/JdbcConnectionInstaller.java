@@ -1,16 +1,16 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.BundleUtils;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,13 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.GATEWAY_MGMT_ENUMERATE_FILTER;
 import static com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException;
 import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
 
 /**
  * JDBC connection logic.
  */
-public class JdbcConnectionInstaller extends BaseInstaller {
+public class JdbcConnectionInstaller extends WsmanInstaller {
     public static final String JDBC_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections";
 
     public JdbcConnectionInstaller(@NotNull final PolicyBundleInstallerContext context,

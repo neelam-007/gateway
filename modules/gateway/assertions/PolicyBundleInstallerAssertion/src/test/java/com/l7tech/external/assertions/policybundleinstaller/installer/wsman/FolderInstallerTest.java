@@ -1,7 +1,6 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.objectmodel.Goid;
@@ -9,10 +8,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, serviceManager, cancelledCallback);
+        }, doNothingInvoker(), context, serviceManager, cancelledCallback);
 
         final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);
@@ -115,7 +115,7 @@ public class FolderInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         final Map<String, Goid> oldToNewMap = bundleInstaller.getFolderInstaller().install();
         assertNotNull(oldToNewMap);

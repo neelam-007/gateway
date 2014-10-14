@@ -1,19 +1,20 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.installer.JdbcConnectionInstaller;
-import com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstaller;
+import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.JdbcConnectionInstaller;
+import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.PolicyInstaller;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -190,7 +191,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, serviceManager, getCancelledCallback(dryRunEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
 
@@ -266,7 +267,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
                             // no results
                             setResponse(context, XmlUtil.parse(FILTER_NO_RESULTS));
                         }
-                    } else if (requestXml.contains("http://schemas.xmlsoap.org/ws/2004/09/transfer/Get")) {
+                    } else {
                         setResponse(context, XmlUtil.parse(FAULT_RESPONSE_INVALID_SELECTOR));
                     }
                 } catch (Exception e) {
@@ -275,7 +276,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, serviceManager, getCancelledCallback(dryRunEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
 
@@ -320,7 +321,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         try {
             installer.installBundle();
@@ -331,5 +332,15 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
             assertNotNull(e.getDeniedRequest());
             assertFalse(e.getDeniedRequest().trim().isEmpty());
         }
+    }
+
+    @Test
+    public void testMigrationDryInstallationWithConflicts() throws Exception {
+        // TODO or test in RestInstaller?
+    }
+
+    @Test
+    public void testMigrationDryInstallationWithNoConflicts() throws Exception {
+        // TODO or test in RestInstaller?
     }
 }

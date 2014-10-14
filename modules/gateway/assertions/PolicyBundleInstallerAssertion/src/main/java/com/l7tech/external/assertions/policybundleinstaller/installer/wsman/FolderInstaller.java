@@ -1,13 +1,13 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.bundle.BundleUtils;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -19,11 +19,9 @@ import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.FOLDER;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
@@ -32,7 +30,7 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 /**
  * Install folder.
  */
-public class FolderInstaller extends BaseInstaller {
+public class FolderInstaller extends WsmanInstaller {
     public static final String FOLDER_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/folders";
 
     public FolderInstaller(@NotNull final PolicyBundleInstallerContext context,
@@ -44,10 +42,13 @@ public class FolderInstaller extends BaseInstaller {
     public Map<String, Goid> install() throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         checkInterrupted();
 
-        final Document folderBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), FOLDER, false);
-        final Goid folderToInstallInto = context.getFolderGoid();
-        assert folderBundle != null;
-        return installFolders(folderToInstallInto, folderBundle);
+        final Document folderBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), FOLDER, true);
+        if (folderBundle == null) {
+            return Collections.emptyMap();
+        } else {
+            final Goid folderToInstallInto = context.getFolderGoid();
+            return installFolders(folderToInstallInto, folderBundle);
+        }
     }
 
     /**

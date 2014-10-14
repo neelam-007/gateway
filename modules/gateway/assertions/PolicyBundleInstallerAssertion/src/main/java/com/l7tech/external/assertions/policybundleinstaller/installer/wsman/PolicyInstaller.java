@@ -1,13 +1,13 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
@@ -39,7 +40,7 @@ import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
 /**
  * Install policy.
  */
-public class PolicyInstaller extends BaseInstaller {
+public class PolicyInstaller extends WsmanInstaller {
     public static final String POLICIES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/policies";
 
     /**
@@ -69,8 +70,6 @@ public class PolicyInstaller extends BaseInstaller {
             "</VersionComment>\n" +
             "    </env:Body>\n" +
             "</env:Envelope>\n";
-
-    private static final String REVISION_COMMENT_FORMAT = "{0} (v{1})";
 
     @Nullable
     private PreBundleSavePolicyCallback savePolicyCallback;
@@ -174,7 +173,7 @@ public class PolicyInstaller extends BaseInstaller {
         return XpathUtil.findElements(policyEnumeration.getDocumentElement(), ".//l7:Name", getNamespaceMap());
     }
 
-      private boolean hasMatchingPolicy(String policyName) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
+    private boolean hasMatchingPolicy(String policyName) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         logger.finest("Finding policy name '" + policyName + "'.");
         final String policyGetSelector = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), POLICIES_MGMT_NS, "name", policyName);
 
@@ -385,10 +384,7 @@ public class PolicyInstaller extends BaseInstaller {
             throws InterruptedException,
             AccessDeniedManagementResponse,
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse {
-
-        BundleInfo bundleInfo = context.getBundleInfo();
-        String comment = MessageFormat.format(REVISION_COMMENT_FORMAT, bundleInfo.getName(), bundleInfo.getVersion());
-
+        String comment = getPolicyRevisionComment(context.getBundleInfo());
         String revisionType = isServiceGoid ? "services" : "policies";
         logger.finest("Setting revision comment for " + revisionType + " GOID '" +  goid + "'.");
         callManagementCheckInterrupted(MessageFormat.format(GATEWAY_MGMT_SET_REVISION_COMMENT_REQUEST, revisionType, getUuid(), goid, comment));

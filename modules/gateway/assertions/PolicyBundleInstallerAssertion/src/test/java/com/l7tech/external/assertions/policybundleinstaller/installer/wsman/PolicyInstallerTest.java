@@ -1,16 +1,19 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -32,9 +35,7 @@ import java.util.UUID;
 
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
     /**
@@ -112,7 +113,7 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
             "    </env:Body>\n" +
             "</env:Envelope>";
 
-    protected static final String CANNED_SET_VERSION_COMMENT_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\" xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\" xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+    public static final String CANNED_SET_VERSION_COMMENT_RESPONSE = "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" xmlns:mdo=\"http://schemas.wiseman.dev.java.net/metadata/messagetypes\" xmlns:mex=\"http://schemas.xmlsoap.org/ws/2004/09/mex\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wse=\"http://schemas.xmlsoap.org/ws/2004/08/eventing\" xmlns:wsen=\"http://schemas.xmlsoap.org/ws/2004/09/enumeration\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:wsmeta=\"http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd\" xmlns:wxf=\"http://schemas.xmlsoap.org/ws/2004/09/transfer\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
             "   <env:Header>\n" +
             "      <wsa:Action env:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services/SetVersionCommentResponse</wsa:Action>\n" +
             "      <wsa:MessageID env:mustUnderstand=\"true\">uuid:bf1dbf0e-b644-4240-8cca-4a1d149665b4</wsa:MessageID>\n" +
@@ -148,7 +149,7 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
         final Map<String, String> oldToNewPolicyGuids = new HashMap<>();
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), installationPrefix, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, serviceManager, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getPolicyInstaller().install(getFolderIds(), oldToNewPolicyIds, oldToNewPolicyGuids);
 
@@ -176,7 +177,7 @@ public class PolicyInstallerTest extends PolicyBundleInstallerTestBase {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), context, serviceManager, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(context.getInstallationPrefix()), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         // install from prerequisite folders
         for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {

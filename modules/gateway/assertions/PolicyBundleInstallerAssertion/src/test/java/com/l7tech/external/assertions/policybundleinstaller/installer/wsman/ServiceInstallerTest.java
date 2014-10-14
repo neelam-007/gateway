@@ -1,18 +1,18 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
 import static org.junit.Assert.assertEquals;
 
 public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
@@ -58,7 +58,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         // OAuth_1_0
         bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
@@ -122,7 +122,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
                     throw new RuntimeException(e);
                 }
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getServiceInstaller().install(getFolderIds(), getPolicyGuids(), bundleInstaller.getPolicyInstaller());
 

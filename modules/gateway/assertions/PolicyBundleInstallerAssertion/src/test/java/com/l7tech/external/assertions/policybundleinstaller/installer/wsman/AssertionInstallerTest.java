@@ -1,15 +1,15 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
@@ -59,7 +59,7 @@ public class AssertionInstallerTest extends PolicyBundleInstallerTestBase {
 
                 return AssertionStatus.NONE;
             }
-        }, context, serviceManager, getCancelledCallback(dryRunEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(dryRunEvent));
 
         installer.dryRunInstallBundle(dryRunEvent);
         final List<String> missingAssertions = dryRunEvent.getMissingAssertions();

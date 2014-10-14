@@ -1,4 +1,4 @@
-package com.l7tech.server.event.wsman;
+package com.l7tech.server.event.bundle;
 
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;

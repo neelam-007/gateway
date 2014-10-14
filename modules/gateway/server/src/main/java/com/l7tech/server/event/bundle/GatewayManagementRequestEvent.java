@@ -1,18 +1,13 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
-package com.l7tech.server.event.wsman;
+package com.l7tech.server.event.bundle;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class WSManagementRequestEvent extends ApplicationEvent {
+public abstract class GatewayManagementRequestEvent extends ApplicationEvent {
 
-    public WSManagementRequestEvent(Object source) {
+    public GatewayManagementRequestEvent(Object source) {
         super(source);
     }
 
@@ -35,7 +30,7 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
 
     /**
      * True when some module processed this event.
-     * @return
+     * @return boolean
      */
     public boolean isProcessed() {
         return processed;
@@ -54,19 +49,6 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
         this.reasonNotProcessed = reasonNotProcessed;
     }
 
-    /**
-     * Get the version of the policy bundle this event supports.
-     * @return
-     */
-    @NotNull
-    public String getBundleVersionNs() {
-        return bundleVersionNs;
-    }
-
-    public void setBundleVersionNs(String bundleVersionNs) {
-        this.bundleVersionNs = bundleVersionNs;
-    }
-
     public boolean isCancelled() {
         return cancelled.get();
     }
@@ -77,13 +59,11 @@ public abstract class WSManagementRequestEvent extends ApplicationEvent {
 
     // - PRIVATE
 
-    private final static String GATEWAY_MGMT_APRIL_10 = "http://ns.l7tech.com/2010/04/gateway-management";
     @Nullable
     private Exception processingException;
     private boolean processed = false;
     @Nullable
     private String reasonNotProcessed;
-    private String bundleVersionNs = GATEWAY_MGMT_APRIL_10;
     private AtomicBoolean cancelled = new AtomicBoolean();
 
 }

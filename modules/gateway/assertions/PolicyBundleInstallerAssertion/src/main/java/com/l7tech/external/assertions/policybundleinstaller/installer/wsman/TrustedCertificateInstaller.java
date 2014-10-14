@@ -1,15 +1,15 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -23,13 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.CERTIFICATE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
 
 /**
  * Install trusted certificate.
  */
-public class TrustedCertificateInstaller extends BaseInstaller {
+public class TrustedCertificateInstaller extends WsmanInstaller {
     public static final String CERTIFICATE_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates";
 
     public TrustedCertificateInstaller(@NotNull final PolicyBundleInstallerContext context,

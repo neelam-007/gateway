@@ -1,11 +1,13 @@
 package com.l7tech.external.assertions.policybundleinstaller;
 
-import com.l7tech.external.assertions.policybundleinstaller.installer.*;
+import com.l7tech.external.assertions.policybundleinstaller.installer.restman.MigrationBundleInstaller;
+import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.*;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,24 +49,28 @@ public class PolicyBundleInstaller {
     private final EncapsulatedAssertionInstaller encapsulatedAssertionInstaller;
     private final JdbcConnectionInstaller jdbcConnectionInstaller;
     private final AssertionInstaller assertionInstaller;
+    private final MigrationBundleInstaller migrationBundleInstaller;
 
-    public PolicyBundleInstaller(@NotNull final GatewayManagementInvoker gatewayManagementInvoker,
+    public PolicyBundleInstaller(@NotNull final GatewayManagementInvoker wsmanInvoker,
+                                 @NotNull final GatewayManagementInvoker restmanInvoker,
                                  @NotNull final PolicyBundleInstallerContext context,
                                  @NotNull final ServiceManager serviceManager,
                                  @NotNull final Nullary<Boolean> cancelledCallback) {
         this.context = context;
 
-        folderInstaller = new FolderInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        policyInstaller = new PolicyInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        encapsulatedAssertionInstaller = new EncapsulatedAssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        serviceInstaller = new ServiceInstaller(context, cancelledCallback, gatewayManagementInvoker, serviceManager);
-        trustedCertificateInstaller = new TrustedCertificateInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        jdbcConnectionInstaller = new JdbcConnectionInstaller(context, cancelledCallback, gatewayManagementInvoker);
-        assertionInstaller = new AssertionInstaller(context, cancelledCallback, gatewayManagementInvoker);
+        folderInstaller = new FolderInstaller(context, cancelledCallback, wsmanInvoker);
+        policyInstaller = new PolicyInstaller(context, cancelledCallback, wsmanInvoker);
+        encapsulatedAssertionInstaller = new EncapsulatedAssertionInstaller(context, cancelledCallback, wsmanInvoker);
+        serviceInstaller = new ServiceInstaller(context, cancelledCallback, wsmanInvoker, serviceManager);
+        trustedCertificateInstaller = new TrustedCertificateInstaller(context, cancelledCallback, wsmanInvoker);
+        jdbcConnectionInstaller = new JdbcConnectionInstaller(context, cancelledCallback, wsmanInvoker);
+        assertionInstaller = new AssertionInstaller(context, cancelledCallback, wsmanInvoker);
+        migrationBundleInstaller = new MigrationBundleInstaller(context, cancelledCallback, restmanInvoker);
     }
 
     public void setSavePolicyCallback(@Nullable PreBundleSavePolicyCallback savePolicyCallback) {
         policyInstaller.setSavePolicyCallback(savePolicyCallback);
+        migrationBundleInstaller.setPreImportCallback(savePolicyCallback);
     }
 
     /**
@@ -94,6 +100,7 @@ public class PolicyBundleInstaller {
         serviceInstaller.dryRunInstall(dryRunEvent);
         trustedCertificateInstaller.dryRunInstall(dryRunEvent);
         jdbcConnectionInstaller.dryRunInstall(dryRunEvent);
+        migrationBundleInstaller.dryRunInstall(dryRunEvent);
 
         logger.fine("Finished conflict checking bundle: " + context.getBundleInfo());
     }
@@ -121,12 +128,14 @@ public class PolicyBundleInstaller {
         for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
             policyInstaller.install(prerequisiteFolder, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
             encapsulatedAssertionInstaller.install(prerequisiteFolder, oldToNewPolicyIds);
+            migrationBundleInstaller.install(prerequisiteFolder);
         }
 
         policyInstaller.install(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
         encapsulatedAssertionInstaller.install(oldToNewPolicyIds);
         serviceInstaller.install(oldToNewFolderIds, oldToNewPolicyGuids, policyInstaller);
         trustedCertificateInstaller.install();
+        migrationBundleInstaller.install();
 
         logger.info("Finished installing bundle: " + context.getBundleInfo());
     }

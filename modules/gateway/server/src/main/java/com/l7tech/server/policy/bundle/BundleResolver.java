@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.bundle;
 
 import com.l7tech.policy.bundle.BundleInfo;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -12,24 +13,35 @@ import java.util.List;
  * Used by BundleInstaller to get bundle resources to install.
  */
 public interface BundleResolver {
+    final static String FILE_EXTENSION_XML = ".xml";
 
     public enum BundleItem {
-        ASSERTION("Assertion.xml"),
-        CERTIFICATE("TrustedCertificate.xml"),
-        ENCAPSULATED_ASSERTION("EncapsulatedAssertion.xml"),
-        FOLDER("Folder.xml"),
-        POLICY("Policy.xml"),
-        SERVICE("Service.xml");
+        ASSERTION("Assertion"),
+        CERTIFICATE("TrustedCertificate"),
+        ENCAPSULATED_ASSERTION("EncapsulatedAssertion"),
+        FOLDER("Folder"),
+        MIGRATION_BUNDLE("MigrationBundle"),
+        POLICY("Policy"),
+        SERVICE("Service");
 
-        private BundleItem(String fileName) {
+        BundleItem(String fileName) {
             this.fileName = fileName;
         }
 
         public String getFileName() {
-            return fileName;
+            if (StringUtils.isEmpty(version)) {
+                return fileName + FILE_EXTENSION_XML;
+            } else {
+                return fileName + version + FILE_EXTENSION_XML;
+            }
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
         }
 
         private String fileName;
+        private String version;
     }
 
     /**

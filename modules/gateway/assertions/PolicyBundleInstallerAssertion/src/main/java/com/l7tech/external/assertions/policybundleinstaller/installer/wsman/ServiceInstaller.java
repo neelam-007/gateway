@@ -1,13 +1,13 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
@@ -18,9 +18,13 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
@@ -28,7 +32,7 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 /**
  * Install service.
  */
-public class ServiceInstaller extends BaseInstaller {
+public class ServiceInstaller extends WsmanInstaller {
     public static final String SERVICES_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/services";
     private final ServiceManager serviceManager;
 
@@ -134,11 +138,6 @@ public class ServiceInstaller extends BaseInstaller {
             }
 
             final Element serviceDetail = getServiceDetailElement(serviceElmWritable);
-            final String bundleFolderId = serviceDetail.getAttribute("folderId");
-
-            if (!oldToNewFolderIds.containsKey(bundleFolderId)) {
-                throw new BundleResolver.InvalidBundleException("Could not find updated folder for service #{" + id + "} in folder " + bundleFolderId);
-            }
             final Element urlPatternWriteableEl = XmlUtil.findFirstDescendantElement(serviceDetail, MGMT_VERSION_NAMESPACE, "UrlPattern");
 
             // lets check if the service has a URL mapping and if so, if any service already exists with that mapping.
@@ -170,6 +169,10 @@ public class ServiceInstaller extends BaseInstaller {
                 }
             }
 
+            final String bundleFolderId = serviceDetail.getAttribute("folderId");
+            if (!oldToNewFolderIds.containsKey(bundleFolderId)) {
+                throw new BundleResolver.InvalidBundleException("Could not find updated folder for service #{" + id + "} in folder " + bundleFolderId);
+            }
             final Goid newFolderId = oldToNewFolderIds.get(bundleFolderId);
             serviceDetail.setAttribute("folderId", String.valueOf(newFolderId));
 

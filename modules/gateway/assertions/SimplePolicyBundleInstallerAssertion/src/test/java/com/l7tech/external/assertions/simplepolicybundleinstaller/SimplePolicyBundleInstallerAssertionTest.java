@@ -5,8 +5,8 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.event.admin.DetailedAdminEvent;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -98,7 +98,7 @@ public class SimplePolicyBundleInstallerAssertionTest {
             }
         });
 
-        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("33b16742-d62d-4095-8f8d-4db707e9ad51"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null);
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("33b16742-d62d-4095-8f8d-4db707e9ad51"), new Goid(0,-5002), new HashMap<String, BundleMapping>());
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);

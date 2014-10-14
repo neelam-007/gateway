@@ -48,6 +48,6 @@ public class SimplePolicyBundleInstallerAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/interface.gif";
+        return "com/l7tech/external/assertions/simplepolicybundleinstaller/console/dashed_square_down_arrow.png";
     }
 }

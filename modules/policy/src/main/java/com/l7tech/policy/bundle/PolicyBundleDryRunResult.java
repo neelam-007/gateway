@@ -8,7 +8,7 @@ import java.util.*;
  */
 public class PolicyBundleDryRunResult implements Serializable {
 
-    public enum DryRunItem { SERVICES, POLICIES, CERTIFICATES, ENCAPSULATED_ASSERTION, JDBC_CONNECTIONS, ASSERTIONS}
+    public enum DryRunItem { SERVICES, POLICIES, CERTIFICATES, ENCAPSULATED_ASSERTION, JDBC_CONNECTIONS, ASSERTIONS, MIGRATION }
 
     public static class UnknownBundleIdException extends Exception{
         public UnknownBundleIdException(String message) {
@@ -16,7 +16,7 @@ public class PolicyBundleDryRunResult implements Serializable {
         }
     }
 
-    final Map<String, Map<DryRunItem, List<String>>> conflictsForItemMap = new HashMap<>();
+    private final Map<String, Map<DryRunItem, List<String>>> conflictsForItemMap = new HashMap<>();
 
     public PolicyBundleDryRunResult(final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts) {
         for (Map.Entry<String, Map<DryRunItem, List<String>>> entry : bundleToConflicts.entrySet()) {

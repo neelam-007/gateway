@@ -4,12 +4,14 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.wsman.PolicyBundleEvent;
+import com.l7tech.server.event.bundle.PolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.BundleResolverImpl;
 import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -20,6 +22,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -189,7 +192,8 @@ public abstract class PolicyBundleInstallerTestBase {
             "</env:Envelope>";
 
     protected int nextOid = 1000000;
-    @Mock protected ServiceManager serviceManager;
+    @Mock
+    protected ServiceManager serviceManager;
 
     private static List<Pair<BundleInfo, String>> allTestBundleInfoPairList;
     private List<Pair<BundleInfo, String>> getAllTestBundleInfoPairList() throws BundleResolver.InvalidBundleException {
@@ -289,5 +293,14 @@ public abstract class PolicyBundleInstallerTestBase {
     protected static void setResponse(PolicyEnforcementContext context, Document response) {
         final Message responseMsg = context.getResponse();
         responseMsg.initialize(response);
+    }
+
+    protected GatewayManagementInvoker doNothingInvoker() {
+        return new GatewayManagementInvoker() {
+            @Override
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+                return AssertionStatus.NONE;
+            }
+        };
     }
 }

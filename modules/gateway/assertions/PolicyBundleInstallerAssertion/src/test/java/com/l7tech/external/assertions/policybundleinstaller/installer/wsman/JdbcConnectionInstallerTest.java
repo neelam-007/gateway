@@ -1,14 +1,17 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.BundleUtils;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -26,8 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE;
-import static com.l7tech.external.assertions.policybundleinstaller.installer.ServiceInstallerTest.SERVICES_SET_VERSION_COMMENT_ACTION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -69,8 +70,8 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
                     // just reply with any non created response
                     setResponse(context, alreadyExistsResponse);
                     return AssertionStatus.NONE;
-                }  else if (requestXml.contains(SERVICES_SET_VERSION_COMMENT_ACTION)) {
-                    setResponse(context, CANNED_SET_VERSION_COMMENT_RESPONSE);
+                }  else if (requestXml.contains(ServiceInstallerTest.SERVICES_SET_VERSION_COMMENT_ACTION)) {
+                    setResponse(context, PolicyInstallerTest.CANNED_SET_VERSION_COMMENT_RESPONSE);
                     return AssertionStatus.NONE;
                 } else {
                     // Validate any JDBC references
@@ -116,7 +117,7 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
                     return documentPair.left;
                 }
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.installBundle();
 

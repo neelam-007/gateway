@@ -108,7 +108,7 @@ public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractI
                                     boolean integrateApiPortal) throws PolicyBundleInstallerException {
         super.checkingAssertionExistenceRequired = integrateApiPortal;
         this.integrateApiPortal = integrateApiPortal;
-        return install(componentIds, folderGoid, bundleMappings, installationPrefix);
+        return install(componentIds, folderGoid, bundleMappings, installationPrefix, null);
     }
 
     @NotNull

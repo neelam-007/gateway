@@ -1,16 +1,18 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.bundle.*;
+import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -26,10 +28,12 @@ import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.EncapsulatedAssertionInstaller.getPrefixedGuid;
-import static com.l7tech.external.assertions.policybundleinstaller.installer.EncapsulatedAssertionInstaller.getPrefixedName;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedGuid;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedName;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static org.junit.Assert.assertEquals;
@@ -61,7 +65,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
                     throw new RuntimeException(e);
                 }
             }
-        }, context, serviceManager, getCancelledCallback(installEvent));
+        }, doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getEncapsulatedAssertionInstaller().install( getPolicyGuids());
     }
@@ -74,7 +78,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, serviceManager, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         // install from prerequisite folders
         for (String prerequisiteFolder : context.getBundleInfo().getPrerequisiteFolders()) {
@@ -103,7 +107,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
-        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), context, serviceManager, getCancelledCallback(installEvent));
+        final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
 
         bundleInstaller.getEncapsulatedAssertionInstaller().install(getPolicyGuids());
 

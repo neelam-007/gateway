@@ -39,7 +39,7 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
             super(cause);
         }
     }
-    
+
     /**
      * Get the overall version the installer will install.
      *
@@ -89,8 +89,24 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
      *                           install dependency order.
      * @param folderGoid         Folder to install component into.
      * @param bundleMappings     Mapping of bundleId to mappings for that bundle. Required.
+     * @return the name of each bundle installed. If successful this will be each bundle requested.
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE_OR_UPDATE, relevantArg = 1)
+    JobId<ArrayList> install(@NotNull Collection<String> componentIds,
+                             @NotNull Goid folderGoid,
+                             @NotNull Map<String, BundleMapping> bundleMappings) throws PolicyBundleInstallerException;
+
+    /**
+     * Install the bundle identified by the supplied name
+     *
+     * @param componentIds collection of all bundle ids to install. Bundles may depend on each others items, but there is no
+     *                     install dependency order.
+     * @param folderGoid Folder to install component into.
+     * @param bundleMappings Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
+     * @param migrationBundleOverrides override value to resolve migration conflicts
      * @return the name of each bundle installed. If successful this will be each bundle requested.
      */
     @NotNull
@@ -98,6 +114,6 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
     JobId<ArrayList> install(@NotNull Collection<String> componentIds,
                              @NotNull Goid folderGoid,
                              @NotNull Map<String, BundleMapping> bundleMappings,
-                             @Nullable String installationPrefix) throws PolicyBundleInstallerException;
-
+                             @Nullable String installationPrefix,
+                             @Nullable Map<String, String> migrationBundleOverrides) throws PolicyBundleInstallerException;
 }

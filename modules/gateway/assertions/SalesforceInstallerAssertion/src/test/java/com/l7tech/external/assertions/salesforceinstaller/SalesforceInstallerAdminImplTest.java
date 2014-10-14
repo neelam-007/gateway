@@ -5,8 +5,8 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.event.admin.DetailedAdminEvent;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
-import com.l7tech.server.event.wsman.InstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -95,7 +95,7 @@ public class SalesforceInstallerAdminImplTest {
             }
         });
 
-        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null);
+        final AsyncAdminMethods.JobId<ArrayList> jobId = admin.install(Arrays.asList("6a88602e-df72-414a-9f88-9849197c8b7f"), new Goid(0,-5002), new HashMap<String, BundleMapping>(), null, null);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);

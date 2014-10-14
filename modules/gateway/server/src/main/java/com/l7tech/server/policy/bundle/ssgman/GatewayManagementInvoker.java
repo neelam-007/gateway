@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.policybundleinstaller;
+package com.l7tech.server.policy.bundle.ssgman;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -13,8 +13,8 @@ public interface GatewayManagementInvoker {
      *
      * @param context PEC
      * @return assertion status
-     * @throws PolicyAssertionException
-     * @throws IOException
+     * @throws com.l7tech.policy.assertion.PolicyAssertionException
+     * @throws java.io.IOException
      */
-    AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException;
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException;
 }

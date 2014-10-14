@@ -7,6 +7,8 @@ import com.l7tech.policy.bundle.BundleMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 /**
  * Installation context used by clients of the Policy Bundle Installer to pass all required information
  */
@@ -26,7 +28,7 @@ public class PolicyBundleInstallerContext {
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired) {
-        this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired);
+        this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired, null);
     }
 
     /**
@@ -36,18 +38,21 @@ public class PolicyBundleInstallerContext {
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
      * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
+     *
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         @NotNull Goid folderGoid,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
-                                        boolean checkingAssertionExistenceRequired) {
+                                        boolean checkingAssertionExistenceRequired,
+                                        Map<String, String> migrationBundleOverrides) {
         this.bundleInfo = bundleInfo;
         this.folderGoid = folderGoid;
         this.bundleMapping = bundleMapping;
         this.bundleResolver = bundleResolver;
         this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
+        this.migrationBundleOverrides = migrationBundleOverrides;
 
         this.installationPrefix = (installationPrefix == null || installationPrefix.trim().isEmpty())?
                 null:
@@ -78,6 +83,11 @@ public class PolicyBundleInstallerContext {
         return installationPrefix;
     }
 
+    @Nullable
+    public Map<String, String> getMigrationBundleOverrides() {
+        return migrationBundleOverrides;
+    }
+
     @NotNull
     public BundleResolver getBundleResolver() {
         return bundleResolver;
@@ -99,4 +109,5 @@ public class PolicyBundleInstallerContext {
     @NotNull
     private final BundleResolver bundleResolver;
     private final boolean checkingAssertionExistenceRequired;
+    private final Map<String, String> migrationBundleOverrides;
 }

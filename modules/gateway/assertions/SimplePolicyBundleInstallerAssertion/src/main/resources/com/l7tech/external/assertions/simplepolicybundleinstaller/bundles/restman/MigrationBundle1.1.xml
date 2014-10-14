@@ -1,0 +1,439 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>Simple Policy Bundle Updated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b0c</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2014-04-24T14:31:17.247-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders"/>
+            <l7:Resource>
+                <l7:Folder id="f1649a0664f1ebb6235ac238a6f71b0c" folderId="0000000000000000ffffffffffffec76">
+                    <l7:Name>Simple Policy Bundle Updated</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+
+        <l7:Item>
+            <l7:Name>simpleIncludedPolicyFragmentUpdated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b61</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.536-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies"/>
+            <l7:Resource>
+                <l7:Policy guid="e9aaee50-21cf-4b3f-bc11-bbbb1711e265" id="f1649a0664f1ebb6235ac238a6f71b61" version="0">
+                    <l7:PolicyDetail folderId="f1649a0664f1ebb6235ac238a6f71b0c" guid="e9aaee50-21cf-4b3f-bc11-bbbb1711e265" id="f1649a0664f1ebb6235ac238a6f71b61" version="0">
+                        <l7:Name>simpleIncludedPolicyFragmentUpdated</l7:Name>
+                        <l7:PolicyType>Include</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy"><![CDATA[<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PHNpbXBsZUluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+JHtyZXF1ZXN0Lm1haW5wYXJ0fTwvc2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4="/>
+            <L7p:VariableToSet stringValue="simpleIncludedPolicyFragmentVariable"/>
+        </L7p:SetVariable>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="cfa49381-54aa-4231-b72e-6d483a032bf7"/>
+        </L7p:Include>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>simpleEncapsulatedAssertionFragmentUpdated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b75</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.536-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies"/>
+            <l7:Resource>
+                <l7:Policy guid="4c8e03fa-3554-40ed-b67a-de5d86f36d7e" id="f1649a0664f1ebb6235ac238a6f71b75" version="0">
+                    <l7:PolicyDetail folderId="f1649a0664f1ebb6235ac238a6f71b0c" guid="4c8e03fa-3554-40ed-b67a-de5d86f36d7e" id="f1649a0664f1ebb6235ac238a6f71b75" version="0">
+                        <l7:Name>simpleEncapsulatedAssertionFragmentUpdated</l7:Name>
+                        <l7:PolicyType>Include</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy"><![CDATA[<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PGVuY2Fwc3VsYXRlZEFzc2VydGlvbj4ke2luU2ltcGxlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnR9PC9lbmNhcHN1bGF0ZWRBc3NlcnRpb24+"/>
+            <L7p:VariableToSet stringValue="outSimpleEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="e9aaee50-21cf-4b3f-bc11-bbbb1711e265"/>
+        </L7p:Include>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>Simple Encapsulated Assertion Updated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b89</l7:Id>
+            <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.536-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions"/>
+            <l7:Resource>
+                <l7:EncapsulatedAssertion id="f1649a0664f1ebb6235ac238a6f71b89" version="0">
+                    <l7:Name>Simple Encapsulated Assertion Updated</l7:Name>
+                    <l7:Guid>506589b0-eba5-4b3f-81b5-be7809817623</l7:Guid>
+                    <l7:PolicyReference id="f1649a0664f1ebb6235ac238a6f71b75" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                    <l7:EncapsulatedArguments>
+                        <l7:EncapsulatedAssertionArgument>
+                            <l7:Ordinal>1</l7:Ordinal>
+                            <l7:ArgumentName>inSimpleEncapsulatedAssertionFragment</l7:ArgumentName>
+                            <l7:ArgumentType>string</l7:ArgumentType>
+                            <l7:GuiPrompt>false</l7:GuiPrompt>
+                        </l7:EncapsulatedAssertionArgument>
+                    </l7:EncapsulatedArguments>
+                    <l7:EncapsulatedResults>
+                        <l7:EncapsulatedAssertionResult>
+                            <l7:ResultName>outSimpleEncapsulatedAssertionFragment</l7:ResultName>
+                            <l7:ResultType>string</l7:ResultType>
+                        </l7:EncapsulatedAssertionResult>
+                    </l7:EncapsulatedResults>
+                    <l7:Properties>
+                        <l7:Property key="paletteFolder">
+                            <l7:StringValue>routing</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="policyGuid">
+                            <l7:StringValue>4c8e03fa-3554-40ed-b67a-de5d86f36d7e</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="description">
+                            <l7:StringValue>A simple encapsulated assertion</l7:StringValue>
+                        </l7:Property>
+                    </l7:Properties>
+                </l7:EncapsulatedAssertion>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>mysql_root</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71a6d</l7:Id>
+            <l7:Type>SECURE_PASSWORD</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.541-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords"/>
+            <l7:Resource>
+                <l7:StoredPassword id="f1649a0664f1ebb6235ac238a6f71a6d" version="1">
+                    <l7:Name>mysql_root</l7:Name>
+                    <l7:Properties>
+                        <l7:Property key="usageFromVariable">
+                            <l7:BooleanValue>true</l7:BooleanValue>
+                        </l7:Property>
+                        <l7:Property key="description">
+                            <l7:StringValue/>
+                        </l7:Property>
+                        <l7:Property key="lastUpdated">
+                            <l7:DateValue>2014-06-04T14:08:27.076-07:00</l7:DateValue>
+                        </l7:Property>
+                        <l7:Property key="type">
+                            <l7:StringValue>Password</l7:StringValue>
+                        </l7:Property>
+                    </l7:Properties>
+                </l7:StoredPassword>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>SSG</l7:Name>
+            <l7:Id>0567c6a8f0c4cc2c9fb331cb03b4de6f</l7:Id>
+            <l7:Type>JDBC_CONNECTION</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.541-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections"/>
+            <l7:Resource>
+                <l7:JDBCConnection id="0567c6a8f0c4cc2c9fb331cb03b4de6f" version="2">
+                    <l7:Name>SSG</l7:Name>
+                    <l7:Enabled>true</l7:Enabled>
+                    <l7:Properties>
+                        <l7:Property key="maximumPoolSize">
+                            <l7:IntegerValue>15</l7:IntegerValue>
+                        </l7:Property>
+                        <l7:Property key="minimumPoolSize">
+                            <l7:IntegerValue>3</l7:IntegerValue>
+                        </l7:Property>
+                    </l7:Properties>
+                    <l7:Extension>
+                        <l7:DriverClass>com.l7tech.jdbc.mysql.MySQLDriver</l7:DriverClass>
+                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg82ske</l7:JdbcUrl>
+                        <l7:ConnectionProperties>
+                            <l7:Property key="EnableCancelTimeout">
+                                <l7:StringValue>true</l7:StringValue>
+                            </l7:Property>
+                            <l7:Property key="password">
+                                <l7:StringValue>${secpass.mysql_root.plaintext}</l7:StringValue>
+                            </l7:Property>
+                            <l7:Property key="user">
+                                <l7:StringValue>root</l7:StringValue>
+                            </l7:Property>
+                        </l7:ConnectionProperties>
+                    </l7:Extension>
+                </l7:JDBCConnection>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>simpleCompositeEncapsulatedAssertionFragmentUpdated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b8f</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.541-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies"/>
+            <l7:Resource>
+                <l7:Policy guid="e9f40c8f-6f76-4a74-803d-187afc91e28d" id="f1649a0664f1ebb6235ac238a6f71b8f" version="0">
+                    <l7:PolicyDetail folderId="f1649a0664f1ebb6235ac238a6f71b0c" guid="e9f40c8f-6f76-4a74-803d-187afc91e28d" id="f1649a0664f1ebb6235ac238a6f71b8f" version="0">
+                        <l7:Name>simpleCompositeEncapsulatedAssertionFragmentUpdated</l7:Name>
+                        <l7:PolicyType>Include</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy"><![CDATA[<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="JHtpblNpbXBsZUNvbXBvc2l0ZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50fQ=="/>
+            <L7p:VariableToSet stringValue="inSimpleEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Encapsulated>
+            <L7p:EncapsulatedAssertionConfigGuid stringValue="506589b0-eba5-4b3f-81b5-be7809817623"/>
+            <L7p:EncapsulatedAssertionConfigName stringValue="Simple Encapsulated Assertion"/>
+        </L7p:Encapsulated>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PGNvbXBvc2l0ZUVuY2Fwc3VsYXRlZEFzc2VydGlvbj4ke291dFNpbXBsZUVuY2Fwc3VsYXRlZEFzc2VydGlvbkZyYWdtZW50fTwvY29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uPg=="/>
+            <L7p:VariableToSet stringValue="outSimpleCompositeEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>Simple Composite Encapsulated Assertion Updated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71ba3</l7:Id>
+            <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.541-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions"/>
+            <l7:Resource>
+                <l7:EncapsulatedAssertion id="f1649a0664f1ebb6235ac238a6f71ba3" version="0">
+                    <l7:Name>Simple Composite Encapsulated Assertion Updated</l7:Name>
+                    <l7:Guid>75062052-9f23-4be2-b7fc-c3caad51620d</l7:Guid>
+                    <l7:PolicyReference id="f1649a0664f1ebb6235ac238a6f71b8f" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                    <l7:EncapsulatedArguments>
+                        <l7:EncapsulatedAssertionArgument>
+                            <l7:Ordinal>1</l7:Ordinal>
+                            <l7:ArgumentName>inSimpleCompositeEncapsulatedAssertionFragment</l7:ArgumentName>
+                            <l7:ArgumentType>string</l7:ArgumentType>
+                            <l7:GuiLabel>aaa</l7:GuiLabel>
+                            <l7:GuiPrompt>false</l7:GuiPrompt>
+                        </l7:EncapsulatedAssertionArgument>
+                    </l7:EncapsulatedArguments>
+                    <l7:EncapsulatedResults>
+                        <l7:EncapsulatedAssertionResult>
+                            <l7:ResultName>outSimpleCompositeEncapsulatedAssertionFragment</l7:ResultName>
+                            <l7:ResultType>string</l7:ResultType>
+                        </l7:EncapsulatedAssertionResult>
+                    </l7:EncapsulatedResults>
+                    <l7:Properties>
+                        <l7:Property key="paletteFolder">
+                            <l7:StringValue>routing</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="description">
+                            <l7:StringValue>A simple composite encapsulated assertion</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="policyGuid">
+                            <l7:StringValue>e9f40c8f-6f76-4a74-803d-187afc91e28d</l7:StringValue>
+                        </l7:Property>
+                        <l7:Property key="allowTracing">
+                            <l7:StringValue>false</l7:StringValue>
+                        </l7:Property>
+                    </l7:Properties>
+                </l7:EncapsulatedAssertion>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>simpleRestServiceUpdated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71ba9</l7:Id>
+            <l7:Type>SERVICE</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.543-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/services"/>
+            <l7:Resource>
+                <l7:Service id="f1649a0664f1ebb6235ac238a6f71ba9" version="2">
+                    <l7:ServiceDetail folderId="f1649a0664f1ebb6235ac238a6f71b0c" id="f1649a0664f1ebb6235ac238a6f71ba9" version="2">
+                        <l7:Name>simpleRestServiceUpdated</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                        <l7:ServiceMappings>
+                            <l7:HttpMapping>
+                                <l7:UrlPattern>/simpleRestServiceUpdated</l7:UrlPattern>
+                                <l7:Verbs>
+                                    <l7:Verb>GET</l7:Verb>
+                                    <l7:Verb>POST</l7:Verb>
+                                    <l7:Verb>PUT</l7:Verb>
+                                    <l7:Verb>DELETE</l7:Verb>
+                                </l7:Verbs>
+                            </l7:HttpMapping>
+                        </l7:ServiceMappings>
+                        <l7:Properties>
+                            <l7:Property key="policyRevision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="wssProcessingEnabled">
+                                <l7:BooleanValue>true</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="internal">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="tracingEnabled">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:ServiceDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy" version="0"><![CDATA[<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:Simple/>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="e9aaee50-21cf-4b3f-bc11-bbbb1711e265"/>
+        </L7p:Include>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+            <L7p:VariableToSet stringValue="inSimpleEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Encapsulated>
+            <L7p:EncapsulatedAssertionConfigGuid stringValue="506589b0-eba5-4b3f-81b5-be7809817623"/>
+            <L7p:EncapsulatedAssertionConfigName stringValue="Simple Encapsulated Assertion"/>
+        </L7p:Encapsulated>
+        <L7p:JdbcQuery>
+            <L7p:ConnectionName stringValue="SSG"/>
+            <L7p:ConvertVariablesToStrings booleanValue="false"/>
+            <L7p:NamingMap mapValue="included">
+                <L7p:entry>
+                    <L7p:key stringValue="current_version"/>
+                    <L7p:value stringValue="ssgVersion"/>
+                </L7p:entry>
+            </L7p:NamingMap>
+            <L7p:SqlQuery stringValue="select current_version from ssg_version;"/>
+            <L7p:VariablePrefix stringValue="simpleJdbcQuery"/>
+        </L7p:JdbcQuery>
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lm1haW5wYXJ0fQ=="/>
+            <L7p:VariableToSet stringValue="inSimpleCompositeEncapsulatedAssertionFragment"/>
+        </L7p:SetVariable>
+        <L7p:Encapsulated>
+            <L7p:EncapsulatedAssertionConfigGuid stringValue="75062052-9f23-4be2-b7fc-c3caad51620d"/>
+            <L7p:EncapsulatedAssertionConfigName stringValue="Simple Composite Encapsulated Assertion"/>
+        </L7p:Encapsulated>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNpbXBsZVJlc3BvbnNlPgogICA8cmVxdWVzdC51cmw+JHtyZXF1ZXN0LnVybH08L3JlcXVlc3QudXJsPgogICA8cmVxdWVzdC5odHRwLm1ldGhvZD4ke3JlcXVlc3QuaHR0cC5tZXRob2R9PC9yZXF1ZXN0Lmh0dHAubWV0aG9kPgogICA8cmVxdWVzdC5tYWlucGFydD4ke3JlcXVlc3QubWFpbnBhcnR9PC9yZXF1ZXN0Lm1haW5wYXJ0PgogICA8c2ltcGxlSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4KICAgICAgJHtzaW1wbGVJbmNsdWRlZFBvbGljeUZyYWdtZW50VmFyaWFibGV9CiAgICAgICAgICR7c2ltcGxlTmVzdGVkSW5jbHVkZWRQb2xpY3lGcmFnbWVudFZhcmlhYmxlfQogICA8L3NpbXBsZUluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+CiAgIDxvdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudD4KICAgICAgJHtvdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudH0KICAgPC9vdXRTaW1wbGVFbmNhcHN1bGF0ZWRBc3NlcnRpb25GcmFnbWVudD4KICAgPHNpbXBsZUpkYmNRdWVyeT4KICAgICAgPHNzZ1ZlcnNpb24+JHtzaW1wbGVKZGJjUXVlcnkuc3NnVmVyc2lvbn08L3NzZ1ZlcnNpb24+CiAgIDwvc2ltcGxlSmRiY1F1ZXJ5PgogICA8b3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnQ+CiAgICAgICR7b3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnR9CiAgIDwvb3V0U2ltcGxlQ29tcG9zaXRlRW5jYXBzdWxhdGVkQXNzZXJ0aW9uRnJhZ21lbnQ+Cjwvc2ltcGxlUmVzcG9uc2U+"/>
+        </L7p:HardcodedResponse>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Service>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>simpleNestedIncludedPolicyFragmentUpdated</l7:Name>
+            <l7:Id>f1649a0664f1ebb6235ac238a6f71b4c</l7:Id>
+            <l7:Type>POLICY</l7:Type>
+            <l7:TimeStamp>2014-06-04T14:11:20.543-07:00</l7:TimeStamp>
+            <l7:Link rel="self" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c"/>
+            <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/template"/>
+            <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies"/>
+            <l7:Resource>
+                <l7:Policy guid="cfa49381-54aa-4231-b72e-6d483a032bf7" id="f1649a0664f1ebb6235ac238a6f71b4c" version="0">
+                    <l7:PolicyDetail folderId="f1649a0664f1ebb6235ac238a6f71b0c" guid="cfa49381-54aa-4231-b72e-6d483a032bf7" id="f1649a0664f1ebb6235ac238a6f71b4c" version="0">
+                        <l7:Name>simpleNestedIncludedPolicyFragmentUpdated</l7:Name>
+                        <l7:PolicyType>Include</l7:PolicyType>
+                        <l7:Properties>
+                            <l7:Property key="revision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:PolicyDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy"><![CDATA[<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:SetVariable>
+            <L7p:Base64Expression stringValue="PHNpbXBsZU5lc3RlZEluY2x1ZGVkUG9saWN5RnJhZ21lbnQ+JHtyZXF1ZXN0Lm1haW5wYXJ0fTwvc2ltcGxlTmVzdGVkSW5jbHVkZWRQb2xpY3lGcmFnbWVudD4="/>
+            <L7p:VariableToSet stringValue="simpleNestedIncludedPolicyFragmentVariable"/>
+        </L7p:SetVariable>
+    </wsp:All>
+</wsp:Policy>]]></l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Policy>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b61" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61" type="POLICY"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION"/>
+        <l7:Mapping action="NewOrExisting" srcId="f1649a0664f1ebb6235ac238a6f71a6d" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d" type="SECURE_PASSWORD">
+            <l7:Properties>
+                <l7:Property key="FailOnNew">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrUpdate" srcId="0567c6a8f0c4cc2c9fb331cb03b4de6f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f" type="JDBC_CONNECTION"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b8f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f" type="POLICY"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71ba3" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3" type="ENCAPSULATED_ASSERTION"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE"/>
+        <l7:Mapping action="NewOrUpdate" srcId="f1649a0664f1ebb6235ac238a6f71b4c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="POLICY"/>
+    </l7:Mappings>
+</l7:Bundle>

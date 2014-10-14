@@ -1,18 +1,24 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -21,20 +27,21 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.ENCAPSULATED_ASSERTION;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.getNamespaceMap;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static java.util.logging.Level.WARNING;
 
 /**
  * Install Encapsulated Assertion.
  */
-public class EncapsulatedAssertionInstaller extends BaseInstaller {
+public class EncapsulatedAssertionInstaller extends WsmanInstaller {
     public static final String ENCAPSULATED_ASSERTIONS_MGMT_NS = "http://ns.l7tech.com/2010/04/gateway-management/encapsulatedAssertions";
 
     public EncapsulatedAssertionInstaller(@NotNull final PolicyBundleInstallerContext context,
@@ -67,12 +74,14 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
 
                 try {
                     logger.finest("Finding encapsulated assertion name '" + encapsulatedAssertionName + "'.");
-                    if (hasMatchingEncapsulatedAssertion("name", encapsulatedAssertionName)) {
+                    List<Goid> matchingEncapsulatedAssertions = findMatchingEncapsulatedAssertion("/l7:EncapsulatedAssertion/l7:Name[text()='" + encapsulatedAssertionName + "']");
+                    if (!matchingEncapsulatedAssertions.isEmpty()) {
                         dryRunEvent.addEncapsulatedAssertionConflict(encapsulatedAssertionName);
                     } else {
                         logger.finest("Finding encapsulated assertion GUID '" + encapsulatedAssertionGuid + "'.");
-                        final String name = getMatchingEncapsulatedAssertionName("guid", encapsulatedAssertionGuid);
-                        if (!StringUtils.isEmpty(name)) {
+                        matchingEncapsulatedAssertions = findMatchingEncapsulatedAssertion("/l7:EncapsulatedAssertion/l7:Guid[text()='" + encapsulatedAssertionGuid + "']");
+                        if (!matchingEncapsulatedAssertions.isEmpty()) {
+                            String name = getExistingEncapsulatedAssertionName(matchingEncapsulatedAssertions.get(0));
                             dryRunEvent.addEncapsulatedAssertionConflict("GUID " + encapsulatedAssertionGuid + " already exists as " + name);
                         }
                     }
@@ -138,22 +147,28 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
         }
     }
 
-    private boolean hasMatchingEncapsulatedAssertion(@NotNull String selectorField, @NotNull String selectorValue) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
-        final String encapsulatedAssertionGetSelector = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, selectorField, selectorValue);
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(encapsulatedAssertionGetSelector);
-        return !hasFaultSubCodeInvalidSelectors(documentPair.right);
+    @NotNull
+    private List<Goid> findMatchingEncapsulatedAssertion(@NotNull String filterString) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        final String serviceFilter = MessageFormat.format(GATEWAY_MGMT_ENUMERATE_FILTER, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, 10, filterString);
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(serviceFilter);
+        return GatewayManagementDocumentUtilities.getSelectorId(documentPair.right, true);
     }
 
     @Nullable
-    private String getMatchingEncapsulatedAssertionName(@NotNull String selectorField, @NotNull String selectorValue) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
-        final String encapsulatedAssertionGetSelector = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, selectorField, selectorValue);
-        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(encapsulatedAssertionGetSelector);
-        final List<Element> elements = XpathUtil.findElements(documentPair.right.getDocumentElement(), "//l7:EncapsulatedAssertion/l7:Name", getNamespaceMap());
-        if (elements.size() > 0 && elements.get(0) != null) {
-            return elements.get(0).getTextContent();
-        } else {
-            return null;
+    private String getExistingEncapsulatedAssertionName(@NotNull final Goid goid) throws InterruptedException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
+        final String getEncapsulatedAssertionXml = MessageFormat.format(GATEWAY_MGMT_GET_ENTITY, getUuid(), ENCAPSULATED_ASSERTIONS_MGMT_NS, "id", goid);
+
+        final Pair<AssertionStatus, Document> documentPair = callManagementCheckInterrupted(getEncapsulatedAssertionXml);
+        final ElementCursor cursor = new DomElementCursor(documentPair.right);
+
+        final XpathResult xpathResult;
+        try {
+            xpathResult = cursor.getXpathResult(new XpathExpression("string(/env:Envelope/env:Body/l7:EncapsulatedAssertion/l7:Name)", getNamespaceMap()).compile());
+        } catch (XPathExpressionException | InvalidXpathException e) {
+            throw new RuntimeException("Unexpected exception performing xpath to obtain Encapsulated Assertion name for goid '" + goid + "' ", e);
         }
+
+        return xpathResult.getString();
     }
 
     /**
@@ -210,7 +225,7 @@ public class EncapsulatedAssertionInstaller extends BaseInstaller {
                     Pair<AssertionStatus, Document> statusDocument = callManagementCheckInterrupted(createPolicyXml);
 
                     // check for error
-                    if (GatewayManagementDocumentUtilities.isConcurrencyErrorResponse(statusDocument.right)) {
+                    if (isConcurrencyErrorResponse(statusDocument.right)) {
                         logger.log(WARNING, "Duplicate or concurrency error: Encapsulated Assertion name [" + encapsulatedAssertionName +
                                 "], GUID [" + encapsulatedAssertionGuid + "].  Bundle ID [" + id + "]. Will continue with any remaining installation.");
                     }

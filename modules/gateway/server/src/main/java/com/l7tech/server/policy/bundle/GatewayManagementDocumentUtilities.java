@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class GatewayManagementDocumentUtilities {
 
     /**
-     * If the Gateay Management namespace is bumped to represent a version change, then the usages of this class
+     * If the Gateway Management namespace is bumped to represent a version change, then the usages of this class
      * will need to be updated to support the new version.
      */
     public static final String MGMT_VERSION_NAMESPACE = "http://ns.l7tech.com/2010/04/gateway-management";

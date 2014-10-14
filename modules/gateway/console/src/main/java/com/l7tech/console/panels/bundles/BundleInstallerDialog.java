@@ -107,7 +107,7 @@ public abstract class BundleInstallerDialog extends JDialog {
     private void initialize() {
         final Dimension sizingPanelPreferredSize = getSizingPanelPreferredSize();
         if (sizingPanelPreferredSize != null) {
-          sizingPanel.setPreferredSize(sizingPanelPreferredSize);
+            sizingPanel.setPreferredSize(sizingPanelPreferredSize);
         }
 
         final Pair<String, Goid> selectedFolderAndGoid = getSelectedFolderAndGoid();
@@ -254,9 +254,16 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                             @NotNull Goid folderGoid,
+                                            @NotNull Map<String, BundleMapping> bundleMappings) throws PolicyBundleInstallerException {
+        return adminInstall(componentIds, folderGoid, bundleMappings, null, null);
+    }
+
+    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
+                                            @NotNull Goid folderGoid,
                                             @NotNull Map<String, BundleMapping> bundleMappings,
-                                            @Nullable String installationPrefix) throws PolicyBundleInstallerException {
-        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix);
+                                            @Nullable String installationPrefix,
+                                            @Nullable Map<String, String> migrationActionOverrides) throws PolicyBundleInstallerException {
+        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationActionOverrides);
     }
 
     protected Dimension getSizingPanelPreferredSize() {
@@ -353,6 +360,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                     try {
                         if (dryRunResult.anyConflictsForBundle(bundleId)) {
                             areConflicts = true;
+                            break;
                         }
                     } catch (PolicyBundleDryRunResult.UnknownBundleIdException e) {
                         DialogDisplayer.showMessageDialog(this, "Could not check for conflicts: " + e.getMessage(),
@@ -366,13 +374,13 @@ public abstract class BundleInstallerDialog extends JDialog {
                 if (areConflicts) {
                     final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult);
                     DialogDisplayer.pack(conflictDialog);
-                    Utilities.centerOnParentWindow(conflictDialog);
+                    Utilities.centerOnScreen(conflictDialog);
                     DialogDisplayer.display(conflictDialog, new Runnable() {
                         @Override
                         public void run() {
                             if (conflictDialog.wasOKed()) {
                                 try {
-                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, conflictDialog.getSelectedMigrationResolutions());
                                 } catch (Exception e) {
                                     // this may execute after the code below completes as it's a callback
                                     handleException(e);
@@ -382,7 +390,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                     });
                     DialogDisplayer.pack(conflictDialog);
                 } else {
-                    doInstall(bundlesToInstall, bundleMappings, admin, prefix);
+                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, null);
                 }
             } else {
                 // error occurred
@@ -424,15 +432,23 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     private void doInstall(final List<String> bundlesToInstall,
                            final Map<String, BundleMapping> bundleMappings,
+                           final PolicyBundleInstallerAdmin admin)
+            throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
+        doInstall(bundlesToInstall, bundleMappings, admin, null, null);
+    }
+
+    private void doInstall(final List<String> bundlesToInstall,
+                           final Map<String, BundleMapping> bundleMappings,
                            final PolicyBundleInstallerAdmin admin,
-                           @Nullable final String prefixToUse)
+                           @Nullable final String prefixToUse,
+                           @Nullable final Map<String, String> selectedMigrationActions)
             throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
                 admin,
                 BundleInstallerDialog.this,
                 installFolder + " Installation",
                 "The selected components of the " + installFolder + " are being installed.",
-                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse));
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, selectedMigrationActions));
 
         if (resultEither.isRight()) {
             final ArrayList right = resultEither.right();

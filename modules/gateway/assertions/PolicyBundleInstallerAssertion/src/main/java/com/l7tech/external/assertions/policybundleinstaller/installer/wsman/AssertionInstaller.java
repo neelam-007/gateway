@@ -1,15 +1,15 @@
-package com.l7tech.external.assertions.policybundleinstaller.installer;
+package com.l7tech.external.assertions.policybundleinstaller.installer.wsman;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.policybundleinstaller.GatewayManagementInvoker;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.event.wsman.DryRunInstallPolicyBundleEvent;
+import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -25,7 +25,7 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 /**
  * Check that Assertion(s) exist on the Gateway.
  */
-public class AssertionInstaller extends BaseInstaller {
+public class AssertionInstaller extends WsmanInstaller {
     public AssertionInstaller(@NotNull final PolicyBundleInstallerContext context,
                               @NotNull final Functions.Nullary<Boolean> cancelledCallback,
                               @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {

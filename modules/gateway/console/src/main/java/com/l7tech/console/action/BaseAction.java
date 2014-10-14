@@ -68,7 +68,7 @@ public abstract class BaseAction extends AbstractAction {
         if (desc != null) {
             putValue(Action.SHORT_DESCRIPTION, desc);
         }
-        Image img = getIcon();
+        Image img = getIcon(this.getClass().getClassLoader());
         if (img != null) {
             putValue(Action.SMALL_ICON, new ImageIcon(img));
         }
@@ -135,10 +135,10 @@ public abstract class BaseAction extends AbstractAction {
                         actionCommand = getName();
                     }
                     e = new ActionEvent(this,
-                      ActionEvent.ACTION_PERFORMED,
-                      actionCommand,
-                      event.getWhen(),
-                      event.getModifiers());
+                            ActionEvent.ACTION_PERFORMED,
+                            actionCommand,
+                            event.getWhen(),
+                            event.getModifiers());
                 }
                 ((ActionListener)listeners[i + 1]).actionPerformed(e);
             }
@@ -167,10 +167,10 @@ public abstract class BaseAction extends AbstractAction {
                         actionCommand = getName();
                     }
                     e = new VetoableActionEvent(this,
-                      VetoableActionEvent.ACTION_WILL_PERFORM,
-                      actionCommand,
-                      event.getWhen(),
-                      event.getModifiers());
+                            VetoableActionEvent.ACTION_WILL_PERFORM,
+                            actionCommand,
+                            event.getWhen(),
+                            event.getModifiers());
                 }
 
                 try {
@@ -189,10 +189,10 @@ public abstract class BaseAction extends AbstractAction {
      *
      * @return the <code>ImageIcon</code> or null if not found
      */
-    public final Image getIcon() {
+    public final Image getIcon(ClassLoader loader) {
         final String name = iconResource();
         if (name == null) return null;
-        return ImageCache.getInstance().getIcon(name);
+        return ImageCache.getInstance().getIcon(name, loader);
 
     }
 
@@ -243,8 +243,8 @@ public abstract class BaseAction extends AbstractAction {
      */
     public final void invoke() {
         actionPerformed(new ActionEvent(this,
-              ActionEvent.ACTION_PERFORMED,
-              getName()));
+                ActionEvent.ACTION_PERFORMED,
+                getName()));
 
     }
 
@@ -257,8 +257,8 @@ public abstract class BaseAction extends AbstractAction {
     public void actionPerformed(ActionEvent ev) {
         if (ev == null) {
             ev = new ActionEvent(this,
-              ActionEvent.ACTION_PERFORMED,
-              getName());
+                    ActionEvent.ACTION_PERFORMED,
+                    getName());
         }
         VetoableActionEvent vev = VetoableActionEvent.create(ev);
         fireActionWillPerform(vev);
@@ -267,7 +267,7 @@ public abstract class BaseAction extends AbstractAction {
             fireActionPerformed(ev);
         }
         catch(Throwable throwable) {
-            ErrorManager.getDefault().notify(Level.WARNING, throwable, ErrorManager.DEFAULT_ERROR_MESSAGE);   
+            ErrorManager.getDefault().notify(Level.WARNING, throwable, ErrorManager.DEFAULT_ERROR_MESSAGE);
         }
     }
 }

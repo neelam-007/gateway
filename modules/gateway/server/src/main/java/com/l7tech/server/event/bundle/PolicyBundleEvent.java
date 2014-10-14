@@ -1,9 +1,9 @@
-package com.l7tech.server.event.wsman;
+package com.l7tech.server.event.bundle;
 
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
 
-public class PolicyBundleEvent extends WSManagementRequestEvent {
+public class PolicyBundleEvent extends GatewayManagementRequestEvent {
 
     public PolicyBundleEvent(final Object source,
                              final PolicyBundleInstallerContext context) {

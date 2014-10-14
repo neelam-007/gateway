@@ -1,4 +1,4 @@
-package com.l7tech.server.event.wsman;
+package com.l7tech.server.event.bundle;
 
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 
@@ -37,6 +37,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         encapsulatedAssertionConflict.add(conflict);
     }
 
+    public void addMigrationErrorMapping(String migrationErrorMapping) {
+        migrationErrorMappings.add(migrationErrorMapping);
+    }
+
     public List<String> getServiceConflict() {
         return Collections.unmodifiableList(serviceConflict);
     }
@@ -61,6 +65,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
         return Collections.unmodifiableList(encapsulatedAssertionConflict);
     }
 
+    public List<String> getMigrationErrorMappings() {
+        return Collections.unmodifiableList(migrationErrorMappings);
+    }
+
     // - PRIVATE
     private List<String> serviceConflict = new ArrayList<>();
     private List<String> policyConflict = new ArrayList<>();
@@ -68,4 +76,6 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
     private List<String> jdbcConnsThatDontExist = new ArrayList<>();
     private List<String> missingAssertions = new ArrayList<>();
     private List<String> encapsulatedAssertionConflict = new ArrayList<>();
+    private List<String> migrationErrorMappings = new ArrayList<>();
+
 }
