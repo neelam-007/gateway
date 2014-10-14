@@ -48,6 +48,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = RevocationCheckingPolicyMO.class),
             @XmlElementRef(type = ServiceMO.class),
             @XmlElementRef(type = RbacRoleMO.class),
+            @XmlElementRef(type = SampleMessageMO.class),
             @XmlElementRef(type = SiteMinderConfigurationMO.class),
             @XmlElementRef(type = StoredPasswordMO.class),
             @XmlElementRef(type = SecurityZoneMO.class),

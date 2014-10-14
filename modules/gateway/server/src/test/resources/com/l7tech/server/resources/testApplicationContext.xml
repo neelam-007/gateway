@@ -751,6 +751,8 @@
         </constructor-arg>
     </bean>
 
+    <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerStub"/>
+
     <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub"/>
 
 </beans>

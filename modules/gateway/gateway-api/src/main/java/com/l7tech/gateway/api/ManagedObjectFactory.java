@@ -570,6 +570,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new SampleMessageMO instance.
+     *
+     * @return The new instance
+     */
+    public static SampleMessageMO createSampleMessageMO() {
+        return new SampleMessageMO();
+    }
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.

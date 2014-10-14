@@ -123,6 +123,19 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
     protected void beforeDeleteEntity(E entityToDelete) throws ObjectModelException {
     }
 
+    @NotNull
+    @Override
+    public String getResourceType() {
+        return getResourceEntityType().toString();
+    }
+
+    /**
+     * Returns the entity type of the resource
+     *
+     * @return The resource entity type
+     */
+    protected abstract EntityType getResourceEntityType();
+
     @Override
     public String createResource(final @NotNull R resource) throws ResourceFactory.InvalidResourceException {
 
@@ -250,7 +263,7 @@ public abstract class EntityManagerAPIResourceFactory<R extends ManagedObject, E
     public List<R> listResources(@Nullable String sort, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
         try {
             List<E> entities = getEntityManager().findPagedMatching(0, -1, sort, ascending, filters);
-            entities = rbacAccessService.accessFilter(entities, EntityType.FIREWALL_RULE, OperationType.READ, null);
+            entities = rbacAccessService.accessFilter(entities, getResourceEntityType(), OperationType.READ, null);
 
             return Functions.map(entities, new Functions.UnaryThrows<R, E, ObjectModelException>() {
                 @Override

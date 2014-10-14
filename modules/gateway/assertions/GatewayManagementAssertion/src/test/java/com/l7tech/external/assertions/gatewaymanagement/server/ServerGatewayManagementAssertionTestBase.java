@@ -53,10 +53,7 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.MockRoleManager;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.security.rbac.SecurityZoneManagerStub;
-import com.l7tech.server.service.PolicyAliasManagerStub;
-import com.l7tech.server.service.ServiceAliasManagerStub;
-import com.l7tech.server.service.ServiceDocumentManagerStub;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.*;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManagerStub;
 import com.l7tech.server.store.CustomKeyValueStoreManagerStub;
 import com.l7tech.server.transport.SsgActiveConnectorManagerStub;
@@ -202,6 +199,7 @@ public class ServerGatewayManagementAssertionTestBase {
         applicationContext.getBeanFactory().registerSingleton("auditRecordManager", new AuditRecordManagerStub());
         applicationContext.getBeanFactory().registerSingleton("uddiServiceControlManager", new UDDIServiceControlManagerStub());
         applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
 
 

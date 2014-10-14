@@ -30,8 +30,8 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
 
     @NotNull
     @Override
-    public String getResourceType() {
-        return EntityType.FIREWALL_RULE.toString();
+    public EntityType getResourceEntityType() {
+        return EntityType.FIREWALL_RULE;
     }
 
     @Override
