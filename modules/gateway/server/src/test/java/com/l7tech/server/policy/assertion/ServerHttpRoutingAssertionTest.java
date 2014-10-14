@@ -41,6 +41,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
 import org.apache.http.pool.PoolStats;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -100,6 +101,13 @@ public class ServerHttpRoutingAssertionTest {
         when(mockClientFactory.createHttpClient(anyInt(), anyInt(), anyInt(), anyInt(), anyObject())).thenReturn(mockClient);
         when(mockClient.createRequest(any(HttpMethod.class), any(GenericHttpRequestParams.class))).thenReturn(mockHttpRequest);
         when(mockHttpRequest.getResponse()).thenReturn(mockHttpResponse);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+        testingHttpClientFactory.setMockHttpClient(null);
     }
 
     @Test(expected = AssertionStatusException.class)
