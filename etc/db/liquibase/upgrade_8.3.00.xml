@@ -38,4 +38,19 @@
             </insert>
         </rollback>
     </changeSet>
+    <changeSet id="update_manage_siteminder_configuration_role" author="ymoiseyenko">
+        <comment>Update SiteMinder Configuration</comment>
+        <update tableName="rbac_role">
+            <column name="name" value="Manage CA Single Sign-On Configuration"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete CA Single Sign-On configuration."/>
+            <where>entity_type = 'SITEMINDER_CONFIGURATION'</where>
+        </update>
+        <rollback>
+            <update tableName="rbac_role">
+                <column name="name" value="Manage SiteMinder Configuration"/>
+                <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete SiteMinder configuration."/>
+                <where>entity_type = 'SITEMINDER_CONFIGURATION'</where>
+            </update>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
