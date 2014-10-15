@@ -597,9 +597,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
             }
 
-            //
-            if(assertion.isOverrideContentType() && doNotForwardContentType) {
-                addContentTypeFromRequest(requestMessage, routedRequestParams);
+            if(assertion.isOverrideContentType()) {
+                if(doNotForwardContentType) { // forwarded Content-Type header is handled by HttpForwardingRuleEnforcer
+                    addContentTypeFromRequest(requestMessage, routedRequestParams);
+                }
             }
             else {
                 // dont add content-type for get and deletes
