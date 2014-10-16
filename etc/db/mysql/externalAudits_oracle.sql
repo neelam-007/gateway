@@ -44,7 +44,7 @@ CREATE INDEX audit_main_reqid on audit_main(request_id);
 CREATE INDEX audit_main_ip on audit_main(ip_address);
 
 CREATE TABLE audit_detail  (
-    audit_oid VARCHAR2(40) NOT NULL PRIMARY KEY,
+    audit_oid VARCHAR2(40) NOT NULL,
     time  NUMBER(19) NOT NULL,
     component_id int,
     ordinal int,
@@ -54,5 +54,6 @@ CREATE TABLE audit_detail  (
     FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
 );
 
+CREATE INDEX audit_detail_oid on audit_detail(audit_oid);
 CREATE INDEX audit_detail_mid on audit_detail(message_id);
 CREATE INDEX audit_detail_time on audit_detail(time);

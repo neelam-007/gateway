@@ -61,9 +61,9 @@ CREATE TABLE audit_detail  (
     message_id integer NOT NULL,
     exception_message varchar(max),
     properties varchar(max),
-    PRIMARY KEY (audit_oid),
     FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
 );
 
+CREATE INDEX audit_detail_oid on audit_detail(audit_oid);
 CREATE INDEX audit_detail_mid on audit_detail(message_id);
 CREATE INDEX audit_detail_time on audit_detail(time);
