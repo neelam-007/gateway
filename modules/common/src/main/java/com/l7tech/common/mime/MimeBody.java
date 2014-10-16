@@ -40,7 +40,9 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
     private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
     private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
-    static boolean ENABLE_MULTIPART_PROCESSING = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.enableMultipartProcessing", true );
+
+    // Should be changed only by unit test code
+    public static boolean ENABLE_MULTIPART_PROCESSING = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.enableMultipartProcessing", true );
 
     /**
      * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage

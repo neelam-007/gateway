@@ -4,10 +4,7 @@ import ch.mimo.netty.handler.codec.icap.*;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
-import com.l7tech.common.mime.MimeBody;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.*;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapServiceParameter;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -68,7 +65,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private FailoverStrategy<String> failoverStrategy;
 
     @Inject @Named("stashManagerFactory")
-    private StashManagerFactory stashManagerFactory;
+    StashManagerFactory stashManagerFactory;
 
     private final Map<String, BlockingDeque<ChannelInfo>> channelPool = new HashMap<String, BlockingDeque<ChannelInfo>>();
 
@@ -238,8 +235,9 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         AssertionStatus status = AssertionStatus.NONE;
         List<String> infectedParts = new ArrayList<String>();
         try {
+            boolean enableRecursion = message.getMimeKnob().isMultipart();
             for (PartIterator pi = message.getMimeKnob().getParts(); pi.hasNext(); ) {
-                status = scan(context, pi.next(), 0, infectedParts, client);
+                status = scan(context, pi.next(), 0, infectedParts, client, enableRecursion);
                 if (status != AssertionStatus.NONE) {
                     break;
                 }
@@ -255,16 +253,17 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return status;
     }
 
-    private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth, List<String> infectedParts, ClientBootstrap client) {
+    private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth, List<String> infectedParts, ClientBootstrap client, boolean enableRecursion) {
         try {
-            if (currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
+            if (enableRecursion && currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
                 MimeBody mimeBody = null;
                 try {
-                    mimeBody = new MimeBody(stashManagerFactory.createStashManager(),
+                    StashManager stashManager = stashManagerFactory.createStashManager();
+                    mimeBody = new MimeBody(stashManager,
                             partInfo.getContentType(), partInfo.getInputStream(false), 0L);
                     for (final PartInfo pi : mimeBody) {
                         //recursively traverse all the multiparts break when it failed
-                        AssertionStatus status = scan(context, pi, currentDepth++, infectedParts, client);
+                        AssertionStatus status = scan(context, pi, currentDepth++, infectedParts, client, mimeBody.isMultipart());
                         if (status == AssertionStatus.FAILED) {
                             return status;
                         }
