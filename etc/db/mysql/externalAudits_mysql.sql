@@ -37,7 +37,19 @@ CREATE TABLE audit_main (
     component_id int,
     action varchar(32),
     --
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    INDEX audit_main_time (time),
+    INDEX audit_main_level (audit_level),
+    INDEX audit_main_node (nodeid),
+    INDEX audit_main_type (type),
+    INDEX audit_main_name (name),
+    INDEX audit_main_username (user_name),
+    INDEX audit_main_userid (user_id),
+    INDEX audit_main_message (message),
+    INDEX audit_main_e_class (entity_class),
+    INDEX audit_main_e_id (entity_id),
+    INDEX audit_main_reqid (request_id),
+    INDEX audit_main_ip (ip_address)
 );
 
 CREATE TABLE audit_detail  (
@@ -48,5 +60,8 @@ CREATE TABLE audit_detail  (
     message_id integer NOT NULL,
     exception_message MEDIUMTEXT,
     properties MEDIUMTEXT,
-    FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
+    FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE,
+    PRIMARY KEY (audit_oid),
+    INDEX audit_detail_mid (message_id),
+    INDEX audit_detail_time (time)
 );

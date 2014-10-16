@@ -30,8 +30,21 @@ CREATE TABLE audit_main (
     action VARCHAR2(32)
 );
 
+CREATE INDEX audit_main_time on audit_main(time);
+CREATE INDEX audit_main_level on audit_main(audit_level);
+CREATE INDEX audit_main_node on audit_main(nodeid);
+CREATE INDEX audit_main_type on audit_main(type);
+CREATE INDEX audit_main_name on audit_main(name);
+CREATE INDEX audit_main_username on audit_main(user_name);
+CREATE INDEX audit_main_userid on audit_main(user_id);
+CREATE INDEX audit_main_message on audit_main(message);
+CREATE INDEX audit_main_e_class on audit_main(entity_class);
+CREATE INDEX audit_main_e_id on audit_main(entity_id);
+CREATE INDEX audit_main_reqid on audit_main(request_id);
+CREATE INDEX audit_main_ip on audit_main(ip_address);
+
 CREATE TABLE audit_detail  (
-    audit_oid VARCHAR2(40) NOT NULL,
+    audit_oid VARCHAR2(40) NOT NULL PRIMARY KEY,
     time  NUMBER(19) NOT NULL,
     component_id int,
     ordinal int,
@@ -40,3 +53,6 @@ CREATE TABLE audit_detail  (
     properties CLOB,
     FOREIGN KEY (audit_oid) REFERENCES audit_main (id) ON DELETE CASCADE
 );
+
+CREATE INDEX audit_detail_mid on audit_detail(message_id);
+CREATE INDEX audit_detail_time on audit_detail(time);
