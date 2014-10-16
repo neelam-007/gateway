@@ -48,6 +48,7 @@ public class Component {
     public static final Component     GW_SSHRECV          = new Component(  90080, "SSH2 Listeners", GW_SERVER);
     public static final Component     GW_GENERIC_CONNECTOR= new Component(  90090, "Other Listeners", GW_SERVER);
     public static final Component     GW_BUNDLE_INSTALLER = new Component(  90100, "Bundle Installer", GW_SERVER);
+    public static final Component     GW_BUNDLE_EXPORTER  = new Component(  90110, "Bundle Exporter", GW_SERVER);
     // TODO find a way to atomically renumber these in an SQL script or UpgradeTask, this is ridiculous
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);

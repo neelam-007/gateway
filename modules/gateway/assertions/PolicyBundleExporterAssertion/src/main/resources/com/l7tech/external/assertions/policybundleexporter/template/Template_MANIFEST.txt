@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Specification-Title: ModularAssertion
+Specification-Version: 3.7.0
+Specification-Vendor: Layer 7 Technologies
+Specification-Vendor-Id: com.l7tech
+Implementation-Title: {2}Assertion
+Implementation-Version: {3}
+Implementation-Vendor: Layer 7 Technologies
+Implementation-Vendor-Id: com.l7tech
+ModularAssertion-List: {0}{1}.{2}Assertion

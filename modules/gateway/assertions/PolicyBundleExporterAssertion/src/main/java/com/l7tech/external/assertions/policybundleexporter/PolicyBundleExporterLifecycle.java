@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.policybundleinstaller;
+package com.l7tech.external.assertions.policybundleexporter;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseException;
@@ -9,10 +9,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.bundle.GatewayManagementRequestEvent;
-import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
-import com.l7tech.server.event.bundle.PolicyBundleInstallerEvent;
+import com.l7tech.server.event.bundle.PolicyBundleEvent;
 import com.l7tech.server.event.system.DetailedSystemEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -20,9 +18,6 @@ import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.bundle.BundleResolver;
-import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -42,11 +37,10 @@ import java.util.logging.Logger;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
-import static com.l7tech.util.Functions.Nullary;
 
-public class PolicyBundleInstallerLifecycle implements ApplicationListener {
+public class PolicyBundleExporterLifecycle implements ApplicationListener {
 
-    public PolicyBundleInstallerLifecycle(final ApplicationContext spring) {
+    public PolicyBundleExporterLifecycle(final ApplicationContext spring) {
         ApplicationEventProxy applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
         this.spring = spring;
@@ -69,75 +63,67 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             return;
         }
 
-        if (applicationEvent instanceof PolicyBundleInstallerEvent) {
+        if (applicationEvent instanceof PolicyBundleEvent) {
 
             if (!isLicensed.get()) {
                 return;
             }
 
             // process event
-            final PolicyBundleInstallerEvent bundleInstallerEvent = (PolicyBundleInstallerEvent) applicationEvent;
+            final PolicyBundleEvent bundleEvent = (PolicyBundleEvent) applicationEvent;
 
-            if (!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleInstallerEvent.getPolicyBundleVersionNs())) {
+            if (!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleEvent.getPolicyBundleVersionNs())) {
                 // not applicable
                 return;
             }
 
-            if (serverMgmtAssertion.get() == null) {
+            if (serverRestMgmtAssertion.get() == null) {
                 // if we are licensed and no assertion, then we need to configure.
                 // this works around issue with Gateway app context creation, there is currently no way of knowing
                 // when it's safe to initialize. Issue is with bean 'wspReader'.
                 configureBeans();
-                if (serverMgmtAssertion.get() == null) {
-                    bundleInstallerEvent.setReasonNotProcessed("Bundle installer is not initialized");
+                if (serverRestMgmtAssertion.get() == null) {
+                    bundleEvent.setReasonNotProcessed("Bundle exporter is not initialized");
                     return;
                 }
             }
 
-            if (applicationEvent instanceof InstallPolicyBundleEvent) {
-                processInstallEvent((InstallPolicyBundleEvent) applicationEvent);
-            } else if (applicationEvent instanceof DryRunInstallPolicyBundleEvent) {
-                processDryRunEvent((DryRunInstallPolicyBundleEvent) applicationEvent);
+            if (applicationEvent instanceof PolicyBundleExporterEvent) {
+                processExportEvent((PolicyBundleExporterEvent) applicationEvent);
             }
         }
     }
 
     /**
-     * Wired via PolicyBundleInstallerAssertion meta data.
+     * Wired via PolicyBundleExporterAssertion meta data.
      *
      * @param context spring application context
      */
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
 
         if (instance != null) {
-            logger.log(Level.WARNING, "Bundle Installer module is already initialized");
+            logger.log(Level.WARNING, "Bundle Exporter module is already initialized");
         } else {
-            instance = new PolicyBundleInstallerLifecycle(context);
+            instance = new PolicyBundleExporterLifecycle(context);
         }
     }
 
     public static synchronized void onModuleUnloaded() {
         if (instance != null) {
-            logger.log(Level.FINE, "Bundle Installer module is shutting down");
+            logger.log(Level.FINE, "Bundle Exporter module is shutting down");
             instance = null;
         }
     }
 
     // - PRIVATE
-    private static PolicyBundleInstallerLifecycle instance = null;
-    private static final Logger logger = Logger.getLogger(PolicyBundleInstallerLifecycle.class.getName());
+    private static PolicyBundleExporterLifecycle instance = null;
+    private static final Logger logger = Logger.getLogger(PolicyBundleExporterLifecycle.class.getName());
     private final ApplicationContext spring;
-    private final AtomicReference<ServerAssertion> serverMgmtAssertion = new AtomicReference<>();
     private final AtomicReference<ServerAssertion> serverRestMgmtAssertion = new AtomicReference<>();
     private final AtomicBoolean isLicensed = new AtomicBoolean(false);
     private final AtomicReference<ServiceManager> serviceManager = new AtomicReference<>();
     private final AtomicReference<ServerAssertionRegistry> assertionRegistry = new AtomicReference<>();
 
-    private static final String GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <wsp:All wsp:Usage=\"Required\">\n" +
-            "        <L7p:GatewayManagement/>\n" +
-            "    </wsp:All>\n" +
-            "</wsp:Policy>\n";
     private static final String REST_GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
             "        <L7p:RESTGatewayManagement>\n" +
@@ -149,7 +135,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
 
     private boolean isLicensed() {
         LicenseManager licMan = spring.getBean("licenseManager", LicenseManager.class);
-        return licMan.isFeatureEnabled(new PolicyBundleInstallerAssertion().getFeatureSetName());
+        return licMan.isFeatureEnabled(new PolicyBundleExporterAssertion().getFeatureSetName());
     }
 
 
@@ -160,30 +146,28 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
     private synchronized void configureBeans() {
         if (!isLicensed()) {
             isLicensed.set(false);
-            logger.warning("Bundle Installer module is not licensed and will not be available.");
-            serverMgmtAssertion.set(null);
+            logger.warning("Bundle Exporter module is not licensed and will not be available.");
+            serverRestMgmtAssertion.set(null);
             serviceManager.set(null);
         } else {
             if (isLicensed.compareAndSet(false, true)) {
-                logger.info("Bundle Installer module is now licensed.");
+                logger.info("Bundle Exporter module is now licensed.");
             }
-            if (serverMgmtAssertion.get() == null || serviceManager.get() == null) {
-                logger.info("Initializing Bundle Installer.");
+            if (serverRestMgmtAssertion.get() == null || serviceManager.get() == null) {
+                logger.info("Initializing Bundle Exporter.");
 
-                if (serverMgmtAssertion.get() == null) {
+                if (serverRestMgmtAssertion.get() == null) {
                     final WspReader wspReader = spring.getBean("wspReader", WspReader.class);
                     final ServerPolicyFactory serverPolicyFactory = spring.getBean("policyFactory", ServerPolicyFactory.class);
                     try {
-                        Assertion assertion = wspReader.parseStrictly(GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
-                        serverMgmtAssertion.compareAndSet(null, serverPolicyFactory.compilePolicy(assertion, false));
-                        assertion = wspReader.parseStrictly(REST_GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
+                        Assertion assertion = wspReader.parseStrictly(REST_GATEWAY_MGMT_POLICY_XML, WspReader.Visibility.omitDisabled);
                         serverRestMgmtAssertion.compareAndSet(null, serverPolicyFactory.compilePolicy(assertion, false));
                     } catch (ServerPolicyException e) {
-                        handleInitException(e, "Could not create Gateway Management assertion");
+                        handleInitException(e, "Could not create REST Gateway Management assertion");
                     } catch (LicenseException e) {
-                        handleInitException(e, "Gateway Management assertion is not licensed");
+                        handleInitException(e, "REST Gateway Management assertion is not licensed");
                     } catch (IOException e) {
-                        handleInitException(e, "Gateway Management assertion is not available");
+                        handleInitException(e, "REST Gateway Management assertion is not available");
                     }
                 }
 
@@ -198,10 +182,10 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
         }
     }
 
-    static class BundleInstallerLifecycleEvent extends DetailedSystemEvent {
+    static class BundleExporterLifecycleEvent extends DetailedSystemEvent {
         private final String action;
-        public BundleInstallerLifecycleEvent(final Object source, final String note, final Level level, final String action) {
-            super(source, Component.GW_BUNDLE_INSTALLER, null, level, note);
+        public BundleExporterLifecycleEvent(final Object source, final String note, final Level level, final String action) {
+            super(source, Component.GW_BUNDLE_EXPORTER, null, level, note);
             this.action = action;
         }
 
@@ -211,45 +195,20 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
         }
     }
 
-    private void processInstallEvent(final InstallPolicyBundleEvent installEvent) {
-        final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
-        final PolicyBundleInstallerContext context = installEvent.getContext();
-        final PolicyBundleInstaller installer = new PolicyBundleInstaller(
-                getGatewayMgmtInvoker(serverMgmtAssertion.get()), getGatewayMgmtInvoker(serverRestMgmtAssertion.get()), context, serviceManager.get(), new Nullary<Boolean>() {
+    private void processExportEvent(final PolicyBundleExporterEvent exportEvent) {
+        final MigrationBundleExporter exporter = new MigrationBundleExporter(getGatewayMgmtInvoker(serverRestMgmtAssertion.get()), exportEvent.getExportContext(), assertionRegistry.get(), new Functions.Nullary<Boolean>() {
             @Override
             public Boolean call() {
-                return installEvent.isCancelled();
-            }
-        });
-        installer.setSavePolicyCallback(savePolicyCallback);
-
-        try {
-            installer.installBundle();
-        } catch (PolicyBundleInstaller.InstallationException | BundleResolver.UnknownBundleException | BundleResolver.BundleResolverException
-                | InterruptedException | BundleResolver.InvalidBundleException | UnexpectedManagementResponse | AccessDeniedManagementResponse | IOException | RuntimeException e) {
-            installEvent.setProcessingException(e);
-        }
-
-        installEvent.setProcessed(true);
-    }
-
-    private void processDryRunEvent(final DryRunInstallPolicyBundleEvent dryRunEvent) {
-        final PolicyBundleInstallerContext context = dryRunEvent.getContext();
-        final PolicyBundleInstaller installer = new PolicyBundleInstaller(
-                getGatewayMgmtInvoker(serverMgmtAssertion.get()), getGatewayMgmtInvoker(serverRestMgmtAssertion.get()), context, serviceManager.get(), new Functions.Nullary<Boolean>() {
-            @Override
-            public Boolean call() {
-                return dryRunEvent.isCancelled();
+                return exportEvent.isCancelled();
             }
         });
 
         try {
-            installer.dryRunInstallBundle(dryRunEvent);
-        } catch (BundleResolver.BundleResolverException | BundleResolver.UnknownBundleException | BundleResolver.InvalidBundleException
-                | InterruptedException | AccessDeniedManagementResponse e) {
-            dryRunEvent.setProcessingException(e);
+            exporter.export(exportEvent);
+        } catch (IOException | InterruptedException | UnexpectedManagementResponse | AccessDeniedManagementResponse e) {
+            exportEvent.setProcessingException(e);
         } finally {
-            dryRunEvent.setProcessed(true);
+            exportEvent.setProcessed(true);
         }
     }
 
@@ -257,15 +216,15 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
         return new GatewayManagementInvoker() {
             @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-                return serverAssertion.checkRequest(context);
+                    return serverAssertion.checkRequest(context);
             }
         };
     }
 
     private void handleInitException(Exception e, @NotNull String logicalCause) {
-        serverMgmtAssertion.set(null);
         serverRestMgmtAssertion.set(null);
-        final BundleInstallerLifecycleEvent problemEvent = new BundleInstallerLifecycleEvent(this, "Could not initialize bundle installer", Level.WARNING, "Initialization");
+        serverRestMgmtAssertion.set(null);
+        final BundleExporterLifecycleEvent problemEvent = new BundleExporterLifecycleEvent(this, "Could not initialize bundle exporter", Level.WARNING, "Initialization");
         final String details =  logicalCause + ". " + ExceptionUtils.getMessage(e);
         problemEvent.setAuditDetails(Arrays.asList(
                 new AuditDetail(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,

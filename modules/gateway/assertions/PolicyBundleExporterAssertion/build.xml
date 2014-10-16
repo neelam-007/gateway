@@ -1,0 +1,5 @@
+<project name="PolicyBundleExporterAssertion" default="compile">
+    <property name="privateLibraries" value="AAR-INF/lib/asm-5.0.3.jar"/>
+
+    <import file="../assertion-build.xml"/>
+</project>

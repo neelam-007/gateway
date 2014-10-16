@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DryRunInstallPolicyBundleEvent extends PolicyBundleEvent {
+public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
     public DryRunInstallPolicyBundleEvent(final Object source,
                                           final PolicyBundleInstallerContext context) {

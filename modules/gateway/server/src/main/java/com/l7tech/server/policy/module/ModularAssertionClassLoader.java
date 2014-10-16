@@ -79,7 +79,12 @@ class ModularAssertionClassLoader extends URLClassLoader implements Closeable {
         Class c = findLoadedClass(name);
 
         if ( c == null ) {
-            if ( shouldLoadFromParentResources( name ) ) {
+            if ( shouldLoadFromParentResources( name )
+
+                // ASM 3.3 library (lib\repository\asm\asm-3.3.1.jar) incompatible with ASM 5.0 library (PolicyBundleInstallerAssertion-v.aar/AAR-INF/lib/asm-5.0.3.jar)
+                // TODO need permanent solution to allow Modular Assertion a choice between conflicting third party classes in the Gateway or in it's own module
+                || (moduleName.contains("PolicyBundleExporterAssertion") && name.startsWith("org.objectweb.asm")) ) {
+
                 c = findClass( name );
             } else {
                 c = super.loadClass( name, resolve );

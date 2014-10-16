@@ -15,7 +15,7 @@ import com.l7tech.server.event.admin.DetailedAdminEvent;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.bundle.GatewayManagementRequestEvent;
 import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
-import com.l7tech.server.event.bundle.PolicyBundleEvent;
+import com.l7tech.server.event.bundle.PolicyBundleInstallerEvent;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -412,9 +412,9 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
         return new PolicyBundleDryRunResult(bundleToConflicts);
     }
 
-    public static boolean validateEventProcessed(PolicyBundleEvent bundleEvent) throws PolicyBundleInstallerException {
-        if (!bundleEvent.isProcessed()) {
-            final String reason = bundleEvent.getReasonNotProcessed();
+    public static boolean validateEventProcessed(PolicyBundleInstallerEvent bundleInstallerEvent) throws PolicyBundleInstallerException {
+        if (!bundleInstallerEvent.isProcessed()) {
+            final String reason = bundleInstallerEvent.getReasonNotProcessed();
             if (reason != null) {
                 throw new PolicyBundleInstallerException(reason);
             } else {
@@ -422,7 +422,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             }
         }
 
-        final Exception processingException = bundleEvent.getProcessingException();
+        final Exception processingException = bundleInstallerEvent.getProcessingException();
         if (processingException != null) {
             if (!(processingException instanceof BundleResolver.UnknownBundleException)) {
                 if (processingException instanceof InterruptedException) {
@@ -432,7 +432,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                 if (processingException instanceof AccessDeniedManagementResponse) {
                     AccessDeniedManagementResponse accessDeniedException = (AccessDeniedManagementResponse) processingException;
                     throw new PolicyBundleInstallerException("Problem installing " +
-                            bundleEvent.getContext().getBundleInfo().getName() + ": " + accessDeniedException.getMessage());
+                            bundleInstallerEvent.getContext().getBundleInfo().getName() + ": " + accessDeniedException.getMessage());
                 }
 
                 // unexpected exception
@@ -443,7 +443,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                 throw new PolicyBundleInstallerException(processingException);
             }
         }
-        return Thread.interrupted() || bundleEvent.isCancelled();
+        return Thread.interrupted() || bundleInstallerEvent.isCancelled();
 
     }
 

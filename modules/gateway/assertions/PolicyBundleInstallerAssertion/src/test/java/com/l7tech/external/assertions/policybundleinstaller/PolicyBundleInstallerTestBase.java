@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleInfo;
-import com.l7tech.server.event.bundle.PolicyBundleEvent;
+import com.l7tech.server.event.bundle.PolicyBundleInstallerEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.BundleResolverImpl;
@@ -228,11 +228,11 @@ public abstract class PolicyBundleInstallerTestBase {
         return null;
     }
 
-    protected Functions.Nullary<Boolean> getCancelledCallback(final PolicyBundleEvent bundleEvent) {
+    protected Functions.Nullary<Boolean> getCancelledCallback(final PolicyBundleInstallerEvent bundleInstallerEvent) {
         return new Functions.Nullary<Boolean>() {
             @Override
             public Boolean call() {
-                return bundleEvent.isCancelled();
+                return bundleInstallerEvent.isCancelled();
             }
         };
     }

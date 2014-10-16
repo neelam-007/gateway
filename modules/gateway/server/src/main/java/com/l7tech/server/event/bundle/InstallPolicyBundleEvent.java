@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Event used to request the appropriate handler to install a policy bundle.
  */
-public class InstallPolicyBundleEvent extends PolicyBundleEvent {
+public class InstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
     public InstallPolicyBundleEvent(final Object source,
                                     final PolicyBundleInstallerContext context,

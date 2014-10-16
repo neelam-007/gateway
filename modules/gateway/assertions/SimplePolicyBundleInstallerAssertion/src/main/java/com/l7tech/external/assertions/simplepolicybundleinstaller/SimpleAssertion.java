@@ -18,9 +18,9 @@ public class SimpleAssertion extends Assertion {
             return meta;
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/simplepolicybundleinstaller/console/dashed_square_down_arrow.png");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/simplepolicybundleinstaller/console/rectangle_lines_up_arrow.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/simplepolicybundleinstaller/console/dashed_square_down_arrow.png");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/simplepolicybundleinstaller/console/rectangle_lines_up_arrow.png");
 
         // this assertion is for a development only, leave as "set:modularAssertion", no need to change to "(fromClass)"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");

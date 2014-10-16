@@ -14,12 +14,9 @@ import java.io.IOException;
  * @see com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerAssertion
  */
 public class ServerPolicyBundleInstallerAssertion extends AbstractServerAssertion<PolicyBundleInstallerAssertion> {
-    private final String[] variablesUsed;
 
     public ServerPolicyBundleInstallerAssertion( final PolicyBundleInstallerAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
-
-        this.variablesUsed = assertion.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {

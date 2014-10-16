@@ -4,6 +4,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -64,7 +65,7 @@ public class FileChooserUtil {
     public static void addListenerToFileChooser(JFileChooser fileChooser) {
         fileChooser.addActionListener(FILE_CHOOSER_SELECTION_LISTENER);
     }
-    
+
     /**
      * A factory that creates a JFileChooser with the selection listener
      * already added to it.
@@ -86,7 +87,7 @@ public class FileChooserUtil {
      * @return the JFileChooser that was created.  Never null.
      * @throws AccessControlException if a new JFileChooser could not be created due to an access control exception
      */
-    public static JFileChooser doWithJFileChooser(final FileChooserUser fcu) throws AccessControlException {
+    public static JFileChooser doWithJFileChooser(@Nullable final FileChooserUser fcu) throws AccessControlException {
         return AccessController.doPrivileged(new PrivilegedAction<JFileChooser>() {
             public JFileChooser run() {
                 try {
@@ -95,7 +96,7 @@ public class FileChooserUtil {
                     if ( sm != null ) {
                         sm.checkRead(new File("").getAbsolutePath());
                     }
-                    
+
                     JFileChooser fc = createJFileChooserHavePrivs();
                     if (fcu != null) fcu.useFileChooser(fc);
                     return fc;
@@ -193,17 +194,21 @@ public class FileChooserUtil {
      * @param dialogTitle  title of dialog, eg "Save .DOC File".  Required.
      * @param fileFilter   FileFilter.  Optional.  See {@link #buildFilter(String, String)}.
      * @param defaultExtension  extension to add if user does not provide one, eg ".doc".  Optional.
+     * @param defaultFileName default file name. Optional.
      * @param saver  a Saver that will write content to the file.  Required.  See {@link com.l7tech.util.FileUtils.ByteSaver}.
      * @return true if the file was saved successfully; false if the operation was canceled by the user or if there was a problem saving the file
      * (in which case an error message dialog has already been shown to the user)
      */
-    public static boolean saveSingleFileWithOverwriteConfirmation(final Component parent, final String dialogTitle, final FileFilter fileFilter, final String defaultExtension, final FileUtils.Saver saver) {
+    public static boolean saveSingleFileWithOverwriteConfirmation(final Component parent, final String dialogTitle, final FileFilter fileFilter, final String defaultExtension, @Nullable final String defaultFileName, final FileUtils.Saver saver) {
         final boolean[] saved = { false };
         doWithJFileChooser(new FileChooserUser() {
             @Override
             public void useFileChooser(JFileChooser fc) {
                 fc.setDialogTitle(dialogTitle);
                 fc.setDialogType(JFileChooser.SAVE_DIALOG);
+                if (defaultFileName != null) {
+                    fc.setSelectedFile(new File(defaultFileName));
+                }
                 fc.setMultiSelectionEnabled(false);
                 if (fileFilter != null)
                     fc.setFileFilter(fileFilter);
@@ -242,5 +247,9 @@ public class FileChooserUtil {
             }
         });
         return saved[0];
+    }
+
+    public static boolean saveSingleFileWithOverwriteConfirmation(final Component parent, final String dialogTitle, final FileFilter fileFilter, final String defaultExtension, final FileUtils.Saver saver) {
+        return saveSingleFileWithOverwriteConfirmation(parent, dialogTitle, fileFilter, defaultExtension, null, saver);
     }
 }
