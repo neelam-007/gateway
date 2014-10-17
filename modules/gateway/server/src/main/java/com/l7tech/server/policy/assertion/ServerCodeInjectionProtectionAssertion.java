@@ -54,6 +54,20 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
 
     @Override
     protected AssertionStatus scanBody(final Message message, final String messageDesc) throws IOException {
+        long contentLength;
+
+        try {
+            contentLength = message.getMimeKnob().getFirstPart().getActualContentLength();
+        } catch (NoSuchPartException ex) {
+            logAndAudit(AssertionMessages.NO_SUCH_PART, new String[] {assertion.getTargetName(), "1"},
+                    ExceptionUtils.getDebugException(ex));
+            return AssertionStatus.FAILED;
+        }
+
+        if (0 == contentLength) { // only attempt to scan the body if there's something there
+            return AssertionStatus.NONE;
+        }
+
         final ContentTypeHeader contentType = message.getMimeKnob().getOuterContentType();
 
         if (isRequest() && contentType.matches("application", "x-www-form-urlencoded")) {

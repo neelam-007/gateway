@@ -15,6 +15,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
@@ -99,6 +100,40 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertTrue(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
         checkAuditPresence(false, false, false, false, false);
+    }
+
+    /**
+     * Target message body is empty, expect body protection scans to be skipped but URL scans to be included.
+     * @throws Exception
+     */
+    @BugId("SSG-9402")
+    @Test
+    public void testCheckRequest_IncludeAllComponentsForRequestTargetWithEmptyBody_BodyScansNotPerformed() throws Exception {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, true, true, true,
+                        PHP_EVAL_INJECTION, HTML_JAVASCRIPT, SHELL_INJECTION,
+                        SHELL_INJECTION, LDAP_DN_INJECTION, LDAP_SEARCH_INJECTION);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final PolicyEnforcementContext context = getContext("", ContentTypeHeader.XML_DEFAULT);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        // no body scans should have been made
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_FORMDATA));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_JSON));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_TEXT));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED));
+        assertFalse(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_XML));
+
+        checkAuditPresence(true, true, false, false, false);
     }
 
     /**
