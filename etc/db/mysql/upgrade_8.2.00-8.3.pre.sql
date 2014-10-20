@@ -32,6 +32,8 @@ AlTER TABLE client_cert MODIFY serial varchar(255);
 AlTER TABLE cluster_properties MODIFY propkey varchar(255) NOT NULL;
 
 -- adding index and foreign key that is in derby db but not mysql
+-- need to remove email_listener_state for no longer existing email_listener.
+DELETE FROM email_listener_state WHERE email_listener_goid NOT IN (SELECT goid FROM email_listener);
 alter table email_listener_state add constraint FOREIGN KEY fk_email_listener_state_email_listener_goid (email_listener_goid) references email_listener(goid) on delete cascade;
 alter table email_listener_state add constraint UNIQUE KEY idx_email_listener_state_email_listener_goid (email_listener_goid);
 

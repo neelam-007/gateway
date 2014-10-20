@@ -49,7 +49,7 @@ ALTER TABLE audit_message ADD COLUMN status_backup integer;
 UPDATE audit_message SET status_backup = status;
 ALTER TABLE audit_message DROP COLUMN status;
 ALTER TABLE audit_message ADD COLUMN status varchar(32);
-UPDATE audit_message SET status = CAST(status_backup as char);
+UPDATE audit_message SET status = CAST(status_backup as char(32));
 ALTER TABLE audit_message ALTER COLUMN status NOT NULL;
 ALTER TABLE audit_message DROP COLUMN status_backup;
 
@@ -62,6 +62,8 @@ CREATE INDEX idx_audit_system_component_id ON audit_system(component_id);
 CREATE INDEX idx_audit_system_action ON audit_system(action);
 
 -- Update client_cert table
+-- need to remove client_certs for no longer existing identity_providers.
+DELETE FROM client_cert WHERE provider NOT IN (SELECT goid from identity_provider);
 ALTER TABLE client_cert ADD CONSTRAINT fk_client_cert_provider FOREIGN KEY (provider) REFERENCES identity_provider ON DELETE CASCADE;
 
 CREATE INDEX i_subject_dn ON client_cert(subject_dn);
@@ -321,6 +323,8 @@ ALTER TABLE logon_info ALTER COLUMN provider_goid NOT NULL;
 ALTER TABLE logon_info ALTER COLUMN state NOT NULL;
 ALTER TABLE logon_info ALTER COLUMN version NOT NULL;
 
+-- need to remove logon_infos for no longer existing identity_providers.
+DELETE FROM logon_info WHERE provider_goid NOT IN (SELECT goid from identity_provider);
 ALTER TABLE logon_info ADD CONSTRAINT fk_logon_info_provider_goid FOREIGN KEY (provider_goid) REFERENCES identity_provider ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX unique_provider_login ON logon_info(provider_goid, login);
@@ -360,6 +364,8 @@ ALTER TABLE password_history ALTER COLUMN prev_password NULL;
 
 -- Update password_policy table
 ALTER TABLE password_policy ALTER COLUMN version NOT NULL;
+-- need to remove password_policys for no longer existing identity_providers.
+DELETE FROM password_policy WHERE internal_identity_provider_goid NOT IN (SELECT goid from identity_provider);
 ALTER TABLE password_policy ADD CONSTRAINT fk_password_policy_internal_identity_provider_goid FOREIGN KEY (internal_identity_provider_goid) REFERENCES identity_provider ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_password_policy_internal_identity_provider_goid ON password_policy(internal_identity_provider_goid);
@@ -398,6 +404,8 @@ ALTER TABLE policy_version ALTER COLUMN time NOT NULL;
 
 CREATE INDEX idx_policy_version_policy_goid ON policy_version(policy_goid);
 CREATE UNIQUE INDEX idx_policy_version_ordinal ON policy_version(policy_goid, ordinal);
+-- need to remove policy versions for no longer existing policies.
+DELETE FROM policy_version WHERE policy_goid NOT IN (SELECT goid from POLICY);
 ALTER TABLE policy_version ADD CONSTRAINT fk_policy_version_policy_goid FOREIGN KEY (policy_goid) REFERENCES policy ON DELETE CASCADE;
 
 -- Update published_service table
@@ -431,6 +439,8 @@ ALTER TABLE published_service DROP COLUMN http_methods_backup;
 ALTER TABLE published_service_alias ALTER COLUMN folder_goid NOT NULL;
 ALTER TABLE published_service_alias ALTER COLUMN published_service_goid NOT NULL;
 
+-- need to remove published_service_alias for no longer existing published_service.
+DELETE FROM published_service_alias WHERE published_service_goid NOT IN (SELECT goid from published_service);
 ALTER TABLE published_service_alias ADD CONSTRAINT fk_published_service_alias_published_service_goid FOREIGN KEY (published_service_goid) REFERENCES published_service ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_published_service_alias_folder_goid_published_service_goid ON published_service_alias(folder_goid, published_service_goid);
@@ -442,8 +452,12 @@ CREATE INDEX i_rbacassign_pid ON rbac_assignment(provider_goid);
 
 --add missing on delete cascade on rbac_role foreign key
 ALTER TABLE rbac_assignment DROP FOREIGN KEY FK51FEC6DACCD6DF3E;
+-- need to remove rbac_assignment for no longer existing rbac_role.
+DELETE FROM rbac_assignment WHERE role_goid NOT IN (SELECT goid from rbac_role);
 ALTER TABLE rbac_assignment ADD CONSTRAINT fk_rbac_assignment_role_goid FOREIGN KEY (role_goid) REFERENCES rbac_role ON DELETE CASCADE;
 
+-- need to remove rbac_assignment for no longer existing identity_providers.
+DELETE FROM rbac_assignment WHERE provider_goid NOT IN (SELECT goid from identity_provider);
 ALTER TABLE rbac_assignment ADD CONSTRAINT fk_rbac_assignment_provider_goid FOREIGN KEY (provider_goid) REFERENCES identity_provider ON DELETE CASCADE;
 
 -- Update rbac_permission table
@@ -544,6 +558,8 @@ ALTER TABLE service_documents ADD COLUMN uri clob(2147483647);
 UPDATE service_documents SET uri = uri_backup;
 ALTER TABLE service_documents DROP COLUMN uri_backup;
 
+-- need to remove service_documents for no longer existing published_service.
+DELETE FROM service_documents WHERE service_goid NOT IN (SELECT goid from published_service);
 ALTER TABLE service_documents ADD CONSTRAINT fk_service_documents_service_goid FOREIGN KEY (service_goid) REFERENCES published_service ON DELETE CASCADE;
 
 CREATE INDEX i_sd_service_type ON service_documents(service_goid, type);
@@ -574,6 +590,8 @@ ALTER TABLE service_metrics_details ALTER COLUMN completed NOT NULL;
 ALTER TABLE service_metrics_details ALTER COLUMN back_sum NOT NULL;
 ALTER TABLE service_metrics_details ALTER COLUMN front_sum NOT NULL;
 
+-- need to remove service_metrics_details for no longer existing service_metrics.
+DELETE FROM service_metrics_details WHERE service_metrics_goid NOT IN (SELECT goid from service_metrics);
 ALTER TABLE service_metrics_details ADD CONSTRAINT fk_service_metrics_details_service_metrics_goid FOREIGN KEY (service_metrics_goid) REFERENCES service_metrics ON DELETE CASCADE;
 
 -- Update service_usage table
@@ -629,6 +647,8 @@ ALTER TABLE trusted_esm_user ALTER COLUMN version NOT NULL;
 ALTER TABLE trusted_esm_user ALTER COLUMN user_id NOT NULL;
 ALTER TABLE trusted_esm_user ALTER COLUMN esm_user_id NOT NULL;
 
+-- need to remove trusted_esm_user for no longer existing identity_provider.
+DELETE FROM trusted_esm_user WHERE provider_goid NOT IN (SELECT goid from identity_provider);
 ALTER TABLE trusted_esm_user ADD CONSTRAINT fk_trusted_esm_user_provider_goid FOREIGN KEY (provider_goid) REFERENCES identity_provider ON DELETE CASCADE;
 
 -- Update uddi_business_service_status table
@@ -640,7 +660,11 @@ ALTER TABLE uddi_business_service_status ALTER COLUMN uddi_service_key NOT NULL;
 ALTER TABLE uddi_business_service_status ALTER COLUMN uddi_service_name NOT NULL;
 ALTER TABLE uddi_business_service_status ALTER COLUMN version NOT NULL;
 
+-- need to remove uddi_business_service_status for no longer existing published_service.
+DELETE FROM uddi_business_service_status WHERE published_service_goid NOT IN (SELECT goid from published_service);
 ALTER TABLE uddi_business_service_status ADD CONSTRAINT fk_uddi_business_service_status_published_service_goid FOREIGN KEY (published_service_goid) REFERENCES published_service ON DELETE CASCADE;
+-- need to remove uddi_business_service_status for no longer existing uddi_registries.
+DELETE FROM uddi_business_service_status WHERE uddi_registry_goid NOT IN (SELECT goid from uddi_registries);
 ALTER TABLE uddi_business_service_status ADD CONSTRAINT fk_uddi_business_service_status_uddi_registry_goid FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries ON DELETE CASCADE;
 
 -- Update uddi_proxied_service table
@@ -676,7 +700,11 @@ ALTER TABLE uddi_proxied_service_info ALTER COLUMN update_proxy_on_local_change 
 ALTER TABLE uddi_proxied_service_info ALTER COLUMN version NOT NULL;
 ALTER TABLE uddi_proxied_service_info ALTER COLUMN wsdl_hash NOT NULL;
 
+-- need to remove uddi_proxied_service_info for no longer existing uddi_registries.
+DELETE FROM uddi_proxied_service_info WHERE published_service_goid NOT IN (SELECT goid from published_service);
 ALTER TABLE uddi_proxied_service_info ADD CONSTRAINT fk_uddi_proxied_service_info_published_service_goid FOREIGN KEY (published_service_goid) REFERENCES published_service ON DELETE CASCADE;
+-- need to remove uddi_proxied_service_info for no longer existing uddi_registries.
+DELETE FROM uddi_proxied_service_info WHERE uddi_registry_goid NOT IN (SELECT goid from uddi_registries);
 ALTER TABLE uddi_proxied_service_info ADD CONSTRAINT fk_uddi_proxied_service_info_uddi_registry_goid FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_uddi_proxied_service_info_published_service_goid ON uddi_proxied_service_info(published_service_goid);
@@ -687,6 +715,8 @@ ALTER TABLE uddi_publish_status ALTER COLUMN publish_status NOT NULL;
 ALTER TABLE uddi_publish_status ALTER COLUMN fail_count DEFAULT 0;
 ALTER TABLE uddi_publish_status ALTER COLUMN fail_count NOT NULL;
 
+-- need to remove uddi_publish_status for no longer existing uddi_proxied_service_info.
+DELETE FROM uddi_publish_status WHERE uddi_proxied_service_info_goid NOT IN (SELECT goid from uddi_proxied_service_info);
 ALTER TABLE uddi_publish_status ADD CONSTRAINT fk_uddi_publish_status_uddi_proxied_service_info_goid FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info ON DELETE CASCADE;
 CREATE UNIQUE INDEX idx_uddi_publish_status_uddi_proxied_service_info_goid ON uddi_publish_status(uddi_proxied_service_info_goid);
 
@@ -721,6 +751,8 @@ ALTER TABLE uddi_registry_subscription ALTER COLUMN uddi_subscription_notified_t
 ALTER TABLE uddi_registry_subscription ALTER COLUMN uddi_registry_goid NOT NULL;
 ALTER TABLE uddi_registry_subscription ALTER COLUMN version NOT NULL;
 
+-- need to remove uddi_registry_subscription for no longer existing uddi_registries.
+DELETE FROM uddi_registry_subscription WHERE uddi_registry_goid NOT IN (SELECT goid from uddi_registries);
 ALTER TABLE uddi_registry_subscription ADD CONSTRAINT fk_uddi_registry_subscription_uddi_registry_goid FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_uddi_registry_subscription_uddi_registry_goid ON uddi_registry_subscription(uddi_registry_goid);
@@ -758,7 +790,11 @@ ALTER TABLE uddi_service_control ALTER COLUMN wsdl_port_binding_namespace NOT NU
 ALTER TABLE uddi_service_control ALTER COLUMN wsdl_port_name NOT NULL;
 ALTER TABLE uddi_service_control ALTER COLUMN wsdl_service_name NOT NULL;
 
+-- need to remove uddi_service_control for no longer existing published_service.
+DELETE FROM uddi_service_control WHERE published_service_goid NOT IN (SELECT goid from published_service);
 ALTER TABLE uddi_service_control ADD CONSTRAINT fk_uddi_service_control_published_service_goid FOREIGN KEY (published_service_goid) REFERENCES published_service ON DELETE CASCADE;
+-- need to remove uddi_service_control for no longer existing uddi_registries.
+DELETE FROM uddi_service_control WHERE uddi_registry_goid NOT IN (SELECT goid from uddi_registries);
 ALTER TABLE uddi_service_control ADD CONSTRAINT fk_uddi_service_control_uddi_registry_goid FOREIGN KEY (uddi_registry_goid) REFERENCES uddi_registries ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_uddi_service_control_published_service_goid ON uddi_service_control(published_service_goid);
@@ -769,6 +805,8 @@ ALTER TABLE uddi_service_control_monitor_runtime ALTER COLUMN access_point_url N
 ALTER TABLE uddi_service_control_monitor_runtime ALTER COLUMN version NOT NULL;
 ALTER TABLE uddi_service_control_monitor_runtime ALTER COLUMN uddi_service_control_goid NOT NULL;
 
+-- need to remove uddi_service_control_monitor_runtime for no longer existing uddi_service_control.
+DELETE FROM uddi_service_control_monitor_runtime WHERE uddi_service_control_goid NOT IN (SELECT goid from uddi_service_control);
 ALTER TABLE uddi_service_control_monitor_runtime ADD CONSTRAINT fk_uddi_service_control_monitor_runtime_uddi_service_control_goid FOREIGN KEY (uddi_service_control_goid) REFERENCES uddi_service_control ON DELETE CASCADE;
 
 CREATE UNIQUE INDEX idx_uddi_service_control_monitor_runtime_uddi_service_control_goid ON uddi_service_control_monitor_runtime(uddi_service_control_goid);
