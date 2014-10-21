@@ -3416,22 +3416,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         setTitle(resapplication.getString("SSG"));
 
         String imagePath = null;
-        try {
-            final ClassLoader classLoader = getClass().getClassLoader();
-            imagePath = RESOURCE_PATH + "/CA_Logo_Black_16x16.png";
-            final Image smallIcon = ImageIO.read(classLoader.getResource(imagePath));
-            imagePath = RESOURCE_PATH + "/CA_Logo_Black_32x32.png";
-            final Image largeIcon = ImageIO.read(classLoader.getResource(imagePath));
+        final ClassLoader classLoader = getClass().getClassLoader();
+        ImageIcon smallIcon =
+                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
+        ImageIcon largeIcon =
+                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_32x32.png"));
+        setIconImages(Arrays.asList(smallIcon.getImage(), largeIcon.getImage()));
 
-            final ImageIcon smallImageIcon = new ImageIcon(smallIcon);
-            final ImageIcon largeImageIcon = new ImageIcon(largeIcon);
-            setIconImages(Arrays.asList(smallImageIcon.getImage(), largeImageIcon.getImage()));
-
-            DialogDisplayer.setDefaultFrameIcon(new ImageIcon(smallIcon));
-            DialogDisplayer.setDefaultWindowImages(Arrays.asList(largeIcon, smallIcon));
-        } catch (final IOException e) {
-            throw new RuntimeException("Unable to load image resource: " + imagePath);
-        }
+        DialogDisplayer.setDefaultFrameIcon(smallIcon);
+        DialogDisplayer.setDefaultWindowImages(Arrays.asList(largeIcon.getImage(), smallIcon.getImage()));
 
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());

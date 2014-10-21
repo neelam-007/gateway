@@ -1,17 +1,17 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.io.*;
+import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -131,27 +131,15 @@ public final class ImageCache {
                 return image;
         }
 
-        // we have to load it
-        InputStream stream = loader.getResourceAsStream(name);
-        byte[] imageBytes = null;
-        if (stream != null) {
-            try {
-                imageBytes = IOUtils.slurpStream(stream);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
-            }
+        try {
+            final Image image = ImageIO.read(loader.getResource(name));
+            final Reference<Image> imgRef = new SoftReference<>(image);
+            imageMap.put(name, imgRef);
+            return image;
+        } catch (final IOException e) {
+            logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
         }
-
-        Image img = imageBytes == null ? null : Toolkit.getDefaultToolkit().createImage(imageBytes);
-        if (img != null) {
-            Image img2 = toBufferedImage(img,transparency);
-
-            Reference<Image> r = new SoftReference<Image>(img2);
-            imageMap.put(name, r);
-            return img2;
-        } else {
-            return null;
-        }
+        return null;
     }
 
     /**

@@ -23,6 +23,7 @@ import java.awt.event.*;
 import java.awt.print.PageFormat;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.Properties;
@@ -59,8 +60,11 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     public DashboardWindow() throws HeadlessException {
         super(_windowResources.getString("window.title"));
 
-        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
-        setIconImage(imageIcon.getImage());
+        ImageIcon smallIcon =
+                new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
+        ImageIcon largeIcon =
+                new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/CA_Logo_Black_32x32.png"));
+        setIconImages(Arrays.asList(smallIcon.getImage(), largeIcon.getImage()));
 
         initMenuBar();
 

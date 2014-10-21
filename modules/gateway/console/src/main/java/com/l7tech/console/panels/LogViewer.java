@@ -116,10 +116,12 @@ public class LogViewer extends JFrame {
 
     private void initialize() {
 
-        ImageIcon imageIcon =
+        ImageIcon smallIcon =
                 new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
+        ImageIcon largeIcon =
+                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_32x32.png"));
+        setIconImages(Arrays.asList(smallIcon.getImage(),largeIcon.getImage()));
 
-        setIconImage(imageIcon.getImage());
         setBounds(0, 0, 850, 600);
         setJMenuBar(getWindowMenuBar());
         setContentPane(contentPane);
