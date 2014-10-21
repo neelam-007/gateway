@@ -134,6 +134,11 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
             }
 
             @Override
+            public String getRemoteHost() {
+                return "127.0.0.1";
+            }
+
+            @Override
             public String getRequestUrl() {
                 return URL_LOCALHOST_8080_RESTMAN;
             }
