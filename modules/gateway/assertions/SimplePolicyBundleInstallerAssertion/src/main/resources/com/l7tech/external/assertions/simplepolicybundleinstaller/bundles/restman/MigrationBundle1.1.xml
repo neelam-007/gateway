@@ -186,7 +186,7 @@
                     </l7:Properties>
                     <l7:Extension>
                         <l7:DriverClass>com.l7tech.jdbc.mysql.MySQLDriver</l7:DriverClass>
-                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg82ske</l7:JdbcUrl>
+                        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg</l7:JdbcUrl>
                         <l7:ConnectionProperties>
                             <l7:Property key="EnableCancelTimeout">
                                 <l7:StringValue>true</l7:StringValue>
