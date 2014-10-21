@@ -11,6 +11,7 @@ import com.l7tech.util.*;
 
 import static com.l7tech.util.CollectionUtils.list;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 
@@ -30,6 +31,30 @@ public class MimeBodyTest {
 
     private static long FIRST_PART_MAX_BYTE = 0L;
 
+    @After
+    public void afterTest() {
+        cleanup();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        cleanup();
+    }
+
+    static void cleanup() {
+        // full clean up of internal state of MimeBody
+        SyspropUtil.clearProperties(
+                "com.l7tech.common.mime.preambleMaxSize",
+                "com.l7tech.common.mime.headersMaxSize",
+                "com.l7tech.common.mime.rawParts",
+                "com.l7tech.common.mime.allowLaxStartParamMatch",
+                "com.l7tech.common.mime.allowLaxEmptyMultipart",
+                "com.l7tech.common.mime.allowLaxInitialBareCrOrLf"
+        );
+        ConfigFactory.clearCachedConfig();
+        MimeBody.loadLaxParams();
+    }
+
     @Test
     public void testEmptySinglePartMessage() throws Exception {
         MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),FIRST_PART_MAX_BYTE);
@@ -43,19 +68,19 @@ public class MimeBodyTest {
     public void testEmptyMultiPartMessageNonLaxEmptyMultipart() throws Exception {
         System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "false");
         ConfigFactory.clearCachedConfig();
-        MimeBody.loadLaxEmptyMutipart();
+        MimeBody.loadLaxParams();
         try {
             MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
             mm.getEntireMessageBodyLength(); // force entire body to be read
         } catch (IOException e){
             // exception expected
-            assertEquals("Message MIME type is multipart/related, but no initial boundary found", e.getMessage());
+            assertEquals("Message MIME type is multipart, but no initial boundary found", e.getMessage());
             return ;
         } finally {
             // full clean up of internal state of MimeBody
             System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
             ConfigFactory.clearCachedConfig();
-            MimeBody.loadLaxEmptyMutipart();
+            MimeBody.loadLaxParams();
         }
         fail("Did not receive expected IOException");
     }
@@ -64,7 +89,7 @@ public class MimeBodyTest {
     public void testEmptyPart() throws Exception {
         System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "true");
         ConfigFactory.clearCachedConfig();
-        MimeBody.loadLaxEmptyMutipart();
+        MimeBody.loadLaxParams();
 
         try{
             MimeBody mm = makeMessage("----=Part_-763936460.407197826076299",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
@@ -77,7 +102,7 @@ public class MimeBodyTest {
             // full clean up of internal state of MimeBody
             System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
             ConfigFactory.clearCachedConfig();
-            MimeBody.loadLaxEmptyMutipart();
+            MimeBody.loadLaxParams();
         }
         fail("Did not receive expected IOException");
 
@@ -88,7 +113,7 @@ public class MimeBodyTest {
 
         System.setProperty("com.l7tech.common.mime.allowLaxEmptyMultipart", "true");
         ConfigFactory.clearCachedConfig();
-        MimeBody.loadLaxEmptyMutipart();
+        MimeBody.loadLaxParams();
 
         try{
             MimeBody mm = makeMessage("",MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
@@ -104,7 +129,7 @@ public class MimeBodyTest {
             // full clean up of internal state of MimeBody
             System.clearProperty("com.l7tech.common.mime.allowLaxEmptyMultipart");
             ConfigFactory.clearCachedConfig();
-            MimeBody.loadLaxEmptyMutipart();
+            MimeBody.loadLaxParams();
         }
     }
 
@@ -190,7 +215,7 @@ public class MimeBodyTest {
             // MimeBody may already be loaded so we need to reset it internally to allow new value to be picked up.
             System.setProperty("com.l7tech.common.mime.allowLaxStartParamMatch", "true");
             ConfigFactory.clearCachedConfig();
-            MimeBody.loadLaxStartParam();
+            MimeBody.loadLaxParams();
             {
                 // Start has no surrounding brackets
                 String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"; start=\"-76394136.15558\"";
@@ -208,7 +233,7 @@ public class MimeBodyTest {
             // full clean up of internal state of MimeBody
             System.clearProperty("com.l7tech.common.mime.allowLaxStartParamMatch");
             ConfigFactory.clearCachedConfig();
-            MimeBody.loadLaxStartParam();
+            MimeBody.loadLaxParams();
         }
 
     }
@@ -859,7 +884,7 @@ public class MimeBodyTest {
             MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
             mm.getEntireMessageBodyLength();
 
-            fail( "Expected excption not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble.)" );
+            fail( "Expected excption not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble by default.)" );
         } catch ( IOException e ) {
             assertTrue( e.getMessage().contains( "Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part." ) );
         }
@@ -870,7 +895,7 @@ public class MimeBodyTest {
     public void testInitialBoundaryLacksCR_noStart() throws Exception {
         MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
         mm.getEntireMessageBodyLength();
-        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format)",
+        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format by default)",
                 2, mm.getNumPartsKnown() );
     }
 
@@ -879,7 +904,7 @@ public class MimeBodyTest {
     public void testInitialBoundaryLacksLF_noStart() throws Exception {
         MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
         mm.getEntireMessageBodyLength();
-        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format)",
+        assertEquals( "First part currently treated as preamble and stripped (Change this test if MimeBody is enhanced to properly support this msg format by default)",
                 2, mm.getNumPartsKnown() );
     }
 
@@ -897,6 +922,75 @@ public class MimeBodyTest {
         } finally {
             MimeBody.ENABLE_MULTIPART_PROCESSING = true;
         }
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryNoPreambleBaseline_WithWorkAround() throws Exception {
+        laxMultipart();
+        MimeBody mm = makeMessage( MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( 3, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR_WithWorkAround() throws Exception {
+        laxMultipart();
+        MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+        mm.getEntireMessageBodyLength();
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksLF_WithWorkAround() throws Exception {
+        laxMultipart();
+        MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
+        mm.getEntireMessageBodyLength();
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR_noStart_WithWorkAround() throws Exception {
+        laxMultipart();
+        MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( "First part recognized, if work-around enabled",
+                3, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksLF_noStart_WithWorkAround() throws Exception {
+        laxMultipart();
+        MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+        mm.getEntireMessageBodyLength();
+        assertEquals( "First part recognized, if work-around enabled",
+                3, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksCR_multipartModeDisabled_WithWorkAround() throws Exception {
+        laxMultipart();
+        // Work around should have no effect on this test, since multipart processing is disabled
+        try {
+            MimeBody.ENABLE_MULTIPART_PROCESSING = false;
+
+            MimeBody mm = makeMessage( "\n" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE_NO_START, 0 );
+            mm.getEntireMessageBodyLength();
+            assertEquals( 1, mm.getNumPartsKnown() );
+            assertFalse( mm.isMultipart() );
+
+        } finally {
+            MimeBody.ENABLE_MULTIPART_PROCESSING = true;
+        }
+    }
+
+    private static void laxMultipart() {
+        System.setProperty("com.l7tech.common.mime.allowLaxInitialBareCrOrLf", "true");
+        ConfigFactory.clearCachedConfig();
+        MimeBody.loadLaxParams();
     }
 
     @BugId("SSG-8887")

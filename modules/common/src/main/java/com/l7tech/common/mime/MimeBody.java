@@ -39,7 +39,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
     private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
     private static boolean ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
-    private static boolean ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
+    private static boolean ALLOW_LAX_EMPTY_MULTIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
+    private static boolean ALLOW_LAX_INITIAL_BARE_CR_OR_LF = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxInitialBareCrOrLf", false );
 
     // Should be changed only by unit test code
     public static boolean ENABLE_MULTIPART_PROCESSING = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.enableMultipartProcessing", true );
@@ -47,13 +48,11 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     /**
      * Allow system loaded lax start param match variable to be reloaded, used initially in test coverage
      */
-    static void loadLaxStartParam(){
+    static void loadLaxParams(){
         ALLOW_LAX_START_PARAM_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxStartParamMatch", false );
+        ALLOW_LAX_EMPTY_MULTIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
+        ALLOW_LAX_INITIAL_BARE_CR_OR_LF = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxInitialBareCrOrLf", false );
     }
-    static void loadLaxEmptyMutipart(){
-        ALLOW_LAX_EMPTY_MUTLIPART = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.allowLaxEmptyMultipart", true );
-    }
-
 
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
@@ -117,11 +116,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
                 if (boundary.length > BLOCKSIZE)
                     throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
-                byte[] boundaryScanbuf = new byte[boundary.length];
-                pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
+                pushbackSize = BLOCKSIZE + boundary.length;
                 this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream);
                 readInitialBoundary();
-                if(!moreParts && ALLOW_LAX_EMPTY_MUTLIPART){
+                if(!moreParts && ALLOW_LAX_EMPTY_MULTIPART){
                     // Is multi part with no content. Read as single-part message.  Configure first and only part.
                     moreParts = true;
                     boundaryStr = null;
@@ -209,7 +207,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             }
             itworked = true;
         } catch (NoSuchPartException e) {
-            throw (IOException) new IOException("Message MIME type is multipart/related, but no initial boundary found").initCause(e);
+            throw (IOException) new IOException("Message MIME type is multipart, but no initial boundary found").initCause(e);
         } finally {
             if (!itworked) ResourceUtils.closeQuietly(stashManager);
         }
@@ -283,6 +281,14 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
     }
 
+    // Boundary work-around state for SSG-7703 work-around
+    enum BdwState {
+        SAW_NONE,
+        SAW_CR_OR_LF,
+        SAW_FIRST_DASH,
+        SAW_SECOND_DASH
+    }
+
     /**
      * Consume the preamble and initial multipart boundary.  When this returns, input stream will be positioned at
      * the first byte of the first multipart part.
@@ -294,6 +300,68 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         if (boundary == null)
             throw new IllegalStateException("readInitialBoundary does not work on single-part messages");
         mainInputStream.unread("\r\n".getBytes()); // Fix problem reading initial boundary when there's no preamble
+
+        if ( ALLOW_LAX_INITIAL_BARE_CR_OR_LF ) {
+            // Enable SSG-7703 work-around -- absorb any leading data up to "\r--" or "\n--"
+            BdwState s = BdwState.SAW_NONE;
+            int count = 0;
+            CHARLOOP: do {
+                int c = mainInputStream.read();
+                if ( c < 0 ) {
+                    if ( count < 3 && ALLOW_LAX_EMPTY_MULTIPART ) {
+                        moreParts = false;
+                        return;
+                    }
+                    throw new IOException( "Message MIME type is multipart, but stream ended before initial boundary was found (BDW)" );
+                }
+                if ( ++count > PREAMBLE_MAX_SIZE ) {
+                    throw new IOException( "MIME multipart message preamble exceeds maximum size" );
+                }
+
+                switch ( s ) {
+                    case SAW_NONE:
+                        switch ( c ) {
+                            case '\r':
+                            case '\n':
+                                s = BdwState.SAW_CR_OR_LF;
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+
+                    case SAW_CR_OR_LF:
+                        switch ( c ) {
+                            case '\r':
+                            case '\n':
+                                break;
+                            case '-':
+                                s = BdwState.SAW_FIRST_DASH;
+                                break;
+                            default:
+                                s = BdwState.SAW_NONE;
+                                break;
+                        }
+                        break;
+
+                    case SAW_FIRST_DASH:
+                        switch ( c) {
+                            case '-':
+                                s = BdwState.SAW_SECOND_DASH;
+                                mainInputStream.unread( "\r\n--".getBytes( Charsets.UTF8 ) );
+                                break CHARLOOP;
+                        }
+                        break;
+
+                    default:
+                        throw new IllegalStateException( "Impossible BdwState" ); // can't happen
+                }
+            } while ( true );
+
+            // Assertion: first sequence of any (linefeeds/crs) + "--" has been transformed into "\r\n--", and
+            //            mainstream is now positioned there
+        }
+
         final MimeBoundaryTerminatedInputStream preamble = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         final NullOutputStream nowhere = new NullOutputStream();
         final ByteLimitInputStream limitedPreamble = new ByteLimitInputStream(preamble, 32, PREAMBLE_MAX_SIZE);
