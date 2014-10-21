@@ -19,7 +19,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Created by vkazakov on 10/7/2014.
+ * This test verifies that the wadl doesn't change from the previously released versions.
  */
 public class WadlPastVersionTest {
 
