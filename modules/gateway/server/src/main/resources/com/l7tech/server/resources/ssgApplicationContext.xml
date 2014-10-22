@@ -1918,7 +1918,8 @@
         <constructor-arg ref="ssgConnectorManager"/>
     </bean>
 
-    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager">
+    <bean id="jdbcConnectionPoolManager" class="com.l7tech.server.jdbc.JdbcConnectionPoolManager"
+            depends-on="configureServerVariablesSecurePasswordManager">
         <constructor-arg ref="jdbcConnectionManager" />
     </bean>
 
