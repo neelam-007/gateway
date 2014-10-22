@@ -3623,6 +3623,11 @@
         </java>
     </target>
 
+    <!--
+        This will ensure that the database is up to date.
+        Use the -Ddatabase.name property to specify the database name
+        Use the -DcreateDatabase option to create a new database
+    -->
     <target name="updatedb" depends="init">
         <path id="liquibase.classpath">
             <fileset dir="lib/repository/liquibase">
@@ -3631,6 +3636,9 @@
             <fileset dir="lib/repository/mysql">
                 <include name="*.jar"/>
             </fileset>
+            <dirset dir="">
+               <include name="etc/db/liquibase" />
+            </dirset>
         </path>
 
         <!-- adding liquibase task -->
@@ -3661,7 +3669,7 @@
         </if>
 
         <updateDatabase
-                changeLogFile="etc/db/liquibase/ssg.xml"
+                changeLogFile="ssg.xml"
                 driver="${database.driver}"
                 url="jdbc:mysql://localhost:3306/${database.name}"
                 username="${database.user}"
@@ -3669,5 +3677,15 @@
                 dropFirst="false"
                 classpathref="liquibase.classpath"
                 />
+    </target>
+
+    <!--
+        This will setup autoprovisioning. It will install a new license and the restman service on first gateway startup.
+    -->
+    <target name="autoprovision">
+        <mkdir dir="build/deploy/Gateway/node/default/etc/bootstrap/services" />
+        <mkdir dir="build/deploy/Gateway/node/default/etc/bootstrap/license" />
+        <copy file="DEVLICENSE.xml" todir="build/deploy/Gateway/node/default/etc/bootstrap/license"/>
+        <touch file="build/deploy/Gateway/node/default/etc/bootstrap/services/restman" />
     </target>
 </project>
