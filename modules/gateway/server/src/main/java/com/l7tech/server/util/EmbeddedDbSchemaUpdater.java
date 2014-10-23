@@ -103,6 +103,7 @@ public class EmbeddedDbSchemaUpdater extends JdbcDaoSupport implements SchemaUpd
                         logger.warning(msg);
                         throw new SchemaException(msg);
                     }
+                    logger.info("Derby database is at version: " + newVersion);
                 } catch (LiquibaseException e) {
                     String msg = "Could not apply upgrade: " + ExceptionUtils.getMessage(e);
                     logger.warning(msg);
