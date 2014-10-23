@@ -238,6 +238,8 @@ public class  NewPrivateKeyDialog extends JDialog {
                 rsasize(1024, 100, 5),
                 rsasize(1280, 60 * 7, 10),
         dfltk = rsasize(2048, 60 * 20, 17),
+                rsasize(3072, 60 * 20, 30),
+                rsasize(4096, 60 * 20, 50),
                 curvename("sect163k1"),
                 //curvename("sect163r1"),
                 curvename("sect163r2"),
