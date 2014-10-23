@@ -1112,23 +1112,26 @@ public class PatchServiceTest {
 
     /** modifiers must .putNextEntry() and .closeEntry() on the output stream */
     private File modifyPatch(File patch, Map<String,Functions.TernaryVoid<JarEntry, InputStream,JarOutputStream>> modifiers) throws IOException {
-        JarFile jar = new JarFile(patch);
-        File modifiedJar = File.createTempFile(patch.getName(), "_modified.zip", null);
-        modifiedJar.deleteOnExit();
-        JarOutputStream jos = new JarOutputStream(new FileOutputStream(modifiedJar));
-        Enumeration<JarEntry> entries = jar.entries();
-        while(entries.hasMoreElements()) {
-            JarEntry entry = entries.nextElement();
-            if (modifiers.containsKey(entry.getName())) {
-                modifiers.get(entry.getName()).call(entry, jar.getInputStream(entry),jos);
-            } else {
-                jos.putNextEntry(new JarEntry(entry));
-                IOUtils.copyStream(jar.getInputStream(entry), jos);
-                jos.closeEntry();
-                
+        File modifiedJar;
+        try (JarFile jar = new JarFile(patch)) {
+            modifiedJar = File.createTempFile(patch.getName(), "_modified.zip", null);
+            modifiedJar.deleteOnExit();
+            try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(modifiedJar))) {
+                Enumeration<JarEntry> entries = jar.entries();
+                while(entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (modifiers.containsKey(entry.getName())) {
+                        modifiers.get(entry.getName()).call(entry, jar.getInputStream(entry),jos);
+                    } else {
+                        jos.putNextEntry(new JarEntry(entry));
+                        IOUtils.copyStream(jar.getInputStream(entry), jos);
+                        jos.closeEntry();
+
+                    }
+                }
             }
         }
-        jos.close();
+
         return modifiedJar;
     }
 }

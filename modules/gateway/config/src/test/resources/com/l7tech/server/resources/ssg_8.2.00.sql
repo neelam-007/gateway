@@ -169,7 +169,7 @@ CREATE TABLE internal_user_group (
   INDEX (internal_group),
   INDEX (provider_goid),
   INDEX (user_goid),
-  INDEX (subgroup_id)
+  INDEX (subgroup_id(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
@@ -207,7 +207,7 @@ CREATE TABLE logon_info (
   last_activity bigint(20) NOT NULL,
   state varchar(32) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (goid),
-  UNIQUE KEY unique_provider_login (provider_goid, login),
+  UNIQUE KEY unique_provider_login (provider_goid, login(250)),
   CONSTRAINT logon_info_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider(goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -288,7 +288,7 @@ CREATE TABLE policy (
   folder_goid binary(16),
   security_zone_goid binary(16),
   PRIMARY KEY (goid),
-  UNIQUE KEY i_name (name),
+  UNIQUE KEY i_name (name(250)),
   UNIQUE KEY i_guid (guid),
   CONSTRAINT policy_folder FOREIGN KEY (folder_goid) REFERENCES folder (goid),
   CONSTRAINT policy_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL,
@@ -355,9 +355,9 @@ CREATE TABLE client_cert (
   serial varchar(64),
   PRIMARY KEY  (goid),
   FOREIGN KEY (provider) REFERENCES identity_provider (goid) ON DELETE CASCADE,
-  UNIQUE KEY i_identity (provider, user_id),
-  INDEX i_subject_dn (subject_dn(255)),
-  INDEX i_issuer_dn (issuer_dn(255)),
+  UNIQUE KEY i_identity (provider, user_id(250)),
+  INDEX i_subject_dn (subject_dn(250)),
+  INDEX i_issuer_dn (issuer_dn(250)),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -529,8 +529,8 @@ CREATE TABLE trusted_cert (
   PRIMARY KEY  (goid),
   UNIQUE i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
-  INDEX i_subject_dn (subject_dn(255)),
-  INDEX i_issuer_dn (issuer_dn(255)),
+  INDEX i_subject_dn (subject_dn(250)),
+  INDEX i_issuer_dn (issuer_dn(250)),
   FOREIGN KEY (revocation_check_policy_goid) REFERENCES revocation_check_policy (goid),
   CONSTRAINT trusted_cert_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -573,8 +573,8 @@ CREATE TABLE fed_user (
   PRIMARY KEY (goid),
   INDEX i_provider_goid (provider_goid),
   INDEX i_email (email),
-  INDEX i_login (login),
-  INDEX i_subject_dn (subject_dn(255)),
+  INDEX i_login (login(250)),
+  INDEX i_subject_dn (subject_dn(250)),
   UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -610,7 +610,7 @@ CREATE TABLE fed_group_virtual (
   properties mediumtext,
   PRIMARY KEY  (goid),
   INDEX i_provider_goid (provider_goid),
-  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
+  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern(250)),
   INDEX i_saml_email_pattern (saml_email_pattern),
   UNIQUE KEY i_name (provider_goid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -681,7 +681,7 @@ CREATE TABLE audit_main (
   PRIMARY KEY  (goid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_prov_user (provider_goid, user_id)
+  KEY idx_prov_user (provider_goid, user_id(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -695,7 +695,7 @@ CREATE TABLE audit_admin (
   entity_id binary(16),
   action char(1),
   PRIMARY KEY  (goid),
-  KEY idx_class (entity_class),
+  KEY idx_class (entity_class(250)),
   KEY idx_oid (entity_id),
   FOREIGN KEY (goid) REFERENCES audit_main (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -780,7 +780,7 @@ CREATE TABLE counters (
   cnt_mnt bigint(20) default 0,
   last_update bigint(20) default 0,
   PRIMARY KEY (goid),
-  UNIQUE (countername)
+  UNIQUE (countername(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -961,7 +961,7 @@ CREATE TABLE keystore_key_metadata (
   alias varchar(255) NOT NULL,
   security_zone_goid binary(16),
   PRIMARY KEY (goid),
-  UNIQUE KEY i_ks_alias (keystore_file_goid, alias),
+  UNIQUE KEY i_ks_alias (keystore_file_goid, alias(250)),
   CONSTRAINT keystore_key_metadata_keystore_file FOREIGN KEY (keystore_file_goid) REFERENCES keystore_file (goid) ON DELETE CASCADE,
   CONSTRAINT keystore_key_metadata_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1207,8 +1207,8 @@ CREATE TABLE uddi_proxied_service (
   wsdl_service_name varchar(255) NOT NULL,
   wsdl_service_namespace varchar(255) NOT NULL,
   PRIMARY KEY (goid),
-  UNIQUE KEY (uddi_proxied_service_info_goid, wsdl_service_name, wsdl_service_namespace),
-  UNIQUE (uddi_service_key),
+  UNIQUE KEY (uddi_proxied_service_info_goid, wsdl_service_name(250), wsdl_service_namespace(250)),
+  UNIQUE (uddi_service_key(250)),
   FOREIGN KEY (uddi_proxied_service_info_goid) REFERENCES uddi_proxied_service_info (goid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1333,7 +1333,7 @@ CREATE TABLE rbac_role (
   user_created tinyint(1) NOT NULL default 0,
   PRIMARY KEY (goid),
   UNIQUE KEY name (name),
-  INDEX i_rbacrole_etype (entity_type),
+  INDEX i_rbacrole_etype (entity_type(250)),
   INDEX i_rbacrole_egoid (entity_goid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1349,7 +1349,7 @@ CREATE TABLE rbac_assignment (
   identity_id varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
   PRIMARY KEY  (goid),
-  UNIQUE KEY unique_assignment (provider_goid,role_goid,identity_id, entity_type),
+  UNIQUE KEY unique_assignment (provider_goid,role_goid,identity_id(250), entity_type),
   FOREIGN KEY (role_goid) REFERENCES rbac_role (goid) ON DELETE CASCADE,
   CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_goid) REFERENCES identity_provider (goid) ON DELETE CASCADE,
   INDEX i_rbacassign_pid (provider_goid),
@@ -1458,7 +1458,7 @@ CREATE TABLE assertion_access (
   name varchar(255) NOT NULL,
   security_zone_goid binary(16),
   PRIMARY KEY (goid),
-  UNIQUE KEY i_name (name),
+  UNIQUE KEY i_name (name(250)),
   CONSTRAINT assertion_access_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1978,7 +1978,7 @@ CREATE TABLE generic_entity (
   enabled boolean DEFAULT TRUE,
   value_xml mediumtext,
   PRIMARY KEY (goid),
-  UNIQUE KEY i_classname_name (classname, name)
+  UNIQUE KEY i_classname_name (classname(250), name(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
@@ -1992,7 +1992,7 @@ CREATE TABLE encapsulated_assertion (
   security_zone_goid binary(16),
   FOREIGN KEY (policy_goid) REFERENCES policy (goid),
   PRIMARY KEY (goid),
-  UNIQUE KEY i_guid (guid),
+  UNIQUE KEY i_guid (guid(250)),
   CONSTRAINT encass_security_zone FOREIGN KEY (security_zone_goid) REFERENCES security_zone (goid) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

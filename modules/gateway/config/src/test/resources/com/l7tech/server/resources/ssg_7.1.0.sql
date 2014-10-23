@@ -134,8 +134,8 @@ CREATE TABLE internal_user_group (
   PRIMARY KEY (objectid),
   INDEX (internal_group),
   INDEX (provider_oid),
-  INDEX (user_id),
-  INDEX (subgroup_id)
+  INDEX (user_id(250)),
+  INDEX (subgroup_id(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
@@ -171,7 +171,7 @@ CREATE TABLE logon_info (
   last_activity bigint(20) NOT NULL,
   state varchar(32) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (objectid),
-  UNIQUE KEY unique_provider_login (provider_oid, login),
+  UNIQUE KEY unique_provider_login (provider_oid, login(250)),
   CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -247,7 +247,7 @@ CREATE TABLE policy (
   internal_tag VARCHAR(64),
   folder_oid bigint(20),
   PRIMARY KEY (objectid),
-  UNIQUE KEY i_name (name),
+  UNIQUE KEY i_name (name(250)),
   UNIQUE KEY i_guid (guid),
   CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
   INDEX (policy_type)
@@ -311,9 +311,9 @@ CREATE TABLE client_cert (
   serial varchar(64),
   PRIMARY KEY  (objectid),
   FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
-  UNIQUE KEY i_identity (provider, user_id),
-  INDEX i_subject_dn (subject_dn(255)),
-  INDEX i_issuer_dn (issuer_dn),
+  UNIQUE KEY i_identity (provider, user_id(250)),
+  INDEX i_subject_dn (subject_dn(250)),
+  INDEX i_issuer_dn (issuer_dn(250)),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -478,8 +478,8 @@ CREATE TABLE trusted_cert (
   PRIMARY KEY (objectid),
   UNIQUE i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
-  INDEX i_subject_dn (subject_dn(255)),
-  INDEX i_issuer_dn (issuer_dn(255)),
+  INDEX i_subject_dn (subject_dn(250)),
+  INDEX i_issuer_dn (issuer_dn(250)),
   FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -521,8 +521,8 @@ CREATE TABLE fed_user (
   PRIMARY KEY (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_email (email),
-  INDEX i_login (login),
-  INDEX i_subject_dn (subject_dn),
+  INDEX i_login (login(250)),
+  INDEX i_subject_dn (subject_dn(250)),
   UNIQUE KEY i_name (provider_oid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -558,7 +558,7 @@ CREATE TABLE fed_group_virtual (
   properties mediumtext,
   PRIMARY KEY  (objectid),
   INDEX i_provider_oid (provider_oid),
-  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
+  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern(250)),
   INDEX i_saml_email_pattern (saml_email_pattern),
   UNIQUE KEY i_name (provider_oid, name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -629,7 +629,7 @@ CREATE TABLE audit_main (
   PRIMARY KEY  (objectid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_prov_user (provider_oid, user_id)
+  KEY idx_prov_user (provider_oid, user_id(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -643,7 +643,7 @@ CREATE TABLE audit_admin (
   entity_id bigint(20),
   action char(1),
   PRIMARY KEY  (objectid),
-  KEY idx_class (entity_class),
+  KEY idx_class (entity_class(250)),
   KEY idx_oid (entity_id),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -726,7 +726,7 @@ CREATE TABLE counters (
   cnt_mnt bigint(20) default 0,
   last_update bigint(20) default 0,
   PRIMARY KEY (counterid),
-  UNIQUE (countername)
+  UNIQUE (countername(250))
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

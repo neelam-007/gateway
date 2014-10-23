@@ -32,6 +32,7 @@ public class WsdlTest {
     public static final String WSDL2PORTS = TestDocuments.WSDL2PORTS;
     public static final String WSDL2SERVICES = TestDocuments.WSDL2SERVICES;
     public static final String WSDL_DOC_STYLE = TestDocuments.WSDL_DOC_LITERAL;
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Win");
 
     public Reader getWsdlReader(String resourcetoread) {
         if (resourcetoread == null) {
@@ -62,7 +63,13 @@ public class WsdlTest {
         wsdl.getMessages();
         wsdl.getPortTypes();
         wsdl.getServices();
-        assertEquals( "Hash", "idiLlFDBpP2sEljl54VX1A==", wsdl.getHash() );
+
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "gxW8U1bR7KbW7If+vvOJeQ==", wsdl.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "idiLlFDBpP2sEljl54VX1A==", wsdl.getHash() );
+        }
     }
 
     /**
@@ -90,7 +97,13 @@ public class WsdlTest {
         wsdl.getPortTypes();
         wsdl.getServices();
         wsdl.getSoapPort();
-        assertEquals( "Hash", "FOs/wNJqudFH9j/UwKunyA==", wsdl.getHash() );
+
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "71ZEkOFJ3rINoB6y5Zd1OA==", wsdl.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "FOs/wNJqudFH9j/UwKunyA==", wsdl.getHash() );
+        }
     }
 
     @Test
@@ -102,7 +115,13 @@ public class WsdlTest {
         wsdl.getPortTypes();
         wsdl.getServices();
         wsdl.getSoapPort();
-        assertEquals( "Hash", "5Jrp/fpHC51BLRdNwWoGlw==", wsdl.getHash() );
+
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "BczKOnpvR6pqswdlwFxKTA==", wsdl.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "5Jrp/fpHC51BLRdNwWoGlw==", wsdl.getHash() );
+        }
     }
 
     @Test
@@ -187,7 +206,13 @@ public class WsdlTest {
                 //
             }
         }
-        assertEquals( "Hash", "NmjaO9VQRVqjSMCuO/oI6Q==", wsdl.getHash() );
+
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "p0x1YkycAU0rmRizZFyM1g==", wsdl.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "NmjaO9VQRVqjSMCuO/oI6Q==", wsdl.getHash() );
+        }
     }
 
     /**
@@ -209,7 +234,13 @@ public class WsdlTest {
                 //
             }
         }
-        assertEquals( "Hash", "YV+dlG3GNfaptkLbMiur1Q==", wsdl.getHash() );
+
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "sXpDLfpcgxXii2NIca3N/g==", wsdl.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "YV+dlG3GNfaptkLbMiur1Q==", wsdl.getHash() );
+        }
     }
 
     /**
@@ -260,7 +291,12 @@ public class WsdlTest {
             fail("WSDLs with circular imports has been handled, so Stack Overflow Error should not happen here.");
         }
 
-        assertEquals( "Hash", "ylC488wFxrJz8/LTtJxHwg==", wsdlA.getHash() );
+        if (IS_WINDOWS) {
+            assertEquals( "Hash", "Z/PJ3FhP5Qd2e5rKk3RrWw==", wsdlA.getHash() );
+        }
+        else {
+            assertEquals( "Hash", "ylC488wFxrJz8/LTtJxHwg==", wsdlA.getHash() );
+        }
     }
 
     @Test

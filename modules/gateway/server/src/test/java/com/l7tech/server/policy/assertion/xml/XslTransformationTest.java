@@ -562,6 +562,6 @@ public class XslTransformationTest {
         assertEquals(AssertionStatus.NONE, result);
 
         String output = new String( IOUtils.slurpStream( context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream() ), Charsets.UTF8 );
-        assertEquals( "<th colspan=\"2\"></th>\n", output );
+        assertEquals( "<th colspan=\"2\"></th>" + System.lineSeparator(), output );
     }
 }

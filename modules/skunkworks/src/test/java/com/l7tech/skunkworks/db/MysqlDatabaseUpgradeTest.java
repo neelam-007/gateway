@@ -164,13 +164,19 @@ public class MysqlDatabaseUpgradeTest {
         Statement statement = null;
 
         if (sqlStatements.length > 0) {
+            int i = 0;
             try {
                 statement = connection.createStatement();
 
-                for (String statementSql : sqlStatements) {
-                    statement.executeUpdate(statementSql);
+                for (i = 0; i < sqlStatements.length; i++) {
+                    statement.executeUpdate(sqlStatements[i]);
                 }
-            } finally {
+            }
+            catch (SQLException sqle) {
+                System.out.println(sqlStatements[i]);
+                throw sqle;
+            }
+            finally {
                 ResourceUtils.closeQuietly(statement);
             }
         }
