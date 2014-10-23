@@ -9,6 +9,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Map;
@@ -131,13 +132,16 @@ public final class ImageCache {
                 return image;
         }
 
-        try {
-            final Image image = ImageIO.read(loader.getResource(name));
-            final Reference<Image> imgRef = new SoftReference<>(image);
-            imageMap.put(name, imgRef);
-            return image;
-        } catch (final IOException e) {
-            logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
+        InputStream stream = loader.getResourceAsStream(name);
+        if (stream != null) {
+            try {
+                final Image image = ImageIO.read(stream);
+                final Reference<Image> imgRef = new SoftReference<>(image);
+                imageMap.put(name, imgRef);
+                return image;
+            } catch (final IOException e) {
+                logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
+            }
         }
         return null;
     }
