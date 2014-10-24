@@ -1,14 +1,21 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.*;
 
 import javax.xml.bind.MarshalException;
+
+import java.util.logging.Level;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -64,6 +71,36 @@ public class AuditRecordDomMarshallerTest {
         Document d = XmlUtil.stringAsDocument("<a/>");
         AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
         AuditRecord auditRecord = AuditRecordTest.makeSystemAuditRecord();
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @BugId("SSG-9419")
+    @Test
+    public void testNullGoidsMarshalAdmin() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", null, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", null, "admin", "1111", "2.3.4.5");
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @BugId("SSG-9419")
+    @Test
+    public void testNullGoidsMarshalSystem() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, null, null, null, "Checking", "192.168.1.42");
+        Element got = m.marshal(d, auditRecord);
+        XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @BugId("SSG-9419")
+    @Test
+    public void testNullGoidsMarshalMessage() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, null, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC,null, "alice", "41123",null);
         Element got = m.marshal(d, auditRecord);
         XmlUtil.nodeToFormattedOutputStream(got, System.out);
     }

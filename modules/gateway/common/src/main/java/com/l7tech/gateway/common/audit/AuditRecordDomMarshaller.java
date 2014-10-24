@@ -177,7 +177,9 @@ public class AuditRecordDomMarshaller {
         elm(e, "responseHttpStatus", Integer.toString(rec.getResponseHttpStatus()));
         elm(e, "routingLatency", Integer.toString(rec.getRoutingLatency()));
         //Leave this as serviceOid as other tooling may expect this to be serviceOid
-        elm(e, "serviceOid", Goid.toString(rec.getServiceGoid()));
+        if(rec.getServiceGoid()!=null) {
+            elm(e, "serviceOid", Goid.toString(rec.getServiceGoid()));
+        }
         elm(e, "status", Integer.toString(rec.getStatus()));
 
         return e;
@@ -202,7 +204,9 @@ public class AuditRecordDomMarshaller {
 
         Element ent = factory.createElementNS(NS, "entity");
         ent.setAttribute("class", rec.getEntityClassname());
-        ent.setAttribute("goid", Goid.toString(rec.getEntityGoid()));
+        if(rec.getEntityGoid()!=null) {
+            ent.setAttribute("goid", Goid.toString(rec.getEntityGoid()));
+        }
         e.appendChild(ent);
 
         return e;
