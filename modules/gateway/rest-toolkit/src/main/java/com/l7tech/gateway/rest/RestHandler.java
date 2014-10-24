@@ -1,6 +1,7 @@
 package com.l7tech.gateway.rest;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
@@ -106,7 +107,7 @@ public class RestHandler {
         } catch (InterruptedException e) {
             throw new RequestProcessingException("Unexpected exception getting a response", e);
         } catch (ExecutionException e) {
-            throw new RequestProcessingException("Exception encountered processing a rest message: " + e.getMessage(), e);
+            throw new RequestProcessingException("Exception encountered processing a rest message: " + ExceptionUtils.getMessageWithCause(e), e);
         }
         return response;
     }
