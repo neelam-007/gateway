@@ -175,8 +175,8 @@ public class MimeHeaders {
      * Writes the headers to the specified output stream, with CRLF after each header,
      * followed by an additional CRLF.  Does not write any initial CRLF or any MIME boundaries.  Does not
      * flush or close the stream when it finishes.  May perform many short writes -- caller is responsible for
-     * configuring output buffering if it's desired.  Always uses UTF-8 when outputting headers, which should
-     * be OK since they are not permitted contain anything but US-ASCII anyway.
+     * configuring output buffering if it's desired.  Always uses either Latin1 or (optionally) UTF-8 when
+     * outputting headers, which should be OK since they are not permitted contain anything but US-ASCII anyway.
      *
      * @param os the OutputStream to write.
      * @throws IOException if the underlying OutputStream cannot be written to.

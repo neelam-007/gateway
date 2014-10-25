@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpHeader;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.SyspropUtil;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
@@ -27,28 +28,15 @@ import java.util.regex.Pattern;
  *    params={charset=>"UTF-8"}
  */
 public class MimeHeader implements HttpHeader {
-    private static final Logger logger = Logger.getLogger(MimeHeader.class.getName());
+    private static final Logger logger = Logger.getLogger( MimeHeader.class.getName() );
 
     public static final String PROP_PRESERVE_FORMAT = "com.l7tech.common.mime.preserveFormat";
     public static final boolean PRESERVE_FORMAT = ConfigFactory.getBooleanProperty( PROP_PRESERVE_FORMAT, true );
 
-    /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
-    public static final Charset ENCODING = Charsets.UTF8;
-
     // Common byte strings needed when serializing mime headers
-    static final byte[] CRLF;
-    protected static final byte[] SEMICOLON;
-    protected static final byte[] COLON;
-
-    static {
-        try {
-            CRLF = "\r\n".getBytes(ENCODING);
-            SEMICOLON = "; ".getBytes(ENCODING);
-            COLON = ": ".getBytes(ENCODING);
-        } catch (Exception e) {
-            throw new Error("Encoding not found: " + ENCODING);
-        }
-    }
+    static final byte[] CRLF = "\r\n".getBytes( MimeUtil.ENCODING );
+    protected static final byte[] SEMICOLON = "; ".getBytes( MimeUtil.ENCODING) ;
+    protected static final byte[] COLON = ": ".getBytes( MimeUtil.ENCODING );
 
     private final String fullValue;
     private final String name;
@@ -229,7 +217,7 @@ public class MimeHeader implements HttpHeader {
         PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             write(baos);
-            return baos.toString(ENCODING);
+            return baos.toString( MimeUtil.ENCODING );
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a baos
         } finally {
@@ -277,7 +265,7 @@ public class MimeHeader implements HttpHeader {
             return;
         }
 
-        os.write(getName().getBytes(ENCODING));
+        os.write(getName().getBytes( MimeUtil.ENCODING ));
         os.write(COLON);
         writeFullValue(os);
         os.write(CRLF);
@@ -291,9 +279,9 @@ public class MimeHeader implements HttpHeader {
      */
     void writeFullValue(OutputStream os) throws IOException {
         if ( PRESERVE_FORMAT ) {
-            os.write( fullValue.getBytes(ENCODING) );
+            os.write( fullValue.getBytes( MimeUtil.ENCODING ) );
         } else {
-            os.write(getMainValue().getBytes(ENCODING));
+            os.write(getMainValue().getBytes( MimeUtil.ENCODING ));
             for (Map.Entry<String, String> entry : getParams().entrySet()) {
                 String name = entry.getKey();
                 String value = entry.getValue();
@@ -314,9 +302,9 @@ public class MimeHeader implements HttpHeader {
      * @throws java.io.IOException if there is an IOException while writing to the stream
      */
     protected void writeParam(OutputStream os, String name, String value) throws IOException {
-        os.write(name.getBytes(ENCODING));
+        os.write(name.getBytes( MimeUtil.ENCODING ));
         os.write('=');
-        os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
+        os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes( MimeUtil.ENCODING ));
     }
 
     /**

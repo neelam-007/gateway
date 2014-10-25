@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 
 /**
@@ -20,6 +21,13 @@ import java.util.Enumeration;
  * $Id$
  */
 public class MimeUtil {
+    static final String PROP_UNICODE_MIME_VALUES = "com.l7tech.common.mime.values.utf8";
+    static final boolean DEFAULT_UNICODE_MIME_VALUES = false;
+    static boolean UNICODE_MIME_VALUES = SyspropUtil.getBoolean( PROP_UNICODE_MIME_VALUES, DEFAULT_UNICODE_MIME_VALUES );
+
+    /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but Latin1 (or UTF-8) is a safer choice. */
+    static Charset ENCODING = MimeUtil.UNICODE_MIME_VALUES ? Charsets.UTF8 : Charsets.ISO8859;
+
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_ID = "Content-Id";
@@ -62,6 +70,12 @@ public class MimeUtil {
             Header h = (Header)e.nextElement();
             String name = h.getName();
             String value = h.getValue();
+
+            if ( UNICODE_MIME_VALUES ) {
+                // SSG-9380: Treat (illegal) non-7BIT header values as UTF-8 rather than Latin-1
+                value = new String( value.getBytes( Charsets.ISO8859 ), Charsets.UTF8 );
+            }
+
             MimeHeader mh;
             if (name.equalsIgnoreCase(CONTENT_TYPE)) {
                 // Special case for Content-Type: since it's such a big deal when doing multipart
@@ -239,4 +253,8 @@ public class MimeUtil {
                TRANSFER_ENCODING_BINARY.equals(contentTransferEncoding);
     }
 
+    static void updateMimeEncoding() {
+        UNICODE_MIME_VALUES = SyspropUtil.getBoolean( PROP_UNICODE_MIME_VALUES, DEFAULT_UNICODE_MIME_VALUES );
+        ENCODING = MimeUtil.UNICODE_MIME_VALUES ? Charsets.UTF8 : Charsets.ISO8859;
+    }
 }

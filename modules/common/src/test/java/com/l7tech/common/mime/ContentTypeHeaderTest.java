@@ -150,7 +150,7 @@ public class ContentTypeHeaderTest {
 
     private byte[] serialize( final String contentType ) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream( );
-        out.write( (HttpConstants.HEADER_CONTENT_TYPE + ": " + contentType).getBytes( ContentTypeHeader.ENCODING ) );
+        out.write( (HttpConstants.HEADER_CONTENT_TYPE + ": " + contentType).getBytes( MimeUtil.ENCODING ) );
         out.write( MimeHeader.CRLF );
         return out.toByteArray();
     }

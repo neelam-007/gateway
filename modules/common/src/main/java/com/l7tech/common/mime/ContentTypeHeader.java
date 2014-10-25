@@ -2,6 +2,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,7 +44,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader APPLICATION_JSON; // appliacation//json; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
-    public static final Charset DEFAULT_HTTP_ENCODING = Charset.forName("ISO8859-1"); // See RFC2616 s3.7.1
+    public static final Charset DEFAULT_HTTP_ENCODING = Charsets.ISO8859; // See RFC2616 s3.7.1
 
     private static final Pattern QUICK_CONTENT_TYPE_PARSER =
             Pattern.compile("^\\s*([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)(\\s*)/(\\s*)([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)\\s*(;.*?)?\\s*$", Pattern.DOTALL);
@@ -314,7 +315,7 @@ public class ContentTypeHeader extends MimeHeader {
             String boundary = ch.getParams().get("boundary");
             if (boundary == null || boundary.length() < 1)
                 throw new IOException("Content-Type of type multipart must include a boundary parameter (RFC 2045 sec 5)");
-            byte[] bytes = boundary.getBytes(ENCODING);
+            byte[] bytes = boundary.getBytes( MimeUtil.ENCODING );
             for (byte aByte : bytes) {
                 if (aByte < ' ' || aByte > 126)
                     throw new IOException("Content-Type multipart boundary contains illegal character; must be US-ASCII (RFC 2045)");
@@ -340,7 +341,7 @@ public class ContentTypeHeader extends MimeHeader {
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
                 if ("UTF8".equalsIgnoreCase(tmp)) {
-                    javaEncoding = ENCODING;
+                    javaEncoding = Charsets.UTF8;
                 } else {
                     try {
                         javaEncoding = Charset.forName(tmp);
@@ -545,7 +546,7 @@ public class ContentTypeHeader extends MimeHeader {
     protected void writeParam(OutputStream os, String name, String value) throws IOException {
         if (CHARSET.equalsIgnoreCase(name)) {
             getEncoding();
-            os.write(name.getBytes(ENCODING));
+            os.write(name.getBytes( MimeUtil.ENCODING ));
             os.write('=');
 
             // Convert Java encoding into MIME charset for the payload
@@ -556,7 +557,7 @@ public class ContentTypeHeader extends MimeHeader {
             if (charsetValue == null)
                 charsetValue = DEFAULT_CHARSET_MIME;
 
-            os.write(MimeUtility.quote(charsetValue.toLowerCase(), HeaderTokenizer.MIME).getBytes(ENCODING));
+            os.write(MimeUtility.quote(charsetValue.toLowerCase(), HeaderTokenizer.MIME).getBytes( MimeUtil.ENCODING ));
         } else {
             super.writeParam(os, name, value);
         }

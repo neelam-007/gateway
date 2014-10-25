@@ -113,7 +113,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
 
                 boundaryStr = outerContentType.getMultipartBoundary();
-                boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
+                boundary = ("--" + boundaryStr).getBytes( MimeUtil.ENCODING );
                 if (boundary.length > BLOCKSIZE)
                     throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
                 pushbackSize = BLOCKSIZE + boundary.length;
