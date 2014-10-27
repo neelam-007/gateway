@@ -77,27 +77,28 @@ public class SslClientTrustManager implements X509TrustManager {
         }
 
         try {
-            // minimum permissable validation is PATH_VALIDATION, since we're
+            // minimum permissible validation is PATH_VALIDATION, since we're
             // not otherwise validating the certificate.
             CertificateValidationResult result =
                     certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LoggingAudit(logger));
 
-            if (certs != null && certs.length > 0)
+            if (certs.length > 0)
                 KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, certs[0]);
 
             if ( result != CertificateValidationResult.OK ) {
-                throw new CertificateException("Certificate path validation and/or revocation checking failed");
+                throw new CertificateException("Certificate [" + CertUtils.getCertIdentifyingInformation(certs[0]) +
+                        "] path validation and/or revocation checking failed");
             }
 
             if (isCartel && logger.isLoggable(Level.FINE)) {
-                final String dn = certs == null || certs.length < 1 ? null : certs[0].getSubjectDN().getName();
+                final String dn = certs.length < 1 ? null : certs[0].getSubjectDN().getName();
                 logger.log(Level.FINE, "SSL server cert was issued to ''{0}'' by a globally recognized CA", dn);
             }
         } catch (KeyUsageException e) {
-            logger.log(Level.INFO, "Rejecting server certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Rejecting server certificate [" +
+                    CertUtils.getCertIdentifyingInformation(certs[0]) + "]: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
             throw e;
-        } catch (SignatureException se) {
-            throw new CertificateException("Certificate path validation and/or revocation checking error", se);
         }
     }
 

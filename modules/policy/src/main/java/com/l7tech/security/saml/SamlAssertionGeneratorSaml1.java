@@ -138,7 +138,7 @@ class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
      * Populate the subject statement assertion properties such as subject name, name qualifier
      *
      * @param subjectStatementAbstractType the subject statement abstract type
-     * @param subjectStatement
+     * @param subjectStatement the subject statement
      * @throws java.security.cert.CertificateEncodingException on certificate error
      */
     private void populateSubjectStatement(SubjectStatementAbstractType subjectStatementAbstractType,
@@ -191,7 +191,8 @@ class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
                 NamespaceFactory nsf = new NamespaceFactory();
                 final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
                 if (ski == null)
-                    throw new CertificateException("Unable to use SKI reference: no SKI available for cert");
+                    throw new CertificateException("Unable to create SKI reference: no SKI available for certificate [" +
+                            CertUtils.getCertIdentifyingInformation(cert) + "]");
                 KeyInfoDetails.makeKeyId(ski, SoapConstants.VALUETYPE_SKI).
                         createAndAppendKeyInfoElement(nsf, subjConfEl);
                 break;
@@ -263,7 +264,7 @@ class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
         assertionDocument.setAssertion(assertion);
 
         XmlOptions xo = new XmlOptions();
-        Map<String, String> namespaces = new HashMap<String, String>();
+        Map<String, String> namespaces = new HashMap<>();
         namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
         xo.setSaveSuggestedPrefixes(namespaces);
 

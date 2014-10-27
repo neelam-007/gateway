@@ -1,6 +1,7 @@
 package com.l7tech.common.io;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.TestKeys;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -9,12 +10,17 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * The current CertUtilsTest is the merge of the original CertUtilsTest and ServerCertUtilsTest (Note: ServerCertUtilsTest has been removed.)
@@ -182,17 +188,17 @@ public class CertUtilsTest {
 
     @Test
     public void testDNComparison() {
-        assertTrue( "Canonical match", CertUtils.isEqualDNCanonical( "ou=blah+cn=abc", "cn=ABC+OU=Blah" ) );
-        assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical( "email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com" ) );
-        assertFalse( "Basic mismatch", CertUtils.isEqualDNCanonical( "cn=a", "cn=b" ) );
+        assertTrue("Canonical match", CertUtils.isEqualDNCanonical("ou=blah+cn=abc", "cn=ABC+OU=Blah"));
+        assertTrue( "Canonical match naming", CertUtils.isEqualDNCanonical("email=test@test.com+s=ca+dnq=test.com", "EMAILADDRESS=test@test.com+ST=ca+DNQUALIFIER=test.com") );
+        assertFalse("Basic mismatch", CertUtils.isEqualDNCanonical("cn=a", "cn=b"));
     }
 
     @Test
     public void testValidDN() {
         assertTrue( "Valid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, ST=NJ, DNQ=org, EMAILADDRESS=support@simpson.org") );
         assertFalse( "Invalid DN", CertUtils.isValidDN("CN=bug5722_child, O=OASIS, S=NJ, DNQUALIFIER=org, EMAIL=support@simpson.org") );
-        assertTrue( "Valid DN with explicit known OIDs", CertUtils.isValidDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
-        assertTrue( "Valid DN with explicit unknown OIDs", CertUtils.isValidDN("cn=bug5722_child,2.5.4.46342342=#1613737570706f72744073696d70736f6e2e6f7267") );
+        assertTrue("Valid DN with explicit known OIDs", CertUtils.isValidDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267"));
+        assertTrue("Valid DN with explicit unknown OIDs", CertUtils.isValidDN("cn=bug5722_child,2.5.4.46342342=#1613737570706f72744073696d70736f6e2e6f7267"));
     }
 
     @Test
@@ -223,40 +229,40 @@ public class CertUtilsTest {
 
         X509Certificate cert2 = CertUtils.decodeFromPEM(
                 "-----BEGIN CERTIFICATE-----\n" +
-                "MIIEpTCCA42gAwIBAgIQF3YFiJVY7rsA2hDl8POc8DANBgkqhkiG9w0BAQUFADCB\n" +
-                "izELMAkGA1UEBhMCVVMxFTATBgNVBAoTDHRoYXd0ZSwgSW5jLjE5MDcGA1UECxMw\n" +
-                "VGVybXMgb2YgdXNlIGF0IGh0dHBzOi8vd3d3LnRoYXd0ZS5jb20vY3BzIChjKTA2\n" +
-                "MSowKAYDVQQDEyF0aGF3dGUgRXh0ZW5kZWQgVmFsaWRhdGlvbiBTU0wgQ0EwHhcN\n" +
-                "MDgxMTE5MDAwMDAwWhcNMTAwMTE3MjM1OTU5WjCBxzETMBEGCysGAQQBgjc8AgED\n" +
-                "EwJVUzEZMBcGCysGAQQBgjc8AgECFAhEZWxhd2FyZTEbMBkGA1UEDxMSVjEuMCwg\n" +
-                "Q2xhdXNlIDUuKGIpMRMwEQYDVQQKFApUaGF3dGUgSW5jMRAwDgYDVQQFEwczODk4\n" +
-                "MjYxMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxQN\n" +
-                "TW91bnRhaW4gVmlldzEXMBUGA1UEAxQOd3d3LnRoYXd0ZS5jb20wgZ8wDQYJKoZI\n" +
-                "hvcNAQEBBQADgY0AMIGJAoGBAOeJaLVuHTgZ9i1hwgC6bqtmktaFhy3VqFipenUn\n" +
-                "ne2e/gZxcC0hcEw+nLbVXUSStODufApQTA1nmKoBDjejKu/m4BF77rCitDJkpw3a\n" +
-                "bBX4xaVaLPzJpjyIiL/fpzjweO2BkykMrserUSFeypXlSFJBthhgBBlvPYAU068j\n" +
-                "AxCVAgMBAAGjggFJMIIBRTAMBgNVHRMBAf8EAjAAMDkGA1UdHwQyMDAwLqAsoCqG\n" +
-                "KGh0dHA6Ly9jcmwudGhhd3RlLmNvbS9UaGF3dGVFVkNBMjAwNi5jcmwwQgYDVR0g\n" +
-                "BDswOTA3BgtghkgBhvhFAQcwATAoMCYGCCsGAQUFBwIBFhpodHRwczovL3d3dy50\n" +
-                "aGF3dGUuY29tL2NwczAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYD\n" +
-                "VR0jBBgwFoAUzTLi8l0lRwKqj3lLMu4Dmf0wSdEwdgYIKwYBBQUHAQEEajBoMCIG\n" +
-                "CCsGAQUFBzABhhZodHRwOi8vb2NzcC50aGF3dGUuY29tMEIGCCsGAQUFBzAChjZo\n" +
-                "dHRwOi8vd3d3LnRoYXd0ZS5jb20vcmVwb3NpdG9yeS9UaGF3dGVfRVZfQ0FfMjAw\n" +
-                "Ni5jcnQwDQYJKoZIhvcNAQEFBQADggEBALKglt3sBDhrw3qtI0SR5WKMsfacAyEf\n" +
-                "7wPZymOy+Ntak8LM8Xxv6w9Re0vntfy8m4dIzFv5yGakQKzpQl3t81MT571uf1BT\n" +
-                "ZLOV8UJPNlS0Hn8YNzk7BlvlE9lXvNVo43FfXyv1psKPZ4E6RGOMNvqo7f3XXqKf\n" +
-                "sJ1HhvtxYI7I00UZt9rNnupwEIc3EN0sEd/uAiGmdebWn1RyYeZcHm4W9o64/EeA\n" +
-                "BUv3LQLuUCbRSAFg3Dyn2+vKi6b/nkddh0D40oLXE2QO1LMpIqfgyM2MTfURISYC\n" +
-                "QzOOqT+R1AWXydNCawWZ9hZxZ2XHlt8q11RjJcAo9xzuzYvknTKjgVU=\n" +
-                "-----END CERTIFICATE-----",
+                        "MIIEpTCCA42gAwIBAgIQF3YFiJVY7rsA2hDl8POc8DANBgkqhkiG9w0BAQUFADCB\n" +
+                        "izELMAkGA1UEBhMCVVMxFTATBgNVBAoTDHRoYXd0ZSwgSW5jLjE5MDcGA1UECxMw\n" +
+                        "VGVybXMgb2YgdXNlIGF0IGh0dHBzOi8vd3d3LnRoYXd0ZS5jb20vY3BzIChjKTA2\n" +
+                        "MSowKAYDVQQDEyF0aGF3dGUgRXh0ZW5kZWQgVmFsaWRhdGlvbiBTU0wgQ0EwHhcN\n" +
+                        "MDgxMTE5MDAwMDAwWhcNMTAwMTE3MjM1OTU5WjCBxzETMBEGCysGAQQBgjc8AgED\n" +
+                        "EwJVUzEZMBcGCysGAQQBgjc8AgECFAhEZWxhd2FyZTEbMBkGA1UEDxMSVjEuMCwg\n" +
+                        "Q2xhdXNlIDUuKGIpMRMwEQYDVQQKFApUaGF3dGUgSW5jMRAwDgYDVQQFEwczODk4\n" +
+                        "MjYxMQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxQN\n" +
+                        "TW91bnRhaW4gVmlldzEXMBUGA1UEAxQOd3d3LnRoYXd0ZS5jb20wgZ8wDQYJKoZI\n" +
+                        "hvcNAQEBBQADgY0AMIGJAoGBAOeJaLVuHTgZ9i1hwgC6bqtmktaFhy3VqFipenUn\n" +
+                        "ne2e/gZxcC0hcEw+nLbVXUSStODufApQTA1nmKoBDjejKu/m4BF77rCitDJkpw3a\n" +
+                        "bBX4xaVaLPzJpjyIiL/fpzjweO2BkykMrserUSFeypXlSFJBthhgBBlvPYAU068j\n" +
+                        "AxCVAgMBAAGjggFJMIIBRTAMBgNVHRMBAf8EAjAAMDkGA1UdHwQyMDAwLqAsoCqG\n" +
+                        "KGh0dHA6Ly9jcmwudGhhd3RlLmNvbS9UaGF3dGVFVkNBMjAwNi5jcmwwQgYDVR0g\n" +
+                        "BDswOTA3BgtghkgBhvhFAQcwATAoMCYGCCsGAQUFBwIBFhpodHRwczovL3d3dy50\n" +
+                        "aGF3dGUuY29tL2NwczAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYD\n" +
+                        "VR0jBBgwFoAUzTLi8l0lRwKqj3lLMu4Dmf0wSdEwdgYIKwYBBQUHAQEEajBoMCIG\n" +
+                        "CCsGAQUFBzABhhZodHRwOi8vb2NzcC50aGF3dGUuY29tMEIGCCsGAQUFBzAChjZo\n" +
+                        "dHRwOi8vd3d3LnRoYXd0ZS5jb20vcmVwb3NpdG9yeS9UaGF3dGVfRVZfQ0FfMjAw\n" +
+                        "Ni5jcnQwDQYJKoZIhvcNAQEFBQADggEBALKglt3sBDhrw3qtI0SR5WKMsfacAyEf\n" +
+                        "7wPZymOy+Ntak8LM8Xxv6w9Re0vntfy8m4dIzFv5yGakQKzpQl3t81MT571uf1BT\n" +
+                        "ZLOV8UJPNlS0Hn8YNzk7BlvlE9lXvNVo43FfXyv1psKPZ4E6RGOMNvqo7f3XXqKf\n" +
+                        "sJ1HhvtxYI7I00UZt9rNnupwEIc3EN0sEd/uAiGmdebWn1RyYeZcHm4W9o64/EeA\n" +
+                        "BUv3LQLuUCbRSAFg3Dyn2+vKi6b/nkddh0D40oLXE2QO1LMpIqfgyM2MTfURISYC\n" +
+                        "QzOOqT+R1AWXydNCawWZ9hZxZ2XHlt8q11RjJcAo9xzuzYvknTKjgVU=\n" +
+                        "-----END CERTIFICATE-----",
                 true
         );
 
-        assertEquals( "DNQ DN", "cn=bug5722_child,o=oasis,st=nj,2.5.4.46=org,1.2.840.113549.1.9.1=support@simpson.org", CertUtils.formatDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267") );
+        assertEquals("DNQ DN", "cn=bug5722_child,o=oasis,st=nj,2.5.4.46=org,1.2.840.113549.1.9.1=support@simpson.org", CertUtils.formatDN("cn=bug5722_child,o=oasis,st=nj,2.5.4.46=#13036f7267,1.2.840.113549.1.9.1=#1613737570706f72744073696d70736f6e2e6f7267"));
         assertEquals( "Formatted Subject DN 1", CertUtils.formatDN( "CN=URN:BAE:TEST:3:LAYER7, OU=APL_GIG_TESTBED, O=JHU-APL, ST=MD, C=US" ), CertUtils.getSubjectDN(cert) );
         assertEquals( "Formatted Subject DN 2", CertUtils.formatDN( "CN=www.thawte.com, L=Mountain View, ST=California, C=US, SERIALNUMBER=3898261, O=Thawte Inc, OID.2.5.4.15=\"V1.0, Clause 5.(b)\", OID.1.3.6.1.4.1.311.60.2.1.2=Delaware, OID.1.3.6.1.4.1.311.60.2.1.3=US" ), CertUtils.getSubjectDN(cert2) );
         // The following test is not generally applicable, but is true for this test data
-        assertEquals( "Subject DN 1", cert.getSubjectDN().getName().toLowerCase().replaceAll(" ", ""), CertUtils.getSubjectDN( cert ));
+        assertEquals("Subject DN 1", cert.getSubjectDN().getName().toLowerCase().replaceAll(" ", ""), CertUtils.getSubjectDN(cert));
     }
 
     @Ignore("Developer test")
@@ -269,7 +275,7 @@ public class CertUtilsTest {
         }
         final long t = (System.currentTimeMillis() - before);
         System.out.println( i + " iterations in " + t + "ms.");
-        System.out.println((double)i/t *1000 + " iterations per second");
+        System.out.println((double) i / t * 1000 + " iterations per second");
     }
 
     /**
@@ -287,7 +293,6 @@ public class CertUtilsTest {
             fail("Method should have thrown for invalid dn");
         } catch (IllegalArgumentException e) {
             final String message = e.getMessage();
-            System.out.println(message);
             assertTrue("Invalid message text found", message.startsWith("Invalid DN"));
         }
     }
@@ -322,9 +327,9 @@ public class CertUtilsTest {
                 "0RTm3chJ4nLEWA2Sd67fGUM=\n" +
                 "-----END CERTIFICATE-----";
 
-        final X509Certificate certificate = CertUtils.decodeFromPEM( certificatePem );
+        final X509Certificate certificate = CertUtils.decodeFromPEM(certificatePem);
         final String fingerprint = CertUtils.getCertificateFingerprint(certificate, "SHA1").substring(5);
-        assertEquals( "Fingerprint only", "F6:F6:1A:8B:28:A2:06:1F:5B:62:8C:C8:22:CC:6C:64:D2:5A:D2:79", fingerprint );
+        assertEquals("Fingerprint only", "F6:F6:1A:8B:28:A2:06:1F:5B:62:8C:C8:22:CC:6C:64:D2:5A:D2:79", fingerprint);
     }
 
     @Test
@@ -343,8 +348,8 @@ public class CertUtilsTest {
     public void testCRLURLAlice() throws Exception {
         X509Certificate certificate = TestDocuments.getWssInteropAliceCert();
         String[] crlUrls = CertUtils.getCrlUrls(certificate);
-        assertNotNull( "Null CRL urls", crlUrls );
-        assertEquals( "CRL urls", 0L, (long) crlUrls.length );
+        assertNotNull("Null CRL urls", crlUrls);
+        assertEquals("CRL urls", 0L, (long) crlUrls.length);
     }
 
     @Test
@@ -567,6 +572,163 @@ public class CertUtilsTest {
         byte[] got = CertUtils.decodeCertBytesFromPEM(nolf, true);
         final X509Certificate cert = CertUtils.decodeCert(got);
         assertNotNull(cert);
+    }
+
+    @Test
+    public void testGetCertProperties() throws Exception {
+        String propertiesTestCert = "-----BEGIN CERTIFICATE-----\n" +
+            "MIICJDCCAY2gAwIBAgIJANtlD/ubhZo0MA0GCSqGSIb3DQEBDAUAMBAxDjAMBgNVBAMTBWJsb3Jn\n" +
+            "MB4XDTE0MTAyMTE3MTg1NloXDTM0MTAxNjE3MTg1NlowEDEOMAwGA1UEAxMFYmxvcmcwgZ8wDQYJ\n" +
+            "KoZIhvcNAQEBBQADgY0AMIGJAoGBAI/0hxogzZp4RlYflk1iCYES8w5KlwCPHzdoB3CKbbosGgpD\n" +
+            "lhtZrsDqGkd1EPb78DOYp41xxLob2hG9g6NIiV2+NHQLuklWzqBRIwDlmMe+wcp5Fur+EqH0di3k\n" +
+            "IG5pfWpLZGtUNeJJXtZB0fT8GzcSuQaxyA0XxSMkOLcePfWdAgMBAAGjgYUwgYIwEgYDVR0TAQH/\n" +
+            "BAgwBgEB/wIBBDAOBgNVHQ8BAf8EBAMCASIwHAYDVR0lAQH/BBIwEAYEVR0lAAYIKwYBBQUHAwMw\n" +
+            "HQYDVR0OBBYEFOfnKT3VxNomMMsKMYWysmxxKOb3MB8GA1UdIwQYMBaAFOfnKT3VxNomMMsKMYWy\n" +
+            "smxxKOb3MA0GCSqGSIb3DQEBDAUAA4GBAEgf+SmjwsixO2A+oGVxQve63MJvZMvISge4l9lG6QcU\n" +
+            "q1upQQ8JEid223g/Qy1H2E50aKj9KvJyykSFpdeDuEJyWuj/YNPgTCL+pteUHoUUnotapfp0aKVq\n" +
+            "f+pWFbcdrZnlEnksKTTn7MJ88PHOI6uiyANfeMHzgMIr90T/17rD\n" +
+            "-----END CERTIFICATE-----";
+
+        X509Certificate cert = TestKeys.getCert(propertiesTestCert);
+
+        List<Pair<String,String>> props = CertUtils.getCertProperties(cert);
+
+        assertTrue(props.contains(new Pair<>(CertUtils.CERT_PROP_KEY_USAGE, "Key Encipherment, CRL Signing")));
+        assertTrue(props.contains(new Pair<>(CertUtils.CERT_PROP_EXT_KEY_USAGE, "any, id-kp-codeSigning")));
+        assertTrue(props.contains(new Pair<>(CertUtils.CERT_PROP_ISSUED_TO, "CN=blorg")));
+    }
+
+    @Test
+    public void testCheckForMismatchingKey_NoMismatch() throws Exception {
+        Pair<X509Certificate, PrivateKey> certAndKeyA = TestKeys.getCertAndKey("RSA_512");
+
+        CertUtils.checkForMismatchingKey(certAndKeyA.left, certAndKeyA.right);
+    }
+
+    @Test
+    public void testCheckForMismatchingKey_KeyIsNotRSA_CertificateExceptionThrown() throws Exception {
+        X509Certificate rsaCert = TestKeys.getCert(TestKeys.RSA_1024_CERT_X509_B64);
+        PrivateKey dsaKey = TestKeys.getKey("DSA", TestKeys.DSA_1024_KEY_PKCS8_B64);
+
+        try {
+            CertUtils.checkForMismatchingKey(rsaCert, dsaKey);
+            fail("Should have failed due to detectable mismatching key");
+        } catch (CertificateException e) {
+            assertEquals("The specified key does not belong to the specified " +
+                    "certificate [cn=test_rsa_1024].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCheckForMismatchingKey_CertIsNotRSA_CertificateExceptionThrown() throws Exception {
+        X509Certificate dsaCert = TestKeys.getCert(TestKeys.DSA_1024_CERT_X509_B64);
+        PrivateKey rsaKey = TestKeys.getKey("RSA", TestKeys.RSA_1024_KEY_PKCS8_B64);
+
+        try {
+            CertUtils.checkForMismatchingKey(dsaCert, rsaKey);
+            fail("Should have failed due to detectable mismatching key");
+        } catch (CertificateException e) {
+            assertEquals("The specified key does not belong to the specified " +
+                    "certificate [cn=test_dsa_1024].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCheckForMismatchingKey_RSAModulusDiffers_CertificateExceptionThrown() throws Exception {
+        X509Certificate rsa1024Cert = TestKeys.getCert(TestKeys.RSA_1024_CERT_X509_B64);
+        PrivateKey rsa2048Key = TestKeys.getKey("RSA", TestKeys.RSA_2048_KEY_PKCS8_B64);
+
+        try {
+            CertUtils.checkForMismatchingKey(rsa1024Cert, rsa2048Key);
+            fail("Should have failed due to detectable mismatching key");
+        } catch (CertificateException e) {
+            assertEquals("The specified key's RSA modulus differs from that of the public key " +
+                    "in the certificate [cn=test_rsa_1024].", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractSingleCommonNameFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getSubjectDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractSingleCommonNameFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no subject DN", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractFirstCommonNameFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getSubjectDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractFirstCommonNameFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no subject DN", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractCommonNamesFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getSubjectDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractCommonNamesFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no subject DN", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractSingleIssuerNameFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getIssuerDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractSingleIssuerNameFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no issuer DN", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractFirstIssuerNameFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getIssuerDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractFirstIssuerNameFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no issuer DN", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExtractIssuerNamesFromCertificate_NoSubjectDN_IAEThrown() throws Exception {
+        X509Certificate mockCert = mock(X509Certificate.class);
+
+        when(mockCert.getIssuerDN()).thenReturn(null);
+
+        try {
+            CertUtils.extractIssuerNamesFromCertificate(mockCert);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Certificate [] contains no issuer DN", e.getMessage());
+        }
     }
 
     /**

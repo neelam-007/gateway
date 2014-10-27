@@ -20,7 +20,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -57,8 +56,9 @@ class FederatedAuthorizationHandler {
                                                   "that are trusted");
             }
         } else if ( !CertUtils.certsAreEqual(importedCert, requestCert) ) {
-                throw new BadCredentialsException("Request certificate for user " + u +
-                                                  " does not match previously imported certificate");
+                throw new BadCredentialsException("Request certificate [" +
+                        CertUtils.getCertIdentifyingInformation(requestCert) + "] for user " + u + "] does not match " +
+                        "previously imported certificate [" + CertUtils.getCertIdentifyingInformation(importedCert) + "]");
         }
     }
 
@@ -72,12 +72,12 @@ class FederatedAuthorizationHandler {
                             auditor);
 
             if ( cvr != CertificateValidationResult.OK ) {
-                exceptionForType("Certificate path validation and/or revocation checking failed", null, isClient);
+                exceptionForType("Certificate [" + CertUtils.getCertIdentifyingInformation(certificate) +
+                        "] path validation and/or revocation checking failed", null, isClient);
             }
         } catch (CertificateException ce) {
-            exceptionForType("Certificate path validation and/or revocation checking error", ce, isClient);
-        } catch (SignatureException se) {
-            exceptionForType("Certificate path validation and/or revocation checking error", se, isClient);
+            exceptionForType("Certificate [" + CertUtils.getCertIdentifyingInformation(certificate) +
+                    "] path validation and/or revocation checking error", ce, isClient);
         }
     }
 

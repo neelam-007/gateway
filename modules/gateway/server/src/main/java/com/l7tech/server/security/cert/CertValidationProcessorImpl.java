@@ -117,7 +117,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                                              final CertificateValidationType requestedValType,
                                              final Facility facility,
                                              final Audit auditor)
-            throws CertificateException, SignatureException
+            throws CertificateException
     {
         if (endEntityCertificatePath == null || auditor == null) throw new NullPointerException("a required parameter is missing");
         if (requestedValType == null && facility == null) throw new NullPointerException("Either requestedValType or facility must be provided");
@@ -217,7 +217,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
     private CertificateValidationResult checkCertificateOnly(final X509Certificate endEntityCertificate,
                                                              final String subjectDnForLoggingOnly,
                                                              final Audit auditor)
-            throws SignatureException, CertificateException
+            throws CertificateException
     {
         // note that if the cert is invalid we won't actually get here
         // since this is checked when the credentials are gathered.
@@ -540,7 +540,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, Pos
                 mySkiCache.put(tce.getSki(), entry);
                 // last since it may throw on invalid data
                 myIssuerDnCache.put(new IDNSerialKey(entry.issuerDn, entry.serial), entry);
-            } catch (CertificateException | IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 logger.log(Level.WARNING, "Couldn't load TrustedCert #{0} ({1}): " + ExceptionUtils.getMessage(e), new Object[] { tce.getGoid(), tce.getSubjectDn() });
             }
         }

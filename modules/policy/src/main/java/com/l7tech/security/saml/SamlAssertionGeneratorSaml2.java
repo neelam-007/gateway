@@ -157,7 +157,8 @@ class SamlAssertionGeneratorSaml2 extends SamlVersionAssertionGenerator {
                         NamespaceFactory nsf = new NamespaceFactory();
                         final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
                         if (ski == null)
-                            throw new CertificateException("Unable to create SKI reference: no SKI available for cert");
+                            throw new CertificateException("Unable to create SKI reference: no SKI available for " +
+                                    "certificate [" + CertUtils.getCertIdentifyingInformation(cert) + "]");
                         KeyInfoDetails kid = KeyInfoDetails.makeKeyId(ski,
                                                  SoapConstants.VALUETYPE_SKI);
                         kid.createAndAppendKeyInfoElement(nsf, node);

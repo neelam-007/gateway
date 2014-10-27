@@ -90,10 +90,14 @@ public class CertificateAuthenticator {
                         CertValidationProcessor.Facility.IDENTITY,
                         auditor);
                 if (cvr != CertificateValidationResult.OK) {
-                    throw new InvalidClientCertificateException("Certificate path validation and/or revocation checking failed");
+                    throw new InvalidClientCertificateException("Certificate [" +
+                            CertUtils.getCertIdentifyingInformation(requestCert) + "] path validation and/or " +
+                            "revocation checking failed");
                 }
             } catch (GeneralSecurityException e) {
-                throw new InvalidClientCertificateException("Certificate validation failed: " + ExceptionUtils.getMessage(e), e);
+                throw new InvalidClientCertificateException("Certificate [" +
+                        CertUtils.getCertIdentifyingInformation(requestCert) + "] validation failed:" +
+                        ExceptionUtils.getMessage(e), e);
             }
             logger.finest(MessageFormat.format("Authenticated user {0} using a client certificate", userLabel));
             if (internalCert) {
@@ -110,8 +114,9 @@ public class CertificateAuthenticator {
                 return new AuthenticationResult(user, pc.getSecurityTokens(), requestCert, false);
             }
         } else {
-            String err = "Failed to authenticate user " + userLabel + " using a client certificate " +
-                    "(request certificate doesn't match database's)";
+            String err = "Failed to authenticate user " + userLabel + " using a client certificate [" +
+                    CertUtils.getCertIdentifyingInformation(requestCert) + "] - request certificate doesn't match " +
+                    "database certificate [" + CertUtils.getCertIdentifyingInformation(validCert) + "]";
             logger.warning(err);
             throw new InvalidClientCertificateException(err);
         }

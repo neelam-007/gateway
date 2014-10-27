@@ -256,7 +256,8 @@ public class CertUtils {
         boolean keyIsRsa = "RSA".equalsIgnoreCase(key.getAlgorithm());
 
         if (certIsRsa != keyIsRsa)
-            throw new CertificateException("The specified key does not belong to the specified certificate.");
+            throw new CertificateException("The specified key does not belong to the specified certificate [" +
+                    getCertIdentifyingInformation(cert) + "].");
 
         if (!(certPublic instanceof RSAKey) || !(key instanceof RSAKey))
             return; // can't compare modulus, so can't help you further
@@ -268,7 +269,8 @@ public class CertUtils {
             return; // we can't help you.  (Plus, normally can't happen.)
 
         if (!certKeyMod.equals(rsaKeyMod))
-            throw new CertificateException("The specified key's RSA modulus differs from that of the public key in the certificate.");
+            throw new CertificateException("The specified key's RSA modulus differs from that of the public key in " +
+                    "the certificate [" + getCertIdentifyingInformation(cert) + "].");
     }
 
     public static X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {
@@ -1106,7 +1108,7 @@ public class CertUtils {
             }
 
             if (ocspUrls.length > 0)
-                l.add(new Pair<String, String>(CERT_PROP_OCSP, sb.toString()));
+                l.add(new Pair<>(CERT_PROP_OCSP, sb.toString()));
         } catch (CertificateException e) {
             logger.log( Level.WARNING, "Cannot get the OCSP information from the certificate: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
         }
@@ -1122,10 +1124,12 @@ public class CertUtils {
             }
 
             if (crlUrls.length > 0)
-                l.add(new Pair<String, String>(CERT_PROP_CRL_DISTRIBUTION_POINTS, sb.toString()));
+                l.add(new Pair<>(CERT_PROP_CRL_DISTRIBUTION_POINTS, sb.toString()));
 
         } catch (IOException e) {
-            logger.log( Level.WARNING, "Cannot get the CRL information from the certificate: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            logger.log( Level.WARNING, "Cannot get the CRL information from the certificate: [" +
+                    getCertIdentifyingInformation(cert) + "]: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
         }
 
         try {
@@ -1147,7 +1151,9 @@ public class CertUtils {
                 }
             }
         } catch (CertificateParsingException e) {
-            logger.log(Level.WARNING, "Cannot get the Subject Alternative Names from the certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Cannot get the Subject Alternative Names from the certificate: [" +
+                    getCertIdentifyingInformation(cert) + "]: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
         }
 
         return l;
@@ -1453,8 +1459,10 @@ public class CertUtils {
      */
     public static String extractSingleCommonNameFromCertificate(X509Certificate cert) throws IllegalArgumentException, MultipleCnValuesException {
         Principal principal = cert.getSubjectDN();
-        if (principal == null)
-            throw new IllegalArgumentException("Cert contains no subject DN");
+        if (principal == null) {
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no subject DN");
+        }
         String ret = extractSingleCommonName(principal);
         return ret == null ? "" : ret;
     }
@@ -1469,7 +1477,8 @@ public class CertUtils {
     public static String extractFirstCommonNameFromCertificate(X509Certificate cert) {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no subject DN");
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no subject DN");
         return extractFirstCommonNameFromDN( principal.getName() );
     }
 
@@ -1500,7 +1509,8 @@ public class CertUtils {
     public static List<String> extractCommonNamesFromCertificate(X509Certificate cert) throws IllegalArgumentException {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no subject DN");
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no subject DN");
         List<String> vals = dnToAttributeMap(principal.getName()).get("CN");
         return vals == null ? Collections.<String>emptyList() : vals;
     }
@@ -1517,7 +1527,8 @@ public class CertUtils {
     public static String extractSingleIssuerNameFromCertificate(X509Certificate cert) throws IllegalArgumentException, MultipleCnValuesException {
         Principal principal = cert.getIssuerDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no issuer DN");
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no issuer DN");
         String ret = extractSingleCommonName(principal);
         if (ret == null) ret = principal.getName();
         return ret == null ? "" : ret;
@@ -1534,7 +1545,8 @@ public class CertUtils {
     public static String extractFirstIssuerNameFromCertificate(X509Certificate cert) {
         Principal principal = cert.getIssuerDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no issuer DN");
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no issuer DN");
         Map<String, List<String>> dnMap = dnToAttributeMap(principal.getName());
         List<String> cnValues = dnMap.get("CN");
         String login = null;
@@ -1553,7 +1565,8 @@ public class CertUtils {
     public static List<String> extractIssuerNamesFromCertificate(X509Certificate cert) {
         Principal principal = cert.getIssuerDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no issuer DN");
+            throw new IllegalArgumentException("Certificate [" + getCertIdentifyingInformation(cert) + "] " +
+                    "contains no issuer DN");
         List<String> vals = dnToAttributeMap(principal.getName()).get("CN");
         return vals == null ? Collections.<String>emptyList() : vals;
     }
@@ -1874,11 +1887,7 @@ public class CertUtils {
         try {
             in = inputStreamFactory.call();
             ks.load(in, ksPass);
-        } catch (IOException e) {
-            throw e;
-        } catch (NoSuchAlgorithmException e) {
-            throw e;
-        } catch (CertificateException e) {
+        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             throw e;
         } catch (Exception e) {
             throw new KeyStoreException(e); // can't happen
@@ -2020,13 +2029,15 @@ public class CertUtils {
                 // Process AIA extension
                 ASN1Object extensionObject = ASN1Object.fromByteArray(aiaBytes);
                 if (!(extensionObject instanceof DEROctetString))
-                    throw new CertificateException("Certificate authority information access extension is not of the expected type: " +
+                    throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
+                            "authority information access extension is not of the expected type: " +
                             extensionObject.getClass().getName());
 
                 DEROctetString derOS = (DEROctetString) extensionObject;
                 ASN1Object extensionSequenceObject =  ASN1Object.fromByteArray(derOS.getOctets());
                 if (!(extensionSequenceObject instanceof DERSequence))
-                    throw new CertificateException("Certificate authority information access extension content is not of the expected type: " +
+                    throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
+                            "authority information access extension content is not of the expected type: " +
                             extensionSequenceObject.getClass().getName());
 
                 // Create AIA from sequence
@@ -2035,7 +2046,8 @@ public class CertUtils {
                 AccessDescription[] accessDescriptions = aia.getAccessDescriptions();
 
                 if (accessDescriptions.length == 0)
-                    throw new CertificateException("Certificate authority information access extension is empty.");
+                    throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
+                            "authority information access extension is empty.");
 
                 for (AccessDescription accessDescription : accessDescriptions) {
                     if(accessMethodOid.equals(accessDescription.getAccessMethod().getId())) {
@@ -2044,20 +2056,18 @@ public class CertUtils {
                         if (name.getTagNo() == 6) {
                             DEREncodable nameObject = name.getName();
                             if (!(nameObject instanceof DERIA5String))
-                                throw new CertificateException("Certificate authority information access extension has access description location with incorrect name type " +
-                                    nameObject.getClass().getName());
+                                throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
+                                        "authority information access extension has access description location with " +
+                                        "incorrect name type " + nameObject.getClass().getName());
 
                             DERIA5String urlDer = (DERIA5String) nameObject;
                             uris.add(urlDer.getString());
                         }
                     }
                 }
-            }
-            catch(IllegalArgumentException iae) { // can be thrown from AuthorityInformationAccess constructor
-                throw new CertificateException("Error processing certificate authority information access extension.", iae);
-            }
-            catch(IOException ioe) {
-                throw new CertificateException("Error processing certificate authority information access extension.", ioe);
+            } catch (IllegalArgumentException | IOException iae) { // IllegalArgumentException can be thrown from AuthorityInformationAccess constructor
+                throw new CertificateException("Error processing certificate [" +
+                        getCertIdentifyingInformation(certificate) + "] authority information access extension.", iae);
             }
         }
 
@@ -2137,6 +2147,24 @@ public class CertUtils {
         }
 
         return issuerDn;
+    }
+
+    /**
+     * Creates a String containing information which identifies the given certificate and returns it. If the
+     * identifying information can't be retrieved an empty string will be returned.
+     *
+     * Intended for use in messages for certificate-related errors. See issue SSG-6366.
+     */
+    public static String getCertIdentifyingInformation(X509Certificate certificate) {
+        String identifyingInformation;
+
+        try {
+            identifyingInformation = getSubjectDN(certificate);
+        } catch (Exception e) {
+            identifyingInformation = "";
+        }
+
+        return identifyingInformation;
     }
 
     // This method was originally migrated from ServerCertUtils.

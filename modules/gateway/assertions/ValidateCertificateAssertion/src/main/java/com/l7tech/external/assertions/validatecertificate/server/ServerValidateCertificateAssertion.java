@@ -77,9 +77,6 @@ public class ServerValidateCertificateAssertion extends AbstractServerAssertion<
         } catch (final CertificateException e) {
             handleError(e, context, AssertionMessages.CERT_VALIDATION_FAILURE,
                     new String[]{subjectDN, assertion.getValidationType().toString(), e.getMessage()});
-        } catch (final SignatureException e) {
-            handleError(e, context, AssertionMessages.CERT_VALIDATION_FAILURE,
-                    new String[]{subjectDN, assertion.getValidationType().toString(), e.getMessage()});
         }
         return assertionStatus;
     }

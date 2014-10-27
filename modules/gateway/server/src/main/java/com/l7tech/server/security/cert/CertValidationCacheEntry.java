@@ -21,7 +21,7 @@ class CertValidationCacheEntry {
     final String issuerDn;
     final BigInteger serial;
 
-    CertValidationCacheEntry(TrustedCert tce) throws CertificateException {
+    CertValidationCacheEntry(TrustedCert tce) {
         this.tce = tce;
         this.cert = tce.getCertificate();
         this.subjectDn = tce.getSubjectDn();

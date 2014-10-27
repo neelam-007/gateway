@@ -8,7 +8,6 @@ import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 
 import java.math.BigInteger;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -43,7 +42,7 @@ public interface CertValidationProcessor {
                                       CertificateValidationType requestedValidationType,
                                       Facility facility,
                                       Audit auditor)
-            throws CertificateException, SignatureException;
+            throws CertificateException;
 
     /**
      * Get a known certificate by subject distinguished name.

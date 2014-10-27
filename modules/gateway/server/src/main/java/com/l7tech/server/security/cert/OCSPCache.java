@@ -1,6 +1,7 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.Config;
@@ -140,7 +141,7 @@ public class OCSPCache {
     private static final ThreadLocal<Set<OcspKey>> RECURSION_SET = new ThreadLocal<Set<OcspKey>>() {
         @Override
         protected Set<OcspKey> initialValue() {
-            return new HashSet<OcspKey>();
+            return new HashSet<>();
         }
     };
 
@@ -223,7 +224,8 @@ public class OCSPCache {
         try {
             return new OcspKey(responderUrl, certificate);
         } catch (CertificateException ce) {
-            throw new OCSPClient.OCSPClientException("Error processing certificate", ce);
+            throw new OCSPClient.OCSPClientException("Error processing certificate [" +
+                    CertUtils.getCertIdentifyingInformation(certificate) + "]", ce);
         }
     }
 

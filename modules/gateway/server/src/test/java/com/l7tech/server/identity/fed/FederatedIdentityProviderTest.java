@@ -22,7 +22,6 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.junit.Test;
 
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -113,7 +112,7 @@ public class FederatedIdentityProviderTest {
                                                       final CertificateValidationType minimumValidationType,
                                                       final CertificateValidationType requestedValidationType,
                                                       final Facility facility,
-                                                      final Audit auditor ) throws CertificateException, SignatureException {
+                                                      final Audit auditor ) throws CertificateException {
                 return certificatePath.length>0 && CertUtils.certsAreEqual( certificatePath[0], CertUtils.decodeCert( HexUtils.decodeBase64(SAML_ISSUER_B64))) ?
                         CertificateValidationResult.OK :
                         CertificateValidationResult.CANT_BUILD_PATH;

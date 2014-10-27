@@ -1,6 +1,7 @@
 package com.l7tech.security.saml;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
@@ -17,6 +18,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +160,36 @@ public class SignedSamlTest {
                                                          SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         ag.attachStatement(request, statement, samlOptions);
         return request;
+    }
+
+    @Test
+    public void testAttachRequest_SKISubjectConfirmationSpecifiedButCertContainsNoSKI_CertificateExceptionThrown() throws Exception {
+        Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+
+        Pair<X509Certificate, PrivateKey> testCertAndKey = TestKeys.getCertAndKey("DSA_1024_NO_SKI");
+
+        SamlAssertionGenerator ag = new SamlAssertionGenerator(new SignerInfo(testCertAndKey.right,
+                new X509Certificate[] {testCertAndKey.left}));
+
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setNotAfterSeconds(300);
+        samlOptions.setProofOfPosessionRequired(false);
+        samlOptions.setIssuerKeyInfoType(KeyInfoInclusionType.STR_SKI);
+        samlOptions.setVersion(1);
+
+        SubjectStatement statement =
+                SubjectStatement.createAuthenticationStatement(LoginCredentials.
+                        makeLoginCredentials(new HttpClientCertToken(testCertAndKey.left), SslAssertion.class),
+                SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.STR_SKI,
+                NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
+
+        try {
+            ag.attachStatement(request, statement, samlOptions);
+            fail("Expected CertificateException");
+        } catch (CertificateException e) {
+            assertEquals("Unable to create SKI reference: no SKI available for certificate [cn=test_dsa_1024]",
+                    e.getMessage());
+        }
     }
 
     public Document getSignedRequestWithSenderVouchesToken() throws Exception {

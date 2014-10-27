@@ -24,7 +24,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.security.Principal;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -83,7 +82,7 @@ public class ServerValidateCertificateAssertionTest {
         context.setVariable(TEST_CERT, null);
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
         assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("No certificate found for variable: " + TEST_CERT, (String) context.getVariable("certificateValidation.error"));
+        assertEquals("No certificate found for variable: " + TEST_CERT, context.getVariable("certificateValidation.error"));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_NOT_FOUND));
     }
 
@@ -92,7 +91,7 @@ public class ServerValidateCertificateAssertionTest {
         context.setVariable(TEST_CERT, "not a certificate");
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
         assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("No certificate found for variable: " + TEST_CERT, (String) context.getVariable("certificateValidation.error"));
+        assertEquals("No certificate found for variable: " + TEST_CERT, context.getVariable("certificateValidation.error"));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_NOT_FOUND));
     }
 
@@ -120,14 +119,6 @@ public class ServerValidateCertificateAssertionTest {
     }
 
     @Test
-    public void validationSignatureException() throws Exception {
-        for (final CertificateValidationType type : CertificateValidationType.values()) {
-            testValidationWithException(type, new SignatureException("mocking exception"));
-            testAudit.reset();
-        }
-    }
-
-    @Test
     public void validationOkLogOnly() throws Exception {
         assertion.setLogOnly(true);
         testValidationOk(CertificateValidationType.CERTIFICATE_ONLY);
@@ -139,7 +130,7 @@ public class ServerValidateCertificateAssertionTest {
         setupMock(CertificateValidationType.CERTIFICATE_ONLY, CertificateValidationResult.UNKNOWN);
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("Certificate CN=test validation (" + CertificateValidationType.CERTIFICATE_ONLY + ") failed with status: " + CertificateValidationResult.UNKNOWN, (String) context.getVariable("certificateValidation.error"));
+        assertEquals("Certificate CN=test validation (" + CertificateValidationType.CERTIFICATE_ONLY + ") failed with status: " + CertificateValidationResult.UNKNOWN, context.getVariable("certificateValidation.error"));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE));
     }
 
@@ -149,17 +140,7 @@ public class ServerValidateCertificateAssertionTest {
         setupMock(CertificateValidationType.CERTIFICATE_ONLY, new CertificateException("mocking exception"));
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("Certificate CN=test validation (" + CertificateValidationType.CERTIFICATE_ONLY + ") failed: mocking exception", (String) context.getVariable("certificateValidation.error"));
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_FAILURE));
-    }
-
-    @Test
-    public void validationWithSignatureExceptionLogOnly() throws Exception {
-        assertion.setLogOnly(true);
-        setupMock(CertificateValidationType.CERTIFICATE_ONLY, new SignatureException("mocking exception"));
-        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
-        assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("Certificate CN=test validation (" + CertificateValidationType.CERTIFICATE_ONLY + ") failed: mocking exception", (String) context.getVariable("certificateValidation.error"));
+        assertEquals("Certificate CN=test validation (" + CertificateValidationType.CERTIFICATE_ONLY + ") failed: mocking exception", context.getVariable("certificateValidation.error"));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_FAILURE));
     }
 
@@ -168,7 +149,7 @@ public class ServerValidateCertificateAssertionTest {
         setupMock(validationType, ex);
         assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
         assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-        assertEquals("Certificate CN=test validation (" + validationType + ") failed: " + ex.getMessage(), (String) context.getVariable("certificateValidation.error"));
+        assertEquals("Certificate CN=test validation (" + validationType + ") failed: " + ex.getMessage(), context.getVariable("certificateValidation.error"));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_FAILURE));
     }
 
@@ -179,7 +160,7 @@ public class ServerValidateCertificateAssertionTest {
                 setupMock(validationType, result);
                 assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
                 assertFalse((Boolean) context.getVariable("certificateValidation.passed"));
-                assertEquals("Certificate CN=test validation (" + validationType + ") failed with status: " + result, (String) context.getVariable("certificateValidation.error"));
+                assertEquals("Certificate CN=test validation (" + validationType + ") failed with status: " + result, context.getVariable("certificateValidation.error"));
                 assertTrue(testAudit.isAuditPresent(AssertionMessages.CERT_VALIDATION_STATUS_FAILURE));
                 testAudit.reset();
             }

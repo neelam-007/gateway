@@ -107,38 +107,47 @@ public class CertVerifier {
             throws CertificateException, CertUtils.CertificateUntrustedException
     {
         if (chain == null || chain.length < 1)
-            throw new CertificateException("Couldn't find trusted certificate in peer's certificate chain: certificate chain is null or empty");
+            throw new CertificateException("Couldn't find trusted certificate [" +
+                    CertUtils.getCertIdentifyingInformation(trustedCert) + "] in peer's certificate chain: " +
+                    "certificate chain is null or empty");
 
         if (CertUtils.certsAreEqual(chain[0], trustedCert))
             return; // success
 
         for (int i = 1; i < chain.length; ++i) {
             X509Certificate cert = chain[i - 1];
-            X509Certificate cacert = chain[i];
+            X509Certificate caCert = chain[i];
 
-            boolean haveConstraints = cacert.getExtensionValue(CertUtils.X509_OID_BASIC_CONSTRAINTS) != null;
-            int pathlen = haveConstraints ? cacert.getBasicConstraints() : CertUtils.DEFAULT_X509V1_MAX_PATH_LENGTH;
+            boolean haveConstraints = caCert.getExtensionValue(CertUtils.X509_OID_BASIC_CONSTRAINTS) != null;
+            int pathlen = haveConstraints ? caCert.getBasicConstraints() : CertUtils.DEFAULT_X509V1_MAX_PATH_LENGTH;
 
             if (pathlen < 0)
-                throw new CertificateException("CA cert at position " + i + " in certificate path contains basic constraints disallowing use as a CA cert");
+                throw new CertificateException("CA certificate [" + CertUtils.getCertIdentifyingInformation(caCert) + "] " +
+                        "at position " + i + " in certificate path contains basic constraints disallowing " +
+                        "use as a CA certificate");
 
             int numIntermediateCaCerts = i - 1;
             if (numIntermediateCaCerts > pathlen)
-                throw new CertificateException("Path length constraint exceeded: CA cert at position " + i +
-                                               " in certificate path contains basic contraints disallowing use with more than " + pathlen + " intermediate CA certs");
+                throw new CertificateException("Path length constraint exceeded: CA certificate [" +
+                        CertUtils.getCertIdentifyingInformation(caCert) + "] at position " + i + " in certificate " +
+                        "path contains basic constraints disallowing use with more than " + pathlen +
+                        " intermediate CA certificates");
 
             try {
-                cachedVerify(cert, cacert);
+                cachedVerify(cert, caCert);
             } catch (GeneralSecurityException e) {
-                throw new CertificateException("Unable to verify signature in peer certificate chain: " + ExceptionUtils.getMessage(e), e);
+                throw new CertificateException("Unable to verify certificate [" +
+                        CertUtils.getCertIdentifyingInformation(cert) +
+                        "] signature in peer certificate chain: " + ExceptionUtils.getMessage(e), e);
             }
 
-            if (CertUtils.certsAreEqual(cacert, trustedCert))
+            if (CertUtils.certsAreEqual(caCert, trustedCert))
                 return; // Success
         }
 
         // We probably just haven't talked to this Ssg before.  Trigger a reimport of the certificate.
-        throw new CertUtils.CertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
+        throw new CertUtils.CertificateUntrustedException("Couldn't find trusted certificate [" +
+                CertUtils.getCertIdentifyingInformation(trustedCert) + "] in peer's certificate chain");
     }
 
     public static class VerifiedCert {
