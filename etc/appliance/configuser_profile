@@ -1,4 +1,3 @@
-
 set -u
 
 # SSG-7152: This command causes this script to immediately exit if any commands it calls returns a non-zero exit status
@@ -7,7 +6,6 @@ set -u
 
 # SSG-9027: ssgconfig menu (configuser_profile_menu.sh) is extracted and stored in Foundation Services  
 # to centralize the ssgconfig menu code, 
-# 
 #
 source /opt/SecureSpan/Platform/bin/configuser_profile_menu.sh
 
@@ -16,3 +14,4 @@ if [ $? -ne 0 ] ; then
     echo "Unable to execute the ssg config menu"
     exit
 fi
+
