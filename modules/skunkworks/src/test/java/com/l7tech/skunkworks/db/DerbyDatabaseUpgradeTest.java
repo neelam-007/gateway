@@ -58,7 +58,7 @@ public class DerbyDatabaseUpgradeTest {
         newDBDataSource.setDatabaseName(NEW_DATABASE_NAME);
         newDBDataSource.setCreateDatabase("create");
 
-        DerbyDbHelper.ensureDataSource(newDBDataSource, new LiquibaseDBManager("etc/db/liquibase"));
+        DerbyDbHelper.ensureDataSource(newDBDataSource, new LiquibaseDBManager("etc/db/liquibase"), new Resource[0]);
 
         // Gets the version of the new database;
         Connection newDBConnection = newDBDataSource.getConnection();

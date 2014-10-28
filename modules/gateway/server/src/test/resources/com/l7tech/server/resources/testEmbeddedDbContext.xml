@@ -22,6 +22,9 @@
             <list>
                 <ref local="embeddedDBCreationDataSource"/>
                 <ref bean="liquibaseManager"/>
+                <list>
+                    <value>file:${com.l7tech.server.varDirectory}/derby.sql</value>
+                </list>
             </list>
         </property>
     </bean>

@@ -22,6 +22,11 @@
             <list>
                 <ref local="embeddedDBCreationDataSource"/>
                 <ref bean="liquibaseManager"/>
+                <!-- This is a list of additional scripts to run after the database has been created.
+                The derby.sql file is created by the gateway configuration client to provide the default policy manager username and password. See SSG-9502-->
+                <list>
+                    <value>file:${com.l7tech.server.varDirectory}/derby.sql</value>
+                </list>
             </list>
         </property>
     </bean>

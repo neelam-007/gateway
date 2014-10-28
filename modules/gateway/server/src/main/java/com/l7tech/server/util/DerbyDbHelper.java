@@ -142,7 +142,8 @@ public class DerbyDbHelper {
      */
     @SuppressWarnings("UnusedDeclaration") //This is referenced in embeddedDBContext.xml
     public static void ensureDataSource(final DataSource dataSource,
-                                        final LiquibaseDBManager dbManager) {
+                                        final LiquibaseDBManager dbManager,
+                                        final Resource[] createScripts) {
         Connection connection = null;
 
         boolean created = true;
@@ -162,6 +163,10 @@ public class DerbyDbHelper {
             if ( created ) {
                 //create the new schema
                 dbManager.ensureSchema(connection);
+                //run any additional scripts needed when creating the derby database.
+                //This will be the script to change the policy manager admin username/password.
+                //SSG-9502
+                runScripts( connection, createScripts, false );
                 connection.commit();
             }
         } catch ( SQLException se ) {
