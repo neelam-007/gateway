@@ -63,10 +63,12 @@ public class AuditDetailAssertionPropertiesDialog extends LegacyAssertionPropert
         modified = false;
         setContentPane(mainPanel);
         setTitle("Audit Detail Properties");
-
         String[] levels = {
-            Level.INFO.getName(),
             Level.WARNING.getName(),
+            Level.INFO.getName(),
+            Level.FINE.getName(),
+            Level.FINER.getName(),
+            Level.FINEST.getName()
         };
 
         levelComboBox.setModel(new DefaultComboBoxModel(levels));
