@@ -1,6 +1,5 @@
 package com.l7tech.gateway.common.cassandra;
 
-import com.datastax.driver.core.ProtocolOptions;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
@@ -38,7 +37,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private String port;
     private String username;
     private Goid passwordGoid;
-    private String compression = ProtocolOptions.Compression.NONE.name();
+    private String compression = "";
     private boolean ssl;
 
     private String propertiesXml;
