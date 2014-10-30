@@ -857,6 +857,10 @@ public class GatewayFeatureSets {
                         mass("assertion:XMPPSetSessionAttribute"),
                         mass("assertion:XMPPOpenServerSession"));
 
+        GatewayFeatureSet retrieveServiceWsdlAssertion = fsr("set:RetrieveServiceWsdl:Assertions",
+                "Assertions to enable service WSDL retrieval functionality.",
+                mass("assertion:RetrieveServiceWsdl"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -981,6 +985,7 @@ public class GatewayFeatureSets {
             fs(sophosAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
+            fs(retrieveServiceWsdlAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
@@ -1047,6 +1052,7 @@ public class GatewayFeatureSets {
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
             fs(radiusAssertions),
+            fs(retrieveServiceWsdlAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONTROL, "CloudSpan CloudControl",
@@ -1115,6 +1121,7 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(retrieveServiceWsdlAssertion),
             mass("assertion:ValidateCertificate"));
 
         GatewayFeatureSet profileApi =
@@ -1169,7 +1176,8 @@ public class GatewayFeatureSets {
                 fs(trustStore),
                 fs(siteMinderAssertions),
                 fs(sophosAssertions),
-                fs(csrfProtectionAssertion));
+                fs(csrfProtectionAssertion),
+                fs(retrieveServiceWsdlAssertion));
 
         /**
          * ### FEATURE PACK DEFINITIONS BEGIN ###

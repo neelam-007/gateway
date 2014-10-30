@@ -181,7 +181,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         return comboBoxModel;
     }
 
-    protected ComboBoxModel buildMessageTargetComboBoxModel( final boolean includeDefault ) {
+    protected ComboBoxModel<MessageTargetableSupport> buildMessageTargetComboBoxModel( final boolean includeDefault ) {
         final DefaultComboBoxModel<MessageTargetableSupport> comboBoxModel = new DefaultComboBoxModel<>();
         if (includeDefault) comboBoxModel.addElement( null );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
