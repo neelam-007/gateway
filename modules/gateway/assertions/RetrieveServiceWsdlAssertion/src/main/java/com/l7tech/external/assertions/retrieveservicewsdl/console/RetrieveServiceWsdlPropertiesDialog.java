@@ -3,17 +3,21 @@ package com.l7tech.external.assertions.retrieveservicewsdl.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 /**
@@ -45,7 +49,10 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     protected void initComponents() {
         super.initComponents();
 
-        // Message target combo box
+        // host name text field
+        hostNameTextField.setDocument(new MaxLengthDocument(255));
+
+        // message target combo box
         targetMessageComboBox.setModel(buildMessageTargetComboBoxModel(false));
 
         targetMessageComboBox.setRenderer(
@@ -58,17 +65,37 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
             }
         });
 
-        // Message target variable
+        // message target variable
         targetVariablePanel = new TargetVariablePanel();
         targetVariablePanelHolder.setLayout(new BorderLayout());
         targetVariablePanelHolder.add(targetVariablePanel, BorderLayout.CENTER);
 
-        /* --- validation --- */
+        /* --- Validation --- */
 
         inputValidator = new InputValidator(this, getResourceString("validationDialogTitle"));
 
-        // service ID is required
-        inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("serviceIdLabel"), serviceIdTextField, null);
+        // service ID is required, must be a single context variable or a valid GOID
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String serviceId = serviceIdTextField.getText().trim();
+
+                if (serviceId.isEmpty()) {
+                    return resources.getString("serviceIdEmptyErrMsg");
+                }
+
+                // see if a context variable is present
+                if (Syntax.getReferencedNames(serviceId).length > 0) {
+                    if (!Syntax.isOnlyASingleVariableReferenced(serviceId)) {
+                        return resources.getString("serviceIdNotOnlyOneVariableErrMsg");
+                    }
+                } else if (!ValidationUtils.isValidGoid(serviceId, false)) {  // if not a variable, must be a GOID
+                    return MessageFormat.format(resources.getString("serviceIdInvalidErrMsg"), serviceId);
+                }
+
+                return null;
+            }
+        });
 
         // host is required
         inputValidator.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostNameTextField, null);
@@ -119,10 +146,10 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         }
 
         // service ID
-        assertion.setServiceId(serviceIdTextField.getText());
+        assertion.setServiceId(serviceIdTextField.getText().trim());
 
         // host name
-        assertion.setHostname(hostNameTextField.getText());
+        assertion.setHostname(hostNameTextField.getText().trim());
 
         // message target
         final MessageTargetableSupport responseTarget =
