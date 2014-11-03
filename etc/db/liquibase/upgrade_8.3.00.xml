@@ -53,4 +53,40 @@
             </update>
         </rollback>
     </changeSet>
+    <changeSet id="add_cassandra_connection_table" author="acheuk">
+        <createTable tableName="cassandra_connection">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="connection_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="keyspace_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact_points" type="VARCHAR(4096)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="port" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_goid" type="${goid.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compression" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ssl" type="${tinyint.type}" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>
