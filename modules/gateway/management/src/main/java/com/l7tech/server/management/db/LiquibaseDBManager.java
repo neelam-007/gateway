@@ -6,8 +6,12 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.FileSystemResourceAccessor;
+import liquibase.servicelocator.CustomResolverServiceLocator;
+import liquibase.servicelocator.DefaultPackageScanClassResolver;
+import liquibase.servicelocator.PackageScanFilter;
 import liquibase.servicelocator.ServiceLocator;
 import liquibase.snapshot.SnapshotGeneratorFactory;
+import liquibase.sqlgenerator.core.LockDatabaseChangeLogGenerator;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -46,6 +50,18 @@ public class LiquibaseDBManager {
             throw new RuntimeException("Could not find liquibase folder: " + liquibaseSchemaFolder);
         }
 
+        //removes the liquibase LockDatabaseChangeLogGenerator. It crashes when the gateway hostname is not properly configured on the network
+        //The CALockDatabaseChangeLogGenerator will be used instead. See SSG-9563 and SSG-9564
+        ServiceLocator.setInstance(new CustomResolverServiceLocator(new DefaultPackageScanClassResolver() {
+            {
+                addFilter(new PackageScanFilter() {
+                    @Override
+                    public boolean matches(Class<?> type) {
+                        return !LockDatabaseChangeLogGenerator.class.equals(type);
+                    }
+                });
+            }
+        }));
         //Add this package so that out custom logger gets used by liquibase.
         ServiceLocator.getInstance().addPackageToScan("com.l7tech.server.management.db");
     }
