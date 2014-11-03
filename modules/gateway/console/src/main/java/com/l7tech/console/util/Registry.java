@@ -1,5 +1,6 @@
 package com.l7tech.console.util;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.gateway.common.admin.*;
@@ -123,6 +124,12 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JdbcAdmin getJdbcConnectionAdmin();
+
+    /**
+     * @return the Cassandra connection manager
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    abstract public CassandraConnectionManagerAdmin getCassandraConnectionAdmin();
 
     /**
      *
@@ -350,6 +357,12 @@ public abstract class Registry {
 
         @Override
         public JdbcAdmin getJdbcConnectionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+
+        @Override
+        public CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

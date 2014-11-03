@@ -392,6 +392,10 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
+    <bean id="cassandraAdmin" class="com.l7tech.server.cassandra.CassandraConnectionManagerAdminImpl">
+        <constructor-arg ref="cassandraEntityManager"/>
+    </bean>
+
     <!-- FTP admin servant -->
     <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
         <constructor-arg ref="routingTrustManager"/>

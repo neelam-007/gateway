@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
@@ -129,7 +130,13 @@ public class RegistryStub extends Registry {
     }
 
     @Override
-      public JdbcAdmin getJdbcConnectionAdmin() {
+    public JdbcAdmin getJdbcConnectionAdmin() {
+        return null;
+    }
+
+
+    @Override
+    public CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
         return null;
     }
 

@@ -69,6 +69,11 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
     </bean>
 
+    <bean name="/CassandraAdmin" parent="httpInvokerParent">
+        <property name="service" ref="cassandraAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin"/>
+    </bean>
+
     <bean name="/TrustedCertAdmin" parent="httpInvokerParent">
         <property name="service" ref="trustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>

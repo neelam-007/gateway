@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.EntityNameResolver;
@@ -68,6 +69,7 @@ public final class RegistryImpl extends Registry
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
+    private CassandraConnectionManagerAdmin cassandraConnectionAdmin;
     private SiteMinderAdmin siteMinderAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private ResourceAdmin resourceAdmin;
@@ -181,6 +183,16 @@ public final class RegistryImpl extends Registry
         }
         jdbcAdmin = adminContext.getJdbcConnectionAdmin();
         return jdbcAdmin;
+    }
+
+    @Override
+    public synchronized CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
+        checkAdminContext();
+        if (cassandraConnectionAdmin != null) {
+            return cassandraConnectionAdmin;
+        }
+        cassandraConnectionAdmin = adminContext.getCassandraConnecitonAdmin();
+        return cassandraConnectionAdmin;
     }
 
     /**

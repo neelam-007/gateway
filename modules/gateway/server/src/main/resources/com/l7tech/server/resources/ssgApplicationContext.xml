@@ -1932,6 +1932,8 @@
 
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
             <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
