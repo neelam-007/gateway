@@ -85,6 +85,9 @@
             <column name="ssl" type="${tinyint.type}" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
+			<column name="enabled" type="${tinyint.type}" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
             <column name="${properties.column.name}" type="${mediumtext.type}"/>
             <column name="security_zone_goid" type="${goid.type}"/>
         </createTable>
