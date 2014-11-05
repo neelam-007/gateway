@@ -3,13 +3,17 @@ package com.l7tech.common.io;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.*;
-import java.net.Socket;
-import java.security.cert.X509Certificate;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyManagementException;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +75,14 @@ public class SslCertificateSniffer {
             throw new IOException(e.getMessage());
         }
 
-        final String[] sslProtocols = sslContext.getSupportedSSLParameters().getProtocols();
+        final List<String> sslProtocols = new ArrayList<String>();
+        sslProtocols.addAll(Arrays.asList(sslContext.getSupportedSSLParameters().getProtocols()));
+
+        // SSG-9624 - move SSLv3 to the end of the list so that it is only tried after protocols that are less likely to cause problems
+        if ( sslProtocols.contains("SSLv3") ) {
+            sslProtocols.remove("SSLv3");
+            sslProtocols.add("SSLv3");
+        }
 
         Exception lastException = null;
         for ( final String protocol : sslProtocols ) {
