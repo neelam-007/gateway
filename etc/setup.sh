@@ -80,6 +80,7 @@ do
     echo " 3) Display the current Layer 7 Gateway configuration"
     echo " 4) Change the Layer 7 Gateway Cluster Passphrase"
     echo " 5) Change the Master Passphrase"
+    echo " 6) Reset Admin password"
     echo " X) Exit"
     echo ""
     echo -n "Please make a selection: "
@@ -121,6 +122,11 @@ do
             5)
                 clear;
                 (${CONFWIZARD} -changeMasterPassphrase);
+                confirmedMessage ""
+                clear;;
+            6)
+                clear;
+                (${CONFWIZARD} -passwordReset);
                 confirmedMessage ""
                 clear;;
             x|X)
