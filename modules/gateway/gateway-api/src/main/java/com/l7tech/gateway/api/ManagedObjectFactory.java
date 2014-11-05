@@ -183,6 +183,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new CassandraConnectionMO instance.
+     *
+     * @return The new instance.
+     */
+    public static CassandraConnectionMO createCassandraConnectionMO() {
+        return new CassandraConnectionMO();
+    }
+
+    /**
      * Create a new JDBCConnectionMO instance.
      *
      * @return The new instance.

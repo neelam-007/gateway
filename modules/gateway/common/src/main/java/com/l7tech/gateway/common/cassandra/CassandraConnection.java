@@ -133,7 +133,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
-    @Column(name="enabled", nullable = false)
+    @Column(name = "enabled", nullable = false)
     public boolean isEnabled() {
         return enabled;
     }
@@ -198,12 +198,12 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.setContactPoints(other.getContactPoints());
         this.setPort(other.getPort());
         this.setUsername(other.getUsername());
-        this.setCompression(other.getCompression());
-        this.setSsl(other.isSsl());
-        this.setEnabled(other.isEnabled());
         this.setPasswordGoid(other.getPasswordGoid());
-        this.setSecurityZone(other.getSecurityZone());
+        this.setCompression(other.getCompression());
+        this.setSsl((other.isSsl()));
+        this.setEnabled(other.isEnabled());
         this.setProperties(other.getProperties());
+        this.setSecurityZone(other.getSecurityZone());
     }
 
     @Override
