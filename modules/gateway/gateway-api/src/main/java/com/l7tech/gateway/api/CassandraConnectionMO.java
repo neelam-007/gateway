@@ -1,8 +1,8 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -27,9 +27,10 @@ import java.util.Map;
  * @see ManagedObjectFactory#createCassandraConnectionMO()
  */
 @XmlRootElement(name = "CassandraConnection")
-@XmlType(name = "CassandraConnectionType", propOrder = {"name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "properties"})
+@XmlType(name = "CassandraConnectionType",
+        propOrder = {"name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "enabled", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "cassandraConnections")
-public class CassandraConnectionMO extends SecurityZoneableObject {
+public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -38,8 +39,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The name
      */
+    @XmlElement(name = "Name", required = true)
     public String getName() {
-        return get(name);
+        return name;
     }
 
     /**
@@ -48,7 +50,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param name The name to use
      */
     public void setName(final String name) {
-        this.name = set(this.name, name);
+        this.name = name;
     }
 
     /**
@@ -56,8 +58,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The keyspace
      */
+    @XmlElement(name = "Keyspace", required = true)
     public String getKeyspace() {
-        return get(keyspace);
+        return keyspace;
     }
 
     /**
@@ -66,7 +69,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param keyspace The keyspace to use
      */
     public void setKeyspace(final String keyspace) {
-        this.keyspace = set(this.keyspace, keyspace);
+        this.keyspace = keyspace;
     }
 
     /**
@@ -74,8 +77,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The contact point
      */
+    @XmlElement(name = "ContactPoint", required = true)
     public String getContactPoint() {
-        return get(contactPoint);
+        return contactPoint;
     }
 
     /**
@@ -84,7 +88,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param contactPoint The contact point to use
      */
     public void setContactPoint(final String contactPoint) {
-        this.contactPoint = set(this.contactPoint, contactPoint);
+        this.contactPoint = contactPoint;
     }
 
     /**
@@ -92,8 +96,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The port
      */
+    @XmlElement(name = "Port", required = true)
     public String getPort() {
-        return get(port);
+        return port;
     }
 
     /**
@@ -102,7 +107,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param port The port to use
      */
     public void setPort(final String port) {
-        this.port = set(this.port, port);
+        this.port = port;
     }
 
     /**
@@ -110,8 +115,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The username
      */
+    @XmlElement(name = "Username", required = true)
     public String getUsername() {
-        return get(username);
+        return username;
     }
 
     /**
@@ -120,7 +126,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param username The username to use
      */
     public void setUsername(final String username) {
-        this.username = set(this.username, username);
+        this.username = username;
     }
 
     /**
@@ -128,8 +134,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return The compression
      */
+    @XmlElement(name = "Compression", required = true)
     public String getCompression() {
-        return get(compression);
+        return compression;
     }
 
     /**
@@ -138,7 +145,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param compression The compression to use
      */
     public void setCompression(final String compression) {
-        this.compression = set(this.compression, compression);
+        this.compression = compression;
     }
 
     /**
@@ -146,8 +153,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return True if enabled.
      */
+    @XmlElement(name = "Ssl", required = true)
     public boolean isSsl() {
-        return get(ssl, false);
+        return ssl;
     }
 
     /**
@@ -156,7 +164,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param ssl True for enabled.
      */
     public void setSsl( final boolean ssl ) {
-        this.ssl = set(this.ssl, ssl);
+        this.ssl = ssl;
     }
 
     /**
@@ -164,8 +172,9 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      *
      * @return True if enabled.
      */
+    @XmlElement(name = "Enabled", required = true)
     public boolean isEnabled() {
-        return get(enabled, false);
+        return enabled;
     }
 
     /**
@@ -174,7 +183,7 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
      * @param enabled True for enabled.
      */
     public void setEnabled(final boolean enabled) {
-        this.enabled = set(this.enabled, enabled);
+        this.enabled = enabled;
     }
 
     /**
@@ -204,13 +213,13 @@ public class CassandraConnectionMO extends SecurityZoneableObject {
 
     //- PRIVATE
 
-    private AttributeExtensibleString name;
-    private AttributeExtensibleString keyspace;
-    private AttributeExtensibleString contactPoint;
-    private AttributeExtensibleString port;
-    private AttributeExtensibleString username;
-    private AttributeExtensibleString compression;
-    private AttributeExtensibleBoolean ssl = new AttributeExtensibleBoolean(false);
-    private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
+    private String name;
+    private String keyspace;
+    private String contactPoint;
+    private String port;
+    private String username;
+    private String compression;
+    private Boolean ssl = false;
+    private Boolean enabled = false;
     private Map<String, String> properties;
 }
