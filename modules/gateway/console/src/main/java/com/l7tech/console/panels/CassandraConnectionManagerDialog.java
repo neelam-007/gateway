@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
@@ -134,23 +135,27 @@ public class CassandraConnectionManagerDialog extends JDialog {
 
     }
 
-    private void loadCassandraConnections() {
+    private CassandraConnectionManagerAdmin getCassandraManagerAdmin() {
+        CassandraConnectionManagerAdmin admin = null;
         if(Registry.getDefault().isAdminContextPresent()) {
-
-            CassandraConnectionManagerAdmin admin = Registry.getDefault().getCassandraConnectionAdmin();
-            if (admin != null) {
-                try {
-                    for (CassandraConnection connection : admin.getAllCassandraConnections())
-                        cassandraConnectionsTableModel.addRow(connection);
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, resources.getString("errors.manage.cassandra.connections.loadconnections="));
-                }
-            }
+           admin =  Registry.getDefault().getCassandraConnectionAdmin();
         }
         else {
             logger.log(Level.WARNING, "No Admin Context present!");
         }
+        return admin;
+    }
 
+    private void loadCassandraConnections() {
+        CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
+        if (admin != null) {
+            try {
+                for (CassandraConnection connection : admin.getAllCassandraConnections())
+                    cassandraConnectionsTableModel.addRow(connection);
+            } catch (FindException e) {
+                logger.log(Level.WARNING, resources.getString("errors.manage.cassandra.connections.loadconnections"));
+            }
+        }
     }
 
     private void enableOrDisableButtons() {
@@ -168,6 +173,16 @@ public class CassandraConnectionManagerDialog extends JDialog {
     }
 
     private void doAdd() {
+        CassandraConnection connection = new CassandraConnection();
+        CassandraConnectionPropertiesDialog dlg = new CassandraConnectionPropertiesDialog(this, connection);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                //TODO: save cassandra connection
+            }
+        });
 
     }
 
@@ -187,13 +202,19 @@ public class CassandraConnectionManagerDialog extends JDialog {
     private SimpleTableModel<CassandraConnection> buildConnectionTableModel() {
         return TableUtil.configureTable(
                 connectionTable,
+                TableUtil.column("Active", 40,100, 100, new Functions.Unary<Boolean, CassandraConnection>() {
+                    @Override
+                    public Boolean call(CassandraConnection cassandraConnection) {
+                        return new Boolean(cassandraConnection.isEnabled());
+                    }
+                }, Boolean.class),
                 TableUtil.column("Connection Name", 40, 200, 1000000, new Functions.Unary<String, CassandraConnection>() {
                     @Override
                     public String call(CassandraConnection cassandraConnectionEntity) {
                         return cassandraConnectionEntity.getName();
                     }
                 }, String.class),
-                TableUtil.column("Contact Points", 40, 100, 180, new Functions.Unary<String, CassandraConnection>() {
+                TableUtil.column("Contact Points", 40, 150, 180, new Functions.Unary<String, CassandraConnection>() {
                     @Override
                     public String call(CassandraConnection cassandraConnectionEntity) {
                         return cassandraConnectionEntity.getContactPoints();
@@ -209,12 +230,6 @@ public class CassandraConnectionManagerDialog extends JDialog {
                     @Override
                     public String call(CassandraConnection cassandraConnectionEntity) {
                         return cassandraConnectionEntity.getPort();
-                    }
-                }, String.class),
-                TableUtil.column("User Name", 40, 100, 180, new Functions.Unary<String, CassandraConnection>() {
-                    @Override
-                    public String call(CassandraConnection cassandraConnectionEntity) {
-                        return cassandraConnectionEntity.getUsername();
                     }
                 }, String.class)
         );

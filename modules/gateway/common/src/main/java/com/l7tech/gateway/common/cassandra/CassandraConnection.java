@@ -39,6 +39,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private Goid passwordGoid;
     private String compression = "";
     private boolean ssl;
+    private boolean enabled;
 
     private String propertiesXml;
     private Map<String, String> properties = new HashMap<>();
@@ -132,6 +133,16 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
+    @Column(name="enabled", nullable = false)
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    @RbacAttribute
     @Column(name = "properties", nullable = true)
     public Map<String, String> getProperties() {
         return properties;
@@ -188,7 +199,8 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.setPort(other.getPort());
         this.setUsername(other.getUsername());
         this.setCompression(other.getCompression());
-        this.setSsl((other.isSsl()));
+        this.setSsl(other.isSsl());
+        this.setEnabled(other.isEnabled());
         this.setPasswordGoid(other.getPasswordGoid());
         this.setSecurityZone(other.getSecurityZone());
         this.setProperties(other.getProperties());
