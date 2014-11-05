@@ -6,6 +6,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 /**
  * Retrieves and rewrite the endpoints of a WSDL for a service.
  *
@@ -45,7 +47,7 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
     }
 
     @NotNull
-    public MessageTargetableSupport getMessageTarget() {
+    public MessageTargetableSupport getTargetMessage() {
         return messageTarget;
     }
 
@@ -55,7 +57,7 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
 
     public String[] getVariablesUsed() {
         return messageTarget.getMessageTargetVariablesUsed()
-                .withExpressions(Syntax.getReferencedNames(serviceId, hostname))
+                .withExpressions(serviceId, hostname)
                 .asArray();
     }
 

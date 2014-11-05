@@ -16,7 +16,19 @@ public class RetrieveServiceWsdlAssertionTest {
     @Test
     public void testGetVariablesUsedDefault() {
         String[] variablesUsed = new RetrieveServiceWsdlAssertion().getVariablesUsed();
-        assertEquals(0, variablesUsed.length);
+        assertEquals(2, variablesUsed.length);
+    }
+
+    @Test
+    public void testGetVariablesUsed_WithServiceIdButNotHostnameVariables() {
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setHostname("localhost");
+        assertion.setServiceId("${foo}");
+
+        String[] variablesUsed = assertion.getVariablesUsed();
+        assertEquals(1, variablesUsed.length);
+        assertEquals("foo", variablesUsed[0]);
     }
 
     @Test

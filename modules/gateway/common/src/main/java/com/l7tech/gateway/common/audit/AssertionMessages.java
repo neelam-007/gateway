@@ -1319,5 +1319,11 @@ public class AssertionMessages extends Messages {
     public static final M ODATA_VALIDATION_INVALID_HTTP_METHOD = m(10608, Level.WARNING, "Invalid OData HTTP method: ''{0}''");
     public static final M ODATA_VALIDATION_EMPTY_HTTP_METHOD = m(10609, Level.WARNING, "HTTP method is null or empty.");
 
+    // Retrieve Service WSDL Assertion
+    public static final M RETRIEVE_WSDL_INVALID_SERVICE_ID = m(10700, Level.WARNING, "Invalid Service ID: {0}");
+    public static final M RETRIEVE_WSDL_SERVICE_NOT_FOUND = m(10701, Level.WARNING, "Could not find service with ID: {0}");
+    public static final M RETRIEVE_WSDL_SERVICE_NOT_SOAP = m(10702, Level.WARNING, "Service is not SOAP.");
+    public static final M RETRIEVE_WSDL_ERROR_PARSING_WSDL = m(10703, Level.WARNING, "Could not parse WSDL XML: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

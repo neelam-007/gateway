@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://warehouse.acme.com/ws"
+                  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+                  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+                  xmlns:s="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                  xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/"
+                  xmlns:tns="http://warehouse.acme.com/ws" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+    <wsdl:types>
+        <s:schema elementFormDefault="qualified" targetNamespace="http://warehouse.acme.com/ws">
+            <s:element name="listProducts">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="listProductsResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0"
+                                   name="listProductsResult" type="tns:ArrayOfProductListHeader"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ArrayOfProductListHeader">
+                <s:sequence>
+                    <s:element maxOccurs="unbounded" minOccurs="0"
+                               name="ProductListHeader" nillable="true" type="tns:ProductListHeader"/>
+                </s:sequence>
+            </s:complexType>
+            <s:complexType name="ProductListHeader">
+                <s:sequence>
+                    <s:element maxOccurs="1" minOccurs="0"
+                               name="productName" type="s:string"/>
+                    <s:element maxOccurs="1" minOccurs="1"
+                               name="productId" type="s:long"/>
+                </s:sequence>
+            </s:complexType>
+            <s:element name="getProductDetails">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="productid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="getProductDetailsResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0"
+                                   name="getProductDetailsResult" type="tns:ProductDetails"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ProductDetails">
+                <s:complexContent mixed="false">
+                    <s:extension base="tns:ProductListHeader">
+                        <s:sequence>
+                            <s:element maxOccurs="1" minOccurs="0"
+                                       name="description" type="s:string"/>
+                            <s:element maxOccurs="1" minOccurs="1"
+                                       name="price" type="s:float"/>
+                            <s:element maxOccurs="1" minOccurs="1"
+                                       name="inStock" type="s:boolean"/>
+                        </s:sequence>
+                    </s:extension>
+                </s:complexContent>
+            </s:complexType>
+            <s:element name="placeOrder">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="productid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="amount" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="price" type="s:float"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="accountid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="placeOrderResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="placeOrderResult" type="s:long"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="currentOrders">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="accountid" type="s:long"/>
+                        <s:element maxOccurs="1" minOccurs="1"
+                                   name="delay" type="s:int"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:element name="currentOrdersResponse">
+                <s:complexType>
+                    <s:sequence>
+                        <s:element maxOccurs="1" minOccurs="0"
+                                   name="currentOrdersResult" type="tns:ArrayOfOrder"/>
+                    </s:sequence>
+                </s:complexType>
+            </s:element>
+            <s:complexType name="ArrayOfOrder">
+                <s:sequence>
+                    <s:element maxOccurs="unbounded" minOccurs="0"
+                               name="Order" nillable="true" type="tns:Order"/>
+                </s:sequence>
+            </s:complexType>
+            <s:complexType name="Order">
+                <s:sequence>
+                    <s:element maxOccurs="1" minOccurs="1" name="date" type="s:dateTime"/>
+                    <s:element maxOccurs="1" minOccurs="1"
+                               name="accountId" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1"
+                               name="productId" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="amount" type="s:long"/>
+                    <s:element maxOccurs="1" minOccurs="1" name="price" type="s:float"/>
+                    <s:element maxOccurs="1" minOccurs="1"
+                               name="confirmationId" type="s:long"/>
+                </s:sequence>
+            </s:complexType>
+        </s:schema>
+    </wsdl:types>
+    <wsdl:message name="listProductsSoapIn">
+        <wsdl:part element="tns:listProducts" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="listProductsSoapOut">
+        <wsdl:part element="tns:listProductsResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="getProductDetailsSoapIn">
+        <wsdl:part element="tns:getProductDetails" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="getProductDetailsSoapOut">
+        <wsdl:part element="tns:getProductDetailsResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="placeOrderSoapIn">
+        <wsdl:part element="tns:placeOrder" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="placeOrderSoapOut">
+        <wsdl:part element="tns:placeOrderResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="currentOrdersSoapIn">
+        <wsdl:part element="tns:currentOrders" name="parameters"/>
+    </wsdl:message>
+    <wsdl:message name="currentOrdersSoapOut">
+        <wsdl:part element="tns:currentOrdersResponse" name="parameters"/>
+    </wsdl:message>
+    <wsdl:portType name="WarehouseSoap">
+        <wsdl:operation name="listProducts">
+            <wsdl:input message="tns:listProductsSoapIn"/>
+            <wsdl:output message="tns:listProductsSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="getProductDetails">
+            <wsdl:input message="tns:getProductDetailsSoapIn"/>
+            <wsdl:output message="tns:getProductDetailsSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="placeOrder">
+            <wsdl:input message="tns:placeOrderSoapIn"/>
+            <wsdl:output message="tns:placeOrderSoapOut"/>
+        </wsdl:operation>
+        <wsdl:operation name="currentOrders">
+            <wsdl:input message="tns:currentOrdersSoapIn"/>
+            <wsdl:output message="tns:currentOrdersSoapOut"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="WarehouseSoap" type="tns:WarehouseSoap">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="listProducts">
+            <soap:operation
+                    soapAction="http://warehouse.acme.com/ws/listProducts" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getProductDetails">
+            <soap:operation
+                    soapAction="http://warehouse.acme.com/ws/getProductDetails" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="placeOrder">
+            <soap:operation
+                    soapAction="http://warehouse.acme.com/ws/placeOrder" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="currentOrders">
+            <soap:operation
+                    soapAction="http://warehouse.acme.com/ws/currentOrders" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="WarehouseSoap12" type="tns:WarehouseSoap">
+        <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="listProducts">
+            <soap12:operation
+                    soapAction="http://warehouse.acme.com/ws/listProducts" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getProductDetails">
+            <soap12:operation
+                    soapAction="http://warehouse.acme.com/ws/getProductDetails" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="placeOrder">
+            <soap12:operation
+                    soapAction="http://warehouse.acme.com/ws/placeOrder" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="currentOrders">
+            <soap12:operation
+                    soapAction="http://warehouse.acme.com/ws/currentOrders" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="Warehouse">
+        <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
+            <soap:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+        </wsdl:port>
+        <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
+            <soap12:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

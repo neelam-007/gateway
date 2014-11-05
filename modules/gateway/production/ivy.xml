@@ -63,6 +63,7 @@
         <dependency name="EncodeDecodeAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CsrfProtectionAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JsonTransformationAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="RetrieveServiceWsdlAssertion" rev="latest.integration" conf="module"/>
         <dependency name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="UUIDGeneratorAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SshAssertion" rev="latest.integration" conf="module"/>

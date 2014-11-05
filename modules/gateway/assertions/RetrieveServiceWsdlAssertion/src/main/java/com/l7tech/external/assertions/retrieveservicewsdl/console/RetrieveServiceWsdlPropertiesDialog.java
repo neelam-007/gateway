@@ -123,7 +123,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         hostNameTextField.setText(assertion.getHostname());
 
         // message target
-        final MessageTargetableSupport responseTarget = assertion.getMessageTarget();
+        final MessageTargetableSupport responseTarget = assertion.getTargetMessage();
         targetMessageComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
 
         // message target variable
