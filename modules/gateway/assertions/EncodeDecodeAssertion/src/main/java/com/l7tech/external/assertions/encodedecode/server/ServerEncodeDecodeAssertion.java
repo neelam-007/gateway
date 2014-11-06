@@ -20,13 +20,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -35,6 +31,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.zip.*;
 
 /**
  * Server side implementation of the EncodeDecodeAssertion.
@@ -113,6 +110,18 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 break;
             case URL_DECODE:
                 transformer = new UrlDecodingTransformer( encodeDecodeContext );
+                break;
+            case ZIP:
+                transformer = new ZipCompressingTransformer( encodeDecodeContext );
+                break;
+            case UNZIP:
+                transformer = new ZipDecompressingTransformer( encodeDecodeContext );
+                break;
+            case GZIP:
+                transformer = new GzipCompressingTransformer( encodeDecodeContext );
+                break;
+            case GUNZIP:
+                transformer = new GzipDecompressingTransformer( encodeDecodeContext );
                 break;
             default:
                 logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unknown transform requested '" + transformType + "'" );
@@ -198,7 +207,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
     }
 
     private static abstract class EncodeDecodeTransformer {
-        private final EncodeDecodeContext encodeDecodeContext;
+        final EncodeDecodeContext encodeDecodeContext;
 
         EncodeDecodeTransformer( final EncodeDecodeContext encodeDecodeContext ) {
             this.encodeDecodeContext = encodeDecodeContext;
@@ -466,4 +475,128 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             return buildTextOutput( decoded );
         }
     }
+
+    private static class ZipCompressingTransformer extends EncodeDecodeTransformer {
+        ZipCompressingTransformer( EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( Object source ) {
+            // TODO support streaming input; get InputStream to transform instead of byte array
+            byte[] data = getBinaryInput( source );
+            ByteArrayInputStream in = new ByteArrayInputStream( data );
+            PoolByteArrayOutputStream out = new PoolByteArrayOutputStream();
+            ZipOutputStream zos = new ZipOutputStream( out, Charsets.UTF8 );
+
+            // TODO we use the source variable name as the filename, which many might find... suprrising,
+            // but seems better than just always hardcoding it
+            String filename = encodeDecodeContext.assertion.getSourceVariableName();
+            if ( filename == null || filename.length() > 0 )
+                filename = "contents.dat";
+
+            byte[] compressed;
+            try {
+                zos.putNextEntry( new ZipEntry( filename ) );
+                IOUtils.copyStream( in, zos );
+                zos.finish();
+                zos.flush();
+                compressed = out.toByteArray();
+            } catch ( IOException e ) {
+                audit( AssertionMessages.ENCODE_DECODE_ERROR, ExceptionUtils.getDebugException( e ), ExceptionUtils.getMessage( e ) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            } finally {
+                ResourceUtils.closeQuietly( out );
+            }
+
+            // TODO support copy avoidance; initialize output Message with ByteArrayInputStream( outDetachedByteArray, 0, outSize )
+            return buildBinaryOutput( compressed );
+        }
+    }
+
+    private static class ZipDecompressingTransformer extends EncodeDecodeTransformer {
+        ZipDecompressingTransformer( EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( Object source ) {
+            // TODO support streaming input; get InputStream to transform instead of byte array
+            byte[] data = getBinaryInput( source );
+
+            ZipInputStream in = new ZipInputStream( new ByteArrayInputStream( data ), Charsets.UTF8 );
+
+            // Read the first file from the ZIP, regardless of filename, and ignore the rest
+            byte[] decompressed;
+            try ( PoolByteArrayOutputStream out = new PoolByteArrayOutputStream() ) {
+                in.getNextEntry();
+                IOUtils.copyStream( in, out );
+                decompressed = out.toByteArray();
+            } catch ( IOException e ) {
+                audit( AssertionMessages.ENCODE_DECODE_ERROR, ExceptionUtils.getDebugException( e ), ExceptionUtils.getMessage( e ) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            }
+
+            // TODO support copy avoidance; initialize output Message with ByteArrayInputStream( outDetachedByteArray, 0, outSize )
+            return buildBinaryOutput( decompressed );
+        }
+    }
+
+    private static class GzipCompressingTransformer extends EncodeDecodeTransformer {
+        GzipCompressingTransformer( EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( Object source ) {
+            // TODO support streaming input; get InputStream to transform instead of byte array
+            byte[] data = getBinaryInput( source );
+            ByteArrayInputStream in = new ByteArrayInputStream( data );
+            PoolByteArrayOutputStream out = new PoolByteArrayOutputStream();
+
+            byte[] compressed;
+            try {
+                GZIPOutputStream zos = new GZIPOutputStream( out );
+                IOUtils.copyStream( in, zos );
+                zos.finish();
+                zos.flush();
+                compressed = out.toByteArray();
+            } catch ( IOException e ) {
+                audit( AssertionMessages.ENCODE_DECODE_ERROR, ExceptionUtils.getDebugException( e ), ExceptionUtils.getMessage( e ) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            } finally {
+                ResourceUtils.closeQuietly( out );
+            }
+
+            // TODO support copy avoidance; initialize output Message with ByteArrayInputStream( outDetachedByteArray, 0, outSize )
+            return buildBinaryOutput( compressed );
+        }
+    }
+
+    private static class GzipDecompressingTransformer extends EncodeDecodeTransformer {
+        GzipDecompressingTransformer( EncodeDecodeContext encodeDecodeContext ) {
+            super( encodeDecodeContext );
+        }
+
+        @Override
+        Object transform( Object source ) {
+            // TODO support streaming input; get InputStream to transform instead of byte array
+            byte[] data = getBinaryInput( source );
+
+            byte[] decompressed;
+            try ( PoolByteArrayOutputStream out = new PoolByteArrayOutputStream() ) {
+                GZIPInputStream in = new GZIPInputStream( new ByteArrayInputStream( data ) );
+                IOUtils.copyStream( in, out );
+                decompressed = out.toByteArray();
+            } catch ( IOException e ) {
+                audit( AssertionMessages.ENCODE_DECODE_ERROR, ExceptionUtils.getDebugException( e ), ExceptionUtils.getMessage( e ) );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
+            }
+
+            // TODO support copy avoidance; initialize output Message with ByteArrayInputStream( outDetachedByteArray, 0, outSize )
+            return buildBinaryOutput( decompressed );
+        }
+    }
+
+
 }

@@ -137,6 +137,22 @@ public class ServerEncodeDecodeAssertionTest{
     }
 
     @Test
+    public void testZip() throws Exception {
+        roundTripTest( EncodeDecodeAssertion.TransformType.ZIP,
+                EncodeDecodeAssertion.TransformType.UNZIP,
+                DataType.MESSAGE,
+                true );
+    }
+
+    @Test
+    public void testGzip() throws Exception {
+        roundTripTest( EncodeDecodeAssertion.TransformType.GZIP,
+                EncodeDecodeAssertion.TransformType.GUNZIP,
+                DataType.MESSAGE,
+                true );
+    }
+
+    @Test
     public void testBase16Strict() throws Exception {
         oneWayTest( EncodeDecodeAssertion.TransformType.HEX_DECODE, AssertionStatus.NONE, true, 0, "2F:74 6578742F\r207\n76 \t 974682073706163657320616E64203C223E73" );
         oneWayTest( EncodeDecodeAssertion.TransformType.HEX_DECODE, AssertionStatus.FALSIFIED, true, 0, "2F746578r742F20776974682073706163657320616E64203C223E73" );
@@ -237,10 +253,18 @@ public class ServerEncodeDecodeAssertionTest{
     private void roundTripTest( final EncodeDecodeAssertion.TransformType encode,
                                 final EncodeDecodeAssertion.TransformType decode,
                                 final boolean strict ) throws Exception {
+        roundTripTest( encode, decode, DataType.STRING, strict );
+    }
+
+
+    private void roundTripTest( final EncodeDecodeAssertion.TransformType encode,
+                                final EncodeDecodeAssertion.TransformType decode,
+                                final DataType initialTargetDataType,
+                                final boolean strict ) throws Exception {
         final EncodeDecodeAssertion assertion = new EncodeDecodeAssertion();
         assertion.setSourceVariableName( "source" );
         assertion.setTargetVariableName( "output1" );
-        assertion.setTargetDataType( DataType.STRING );
+        assertion.setTargetDataType( initialTargetDataType );
         assertion.setTransformType( encode );
 
         final String sourceText = "test source text with special characters and some non-latin ones \u03d0~`!@#$%^&*()_-+=}]{[|\"':;?/>.<,";
@@ -257,6 +281,8 @@ public class ServerEncodeDecodeAssertionTest{
         assertion.setSourceVariableName( "output1" );
         assertion.setTargetVariableName( "output2" );
         assertion.setTransformType( decode );
+        assertion.setTargetDataType( DataType.STRING );
+
         final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion2 = new ServerEncodeDecodeAssertion( assertion );
         final AssertionStatus status2 = serverEncodeDecodeAssertion2.checkRequest( pec );
 

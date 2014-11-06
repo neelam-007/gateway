@@ -159,7 +159,11 @@ public class EncodeDecodeAssertion extends Assertion implements SetsVariables, U
         HEX_ENCODE("Base16 Encode", true, false, false, false),
         HEX_DECODE("Base16 Decode",  false, true, true, false),
         URL_ENCODE("URL Encode", false, false, false, true),
-        URL_DECODE("URL Decode", false, false, false, true);
+        URL_DECODE("URL Decode", false, false, false, true),
+        ZIP("Zip Compress", true, true, false, false),
+        UNZIP("Zip Decompress", true, true, false, false),
+        GZIP("GZIP Compress", true, true, false, false),
+        GUNZIP("GZIP Decompress", true, true, false, false);
 
         private final String name;
         private final boolean binaryInput;
