@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.Syntax;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.regex.Pattern;
 
 /** @author alex */
 public class UserSelector implements ExpandVariables.Selector<User> {
@@ -18,6 +19,10 @@ public class UserSelector implements ExpandVariables.Selector<User> {
 
     @Override
     public Selection select(String contextName, User user, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+
+        int dot = name.indexOf('.');
+        String remainingName = dot < 1 ? null : (name.length() > dot ? name.substring(dot + 1) : null);
+
         if (name.startsWith(PREFIX_CERT) || name.equals(CERT)) {
             if (user instanceof LdapUser) {
                 LdapUser ldapUser = (LdapUser)user;
@@ -32,10 +37,10 @@ public class UserSelector implements ExpandVariables.Selector<User> {
             } else {
                 return new Selection(null); // TODO support user.cert for other types of user?
             }
-        } else if (Identity.ATTR_PROVIDER_OID.equalsIgnoreCase(name)) {
-            return new Selection(user.getProviderId());
-        } else if ("providerId".equalsIgnoreCase(name)) {
-            return new Selection(user.getProviderId());
+        } else if (Identity.ATTR_PROVIDER_OID.equalsIgnoreCase(name) || name.toLowerCase().startsWith( Identity.ATTR_PROVIDER_OID.toLowerCase() + "." )) {
+            return new Selection(user.getProviderId(), remainingName);
+        } else if ( "providerOid".equalsIgnoreCase(name) || name.toLowerCase().startsWith( "provideroid." )) {
+            return new Selection(user.getProviderId(), remainingName);
         } else if ("id".equalsIgnoreCase(name)) {
             return new Selection(user.getId());
         } else if ("login".equalsIgnoreCase(name)) {

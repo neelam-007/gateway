@@ -19,6 +19,7 @@ import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
@@ -386,6 +387,12 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     String getSavedRequestL7aMessageId();
 
+    /**
+     * Get the currently recorded message context mappings (from Capture Identity of Requestor).
+     *
+     * @return list of mappings.  May be empty but never null.
+     */
+    @NotNull
     List<MessageContextMapping> getMappings();
 
     void setMappings(List<MessageContextMapping> mappings);
@@ -544,6 +551,28 @@ public interface PolicyEnforcementContext extends Closeable {
      * @param overwriteResponseCookieDomain set to true if response cookies should have their domain overwritten with the gateway domain.
      */
     void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain);
+
+    /**
+     * @return true if the request should be considered to have been authorized,
+     *              given the current {@link #getRoutingStatus()}, {@link #getPolicyResult()} and
+     *              (for HTTP requests) response HTTP status.
+     *              <p/>
+     *              After request processing has completed (and assuming the policy result and routing status are updated),
+     *              this is the value that will be recorded in the service metrics as the "authorized" metrics flag
+     *              for this request.
+     */
+    boolean isAuthorizedRequest();
+
+    /**
+     * @return true if the request should be considered to have been completed,
+     *              given the current {@link #getRoutingStatus()}, {@link #getPolicyResult()} and
+     *              (for HTTP requests) response HTTP status.
+     *              <p/>
+     *              After request processing has completed (and assuming the policy result and routing status are updated),
+     *              this is the value that will be recorded in the service metrics as the "completed" metrics flag
+     *              for this request.
+     */
+    boolean isCompletedRequest();
 
     final static class AssertionResult {
         private final Assertion assertion;

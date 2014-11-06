@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.message;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -77,6 +78,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private long routingEndTime;
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
+    private Boolean outcomeAuthorized = null;
+    private Boolean outcomeCompleted = null;
     private List<MessageContextMapping> mappings = new ArrayList<>(5);
     private boolean requestWasCompressed;
     private boolean responseWss11;
@@ -764,9 +767,59 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     @Override
     public void setPolicyResult(AssertionStatus policyoutcome) {
         this.policyoutcome = policyoutcome;
+        outcomeAuthorized = null;
+        outcomeCompleted = null;
+    }
+
+    void updateAuthorizedAndCompleted() {
+        boolean authorizedRequest = false;
+        boolean completedRequest = false;
+        RoutingStatus rstat = this.getRoutingStatus();
+        if ( this.getPolicyResult() == AssertionStatus.NONE) {
+            // Policy execution concluded successfully.
+            authorizedRequest = true;
+            // Considered success (i.e., completed); unless we have routing
+            // assertion and the routed response has HTTP error status: then
+            // it's a routing failure.
+            if (rstat == RoutingStatus.NONE) {
+                completedRequest = true;
+            } else if (rstat == RoutingStatus.ROUTED) {
+                if (!this.getRequest().isHttpRequest() || this.getResponse().getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
+                    completedRequest = true;
+                }
+            }
+        } else {
+            // Policy execution was not successful.
+            // Considered policy violation (i.e., not authorized); unless we
+            // have routing assertion and it failed or the routed response
+            // has HTTP error status: then it's a routing failure.
+            if (rstat == RoutingStatus.ATTEMPTED ||
+                    (rstat == RoutingStatus.ROUTED && ( this.getRequest().isHttpRequest() && this.getResponse().getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START))) {
+                authorizedRequest = true;
+            }
+        }
+        this.outcomeAuthorized = authorizedRequest;
+        this.outcomeCompleted = completedRequest;
     }
 
     @Override
+    public boolean isAuthorizedRequest() {
+        if ( outcomeAuthorized == null ) {
+            updateAuthorizedAndCompleted();
+        }
+        return outcomeAuthorized;
+    }
+
+    @Override
+    public boolean isCompletedRequest() {
+        if ( outcomeCompleted == null ) {
+            updateAuthorizedAndCompleted();
+        }
+        return outcomeCompleted;
+    }
+
+    @Override
+    @NotNull
     public List<MessageContextMapping> getMappings() {
         return mappings;
     }

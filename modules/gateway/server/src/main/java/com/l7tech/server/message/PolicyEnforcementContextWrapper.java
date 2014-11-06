@@ -21,6 +21,7 @@ import com.l7tech.server.stepdebug.DebugContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
@@ -439,6 +440,7 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    @NotNull
     public List<MessageContextMapping> getMappings() {
         return delegate.getMappings();
     }
@@ -556,6 +558,16 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public void setOverwriteResponseCookieDomain(final boolean overwriteResponseCookieDomain) {
         delegate.setOverwriteResponseCookieDomain(overwriteResponseCookieDomain);
+    }
+
+    @Override
+    public boolean isAuthorizedRequest() {
+        return delegate.isAuthorizedRequest();
+    }
+
+    @Override
+    public boolean isCompletedRequest() {
+        return delegate.isCompletedRequest();
     }
 
     //- PROTECTED

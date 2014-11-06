@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.common.mime.MimeBody;
@@ -31,10 +30,7 @@ import com.l7tech.server.audit.*;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
-import com.l7tech.server.message.HttpSessionPolicyContextCache;
-import com.l7tech.server.message.PolicyContextCache;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.*;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -168,12 +164,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     private void initSettings(final int period) {
         updateSettings(period);
-        Background.scheduleRepeated(new TimerTask() {
+        Background.scheduleRepeated( new TimerTask() {
             @Override
             public void run() {
-                updateSettings(period);
+                updateSettings( period );
             }
-        }, period, period);
+        }, period, period );
     }
 
     private void updateSettings(int period) {
@@ -302,7 +298,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private AssertionStatus reallyProcessMessage(final PolicyEnforcementContext context)
         throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException
     {
-        doRequestPreChecks(context);
+        doRequestPreChecks( context );
 
         final MessageProcessingContext mc = new MessageProcessingContext(context);
 
@@ -331,7 +327,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private void doRequestPreChecks(PolicyEnforcementContext context) throws LicenseException, MessageProcessingSuspendedException {
-        context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
+        context.setAuditLevel( DEFAULT_MESSAGE_AUDIT_LEVEL );
         // License check hook
         licenseManager.requireFeature(GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR);
 
@@ -357,9 +353,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         status = adjustAndAuditAssertionStatus(context, status);
 
         // ensure result is set
-        if (context.getPolicyResult() == null) context.setPolicyResult(status);
+        if (context.getPolicyResult() == null) {
+            context.setPolicyResult( status );
+        }
 
-        updateServiceStatisticsAndMetrics(context, status);
+        updateServiceStatisticsAndMetrics( context );
         notifyTrafficMonitors(context, status);
 
         publishMessageProcessedEvent(context, status);
@@ -431,39 +429,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         return status;
     }
 
-    private void updateServiceStatisticsAndMetrics(PolicyEnforcementContext context, AssertionStatus status) {
-        boolean authorizedRequest = false;
-        boolean completedRequest = false;
-        RoutingStatus rstat = context.getRoutingStatus();
-        if (status == AssertionStatus.NONE) {
-            // Policy execution concluded successfully.
-            authorizedRequest = true;
-            // Considered success (i.e., completed); unless we have routing
-            // assertion and the routed response has HTTP error status: then
-            // it's a routing failure.
-            if (rstat == RoutingStatus.NONE) {
-                completedRequest = true;
-            } else if (rstat == RoutingStatus.ROUTED) {
-                if (!context.getRequest().isHttpRequest() || context.getResponse().getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
-                    completedRequest = true;
-                }
-            }
-        } else {
-            // Policy execution was not successful.
-            // Considered policy violation (i.e., not authorized); unless we
-            // have routing assertion and it failed or the routed response
-            // has HTTP error status: then it's a routing failure.
-            if (rstat == RoutingStatus.ATTEMPTED ||
-                (rstat == RoutingStatus.ROUTED && (context.getRequest().isHttpRequest() && context.getResponse().getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START))) {
-                authorizedRequest = true;
-            }
-        }
-
-        updateServiceStatistics(context, authorizedRequest, completedRequest);
-        updateServiceMetrics(context, authorizedRequest, completedRequest);
+    private void updateServiceStatisticsAndMetrics( PolicyEnforcementContext context ) {
+        updateServiceStatistics( context );
+        updateServiceMetrics( context );
     }
 
-    private void updateServiceMetrics(PolicyEnforcementContext context, boolean authorizedRequest, boolean completedRequest) {
+    private void updateServiceMetrics( PolicyEnforcementContext context ) {
         if (context.isPolicyExecutionAttempted() && serviceMetricsServices.isEnabled()) {
             final int frontTime = (int)(context.getEndTime() - context.getStartTime());
             final int backTime = (int)(context.getRoutingTotalTime());
@@ -474,18 +445,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     getOperationName(context),
                     context.getDefaultAuthenticationContext().getLastAuthenticatedUser(),
                     context.getMappings(),
-                    authorizedRequest, completedRequest, frontTime, backTime);
+                    context.isAuthorizedRequest(), context.isCompletedRequest(), frontTime, backTime);
         }
     }
 
-    private void updateServiceStatistics(PolicyEnforcementContext context, boolean authorizedRequest, boolean completedRequest) {
+    private void updateServiceStatistics( PolicyEnforcementContext context ) {
         PublishedService service = context.getService();
         if (service != null && context.isPolicyExecutionAttempted()) {
             ServiceStatistics stats = serviceCache.getServiceStatistics(service.getGoid());
             stats.attemptedRequest();
-            if (authorizedRequest) {
+            if ( context.isAuthorizedRequest() ) {
                 stats.authorizedRequest();
-                if (completedRequest) {
+                if ( context.isCompletedRequest() ) {
                     stats.completedRequest();
                 }
             }

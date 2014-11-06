@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
@@ -311,6 +312,31 @@ public class ServerVariables {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
                     return Long.toString(System.currentTimeMillis() - context.getStartTime());
+                }
+            }),
+            new Variable("request.routingTotalTime", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return Long.toString(context.getRoutingTotalTime());
+                }
+            }),
+            new Variable("request.authorized", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return Boolean.toString(context.isAuthorizedRequest());
+                }
+            }),
+            new Variable("request.completed", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return Boolean.toString(context.isCompletedRequest());
+                }
+            }),
+            new Variable("request.identityMappings", new SelectingGetter( "request.identityMappings" ) {
+                @Override
+                protected Object getBaseObject( PolicyEnforcementContext context ) {
+                    List<MessageContextMapping> mappings = context.getMappings();
+                    return mappings.toArray( new MessageContextMapping[mappings.size()] );
                 }
             }),
             new SettableVariable("auditLevel",
