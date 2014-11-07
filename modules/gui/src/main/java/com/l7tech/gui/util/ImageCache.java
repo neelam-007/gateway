@@ -139,8 +139,8 @@ public final class ImageCache {
                 final Reference<Image> imgRef = new SoftReference<>(image);
                 imageMap.put(name, imgRef);
                 return image;
-            } catch (final IOException e) {
-                logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
+            } catch (final Exception e) {
+                logger.log( Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
             }
         }
         return null;
