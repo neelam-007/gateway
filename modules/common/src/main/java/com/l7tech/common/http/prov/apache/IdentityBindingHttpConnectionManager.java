@@ -40,6 +40,22 @@ public class IdentityBindingHttpConnectionManager extends PoolingClientConnectio
             context.setAttribute(ClientContext.USER_TOKEN, tli.getId());
         }
     }
+
+    public boolean isBoundIdentity() {
+        if(BINDING_ENABLED) {
+            if(getInfo() != null)
+                return getInfo().isBound();
+        }
+        return false;
+    }
+
+    public void setBound(boolean bind) {
+        if(BINDING_ENABLED) {
+            if(getInfo() != null){
+                getInfo().setBound(bind);
+            }
+        }
+    }
     /**
      * Set the id that will be used from this thread.
      *
@@ -73,6 +89,14 @@ public class IdentityBindingHttpConnectionManager extends PoolingClientConnectio
      */
     private static final class ThreadLocalInfo {
         private final Object id;
+        private boolean bind = false;
+        public boolean isBound() {
+            return bind;
+        }
+
+        public void setBound(boolean bound) {
+            this.bind = bound;
+        }
 
         private ThreadLocalInfo(final Object id) {
             this.id = id;

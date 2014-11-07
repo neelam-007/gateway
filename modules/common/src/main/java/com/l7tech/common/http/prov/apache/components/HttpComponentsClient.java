@@ -71,6 +71,8 @@ import java.util.zip.GZIPOutputStream;
  *
  */
 public class HttpComponentsClient implements RerunnableGenericHttpClient{
+    private static final String NTLM_SCHEME = "NTLM";
+    private static final byte[] NTLM_MESSAGE_PREFIX =  new byte[]{'N', 'T', 'L', 'M', 'S', 'S', 'P', 0};
 
     //Retain the old version of Apache HTTP Client configuration prefix
     private static final String COMMONS_HTTP_CLIENT = "com.l7tech.common.http.prov.apache.CommonsHttpClient";
@@ -336,8 +338,14 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         final List<HttpHeader> headers = params.getExtraHeaders();
+        if(isBound()) {
+            bind(state, true);
+        }
+
+        //find authorizatoin header and perform the binding
         for (HttpHeader header : headers) {
-            doBinding(header, state);
+            if(!isBound())
+                doBinding(header, state);
             httpMethod.addHeader(header.getName(), header.getFullValue());
         }
 
@@ -481,6 +489,15 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                         @Override
                         public void close() {
                             stampBindingIdentity();
+                            if(response != null && response.getEntity() != null) {
+                                try {
+                                    if(response.getEntity().getContent() != null) {
+                                        response.getEntity().getContent().close();
+                                    }
+                                } catch (IOException e) {
+                                    logger.log(Level.WARNING, "Unable to close response stream");
+                                }
+                            }
                             if (requestMethod != null) {
                                 requestMethod.reset();//release connection
                                 requestMethod = null;
@@ -544,14 +561,47 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                         if (logger.isLoggable(Level.FINE)) {
                             logger.log(Level.FINE, "Binding authorization header '"+value+"'.");
                         }
-                        IdentityBindingHttpConnectionManager bcm =
-                                (IdentityBindingHttpConnectionManager) cman;
-                        bcm.bind(context);
-                        context.setAttribute(ClientContext.USER_TOKEN, identity);
+                        bind(context, isNtlmAuthorization(value));
                     }
                 }
             }
         }
+    }
+
+    private boolean isNtlmAuthorization(String value) {
+        int spos = value.indexOf(" ");
+        if ( spos > 0 ) {
+            String scheme = value.substring(0, spos);
+            byte[] token = HexUtils.decodeBase64(value.substring( spos + 1 ), true);
+            //check if the client using NTLM as a part of negotiation
+            if ( scheme.equalsIgnoreCase(NTLM_SCHEME) || (ArrayUtils.matchSubarrayOrPrefix(token, 0, 1, NTLM_MESSAGE_PREFIX, 0) > -1)) {
+                return true;
+            }
+        }
+        else {
+            logger.log(Level.WARNING, "Bad Authorization header present" + value);
+        }
+
+        return false;
+    }
+
+    private void bind(HttpContext context, boolean bind) {
+        IdentityBindingHttpConnectionManager bcm =
+                (IdentityBindingHttpConnectionManager) cman;
+        bcm.bind(context);
+        context.setAttribute(ClientContext.USER_TOKEN, identity);
+        if(bcm.isBoundIdentity() != bind) {
+            bcm.setBound(bind);
+        }
+    }
+
+    private boolean isBound() {
+        boolean ret = false;
+        if(isBindingManager) {
+            IdentityBindingHttpConnectionManager bcm = (IdentityBindingHttpConnectionManager) cman;
+            ret = bcm.isBoundIdentity();
+        }
+        return ret;
     }
 
     private void configureProxyAuthentication(CredentialsProvider proxyCredProvider, HttpParams clientParams, HttpHost proxyHost, String username, String password) {
