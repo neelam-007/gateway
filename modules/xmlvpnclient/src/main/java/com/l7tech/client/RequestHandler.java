@@ -577,7 +577,7 @@ public class RequestHandler extends AbstractHandler {
             String newUrl = "http://" + InetAddressUtil.getHostForUrl(host) + ":" + port + "/" +
               ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
             NodeList descList = wsil.getElementsByTagName("description");
-            Pattern replaceService = Pattern.compile("http.*serviceoid=(-?\\d+)");
+            Pattern replaceService = Pattern.compile("http.*serviceoid=(-?[a-fA-F0-9]+)");
             for (int i = 0; i < descList.getLength(); ++i) {
                 Node desc = descList.item(i);
                 NamedNodeMap attrs = desc.getAttributes();
