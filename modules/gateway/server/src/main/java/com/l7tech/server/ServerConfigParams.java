@@ -61,6 +61,7 @@ public interface ServerConfigParams {
     String PARAM_CONFIG_AUDIT_SIGN_CLUSTER = "audit.signing";
     String PARAM_AUDIT_SIGN_MAX_VALIDATE = "audit.validateSignature.maxrecords";
     String PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE = "audit.search.maxMessageSize";
+    String PARAM_AUDIT_INCLUDE_CUSTER_PROPERTY_VALUE = "audit.includeClusterPropertyValues";
     String PARAM_METRICS_FINE_INTERVAL = "metricsFineInterval";
     String PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT = "ioInReadTimeout";
     String PARAM_IO_FRONT_SLOW_READ_THRESHOLD = "ioInSlowReadThreshold";

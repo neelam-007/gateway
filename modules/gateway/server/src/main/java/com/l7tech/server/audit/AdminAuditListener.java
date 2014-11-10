@@ -6,16 +6,19 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.HasAuditDetails;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.service.ServiceEvent;
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -32,10 +35,12 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     private final String nodeId;
     private static final String SERVICE_DISABLED = "disabled";
     private final AuditContextFactory auditContextFactory;
+    private Config config;
 
-    public AdminAuditListener(String nodeId, AuditContextFactory auditContextFactory) {
+    public AdminAuditListener(String nodeId, AuditContextFactory auditContextFactory, Config config) {
         this.nodeId = nodeId;
         this.auditContextFactory = auditContextFactory;
+        this.config = config;
 
         Map<Class<? extends PersistenceEvent>, Level> levels = new HashMap<Class<? extends PersistenceEvent>, Level>();
         levels.put(Deleted.class, Level.WARNING);
@@ -212,6 +217,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 msg.append(" (").append(note).append(")");
             }
 
+            msg.append(getDetailedMessage(event));
+
             AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
@@ -264,6 +271,22 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }
+    }
+
+    private String getDetailedMessage(PersistenceEvent event) {
+        if(event.getEntity() instanceof ClusterProperty){
+            final boolean includeClusterPropVal = config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_INCLUDE_CUSTER_PROPERTY_VALUE, false);
+            if(includeClusterPropVal){
+                if( event instanceof  Updated) {
+                    EntityChangeSet changes = ((Updated)event).getChangeSet();
+                    if( changes.getOldValue("value")!= null && !changes.getOldValue("value").equals(changes.getNewValue("value")))
+                        return " from " + changes.getOldValue("value") + " to " + changes.getNewValue("value");
+                }else if ( event instanceof Created){
+                    return " with value "+ ((ClusterProperty)event.getEntity()).getValue();
+                }
+            }
+        }
+        return "";
     }
 
     private boolean isEmpty(Object o) {
