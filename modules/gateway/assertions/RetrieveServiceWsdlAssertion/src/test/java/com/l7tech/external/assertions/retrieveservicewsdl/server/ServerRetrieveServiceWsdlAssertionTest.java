@@ -31,6 +31,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -71,14 +73,223 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
+    public void testCheckRequest_SpecifyingNonExistentProtocolVariable_NoSuchVariableAudited() throws Exception {
+        String protocolVariable = "protocolVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setProtocol(null);
+        assertion.setProtocolVariable(protocolVariable);
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // don't set protocolVariable
+        // context.setVariable(protocolVariable, "HTTP");
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(AssertionMessages.NO_SUCH_VARIABLE_WARNING.getMessage(), protocolVariable)));
+        }
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingNonStringTypeProtocolVariable_InvalidVariableAudited() throws Exception {
+        String protocolVariable = "protocolVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setProtocol(null);
+        assertion.setProtocolVariable(protocolVariable);
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set protocolVariable as integer
+        context.setVariable(protocolVariable, 10);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(AssertionMessages.VARIABLE_INVALID_VALUE.getMessage(), protocolVariable, "String")));
+        }
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingEmptyStringForProtocol_NoProtocolAudited() throws Exception {
+        String protocolVariable = "protocolVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setProtocol(null);
+        assertion.setProtocolVariable(protocolVariable);
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set protocolVariable as empty String
+        context.setVariable(protocolVariable, "");
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_NO_PROTOCOL));
+    }
+
+    @Test
+    public void testCheckRequest_ProtocolAndProtocolVariableBothNull_NoProtocolAudited() throws Exception {
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        // protocol and protocol variable properties both null - N.B. not possible in normal use
+        assertion.setProtocol(null);
+        assertion.setProtocolVariable(null);
+
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_NO_PROTOCOL));
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingNonIntegerRepresentationPort_InvalidPortAudited() throws Exception {
+        String portVariable = "portVar";
+        String portValue = "eightyEighty";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setPort("${" + portVariable + "}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set portVariable to invalid integer representation
+        context.setVariable(portVariable, portValue);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(AssertionMessages.RETRIEVE_WSDL_INVALID_PORT.getMessage(), portValue)));
+        }
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingEmptyStringInPortVariable_NoPortAudited() throws Exception {
+        String portVariable = "portVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setPort("${" + portVariable + "}");
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set portVariable to empty String
+        context.setVariable(portVariable, "");
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_NO_PORT));
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingPortNumberOutsideValidRange_InvalidPortAudited() throws Exception {
+        String portVariable = "portVar";
+        String portValue = "66666"; // greater than maximum port number of 65535
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setPort("${" + portVariable + "}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable(portVariable, portValue);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(AssertionMessages.RETRIEVE_WSDL_INVALID_PORT.getMessage(), portValue)));
+        }
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingNullOtherTargetMessageVariable_NoSuchVariableAudited() throws Exception {
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        // set Message Target to variable but set target variable as null - N.B. not possible in normal use
+        MessageTargetableSupport messageTarget = new MessageTargetableSupport(TargetMessageType.OTHER, true);
+        messageTarget.setOtherTargetMessageVariable(null);
+
+        assertion.setMessageTarget(messageTarget);
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                .format(AssertionMessages.NO_SUCH_VARIABLE_WARNING.getMessage(), "Target variable name is null.")));
+    }
+
+    @Test
     public void testCheckRequest_SpecifyingNonExistentServiceIdVariable_UnsupportedVariableAudited() throws Exception {
         String serviceIdVariable = "serviceId";
-        String hostnameVariable = "hostname";
+        String hostVariable = "host";
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${" + serviceIdVariable + "}");
-        assertion.setHost("${" + hostnameVariable + "}");
+        assertion.setHost("${" + hostVariable + "}");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -88,12 +299,14 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         // don't set serviceId
         // context.setVariable(serviceIdVariable, "ffffffffffffffffffffffffffffffffffff");
 
-        context.setVariable(hostnameVariable, "localhost");
+        context.setVariable(hostVariable, "localhost");
 
         try {
             serverAssertion.checkRequest(context);
             fail("Expected VariableNameSyntaxException");
         } catch (VariableNameSyntaxException e) {
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(AssertionMessages.NO_SUCH_VARIABLE_WARNING.getMessage(), serviceIdVariable)));
             assertTrue(testAudit.isAuditPresentContaining(MessageFormat
                     .format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), serviceIdVariable)));
         }
@@ -102,12 +315,12 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     @Test
     public void testCheckRequest_SpecifyingNonExistentHostnameVariable_UnsupportedVariableAudited() throws Exception {
         String serviceIdVariable = "serviceId";
-        String hostnameVariable = "hostname";
+        String hostVariable = "host";
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${" + serviceIdVariable + "}");
-        assertion.setHost("${" + hostnameVariable + "}");
+        assertion.setHost("${" + hostVariable + "}");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -117,14 +330,16 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         context.setVariable(serviceIdVariable, "ffffffffffffffffffffffffffffffff");
 
         // don't set hostname
-        // context.setVariable(hostnameVariable, "localhost");
+        // context.setVariable(hostVariable, "localhost");
 
         try {
             serverAssertion.checkRequest(context);
             fail("Expected VariableNameSyntaxException");
         } catch (VariableNameSyntaxException e) {
             assertTrue(testAudit.isAuditPresentContaining(MessageFormat
-                    .format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), hostnameVariable)));
+                    .format(AssertionMessages.NO_SUCH_VARIABLE_WARNING.getMessage(), hostVariable)));
+            assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                    .format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), hostVariable)));
         }
     }
 
@@ -244,11 +459,13 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         PolicyEnforcementContext context = createPolicyEnforcementContext();
 
         context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
         assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -261,7 +478,38 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
 
-        // TODO jwilliams: assert that endpoints were rewritten correctly
+        // confirm the endpoints were rewritten correctly
+        NodeList nl = storedWsdl.getElementsByTagName("*");
+
+        for (int i = 0; i < nl.getLength(); i++) {
+            Element element = (Element) nl.item(i);
+
+            if ("address".equals(element.getLocalName())) {
+                assertEquals("http://localhost:8443/svc", element.getAttribute("location"));
+            }
+        }
+
+        /* TEST DOCUMENT:
+        <wsdl:service name="Warehouse">
+            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
+                <soap:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+            </wsdl:port>
+            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
+                <soap12:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+            </wsdl:port>
+        </wsdl:service>
+         */
+
+        /* EXPECTED:
+        <wsdl:service name="Warehouse">
+            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
+                <soap:address location="http://localhost:8443/svc"/>
+            </wsdl:port>
+            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
+                <soap12:address location="http://localhost:8443/svc"/>
+            </wsdl:port>
+        </wsdl:service>
+         */
     }
 
     @Test
@@ -295,6 +543,38 @@ public class ServerRetrieveServiceWsdlAssertionTest {
                 .format(AssertionMessages.RETRIEVE_WSDL_ERROR_PARSING_WSDL.getMessage(),
                         "Attribute name \"INVALID\" associated with " +
                                 "an element type \"wsdl:definitions\" must be followed by the ' = ' character.")));
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingUnrecognizableProtocol_InvalidEndpointAudited() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
+
+        String protocolVariable = "protocolVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setProtocol(null);
+        assertion.setProtocolVariable(protocolVariable);
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("localhost");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set protocolVariable as empty String
+        context.setVariable(protocolVariable, "wxyz");
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_INVALID_ENDPOINT_URL));
     }
 
     private ServerRetrieveServiceWsdlAssertion createServer(RetrieveServiceWsdlAssertion assertion) {

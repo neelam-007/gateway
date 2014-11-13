@@ -81,7 +81,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         try {
             targetMessage = context.getOrCreateTargetMessage(assertion.getTargetMessage(), false);
         } catch (NoSuchVariableException e) {
-            logAndAudit(NO_SUCH_VARIABLE_WARNING, e.getVariable(), getMessage(e));
+            logAndAudit(NO_SUCH_VARIABLE_WARNING, new String[] {e.getMessage()}, getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
