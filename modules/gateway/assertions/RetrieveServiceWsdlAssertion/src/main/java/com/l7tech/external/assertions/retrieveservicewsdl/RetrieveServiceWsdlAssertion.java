@@ -2,14 +2,11 @@ package com.l7tech.external.assertions.retrieveservicewsdl;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
-
 /**
- * Retrieves and rewrite the endpoints of a WSDL for a service.
+ * Retrieves a WSDL for a service and rewrites the endpoints and references.
  *
  * @author Jamie Williams - jamie.williams2@ca.com
  */
@@ -19,11 +16,21 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
     private static final String META_INITIALIZED =
             RetrieveServiceWsdlAssertion.class.getName() + ".metadataInitialized";
 
+    public static final int PORT_RANGE_START = 1;
+    public static final int PORT_RANGE_END = 65535;
+
     @NotNull
     private String serviceId = "${service.oid}";
 
+    private String protocol = "http";
+
+    private String protocolVariable = null;
+
     @NotNull
-    private String hostname = "${gateway.cluster.hostname}";
+    private String host = "${gateway.cluster.hostname}";
+
+    @NotNull
+    private String port = "8080";
 
     @NotNull
     private MessageTargetableSupport messageTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
@@ -37,13 +44,38 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
         this.serviceId = serviceId;
     }
 
-    @NotNull
-    public String getHostname() {
-        return hostname;
+    public String getProtocol() {
+        return protocol;
     }
 
-    public void setHostname(@NotNull String hostname) {
-        this.hostname = hostname;
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public String getProtocolVariable() {
+        return protocolVariable;
+    }
+
+    public void setProtocolVariable(String protocolVariable) {
+        this.protocolVariable = protocolVariable;
+    }
+
+    @NotNull
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(@NotNull String host) {
+        this.host = host;
+    }
+
+    @NotNull
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(@NotNull String port) {
+        this.port = port;
     }
 
     @NotNull
@@ -57,7 +89,7 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
 
     public String[] getVariablesUsed() {
         return messageTarget.getMessageTargetVariablesUsed()
-                .withExpressions(serviceId, hostname)
+                .withExpressions(serviceId, protocolVariable, host, port)
                 .asArray();
     }
 

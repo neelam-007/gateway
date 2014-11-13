@@ -5,7 +5,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.CommonMessages;
@@ -21,11 +20,10 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import org.apache.cxf.helpers.XMLUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -35,7 +33,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.MessageFormat;
 
 /**
@@ -81,7 +78,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${" + serviceIdVariable + "}");
-        assertion.setHostname("${" + hostnameVariable + "}");
+        assertion.setHost("${" + hostnameVariable + "}");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -110,7 +107,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${" + serviceIdVariable + "}");
-        assertion.setHostname("${" + hostnameVariable + "}");
+        assertion.setHost("${" + hostnameVariable + "}");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -142,7 +139,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -167,7 +164,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -194,7 +191,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -221,7 +218,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -233,8 +230,6 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_SERVICE_NOT_SOAP));
     }
 
-    // TODO jwilliams: write test for SAXException on invalid WSDL xml
-
     @Test
     public void testCheckRequest_SpecifyingValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
@@ -242,17 +237,18 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
         when(service.isSoap()).thenReturn(true);
         when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
 
-        String nonSoapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
 
         PolicyEnforcementContext context = createPolicyEnforcementContext();
 
-        context.setVariable("serviceId", nonSoapServiceId);
+        context.setVariable("serviceId", soapServiceId);
 
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
@@ -263,7 +259,9 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         Document storedWsdl = context.getResponse().getXmlKnob().getDocumentReadOnly();
 
-        assertTrue(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // TODO jwilliams: assert that endpoints were rewritten correctly
     }
 
     @Test
@@ -281,23 +279,22 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
         assertion.setServiceId("${serviceId}");
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
 
         ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
 
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.SERVER_ERROR, status);
-
-        for (String s : testAudit) {
-            System.out.println(s);
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.SERVER_ERROR, e.getAssertionStatus());
         }
 
         assertTrue(testAudit.isAuditPresentContaining(MessageFormat
-                .format(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO.getMessage(),
-                        "Attribute name \"INVALID\" associated with an element type \"wsdl:definitions\" " +
-                                "must be followed by the ' = ' character.")));
+                .format(AssertionMessages.RETRIEVE_WSDL_ERROR_PARSING_WSDL.getMessage(),
+                        "Attribute name \"INVALID\" associated with " +
+                                "an element type \"wsdl:definitions\" must be followed by the ' = ' character.")));
     }
 
     private ServerRetrieveServiceWsdlAssertion createServer(RetrieveServiceWsdlAssertion assertion) {

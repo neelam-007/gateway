@@ -1324,6 +1324,10 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_SERVICE_NOT_FOUND = m(10701, Level.WARNING, "Could not find service with ID: {0}");
     public static final M RETRIEVE_WSDL_SERVICE_NOT_SOAP = m(10702, Level.WARNING, "Service is not SOAP.");
     public static final M RETRIEVE_WSDL_ERROR_PARSING_WSDL = m(10703, Level.WARNING, "Could not parse WSDL XML: {0}");
+    public static final M RETRIEVE_WSDL_NO_PROTOCOL = m(10704, Level.WARNING, "No protocol specified.");
+    public static final M RETRIEVE_WSDL_INVALID_PORT = m(10705, Level.WARNING, "Invalid port: {0}");
+    public static final M RETRIEVE_WSDL_NO_PORT = m(10706, Level.WARNING, "No port specified.");
+    public static final M RETRIEVE_WSDL_INVALID_ENDPOINT_URL = m(10707, Level.WARNING, "Invalid endpoint URL: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

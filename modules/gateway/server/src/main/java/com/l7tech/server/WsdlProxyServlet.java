@@ -38,9 +38,7 @@ import com.l7tech.wsdl.WsdlUtil;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -51,14 +49,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
-
-import static com.l7tech.wsdl.WsdlConstants.*;
-
 
 /**
  * Provides access to WSDL for published services of this SSG.
@@ -154,14 +148,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             } else {
                 results = authenticateRequestBasic(req);
             }
-        } catch (BadCredentialsException e) {
-            // Authentication failed (bug #4338)
-            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            res.getOutputStream().print("Authentication failed");
-            res.flushBuffer();
-            return;
-        } catch (IssuedCertNotPresentedException e) {
+        } catch (BadCredentialsException | IssuedCertNotPresentedException e) {
             // Authentication failed (bug #4338)
             logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -284,7 +271,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private Collection<PublishedService> removeDisabledServices( final Collection<PublishedService> services ) {
-        List<PublishedService> filteredServices = new ArrayList<PublishedService>();
+        List<PublishedService> filteredServices = new ArrayList<>();
 
         for ( PublishedService service : services ) {
             if ( !service.isDisabled() ) {
@@ -313,6 +300,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // make sure this service is indeed anonymously accessible
+            //noinspection StatementWithEmptyBody
             if (systemAllowsAnonymousDownloads(req)) {
             } else if (results == null || results.length < 1) {
                 if (!policyAllowAnonymous(svc.getPolicy())) {
@@ -499,87 +487,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return nameBuilder.toString();
     }
 
-    /**
-     * Update the address for existing ports, create service and ports if necessary.
-     *
-     * @param wsdl The WSDL document
-     * @param newURL The address location to use
-     * @param serviceId The identifier for the service (should only be passed for the top level WSDL, not for dependencies)
-     */
-    private void addOrUpdateEndpoints( final Document wsdl,
-                                       final URL newURL,
-                                       final Goid serviceId ) {
-        final String location = newURL.toString();
-        final boolean[] updatedAddress = {false};
-
-        WsdlUtil.rewriteAddressLocations(wsdl, new WsdlUtil.LocationBuilder() {
-            @Override
-            public String buildLocation(Element address) throws MalformedURLException {
-                updatedAddress[0] = true;
-                return location;
-            }
-        });
-
-        if ( !updatedAddress[0] && serviceId != null ) {
-            final byte[] serviceRandom = serviceId.toString().getBytes();
-            addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_1, "soap", serviceRandom );
-            addEndpointsForHttpBindings( wsdl, location, NAMESPACE_WSDL_SOAP_1_2, "soap12", serviceRandom );
-        }
-    }
-
-    /**
-     * Add endpoints for the given binding NS adding a service if required.
-     *
-     * @param wsdl The WSDL document
-     * @param location The endpoint address
-     * @param bindingNs The binding namespace
-     * @param bindingPrefix The preferred prefix for the binding namespace
-     * @param serviceRandom Data for generation of a repeatable random identifier for the service name
-     */
-    private void addEndpointsForHttpBindings( final Document wsdl,
-                                              final String location,
-                                              final String bindingNs,
-                                              final String bindingPrefix,
-                                              final byte[] serviceRandom ) {
-        final NodeList bindingList = wsdl.getElementsByTagNameNS( bindingNs, ELEMENT_BINDING );
-        final String targetNamespace = wsdl.getDocumentElement().getAttribute( ATTR_TARGET_NAMESPACE );
-
-        if ( targetNamespace.isEmpty() ) return;
-
-        for ( int i = 0; i < bindingList.getLength(); i++)  {
-            final Element bindingElement = (Element) bindingList.item(i);
-            final Element wsdlBindingElement = (Element) bindingElement.getParentNode();
-            final String bindingName = wsdlBindingElement.getAttribute( ATTR_NAME );
-            final String soapPrefix = bindingElement.getPrefix() == null ? bindingPrefix : bindingElement.getPrefix();
-            final String wsdlPrefix = wsdlBindingElement.getPrefix() == null ? "wsdl" : bindingElement.getPrefix();
-
-            if ( !bindingName.isEmpty() ) {
-                Element serviceElement = XmlUtil.findFirstChildElementByName( wsdl.getDocumentElement(), NAMESPACE_WSDL, ELEMENT_SERVICE );
-
-                final Set<String> portNames = new HashSet<String>();
-                if ( serviceElement == null ) {
-                    serviceElement = XmlUtil.createAndAppendElementNS( wsdl.getDocumentElement(), ELEMENT_SERVICE, NAMESPACE_WSDL, wsdlPrefix );
-                    serviceElement.setAttributeNS( null, ATTR_NAME, "Service-" + UUID.nameUUIDFromBytes( serviceRandom ).toString() );
-                } else {
-                    for ( Element svcElement : XmlUtil.findChildElementsByName( wsdl.getDocumentElement(), NAMESPACE_WSDL, ELEMENT_SERVICE )) {
-                        for ( Element portElement : XmlUtil.findChildElementsByName( svcElement, NAMESPACE_WSDL, ELEMENT_PORT )) {
-                            portNames.add( portElement.getAttribute( ATTR_NAME ));
-                        }
-                    }
-                }
-
-                if ( !portNames.contains( bindingName ) ) {
-                    final Element portElement = XmlUtil.createAndAppendElementNS( serviceElement, ELEMENT_PORT, NAMESPACE_WSDL, wsdlPrefix );
-                    portElement.setAttributeNS( null, ATTR_NAME, bindingName );
-                    portElement.setAttributeNS( null, ELEMENT_BINDING, XmlUtil.getOrCreatePrefixForNamespace( portElement, targetNamespace, "tns" )+ ":" + bindingName );
-
-                    final Element addressElement = XmlUtil.createAndAppendElementNS( portElement, ELEMENT_ADDRESS, bindingNs, soapPrefix );
-                    addressElement.setAttributeNS( null, ATTR_LOCATION, location );
-                }
-            }
-        }
-    }
-
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
         if (!config.getBooleanProperty( PROPERTY_WSSP_ATTACH, true )) {
             logger.fine("WS-SecurityPolicy decoration not enabled.");
@@ -620,15 +527,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 logger.info("No policy to add!");
             }
 
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (PolicyAssertionException e) {
-            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (FilteringException e) {
+        } catch (InterruptedException | PolicyAssertionException | IOException | FilteringException | SAXException e) {
             logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch(Exception e) {
             logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), e);
@@ -675,12 +574,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 serviceId = svc.getGoid();
                 wsdlDoc = parse(svc.getWsdlUrl(), svc.getWsdlXml());
             }
-        } catch (SAXException e) {
+        } catch (SAXException | FindException e) {
             logger.log(Level.WARNING, "cannot parse wsdl", e);
-            res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
-            return;
-        } catch (FindException fe) {
-            logger.log(Level.WARNING, "cannot parse wsdl", fe);
             res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
             return;
         }
@@ -748,7 +643,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         rewriteReferences(svc.getId(), svc.getWsdlUrl(), wsdlDoc, documents, wsdlProxyUrl);
-        addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId);
+        WsdlUtil.addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId.toString());
         addSecurityPolicy(wsdlDoc, svc);
 
         // output the wsdl
@@ -813,7 +708,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         final Collection<PublishedService> allServices = serviceCache.getCachedServices();
 
         // prepare output collection
-        final Collection<PublishedService> output = new ArrayList<PublishedService>();
+        final Collection<PublishedService> output = new ArrayList<>();
 
         // decide which ones make the cut
         for (PublishedService svc : allServices) {
@@ -922,7 +817,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         */
         boolean isResModeRequested = isResModeRequested(req);
         String protocol = req.isSecure() ? "https" : "http";
-        StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        StringBuilder outDoc = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
           "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service

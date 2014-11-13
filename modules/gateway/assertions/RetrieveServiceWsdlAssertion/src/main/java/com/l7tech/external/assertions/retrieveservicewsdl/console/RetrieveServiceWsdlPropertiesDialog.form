@@ -1,86 +1,184 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.retrieveservicewsdl.console.RetrieveServiceWsdlPropertiesDialog">
-  <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="3" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="48" y="54" width="613" height="297"/>
+      <xy x="48" y="54" width="536" height="262"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <component id="6c2a2" class="javax.swing.JTextField" binding="serviceIdTextField">
-        <constraints>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-            <preferred-size width="150" height="-1"/>
-          </grid>
-        </constraints>
-        <properties/>
-      </component>
-      <hspacer id="c2edd">
-        <constraints>
-          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </hspacer>
-      <vspacer id="c6ae3">
-        <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </vspacer>
-      <component id="9d121" class="javax.swing.JLabel">
-        <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceIdLabel"/>
-        </properties>
-      </component>
-      <component id="35383" class="javax.swing.JLabel">
-        <constraints>
-          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="hostNameLabel"/>
-        </properties>
-      </component>
-      <component id="b129d" class="javax.swing.JTextField" binding="hostNameTextField">
-        <constraints>
-          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-            <preferred-size width="150" height="-1"/>
-          </grid>
-        </constraints>
-        <properties/>
-      </component>
-      <component id="cc8e7" class="javax.swing.JLabel">
-        <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="messageTargetLabel"/>
-        </properties>
-      </component>
-      <component id="d34f2" class="javax.swing.JLabel">
-        <constraints>
-          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="messageVariableLabel"/>
-        </properties>
-      </component>
-      <component id="5851" class="javax.swing.JComboBox" binding="targetMessageComboBox">
-        <constraints>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-      </component>
-      <grid id="f6588" binding="targetVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="59a7d" layout-manager="GridLayoutManager" row-count="4" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
+            <preferred-size width="500" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+        <border type="etched" title-resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" title-key="endpointSectionTitle"/>
+        <children>
+          <component id="35383" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false">
+                <preferred-size width="117" height="18"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="hostLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="hostToolTip"/>
+            </properties>
+          </component>
+          <component id="b129d" class="javax.swing.JTextField" binding="hostTextField">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="9" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="1f2a0" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="portLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="portToolTip"/>
+            </properties>
+          </component>
+          <component id="c2c4e" class="javax.swing.JTextField" binding="portTextField">
+            <constraints>
+              <grid row="2" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="6" anchor="9" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="82155" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolComboBoxToolTip"/>
+            </properties>
+          </component>
+          <component id="97674" class="javax.swing.JLabel" binding="urlPreviewLabel">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="3449a" class="javax.swing.JComboBox" binding="protocolComboBox">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="80698" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolVariableLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolVariableToolTip"/>
+            </properties>
+          </component>
+          <grid id="6abdc" binding="protocolVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children/>
+          </grid>
+        </children>
+      </grid>
+      <grid id="ab590" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
+            <preferred-size width="500" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+        <border type="etched" title="Service"/>
+        <children>
+          <component id="9d121" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceIdLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceIdToolTip"/>
+            </properties>
+          </component>
+          <component id="6c2a2" class="javax.swing.JTextField" binding="serviceIdTextField">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+        </children>
+      </grid>
+      <grid id="ab049" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true">
+            <preferred-size width="500" height="-1"/>
+          </grid>
         </constraints>
         <properties/>
         <border type="none"/>
-        <children/>
+        <children>
+          <component id="cc8e7" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="messageTargetLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="targetMessageToolTip"/>
+            </properties>
+          </component>
+          <component id="5851" class="javax.swing.JComboBox" binding="targetMessageComboBox">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="d34f2" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="messageVariableLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="targetVariableToolTip"/>
+            </properties>
+          </component>
+          <grid id="f6588" binding="targetVariablePanelHolder" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children/>
+          </grid>
+        </children>
       </grid>
+      <vspacer id="5f00f">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+      <hspacer id="a6f2b">
+        <constraints>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </hspacer>
     </children>
   </grid>
 </form>

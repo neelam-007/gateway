@@ -6,8 +6,6 @@ import com.l7tech.policy.AllAssertionsTest;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.junit.Test;
 
-import java.util.logging.Logger;
-
 /**
  * Test the RetrieveServiceWsdlAssertion.
  */
@@ -23,7 +21,7 @@ public class RetrieveServiceWsdlAssertionTest {
     public void testGetVariablesUsed_WithServiceIdButNotHostnameVariables() {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 
-        assertion.setHostname("localhost");
+        assertion.setHost("localhost");
         assertion.setServiceId("${foo}");
 
         String[] variablesUsed = assertion.getVariablesUsed();
