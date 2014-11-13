@@ -31,7 +31,7 @@ import java.util.Map;
 @Table(name="cassandra_connection")
 public class CassandraConnection extends ZoneableNamedEntityImp implements Comparable {
 
-    private String connectionName;
+    private String name;
     private String keyspaceName;
     private String contactPoints;
     private String port;
@@ -39,21 +39,17 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private Goid passwordGoid;
     private String compression = "";
     private boolean ssl;
-    private boolean enabled;
+    private boolean enabled = true;
 
     private String propertiesXml;
     private Map<String, String> properties = new HashMap<>();
 
-
     @RbacAttribute
-    @Size(min = 1, max = 255)
-    @Column(name = "connection_name", nullable = false)
-    public String getConnectionName() {
-        return connectionName;
-    }
-
-    public void setConnectionName(String connectionName) {
-        this.connectionName = connectionName;
+    @Size(min = 1, max = 128)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
     }
 
     @RbacAttribute
@@ -108,6 +104,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     public void setPasswordGoid(Goid passwordGoid) {
+        checkLocked();
         this.passwordGoid = passwordGoid;
     }
 
@@ -142,13 +139,13 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.enabled = enabled;
     }
 
-    @RbacAttribute
-    @Column(name = "properties", nullable = true)
+    @Transient
     public Map<String, String> getProperties() {
-        return properties;
+        return new HashMap<>(this.properties);
     }
 
     public void setProperties(Map<String, String> properties) {
+        this.propertiesXml = null;
         this.properties = properties;
     }
 
@@ -193,7 +190,6 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     public void copyFrom(CassandraConnection other) {
         this.setGoid(other.getGoid());
         this.setName(other.getName());
-        this.setConnectionName(other.getConnectionName());
         this.setKeyspaceName(other.getKeyspaceName());
         this.setContactPoints(other.getContactPoints());
         this.setPort(other.getPort());

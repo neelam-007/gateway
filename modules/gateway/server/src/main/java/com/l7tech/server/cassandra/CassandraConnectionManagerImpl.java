@@ -148,7 +148,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     @Override
     public void updateConnection(CassandraConnection cassandraConnectionEntity) {
         removeConnection(cassandraConnectionEntity);
-        cassandraConnections.put(cassandraConnectionEntity.getConnectionName(), createConnection(cassandraConnectionEntity));
+        cassandraConnections.put(cassandraConnectionEntity.getName(), createConnection(cassandraConnectionEntity));
     }
 
     private CassandraConnectionHolder createConnection(CassandraConnection cassandraConnectionEntity){

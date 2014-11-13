@@ -1617,4 +1617,6 @@
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
 
+    <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
 </beans>

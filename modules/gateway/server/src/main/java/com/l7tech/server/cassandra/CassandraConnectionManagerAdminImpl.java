@@ -1,7 +1,5 @@
 package com.l7tech.server.cassandra;
 
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.objectmodel.*;
@@ -37,7 +35,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     public List<String> getAllCassandraConnectionNames() throws FindException {
         List<String> names = new ArrayList<>();
         for(CassandraConnection entity : getAllCassandraConnections()){
-            names.add(entity.getConnectionName());
+            names.add(entity.getName());
         }
         return names;
     }

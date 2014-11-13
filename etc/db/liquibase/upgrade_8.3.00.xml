@@ -61,7 +61,7 @@
             <column name="version" type="INT(10)">
                 <constraints nullable="false"/>
             </column>
-            <column name="connection_name" type="VARCHAR(255)">
+            <column name="name" type="VARCHAR(128)">
                 <constraints nullable="false"/>
             </column>
             <column name="keyspace_name" type="VARCHAR(255)">
