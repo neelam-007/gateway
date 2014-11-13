@@ -34,7 +34,7 @@ public class DependencyListMO  {
         this.options = options;
     }
 
-    @XmlElement(name = "Reference", required = true)
+    @XmlElement(name = "Reference")
     public DependencyMO getSearchObjectItem() {
         return searchObjectItem;
     }

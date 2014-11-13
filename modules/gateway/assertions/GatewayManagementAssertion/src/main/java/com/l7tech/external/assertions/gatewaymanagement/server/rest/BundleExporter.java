@@ -1,16 +1,24 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.DependencyTransformer;
 import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.DependencyListMO;
+import com.l7tech.gateway.api.DependencyMO;
+import com.l7tech.gateway.rest.SpringBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
+import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -21,6 +29,11 @@ public class BundleExporter {
     private EntityBundleExporter entityBundleExporter;
     @Inject
     private BundleTransformer bundleTransformer;
+    @Inject
+    private DependencyAnalyzer dependencyAnalyzer;
+    @Inject
+    private DependencyTransformer dependencyTransformer;
+
 
 
     //DEFAULTS and options
@@ -38,8 +51,15 @@ public class BundleExporter {
      * @throws FindException
      */
     @NotNull
-    public Bundle exportBundle(@Nullable Properties bundleExportOptions, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
+    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
-        return bundleTransformer.convertToMO(entityBundle);
+        Bundle bundle = bundleTransformer.convertToMO(entityBundle);
+        if(includeDependencies){
+            final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(CollectionUtils.list(headers),
+                    CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map());
+            final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(dependencySearchResults);
+            bundle.setDependencyGraph(dependencyMOs);
+        }
+        return bundle;
     }
 }

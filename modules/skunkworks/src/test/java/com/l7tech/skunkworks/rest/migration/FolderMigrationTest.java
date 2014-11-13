@@ -1163,7 +1163,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
     }
 
     @Test
-    public void testDoubleImportUpdate() throws Exception {
+      public void testDoubleImportUpdate() throws Exception {
         //get the bundle
         RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "includeRequestFolder=true", HttpMethod.GET, null, "");
         assertOkResponse(response);
@@ -1192,5 +1192,18 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                 objectToString(bundleItem.getContent()));
         assertOkResponse(response);
+    }
+
+    @Test
+    public void testExportWithDependencies() throws Exception {
+        //get the bundle
+        RestResponse response = getSourceEnvironment().processRequest("bundle/folder/" + Folder.ROOT_FOLDER_ID.toString(), "includeDependencies=true", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals("The bundle should have 6 item. A policy, a policy alias, 4 folders", 5, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 6 mappings.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getMappings().size());
+        Assert.assertEquals("The dependencies list should have 6 dependencies.  A policy, a policy alias, 4 folders", 5, bundleItem.getContent().getDependencyGraph().getDependencies().size());
+
     }
 }

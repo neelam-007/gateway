@@ -21,8 +21,11 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import junit.framework.*;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;

@@ -55,6 +55,31 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
     }
 
     @NotNull
+    public DependencyListMO convertToMO(@NotNull List<DependencySearchResults> dependencySearchResultsList) {
+        DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
+        if(dependencySearchResultsList.isEmpty()){
+            return dependencyAnalysisMO;
+        }
+//        dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
+//        dependencyAnalysisMO.setSearchObjectItem(toDependencyManagedObject(dependencySearchResultsList.get(0).getDependent(), dependencySearchResultsList.get(0).getDependencies()));
+        List<Dependency> dependencyList = new ArrayList<>();
+        for (DependencySearchResults results : dependencySearchResultsList){
+            dependencyList.addAll(dependencyAnalyzer.flattenDependencySearchResults(results, false));
+        }
+        dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
+        dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
+        for(Dependency dependency: dependencyList){
+            if(dependency instanceof BrokenDependency){
+                dependencyAnalysisMO.getMissingDependencies().add(toManagedObject(dependency));
+            }else{
+                dependencyAnalysisMO.getDependencies().add(toManagedObject(dependency));
+            }
+        }
+
+        return dependencyAnalysisMO;
+    }
+
+    @NotNull
     @Override
     public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
         return convertFromMO(dependencyListMO, true);

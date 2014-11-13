@@ -82,7 +82,9 @@ public class BundleResource {
      * @param folderIds                          Folders to export
      * @param serviceIds                         Services to export
      * @param policyIds                          Policies to export
-     * @param fullGateway                        True to export the full gateway, false otherwise.
+     * @param fullGateway                        True to export the full gateway. False by default
+     * @param includeDependencies                True to export with dependencies. False by default
+     *
      * @return The bundle for the resources
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -94,9 +96,10 @@ public class BundleResource {
                                      @QueryParam("folder") List<String> folderIds,
                                      @QueryParam("service") List<String> serviceIds,
                                      @QueryParam("policy") List<String> policyIds,
-                                     @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                     @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
+                                     @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies"));
 
         //validate that something is being exported
         if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty() && !fullGateway) {
@@ -119,7 +122,7 @@ public class BundleResource {
             throw new InvalidArgumentException("If specifying full gateway export (all=true) do not give any other entity id's");
         }
 
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, includeDependencies, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
@@ -135,6 +138,7 @@ public class BundleResource {
      *                                           bundle or just its contents.
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
      *                                           default.
+     * @param includeDependencies                True to export with dependencies. False by default
      * @return The bundle for the resource
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -148,7 +152,8 @@ public class BundleResource {
                                                           @QueryParam("defaultAction") @ChoiceParam({"NewOrExisting", "NewOrUpdate"}) @DefaultValue("NewOrExisting") String defaultAction,
                                                           @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
                                                           @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
-                                                          @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                                          @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
+                                                          @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
@@ -166,7 +171,7 @@ public class BundleResource {
         }
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy, exportGatewayRestManagementService, header)))
+        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy, exportGatewayRestManagementService, includeDependencies, header)))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
@@ -219,13 +224,19 @@ public class BundleResource {
      * @param includeRequestFolder true to include the request folder
      * @param defaultAction        The default mapping action to take
      * @param defaultMapBy         The default map by property
+     * @param includeDependencies  true to include dependencies
      * @param headers              The header to bundle a bundle for
      * @return The bundle from the headers
      * @throws FindException
      */
     @SuppressWarnings("unchecked")
     @NotNull
-    private Bundle createBundle(boolean includeRequestFolder, @NotNull final Mapping.Action defaultAction, @NotNull final String defaultMapBy, boolean exportGatewayRestManagementService, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
+    private Bundle createBundle(boolean includeRequestFolder,
+                                @NotNull final Mapping.Action defaultAction,
+                                @NotNull final String defaultMapBy,
+                                boolean exportGatewayRestManagementService,
+                                boolean includeDependencies,
+                                @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeRequestFolderOption, String.valueOf(includeRequestFolder));
@@ -237,6 +248,6 @@ public class BundleResource {
             bundleOptionsBuilder.setProperty(BundleExporter.IgnoredEntityIdsOption, containerRequest.getProperty("ServiceId").toString());
         }
         //create the bundle export
-        return bundleExporter.exportBundle(bundleOptionsBuilder, headers);
+        return bundleExporter.exportBundle(bundleOptionsBuilder,includeDependencies, headers);
     }
 }
