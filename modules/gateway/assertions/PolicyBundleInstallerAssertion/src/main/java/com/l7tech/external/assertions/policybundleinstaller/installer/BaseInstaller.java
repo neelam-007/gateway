@@ -5,6 +5,7 @@ import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import com.l7tech.server.policy.bundle.ssgman.BaseGatewayManagementInvoker;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 import java.util.logging.Logger;
@@ -27,16 +28,32 @@ public abstract class BaseInstaller {
         this.cancelledCallback = cancelledCallback;
     }
 
-    protected static boolean isPrefixValid(String installationPrefix) {
-        return installationPrefix != null && !installationPrefix.trim().isEmpty();
+    public static String getSuffixedFolderName(@Nullable String versionModifier, @NotNull String folderName) {
+        return isValidVersionModifier(versionModifier) ? folderName + " " + versionModifier : folderName;
+    }
+
+    public static String getPrefixedPolicyName(@Nullable String versionModifier, @NotNull String policyName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + policyName : policyName;
+    }
+
+    public static String getPrefixedUrl(@Nullable String versionModifier, @NotNull String urlPattern) {
+        return isValidVersionModifier(versionModifier) ? "/" + versionModifier + urlPattern : urlPattern;
+    }
+
+    public static String getPrefixedEncapsulatedAssertionName(@Nullable String versionModifier, @NotNull String encapsulatedAssertionName) {
+        return isValidVersionModifier(versionModifier) ? versionModifier + " " + encapsulatedAssertionName : encapsulatedAssertionName;
     }
 
     protected String getPrefixedPolicyName(@NotNull String policyName) {
-        if(isPrefixValid(context.getInstallationPrefix())) {
-            return context.getInstallationPrefix() + " " + policyName;
-        } else {
-            return policyName;
-        }
+        return getPrefixedPolicyName(context.getInstallationPrefix(), policyName);
+    }
+
+    protected String getPrefixedUrl(final String existingUrlPattern) {
+        return getPrefixedUrl(context.getInstallationPrefix(), existingUrlPattern);
+    }
+
+    protected static boolean isValidVersionModifier(@Nullable String versionModifier) {
+        return versionModifier != null && !versionModifier.trim().isEmpty();
     }
 
     protected String getPolicyRevisionComment(final BundleInfo bundleInfo) {

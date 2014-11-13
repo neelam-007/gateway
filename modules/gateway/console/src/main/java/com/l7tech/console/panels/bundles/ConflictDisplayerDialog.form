@@ -8,7 +8,7 @@
     <properties>
       <maximumSize width="-1" height="-1"/>
       <minimumSize width="-1" height="-1"/>
-      <preferredSize width="1050" height="730"/>
+      <preferredSize width="1075" height="730"/>
     </properties>
     <border type="none"/>
     <children>

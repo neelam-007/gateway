@@ -242,7 +242,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                     @NotNull final Goid folderGoid,
                                     @NotNull final Map<String, BundleMapping> bundleMappings,
                                     @Nullable final String installationPrefix,
-                                    @Nullable final Map<String, String> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                    @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
 
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -452,7 +452,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                      @NotNull final Goid folderGoid,
                                      @NotNull Map<String, BundleMapping> bundleMappings,
                                      @Nullable final String installationPrefix,
-                                     @Nullable final Map<String, String> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                     @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
 
         // When installing more than one bundle, allow for optimization of not trying to recreate items already created.
         // final Map<String, Object> contextMap = new HashMap<>();

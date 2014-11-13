@@ -33,7 +33,7 @@ public class BundleUtilsTest {
     @Test
     public void testGetBundleInfos() throws Exception {
         assertNotNull(bundleInfos);
-        assertEquals("Incorrect number of bundles found. Check if only 2 test bundles exist", 2, bundleInfos.size());
+        assertEquals("Incorrect number of bundles found. Check if only 3 test bundles exist", 3, bundleInfos.size());
         // for (Pair<BundleInfo, String> bundleInfo : bundleInfos) {
             // System.out.println("Bundle found: " + bundleInfo.left.toString() + " Path: " + bundleInfo.right);
         // }
@@ -54,7 +54,7 @@ public class BundleUtilsTest {
 
             @Override
             public Document getBundleItem(@NotNull String bundleId, @NotNull String prerequisiteFolder, @NotNull BundleItem bundleItem, boolean allowMissing) throws UnknownBundleException, BundleResolverException, InvalidBundleException {
-                final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/Bundle1/Service.xml");
+                final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/WsmanBundle1/Service.xml");
                 try {
                     final byte[] bytes = IOUtils.slurpUrl(resourceUrl);
                     return XmlUtil.parse(new ByteArrayInputStream(bytes));
@@ -87,7 +87,7 @@ public class BundleUtilsTest {
      */
     @Test
     public void testGetPolicyNameElement() throws Exception {
-        final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/Bundle1/Policy.xml");
+        final URL resourceUrl = getClass().getResource("/com/l7tech/server/policy/bundle/bundles/WsmanBundle1/Policy.xml");
         final byte[] bytes = IOUtils.slurpUrl(resourceUrl);
         final Document enumPolicy = XmlUtil.parse(new ByteArrayInputStream(bytes));
         final List<Element> policyElms = GatewayManagementDocumentUtilities.getEntityElements(enumPolicy.getDocumentElement(), "Policy");

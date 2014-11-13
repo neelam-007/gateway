@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
@@ -12,6 +13,7 @@ import com.l7tech.server.policy.bundle.ssgman.BaseGatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
@@ -24,14 +26,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
-import static com.l7tech.server.bundling.EntityMappingInstructions.MappingAction.NewOrUpdate;
+import static com.l7tech.objectmodel.EntityType.valueOf;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.MIGRATION_BUNDLE;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
-import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
+import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker.*;
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.*;
 
 /**
  * Install migration bundle using the Gateway Management REST API.
@@ -64,11 +67,34 @@ public class MigrationBundleInstaller extends BaseInstaller {
             logger.finest("Dry run checking by performing a test bundle import without committing.");
             checkInterrupted();
 
-            // TODO handle prefix
-
             try {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
-                requestMessage.addPropertyToAllChildlessMappings(MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING, true);   // get mappings, add Properties, add Property "FailOnExisting"
+
+                // handle version modifier
+                final String versionModifier = context.getInstallationPrefix();
+                if (isValidVersionModifier(versionModifier)) {
+                    new VersionModifier(requestMessage, versionModifier).apply();
+                }
+
+                // get mappings, set action, add Properties, add Property
+                for (Element mapping : requestMessage.getMappings()) {
+                    Element propertiesElement = DomUtils.findFirstChildElementByName(mapping, MGMT_VERSION_NAMESPACE, "Properties");
+                    if (propertiesElement == null) {
+                        propertiesElement = DomUtils.createAndAppendElement(mapping, "Properties");
+                    }
+                    final Element property = DomUtils.createAndAppendElement(propertiesElement, "Property");
+                    switch (valueOf(mapping.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
+                        case JDBC_CONNECTION: case SECURE_PASSWORD:
+                            property.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_NEW);
+                            break;
+                        default:
+                            property.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING);
+                            break;
+                    }
+                    final Element booleanValue = DomUtils.createAndAppendElement(property, "BooleanValue");
+                    booleanValue.setTextContent(Boolean.toString(true));
+                }
+
                 final String requestXml = requestMessage.getAsString();
 
                 final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
@@ -83,7 +109,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
                     final List<Element> mappingErrors = dryRunMessage.getMappingErrors();
                     for (Element mappingError : mappingErrors) {
                         // Add "l7" namespace into each mapping element
-                        RestmanMessage.setL7Xmlns(mappingError);
+                        RestmanMessage.setL7XmlNs(mappingError);
                         // Save the string of each mapping element
                         dryRunEvent.addMigrationErrorMapping(XmlUtil.nodeToFormattedString(mappingError));
                     }
@@ -138,28 +164,26 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
             String requestXml;
             try {
-                requestXml = XmlUtil.nodeToString(bundle);
-            } catch (IOException e) {
-                throw new RuntimeException("Unexpected exception serializing bundle document", e);
-            }
+                final RestmanMessage requestMessage = new RestmanMessage(bundle);
 
-            // Check if there is a migration action override map.  If so, resolve the target issues based on the user's options
-            final Map<String, String> migrationOverrides = context.getMigrationBundleOverrides();
-            if (migrationOverrides != null && !migrationOverrides.isEmpty()) {
-                for (String id: migrationOverrides.keySet()) {
-                    String value = migrationOverrides.get(id);
-                    // Resolve the target based on the "NewOrUpdate" option
-                    if (NewOrUpdate.toString().equals(value)) {
-                        // todo move as much restman message logic into RestmanMessage
-                        requestXml = requestXml.replaceFirst(
-                            "<l7:Mapping action=\"NewOrExisting\" srcId=\"" + id + "\"",
-                            "<l7:Mapping action=\"NewOrUpdate\" srcId=\"" + id + "\"");
-                    }
-                    // Resolve the target based on a new entity
-                    else {
-                        requestXml = requestXml.replaceAll(id, value); // value will be a new entity id.
+                // handle version modifier
+                final String versionModifier = context.getInstallationPrefix();
+                if (isValidVersionModifier(versionModifier)) {
+                    new VersionModifier(requestMessage, versionModifier).apply();
+                }
+
+                // handle migration action override, resolve the target issues based on the user's options
+                final Map<String, Pair<String, Properties>> migrationOverrides = context.getMigrationBundleOverrides();
+                if (migrationOverrides != null && !migrationOverrides.isEmpty()) {
+                    for (String id : migrationOverrides.keySet()) {
+                        Pair<String, Properties> mapping = migrationOverrides.get(id);
+                        requestMessage.setMappingAction(id, EntityMappingInstructions.MappingAction.valueOf(mapping.left), mapping.right);
                     }
                 }
+
+                requestXml = requestMessage.getAsString();
+            } catch (IOException e) {
+                throw new RuntimeException("Unexpected exception serializing bundle document", e);
             }
 
             // set policy revision comment
@@ -177,9 +201,9 @@ public class MigrationBundleInstaller extends BaseInstaller {
             // check for errors
             if (installMessage.hasMappingError()) {
                 try {
-                    throw new RuntimeException("Installation failed: " + installMessage.getMappingErrorsAsString());
+                    throw new RuntimeException(" installation failed. " + System.getProperty("line.separator") + installMessage.getMappingErrorsAsString());
                 }  catch (IOException e) {
-                    throw new RuntimeException("Installation failed:", e);
+                    throw new RuntimeException(" installation failed. ", e);
                 }
             }
         }

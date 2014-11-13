@@ -37,6 +37,7 @@ import static com.l7tech.gateway.common.AsyncAdminMethods.JobId;
 import static com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin.PolicyBundleInstallerException;
 import static com.l7tech.policy.bundle.BundleInfo.getPrefixedUrlErrorMsg;
 import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Provide reusable logic for Bundle Installer dialogs (e.g. handles extracting bundle information, folder selection,
@@ -261,8 +262,15 @@ public abstract class BundleInstallerDialog extends JDialog {
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                             @NotNull Goid folderGoid,
                                             @NotNull Map<String, BundleMapping> bundleMappings,
+                                            @Nullable String installationPrefix) throws PolicyBundleInstallerException {
+        return adminInstall(componentIds, folderGoid, bundleMappings, installationPrefix, null);
+    }
+
+    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
+                                            @NotNull Goid folderGoid,
+                                            @NotNull Map<String, BundleMapping> bundleMappings,
                                             @Nullable String installationPrefix,
-                                            @Nullable Map<String, String> migrationActionOverrides) throws PolicyBundleInstallerException {
+                                            @Nullable Map<String, Pair<String, Properties>> migrationActionOverrides) throws PolicyBundleInstallerException {
         return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationActionOverrides);
     }
 
@@ -372,7 +380,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                 }
 
                 if (areConflicts) {
-                    final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult);
+                    final ConflictDisplayerDialog conflictDialog = new ConflictDisplayerDialog(this, bundlesSelected, dryRunResult, !isEmpty(prefix));
                     DialogDisplayer.pack(conflictDialog);
                     Utilities.centerOnScreen(conflictDialog);
                     DialogDisplayer.display(conflictDialog, new Runnable() {
@@ -441,7 +449,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                            final Map<String, BundleMapping> bundleMappings,
                            final PolicyBundleInstallerAdmin admin,
                            @Nullable final String prefixToUse,
-                           @Nullable final Map<String, String> selectedMigrationActions)
+                           @Nullable final Map<String, Pair<String, Properties>> selectedMigrationActions)
             throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
                 admin,

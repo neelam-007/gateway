@@ -3,6 +3,7 @@ package com.l7tech.console.panels.bundles;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,8 +11,21 @@ import java.awt.event.*;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class ConflictDisplayerDialog extends JDialog {
+    public static enum MappingAction {
+        // com.l7tech.server.bundling.EntityMappingInstructions.MappingAction not accessible in console packages
+        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore
+    }
+
+    public static enum ErrorType {
+        // com.l7tech.gateway.api.Mapping.ErrorType not accessible in console packages
+        TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, ImproperMapping, InvalidResource, Unknown
+    }
+
+    public static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -20,11 +34,12 @@ public class ConflictDisplayerDialog extends JDialog {
     private boolean hasInfoOnlyConflict;
 
     // holds the aggregate of selected resolutions across all bundles
-    private Map<String, String> selectedMigrationResolutions = new Hashtable<>();
+    private Map<String, Pair<MappingAction, Properties>> selectedMigrationResolutions = new Hashtable<>();
 
     public ConflictDisplayerDialog(final Window owner,
                                    final List<BundleInfo> bundleInfos,
-                                   final PolicyBundleDryRunResult dryRunResult) throws PolicyBundleDryRunResult.UnknownBundleIdException {
+                                   final PolicyBundleDryRunResult dryRunResult,
+                                   final boolean versionModified) throws PolicyBundleDryRunResult.UnknownBundleIdException {
         super(owner, "Conflicts detected");
         setContentPane(contentPane);
         setModal(true);
@@ -63,11 +78,15 @@ public class ConflictDisplayerDialog extends JDialog {
         tabbedPane.removeAll();
         for (BundleInfo bundleInfo : bundleInfos) {
             if (dryRunResult.anyConflictsForBundle(bundleInfo.getId())) {
-                BundleConflictComponent bundleConflictComponent = new BundleConflictComponent(this, bundleInfo.getId(), dryRunResult, selectedMigrationResolutions);
+                BundleConflictComponent bundleConflictComponent = new BundleConflictComponent(this, bundleInfo.getId(), dryRunResult, versionModified, selectedMigrationResolutions);
                 JPanel mainPanel = bundleConflictComponent.getMainPanel();
 
                 if (bundleConflictComponent.hasInfoOnlyConflict()) {
                     hasInfoOnlyConflict = true;
+                }
+
+                if (bundleConflictComponent.hasUnresolvableEntityConflict()) {
+                    buttonOK.setEnabled(false);
                 }
 
                 tabbedPane.add(bundleInfo.getName(), mainPanel);
@@ -79,8 +98,17 @@ public class ConflictDisplayerDialog extends JDialog {
         return wasoked;
     }
 
-    public Map<String, String> getSelectedMigrationResolutions() {
-        return selectedMigrationResolutions;
+    /**
+     * Due to limited visibility of com.l7tech.server.bundling.EntityMappingInstructions.MappingAction, we transport the enum as String
+     * @return map of selected migration resolutions
+     */
+    public Map<String, Pair<String, Properties>> getSelectedMigrationResolutions() {
+        Map<String, Pair<String, Properties>> map = new Hashtable<>(selectedMigrationResolutions.size());
+        for (String  id : selectedMigrationResolutions.keySet()) {
+            Pair<MappingAction, Properties> actionAndProperties = selectedMigrationResolutions.get(id);
+            map.put(id, new Pair<>(actionAndProperties.left.toString(), actionAndProperties.right));
+        }
+        return map;
     }
 
     private void onOK() {

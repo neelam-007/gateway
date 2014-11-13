@@ -318,7 +318,7 @@ public class PolicyInstaller extends WsmanInstaller {
 
         final String policyNameToUse;
         // Add prefix if needed
-        if (isPrefixValid(context.getInstallationPrefix())) {
+        if (isValidVersionModifier(context.getInstallationPrefix())) {
             final Element nameElementWritable = GatewayManagementDocumentUtilities.getEntityNameElement(policyDetailWritable);
             final String policyName = DomUtils.getTextValue(nameElementWritable);
             policyNameToUse = getPrefixedPolicyName(policyName);

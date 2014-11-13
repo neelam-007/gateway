@@ -1,0 +1,110 @@
+<l7:Item xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Name>Bundle mappings</l7:Name>
+    <l7:Type>BUNDLE MAPPINGS</l7:Type>
+    <l7:TimeStamp>2014-11-12T12:06:48.915-08:00</l7:TimeStamp>
+    <l7:Link rel="self" uri="/1.0/bundle?test=true&amp;versionComment=REST+Gateway+Management+Bundle+%28v1.0%29"/>
+    <l7:Resource>
+        <l7:Mappings>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b0c" type="FOLDER">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(folder, name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b61" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61" type="POLICY">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b75" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b75" type="POLICY">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b89" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89" type="ENCAPSULATED_ASSERTION">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrExisting" errorType="TargetNotFound" srcId="f1649a0664f1ebb6235ac238a6f71a6d" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/passwords/f1649a0664f1ebb6235ac238a6f71a6d" type="SECURE_PASSWORD">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=mysql_root, id=f1649a0664f1ebb6235ac238a6f71a6d, description=null, type = SECURE_PASSWORD</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnNew">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrExisting" errorType="TargetNotFound" srcId="0567c6a8f0c4cc2c9fb331cb03b4de6f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/jdbcConnections/0567c6a8f0c4cc2c9fb331cb03b4de6f" type="JDBC_CONNECTION">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>Could not locate entity: Fail on new specified and could not locate existing target.. Source Entity: EntityHeader. Name=SSG, id=0567c6a8f0c4cc2c9fb331cb03b4de6f, description=null, type = JDBC_CONNECTION</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnNew">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b8f" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b8f" type="POLICY">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71ba3" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71ba3" type="ENCAPSULATED_ASSERTION">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="InvalidResource" srcId="f1649a0664f1ebb6235ac238a6f71ba9" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/services/f1649a0664f1ebb6235ac238a6f71ba9" type="SERVICE">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>Error attempting to save or update class com.l7tech.gateway.common.service.PublishedService</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+            <l7:Mapping action="NewOrUpdate" errorType="UniqueKeyConflict" srcId="f1649a0664f1ebb6235ac238a6f71b4c" srcUri="https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b4c" type="POLICY">
+                <l7:Properties>
+                    <l7:Property key="ErrorMessage">
+                        <l7:StringValue>(name)  must be unique</l7:StringValue>
+                    </l7:Property>
+                    <l7:Property key="FailOnExisting">
+                        <l7:BooleanValue>true</l7:BooleanValue>
+                    </l7:Property>
+                </l7:Properties>
+            </l7:Mapping>
+        </l7:Mappings>
+    </l7:Resource>
+</l7:Item>

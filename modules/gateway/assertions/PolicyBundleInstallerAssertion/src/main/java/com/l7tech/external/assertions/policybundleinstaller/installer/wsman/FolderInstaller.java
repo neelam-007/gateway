@@ -125,8 +125,8 @@ public class FolderInstaller extends WsmanInstaller {
             // suffix allow folders from specific installers to display together.
             // e.g. otk1, otk2, sfdc1, sfdc2, simple1, simple2 vs 1otk, 1sfdc, 1simple, 2otk, 2sfdc, 2simple
             String folderSuffix = context.getInstallationPrefix();
-            if (isPrefixValid(folderSuffix)) {
-                folderName = folderName + " " + folderSuffix;
+            if (isValidVersionModifier(folderSuffix)) {
+                folderName = getSuffixedFolderName(folderSuffix, folderName);
             }
 
             final Text nameText = document.createTextNode(folderName);

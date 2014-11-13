@@ -9,7 +9,7 @@
             <l7:Link rel="template" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders/template"/>
             <l7:Link rel="list" uri="https://tluong-pc.l7tech.local:8443/restman/1.0/folders"/>
             <l7:Resource>
-                <l7:Folder id="f1649a0664f1ebb6235ac238a6f71b0c" folderId="0000000000000000ffffffffffffec76">
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="f1649a0664f1ebb6235ac238a6f71b0c">
                     <l7:Name>Simple Policy Bundle</l7:Name>
                 </l7:Folder>
             </l7:Resource>

@@ -206,15 +206,6 @@ public class ServiceInstaller extends WsmanInstaller {
         }
     }
 
-    private String getPrefixedUrl(final String existingUrlPattern) {
-        if (isPrefixValid(context.getInstallationPrefix())) {
-            final String prefixToUse = "/" + context.getInstallationPrefix();
-            return prefixToUse + existingUrlPattern;
-        } else {
-            return existingUrlPattern;
-        }
-    }
-
     private Document parseQuietly(String inputXml) {
         try {
             return XmlUtil.parse(inputXml);

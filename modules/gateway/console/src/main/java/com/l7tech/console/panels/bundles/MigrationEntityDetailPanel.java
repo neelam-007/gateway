@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -29,12 +30,14 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.console.panels.bundles.BundleConflictComponent.ERROR_ACTION_NEW_OR_UPDATE;
-import static com.l7tech.console.panels.bundles.BundleConflictComponent.ERROR_TYPE_TARGET_EXISTS;
-import static com.l7tech.console.panels.bundles.BundleConflictComponent.ERROR_TYPE_TARGET_NOT_FOUND;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetExists;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetNotFound;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MAPPING_TARGET_ID_ATTRIBUTE;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MappingAction.*;
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 /**
@@ -54,13 +57,15 @@ public class MigrationEntityDetailPanel {
     private JRadioButton updateRadioButton;
     private JButton createEntityButton;
     private JComboBox entitiesComboBox;
+    private JRadioButton createRadioButton;
     private String targetType;
 
     private JDialog parent;
     private Registry registry = Registry.getDefault();
 
-    public MigrationEntityDetailPanel(final JDialog parent, final String errorType, final String targetType, final String name,
-                                      final String id, final Map<String, String> selectedMigrationResolutions) {
+    public MigrationEntityDetailPanel(final JDialog parent, final ConflictDisplayerDialog.ErrorType errorType,
+                                      final String targetType, final String name, final String id, boolean versionModified,
+                                      final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
         this.targetType = targetType;
         this.parent = parent;
 
@@ -69,17 +74,27 @@ public class MigrationEntityDetailPanel {
         nameLabel.setText(name);
         idLabel.setText(id);
 
-        useExistRadioButton.setVisible(ERROR_TYPE_TARGET_EXISTS.equals(errorType));
-        updateRadioButton.setVisible(ERROR_TYPE_TARGET_EXISTS.equals(errorType));
+        useExistRadioButton.setVisible(errorType == TargetExists);
+        updateRadioButton.setVisible(errorType == TargetExists);
+        createRadioButton.setVisible(errorType == TargetExists);
 
-        entitiesComboBox.setVisible(ERROR_TYPE_TARGET_NOT_FOUND.equals(errorType));
-        createEntityButton.setVisible(ERROR_TYPE_TARGET_NOT_FOUND.equals(errorType));
+        entitiesComboBox.setVisible(errorType == TargetNotFound);
+        createEntityButton.setVisible(errorType == TargetNotFound);
+
+        // default to "Use Existing", unless there's a version modifier (prefix) default to "Create New"
+        if (versionModified) {
+            createRadioButton.setSelected(true);
+            selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(AlwaysCreateNew, (Properties) null));
+        } else {
+            useExistRadioButton.setSelected(true);
+            selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, (Properties) null));
+        }
 
         useExistRadioButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (useExistRadioButton.isSelected()) {
-                    selectedMigrationResolutions.remove(idLabel.getText());
+                    selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, (Properties) null));
                 }
             }
         });
@@ -88,7 +103,16 @@ public class MigrationEntityDetailPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (updateRadioButton.isSelected()) {
-                    selectedMigrationResolutions.put(idLabel.getText(), ERROR_ACTION_NEW_OR_UPDATE);
+                    selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrUpdate, (Properties) null));
+                }
+            }
+        });
+
+        createRadioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (createRadioButton.isSelected()) {
+                    selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(AlwaysCreateNew, (Properties) null));
                 }
             }
         });
@@ -96,32 +120,36 @@ public class MigrationEntityDetailPanel {
         entitiesComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                final Properties properties = new Properties();
                 if (EntityType.JDBC_CONNECTION.toString().equals(targetType)) {
                     String selectedJdbcConnName = (String) entitiesComboBox.getSelectedItem();
+
                     JdbcAdmin admin = getJdbcConnectionAdmin();
                     if (admin == null) return;
 
                     try {
-                        selectedMigrationResolutions.put(idLabel.getText(), admin.getJdbcConnection(selectedJdbcConnName).getGoid().toString());
+                        properties.put(MAPPING_TARGET_ID_ATTRIBUTE, admin.getJdbcConnection(selectedJdbcConnName).getGoid().toString());
+                        selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, properties));
                     } catch (FindException e1) {
                         showErrorMessage("Error Resolving Migration Issues", "Cannot find a JDBC Connection.", e1, null);
-
                     }
                 } else if (EntityType.SSG_KEY_ENTRY.toString().equals(targetType)) {
                     final KeystoreComboEntry keystoreEntry = (KeystoreComboEntry) entitiesComboBox.getSelectedItem();
 
-                    selectedMigrationResolutions.put(idLabel.getText(), keystoreEntry.getKeystoreid().toString() + ":" + keystoreEntry.getAlias());
+                    properties.put(MAPPING_TARGET_ID_ATTRIBUTE, keystoreEntry.getKeystoreid().toString() + ":" + keystoreEntry.getAlias());
+                    selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, properties));
                 } else if (EntityType.SECURE_PASSWORD.toString().equals(targetType)) {
                     final SecurePassword securePassword = ((SecurePasswordComboBox) entitiesComboBox).getSelectedSecurePassword();
 
                     if (securePassword != null) {
-                        selectedMigrationResolutions.put(idLabel.getText(), securePassword.getGoid().toString());
+                        properties.put(MAPPING_TARGET_ID_ATTRIBUTE, securePassword.getGoid().toString());
+                        selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, properties));
                     }
                 }
             }
         });
 
-        if (ERROR_TYPE_TARGET_NOT_FOUND.equals(errorType)) {
+        if (errorType == TargetNotFound) {
             initializeEntityComponents();
         }
     }

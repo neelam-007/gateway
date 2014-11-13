@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedGuid;
-import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedName;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.wsman.EncapsulatedAssertionInstaller.getPrefixedEncapsulatedAssertionGuid;
+import static com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller.getPrefixedEncapsulatedAssertionName;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static org.junit.Assert.assertEquals;
@@ -116,8 +116,8 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         assertEquals("Incorrect number of Encapsulated Assertion created", 1, idToGuid.size());
 
         // hardcoded test resources - validate each Encapsulated Assertion found and correct name and GUID was published
-        assertEquals(getPrefixedName(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_NAME), idToName.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
-        assertEquals(getPrefixedGuid(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_GUID), idToGuid.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
+        assertEquals(getPrefixedEncapsulatedAssertionName(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_NAME), idToName.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
+        assertEquals(getPrefixedEncapsulatedAssertionGuid(prefix, SIMPLE_TEST_BUNDLE_COMP_ENCASS_GUID), idToGuid.get(SIMPLE_TEST_BUNDLE_COMP_ENCASS_ID));
     }
 
     private GatewayManagementInvoker stubGatewayManagementInvoker(final Map<String, String> idToName, final Map<String, String> idToGuid) {
@@ -194,28 +194,28 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
 
         // check its been updated as expected
         List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
-        assertEquals(getPrefixedGuid(prefix, SIMPLE_TEST_BUNDLE_ENCASS_GUID), encapsulatedAssertions.get(0).getAttribute("stringValue"));
+        assertEquals(getPrefixedEncapsulatedAssertionGuid(prefix, SIMPLE_TEST_BUNDLE_ENCASS_GUID), encapsulatedAssertions.get(0).getAttribute("stringValue"));
         encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
-        assertEquals(getPrefixedName(prefix, SIMPLE_TEST_BUNDLE_ENCASS_NAME), encapsulatedAssertions.get(0).getAttribute("stringValue"));
+        assertEquals(getPrefixedEncapsulatedAssertionName(prefix, SIMPLE_TEST_BUNDLE_ENCASS_NAME), encapsulatedAssertions.get(0).getAttribute("stringValue"));
     }
 
     @Test
     public void testPrefixedName() {
         final String name = "Simple Encapsulated Assertion";
-        assertEquals(name, getPrefixedName(null, name));
-        assertEquals(name, getPrefixedName("", name));
-        assertEquals("Prefixed Simple Encapsulated Assertion", getPrefixedName("Prefixed", name));
+        assertEquals(name, getPrefixedEncapsulatedAssertionName(null, name));
+        assertEquals(name, getPrefixedEncapsulatedAssertionName("", name));
+        assertEquals("Prefixed Simple Encapsulated Assertion", getPrefixedEncapsulatedAssertionName("Prefixed", name));
     }
 
     @Test
     public void testPrefixedGuid() {
         final String guid = "abc589b0-eba5-4b3f-81b5-be7809817623";
-        assertEquals(guid, getPrefixedGuid(null, guid));
-        assertEquals(guid, getPrefixedGuid("", guid));
-        assertEquals("123abc589b0-eba5-4b3f-81b5-be7809817", getPrefixedGuid("123", guid));
-        assertEquals("12345678901234567890123456789012345a", getPrefixedGuid("12345678901234567890123456789012345", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedGuid("123456789012345678901234567890123456", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedGuid("1234567890123456789012345678901234567", guid));
-        assertEquals("123456789012345678901234567890123456", getPrefixedGuid("12345678901234567890123456789012345678901234567890", guid));
+        assertEquals(guid, getPrefixedEncapsulatedAssertionGuid(null, guid));
+        assertEquals(guid, getPrefixedEncapsulatedAssertionGuid("", guid));
+        assertEquals("123abc589b0-eba5-4b3f-81b5-be7809817", getPrefixedEncapsulatedAssertionGuid("123", guid));
+        assertEquals("12345678901234567890123456789012345a", getPrefixedEncapsulatedAssertionGuid("12345678901234567890123456789012345", guid));
+        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("123456789012345678901234567890123456", guid));
+        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("1234567890123456789012345678901234567", guid));
+        assertEquals("123456789012345678901234567890123456", getPrefixedEncapsulatedAssertionGuid("12345678901234567890123456789012345678901234567890", guid));
     }
 }

@@ -7,13 +7,11 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Admin interface for implementing Policy Bundle install.
@@ -115,5 +113,5 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
                              @NotNull Goid folderGoid,
                              @NotNull Map<String, BundleMapping> bundleMappings,
                              @Nullable String installationPrefix,
-                             @Nullable Map<String, String> migrationBundleOverrides) throws PolicyBundleInstallerException;
+                             @Nullable Map<String,Pair<String,Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException;
 }

@@ -33,19 +33,19 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
+import static com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage.MAPPING_ACTION_ATTRIBUTE;
 
 /**
  * Common code useful for all restman policy bundle installers (and exporter).
  */
 public class RestmanInvoker extends BaseGatewayManagementInvoker {
-    public static final String MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING = "FailOnExisting";
-    private   static final String RESTMAN_VAR_PREFIX = "RestGatewayMan";
-    public   static final String VAR_RESTMAN_ACTION = RESTMAN_VAR_PREFIX + ".action";
-    private   static final String VAR_RESTMAN_BASE_URI = RESTMAN_VAR_PREFIX + ".baseuri";
+    private static final String RESTMAN_VAR_PREFIX = "RestGatewayMan";
+    public static final String VAR_RESTMAN_ACTION = RESTMAN_VAR_PREFIX + "." + MAPPING_ACTION_ATTRIBUTE;
+    private static final String VAR_RESTMAN_BASE_URI = RESTMAN_VAR_PREFIX + ".baseuri";
     public static final String VAR_RESTMAN_URI = RESTMAN_VAR_PREFIX + ".uri";
     public static final String VAR_RESTMAN_CONTENT_TYPE = RESTMAN_VAR_PREFIX + ".contentType";
     public static final String URL_1_0_BUNDLE = "1.0/bundle";
-    private   static final String URL_LOCALHOST_8080_RESTMAN = "http://localhost:8080/restman/";
+    private static final String URL_LOCALHOST_8080_RESTMAN = "http://localhost:8080/restman/";
     public static final String UTF_8 = "UTF-8";
 
     public RestmanInvoker(@NotNull final Functions.Nullary<Boolean> cancelledCallback, @NotNull final GatewayManagementInvoker gatewayManagementInvoker) {
@@ -83,7 +83,7 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
             // check for unexpected internal error
             if (responseMessage == null) {
                 throw new UnexpectedManagementResponse("Unexpected exception: a call result was expected.");
-            } else if (responseMessage.isError()) {
+            } else if (responseMessage.isErrorResponse()) {
                 throw new UnexpectedManagementResponse(responseMessage.getAsFormattedString());
             }
         } catch (SAXException | IOException | NoSuchPartException e) {

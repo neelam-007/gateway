@@ -4,10 +4,12 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Installation context used by clients of the Policy Bundle Installer to pass all required information
@@ -38,7 +40,7 @@ public class PolicyBundleInstallerContext {
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
      * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
-     *
+     * @param migrationBundleOverrides migration bundle overrides
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         @NotNull Goid folderGoid,
@@ -46,7 +48,7 @@ public class PolicyBundleInstallerContext {
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired,
-                                        Map<String, String> migrationBundleOverrides) {
+                                        @Nullable Map<String, Pair<String, Properties>> migrationBundleOverrides) {
         this.bundleInfo = bundleInfo;
         this.folderGoid = folderGoid;
         this.bundleMapping = bundleMapping;
@@ -84,7 +86,7 @@ public class PolicyBundleInstallerContext {
     }
 
     @Nullable
-    public Map<String, String> getMigrationBundleOverrides() {
+    public Map<String,Pair<String,Properties>> getMigrationBundleOverrides() {
         return migrationBundleOverrides;
     }
 
@@ -109,5 +111,5 @@ public class PolicyBundleInstallerContext {
     @NotNull
     private final BundleResolver bundleResolver;
     private final boolean checkingAssertionExistenceRequired;
-    private final Map<String, String> migrationBundleOverrides;
+    private final Map<String, Pair<String,Properties>> migrationBundleOverrides;
 }

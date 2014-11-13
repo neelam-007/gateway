@@ -74,8 +74,7 @@ public class OAuthInstallerTaskDialog extends BundleInstallerDialog {
     protected AsyncAdminMethods.JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                                               @NotNull Goid folderGoid,
                                                               @NotNull Map<String, BundleMapping> bundleMappings,
-                                                              @Nullable String installationPrefix,
-                                                              @Nullable Map<String, String> migrationActionOverrides) throws PolicyBundleInstallerException {
+                                                              @Nullable String installationPrefix) throws PolicyBundleInstallerException {
         return ((OAuthInstallerAdmin) getExtensionInterface(null)).install(componentIds, folderGoid, bundleMappings, installationPrefix, integrateApiPortal);
     }
 

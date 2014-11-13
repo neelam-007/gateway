@@ -20,7 +20,6 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathUtil;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -67,9 +66,9 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                 final String prefix = context.getInstallationPrefix();
                 String encapsulatedAssertionName = GatewayManagementDocumentUtilities.getEntityName(encapsulatedAssertionElm);
                 String encapsulatedAssertionGuid = GatewayManagementDocumentUtilities.getEntityGuid(encapsulatedAssertionElm);
-                if (isPrefixValid(prefix)) {
-                    encapsulatedAssertionName = getPrefixedName(prefix, encapsulatedAssertionName);
-                    encapsulatedAssertionGuid = getPrefixedGuid(prefix, encapsulatedAssertionGuid);
+                if (isValidVersionModifier(prefix)) {
+                    encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
+                    encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                 }
 
                 try {
@@ -131,15 +130,15 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                                    @NotNull final Document policyDocumentFromResource,
                                    @Nullable final String prefix) throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
         // update encapsulated assertion name with prefix
-        if (isPrefixValid(prefix)) {
+        if (isValidVersionModifier(prefix)) {
             List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
             for (Element encapsulatedAssertion : encapsulatedAssertions) {
-                encapsulatedAssertion.setAttribute("stringValue", getPrefixedGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
+                encapsulatedAssertion.setAttribute("stringValue", getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
             }
 
             encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
             for (Element encapsulatedAssertion : encapsulatedAssertions) {
-                encapsulatedAssertion.setAttribute("stringValue", getPrefixedName(prefix, encapsulatedAssertion.getAttribute("stringValue")));
+                encapsulatedAssertion.setAttribute("stringValue", getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertion.getAttribute("stringValue")));
             }
 
             // write changes back to the resource document
@@ -210,11 +209,11 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
                     // add prefix if needed
                     String prefix = context.getInstallationPrefix();
-                    if (isPrefixValid(prefix)) {
-                        encapsulatedAssertionName = getPrefixedName(prefix, encapsulatedAssertionName);
+                    if (isValidVersionModifier(prefix)) {
+                        encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
                         DomUtils.setTextContent(nameElementWritable, encapsulatedAssertionName);
 
-                        encapsulatedAssertionGuid = getPrefixedGuid(prefix, encapsulatedAssertionGuid);
+                        encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                         DomUtils.setTextContent(guidElementWritable, encapsulatedAssertionGuid);
                     }
 
@@ -236,11 +235,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
         }
     }
 
-    protected static String getPrefixedName(@Nullable String prefix, @NotNull String encapsulatedAssertionName) {
-        return StringUtils.isEmpty(prefix) ? encapsulatedAssertionName : prefix + " " + encapsulatedAssertionName;
-    }
-
-    protected static String getPrefixedGuid(@Nullable String prefix, @NotNull String guid) {
+    public static String getPrefixedEncapsulatedAssertionGuid(@Nullable String prefix, @NotNull String guid) {
         return prefix == null ? guid : (prefix + guid).substring(0, guid.length());
     }
 }
