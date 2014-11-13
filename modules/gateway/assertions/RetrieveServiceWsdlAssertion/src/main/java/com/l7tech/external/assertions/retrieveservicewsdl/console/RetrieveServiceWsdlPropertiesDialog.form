@@ -35,7 +35,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="hostToolTip"/>
+            </properties>
           </component>
           <component id="1f2a0" class="javax.swing.JLabel">
             <constraints>
@@ -52,7 +54,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="portToolTip"/>
+            </properties>
           </component>
           <component id="82155" class="javax.swing.JLabel">
             <constraints>
@@ -73,7 +77,9 @@
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolComboBoxToolTip"/>
+            </properties>
           </component>
           <component id="80698" class="javax.swing.JLabel">
             <constraints>
@@ -89,7 +95,9 @@
             <constraints>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="protocolVariableToolTip"/>
+            </properties>
             <border type="none"/>
             <children/>
           </grid>
@@ -120,7 +128,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceIdToolTip"/>
+            </properties>
           </component>
         </children>
       </grid>
@@ -147,7 +157,9 @@
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="targetMessageToolTip"/>
+            </properties>
           </component>
           <component id="d34f2" class="javax.swing.JLabel">
             <constraints>
@@ -163,7 +175,9 @@
             <constraints>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="targetVariableToolTip"/>
+            </properties>
             <border type="none"/>
             <children/>
           </grid>
