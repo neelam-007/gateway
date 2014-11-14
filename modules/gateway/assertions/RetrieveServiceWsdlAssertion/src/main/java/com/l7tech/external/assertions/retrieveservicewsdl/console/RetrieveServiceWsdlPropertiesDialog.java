@@ -249,7 +249,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         updateUrlPreview();
 
         // message target
-        final MessageTargetableSupport responseTarget = assertion.getTargetMessage();
+        final MessageTargetableSupport responseTarget = assertion.getMessageTarget();
         targetMessageComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
 
         // message target variable

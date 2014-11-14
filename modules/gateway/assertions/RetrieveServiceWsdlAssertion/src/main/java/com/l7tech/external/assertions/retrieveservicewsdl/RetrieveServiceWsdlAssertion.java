@@ -79,7 +79,7 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
     }
 
     @NotNull
-    public MessageTargetableSupport getTargetMessage() {
+    public MessageTargetableSupport getMessageTarget() {
         return messageTarget;
     }
 

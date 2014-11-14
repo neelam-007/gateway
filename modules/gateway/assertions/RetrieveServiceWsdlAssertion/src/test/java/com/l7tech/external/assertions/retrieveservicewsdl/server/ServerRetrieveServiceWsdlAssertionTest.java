@@ -446,6 +446,43 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
+    public void testCheckRequest_SpecifyingValidServiceAndRequestTarget_WsdlStoredToRequest() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedWsdl = context.getRequest().getXmlKnob().getDocumentReadOnly();
+
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
+    }
+
+    @Test
     public void testCheckRequest_SpecifyingValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
@@ -479,37 +516,53 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
 
         // confirm the endpoints were rewritten correctly
-        NodeList nl = storedWsdl.getElementsByTagName("*");
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
+    }
 
-        for (int i = 0; i < nl.getLength(); i++) {
-            Element element = (Element) nl.item(i);
+    @Test
+    public void testCheckRequest_SpecifyingValidServiceAndVariableTarget_WsdlStoredToVariable() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
-            if ("address".equals(element.getLocalName())) {
-                assertEquals("http://localhost:8443/svc", element.getAttribute("location"));
-            }
-        }
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
 
-        /* TEST DOCUMENT:
-        <wsdl:service name="Warehouse">
-            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
-                <soap:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
-            </wsdl:port>
-            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
-                <soap12:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
-            </wsdl:port>
-        </wsdl:service>
-         */
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
 
-        /* EXPECTED:
-        <wsdl:service name="Warehouse">
-            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
-                <soap:address location="http://localhost:8443/svc"/>
-            </wsdl:port>
-            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
-                <soap12:address location="http://localhost:8443/svc"/>
-            </wsdl:port>
-        </wsdl:service>
-         */
+        String wsdlTargetContextVar = "wsdlTargetVar";
+
+        MessageTargetableSupport otherMessageTarget = new MessageTargetableSupport(TargetMessageType.OTHER, true);
+        otherMessageTarget.setOtherTargetMessageVariable(wsdlTargetContextVar);
+        otherMessageTarget.setSourceUsedByGateway(false);
+        otherMessageTarget.setTargetModifiedByGateway(true);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(otherMessageTarget);
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Message wsdlTargetMessage = (Message) context.getVariable(wsdlTargetContextVar);
+
+        Document storedWsdl = wsdlTargetMessage.getXmlKnob().getDocumentReadOnly();
+
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
     }
 
     @Test
@@ -575,6 +628,43 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         assertEquals(AssertionStatus.FAILED, status);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_INVALID_ENDPOINT_URL));
+    }
+
+
+    // ---- EXAMPLE OF EXPECTED ENDPOINT REWRITING ----
+
+    /*
+        INPUT DOCUMENT:
+        <wsdl:service name="Warehouse">
+            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
+                <soap:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+            </wsdl:port>
+            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
+                <soap12:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+            </wsdl:port>
+        </wsdl:service>
+
+        CHANGES EXPECTED:
+        <wsdl:service name="Warehouse">
+            <wsdl:port binding="tns:WarehouseSoap" name="WarehouseSoap">
+                <soap:address location="http://localhost:8443/svc"/>
+            </wsdl:port>
+            <wsdl:port binding="tns:WarehouseSoap12" name="WarehouseSoap12">
+                <soap12:address location="http://localhost:8443/svc"/>
+            </wsdl:port>
+        </wsdl:service>
+    */
+
+    private void confirmEndpointsUpdated(String endpointUrl, Document storedWsdl) {
+        NodeList nl = storedWsdl.getElementsByTagName("*");
+
+        for (int i = 0; i < nl.getLength(); i++) {
+            Element element = (Element) nl.item(i);
+
+            if ("address".equals(element.getLocalName())) {
+                assertEquals(endpointUrl, element.getAttribute("location"));
+            }
+        }
     }
 
     private ServerRetrieveServiceWsdlAssertion createServer(RetrieveServiceWsdlAssertion assertion) {
