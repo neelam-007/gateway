@@ -12,7 +12,7 @@ import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 
 /**
- * To setup additional properties of JDBC Connection or C3P0 Pool Configuration
+ * To setup additional properties of JDBC Connection, C3P0 Pool Configuration, or Cassandra Connection.
  *
  * @author ghuang
  */
@@ -29,9 +29,21 @@ public class AdditionalPropertiesDialog extends JDialog {
 
     private MutablePair<String, String> property;
     private boolean confirmed;
+    private boolean disableC3P0CheckBox = false;
 
     public AdditionalPropertiesDialog(Dialog owner, MutablePair<String, String> property) {
         super(owner, resources.getString("dialog.title.additional.props"));
+        initialize(property);
+    }
+
+    public AdditionalPropertiesDialog(Dialog owner, MutablePair<String, String> property, boolean disableC3P0CheckBox) {
+        super(owner, resources.getString("dialog.title.additional.props"));
+        // Hide C3P0 check box
+        this.disableC3P0CheckBox = disableC3P0CheckBox;
+        if (disableC3P0CheckBox) {
+            setC3p0PoolingCheckBox.setSelected(false);
+            setC3p0PoolingCheckBox.setVisible(false);
+        }
         initialize(property);
     }
 
@@ -82,10 +94,14 @@ public class AdditionalPropertiesDialog extends JDialog {
         }
         if (property.left.startsWith(C3P0_PROPERTY_PREFIX)) {
             propNameTextField.setText(property.left.substring(C3P0_PROPERTY_PREFIX.length()));
-            setC3p0PoolingCheckBox.setSelected(true);
+            if (!disableC3P0CheckBox) {
+                setC3p0PoolingCheckBox.setSelected(true);
+            }
         } else {
             propNameTextField.setText(property.left);
-            setC3p0PoolingCheckBox.setSelected(false);
+            if (!disableC3P0CheckBox) {
+                setC3p0PoolingCheckBox.setSelected(false);
+            }
         }
         propValueTextField.setText(property.right);
     }

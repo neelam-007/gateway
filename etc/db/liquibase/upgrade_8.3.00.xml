@@ -76,13 +76,11 @@
             <column name="username" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="password_goid" type="${goid.type}">
-                <constraints nullable="false"/>
-            </column>
+            <column name="password_goid" type="${goid.type}"/>
             <column name="compression" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ssl" type="${tinyint.type}" defaultValueNumeric="0">
+            <column name="use_ssl" type="${tinyint.type}" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
 			<column name="enabled" type="${tinyint.type}" defaultValueNumeric="1">

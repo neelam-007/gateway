@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Map;
 
 
@@ -27,22 +27,25 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 @XmlRootElement
 @Entity
-@Proxy(lazy=false)
-@Table(name="cassandra_connection")
+@Proxy(lazy = false)
+@Table(name = "cassandra_connection")
 public class CassandraConnection extends ZoneableNamedEntityImp implements Comparable {
 
-    private String name;
-    private String keyspaceName;
-    private String contactPoints;
-    private String port;
-    private String username;
+    private String keyspaceName = "";
+    private String contactPoints = "";
+    private String port = "";
+    private String username = "";
     private Goid passwordGoid;
     private String compression = "";
-    private boolean ssl;
+    private boolean ssl = false;
     private boolean enabled = true;
 
     private String propertiesXml;
-    private Map<String, String> properties = new HashMap<>();
+    private Map<String, String> properties = new TreeMap<>();
+
+    public CassandraConnection() {
+        _name = "";
+    }
 
     @RbacAttribute
     @Size(min = 1, max = 128)
@@ -96,7 +99,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.username = username;
     }
 
-    @Column(name="password_goid")
+    @Column(name = "password_goid")
     @Type(type = "com.l7tech.server.util.GoidType")
     @Dependency(type = Dependency.DependencyType.SECURE_PASSWORD, methodReturnType = Dependency.MethodReturnType.GOID)
     public Goid getPasswordGoid() {
@@ -120,7 +123,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
-    @Column(name = "ssl", nullable = false)
+    @Column(name = "use_ssl", nullable = false)
     public boolean isSsl() {
         return ssl;
     }
@@ -141,7 +144,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
 
     @Transient
     public Map<String, String> getProperties() {
-        return new HashMap<>(this.properties);
+        return new TreeMap<>(this.properties);
     }
 
     public void setProperties(Map<String, String> properties) {

@@ -10,6 +10,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.MutablePair;
@@ -22,17 +23,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by yuri on 11/4/14.
  */
-public class CassandraConnectionPropertiesDialog extends JDialog{
+public class CassandraConnectionPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(CassandraConnectionPropertiesDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.CassandraConnectionPropertiesDialog");
     private static final int MAX_TABLE_COLUMN_NUM = 2;
@@ -62,6 +60,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
     private InputValidator validator;
     private final CassandraConnection connection;
     private PermissionFlags flags;
+    private boolean confirmed;
 
     public CassandraConnectionPropertiesDialog(Dialog owner, CassandraConnection connection) {
         super(owner, resources.getString("dialog.title.manage.cassandra.connection.properties"), true);
@@ -134,7 +133,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
                 enableOrDisableTableButtons();
             }
         });
-        additionalPropertiesTable.getTableHeader().setReorderingAllowed( false );
+        additionalPropertiesTable.getTableHeader().setReorderingAllowed(false);
         Utilities.setDoubleClickAction(additionalPropertiesTable, editButton);
 
         enableOrDisableTableButtons();
@@ -142,31 +141,36 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
 
     private CassandraConnectionManagerAdmin getCassandraManagerAdmin() {
         CassandraConnectionManagerAdmin admin = null;
-        if(Registry.getDefault().isAdminContextPresent()) {
-            admin =  Registry.getDefault().getCassandraConnectionAdmin();
-        }
-        else {
+        if (Registry.getDefault().isAdminContextPresent()) {
+            admin = Registry.getDefault().getCassandraConnectionAdmin();
+        } else {
             logger.log(Level.WARNING, "No Admin Context present!");
         }
         return admin;
     }
 
     private void onOk() {
+        String warningMessage = checkDuplicateCassandraConnection();
+        if (warningMessage != null) {
+            DialogDisplayer.showMessageDialog(CassandraConnectionPropertiesDialog.this, warningMessage,
+                    resources.getString("dialog.title.error.saving.conn"), JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
         // Assign new attributes to the connect
         viewToModel();
 
-        CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
-        try {
-            admin.saveCassandraConnection(connection);
-        }
-        catch (UpdateException | SaveException e) {
-            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("dialog.title.error.saving.conn"), e.getMessage()),
-                    resources.getString("dialog.title.manage.cassandra.connection.properties"),
-                    JOptionPane.WARNING_MESSAGE, null);
-        }
-
-        //confirmed = true;
+        confirmed = true;
         dispose();
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void selectName() {
+        nameTextField.requestFocus();
+        nameTextField.selectAll();
     }
 
     private void modelToView() {
@@ -192,7 +196,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
         connection.setContactPoints(contactPointsTextField.getText().trim());
         connection.setPort(portTextField.getText().trim());
         connection.setUsername(credentialsTextField.getText().trim());
-        connection.setPasswordGoid(securePasswordComboBox.getSelectedSecurePassword().getGoid());
+        if (securePasswordComboBox.getSelectedSecurePassword() != null) {
+            connection.setPasswordGoid(securePasswordComboBox.getSelectedSecurePassword().getGoid());
+        }
         connection.setCompression(((String) compressionComboBox.getSelectedItem()));
         connection.setSsl(useSSLCheckBox.isSelected());
         connection.setEnabled(!disableConfigurationCheckBox.isSelected());
@@ -307,7 +313,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
         if (property == null || property.left == null || property.right == null) return;
         final String originalPropName = property.left;
 
-        final AdditionalPropertiesDialog dlg = new AdditionalPropertiesDialog(this, property);
+        final AdditionalPropertiesDialog dlg = new AdditionalPropertiesDialog(this, property, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -374,5 +380,25 @@ public class CassandraConnectionPropertiesDialog extends JDialog{
             if (currentRow >= 0)
                 additionalPropertiesTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
         }
+    }
+
+    private String checkDuplicateCassandraConnection() {
+        CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
+        if (admin == null) return "Cannot get Cassandra Connection Admin.  Check the log and try again.";
+
+        String originalConnName = connection.getName();
+        String connName = nameTextField.getText();
+        if (originalConnName.compareToIgnoreCase(connName) == 0) return null;
+
+        try {
+            for (String name : admin.getAllCassandraConnectionNames()) {
+                if (connName.compareToIgnoreCase(name) == 0) {
+                    return "The connection name \"" + name + "\" already exists. Try a new name.";
+                }
+            }
+        } catch (FindException e) {
+            return "Cannot find Cassandra connections.  Check the log and Try again.";
+        }
+        return null;
     }
 }
