@@ -15,10 +15,7 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.transport.jms.BytesMessageInputStream;
-import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsRuntimeException;
-import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -487,7 +484,13 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
                 }
 
-                responseProducer.send( jmsResponseMsg, jmsResponseMsg.getJMSDeliveryMode(), jmsResponseMsg.getJMSPriority(), jmsResponseMsg.getJMSExpiration() );
+                long timeToLive = jmsResponseMsg.getJMSExpiration() > 0 ? jmsResponseMsg.getJMSExpiration() - System.currentTimeMillis() : 0;
+                if(timeToLive < 0) {
+                    _logger.log(Level.WARNING, "Unable to send JMS message: JMS message expired");
+                    throw new JmsMessageExpiredException();
+                }
+
+                responseProducer.send( jmsResponseMsg, jmsResponseMsg.getJMSDeliveryMode(), jmsResponseMsg.getJMSPriority(), timeToLive);
                 _logger.fine( "Sent response to " + jmsReplyDest );
             }
             sent = true;

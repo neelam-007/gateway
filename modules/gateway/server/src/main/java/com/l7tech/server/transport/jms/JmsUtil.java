@@ -454,7 +454,8 @@ public class JmsUtil {
             if ( cause instanceof InvalidClientIDException ||
                  cause instanceof InvalidDestinationException ||
                  cause instanceof JMSSecurityException ||
-                 cause instanceof ResourceAllocationException ) {
+                 cause instanceof ResourceAllocationException ||
+                 cause instanceof JmsMessageExpiredException) {
                 expected = true;
                 break;
             }
@@ -650,7 +651,7 @@ public class JmsUtil {
 
         try {
             if (entry.getKey().equals(JMS_DESTINATION)) {
-                jmsMessage.setJMSDestination((Destination) entry.getValue());
+                logger.log(Level.WARNING, "JMS Header: " + JMS_DESTINATION + " is not settable");
             } else if (entry.getKey().equals(JMS_DELIVERY_MODE)) {
                 jmsMessage.setJMSDeliveryMode(getInt(entry.getValue()));
             } else if (entry.getKey().equals(JMS_EXPIRATION)) {
@@ -658,9 +659,9 @@ public class JmsUtil {
             } else if (entry.getKey().equals(JMS_PRIORITY)) {
                 jmsMessage.setJMSPriority(getInt(entry.getValue()));
             } else if (entry.getKey().equals(JMS_MESSAGE_ID)) {
-                jmsMessage.setJMSMessageID((String) entry.getValue());
+                logger.log(Level.WARNING, "JMS Header: " + JMS_MESSAGE_ID + " is not settable");
             } else if (entry.getKey().equals(JMS_TIMESTAMP)) {
-                jmsMessage.setJMSTimestamp(getLong(entry.getValue()));
+                logger.log(Level.WARNING, "JMS Header: " + JMS_TIMESTAMP + " is not settable");
             } else if (entry.getKey().equals(JMS_CORRELATION_ID)) {
                 jmsMessage.setJMSCorrelationID((String)entry.getValue());
             } else if (entry.getKey().equals(JMS_REPLY_TO)) {
@@ -668,7 +669,7 @@ public class JmsUtil {
             } else if (entry.getKey().equals(JMS_TYPE)) {
                 jmsMessage.setJMSType((String) entry.getValue());
             } else if (entry.getKey().equals(JMS_REDELIVERED)) {
-                jmsMessage.setJMSRedelivered(entry.getValue() instanceof Boolean ? (Boolean) entry.getValue() : Boolean.valueOf((String) entry.getValue()));
+                logger.log(Level.WARNING, "JMS Header: " + JMS_REDELIVERED + " is not settable");
             }
         } catch (Exception e) {
             JMSException je = new JMSException("Error setting JMS Header " + entry.getKey());

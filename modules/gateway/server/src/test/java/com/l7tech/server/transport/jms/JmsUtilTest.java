@@ -161,13 +161,12 @@ public class JmsUtilTest {
         setJmsHeaders(jmsMsg, jmsHeaderMap);
         assertEquals(CORRELATIONID,jmsMsg.getJMSCorrelationID());
         assertEquals(DELIVERYMODE, jmsMsg.getJMSDeliveryMode());
-        assertEquals(DESTINATION, jmsMsg.getJMSDestination().toString());
+        assertNull( jmsMsg.getJMSDestination());
         assertEquals(EXPIRATION, jmsMsg.getJMSExpiration());
-        assertEquals(MESSAGEID, jmsMsg.getJMSMessageID());
+        assertNull(jmsMsg.getJMSMessageID());
         assertEquals(PRIORITY, jmsMsg.getJMSPriority());
-        assertEquals(REDELIVERED, jmsMsg.getJMSRedelivered());
         assertEquals(REPLYTO, jmsMsg.getJMSReplyTo().toString());
-        assertEquals(TIMESTAMP, jmsMsg.getJMSTimestamp());
+        assertEquals(0L, jmsMsg.getJMSTimestamp());
         assertEquals(TYPE, jmsMsg.getJMSType());
     }
 
@@ -184,8 +183,8 @@ public class JmsUtilTest {
         assertEquals(1234L, msg.getJMSExpiration());
         assertEquals(1, msg.getJMSDeliveryMode());
         assertEquals(0, msg.getJMSPriority());
-        assertEquals(12345667790L, msg.getJMSTimestamp());
-        assertTrue(msg.getJMSRedelivered());
+        assertEquals(0L, msg.getJMSTimestamp());
+        assertFalse(msg.getJMSRedelivered());
     }
 
 
@@ -203,10 +202,10 @@ public class JmsUtilTest {
     }
 
     @Test(expected = JMSException.class)
-    public void setJmsDestination_wrongType() throws Exception {
+    public void setJmsReplyTo_wrongType() throws Exception {
         Message msg = new TextMessageStub();
         Map<String, Object> headerMap = new HashMap<>();
-        headerMap.put(JmsUtil.JMS_DESTINATION, "invalidDestination");
+        headerMap.put(JmsUtil.JMS_REPLY_TO, "invalidDestination");
         setJmsHeaders(msg, headerMap);
     }
 

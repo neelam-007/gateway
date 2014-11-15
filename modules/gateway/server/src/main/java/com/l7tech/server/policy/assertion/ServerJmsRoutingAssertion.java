@@ -397,9 +397,16 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), getAudit() );
                 MessageProducer jmsProducer = bag.getMessageProducer();
 
-                final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
-                final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
-                final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0L, Long.MAX_VALUE, variables );
+                final int deliveryMode = assertion.getRequestDeliveryMode() != null? assertion.getRequestDeliveryMode().getValue() : jmsOutboundRequest.getJMSDeliveryMode();
+                final int priority = assertion.getRequestPriority() != null ? expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables ) : jmsOutboundRequest.getJMSPriority();
+                final long timeToLive = assertion.getRequestTimeToLive() != null ? expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0L, Long.MAX_VALUE, variables ) :
+                        jmsOutboundRequest.getJMSExpiration() > 0 ? jmsOutboundRequest.getJMSExpiration() - System.currentTimeMillis() : 0;
+
+                if(timeToLive < 0) {
+                    logAndAudit(AssertionMessages.JMS_ROUTING_ERROR_SENDING_MESSAGE, jmsProducer.getDestination().toString(), "JMS message expired");
+                    messageSent = true;
+                    throw new JmsMessageExpiredException();
+                }
 
                 context.routingStarted();
                 routingStarted = true;
@@ -407,11 +414,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if ( logger.isLoggable( Level.FINE ))
                     logger.fine("Sending JMS outbound message");
 
-                if ( deliveryMode != null && priority != null && timeToLive != null ) {
-                    jmsProducer.send( jmsOutboundRequest, deliveryMode.getValue(), priority, timeToLive );
-                } else {
-                    jmsProducer.send( jmsOutboundRequest );
-                }
+                jmsProducer.send( jmsOutboundRequest, deliveryMode, priority, timeToLive );
 
                 messageSent = true; // no retries once sent
 
