@@ -1329,6 +1329,8 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_INVALID_PORT = m(10705, Level.WARNING, "Invalid port: {0}");
     public static final M RETRIEVE_WSDL_NO_PORT = m(10706, Level.WARNING, "No port specified.");
     public static final M RETRIEVE_WSDL_INVALID_ENDPOINT_URL = m(10707, Level.WARNING, "Invalid endpoint URL: {0}");
+    public static final M RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE = m(10708, Level.WARNING, "Failed to create proxy URL for reference: {0}");
+    public static final M RETRIEVE_WSDL_NO_HOSTNAME = m(10709, Level.WARNING, "No host name specified.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

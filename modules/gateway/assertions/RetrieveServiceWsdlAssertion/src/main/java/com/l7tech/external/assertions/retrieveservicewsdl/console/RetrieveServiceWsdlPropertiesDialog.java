@@ -48,6 +48,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     private JLabel urlPreviewLabel;
     private JComboBox<String> protocolComboBox;
     private JPanel protocolVariablePanelHolder;
+    private JCheckBox proxyDependenciesCheckBox;
     private TargetVariablePanel protocolVariablePanel;
     private TargetVariablePanel targetVariablePanel;
 
@@ -248,6 +249,9 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
 
         updateUrlPreview();
 
+        // proxy dependencies toggle
+        proxyDependenciesCheckBox.setSelected(assertion.isProxyDependencies());
+
         // message target
         final MessageTargetableSupport responseTarget = assertion.getMessageTarget();
         targetMessageComboBox.setSelectedItem(new MessageTargetableSupport(responseTarget.getTarget()));
@@ -290,6 +294,9 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
 
         assertion.setHost(hostTextField.getText().trim());
         assertion.setPort(portTextField.getText().trim());
+
+        // proxy dependencies toggle
+        assertion.setProxyDependencies(proxyDependenciesCheckBox.isSelected());
 
         // message target
         final MessageTargetableSupport responseTarget =

@@ -10,7 +10,10 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
@@ -22,12 +25,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.w3c.dom.Document;
@@ -45,11 +51,19 @@ import java.text.MessageFormat;
 public class ServerRetrieveServiceWsdlAssertionTest {
     private static final String ACME_WAREHOUSE_WSDL = "ACMEWarehouse.wsdl";
 
+    private static final String WSDL_QUERY_HANDLER_SERVICE_ROUTING_URI = "/wsdlHandler";
+
     @Mock
     private PublishedService service;
 
     @Mock
+    private PublishedService wsdlQueryHandlerService;
+
+    @Mock
     private ServiceCache serviceCache;
+
+    @Mock
+    private ServiceDocumentManager serviceDocumentManager;
 
     private TestAudit testAudit;
 
@@ -65,6 +79,8 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         MockitoAnnotations.initMocks(this);
 
         testAudit = new TestAudit();
+
+        when(wsdlQueryHandlerService.getRoutingUri()).thenReturn(WSDL_QUERY_HANDLER_SERVICE_ROUTING_URI);
     }
 
     @AfterClass
@@ -341,6 +357,31 @@ public class ServerRetrieveServiceWsdlAssertionTest {
             assertTrue(testAudit.isAuditPresentContaining(MessageFormat
                     .format(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE.getMessage(), hostVariable)));
         }
+    }
+
+    @Test
+    public void testCheckRequest_SpecifyingEmptyStringForHost_UnsupportedVariableAudited() throws Exception {
+        String hostVariable = "hostVar";
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setPort("8080");
+        assertion.setServiceId("ffffffffffffffffffffffffffffffff");
+        assertion.setHost("${" + hostVariable + "}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        // set host variable to empty String
+        context.setVariable(hostVariable, "");
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FAILED, status);
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_NO_HOSTNAME));
     }
 
     @Test
@@ -630,6 +671,56 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_INVALID_ENDPOINT_URL));
     }
 
+    @Test
+    public void testCheckRequest_FindExceptionThrownFromServiceDocumentManager_ServerErrorReturned() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.isInternal()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getRoutingUri()).thenReturn("/svc");
+        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
+                .thenThrow(new FindException("data access error"));
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.SERVER_ERROR, e.getAssertionStatus());
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                .format(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO.getMessage(), "data access error")));
+    }
+
+    // TODO jwilliams: test rewriteReferences audits errors as expected
+
+    // TODO jwilliams: test existing behaviour of rewriteReferences
+    // TODO jwilliams: remove rewriteReferences' need for service documents (change to Map<URI,Contents>)
+    // TODO jwilliams: migrate rewriteReferences to WsdlUtil, move test cases to WsdlUtilTest
+    // TODO jwilliams: change WsdlProxyServlet to use WsdlUtil.rewriteReferences
+
+    @Test
+    public void testRewriteReferences_Success() {
+
+    }
 
     // ---- EXAMPLE OF EXPECTED ENDPOINT REWRITING ----
 
@@ -673,17 +764,41 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
                         .put("auditFactory", testAudit.factory())
                         .put("serviceCache", serviceCache)
+                        .put("serviceDocumentManager", serviceDocumentManager)
                         .unmodifiableMap()
         );
 
         return serverAssertion;
     }
 
-    private static PolicyEnforcementContext createPolicyEnforcementContext() {
-        Message request = new Message();
-        Message response = new Message();
+    private PolicyEnforcementContext createPolicyEnforcementContext() {
+        Message request = createRequest();
+        Message response = createResponse();
 
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        context.setService(wsdlQueryHandlerService);
+
+        return context;
+    }
+
+    private Message createRequest() {
+        MockHttpServletRequest hRequest = new MockHttpServletRequest();
+
+        Message request = new Message();
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
+
+        return request;
+    }
+
+    private Message createResponse() {
+        MockHttpServletResponse hResponse = new MockHttpServletResponse();
+
+        Message response = new Message();
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(hResponse));
+
+        return response;
     }
 
     private String getTestDocumentAsString(String testDocument) throws IOException {

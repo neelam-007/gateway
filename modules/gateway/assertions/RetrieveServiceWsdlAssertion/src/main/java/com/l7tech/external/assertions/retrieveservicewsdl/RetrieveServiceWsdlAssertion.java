@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVariables, SetsVariables {
+    private static final String ICON_FILE = "com/l7tech/external/assertions/retrieveservicewsdl/WSDL_File_16x16.png";
     private final static String BASE_NAME = "Retrieve Service WSDL";
     private final static String LONG_NAME = "Retrieve WSDL for Service";
     private static final String META_INITIALIZED =
@@ -34,6 +35,8 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
 
     @NotNull
     private MessageTargetableSupport messageTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
+
+    private boolean proxyDependencies = false;
 
     @NotNull
     public String getServiceId() {
@@ -87,6 +90,14 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
         this.messageTarget = messageTarget;
     }
 
+    public boolean isProxyDependencies() {
+        return proxyDependencies;
+    }
+
+    public void setProxyDependencies(boolean proxyDependencies) {
+        this.proxyDependencies = proxyDependencies;
+    }
+
     public String[] getVariablesUsed() {
         return messageTarget.getMessageTargetVariablesUsed()
                 .withExpressions(serviceId, protocolVariable, host, port)
@@ -123,8 +134,8 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
         });
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/CreateWSDL16x16.gif"); // TODO jwilliams: get new icon
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/CreateWSDL16x16.gif"); // TODO jwilliams: get new icon
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, ICON_FILE);
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, ICON_FILE);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 

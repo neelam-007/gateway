@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.retrieveservicewsdl.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.external.assertions.retrieveservicewsdl.RetrieveServiceWsdlAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -15,9 +19,13 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.WsdlUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -25,12 +33,13 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Map;
 
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 
 /**
  * Server side implementation of the RetrieveServiceWsdlAssertion.
@@ -42,6 +51,9 @@ import static com.l7tech.util.ExceptionUtils.getMessage;
 public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<RetrieveServiceWsdlAssertion> {
     @Inject
     protected ServiceCache serviceCache;
+    
+    @Inject
+    protected ServiceDocumentManager serviceDocumentManager;
 
     private final String[] variablesUsed;
 
@@ -62,8 +74,14 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // get protocol
         final String protocol = getProtocol(context);
 
-        if (null == protocol ||  protocol.isEmpty()) {
+        if (null == protocol || protocol.isEmpty()) {
             logAndAudit(RETRIEVE_WSDL_NO_PROTOCOL);
+            return AssertionStatus.FAILED;
+        }
+
+        // check host
+        if (null == host || host.isEmpty()) {
+            logAndAudit(RETRIEVE_WSDL_NO_HOSTNAME);
             return AssertionStatus.FAILED;
         }
 
@@ -113,13 +131,37 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // get & parse WSDL xml
         Document wsdlDoc = getWsdlDocument(service);
 
-        // ---
+        // perform reference rewriting, if proxying is necessary or enabled
+        if (isProxyingRequired(service)) {
+            // get any dependency service documents
+            final Collection<ServiceDocument> documents = getImportedDocumentsToProxy(service);
 
-        // rewrite references
+            // get the routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
+            String wsdlProxyUri;
 
-        // TODO jwilliams: construct proxy url (pointing to internal service), rewrite imports. (make optional?)
+            try {
+                String wsdlHandlerServiceRoutingUri = getRoutingUri(context.getService());
 
-        // ---
+                wsdlProxyUri = new URI(context.getRequest().getHttpRequestKnob().getRequestUrl())
+                        .resolve(wsdlHandlerServiceRoutingUri).toString();
+            } catch (Exception e) {
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {"Unable to determine absolute URL for WSDL Proxy: " + ExceptionUtils.getMessage(e)},
+                        ExceptionUtils.getDebugException(e));
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+            }
+
+            // rewrite references
+            rewriteReferences(service.getId(), service.getWsdlUrl(), wsdlDoc, documents, wsdlProxyUri,
+                    new Functions.UnaryVoid<Exception>() {
+                        @Override
+                        public void call(Exception e) {
+                            logAndAudit(AssertionMessages.RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE,
+                                    new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
+                        }
+                    }
+            );
+        }
 
         // construct endpoint URL
         String routingUri = getRoutingUri(service);
@@ -137,18 +179,115 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         // add/update endpoints
         WsdlUtil.addOrUpdateEndpoints(wsdlDoc, endpointUrl, serviceIdString);
 
-        // ---
-
-        // add security policy?
-
-        // TODO jwilliams: add security policy in the internal service policy?
-
-        // ---
-
         // save wsdl to target message
         targetMessage.initialize(wsdlDoc, ContentTypeHeader.XML_DEFAULT);
 
         return AssertionStatus.NONE;
+    }
+
+    private Collection<ServiceDocument> getImportedDocumentsToProxy(PublishedService service) {
+        Collection<ServiceDocument> documents;
+
+        try {
+            documents = serviceDocumentManager.findByServiceIdAndType(service.getGoid(), "WSDL-IMPORT");
+        } catch (FindException e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+        }
+
+        return documents;
+    }
+
+    private boolean isProxyingRequired(PublishedService service) {
+        return service.isInternal()
+                || (service.getWsdlUrl() != null && service.getWsdlUrl().startsWith("file:"))
+                || assertion.isProxyDependencies();
+    }
+
+    /**
+     * Rewrite any dependency references (schema/wsdl) in the given doc to the given request URI
+     */
+    public void rewriteReferences(final String serviceId,
+                                    final String serviceWsdlUrl,
+                                    final Document wsdlDoc,
+                                    final Collection<ServiceDocument> documents,
+                                    final String requestUri,
+                                    final Functions.UnaryVoid<Exception> errorHandler) {
+        final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
+
+        if (!documents.isEmpty()) {
+            DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
+            documentReferenceProcessor.processDocumentReferences(wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
+                @Override
+                public String customize(final Document document,
+                                        final Node node,
+                                        final String documentUrl,
+                                        final DocumentReferenceProcessor.ReferenceInfo referenceInfo) {
+                    String uri = null;
+
+                    if (documentUrl != null && referenceInfo.getReferenceUrl() != null) {
+                        try {
+                            URI base = new URI(documentUrl);
+                            String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
+                            if (docUrl.equals(serviceWsdlUrl)) {
+                                uri = requestUri + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId;
+                            } else {
+                                for (ServiceDocument serviceDocument : documents) {
+                                    if (docUrl.equals(serviceDocument.getUri())) {
+                                        // Don't proxy WSDL if we generated it in place of a directly imported XSD
+                                        // This occurred prior to 4.5 when we stripped XSDs on import since we only
+                                        // used the WSDL documents.
+                                        if (!NOOP_WSDL.equals(serviceDocument.getContents())) {
+                                            uri = requestUri + "/" + getName(serviceDocument) + "?" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            errorHandler.call(e);
+                        }
+                    }
+
+                    return uri;
+                }
+            });
+        }
+    }
+
+    /**
+     * Create a "user-friendly" display name for the document.
+     */
+    private String getName(final ServiceDocument serviceDocument) {
+        String name = serviceDocument.getUri();
+
+        int index = name.lastIndexOf('/');
+        if (index >= 0) {
+            name = name.substring(index+1);
+        }
+
+        index = name.indexOf('?');
+        if (index >= 0) {
+            name = name.substring(0, index);
+        }
+
+        index = name.indexOf('#');
+        if (index >= 0) {
+            name = name.substring(0, index);
+        }
+
+        String permittedCharacters = ValidationUtils.ALPHA_NUMERIC  + "_-.";
+        StringBuilder nameBuilder = new StringBuilder();
+        for (char nameChar : name.toCharArray()) {
+            if (permittedCharacters.indexOf(nameChar) >= 0) {
+                nameBuilder.append(nameChar);
+            }
+        }
+
+        return nameBuilder.toString();
     }
 
     private String getProtocol(final PolicyEnforcementContext context) {
