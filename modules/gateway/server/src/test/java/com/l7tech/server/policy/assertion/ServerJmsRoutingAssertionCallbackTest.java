@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
+import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.message.*;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.JmsMessagePropertyRule;
@@ -14,10 +15,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsMessageTestUtility;
-import com.l7tech.server.transport.jms.JmsUtil;
-import com.l7tech.server.transport.jms.TextMessageStub;
+import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -36,9 +34,10 @@ import java.util.*;
 
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerJmsRoutingAssertionCallbackTest{
@@ -203,6 +202,30 @@ public class ServerJmsRoutingAssertionCallbackTest{
         assertEquals(RoutingStatus.ROUTED, policyContext.getRoutingStatus());
         assertEquals(10, policyContext.getResponse().getJmsKnob().getHeaderNames().length);
         JmsMessageTestUtility.assertDefaultHeadersPresent(policyContext.getResponse().getJmsKnob());
+    }
+
+    @Test
+    public void checkCallbackClosesTemporaryQueue() throws JMSException {
+        JmsEndpointConfig mockEndpointConfig = mock(JmsEndpointConfig.class);
+        JmsEndpoint mockEndPoint = new JmsEndpoint();
+        mockEndPoint.setReplyType(JmsReplyType.AUTOMATIC);
+        mockEndPoint.setOutboundMessageType(JmsOutboundMessageType.ALWAYS_TEXT);
+        when(mockEndpointConfig.getEndpoint()).thenReturn(mockEndPoint);
+        when(mockEndpointConfig.getReplyType()).thenReturn(JmsReplyType.AUTOMATIC);
+        final TemporaryQueue mockTempQueue = mock(TemporaryQueue.class);
+        when(mockTempQueue.getQueueName()).thenReturn("mockTempQueue");
+        TextMessage jmsRequest = new TextMessageStub() {
+            @Override
+            public Destination getJMSReplyTo() throws JMSException {
+                return mockTempQueue;
+            }
+        };
+        when(session.createTextMessage(anyString())).thenReturn(jmsRequest);
+        when(session.createReceiver(any(Queue.class), anyString())).thenReturn(queueReceiver);
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+        callback = serverAssertion.new JmsRoutingCallback(policyContext, mockEndpointConfig, new Destination[1]);
+        callback.doWork(bag, contextProvider);
+        verify(mockTempQueue, times(1)).delete();
     }
 
     @Test

@@ -56,6 +56,8 @@ import static com.l7tech.util.ExceptionUtils.getMessage;
  * Server side implementation of JMS routing assertion.
  */
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
+    private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
+
     private static final String PROP_RETRY_DELAY = "com.l7tech.server.policy.assertion.jmsRoutingRetryDelay";
     private static final String PROP_MAX_OOPS = "com.l7tech.server.policy.assertion.jmsRoutingMaxRetries";
     private static final int MAX_OOPSES = 5;
@@ -601,7 +603,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             } catch (JMSException | SAXException | IOException | NamingException | NumberFormatException e) {
                 exception = e;
             } finally {
-                if ( closeDestinationIfTemporaryQueue( jmsInboundDestinationHolder[0] ) ) {
+                if ( closeDestinationIfTemporaryQueue( jmsInboundDestinationHolder[0], cfg.getReplyType() ) ) {
                     jmsInboundDestinationHolder[0] = null;
                 }
                 if ( routingStarted && !routingFinished ) {
@@ -675,11 +677,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
     }
 
-    private boolean closeDestinationIfTemporaryQueue( final Destination destination ) {
+    private boolean closeDestinationIfTemporaryQueue( final Destination destination, final JmsReplyType replyType ) {
         boolean closed = false;
 
         //SSG-5595 For Weblogic, it treats all queue type as temporary queue
-        if ( destination instanceof TemporaryQueue  && endpointConfig.getReplyType() == JmsReplyType.AUTOMATIC) {
+        if ( destination instanceof TemporaryQueue  && replyType == JmsReplyType.AUTOMATIC) {
             closed = true;
             logAndAudit( AssertionMessages.JMS_ROUTING_DELETE_TEMPORARY_QUEUE );
             try {
