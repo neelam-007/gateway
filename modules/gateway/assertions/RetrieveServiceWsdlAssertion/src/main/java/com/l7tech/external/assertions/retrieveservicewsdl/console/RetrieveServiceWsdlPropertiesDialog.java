@@ -229,6 +229,8 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         serviceIdTextField.setText(assertion.getServiceId());
 
         // endpoint fields
+        protocolVariablePanel.setAssertion(assertion, getPreviousAssertion());
+
         String protocolVariable = assertion.getProtocolVariable();
 
         if (null != protocolVariable) {
