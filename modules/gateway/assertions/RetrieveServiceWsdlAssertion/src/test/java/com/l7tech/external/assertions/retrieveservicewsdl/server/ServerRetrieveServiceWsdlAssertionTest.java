@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.retrieveservicewsdl.server;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.l7tech.common.io.XmlUtil;
@@ -10,6 +11,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
@@ -42,6 +44,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Arrays;
 
 /**
  * Test the RetrieveServiceWsdlAssertion.
@@ -50,6 +53,7 @@ import java.text.MessageFormat;
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerRetrieveServiceWsdlAssertionTest {
     private static final String ACME_WAREHOUSE_WSDL = "ACMEWarehouse.wsdl";
+    private static final String ID_SERVICE_WSDL = "IDService.wsdl";
 
     private static final String WSDL_QUERY_HANDLER_SERVICE_ROUTING_URI = "/wsdlHandler";
 
@@ -61,6 +65,9 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
     @Mock
     private ServiceCache serviceCache;
+
+    @Mock
+    private ServiceDocument serviceDocument;
 
     @Mock
     private ServiceDocumentManager serviceDocumentManager;
@@ -524,6 +531,45 @@ public class ServerRetrieveServiceWsdlAssertionTest {
     }
 
     @Test
+    public void testCheckRequest_SpecifyingServiceWithNoRoutingUri_WsdlStoredToRequest() throws Exception {
+        String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
+        String soapServiceId = "ffffffffffffffffffffffffffffffff";
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlXml()).thenReturn(acmeWsdlXmlString);
+        when(service.getId()).thenReturn(soapServiceId);
+
+        // this null value should cause the endpoints to construct a URL using the service OID instead
+        when(service.getRoutingUri()).thenReturn(null);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedWsdl = context.getRequest().getXmlKnob().getDocumentReadOnly();
+
+        assertFalse(storedWsdl.isEqualNode(XmlUtil.parse(acmeWsdlXmlString)));
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/service/" + soapServiceId, storedWsdl);
+    }
+
+    @Test
     public void testCheckRequest_SpecifyingValidServiceAndResponseTarget_WsdlStoredToResponse() throws Exception {
         String acmeWsdlXmlString = getTestDocumentAsString(ACME_WAREHOUSE_WSDL);
 
@@ -710,16 +756,138 @@ public class ServerRetrieveServiceWsdlAssertionTest {
                 .format(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO.getMessage(), "data access error")));
     }
 
-    // TODO jwilliams: test rewriteReferences audits errors as expected
+    @Test
+    public void testCheckRequest_ExceptionThrownDuringRewriteUrlCreation_ErrorAudited() throws Exception {
+        String serviceWsdlXml = getTestDocumentAsString(ID_SERVICE_WSDL);
 
-    // TODO jwilliams: test existing behaviour of rewriteReferences
-    // TODO jwilliams: remove rewriteReferences' need for service documents (change to Map<URI,Contents>)
-    // TODO jwilliams: migrate rewriteReferences to WsdlUtil, move test cases to WsdlUtilTest
-    // TODO jwilliams: change WsdlProxyServlet to use WsdlUtil.rewriteReferences
+        // this invalid wsdlUrl will cause a URISyntaxException while attempting to create a url for rewriting
+        String wsdlUrl = "://www.predic8.com:8080/base/IDService?wsdl";
+
+        String serviceDocumentId = "11111111111111111111111111111111";
+        String importUrl = "http://www.predic8.com:8080/base/IDService?xsd=1";
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
+                .thenReturn(Arrays.asList(serviceDocument));
+
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlUrl()).thenReturn(wsdlUrl);
+        when(service.getWsdlXml()).thenReturn(serviceWsdlXml);
+        when(service.getRoutingUri()).thenReturn("/svc");
+
+        when(serviceDocument.getId()).thenReturn(serviceDocumentId);
+        when(serviceDocument.getUri()).thenReturn(importUrl);
+        when(serviceDocument.getContents()).thenReturn("");
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setProxyDependencies(true);
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        // despite the error in rewriting, the assertion should continue and succeed
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedWsdl = context.getResponse().getXmlKnob().getDocumentReadOnly();
+
+        // confirm the endpoints were rewritten correctly
+        confirmEndpointsUpdated("http://localhost:8443/svc", storedWsdl);
+
+        NodeList nl = storedWsdl.getElementsByTagName("xsd:import");
+
+        assertEquals(1, nl.getLength());
+
+        Element element = (Element) nl.item(0);
+
+        // should be no change - the rewrite should be skipped because of the error
+        assertEquals(importUrl, element.getAttribute("schemaLocation"));
+
+        // error should have been audited
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE));
+    }
 
     @Test
-    public void testRewriteReferences_Success() {
+    public void testCheckRequest_ExceptionThrownAttemptingToCreateWsdlProxyBaseUrl_ExceptionAudited() throws Exception {
+        String serviceWsdlXml = getTestDocumentAsString(ID_SERVICE_WSDL);
 
+        String wsdlUrl = "http://www.predic8.com:8080/base/IDService?wsdl";
+
+        String serviceDocumentId = "11111111111111111111111111111111";
+        String importUrl = "http://www.predic8.com:8080/base/IDService?xsd=1";
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
+                .thenReturn(Arrays.asList(serviceDocument));
+
+        when(service.isSoap()).thenReturn(true);
+        when(service.getWsdlUrl()).thenReturn(wsdlUrl);
+        when(service.getWsdlXml()).thenReturn(serviceWsdlXml);
+        when(service.getRoutingUri()).thenReturn("/svc");
+
+        when(serviceDocument.getId()).thenReturn(serviceDocumentId);
+        when(serviceDocument.getUri()).thenReturn(importUrl);
+        when(serviceDocument.getContents()).thenReturn("");
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff"; // valid goid with matching SOAP service
+
+        MockHttpServletRequest hRequest = mock(MockHttpServletRequest.class);
+
+        when(hRequest.getMethod()).thenReturn("GET");
+        // this invalid wsdlUrl will cause a URISyntaxException while attempting to create the base url for proxying
+        when(hRequest.getRequestURL()).thenReturn(new StringBuffer("://gateway:80b0"));
+
+        Message request = new Message();
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hRequest));
+        Message response = createResponse();
+
+        PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        context.setService(wsdlQueryHandlerService);
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceId("${serviceId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setProtocol("HTTP");
+        assertion.setProtocolVariable(null);
+        assertion.setProxyDependencies(true);
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        try {
+            serverAssertion.checkRequest(context);
+            fail("Expected AssertionStatusException");
+        } catch (AssertionStatusException e) {
+            assertEquals(AssertionStatus.SERVER_ERROR, e.getAssertionStatus());
+        }
+
+        for (String s:testAudit) {
+            System.out.println(s);
+        }
+
+        // error should have been audited
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat
+                .format(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO.getMessage(),
+                        "Expected scheme name at index 0: ://gateway:80b0")));
     }
 
     // ---- EXAMPLE OF EXPECTED ENDPOINT REWRITING ----

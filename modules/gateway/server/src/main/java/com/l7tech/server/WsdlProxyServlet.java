@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
@@ -38,7 +37,6 @@ import com.l7tech.wsdl.WsdlUtil;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -82,7 +80,6 @@ import java.util.logging.Level;
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private static final String PARAM_ANONYMOUS = "anon";
-    private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private static final String PROPERTY_CLEARTEXT = "wsdlProxy.allowInsecureHttpBasic";
     private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
@@ -405,86 +402,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return "/ssg/wsil2xhtml.xml";
     }
 
-    /**
-     * Rewrite any dependency references (schema/wsdl) in the given doc to request from the gateway.
-     */
-    private void rewriteReferences( final String serviceId,
-                                    final String serviceWsdlUrl,
-                                    final Document wsdlDoc,
-                                    final Collection<ServiceDocument> documents,
-                                    final String requestUri ) {
-        if ( !documents.isEmpty() ) {
-            DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
-            documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
-                @Override
-                public String customize( final Document document,
-                                         final Node node,
-                                         final String documentUrl,
-                                         final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
-                    String uri = null;
+    private void rewriteReferences(final PublishedService service,
+                                   final Document wsdlDoc,
+                                   final Collection<ServiceDocument> documents,
+                                   final String wsdlProxyUri,
+                                   final Functions.UnaryVoid<Exception> errorHandler) {
+        final HashMap<String, Pair<String,String>> dependencies = new HashMap<>();
 
-                    if ( documentUrl != null && referenceInfo.getReferenceUrl() != null ) {
-                        try {
-                            URI base = new URI(documentUrl);
-                            String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
-                            if ( docUrl.equals( serviceWsdlUrl ) ) {
-                                uri = requestUri + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId;
-                            } else {
-                                for ( ServiceDocument serviceDocument : documents ) {
-                                    if ( docUrl.equals(serviceDocument.getUri()) ) {
-                                        // Don't proxy WSDL if we generated it in place of a directly imported XSD
-                                        // This occurred prior to 4.5 when we stripped XSDs on import since we only
-                                        // used the WSDL documents.
-                                        if ( !NOOP_WSDL.equals(serviceDocument.getContents()) ) {
-                                            uri = requestUri + "/" + getName(serviceDocument) + "?" +
-                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
-                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
-                                        }
-                                        break;
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.log( Level.WARNING, "Error rewriting WSDL url for service '"+serviceId+"'..", e );
-                        }
-                    }
-
-                    return uri;
-                }
-            } );
-        }
-    }
-
-    /**
-     * Create a "user-friendly" display name for the document. 
-     */
-    private String getName( final ServiceDocument serviceDocument ) {
-        String name = serviceDocument.getUri();
-
-        int index = name.lastIndexOf('/');
-        if ( index >= 0 ) {
-            name = name.substring( index+1 );
+        for (ServiceDocument document : documents) {
+            dependencies.put(document.getUri(), new Pair<>(document.getId(), document.getContents()));
         }
 
-        index = name.indexOf('?');
-        if ( index >= 0 ) {
-            name = name.substring( 0, index );
-        }
-
-        index = name.indexOf('#');
-        if ( index >= 0 ) {
-            name = name.substring( 0, index );
-        }
-
-        String permittedCharacters = ValidationUtils.ALPHA_NUMERIC  + "_-.";
-        StringBuilder nameBuilder = new StringBuilder();
-        for ( char nameChar : name.toCharArray() ) {
-            if ( permittedCharacters.indexOf(nameChar) >= 0 ) {
-                nameBuilder.append( nameChar );
-            }
-        }
-
-        return nameBuilder.toString();
+        WsdlUtil.rewriteReferences(service.getId(), service.getWsdlUrl(),
+                wsdlDoc, dependencies, wsdlProxyUri, errorHandler);
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
@@ -642,7 +572,13 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.warning("Unable to determine absolute URL for wsdl proxy '"+ExceptionUtils.getMessage(e)+"'.");            
         }
 
-        rewriteReferences(svc.getId(), svc.getWsdlUrl(), wsdlDoc, documents, wsdlProxyUrl);
+        rewriteReferences(svc, wsdlDoc, documents, wsdlProxyUrl, new Functions.UnaryVoid<Exception>() {
+            @Override
+            public void call(Exception e) {
+                logger.log(Level.WARNING, "Error rewriting WSDL url for service '" + svc.getId() + "'..", e);
+            }
+        });
+
         WsdlUtil.addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId.toString());
         addSecurityPolicy(wsdlDoc, svc);
 

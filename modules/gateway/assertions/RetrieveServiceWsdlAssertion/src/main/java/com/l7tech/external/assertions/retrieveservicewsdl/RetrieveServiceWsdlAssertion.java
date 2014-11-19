@@ -23,15 +23,15 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
     @NotNull
     private String serviceId = "${service.oid}";
 
-    private String protocol = "http";
+    private String protocol = null;
 
-    private String protocolVariable = null;
+    private String protocolVariable = "request.url.protocol";
 
     @NotNull
     private String host = "${gateway.cluster.hostname}";
 
     @NotNull
-    private String port = "8080";
+    private String port = "${request.tcp.localPort}";
 
     @NotNull
     private MessageTargetableSupport messageTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
@@ -100,7 +100,8 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
 
     public String[] getVariablesUsed() {
         return messageTarget.getMessageTargetVariablesUsed()
-                .withExpressions(serviceId, protocolVariable, host, port)
+                .withExpressions(serviceId, host, port)
+                .withVariables(protocolVariable)
                 .asArray();
     }
 

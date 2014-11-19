@@ -1,9 +1,15 @@
 package com.l7tech.wsdl;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ValidationUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.wsdl.Binding;
@@ -12,6 +18,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.schema.Schema;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
@@ -24,6 +31,8 @@ import static com.l7tech.wsdl.WsdlConstants.*;
  */
 public class WsdlUtil {
     private static final Logger logger = Logger.getLogger(WsdlUtil.class.getName());
+
+    private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
 
     /**
      * Check if the given wsdl document contains an RPC style binding and has no schema.
@@ -191,5 +200,92 @@ public class WsdlUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Rewrite any dependency references (e.g. schema/wsdl) in the given doc to the given request URI
+     */
+    public static void rewriteReferences(final String serviceId,
+                                         final String serviceWsdlUrl,
+                                         final Document wsdlDoc,
+                                         final HashMap<String, Pair<String,String>> dependencies,
+                                         final String requestUri,
+                                         final Functions.UnaryVoid<Exception> errorHandler) {
+        if (!dependencies.isEmpty()) {
+            DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
+            documentReferenceProcessor.processDocumentReferences(wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
+                @Override
+                public String customize(final Document document,
+                                        final Node node,
+                                        final String documentUrl,
+                                        final DocumentReferenceProcessor.ReferenceInfo referenceInfo) {
+                    String uri = null;
+
+                    if (documentUrl != null && referenceInfo.getReferenceUrl() != null) {
+                        try {
+                            URI base = new URI(documentUrl);
+                            String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
+                            if (docUrl.equals(serviceWsdlUrl)) {  // TODO jwilliams: add test
+                                uri = requestUri + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId;
+                            } else {
+                                for (String dependencyUri : dependencies.keySet()) {
+                                    if (docUrl.equals(dependencyUri)) {
+                                        Pair<String, String> dependencyIdContentPair = dependencies.get(dependencyUri);
+
+                                        // Don't proxy WSDL if we generated it in place of a directly imported XSD
+                                        // This occurred prior to 4.5 when we stripped XSDs on import since we only
+                                        // used the WSDL documents.
+                                        if (!NOOP_WSDL.equals(dependencyIdContentPair.right)) {
+                                            uri = requestUri + "/" + getName(dependencyUri) + "?" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + dependencyIdContentPair.left;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            errorHandler.call(e);
+                        }
+                    }
+
+                    return uri;
+                }
+            });
+        }
+    }
+
+    /**
+     * Create a "user-friendly" display name for the document.
+     */
+    private static String getName(String documentUri) {
+        String name = documentUri;
+
+        int index = name.lastIndexOf('/');
+
+        if (index >= 0) {
+            name = name.substring(index+1);
+        }
+
+        index = name.indexOf('?');
+        if (index >= 0) {
+            name = name.substring(0, index);
+        }
+
+        index = name.indexOf('#');
+        if (index >= 0) {
+            name = name.substring(0, index);
+        }
+
+        String permittedCharacters = ValidationUtils.ALPHA_NUMERIC  + "_-.";
+        StringBuilder nameBuilder = new StringBuilder();
+
+        for (char nameChar : name.toCharArray()) {
+            if (permittedCharacters.indexOf(nameChar) >= 0) {
+                nameBuilder.append(nameChar);
+            }
+        }
+
+        return nameBuilder.toString();
     }
 }
