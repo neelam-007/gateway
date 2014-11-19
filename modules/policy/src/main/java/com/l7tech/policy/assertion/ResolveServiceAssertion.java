@@ -11,7 +11,11 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * An assertion intended to run pre-service-resolution that can resolve the service with alternate parameters.
  */
 public class ResolveServiceAssertion extends Assertion implements UsesVariables {
+
+    public static final String DEFAULT_VARIABLE_PREFIX = "resolvedService";
+
     private String uri;
+    private String prefix;
 
     public String getUri() {
         return uri;
@@ -19,6 +23,14 @@ public class ResolveServiceAssertion extends Assertion implements UsesVariables 
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String variable) {
+        this.prefix = variable;
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)

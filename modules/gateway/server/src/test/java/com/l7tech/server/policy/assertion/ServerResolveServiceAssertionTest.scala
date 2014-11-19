@@ -24,24 +24,6 @@ import com.l7tech.objectmodel.Goid
 class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mockito {
   "ServerResolveServiceAssertion" should {
 
-    "fail if resolved service already present in context" in new DefaultScope {
-      pec.setService(service)
-
-      sass.checkRequest(pec) must be equalTo SERVER_ERROR
-
-      there was no(sass.serviceCache).resolve(anyString, anyString, anyString)
-      there was one(audit).logAndAudit(RESOLVE_SERVICE_ALREADY_RESOLVED)
-    }
-
-    "fail if HasServiceId knob already present on default request" in new DefaultScope {
-      pec.getRequest.attachKnob(classOf[HasServiceId], new HasServiceIdImpl(new Goid(0,123)))
-
-      sass.checkRequest(pec) must be equalTo SERVER_ERROR
-
-      there was no(sass.serviceCache).resolve(anyString, anyString, anyString)
-      there was one(audit).logAndAudit(RESOLVE_SERVICE_ALREADY_HARDWIRED)
-    }
-
     "succeed if matching service is present in service cache" in new DefaultScope {
       sass.serviceCache.resolve("/foo", null, null) returns serviceList(service)
 

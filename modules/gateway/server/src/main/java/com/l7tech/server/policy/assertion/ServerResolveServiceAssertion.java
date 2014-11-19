@@ -26,6 +26,12 @@ import java.util.Map;
  * Server implementation of ResolveServiceAssertion.
  */
 public class ServerResolveServiceAssertion extends AbstractServerAssertion<ResolveServiceAssertion> {
+
+    private static final String NAME_SUFFIX = "name";
+    private static final String GOID_SUFFIX = "goid";
+    private static final String SOAP_SUFFIX = "soap";
+    private static final String SOAP_VERSION_SUFFIX = "soapversion";
+
     @Inject
     ServiceCache serviceCache;
 
@@ -43,15 +49,6 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (context.getService() != null) {
-            getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_ALREADY_RESOLVED);
-            return AssertionStatus.SERVER_ERROR;
-        }
-
-        if (context.getRequest().getKnob(HasServiceId.class) != null) {
-            getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_ALREADY_HARDWIRED);
-            return AssertionStatus.SERVER_ERROR;
-        }
 
         Map<String, ?> vars = context.getVariableMap(varsUsed, getAudit());
 
@@ -78,6 +75,14 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
         final Goid serviceGoid = service.getGoid();
         context.getRequest().attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
         getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_SUCCEEDED, "Resolved to service GOID " + serviceGoid);
+        String variablePrefix = assertion.getPrefix();
+        if ( variablePrefix == null ) {
+            variablePrefix = ResolveServiceAssertion.DEFAULT_VARIABLE_PREFIX;
+        }
+        context.setVariable(variablePrefix + "." + GOID_SUFFIX, service.getGoid());
+        context.setVariable(variablePrefix + "." + NAME_SUFFIX, service.getName());
+        context.setVariable(variablePrefix + "." + SOAP_SUFFIX, service.isSoap());
+        context.setVariable(variablePrefix + "." + SOAP_VERSION_SUFFIX, service.getSoapVersion());
         return AssertionStatus.NONE;
     }
 }

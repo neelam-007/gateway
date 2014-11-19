@@ -7,8 +7,10 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ResolveServiceAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<ResolveServiceAssertion> {
+
     private JPanel contentPane;
     private JTextField uriField;
+    private JTextField resolvedServiceTextField;
 
     public ResolveServiceAssertionPropertiesDialog(Window owner, final ResolveServiceAssertion assertion) {
         super(assertion.getClass(), owner, assertion, true);
@@ -19,6 +21,10 @@ public class ResolveServiceAssertionPropertiesDialog extends AssertionProperties
     @Override
     public void setData(ResolveServiceAssertion assertion) {
         uriField.setText(assertion.getUri());
+        String prefixVariable = assertion.getPrefix();
+        if ( prefixVariable == null )
+            prefixVariable = ResolveServiceAssertion.DEFAULT_VARIABLE_PREFIX;
+        resolvedServiceTextField.setText(prefixVariable);
     }
 
     @Override
@@ -29,6 +35,10 @@ public class ResolveServiceAssertionPropertiesDialog extends AssertionProperties
         if (Syntax.getReferencedNames(uri).length < 1 && !uri.startsWith("/"))
             throw new ValidationException("A URI path that does not use context variables must start with a forward slash");
         assertion.setUri(uri);
+        final String prefix = resolvedServiceTextField.getText();
+        if ( prefix == null | prefix.trim().length() < 1 )
+            throw new ValidationException("The Variable Prefix cannot be empty.");
+        assertion.setPrefix(resolvedServiceTextField.getText().trim());
         return assertion;
     }
 
