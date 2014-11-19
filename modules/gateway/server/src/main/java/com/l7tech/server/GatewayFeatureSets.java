@@ -4,10 +4,7 @@ import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -166,7 +163,10 @@ public class GatewayFeatureSets {
             ass(AllAssertion.class),
             ass(ExactlyOneAssertion.class),
             ass(OneOrMoreAssertion.class),
-            ass(ForEachLoopAssertion.class));
+            ass(ForEachLoopAssertion.class),
+            ass(HandleErrorsAssertion.class),
+            ass(RaiseErrorAssertion.class)
+        );
 
         GatewayFeatureSet wssc =
         fsr("set:wssc", "WS-SecureConversation support",

@@ -2,10 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -54,6 +51,7 @@ public class AllAssertions {
         new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new ForEachLoopAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
+        new HandleErrorsAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new SslAssertion(),
         new HttpRoutingAssertion(),
         new JmsRoutingAssertion(),
@@ -117,6 +115,7 @@ public class AllAssertions {
         new ResolveServiceAssertion(),
         new LookupTrustedCertificateAssertion(),
         new MapValueAssertion(),
+        new RaiseErrorAssertion(),
     };
 
 
@@ -134,6 +133,7 @@ public class AllAssertions {
         new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new ForEachLoopAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
+        new HandleErrorsAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),
@@ -217,5 +217,6 @@ public class AllAssertions {
         new ResolveServiceAssertion(),
         new LookupTrustedCertificateAssertion(),
         new MapValueAssertion(),
+        new RaiseErrorAssertion(),
     };
 }

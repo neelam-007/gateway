@@ -24,10 +24,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -345,6 +342,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         CompositeAssertionTreeNode newAncestor;
                         if(ancestor instanceof AllAssertionTreeNode) {
                             newAncestor = new AllAssertionTreeNode(new AllAssertion());
+                        } else if(ancestor instanceof HandleErrorsAssertionTreeNode) {
+                            newAncestor = new HandleErrorsAssertionTreeNode(new HandleErrorsAssertion());
                         } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
                             newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
                         } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {
