@@ -24,6 +24,7 @@
                 <L7p:ForEachLoop L7p:Usage="Required" loopVariable="" variablePrefix="">
                     <L7p:FalseAssertion/>
                 </L7p:ForEachLoop>
+                <L7p:HandleErrors/>
                 <L7p:FalseAssertion/>
                 <L7p:SslAssertion/>
                 <L7p:HttpRoutingAssertion>
@@ -170,6 +171,7 @@
                 <L7p:ResolveService/>
                 <L7p:LookupTrustedCertificate/>
                 <L7p:MapValue/>
+                <L7p:RaiseError/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">
