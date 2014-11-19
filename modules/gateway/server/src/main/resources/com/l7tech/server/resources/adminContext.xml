@@ -394,6 +394,8 @@
 
     <bean id="cassandraAdmin" class="com.l7tech.server.cassandra.CassandraConnectionManagerAdminImpl">
         <constructor-arg ref="cassandraEntityManager"/>
+        <constructor-arg ref="securePasswordManager"/>
+        <constructor-arg ref="cassandraConnectionManager"/>
     </bean>
 
     <!-- FTP admin servant -->

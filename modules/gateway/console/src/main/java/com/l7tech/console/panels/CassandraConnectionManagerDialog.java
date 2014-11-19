@@ -4,8 +4,6 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -16,13 +14,12 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +43,6 @@ public class CassandraConnectionManagerDialog extends JDialog {
     private JButton closeButton;
 
     private SimpleTableModel<CassandraConnection> cassandraConnectionsTableModel;
-    private TableRowSorter<SimpleTableModel<CassandraConnection>> cassandraConnectionsRawSorter;
 
     private PermissionFlags flags;
 
@@ -98,7 +94,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
 
         };
         connectionTable.getSelectionModel().addListSelectionListener(enableDisableListener);
-
+        connectionTable.setRowSorter(new TableRowSorter<TableModel>(cassandraConnectionsTableModel));
 
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -192,7 +188,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
 
-        editAndSave(cassandraConnectionsTableModel.getRowObject(selectedRow), false);
+        editAndSave(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)), false);
     }
 
     private void doClone() {
@@ -200,7 +196,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
         if (selectedRow < 0) return;
 
         CassandraConnection newConnection = new CassandraConnection();
-        newConnection.copyFrom(cassandraConnectionsTableModel.getRowObject(selectedRow));
+        newConnection.copyFrom(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)));
         EntityUtils.updateCopy(newConnection);
         editAndSave(newConnection, true);
     }
@@ -209,14 +205,15 @@ public class CassandraConnectionManagerDialog extends JDialog {
         int currentRow = connectionTable.getSelectedRow();
         if (currentRow < 0) return;
 
-        CassandraConnection connection = cassandraConnectionsTableModel.getRowObject(currentRow);
+        final int currentModelRow = connectionTable.convertRowIndexToModel(currentRow);
+        CassandraConnection connection = cassandraConnectionsTableModel.getRowObject(currentModelRow);
         Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
         int result = JOptionPane.showOptionDialog(
                 this, MessageFormat.format(resources.getString("confirmation.remove.connection"), connection.getName()),
                 resources.getString("dialog.title.remove.connection"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
 
         if (result == 0) {
-            cassandraConnectionsTableModel.removeRowAt(currentRow);
+            cassandraConnectionsTableModel.removeRowAt(currentModelRow);
 
             CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
             if (admin == null) return;

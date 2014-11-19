@@ -1,18 +1,18 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
@@ -22,10 +22,14 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.variable.Syntax.getReferencedNames;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 
 /**
  * Created by yuri on 11/4/14.
@@ -68,11 +72,31 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         initialize();
     }
 
+    @SuppressWarnings("unchecked")
     private void initialize() {
         flags = PermissionFlags.get(EntityType.CASSANDRA_CONFIGURATION);
         setContentPane(mainPanel);
         validator = new InputValidator(this, this.getTitle());
         Utilities.setEscKeyStrokeDisposes(this);
+
+        nameTextField.setDocument(new MaxLengthDocument(128));
+        keyspaceTextField.setDocument(new MaxLengthDocument(255));
+        contactPointsTextField.setDocument(new MaxLengthDocument(4096));
+        portTextField.setDocument(new MaxLengthDocument(255));
+        credentialsTextField.setDocument(new MaxLengthDocument(255));
+        validator.constrainTextFieldToBeNonEmpty("Connection Name", nameTextField, null);
+        validator.constrainTextFieldToBeNonEmpty("Contact Points", contactPointsTextField, null);
+        validator.constrainTextFieldToBeNonEmpty("Port", portTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                final String port = portTextField.getText().trim();
+                if ( !isValidInteger( port, true, 0, Integer.MAX_VALUE ) && getReferencedNames( port ).length == 0  ) {
+                    errMsg = "The value for the port must be a valid positive number.";
+                }
+                return errMsg;
+            }
+        });
 
         securePasswordComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
         manageStoredPasswordsButton.addActionListener(new ActionListener() {
@@ -117,8 +141,21 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             }
         });
 
+        testConnectionButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doTest();
+            }
+        });
+
         initAdditionalPropertyTable();
-        compressionComboBox.setModel(new DefaultComboBoxModel(new String[]{"LZ4", "NONE", "SNAPPY"}));
+
+        compressionComboBox.setModel(new DefaultComboBoxModel(new String[]{
+                CassandraConnection.COMPRESS_LZ4,
+                CassandraConnection.COMPRESS_NONE,
+                CassandraConnection.COMPRESS_SNAPPY
+        }));
+
         zoneControl.configure(connection);
         modelToView();
     }
@@ -158,7 +195,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         }
 
         // Assign new attributes to the connect
-        viewToModel();
+        viewToModel(this.connection);
 
         confirmed = true;
         dispose();
@@ -181,6 +218,8 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         credentialsTextField.setText(connection.getUsername());
         if (connection.getPasswordGoid() != null) {
             securePasswordComboBox.setSelectedSecurePassword(connection.getPasswordGoid());
+        } else {
+            securePasswordComboBox.setSelectedIndex(-1);
         }
         compressionComboBox.setSelectedItem(connection.getCompression());
         useSSLCheckBox.setSelected(connection.isSsl());
@@ -190,7 +229,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         additionalPropertyTableModel.fireTableDataChanged();
     }
 
-    private void viewToModel() {
+    private void viewToModel(CassandraConnection connection) {
         connection.setName(nameTextField.getText().trim());
         connection.setKeyspaceName(keyspaceTextField.getText().trim());
         connection.setContactPoints(contactPointsTextField.getText().trim());
@@ -198,6 +237,8 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         connection.setUsername(credentialsTextField.getText().trim());
         if (securePasswordComboBox.getSelectedSecurePassword() != null) {
             connection.setPasswordGoid(securePasswordComboBox.getSelectedSecurePassword().getGoid());
+        } else {
+            connection.setPasswordGoid(null);
         }
         connection.setCompression(((String) compressionComboBox.getSelectedItem()));
         connection.setSsl(useSSLCheckBox.isSelected());
@@ -216,13 +257,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 securePasswordComboBox.reloadPasswordList();
-                if (password != null) {
-                    securePasswordComboBox.setSelectedSecurePassword(password.getGoid());
-                    enableDisableComponents();
-                    DialogDisplayer.pack(CassandraConnectionPropertiesDialog.this);
-                } else {
-                    securePasswordComboBox.setSelectedItem(null);
-                }
+                enableDisableComponents();
+                DialogDisplayer.pack(CassandraConnectionPropertiesDialog.this);
+
             }
         });
     }
@@ -232,6 +269,36 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
 
     private void onCancel() {
         this.dispose();
+    }
+
+    private void doTest() {
+        CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
+        if (admin == null) return;
+
+        final CassandraConnection connForTest = new CassandraConnection();
+        // Test with current values from the UI
+        viewToModel(connForTest);
+
+        try {
+            String result = AdminGuiUtils.doAsyncAdmin(
+                    admin,
+                    CassandraConnectionPropertiesDialog.this,
+                    resources.getString("message.testing.progress"),
+                    resources.getString("message.testing"),
+                    admin.testCassandraConnection(connForTest)).right();
+
+            String message = result.isEmpty() ? resources.getString("message.testing.cassandra.conn.passed") :
+                    MessageFormat.format(resources.getString("message.testing.cassandra.conn.failed"), result);
+
+            DialogDisplayer.showMessageDialog(this, message, resources.getString("dialog.title.cassandra.conn.test"),
+                    result.isEmpty() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE, null);
+
+        } catch (InterruptedException e) {
+            // do nothing, user cancelled
+        } catch (InvocationTargetException | RuntimeException e) {
+            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("message.testing.cassandra.conn.failed"),
+                    e.getMessage()), resources.getString("dialog.title.cassandra.conn.test"), JOptionPane.WARNING_MESSAGE, null);
+        }
     }
 
     private class AdditionalPropertyTableModel extends AbstractTableModel {

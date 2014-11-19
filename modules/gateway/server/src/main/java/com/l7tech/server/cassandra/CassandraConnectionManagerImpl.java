@@ -5,10 +5,10 @@ import com.ca.datasources.cassandra.connection.CassandraConnectionHolder;
 import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
 import com.datastax.driver.core.*;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
@@ -57,17 +57,14 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final Map<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
     private final CassandraConnectionEntityManager cassandraEntityManager;
     private final SecurePasswordManager securePasswordManager;
-    private final ClusterPropertyManager clusterPropertyManager;
     private final TrustManager trustManager;
     private final SecureRandom secureRandom;
 
     public CassandraConnectionManagerImpl(CassandraConnectionEntityManager cassandraEntityManager, SecurePasswordManager securePasswordManager,
-                                       ClusterPropertyManager clusterPropertyManager,
                                        TrustManager trustManager,
                                        SecureRandom secureRandom) {
         this.cassandraEntityManager = cassandraEntityManager;
         this.securePasswordManager = securePasswordManager;
-        this.clusterPropertyManager = clusterPropertyManager;
         this.trustManager = trustManager;
         this.secureRandom = secureRandom;
     }
@@ -195,6 +192,28 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         return new CassandraConnectionHolder(cassandraConnectionEntity, cluster, session);
     }
 
+    @Override
+    public void testConnection(CassandraConnection cassandraConnectionEntity) throws Exception {
+        Cluster cluster = null;
+        Session session = null;
+
+        try {
+            Cluster.Builder builder = Cluster.builder();
+            addBasicClusterInfo(builder, cassandraConnectionEntity, cassandraConnectionEntity.getContactPointsAsArray());
+            addSSLOptions(builder, cassandraConnectionEntity);
+            cluster = builder.build();
+
+            if (!cassandraConnectionEntity.getKeyspaceName().isEmpty()) {
+                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+            } else {
+                session = cluster.connect();
+            }
+        } finally {
+            if (session != null) session.close();
+            if (cluster != null) cluster.close();
+        }
+    }
+
     private void addBasicClusterInfo(Cluster.Builder clusterBuilder,
                                      CassandraConnection cassandraConnectionEntity,
                                      String[] contactPoints) throws ParseException, FindException {
@@ -285,8 +304,12 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     private char[] getPassword(CassandraConnection entity) throws FindException, ParseException {
-        if (!Goid.isDefault(entity.getPasswordGoid())) {
-            return securePasswordManager.decryptPassword(securePasswordManager.findByPrimaryKey(entity.getPasswordGoid()).getEncodedPassword());
+        if (entity.getPasswordGoid() != null && !Goid.isDefault(entity.getPasswordGoid())) {
+            SecurePassword securePassword = securePasswordManager.findByPrimaryKey(entity.getPasswordGoid());
+            if (securePassword == null) {
+                return new char[]{};
+            }
+            return securePasswordManager.decryptPassword(securePassword.getEncodedPassword());
         } else {
             return new char[]{};
         }

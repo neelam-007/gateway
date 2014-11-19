@@ -12,6 +12,8 @@ import org.springframework.context.ApplicationListener;
 public interface CassandraConnectionManager extends ApplicationListener {
     CassandraConnectionHolder getConnection(String name);
 
+    void testConnection(CassandraConnection cassandraConnectionEntity) throws Exception;
+
     void closeAllConnections();
 
     void addConnection(CassandraConnection cassandraConnectionEntity);

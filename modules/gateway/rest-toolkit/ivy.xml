@@ -20,7 +20,7 @@
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
         <dependency name="javax.annotation-api" org="javax.annotation" rev="1.2" force="true" conf="core"/>
         <dependency name="javax.ws.rs-api" org="jax-rs" rev="2.0" force="true" conf="core"/>
-        <dependency name="guava" org="jersey" rev="14.0.1" force="true" conf="core"/>
+        <dependency name="guava" org="jersey" rev="16.0.1" force="true" conf="core"/>
         <dependency name="hk2-api" org="jersey" rev="2.2.0.21" force="true" conf="core"/>
         <dependency name="hk2-locator" org="jersey" rev="2.2.0.21" force="true" conf="core"/>
         <dependency name="hk2-utils" org="jersey" rev="2.2.0.21" force="true" conf="core"/>

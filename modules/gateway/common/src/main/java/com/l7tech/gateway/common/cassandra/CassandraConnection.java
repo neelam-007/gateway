@@ -31,6 +31,10 @@ import java.util.Map;
 @Table(name = "cassandra_connection")
 public class CassandraConnection extends ZoneableNamedEntityImp implements Comparable {
 
+    public static final String COMPRESS_LZ4 = "LZ4";
+    public static final String COMPRESS_NONE = "NONE";
+    public static final String COMPRESS_SNAPPY = "SNAPPY";
+
     private String keyspaceName = "";
     private String contactPoints = "";
     private String port = "";
@@ -71,6 +75,17 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     @Column(name = "contact_points", nullable = false)
     public String getContactPoints() {
         return contactPoints;
+    }
+
+    @Transient
+    public String[] getContactPointsAsArray() {
+        String[] contactPointArray = this.contactPoints.split("[,;]");
+
+        for (int i = 0; i < contactPointArray.length; i++) {
+            contactPointArray[i] = contactPointArray[i].trim();
+        }
+
+        return contactPointArray;
     }
 
     public void setContactPoints(String contactPoints) {

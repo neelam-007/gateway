@@ -1934,6 +1934,13 @@
 
     <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
 
+    <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerImpl">
+        <constructor-arg ref="cassandraEntityManager"/>
+        <constructor-arg ref="securePasswordManager" />
+        <constructor-arg ref="trustManager" />
+        <constructor-arg ref="secureRandom" />
+    </bean>
+
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
             <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
