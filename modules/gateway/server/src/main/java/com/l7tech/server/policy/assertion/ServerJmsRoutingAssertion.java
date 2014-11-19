@@ -387,6 +387,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         if(JmsUtil.getCause(je) instanceof ClassCastException) {
                             logAndAudit(AssertionMessages.JMS_ROUTING_INCOMPATIBLE_JMS_PROPERTY_TYPE, new String[] {entry.getKey()}, ExceptionUtils.getDebugException(je));
                         }
+                        else if(je instanceof JmsHeaderFormatException) {
+                            messageSent = true;
+                        }
                         throw je;
                     }
 

@@ -455,7 +455,8 @@ public class JmsUtil {
                  cause instanceof InvalidDestinationException ||
                  cause instanceof JMSSecurityException ||
                  cause instanceof ResourceAllocationException ||
-                 cause instanceof JmsMessageExpiredException) {
+                 cause instanceof JmsMessageExpiredException ||
+                 cause instanceof JmsHeaderFormatException) {
                 expected = true;
                 break;
             }
@@ -646,8 +647,8 @@ public class JmsUtil {
                 name.equals(JMS_TYPE);
     }
 
-    public static void setJmsHeader(final Message jmsMessage, Pair<String, Object> entry) throws JMSException {
-        if (entry.getValue() == null) throw new JMSException("Value is null");
+    public static void setJmsHeader(final Message jmsMessage, Pair<String, Object> entry) throws JmsHeaderFormatException {
+        if (entry.getValue() == null) throw new JmsHeaderFormatException("Value is null");
 
         try {
             if (entry.getKey().equals(JMS_DESTINATION)) {
@@ -672,8 +673,13 @@ public class JmsUtil {
                 logger.log(Level.WARNING, "JMS Header: " + JMS_REDELIVERED + " is not settable");
             }
         } catch (Exception e) {
-            JMSException je = new JMSException("Error setting JMS Header " + entry.getKey());
-            je.setLinkedException(e);
+            JmsHeaderFormatException je = new JmsHeaderFormatException("Error setting JMS Header " + entry.getKey());
+            if(e instanceof NumberFormatException) {
+                je.setLinkedException(new NumberFormatException("Invalid Number " + e.getMessage()));
+            }
+            else {
+                je.setLinkedException(e);
+            }
             throw je;
         }
     }
