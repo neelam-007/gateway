@@ -83,7 +83,7 @@ public @interface PrivateKeySecured {
     OperationType argOp() default OperationType.NONE;
 
     /**
-     * @return index of keystore OID argument of type long.
+     * @return index of keystore GOID argument of type Goid.
      */
     int keystoreGoidArg() default 0;
 
