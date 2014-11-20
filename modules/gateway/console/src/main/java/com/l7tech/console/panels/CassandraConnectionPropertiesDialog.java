@@ -380,7 +380,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         if (property == null || property.left == null || property.right == null) return;
         final String originalPropName = property.left;
 
-        final AdditionalPropertiesDialog dlg = new AdditionalPropertiesDialog(this, property, true);
+        final CassandraPropertiesDialog dlg = new CassandraPropertiesDialog(this, property);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
