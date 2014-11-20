@@ -3,19 +3,22 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * An assertion intended to run pre-service-resolution that can resolve the service with alternate parameters.
  */
-public class ResolveServiceAssertion extends Assertion implements UsesVariables {
-
+public class ResolveServiceAssertion extends Assertion implements UsesVariables, SetsVariables {
     public static final String DEFAULT_VARIABLE_PREFIX = "resolvedService";
+    public static final String NAME_SUFFIX = "name";
+    public static final String OID_SUFFIX = "oid";
+    public static final String SOAP_SUFFIX = "soap";
 
     private String uri;
-    private String prefix;
+    private String prefix = DEFAULT_VARIABLE_PREFIX;
 
     public String getUri() {
         return uri;
@@ -36,9 +39,20 @@ public class ResolveServiceAssertion extends Assertion implements UsesVariables 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(uri);
+        return VariableUseSupport.expressions(uri).asArray();
     }
 
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+                new VariableMetadata(prefix + "." + NAME_SUFFIX, true, false,
+                        prefix + "." + NAME_SUFFIX, false, DataType.STRING),
+                new VariableMetadata(prefix + "." + OID_SUFFIX, true, false,
+                        prefix + "." + OID_SUFFIX, false, DataType.STRING),
+                new VariableMetadata(prefix + "." + SOAP_SUFFIX, true, false,
+                        prefix + "." + SOAP_SUFFIX, false, DataType.BOOLEAN)
+        };
+    }
 
     private static final String shortName = "Resolve Service";
     private static final String META_INIT = ResolveServiceAssertion.class.getName() + ".metaInit";
