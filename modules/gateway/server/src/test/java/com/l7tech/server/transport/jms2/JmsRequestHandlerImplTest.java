@@ -34,6 +34,7 @@ import javax.naming.Context;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -224,7 +225,7 @@ public class JmsRequestHandlerImplTest {
                 // add JMS Standard Header to Response HeadersKnob
                 HeadersKnob headersKnob = new HeadersKnobSupport();
                 response.attachKnob(HeadersKnob.class, headersKnob);
-                headersKnob.addHeader("JMSCorrelationID", NEW_CORRELATION_ID, HEADER_TYPE_JMS_PROPERTY);
+                headersKnob.addHeader("JMSCorrelationID", NEW_CORRELATION_ID, HEADER_TYPE_JMS_HEADER);
 
                 policyContext.setRoutingStatus(RoutingStatus.ROUTED);
 

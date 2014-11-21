@@ -49,6 +49,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 
@@ -341,26 +342,45 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 // Enforces rules on propagation of request JMS message properties.
                 final HeadersKnob jmsInboundHeadersKnob = requestMessage.getKnob(HeadersKnob.class);
 
-                Map<String, Object> inboundRequestProps = new HashMap<>();
+                Map<String, Object> inboundRequestProps = new HashMap<>();//JMS Properties
+                Map<String, Object> inboundRequestHeaders = new HashMap<>();//JMS Standard Headers
 
                 if (jmsInboundHeadersKnob != null) {
-                    Collection<Header> headers = jmsInboundHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
+                    Collection<Header> properties = jmsInboundHeadersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
 
                     HashMap<String, Object> propertyMap = new HashMap<>();
 
-                    for (Header header : headers) {
-                        propertyMap.put(header.getKey(), header.getValue());
+                    for (Header property : properties) {
+                        propertyMap.put(property.getKey(), property.getValue());
                     }
 
                     for (String key : propertyMap.keySet()) {
                         inboundRequestProps.put(key, propertyMap.get(key));
                     }
+
+                    Collection<Header> headers = jmsInboundHeadersKnob.getHeaders(HEADER_TYPE_JMS_HEADER);
+                    for(Header header : headers) {
+                        inboundRequestHeaders.put(header.getKey(), header.getValue());
+                    }
+
                 }
 
                 final Map<String, Object> outboundRequestProps = new HashMap<>();
                 enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
 
-                for (Map.Entry<String,Object> entry : outboundRequestProps.entrySet()) {
+                for (String name : outboundRequestProps.keySet()) {
+                    try {
+                        jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
+                    } catch ( MessageFormatException e ) {
+                        if ( e.getErrorCode() != null && e.getErrorCode().startsWith("MQ") ) {
+                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {name, outboundRequestProps.get(name).toString(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                        } else {
+                            logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
+                        }
+                    }
+                }
+
+                for (Map.Entry<String,Object> entry : inboundRequestHeaders.entrySet()) {
                     try {
                         if(JmsUtil.isJmsHeader(entry.getKey())) {
                             //Set JMS Header defined in the context that might override the default value
@@ -371,25 +391,18 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             else {
                                 value = entry.getValue();
                             }
-                            JmsUtil.setJmsHeader(jmsOutboundRequest, new Pair<>(entry.getKey(), value));
+                            if(!JmsUtil.setJmsHeader(jmsOutboundRequest, new Pair<>(entry.getKey(), value))) {
+                                logAndAudit(AssertionMessages.JMS_ROUTING_NOT_SETTABLE_JMS_HEADER, entry.getKey());
+                            }
                         }
                         else {
-                            //set JMS properties
-                            jmsOutboundRequest.setObjectProperty(entry.getKey(), entry.getValue());
-                        }
-                    } catch ( MessageFormatException e ) {
-                        if ( e.getErrorCode() != null && e.getErrorCode().startsWith("MQ") ) {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY, new String[] {entry.getKey(), entry.getValue().toString(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-                        } else {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_NOT_SUPPORTED_JMS_HEADER, entry.getKey(), (String)entry.getValue());
                         }
                     } catch (JMSException je) {
                         if(JmsUtil.getCause(je) instanceof ClassCastException) {
-                            logAndAudit(AssertionMessages.JMS_ROUTING_INCOMPATIBLE_JMS_PROPERTY_TYPE, new String[] {entry.getKey()}, ExceptionUtils.getDebugException(je));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_INCOMPATIBLE_JMS_HEADER_TYPE, new String[] {entry.getKey()}, ExceptionUtils.getDebugException(je));
                         }
-                        else if(je instanceof JmsHeaderFormatException) {
-                            messageSent = true;
-                        }
+                        messageSent = true;
                         throw je;
                     }
 

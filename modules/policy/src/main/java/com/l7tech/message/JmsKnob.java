@@ -12,6 +12,7 @@ import java.util.Map;
 public interface JmsKnob extends MessageKnob, HasSoapAction, HasServiceId, HasHeaders {
 
     public static final String HEADER_TYPE_JMS_PROPERTY = "JMS Property";
+    public static final String HEADER_TYPE_JMS_HEADER = "JMS Header";
 
     boolean isBytesMessage();
 

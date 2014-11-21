@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -189,6 +190,45 @@ public class MessageSelectorTest {
 
         final Object[] selectedValue = (Object[]) selection.getSelectedValue();
         assertEquals(0, selectedValue.length);
+    }
+
+    @Test
+    public void selectJmsModifiedHeaderNames() {
+        addJmsStandardHeaders();
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.headernames.modified", handler, false);
+        assertNotNull(selection);
+        final List headerNames = Arrays.asList((Object[])selection.getSelectedValue());
+        assertTrue(headerNames. contains("JMSCorrelationID"));
+        assertTrue(headerNames.contains("JMSType"));
+        assertTrue(headerNames.contains("NotJMSHeader"));
+    }
+
+    @Test
+    public void selectJmsModifiedHeaderValues() {
+        addJmsStandardHeaders();
+        final ExpandVariables.Selector.Selection selection = selector.select(null, message, "jms.allheadervalues.modified", handler, false);
+        assertNotNull(selection);
+        final List headerValues = Arrays.asList((Object[])selection.getSelectedValue());
+        assertTrue(headerValues.contains("JMSCorrelationID:CORRID"));
+        assertTrue(headerValues.contains("JMSType:MyType"));
+        assertTrue(headerValues.contains("NotJMSHeader:value"));
+    }
+
+    @Test
+    public void selectJmsModifiedHeaders() {
+        addJmsStandardHeaders();
+
+        assertEquals("CORRID", selector.select(null, message, "jms.header.JMSCorrelationID.modified", handler, false).getSelectedValue());
+
+        assertEquals("MyType", selector.select(null, message, "jms.header.JMSType.modified", handler, false).getSelectedValue());
+
+        assertNotNull(selector.select(null, message, "jms.header.NotJMSHeader.modified", handler, false));
+    }
+
+    @Test
+    public void selectJmsModifiedHeader_headerNotFound() {
+        addJmsStandardHeaders();
+        assertNull(selector.select(null, message, "jms.header.JMSReplyTo.modified", handler, false));
     }
 
     @Test
@@ -1005,5 +1045,12 @@ public class MessageSelectorTest {
         headersKnob.addHeader("p1", "p1value", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("p2", "p2value", HEADER_TYPE_JMS_PROPERTY);
         headersKnob.addHeader("p3", "p3value", HEADER_TYPE_JMS_PROPERTY);
+    }
+
+    private void addJmsStandardHeaders() {
+        HeadersKnob headersKnob = message.getHeadersKnob();
+        headersKnob.addHeader("JMSCorrelationID", "CORRID", HEADER_TYPE_JMS_HEADER);
+        headersKnob.addHeader("JMSType", "MyType", HEADER_TYPE_JMS_HEADER);
+        headersKnob.addHeader("NotJMSHeader", "value", HEADER_TYPE_JMS_HEADER);
     }
 }

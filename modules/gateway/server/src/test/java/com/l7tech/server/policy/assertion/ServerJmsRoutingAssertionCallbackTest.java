@@ -32,6 +32,7 @@ import javax.jms.Queue;
 
 import java.util.*;
 
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -147,7 +148,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
         HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
 
         for (Pair<String, String> property : testProperties) {
-            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_HEADER);
         }
 
         request.attachKnob(HeadersKnob.class, requestHeadersKnob);

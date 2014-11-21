@@ -20,6 +20,7 @@ import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -42,6 +43,7 @@ import java.util.regex.Pattern;
 */
 public class MessageSelector implements ExpandVariables.Selector<Message> {
 
+    public static final String MODIFIED_SUFFIX = ".modified";
     private static Map<String, MessageAttributeSelector> selectorMap = new HashMap<>();
 
     // NOTE: Variable names must be lower case
@@ -124,6 +126,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String JMS_PROPERTY_PREFIX = "jms.property.";
     private static final String JMS_PROPERTYNAMES = "jms.propertynames";
     private static final String JMS_ALLPROPERTYVALUES = "jms.allpropertyvalues";
+
 
     private static final String FTP_REPLY_CODE = "ftp.replycode";
     private static final String FTP_REPLY_TEXT = "ftp.replytext";
@@ -237,11 +240,26 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
         } else if (lname.startsWith(AUTH_USER_DN)) {
             selector = select(new AuthenticatedUserGetter<>(AUTH_USER_DN, false, String.class, AuthenticatedUserGetter.USER_TO_DN, message));
         } else if (lname.startsWith(JMS_HEADER_PREFIX)) {
-            selector = jmsHeaderSelector;
+            if(lname.endsWith(MODIFIED_SUFFIX)){
+                selector = jmsStandardHeaderSelector;
+            }
+            else {
+                selector = jmsHeaderSelector;
+            }
         } else if (lname.startsWith(JMS_HEADERNAMES)) {
-            selector = jmsHeaderNamesSelector;
+            if(lname.endsWith(MODIFIED_SUFFIX)){
+               selector = jmsStandardHeaderNamesSelector;
+            }
+            else {
+                selector = jmsHeaderNamesSelector;
+            }
         } else if (lname.startsWith(JMS_ALLHEADERVALUES)) {
-            selector = jmsAllHeaderValuesSelector;
+            if(lname.endsWith(MODIFIED_SUFFIX)){
+                selector = jmsStandardAllHeaderValuesSelector;
+            }
+            else {
+                selector = jmsAllHeaderValuesSelector;
+            }
         } else if (lname.startsWith(JMS_PROPERTY_PREFIX)) {
             selector = jmsPropertySelector;
         } else if (lname.startsWith(JMS_PROPERTYNAMES)) {
@@ -777,6 +795,7 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
 
     private static final MessageAttributeSelector httpHeaderNamesSelector = new HeadersKnobNamesSelector(HeadersKnob.HEADER_TYPE_HTTP);
     private static final MessageAttributeSelector jmsPropertyNamesSelector = new HeadersKnobNamesSelector(JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+    private static final MessageAttributeSelector jmsStandardHeaderNamesSelector = new HeadersKnobNamesSelector(JmsKnob.HEADER_TYPE_JMS_HEADER);
 
     private static class HeadersKnobNamesSelector implements MessageAttributeSelector {
         final String headerType;
@@ -828,6 +847,21 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
             }
         }
     };
+
+    private static final MessageAttributeSelector jmsStandardAllHeaderValuesSelector =
+            new HeadersKnobAllValuesSelector(JmsKnob.HEADER_TYPE_JMS_HEADER) {
+                @Override
+                protected String getFormattedValueString(final String[] headerValues, final Syntax syntax,
+                                                         final Syntax.SyntaxErrorHandler handler, boolean strict) {
+                    // for JMS headers, use only the last value (most recent overrides previous values)
+                    if (headerValues.length > 0) {
+                        return syntax.format(new Object[]{headerValues[headerValues.length - 1]},
+                                Syntax.getFormatter(headerValues[headerValues.length - 1]), handler, strict);
+                    } else {
+                        return "";
+                    }
+                }
+     };
 
     private static abstract class HeadersKnobAllValuesSelector implements MessageAttributeSelector {
         final String headerType;
@@ -887,7 +921,21 @@ public class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final HeadersKnobSelector jmsPropertySelector = new HeadersKnobSelector(JMS_PROPERTY_PREFIX) {
         @Override
         protected Selection createSelection(final String headerName, final HeadersKnob headersKnob) {
+            if(JmsUtil.isJmsHeader(headerName))
+                return null;
+
             String[] values = headersKnob.getHeaderValues(headerName, JmsKnob.HEADER_TYPE_JMS_PROPERTY);
+
+            return values != null && values.length > 0 ? new Selection(values[values.length - 1]) : null; // return last value
+        }
+    };
+
+    private static final HeadersKnobSelector jmsStandardHeaderSelector = new HeadersKnobSelector(JMS_HEADER_PREFIX) {
+        @Override
+        protected Selection createSelection(final String name, final HeadersKnob headersKnob) {
+            final String headerName =  name.substring(0, name.length() - MODIFIED_SUFFIX.length());
+
+            String[] values = headersKnob.getHeaderValues(headerName, JmsKnob.HEADER_TYPE_JMS_HEADER);
 
             return values != null && values.length > 0 ? new Selection(values[values.length - 1]) : null; // return last value
         }

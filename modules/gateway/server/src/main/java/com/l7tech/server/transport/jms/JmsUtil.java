@@ -647,7 +647,8 @@ public class JmsUtil {
                 name.equals(JMS_TYPE);
     }
 
-    public static void setJmsHeader(final Message jmsMessage, Pair<String, Object> entry) throws JmsHeaderFormatException {
+    public static boolean setJmsHeader(final Message jmsMessage, Pair<String, Object> entry) throws JmsHeaderFormatException {
+        boolean success = false;
         if (entry.getValue() == null) throw new JmsHeaderFormatException("Value is null");
 
         try {
@@ -655,33 +656,40 @@ public class JmsUtil {
                 logger.log(Level.WARNING, "JMS Header: " + JMS_DESTINATION + " is not settable");
             } else if (entry.getKey().equals(JMS_DELIVERY_MODE)) {
                 jmsMessage.setJMSDeliveryMode(getInt(entry.getValue()));
+                success = true;
             } else if (entry.getKey().equals(JMS_EXPIRATION)) {
                 jmsMessage.setJMSExpiration(getLong(entry.getValue()));
+                success = true;
             } else if (entry.getKey().equals(JMS_PRIORITY)) {
                 jmsMessage.setJMSPriority(getInt(entry.getValue()));
+                success = true;
             } else if (entry.getKey().equals(JMS_MESSAGE_ID)) {
                 logger.log(Level.WARNING, "JMS Header: " + JMS_MESSAGE_ID + " is not settable");
             } else if (entry.getKey().equals(JMS_TIMESTAMP)) {
                 logger.log(Level.WARNING, "JMS Header: " + JMS_TIMESTAMP + " is not settable");
             } else if (entry.getKey().equals(JMS_CORRELATION_ID)) {
                 jmsMessage.setJMSCorrelationID((String)entry.getValue());
+                success = true;
             } else if (entry.getKey().equals(JMS_REPLY_TO)) {
                 jmsMessage.setJMSReplyTo((Destination) entry.getValue());
+                success = true;
             } else if (entry.getKey().equals(JMS_TYPE)) {
                 jmsMessage.setJMSType((String) entry.getValue());
+                success = true;
             } else if (entry.getKey().equals(JMS_REDELIVERED)) {
                 logger.log(Level.WARNING, "JMS Header: " + JMS_REDELIVERED + " is not settable");
             }
         } catch (Exception e) {
             JmsHeaderFormatException je = new JmsHeaderFormatException("Error setting JMS Header " + entry.getKey());
             if(e instanceof NumberFormatException) {
-                je.setLinkedException(new NumberFormatException("Invalid Number " + e.getMessage()));
+                je.setLinkedException(new NumberFormatException("Invalid Entry " + e.getMessage()));
             }
             else {
                 je.setLinkedException(e);
             }
             throw je;
         }
+        return success;
     }
 
     private static Long getLong(Object value) throws Exception {

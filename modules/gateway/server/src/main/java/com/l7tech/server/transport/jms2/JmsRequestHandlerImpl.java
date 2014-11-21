@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 
 /**
@@ -326,9 +327,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                         // Copy the JMS Property headers from the response HeadersKnob to the response JMS message.
                         // Propagation rules have already been enforced in the knob by the JMS routing assertion.
-                        final HeadersKnob responseMessageHeadersKnob = context.getResponse().getKnob(HeadersKnob.class);
 
-                        responseSuccess = sendResponse(jmsRequest, jmsResponse, bag, endpointCfg, responseMessageHeadersKnob);
+
+                        responseSuccess = sendResponse(jmsRequest, jmsResponse, bag, endpointCfg, context);
                     } else { // is stealth mode
                         responseSuccess = true;
                     }
@@ -441,7 +442,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                   final Message jmsResponseMsg,
                                   final JmsBag bag,
                                   final JmsEndpointConfig endpointCfg,
-                                  final HeadersKnob headersKnob) {
+                                  final PolicyEnforcementContext context) {
         boolean sent = false;
         try {
             final Context jndiContext = bag.getJndiContext();
@@ -463,13 +464,21 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                         jmsRequestMsg.getJMSCorrelationID();
                 jmsResponseMsg.setJMSCorrelationID(newCorrId);
 
-                if (headersKnob != null) {
-                    Collection<Header> headers = headersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
+                final HeadersKnob headersKnob = context.getResponse().getKnob(HeadersKnob.class);
 
-                    for (Header header : headers) {
+                if (headersKnob != null) {
+                    //set JMS properties
+                    Collection<Header> properties = headersKnob.getHeaders(HEADER_TYPE_JMS_PROPERTY);
+                    for (Header property : properties) {
+                        jmsResponseMsg.setObjectProperty(property.getKey(), property.getValue());
+                    }
+                    //set JMS headers
+                    Collection<Header> headers = headersKnob.getHeaders(HEADER_TYPE_JMS_HEADER);
+                    for(Header header : headers) {
                         if(JmsUtil.isJmsHeader(header.getKey())) { //JMS headers are set differently
                             //Set JMS Header defined in the context that might override the default value
                             Object value = null;
+
                             if((header.getKey().equals(JmsUtil.JMS_REPLY_TO) || header.getKey().equals(JmsUtil.JMS_DESTINATION)) && header.getValue() instanceof String) {
                                 value = JmsUtil.cast( jndiContext.lookup((String)header.getValue()), Destination.class);
                             }
@@ -479,7 +488,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                             JmsUtil.setJmsHeader(jmsResponseMsg, new Pair<>(header.getKey(), value));
                         }
                         else {
-                            jmsResponseMsg.setObjectProperty(header.getKey(), header.getValue());
+                            _logger.log(Level.WARNING, "JMS Header \"" + header.getKey() + "\" is not supported.");
                         }
                     }
                 }

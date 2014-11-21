@@ -571,8 +571,10 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_RESPONSE_TOO_LARGE = m(6029, Level.WARNING, "Response message too large.");
     public static final M JMS_ROUTING_NON_SETTABLE_JMS_PROPERTY =  m(6030,Level.WARNING, "Cannot set JMS Property ''{0}'' to value ''{1}'' on IBM MQ JMS Provider. {2}");
     public static final M JMS_ROUTING_MESSAGE_FORMAT_ERROR = m(6031,Level.WARNING,"JMS message format error while constructing JMS message to route: {0}");
-    public static final M JMS_ROUTING_INCOMPATIBLE_JMS_PROPERTY_TYPE = m(6032, Level.WARNING, "Property type is not compatible with JMS Property ''{0}''");
+    public static final M JMS_ROUTING_INCOMPATIBLE_JMS_HEADER_TYPE = m(6032, Level.WARNING, "Transport property type is not compatible with JMS Header ''{0}''");
     public static final M JMS_ROUTING_ERROR_SENDING_MESSAGE = m(6033, Level.WARNING, "Unable to send JMS message to destination ''{0}'' : {1}.");
+    public static final M JMS_ROUTING_NOT_SUPPORTED_JMS_HEADER =  m(6034,Level.WARNING, "JMS Header ''{0}'' is not supported.");
+    public static final M JMS_ROUTING_NOT_SETTABLE_JMS_HEADER =  m(6035,Level.WARNING, "JMS Header ''{0}'' is not settable.");
 
     // ServerFtpRoutingAssertion
     @Deprecated
