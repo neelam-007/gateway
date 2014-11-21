@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.DependencyResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.UsageResource;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObject;
@@ -25,6 +26,7 @@ import java.util.List;
  */
 public abstract class DependentRestEntityResource<R extends ManagedObject, F extends APIResourceFactory<R>, T extends APITransformer<R, ?>> extends RestEntityResource<R, F, T> {
     private static final String DEPENDENCIES_URI = "dependencies";
+    private static final String USAGES_URI = "usages";
     @Context
     private ResourceContext resourceContext;
 
@@ -42,12 +44,21 @@ public abstract class DependentRestEntityResource<R extends ManagedObject, F ext
         return resourceContext.initResource(new DependencyResource(serviceHeader));
     }
 
+    @Since(RestManVersion.VERSION_1_0_1)
+    @Path("{id}/" + USAGES_URI)
+    public UsageResource usages(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
+        R resource = factory.getResource(id);
+        EntityHeader serviceHeader = new EntityHeader(resource.getId(), EntityType.valueOf(getResourceType()), null, null);
+        return resourceContext.initResource(new UsageResource(serviceHeader));
+    }
+
     @NotNull
     @Override
     public List<Link> getRelatedLinks(@Nullable final R resource) {
         List<Link> links = super.getRelatedLinks(resource);
         if (resource != null) {
             links.add(ManagedObjectFactory.createLink("dependencies", getUrlString(resource.getId() + "/" + DEPENDENCIES_URI)));
+            links.add(ManagedObjectFactory.createLink("usages", getUrlString(resource.getId() + "/" + USAGES_URI)));
         }
         return links;
     }

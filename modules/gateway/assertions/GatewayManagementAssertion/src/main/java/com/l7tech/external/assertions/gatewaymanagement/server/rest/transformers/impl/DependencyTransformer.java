@@ -6,10 +6,9 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.DependencySearchResultsUtils;
 import com.l7tech.server.search.objects.*;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -19,9 +18,6 @@ import java.util.List;
 
 @Component
 public class DependencyTransformer implements APITransformer<DependencyListMO, DependencySearchResults>{
-
-    @Inject
-    private DependencyAnalyzer dependencyAnalyzer;
 
     @Inject
     private ServiceManager serviceManager;
@@ -40,7 +36,7 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
         dependencyAnalysisMO.setSearchObjectItem( toDependencyManagedObject(dependencySearchResults.getDependent(), dependencySearchResults.getDependencies()));
-        List<Dependency> dependencyList = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, false);
+        List<Dependency> dependencyList = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResults, false);
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
         for(Dependency dependency: dependencyList){
@@ -64,7 +60,7 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 //        dependencyAnalysisMO.setSearchObjectItem(toDependencyManagedObject(dependencySearchResultsList.get(0).getDependent(), dependencySearchResultsList.get(0).getDependencies()));
         List<Dependency> dependencyList = new ArrayList<>();
         for (DependencySearchResults results : dependencySearchResultsList){
-            dependencyList.addAll(dependencyAnalyzer.flattenDependencySearchResults(results, false));
+            dependencyList.addAll(DependencySearchResultsUtils.flattenDependencySearchResults(results, false));
         }
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
@@ -101,13 +97,15 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
     private DependencyMO toDependencyManagedObject(DependentObject depObject, List<Dependency> dependencies) {
         List<DependencyMO> dependencyMOs = new ArrayList<>();
-        for (Dependency dependency : dependencies) {
-            DependencyMO dependencyMO = ManagedObjectFactory.createDependencyMO();
-            Item reference = toReference(dependency.getDependent());
-            dependencyMO.setName(reference.getName());
-            dependencyMO.setId(reference.getId());
-            dependencyMO.setType(reference.getType());
-            dependencyMOs.add(dependencyMO);
+        if(dependencies != null) {
+            for (Dependency dependency : dependencies) {
+                DependencyMO dependencyMO = ManagedObjectFactory.createDependencyMO();
+                Item reference = toReference(dependency.getDependent());
+                dependencyMO.setName(reference.getName());
+                dependencyMO.setId(reference.getId());
+                dependencyMO.setType(reference.getType());
+                dependencyMOs.add(dependencyMO);
+            }
         }
 
         DependencyMO dependency = ManagedObjectFactory.createDependencyMO();

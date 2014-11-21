@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import org.jetbrains.annotations.NotNull;
 
@@ -117,40 +116,4 @@ public interface DependencyAnalyzer {
      */
     //TODO: This can be generalized to take in a generic object instead of an entity. Is that something we want to do?
     public <E extends Entity> void replaceDependencies(@NotNull E entity, @NotNull Map<EntityHeader, EntityHeader> replacementMap, boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException;
-
-    /**
-     * This will flatten the {@link com.l7tech.server.search.objects.DependencySearchResults} tree (it can actually be a
-     * graph and contain cycles) into a list of {@link com.l7tech.server.search.objects.Dependency}. The List will be
-     * ordered with leaves first then their parents and so on. This way if the objects are created in that order you
-     * will always be creating the dependencies before creating the dependent objects (except when there is a cycle).
-     * The returned list of Dependency will only have its immediate dependencies set. This means that for any Dependency
-     * in the returned list calling {@link com.l7tech.server.search.objects.Dependency#getDependencies()} on any of its
-     * dependencies will return null.
-     *
-     * @param dependencySearchResult This is the {@link com.l7tech.server.search.objects.DependencySearchResults} to
-     *                               flatten.
-     * @param includeRootNode        If true the {@link com.l7tech.server.search.objects.DependencySearchResults#getDependent()}
-     *                               will be added to the list of dependent objects. Otherwise it won't be.
-     * @return The flattened list of {@link com.l7tech.server.search.objects.Dependency}
-     */
-    @NotNull
-    public List<Dependency> flattenDependencySearchResults(@NotNull DependencySearchResults dependencySearchResult, boolean includeRootNode);
-
-    /**
-     * This will flatten the list of {@link com.l7tech.server.search.objects.DependencySearchResults} trees (it can
-     * actually be a graph and contain cycles) into a list of {@link com.l7tech.server.search.objects.Dependency}. The
-     * List will be ordered with leaves first then their parents and so on. This way if the objects are created in that
-     * order you will always be creating the dependencies before creating the dependent objects (except when there is a
-     * cycle). The returned list of Dependency will only have its immediate dependencies set. This means that for any
-     * Dependency in the returned list calling {@link com.l7tech.server.search.objects.Dependency#getDependencies()} on
-     * any of its dependencies will return null.
-     *
-     * @param dependencySearchResults This is the List of {@link com.l7tech.server.search.objects.DependencySearchResults}
-     *                                to flatten.
-     * @param includeRootNode         If true the {@link com.l7tech.server.search.objects.DependencySearchResults#getDependent()}
-     *                                will be added to the list of dependent objects. Otherwise it won't be.
-     * @return The flattened list of {@link com.l7tech.server.search.objects.Dependency}
-     */
-    @NotNull
-    public List<Dependency> flattenDependencySearchResults(@NotNull List<DependencySearchResults> dependencySearchResults, boolean includeRootNode);
 }

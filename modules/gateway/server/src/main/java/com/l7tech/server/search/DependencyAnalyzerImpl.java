@@ -9,11 +9,13 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.internal.InternalGroup;
@@ -28,12 +30,12 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.server.search.objects.*;
+import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.server.search.processors.DependencyProcessorStore;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -88,7 +90,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SecurityZone.class,
             PublishedServiceAlias.class,
             InternalUser.class,
-            InternalGroup.class
+            InternalGroup.class,
+            SsgFirewallRule.class,
+            SampleMessage.class
     );
 
     /**
@@ -160,6 +164,36 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     }
 
     /**
+     * Returns the list of dependencies for the given entities.
+     *
+     * @param entities      The list of entities to get dependencies for. If the entities list is empty the full
+     *                      gateway dependencies will be returned.
+     * @param searchOptions The search options. These can be used to customize the search. It can be used to specify
+     *                      that some entities can be ignored, or to make it so that individual assertions are returned
+     *                      as dependencies.
+     * @return The list of dependency search results. This list will be the same size as the entities list.
+     * @throws FindException This is thrown if an entity cannot be found by the entity managers.
+     */
+    @NotNull
+    public List<DependencySearchResults> getDependenciesFromEntities(@NotNull final List<Entity> entities, @NotNull final Map<String, Object> searchOptions) throws CannotRetrieveDependenciesException, FindException {
+        if (entities.isEmpty()) {
+            return getDependencies(Collections.<EntityHeader>emptyList(), searchOptions);
+        }
+        logger.log(Level.FINE, "Finding dependencies for {0}", entities.toString());
+        //create a new dependency finder to perform the search
+        final DependencyFinder dependencyFinder = new DependencyFinder(searchOptions, processorStore);
+        final List<DependencySearchResults> results = new ArrayList<>();
+
+        results.addAll(dependencyFinder.process(Functions.map(entities, new Functions.Unary<DependencyFinder.FindResults, Entity>() {
+            @Override
+            public DependencyFinder.FindResults call(Entity entity) {
+                return DependencyFinder.FindResults.create(entity, null);
+            }
+        })));
+        return results;
+    }
+
+    /**
      * This will return a set lists of all entity headers for each entity type.
      *
      * @return The list of all entity headers.
@@ -169,9 +203,10 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         final List<List<EntityHeader>> headerLists = new ArrayList<>();
         for (final Class<? extends Entity> entityClass : entityClasses) {
             final EntityHeaderSet<EntityHeader> entityHeaders;
-            if(Policy.class.equals(entityClass)) {
+            if (Policy.class.equals(entityClass)) {
                 //exclude private service policies
-                entityHeaders = Functions.reduce(entityCrud.findAll(entityClass), new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, EntityHeader>() {
+                EntityHeaderSet<EntityHeader> policyHeaders = entityCrud.findAll(entityClass);
+                entityHeaders = policyHeaders == null ? null : Functions.reduce(policyHeaders, new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, EntityHeader>() {
                     @Override
                     public EntityHeaderSet<EntityHeader> call(EntityHeaderSet<EntityHeader> objects, EntityHeader entityHeader) {
                         if (!PolicyType.PRIVATE_SERVICE.equals(((PolicyHeader) entityHeader).getPolicyType())) {
@@ -180,13 +215,15 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                         return objects;
                     }
                 });
-            } else if(Folder.class.equals(entityClass)) {
+            } else if (Folder.class.equals(entityClass)) {
                 //folders only need to include the root folder.
                 entityHeaders = new EntityHeaderSet<>(EntityHeaderUtils.fromEntity(folderManager.findRootFolder()));
             } else {
                 entityHeaders = entityCrud.findAll(entityClass);
             }
-            headerLists.add(new ArrayList<>(entityHeaders));
+            if (entityHeaders != null) {
+                headerLists.add(new ArrayList<>(entityHeaders));
+            }
         }
         return headerLists;
     }
@@ -207,171 +244,14 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     }
 
     /**
-     * {@inheritDoc}
+     * Creates a dependent object given an object
+     *
+     * @param object The object to create a dependent object from
+     * @return The dependent object
      */
     @NotNull
-    @Override
-    public List<Dependency> flattenDependencySearchResults(@NotNull final DependencySearchResults dependencySearchResult, final boolean includeRootNode) {
-        return flattenDependencySearchResults(Arrays.asList(dependencySearchResult), includeRootNode);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NotNull
-    @Override
-    public List<Dependency> flattenDependencySearchResults(@NotNull final List<DependencySearchResults> dependencySearchResults, final boolean includeRootNode) {
-        //the flat list of dependency object
-        final List<Dependency> dependencyObjects = new ArrayList<>();
-        for (final DependencySearchResults dependencySearchResult : dependencySearchResults) {
-            if (dependencySearchResult != null) {
-                if (includeRootNode) {
-                    //get all security zone dependencies
-                    getSecurityZoneDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
-                    //get all folder dependencies
-                    getFolderDependencies(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
-                    //include the DependencySearchResults.dependentObject
-                    buildDependentObjectsList(dependencyObjects, dependencySearchResult.getDependent(), dependencySearchResult.getDependencies(), new ArrayList<DependentObject>());
-                } else if (dependencySearchResult.getDependencies() != null) {
-                    //if we are not including the dependent object in the DependencySearchResults then process only the dependencies.
-                    //keep track of processed object, this will improve processing time.
-                    final ArrayList<DependentObject> processedObjects = new ArrayList<>();
-                    final ArrayList<DependentObject> processedSecurityZones = new ArrayList<>();
-                    final ArrayList<DependentObject> processedFolders = new ArrayList<>();
-                    //loop throw all the dependencies to build up the dependent objects list.
-                    for (final Dependency dependency : dependencySearchResult.getDependencies()) {
-                        //get all security zone dependencies
-                        getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedSecurityZones);
-                        //get all folder dependencies
-                        getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedFolders);
-                        buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processedObjects);
-                    }
-                }
-            }
-        }
-        return dependencyObjects;
-    }
-
-    /**
-     * This will return an ordered list of all the folder dependencies.
-     *
-     * @param dependencyObjects The list of dependency objects built so far.
-     * @param dependent         The dependent currently being processed.
-     * @param dependencies      current dependent's immediate dependencies.
-     * @param processed         The List of dependent objects already processed.
-     */
-    private void getFolderDependencies(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies, @NotNull final List<DependentObject> processed) {
-        // check if dependency is already processed.
-        if (processed.contains(dependent)) {
-            return;
-        }
-        //add to the processed list before processing to avoid circular dependency issues.
-        processed.add(dependent);
-
-        //if it is a folder dependency add it to the dependency list before processing its children
-        if (com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType())) {
-            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
-        }
-        //loop through the folders children to add all other folders to the list.
-        if (dependencies != null) {
-            for (final Dependency dependency : dependencies) {
-                getFolderDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
-            }
-        }
-    }
-
-    /**
-     * This will return a list of all the security zone dependencies.
-     *
-     * @param dependencyObjects The list of dependency objects built so far.
-     * @param dependent         The dependent currently being processed.
-     * @param dependencies      current dependent's immediate dependencies.
-     * @param processed         The List of dependent objects already processed.
-     */
-    private void getSecurityZoneDependencies(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies, @NotNull final List<DependentObject> processed) {
-        // check if dependency is already processed.
-        if (processed.contains(dependent)) {
-            return;
-        }
-        //add to the processed list before processing to avoid circular dependency issues.
-        processed.add(dependent);
-
-        //if the dependent is a security zone add it to the dependencies list.
-        if (com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependent.getDependencyType())) {
-            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
-        }
-        //recourse through the other dependencies to find the rest of the security zones.
-        if (dependencies != null) {
-            for (final Dependency dependency : dependencies) {
-                getSecurityZoneDependencies(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
-            }
-        }
-    }
-
-    /**
-     * Builds a list of dependency objects. This is called recursively to process the given dependent and list of
-     * dependencies.
-     *
-     * @param dependencyObjects The list of dependency objects built so far.
-     * @param dependent         The dependent currently being processed.
-     * @param dependencies      current dependent's immediate dependencies.
-     * @param processed         The List of dependent objects already processed.
-     */
-    private void buildDependentObjectsList(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies, @NotNull final List<DependentObject> processed) {
-        // check if dependency is already found.
-        if (processed.contains(dependent)) {
-            return;
-        }
-        //add to the processed list before processing to avoid circular dependency issues.
-        processed.add(dependent);
-
-        //process the dependent objects dependencies.
-        if (dependencies != null) {
-            for (final Dependency dependency : dependencies) {
-                buildDependentObjectsList(dependencyObjects, dependency.getDependent(), dependency.getDependencies(), processed);
-            }
-        }
-        //A folder or security zone would already have been added to the dependency object list so only do this if it is not a folder or security zone.
-        if (!com.l7tech.search.Dependency.DependencyType.FOLDER.equals(dependent.getDependencyType()) &&
-                !com.l7tech.search.Dependency.DependencyType.SECURITY_ZONE.equals(dependent.getDependencyType())) {
-            addDependentToDependencyList(dependencyObjects, dependent, dependencies);
-        }
-    }
-
-    /**
-     * Adds the dependent object the the dependencyObjects list if it has not been added already. The added dependency
-     * will have its immediate dependencies set as well
-     *
-     * @param dependencyObjects The list of dependency object built so far
-     * @param dependent         The dependent object to add to the list
-     * @param dependencies      The dependent objects dependencies
-     */
-    private void addDependentToDependencyList(@NotNull final List<Dependency> dependencyObjects, @NotNull final DependentObject dependent, @Nullable final List<Dependency> dependencies) {
-        //Find if the dependent object has been added to the dependencyObjects list.
-        Dependency dependency = Functions.grepFirst(dependencyObjects, new Functions.Unary<Boolean, Dependency>() {
-            @Override
-            public Boolean call(Dependency dependency) {
-                return dependency.getDependent().equals(dependent);
-            }
-        });
-        //if it has not been added then add it.
-        if (dependency == null) {
-            if(dependent instanceof BrokenDependentEntity){
-                dependency = new BrokenDependency( (BrokenDependentEntity)dependent );
-            }else {
-                dependency = new Dependency(dependent);
-            }
-            //add the immediate dependencies to the dependency
-            final ArrayList<Dependency> immediateDependencies = new ArrayList<>();
-            if (dependencies != null && !dependencies.isEmpty()) {
-                for (final Dependency immediateDependency : dependencies) {
-                    immediateDependencies.add(new Dependency(immediateDependency.getDependent()));
-                }
-            }
-            //set the immediate dependencies
-            dependency.setDependencies(immediateDependencies);
-            //add the dependency to the dependencyObjects list
-            dependencyObjects.add(dependency);
-        }
+    DependentObject createDependentObject(@NotNull final Object object) {
+        final DependencyFinder dependencyFinder = new DependencyFinder(Collections.<String, Object>emptyMap(), processorStore);
+        return dependencyFinder.createDependentObject(object);
     }
 }

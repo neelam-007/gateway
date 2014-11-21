@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.PropertiesUtil;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.*;
@@ -191,13 +192,7 @@ public class DependencyFinder {
      */
     @NotNull
     <C, T extends Class<C>> C getOption(@NotNull final String optionKey, @NotNull final T type, @NotNull final C defaultValue) {
-        final Object value = searchOptions.get(optionKey);
-        if (value != null && type.isAssignableFrom(value.getClass())) {
-            return type.cast(value);
-        } else if (value == null) {
-            return defaultValue;
-        }
-        throw new IllegalArgumentException("Search option value for option '" + optionKey + "' was not a valid type. Expected: " + type + " Given: " + value.getClass());
+        return PropertiesUtil.getOption(optionKey, type, defaultValue, searchOptions);
     }
 
     /**
@@ -231,7 +226,7 @@ public class DependencyFinder {
      * @return The DependentObject for the given dependent
      */
     @NotNull
-    DependentObject createDependentObject(@NotNull final Object dependent) {
+    public DependentObject createDependentObject(@NotNull final Object dependent) {
         //Finds the correct processor to use
         InternalDependencyProcessor processor = processorStore.getProcessor(dependent);
         // use the processor to create the DependentObject from the dependent

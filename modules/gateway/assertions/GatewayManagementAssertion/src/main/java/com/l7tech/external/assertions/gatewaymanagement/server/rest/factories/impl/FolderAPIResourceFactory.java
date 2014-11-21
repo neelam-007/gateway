@@ -13,11 +13,15 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.DependencyAnalyzer;
+import com.l7tech.server.search.DependencyCache;
+import com.l7tech.server.search.DependencySearchResultsUtils;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentEntity;
-import com.l7tech.util.*;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -39,7 +43,7 @@ import java.util.List;
 public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO, FolderResourceFactory> {
 
     @Inject
-    private DependencyAnalyzer dependencyAnalyzer;
+    private DependencyCache dependencyCache;
 
     @Inject
     private FolderManager folderManager;
@@ -88,10 +92,10 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
                     rbacAccessService.validatePermitted(folderToDelete, OperationType.DELETE);
 
                     //find the dependencies for the folder
-                    final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(
+                    final List<DependencySearchResults> dependencySearchResults = dependencyCache.getDependencies(
                             CollectionUtils.list(EntityHeaderUtils.fromEntity(folderToDelete)),
                             CollectionUtils.<String, Object>mapBuilder().put(DependencyAnalyzer.SearchEntityTypeOptionKey, CollectionUtils.list(EntityType.FOLDER)).map());
-                    final List<Dependency> dependentObjects = dependencyAnalyzer.flattenDependencySearchResults(dependencySearchResults, true);
+                    final List<Dependency> dependentObjects = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResults, true);
                     Collections.reverse(dependentObjects);
                     final List<Dependency> filteredDependentObjects = Functions.grep(dependentObjects, new Functions.Unary<Boolean, Dependency>() {
                         @Override

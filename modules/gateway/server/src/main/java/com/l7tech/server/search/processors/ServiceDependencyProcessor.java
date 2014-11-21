@@ -37,10 +37,12 @@ public class ServiceDependencyProcessor extends DefaultDependencyProcessor<Publi
             final List<Dependency> dependenciesFound = super.findDependencies(object, finder);
             dependencies = new ArrayList<>();
             for (final Dependency dependency : dependenciesFound) {
-                if (com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType()) && dependency.getDependencies() != null) {
+                if (com.l7tech.search.Dependency.DependencyType.POLICY.equals(dependency.getDependent().getDependencyType())) {
                     //move the policy dependencies to the service.
-                    for (final Dependency policyDependency : dependency.getDependencies()) {
-                        dependencies.add(policyDependency);
+                    if(dependency.getDependencies() != null) {
+                        for (final Dependency policyDependency : dependency.getDependencies()) {
+                            dependencies.add(policyDependency);
+                        }
                     }
                 } else {
                     dependencies.add(dependency);

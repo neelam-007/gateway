@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -85,6 +86,7 @@ public class DatabaseBasedRestManagementEnvironment {
 
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
         applicationContext.start();
+        getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, "127.0.0.1"));
     }
 
     /**

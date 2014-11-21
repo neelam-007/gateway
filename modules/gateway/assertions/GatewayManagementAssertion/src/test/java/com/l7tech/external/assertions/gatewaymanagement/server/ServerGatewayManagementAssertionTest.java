@@ -66,6 +66,8 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.policy.PolicyVersionManagerStub;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
+import com.l7tech.server.search.DependencyCache;
+import com.l7tech.server.search.DependencyCacheStub;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
@@ -117,8 +119,6 @@ import java.text.MessageFormat;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -5589,6 +5589,8 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("emailListenerManager", new EmailListenerManagerStub(emailListener){});
 
         applicationContext.getBeanFactory().registerSingleton( "dependencyAnalyzer", new DependencyAnalyzerImpl());
+        DependencyCache dependencyCache = new DependencyCacheStub();
+        applicationContext.getBeanFactory().registerSingleton( "dependencyCache", dependencyCache);
 
         applicationContext.getBeanFactory().registerSingleton("entityBundleImporter", new EntityBundleImporterStub());
         applicationContext.getBeanFactory().registerSingleton("entityBundleExporter", new EntityBundleExporterStub());

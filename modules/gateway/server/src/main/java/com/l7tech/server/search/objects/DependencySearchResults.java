@@ -22,7 +22,7 @@ public class DependencySearchResults {
     @NotNull
     private final DependentObject dependentObject;
     @Nullable
-    private final List<Dependency> dependencies;
+    private List<Dependency> dependencies;
 
     /**
      * Creates new DependencySearchResults.
@@ -63,5 +63,9 @@ public class DependencySearchResults {
     @Nullable
     public List<Dependency> getDependencies() {
         return dependencies;
+    }
+
+    public void setDependencies(@Nullable List<Dependency> dependencies) {
+        this.dependencies = dependencies;
     }
 }

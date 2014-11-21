@@ -1,20 +1,23 @@
 package com.l7tech.server.search.objects;
 
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * The dependency object contains the dependencies of a dependent object. Two dependency objects are considered equal if their dependents are equal.
+ * The dependency object contains the dependencies of a dependent object. Two dependency objects are considered equal if
+ * their dependents are equal.
  *
  * @author Victor Kazakov
  */
 public class Dependency {
 
     @NotNull
-    protected final DependentObject dependent;
+    protected DependentObject dependent;
     protected List<Dependency> dependencies;
 
     /**
@@ -27,17 +30,6 @@ public class Dependency {
     }
 
     /**
-     * Creates a new dependency object for the given dependent. The dependent will also have the given dependencies.
-     *
-     * @param dependent    The dependent for this dependency object.
-     * @param dependencies The set of dependencies that this dependency has.
-     */
-    protected Dependency(@NotNull final DependentEntity dependent, @NotNull final List<Dependency> dependencies) {
-        this.dependent = dependent;
-        this.dependencies = Collections.unmodifiableList(dependencies);
-    }
-
-    /**
      * Returns the dependent that this dependency represents.
      *
      * @return The dependent for this dependency
@@ -45,6 +37,14 @@ public class Dependency {
     @NotNull
     public DependentObject getDependent() {
         return dependent;
+    }
+
+    /**
+     * Sets the dependent on this dependency
+     * @param dependent The dependent to set.
+     */
+    public void setDependent(@NotNull final DependentObject dependent) {
+        this.dependent = dependent;
     }
 
     /**
@@ -64,7 +64,7 @@ public class Dependency {
      *
      * @param dependencies The dependencies that this dependent has.
      */
-    public void setDependencies(@NotNull final List<Dependency> dependencies) {
+    public void setDependencies(final List<Dependency> dependencies) {
         this.dependencies = dependencies;
     }
 
@@ -83,5 +83,38 @@ public class Dependency {
     @Override
     public int hashCode() {
         return dependent.hashCode();
+    }
+
+    @NotNull
+    public static Dependency clone(@NotNull final Dependency dependency) {
+        return clone(dependency, new HashMap<DependentObject, Dependency>());
+    }
+
+    @NotNull
+    public static List<Dependency> clone(@NotNull final List<Dependency> dependencies) {
+        return clone(dependencies, new HashMap<DependentObject, Dependency>());
+    }
+
+    @NotNull
+    private static List<Dependency> clone(@NotNull final List<Dependency> dependencies, @NotNull final Map<DependentObject, Dependency> clonedDependenciesMap) {
+        return Functions.map(dependencies, new Functions.Unary<Dependency, Dependency>() {
+            @Override
+            public Dependency call(Dependency dependency) {
+                return Dependency.clone(dependency, clonedDependenciesMap);
+            }
+        });
+    }
+
+    @NotNull
+    private static Dependency clone(@NotNull final Dependency dependency, @NotNull final Map<DependentObject, Dependency> clonedDependenciesMap) {
+        Dependency clonedDependency = clonedDependenciesMap.get(dependency.getDependent());
+        if (clonedDependency == null) {
+            clonedDependency = new Dependency(dependency.getDependent());
+            clonedDependenciesMap.put(dependency.getDependent(), clonedDependency);
+            if (dependency.getDependencies() != null) {
+                clonedDependency.setDependencies(clone(dependency.getDependencies(), clonedDependenciesMap));
+            }
+        }
+        return clonedDependency;
     }
 }

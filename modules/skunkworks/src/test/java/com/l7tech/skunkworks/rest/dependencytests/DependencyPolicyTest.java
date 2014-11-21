@@ -21,15 +21,13 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
-import junit.framework.*;
 import org.apache.http.entity.ContentType;
 import org.junit.*;
-import org.junit.Assert;
-import org.junit.Test;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import static junit.framework.Assert.assertEquals;
@@ -128,6 +126,7 @@ public class DependencyPolicyTest extends DependencyTestBase {
         policy.setGuid(UUID.randomUUID().toString());
         policy.setFolder(folder);
         policy.setSecurityZone(securityZone);
+        policy.setName("MyAliasedPolicy");
         policyManager.save(policy);
         policyGoids.add(policy.getGoid());
         policyVersionManager.checkpointPolicy(policy, true, true);

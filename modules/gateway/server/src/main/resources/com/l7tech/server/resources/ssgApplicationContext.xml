@@ -2544,6 +2544,8 @@
 
     <bean id="dependencyAnalyzer" class="com.l7tech.server.search.DependencyAnalyzerImpl"/>
 
+    <bean id="dependencyCache" class="com.l7tech.server.search.DependencyCacheImpl" init-method="init"/>
+
     <bean id="dependencyProcessorStore" class="com.l7tech.server.search.processors.DependencyProcessorStore">
         <constructor-arg>
             <util:map>
