@@ -529,7 +529,15 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             // Read the first file from the ZIP, regardless of filename, and ignore the rest
             byte[] decompressed;
             try ( PoolByteArrayOutputStream out = new PoolByteArrayOutputStream() ) {
-                in.getNextEntry();
+                ZipEntry entry = in.getNextEntry();
+                if ( entry == null ) {
+                    encodeDecodeContext.audit( AssertionMessages.ENCODE_DECODE_ERROR, "Zip archive does not contain any entries" );
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
+                if ( entry.isDirectory() ) {
+                    encodeDecodeContext.audit( AssertionMessages.ENCODE_DECODE_ERROR, "First entry in zip archive is a directory" );
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
                 IOUtils.copyStream( in, out );
                 decompressed = out.toByteArray();
             } catch ( IOException e ) {
