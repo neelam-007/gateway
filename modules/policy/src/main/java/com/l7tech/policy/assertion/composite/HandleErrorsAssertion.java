@@ -20,6 +20,8 @@ public class HandleErrorsAssertion extends CompositeAssertion implements SetsVar
 
     private String variablePrefix = VARIABLE_PREFIX;
 
+    private boolean includeIOException;
+
     public HandleErrorsAssertion() {
 
     }
@@ -45,13 +47,20 @@ public class HandleErrorsAssertion extends CompositeAssertion implements SetsVar
         this.variablePrefix = variablePrefix;
     }
 
+    public boolean isIncludeIOException() {
+        return includeIOException;
+    }
+
+    public void setIncludeIOException(boolean includeIOException) {
+        this.includeIOException = includeIOException;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(PALETTE_FOLDERS, new String[]{"policyLogic"});
-        meta.put(PALETTE_NODE_CLASSNAME, "com.l7tech.console.tree.HandleErrorAssertionNode");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
         meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpen.gif");
 
@@ -63,13 +72,13 @@ public class HandleErrorsAssertion extends CompositeAssertion implements SetsVar
         meta.put(PROPERTIES_ACTION_NAME, "Add 'Handle errors...' Folder");
         meta.put(PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/folder.gif");
 
-        meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/folder.gif");
-        meta.put(CLIENT_ASSERTION_POLICY_ICON_OPEN, "com/l7tech/proxy/resources/tree/folderOpen.gif");
-        meta.put(USED_BY_CLIENT, Boolean.TRUE);
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.HandleErrorsPropertiesDialog");
+        meta.put(WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.policy.assertion.composite.HandleErrorsAssertionTypeMapping");
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+
+        meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

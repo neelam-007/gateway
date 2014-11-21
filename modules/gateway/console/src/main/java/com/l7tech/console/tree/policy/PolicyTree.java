@@ -7,10 +7,7 @@ import com.l7tech.console.panels.ForEachLoopAssertionPolicyNode;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.TransferableTreePath;
-import com.l7tech.console.tree.TransferableTreePaths;
-import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
@@ -343,7 +340,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         if(ancestor instanceof AllAssertionTreeNode) {
                             newAncestor = new AllAssertionTreeNode(new AllAssertion());
                         } else if(ancestor instanceof HandleErrorsAssertionTreeNode) {
-                            newAncestor = new HandleErrorsAssertionTreeNode(new HandleErrorsAssertion());
+                            HandleErrorsAssertion hae = new HandleErrorsAssertion();
+                            HandleErrorsAssertionTreeNode haen = (HandleErrorsAssertionTreeNode) ancestor;
+                            hae.setVariablePrefix(haen.assertion.getVariablePrefix());
+                            newAncestor = new HandleErrorsAssertionTreeNode(hae);
                         } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
                             newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
                         } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {

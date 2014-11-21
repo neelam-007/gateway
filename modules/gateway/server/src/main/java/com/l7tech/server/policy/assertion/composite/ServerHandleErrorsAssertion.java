@@ -7,16 +7,21 @@ import com.l7tech.policy.assertion.composite.HandleErrorsAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 
 public class ServerHandleErrorsAssertion extends ServerCompositeAssertion<HandleErrorsAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerHandleErrorsAssertion.class.getName());
 
     private final AssertionResultListener assertionResultListener = new AssertionResultListener() {
         @Override
-        public boolean assertionFinished(final PolicyEnforcementContext context, final AssertionStatus result) {
-            return AssertionStatus.NONE.equals(result);
+        public boolean assertionFinished(PolicyEnforcementContext context, AssertionStatus result) {
+            if (!AssertionStatus.NONE.equals(result)) {
+                seenAssertionStatus(context, result);
+                rollbackDeferredAssertions(context);
+                return false;
+            }
+            return true;
         }
     };
 
@@ -25,12 +30,19 @@ public class ServerHandleErrorsAssertion extends ServerCompositeAssertion<Handle
     }
 
     @Override
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context) {
-        AssertionStatus status = AssertionStatus.FALSIFIED;
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException {
+        AssertionStatus status = AssertionStatus.FAILED;
         try {
             status = iterateChildren(context, assertionResultListener);
-        } catch (Exception e) {
+        } catch (PolicyAssertionException e) {
             context.setVariable(assertion.getVariablePrefix() + ".message", e.getLocalizedMessage());
+        } catch(IOException e){
+            if(assertion.isIncludeIOException()){
+                context.setVariable(assertion.getVariablePrefix() + ".message", e.getLocalizedMessage());
+            }
+            else {
+                throw e;
+            }
         }
         return status;
     }

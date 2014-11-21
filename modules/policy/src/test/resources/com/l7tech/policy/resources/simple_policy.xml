@@ -24,7 +24,10 @@
                 <L7p:ForEachLoop L7p:Usage="Required" loopVariable="" variablePrefix="">
                     <L7p:FalseAssertion/>
                 </L7p:ForEachLoop>
-                <L7p:HandleErrors/>
+                <L7p:HandleErrors L7p:Usage="Required"
+                    includeIOException="false" variablePrefix="handleError">
+                    <L7p:FalseAssertion/>
+                </L7p:HandleErrors>
                 <L7p:FalseAssertion/>
                 <L7p:SslAssertion/>
                 <L7p:HttpRoutingAssertion>

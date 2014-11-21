@@ -32,8 +32,9 @@
             loopVariable="" variablePrefix="">
             <L7p:FalseAssertion/>
         </L7p:ForEachLoop>
-        <L7p:HandleErrors>
-            <L7p:Enabled booleanValue="false"/>
+        <L7p:HandleErrors L7p:Enabled="false" L7p:Usage="Required"
+            includeIOException="false" variablePrefix="handleError">
+            <L7p:FalseAssertion/>
         </L7p:HandleErrors>
         <L7p:FalseAssertion>
             <L7p:Enabled booleanValue="false"/>

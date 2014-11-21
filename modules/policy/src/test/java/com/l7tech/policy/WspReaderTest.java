@@ -5,10 +5,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -907,6 +904,16 @@ public class WspReaderTest {
         Assertion got = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(ass), WspReader.Visibility.omitDisabled);
         assertTrue(got instanceof ForEachLoopAssertion);
         assertEquals("things", ((ForEachLoopAssertion)got).getLoopVariableName());
+    }
+
+    @Test
+    public void testHandleErrorsRoundTrip() throws Exception {
+        final HandleErrorsAssertion ass = new HandleErrorsAssertion(Arrays.asList(new FalseAssertion()));
+
+        ass.setVariablePrefix("handle");
+        Assertion got = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(ass), WspReader.Visibility.omitDisabled);
+        assertTrue(got instanceof HandleErrorsAssertion);
+        assertEquals("handle", ((HandleErrorsAssertion)got).getVariablePrefix());
     }
 
     @Test

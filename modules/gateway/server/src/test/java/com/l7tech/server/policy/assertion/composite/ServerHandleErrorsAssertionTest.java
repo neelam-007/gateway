@@ -5,10 +5,7 @@ import com.google.common.collect.Lists;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.RaiseErrorAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.HandleErrorsAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.TestLicenseManager;
@@ -89,8 +86,34 @@ public class ServerHandleErrorsAssertionTest {
         hea.setVariablePrefix("foobar");
         ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
         AssertionStatus status = shea.checkRequest(context());
-        Assert.assertEquals(AssertionStatus.FALSIFIED, status);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
         Object m = context.getVariable("foobar.message");
         Assert.assertNotNull(m);
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testErrors02() throws Exception {
+        HandleErrorsAssertion hea = new HandleErrorsAssertion(Lists.newArrayList(new RaiseErrorAssertion(), new SetVariableAssertion("foo", "bar")));
+        hea.setVariablePrefix("foobar");
+        ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
+        AssertionStatus status = shea.checkRequest(context());
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+        Object m = context.getVariable("foobar.message");
+        Assert.assertNotNull(m);
+        //foo doesn't exist as execution would have stopped
+        context.getVariable("foo");
+    }
+
+    @Test
+    public void testErrors03() throws Exception {
+        HandleErrorsAssertion hea = new HandleErrorsAssertion(Lists.newArrayList(new SetVariableAssertion("foo", "bar"), new RaiseErrorAssertion()));
+        hea.setVariablePrefix("foobar");
+        ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
+        AssertionStatus status = shea.checkRequest(context());
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+        Object m = context.getVariable("foobar.message");
+        Assert.assertNotNull(m);
+        Object n = context.getVariable("foo");
+        Assert.assertEquals("bar", n);
     }
 }
