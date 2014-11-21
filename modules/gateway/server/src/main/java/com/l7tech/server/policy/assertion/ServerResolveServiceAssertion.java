@@ -46,7 +46,15 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Map<String, ?> vars = context.getVariableMap(varsUsed, getAudit());
 
+        final String variablePrefix = assertion.getPrefix();
+
+        if (null == variablePrefix || variablePrefix.isEmpty()) {
+            logAndAudit(AssertionMessages.RESOLVE_SERVICE_NO_PREFIX);
+            return AssertionStatus.FAILED;
+        }
+
         final PublishedService service;
+
         try {
             Collection<PublishedService> resolvedSet = serviceCache.resolve(ExpandVariables.process(assertion.getUri(), vars, getAudit()), null, null);
             if (resolvedSet == null || resolvedSet.isEmpty()) {
@@ -60,22 +68,20 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
             }
 
             service = resolvedSet.iterator().next();
-
         } catch (ServiceResolutionException e) {
-            getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_FAILED, new String[] { "Service resolution failed: " + ExceptionUtils.getMessage(e) }, e);
+            getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_FAILED,
+                    new String[] { ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         }
 
         final Goid serviceGoid = service.getGoid();
         context.getRequest().attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
-        getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_SUCCEEDED, "Resolved to service OID " + serviceGoid.toString());
-        String variablePrefix = assertion.getPrefix();
-        if ( variablePrefix == null ) { // TODO jwilliams: this should cause an error
-            variablePrefix = ResolveServiceAssertion.DEFAULT_VARIABLE_PREFIX;
-        }
+        getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_SUCCEEDED, serviceGoid.toString());
+
         context.setVariable(variablePrefix + "." + ResolveServiceAssertion.OID_SUFFIX, serviceGoid.toString());
         context.setVariable(variablePrefix + "." + ResolveServiceAssertion.NAME_SUFFIX, service.getName());
         context.setVariable(variablePrefix + "." + ResolveServiceAssertion.SOAP_SUFFIX, service.isSoap());
+
         return AssertionStatus.NONE;
     }
 }
