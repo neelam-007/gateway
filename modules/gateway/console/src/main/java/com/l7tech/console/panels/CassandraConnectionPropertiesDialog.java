@@ -38,6 +38,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(CassandraConnectionPropertiesDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.CassandraConnectionPropertiesDialog");
     private static final int MAX_TABLE_COLUMN_NUM = 2;
+    private static final String DEFAULT_NATIVE_TRANSPORT_PORT = "9042";
 
     private JPanel mainPanel;
     private JTextField nameTextField;
@@ -214,7 +215,11 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         nameTextField.setText(connection.getName());
         keyspaceTextField.setText(connection.getKeyspaceName());
         contactPointsTextField.setText(connection.getContactPoints());
-        portTextField.setText(connection.getPort());
+        if (connection.getPort().isEmpty()) {
+            portTextField.setText(DEFAULT_NATIVE_TRANSPORT_PORT);
+        } else {
+            portTextField.setText(connection.getPort());
+        }
         credentialsTextField.setText(connection.getUsername());
         if (connection.getPasswordGoid() != null) {
             securePasswordComboBox.setSelectedSecurePassword(connection.getPasswordGoid());
