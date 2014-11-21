@@ -75,7 +75,7 @@ public class ServerBufferDataAssertion extends AbstractServerAssertion<BufferDat
             return AssertionStatus.SERVER_ERROR;
         }
 
-        Pair<OrderedMemoryBuffer.BufferStatus, byte[]> result = buffer.appendAndMaybeExtract( bytes, maxSizeBytes, assertion.getMaxAgeMillis() );
+        Pair<Buffer.BufferStatus, byte[]> result = buffer.appendAndMaybeExtract( bytes, maxSizeBytes, assertion.getMaxAgeMillis() );
 
         Message extractedMessage = null;
         if ( result.right != null ) {

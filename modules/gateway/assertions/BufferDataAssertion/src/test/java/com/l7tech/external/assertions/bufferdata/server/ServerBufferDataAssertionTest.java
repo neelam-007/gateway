@@ -28,7 +28,6 @@ public class ServerBufferDataAssertionTest {
 
     @BeforeClass
     public static void setUp() {
-        OrderedMemoryBuffer.timeSource = timeSource;
         NonBlockingMemoryBuffer.timeSource = timeSource;
     }
 

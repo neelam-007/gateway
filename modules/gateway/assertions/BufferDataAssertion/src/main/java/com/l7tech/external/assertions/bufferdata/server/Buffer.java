@@ -8,6 +8,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface Buffer {
     /**
+     * @return the buffer name.
+     */
+    @NotNull
+    String getName();
+
+    /**
      * Append a byte array to the buffer, possibly first extracting the current buffer contents if it would thereby
      * become too full, or if the oldest buffered data is currently too old.
      *
@@ -29,6 +35,14 @@ public interface Buffer {
      * Not safe if combined concurrently with other calls.
      */
     void discard();
+
+    /**
+     * Discard buffer contents if the buffer's last used time is before the specified last used time.
+     *
+     * @param minLastUsedTime oldest time whose buffers we are willing to keep.
+     * @return true if the buffer was discarded.
+     */
+    boolean discardIfLastUsedBefore( long minLastUsedTime );
 
     /**
      * Used to return the status of a buffer after an appendAndMaybeExtract.

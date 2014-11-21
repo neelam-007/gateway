@@ -27,10 +27,21 @@ public class NonBlockingMemoryBuffer implements Buffer {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final ConcurrentLinkedQueue<byte[]> queue = new ConcurrentLinkedQueue<>();
     private final AtomicLong bufferSize = new AtomicLong();
+    private final AtomicLong lastUsedTime = new AtomicLong();
+    private final String name;
     private long lastExtractTime;
 
-    public NonBlockingMemoryBuffer() {
-        this.lastExtractTime = timeSource.currentTimeMillis();
+    public NonBlockingMemoryBuffer( String name ) {
+        this.name = name;
+        long now = timeSource.currentTimeMillis();
+        this.lastUsedTime.set( now );
+        this.lastExtractTime = now;
+    }
+
+    @NotNull
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -41,6 +52,7 @@ public class NonBlockingMemoryBuffer implements Buffer {
         }
 
         long now = timeSource.currentTimeMillis();
+        lastUsedTime.set( now );
         int recSize = dataToAppend.length;
         long age;
         boolean wasFull;
@@ -121,5 +133,24 @@ public class NonBlockingMemoryBuffer implements Buffer {
     public void discard() {
         queue.clear();
         bufferSize.set( 0 );
+    }
+
+    @Override
+    public boolean discardIfLastUsedBefore( long minLastUsedTime ) {
+        boolean ret = false;
+
+        try {
+            lock.writeLock().lock();
+
+            if ( lastUsedTime.get() < minLastUsedTime ) {
+                discard();
+                ret = true;
+            }
+
+        } finally {
+            lock.writeLock().unlock();
+        }
+
+        return ret;
     }
 }

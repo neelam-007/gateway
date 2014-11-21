@@ -102,6 +102,10 @@ public class BufferDataAssertion extends Assertion implements UsesVariables, Set
     public static final String CLUSTER_PROP_MAX_BUFFER_SIZE = "bufferdata.maxBufferSize";
     public static final Long DEFAULT_MAX_BUFFER_SIZE = 500000000L;
 
+    public static final String PARAM_MAX_IDLE_BUFFER_AGE = "bufferdataMaxIdleBufferAge";
+    public static final String CLUSTER_PROP_MAX_IDLE_BUFFER_AGE = "bufferdata.maxIdleBufferAge";
+    public static final Long DEFAULT_MAX_IDLE_BUFFER_AGE = 86400L;
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -110,9 +114,15 @@ public class BufferDataAssertion extends Assertion implements UsesVariables, Set
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
         props.put( CLUSTER_PROP_MAX_BUFFER_SIZE, new String[] {
-                "The largest maximum buffer size that may be specified for the Buffer Data Assertion.",
+                "The largest maximum buffer size that may be specified for the Buffer Data Assertion. (bytes, default=500000000)",
                 Long.toString( DEFAULT_MAX_BUFFER_SIZE )
         });
+        props.put( CLUSTER_PROP_MAX_IDLE_BUFFER_AGE, new String[] {
+                "The maximum amount of time an idle buffer created by the Buffer Data Assertion is kept in memory before " +
+                        "being discarded for going unused. (seconds, default=86400)",
+                Long.toString( DEFAULT_MAX_IDLE_BUFFER_AGE )
+        });
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
