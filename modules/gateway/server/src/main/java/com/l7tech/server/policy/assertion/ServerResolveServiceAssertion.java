@@ -75,7 +75,9 @@ public class ServerResolveServiceAssertion extends AbstractServerAssertion<Resol
         }
 
         final Goid serviceGoid = service.getGoid();
-        context.getRequest().attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
+        if (context.getRequest().getKnob(HasServiceId.class) == null) {
+            context.getRequest().attachKnob(HasServiceId.class, new HasServiceIdImpl(serviceGoid));
+        }
         getAudit().logAndAudit(AssertionMessages.RESOLVE_SERVICE_SUCCEEDED, serviceGoid.toString());
 
         context.setVariable(variablePrefix + "." + ResolveServiceAssertion.OID_SUFFIX, serviceGoid.toString());
