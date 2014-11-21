@@ -4,17 +4,12 @@ import com.l7tech.gateway.api.CassandraConnectionMO;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.SampleMessage;
+
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.cassandra.CassandraConnectionEntityManager;
-import com.l7tech.server.folder.FolderManager;
-import com.l7tech.server.policy.PolicyVersionManager;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -55,10 +50,10 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc2.setId(getGoid().toString());
         cc2.setName("Test Cassandra connection 2");
         cc2.setKeyspaceName("test.keyspace2");
-        cc2.setContactPoints("localhost");
-        cc2.setPort("9042");
-        cc2.setUsername("gateway");
-        cc2.setCompression("ProtocolOptions.Compression.NONE");
+        cc2.setContactPoints("127.0.0.1");
+        cc2.setPort("9043");
+        cc2.setUsername("gateway2");
+        cc2.setCompression("ProtocolOptions.Compression.LZ4");
         cc2.setSsl(true);
         cc2.setEnabled(true);
         cassandraConnections.add(cc2);
@@ -97,6 +92,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setEnabled(true);
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
 
         cassandraConnectionMOs.add(cassandraConnectionMO);
 
@@ -117,6 +113,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setPort("1234");
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
@@ -131,6 +128,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setPort("4321");
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test2", "test2").map());
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
@@ -143,14 +141,16 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         CollectionUtils.MapBuilder<CassandraConnectionMO, Functions.BinaryVoid<CassandraConnectionMO, RestResponse>> builder = CollectionUtils.MapBuilder.builder();
 
         CassandraConnectionMO cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
-        cassandraConnectionMO.setName("UnCreatable Sample Message");
+        cassandraConnectionMO.setName("UnCreatable Cassandra connection");
         cassandraConnectionMO.setKeyspace("test.keyspace");
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("9042");
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setEnabled(true);
+        cassandraConnectionMO.setSecurityZoneId("12345");
 
         builder.put(cassandraConnectionMO, new Functions.BinaryVoid<CassandraConnectionMO, RestResponse>() {
             @Override
@@ -175,8 +175,10 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setPort("1234");
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setEnabled(true);
+        cassandraConnectionMO.setSecurityZoneId("12345");
 
         builder.put(cassandraConnectionMO, new Functions.BinaryVoid<CassandraConnectionMO, RestResponse>() {
             @Override
@@ -282,6 +284,8 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
                             }
                         }))
                 .put("name=banName", Collections.<String>emptyList())
+                .put("name=" + URLEncoder.encode(cassandraConnections.get(0).getName()) + "&name=" + URLEncoder.encode(cassandraConnections.get(1).getName()) + "&sort=name&order=desc",
+                        Arrays.asList(cassandraConnections.get(1).getId(), cassandraConnections.get(0).getId()))
                 .put("keyspace=" + URLEncoder.encode(cassandraConnections.get(0).getKeyspaceName()), Arrays.asList(cassandraConnections.get(0).getId()))
                 .put("keyspace=" + URLEncoder.encode(cassandraConnections.get(0).getKeyspaceName()) + "&keyspace=" + URLEncoder.encode(cassandraConnections.get(1).getKeyspaceName()),
                         Functions.map(cassandraConnections.subList(0, 2), new Functions.Unary<String, CassandraConnection>() {
@@ -290,8 +294,10 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
                                 return cassandraConnection.getId();
                             }
                         }))
-                .put("name=" + URLEncoder.encode(cassandraConnections.get(0).getName()) + "&name=" + URLEncoder.encode(cassandraConnections.get(1).getName()) + "&sort=name&order=desc",
-                        Arrays.asList(cassandraConnections.get(1).getId(), cassandraConnections.get(0).getId()))
+                .put("contactPoint=" + URLEncoder.encode(cassandraConnections.get(0).getContactPoints()), Arrays.asList(cassandraConnections.get(0).getId()))
+                .put("port=" + URLEncoder.encode(cassandraConnections.get(0).getPort()), Arrays.asList(cassandraConnections.get(0).getId()))
+                .put("username=" + URLEncoder.encode(cassandraConnections.get(0).getUsername()), Arrays.asList(cassandraConnections.get(0).getId()))
+                .put("compression=" + URLEncoder.encode(cassandraConnections.get(0).getCompression()), Arrays.asList(cassandraConnections.get(0).getId()))
                 .map();
     }
 }

@@ -11,7 +11,6 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.rest.SpringBean;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 
 import javax.inject.Singleton;
@@ -91,7 +90,6 @@ public class CassandraConnectionResource extends RestEntityResource<CassandraCon
      * @param compressions    Compression filter
      * @param isSsl           SSL filter
      * @param enabled         Enabled filter
-     * @param securityZoneIds Security zone ID filter
      * @return A list of Cassandra connections. If the list is empty then no Cassandra connections were found.
      */
     @SuppressWarnings("unchecked")
@@ -106,21 +104,20 @@ public class CassandraConnectionResource extends RestEntityResource<CassandraCon
             @QueryParam("username") List<String> usernames,
             @QueryParam("compression") List<String> compressions,
             @QueryParam("ssl") Boolean isSsl,
-            @QueryParam("enabled") Boolean enabled,
-            @QueryParam("securityZone.id") List<Goid> securityZoneIds) {
+            @QueryParam("enabled") Boolean enabled) {
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(),
-                Arrays.asList("name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "enabled", "securityZone.id"));
+                Arrays.asList("name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "enabled"));
 
         CollectionUtils.MapBuilder<String, List<Object>> filters = CollectionUtils.MapBuilder.builder();
         if (names != null && !names.isEmpty()) {
             filters.put("name", (List) names);
         }
         if (keyspaces != null && !keyspaces.isEmpty()) {
-            filters.put("keyspace", (List) keyspaces);
+            filters.put("keyspaceName", (List) keyspaces);
         }
         if (contactPoints != null && !contactPoints.isEmpty()) {
-            filters.put("contactPoint", (List) contactPoints);
+            filters.put("contactPoints", (List) contactPoints);
         }
         if (ports != null && !ports.isEmpty()) {
             filters.put("port", (List) ports);
@@ -136,9 +133,6 @@ public class CassandraConnectionResource extends RestEntityResource<CassandraCon
         }
         if (enabled != null) {
             filters.put("enabled", (List) Arrays.asList(enabled));
-        }
-        if (securityZoneIds != null && !securityZoneIds.isEmpty()) {
-            filters.put("securityZone.id", (List) securityZoneIds);
         }
         return super.list(sort, ascendingSort,
                 filters.map());
