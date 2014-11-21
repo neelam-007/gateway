@@ -81,10 +81,6 @@ public class ServerBufferDataAssertion extends AbstractServerAssertion<BufferDat
         context.setVariable( assertion.prefix( "wasExtracted" ), result.left.isWasExtracted() );
         context.setVariable( assertion.prefix( "wasFull" ), result.left.isWasFull() );
 
-        if ( result.right != null ) {
-            return AssertionStatus.FALSIFIED;
-        }
-
         return AssertionStatus.NONE;
     }
 

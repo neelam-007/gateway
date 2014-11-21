@@ -54,18 +54,21 @@ public class ServerBufferDataAssertionTest {
         context.setVariable( "csv", "a|0|\n" );
         AssertionStatus result = sass.checkRequest( context );
         assertEquals( AssertionStatus.NONE, result );
+        assertFalse( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         assertNullOrNotSet( context, "buffer.extractedMessage" );
 
         // 5 more bytes
         context.setVariable( "csv", "b|1|\n" );
         result = sass.checkRequest( context );
         assertEquals( AssertionStatus.NONE, result );
+        assertFalse( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         assertNullOrNotSet( context, "buffer.extractedMessage" );
 
         // 5 more bytes
         context.setVariable( "csv", "c|2|\n" );
         result = sass.checkRequest( context );
         assertEquals( AssertionStatus.NONE, result );
+        assertFalse( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         assertNullOrNotSet( context, "buffer.extractedMessage" );
 
         // 5 more bytes -- buffer now exactly perfectly full, but extract not triggered until
@@ -73,12 +76,14 @@ public class ServerBufferDataAssertionTest {
         context.setVariable( "csv", "d|3|\n" );
         result = sass.checkRequest( context );
         assertEquals( AssertionStatus.NONE, result );
+        assertFalse( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         assertNullOrNotSet( context, "buffer.extractedMessage" );
 
         // we now overflow the buffer.  existing 20 bytes extracted, new write becomes start of new buffer
         context.setVariable( "csv", "e|4|\n" );
         result = sass.checkRequest( context );
-        assertEquals( AssertionStatus.FALSIFIED, result );
+        assertEquals( AssertionStatus.NONE, result );
+        assertTrue( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         Message extract = (Message) context.getVariable( "buffer.extractedMessage" );
         assertNotNull( extract );
 
@@ -91,7 +96,8 @@ public class ServerBufferDataAssertionTest {
         context.setVariable( "csv", "" );
         timeSource.advanceByMillis( 8640000L );
         result = sass.checkRequest( context );
-        assertEquals( AssertionStatus.FALSIFIED, result );
+        assertEquals( AssertionStatus.NONE, result );
+        assertTrue( (Boolean) context.getVariable( "buffer.wasExtracted" ) );
         extract = (Message) context.getVariable( "buffer.extractedMessage" );
         assertNotNull( extract );
 
