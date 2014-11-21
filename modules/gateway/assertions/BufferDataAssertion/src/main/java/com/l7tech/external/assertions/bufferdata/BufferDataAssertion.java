@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.bufferdata;
 
 import com.l7tech.external.assertions.bufferdata.console.BufferDataPropertiesDialog;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
@@ -97,17 +98,21 @@ public class BufferDataAssertion extends Assertion implements UsesVariables, Set
     //
     private static final String META_INITIALIZED = BufferDataAssertion.class.getName() + ".metadataInitialized";
 
+    public static final String PARAM_MAX_BUFFER_SIZE = "bufferdataMaxBufferSize";
+    public static final String CLUSTER_PROP_MAX_BUFFER_SIZE = "bufferdata.maxBufferSize";
+    public static final Long DEFAULT_MAX_BUFFER_SIZE = 500000000L;
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
+        Map<String, String[]> props = new HashMap<>();
+        props.put( CLUSTER_PROP_MAX_BUFFER_SIZE, new String[] {
+                "The largest maximum buffer size that may be specified for the Buffer Data Assertion.",
+                Long.toString( DEFAULT_MAX_BUFFER_SIZE )
+        });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI

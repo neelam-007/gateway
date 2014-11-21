@@ -11,9 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,11 +24,20 @@ import java.util.Map;
  */
 public class ServerBufferDataAssertion extends AbstractServerAssertion<BufferDataAssertion> {
     private final String[] variablesUsed;
+    private final long maxSizeBytes;
 
     public ServerBufferDataAssertion( final BufferDataAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
 
         this.variablesUsed = assertion.getVariablesUsed();
+
+        long maxSize = assertion.getMaxSizeBytes();
+        long maxSizeLimit = ConfigFactory.getLongProperty( BufferDataAssertion.PARAM_MAX_BUFFER_SIZE, Integer.MAX_VALUE - 1 );
+        if ( maxSize > maxSizeLimit ) {
+            logger.warning( "Capping maximum buffer size to configured limit of " + maxSize );
+            maxSize = maxSizeLimit;
+        }
+        this.maxSizeBytes = maxSize;
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -63,12 +70,12 @@ public class ServerBufferDataAssertion extends AbstractServerAssertion<BufferDat
         }
 
         // Sanity check
-        if ( bytes.length > assertion.getMaxSizeBytes() ) {
-            getAudit().logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Data chunk size " + bytes.length + " exceeds entire buffer maximum size " + assertion.getMaxSizeBytes() );
+        if ( bytes.length > maxSizeBytes ) {
+            getAudit().logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Data chunk size " + bytes.length + " exceeds entire buffer maximum size " + maxSizeBytes );
             return AssertionStatus.SERVER_ERROR;
         }
 
-        Pair<OrderedMemoryBuffer.BufferStatus, byte[]> result = buffer.appendAndMaybeExtract( bytes, assertion.getMaxSizeBytes(), assertion.getMaxAgeMillis() );
+        Pair<OrderedMemoryBuffer.BufferStatus, byte[]> result = buffer.appendAndMaybeExtract( bytes, maxSizeBytes, assertion.getMaxAgeMillis() );
 
         Message extractedMessage = null;
         if ( result.right != null ) {
