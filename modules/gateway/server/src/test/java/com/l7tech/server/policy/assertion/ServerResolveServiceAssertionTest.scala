@@ -66,6 +66,24 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_FAILED), Matchers.any(classOf[Array[String]]), Matchers.any(classOf[Throwable]))
       there was no(audit).logAndAudit(any, Matchers.anyVararg[String]())
     }
+
+    "fail if service does not set name" in new DefaultScope {
+      sass.serviceCache.resolve("/foo", null, null) returns serviceList(service)
+      sass.checkRequest(pec) must be equalTo NONE
+      pec.getVariable("resolvedService.name") must be equalTo "aservice"
+    }
+
+    "fail if service does not set oid" in new DefaultScope {
+      sass.serviceCache.resolve("/foo", null, null) returns serviceList(service)
+      sass.checkRequest(pec) must be equalTo NONE
+      pec.getVariable("resolvedService.oid") must be equalTo goid.toString()
+    }
+
+    "fail if service does not set soap" in new DefaultScope {
+      sass.serviceCache.resolve("/foo", null, null) returns serviceList(service)
+      sass.checkRequest(pec) must be equalTo NONE
+      pec.getVariable("resolvedService.soap") mustEqual true
+    }
   }
 
   trait DefaultScope extends Scope {
@@ -82,7 +100,10 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
     val pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response)
 
     val service = newPublishedService
-    service.setGoid(new Goid(0,2424))
+    val goid = new Goid(0,2424)
+    service.setGoid(goid)
+    service.setName("aservice")
+    service.setSoap(true)
 
     def newPublishedService = new PublishedService()
 
