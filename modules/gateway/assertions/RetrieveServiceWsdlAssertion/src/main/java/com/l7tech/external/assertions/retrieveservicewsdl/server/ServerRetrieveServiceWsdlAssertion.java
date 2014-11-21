@@ -274,12 +274,6 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private String getRoutingUri(PublishedService service) {
-        String routingUri = service.getRoutingUri();
-
-        if (null == routingUri || routingUri.isEmpty()) {
-            routingUri = SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
-        }
-
-        return routingUri;
+        return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
     }
 }
