@@ -10,11 +10,15 @@ import com.l7tech.gui.NumberField;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSupport<BufferDataAssertion> {
     private JPanel contentPane;
@@ -25,7 +29,35 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JTextArea explanatoryText;
     private JScrollPane explanatoryScrollPane;
     private JPanel targetVariablePanelPanel;
+    private JComboBox<TimeUnit> timeUnitComboBox;
+    private JComboBox<StorageUnit> storageUnitComboBox;
     private TargetVariablePanel variableNameField;
+
+    enum StorageUnit {
+        BYTES( 1, "bytes" ),
+        KILOBYTES( 1024, "kilobytes" ),
+        MEGABYTES( 1024 * 1024, "megabytes" );
+
+        private final int bytesPerUnit;
+        private final String displayName;
+
+        StorageUnit( int bytesPerUnit, String displayName ) {
+            this.bytesPerUnit = bytesPerUnit;
+            this.displayName = displayName;
+        }
+
+        public int getBytesPerUnit() {
+            return bytesPerUnit;
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+    }
+
+    static final StorageUnit[] STORAGE_UNITS = new StorageUnit[] { StorageUnit.BYTES, StorageUnit.KILOBYTES, StorageUnit.MEGABYTES };
+    static final TimeUnit[] TIME_UNITS = new TimeUnit[] { TimeUnit.MILLIS, TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS };
 
     public BufferDataPropertiesDialog( Frame owner, final Assertion assertion ) {
         super( BufferDataAssertion.class, owner, assertion, true );
@@ -46,9 +78,50 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     public void setData( BufferDataAssertion a ) {
         bufferNameTextField.setText( a.getBufferName() );
         variableNameField.setVariable( a.getNewDataVarName() );
-        maximumBufferSizeTextField.setText( Long.toString( a.getMaxSizeBytes() ) );
-        maximumBufferTimeTextField.setText( Long.toString( a.getMaxAgeMillis() ) );
+
+        long maxSizeBytes = a.getMaxSizeBytes();
+        StorageUnit storageUnit = selectBestStorageUnit( maxSizeBytes );
+        maxSizeBytes /= storageUnit.getBytesPerUnit();
+        maximumBufferSizeTextField.setText( Long.toString( maxSizeBytes ) );
+
+        long maxAgeMillis = a.getMaxAgeMillis();
+        TimeUnit timeUnit = selectBestTimeUnit( maxAgeMillis );
+        maxAgeMillis /= timeUnit.getMultiplier();
+
+        maximumBufferTimeTextField.setText( Long.toString( maxAgeMillis ) );
         variablePrefixTextField.setText( a.getVariablePrefix() );
+    }
+
+    private TimeUnit selectBestTimeUnit( long t ) {
+        TimeUnit ret = TimeUnit.MILLIS;
+
+        java.util.List<TimeUnit> units = new ArrayList<>( Arrays.asList( TIME_UNITS ) );
+        Collections.reverse( units );
+        for ( TimeUnit unit : units ) {
+            if ( t % unit.getMultiplier() == 0 ) {
+                ret = unit;
+                break;
+            }
+        }
+
+        timeUnitComboBox.setSelectedItem( ret );
+        return ret;
+    }
+
+    private StorageUnit selectBestStorageUnit( long s ) {
+        StorageUnit ret = StorageUnit.BYTES;
+
+        java.util.List<StorageUnit> units = new ArrayList<>( Arrays.asList( STORAGE_UNITS ) );
+        Collections.reverse( units );
+        for ( StorageUnit unit : units ) {
+            if ( s % unit.getBytesPerUnit() == 0 ) {
+                ret = unit;
+                break;
+            }
+        }
+
+        storageUnitComboBox.setSelectedItem( ret );
+        return ret;
     }
 
     @Override
@@ -59,8 +132,15 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             throw new ValidationException( err );
         a.setNewDataVarName( variableNameField.getVariable() );
         a.setExtractIfFull( true );
-        a.setMaxAgeMillis( parseLong( "Maximum Buffer Time", maximumBufferTimeTextField.getText(), Long.MAX_VALUE ) );
-        a.setMaxSizeBytes( parseLong( "Maximum Buffer Size", maximumBufferSizeTextField.getText(), getConfiguredGlobalBufferSizeLimit() ) );
+
+        TimeUnit timeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
+        long timeUnitMultiplier = timeUnit == null ? 1 : timeUnit.getMultiplier();
+        a.setMaxAgeMillis( parseLong( "Maximum Buffer Time", maximumBufferTimeTextField.getText(), timeUnitMultiplier, Long.MAX_VALUE, "milliseconds" ) );
+
+        StorageUnit storageUnit = (StorageUnit) storageUnitComboBox.getSelectedItem();
+        long storageUnitMultiplier = storageUnit == null ? 1 : storageUnit.getBytesPerUnit();
+        a.setMaxSizeBytes( parseLong( "Maximum Buffer Size", maximumBufferSizeTextField.getText(), storageUnitMultiplier, getConfiguredGlobalBufferSizeLimit(), "bytes" ) );
+
         String prefix = variablePrefixTextField.getText();
         if ( !VariableMetadata.isNameValid( prefix, false ) )
             throw new ValidationException( "Invalid prefix" );
@@ -68,13 +148,14 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         return a;
     }
 
-    long parseLong( String label, String str, long limit ) {
+    long parseLong( String label, String str, long multiplier, long limit, String unitLabel ) {
         try {
             long val = Long.parseLong( str );
             if ( val < 0 )
                 throw new ValidationException( "Value of " + label + " must be nonnegative" );
+            val *= multiplier;
             if ( val > limit )
-                throw new ValidationException( "Value of " + label + " exceeds limit of " + limit );
+                throw new ValidationException( "Value of " + label + " exceeds limit of " + limit + " " + unitLabel );
 
             return val;
 
@@ -110,6 +191,9 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 return s != null && VariableMetadata.isNameValid( s );
             }
         } ) );
+
+        storageUnitComboBox.setModel( new DefaultComboBoxModel<>( STORAGE_UNITS ) );
+        timeUnitComboBox.setModel( new DefaultComboBoxModel<>( TIME_UNITS ) );
 
         return contentPane;
     }
