@@ -1,14 +1,18 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class PolicyBundleInstallerEvent extends PolicyBundleEvent {
 
-    public PolicyBundleInstallerEvent(final Object source,
-                                      final PolicyBundleInstallerContext context) {
+    public PolicyBundleInstallerEvent(@NotNull final Object source,
+                                      @NotNull final PolicyBundleInstallerContext context,
+                                      @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
         super(source);
         this.context = context;
+        this.policyBundleInstallerCallback = policyBundleInstallerCallback;
     }
 
     /**
@@ -21,8 +25,14 @@ public abstract class PolicyBundleInstallerEvent extends PolicyBundleEvent {
         return context;
     }
 
+    @Nullable
+    public PolicyBundleInstallerCallback getPolicyBundleInstallerCallback() {
+        return policyBundleInstallerCallback;
+    }
+
     // - PRIVATE
     @NotNull
     private final PolicyBundleInstallerContext context;
-
+    @Nullable
+    private final PolicyBundleInstallerCallback policyBundleInstallerCallback;
 }

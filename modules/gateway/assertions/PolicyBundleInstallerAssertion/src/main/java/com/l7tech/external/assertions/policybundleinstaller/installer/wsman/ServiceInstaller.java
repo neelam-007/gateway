@@ -91,7 +91,7 @@ public class ServiceInstaller extends WsmanInstaller {
         } else {
             try {
                 installServices(oldToNewFolderIds, contextOldPolicyGuidsToNewGuids, serviceBundle, policyInstaller);
-            } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
+            } catch (PolicyBundleInstallerCallback.CallbackException e) {
                 throw new InstallationException(e);
             }
         }
@@ -107,7 +107,7 @@ public class ServiceInstaller extends WsmanInstaller {
      * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      *
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse
-     * @throws com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback.PolicyUpdateException
+     * @throws com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback.CallbackException
      *
      * @throws InterruptedException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
@@ -118,7 +118,7 @@ public class ServiceInstaller extends WsmanInstaller {
                                  @NotNull final PolicyInstaller policyInstaller)
             throws BundleResolver.InvalidBundleException,
             UnexpectedManagementResponse,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
+            PolicyBundleInstallerCallback.CallbackException,
             InterruptedException,
             AccessDeniedManagementResponse {
 

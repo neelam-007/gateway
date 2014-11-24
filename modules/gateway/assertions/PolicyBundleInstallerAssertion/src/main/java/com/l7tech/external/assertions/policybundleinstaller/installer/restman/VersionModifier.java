@@ -4,6 +4,7 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -22,7 +23,7 @@ public class VersionModifier {
     private final RestmanMessage restmanMessage;
     private final String versionModifier;
 
-    public VersionModifier(@NotNull RestmanMessage restmanMessage, String versionModifier) {
+    public VersionModifier(@NotNull final RestmanMessage restmanMessage, @Nullable final String versionModifier) {
         this.restmanMessage = restmanMessage;
         this.versionModifier = versionModifier;
     }

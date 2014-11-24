@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
@@ -35,7 +34,7 @@ public class RestmanMessageTest {
 
     @Test
     public void errorResponse() throws Exception {
-        RestmanMessage responseMessage = new RestmanMessage(XmlUtil.stringToDocument(ERROR_RESPONSE_XML));
+        RestmanMessage responseMessage = new RestmanMessage(ERROR_RESPONSE_XML);
 
         assertTrue(responseMessage.isErrorResponse());
 
@@ -49,7 +48,7 @@ public class RestmanMessageTest {
 
     @Test
     public void validRequest() throws Exception {
-        final RestmanMessage requestMessage = new RestmanMessage(XmlUtil.stringToDocument(validRequestXml));
+        final RestmanMessage requestMessage = new RestmanMessage(validRequestXml);
 
         // xml in should be same as xml out.  note: newline inserted by XmlUtil.nodeToString(...) is just \n, vs \r\n in validRequestXml
         assertEquals(validRequestXml.replace("\r\n", "\n"), requestMessage.getAsString());
@@ -89,7 +88,7 @@ public class RestmanMessageTest {
 
     @Test
     public void mappingErrorResponse() throws Exception {
-        final RestmanMessage responseMessage = spy(new RestmanMessage(XmlUtil.stringToDocument(errorMappingResponseXml)));
+        final RestmanMessage responseMessage = spy(new RestmanMessage(errorMappingResponseXml));
 
         // test response should have some mapping errors
         assertTrue(responseMessage.hasMappingError());

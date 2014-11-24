@@ -1,0 +1,6 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2012/09/policy-bundle" >
+    <l7:Id>70c24d2fb9ea3dae7687cae51e98e7ac</l7:Id>
+    <l7:Version>2.1.1</l7:Version>
+    <l7:Name>MB OAuth Manager</l7:Name>
+    <l7:Description>Manager utility for Client and Token Store</l7:Description>
+</l7:Bundle>

@@ -7,8 +7,8 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.policy.bundle.ssgman.BaseGatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
@@ -43,7 +43,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
     private final RestmanInvoker restmanInvoker;
 
     @Nullable
-    private PreBundleSavePolicyCallback preImportCallback;
+    private PolicyBundleInstallerCallback policyBundleInstallerCallback;
 
     public MigrationBundleInstaller(@NotNull final PolicyBundleInstallerContext context,
                                     @NotNull final Functions.Nullary<Boolean> cancelledCallback,
@@ -52,11 +52,11 @@ public class MigrationBundleInstaller extends BaseInstaller {
         this.restmanInvoker = new RestmanInvoker(cancelledCallback, gatewayManagementInvoker);
     }
 
-    public void setPreImportCallback(@Nullable PreBundleSavePolicyCallback preImportCallback) {
-        this.preImportCallback = preImportCallback;
+    public void setPolicyBundleInstallerCallback(@Nullable PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+        this.policyBundleInstallerCallback = policyBundleInstallerCallback;
     }
 
-    public void dryRunInstall(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, AccessDeniedManagementResponse {
+    public void dryRunInstall(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, AccessDeniedManagementResponse, PolicyBundleInstallerCallback.CallbackException {
         checkInterrupted();
 
         final BundleInfo bundleInfo = context.getBundleInfo();
@@ -66,6 +66,11 @@ public class MigrationBundleInstaller extends BaseInstaller {
         if (bundle != null) {
             logger.finest("Dry run checking by performing a test bundle import without committing.");
             checkInterrupted();
+
+            // pre migration import callback
+            if (policyBundleInstallerCallback != null) {
+                policyBundleInstallerCallback.preMigrationBundleImport(bundleInfo, bundle);
+            }
 
             try {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
@@ -154,10 +159,10 @@ public class MigrationBundleInstaller extends BaseInstaller {
             logger.finest("Installing bundle.");
 
             // pre migration import callback
-            if (preImportCallback != null) {
+            if (policyBundleInstallerCallback != null) {
                 try {
-                    preImportCallback.prePublishCallback(bundleInfo, bundle.getDocumentElement(), bundle);
-                } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
+                    policyBundleInstallerCallback.preMigrationBundleImport(bundleInfo, bundle);
+                } catch (PolicyBundleInstallerCallback.CallbackException e) {
                     throw new InstallationException(e);
                 }
             }

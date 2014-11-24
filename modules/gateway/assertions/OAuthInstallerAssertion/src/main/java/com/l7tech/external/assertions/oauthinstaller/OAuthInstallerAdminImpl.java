@@ -19,8 +19,8 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerAdminAbstractImpl;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyUtils;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
@@ -54,6 +54,7 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
 
 public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractImpl implements OAuthInstallerAdmin {
     private static final Logger logger = Logger.getLogger(OAuthInstallerAdminImpl.class.getName());
+    public static final String OAUTH_SLASH_CLIENTS = "oauth/clients";
 
     @SuppressWarnings("SpringJavaAutowiringInspection")
     @Inject
@@ -66,7 +67,7 @@ public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractI
     private JdbcConnectionManager jdbcConnectionManager;
     @Inject
     private SecurePasswordManager securePasswordManager;
-    private boolean integrateApiPortal;
+    protected boolean integrateApiPortal;
 
     public OAuthInstallerAdminImpl(final String bundleBaseName, final String bundleInfoFileName, final String namespaceInstallerVersion, final ApplicationEventPublisher appEventPublisher) throws PolicyBundleInstallerException {
         super(bundleBaseName, bundleInfoFileName, namespaceInstallerVersion, appEventPublisher);
@@ -446,75 +447,85 @@ public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractI
 
     @NotNull
     @Override
-    protected PreBundleSavePolicyCallback getSavePolicyCallback(final String installationPrefix) throws PolicyBundleInstallerException {
-        return new PreBundleSavePolicyCallback() {
+    protected PolicyBundleInstallerCallback getPolicyBundleInstallerCallback(final String installationPrefix) throws PolicyBundleInstallerException {
+        return new PolicyBundleInstallerCallback() {
             @Override
-            public void prePublishCallback(@NotNull BundleInfo bundleInfo, @NotNull Element entityDetailElmReadOnly, @NotNull Document writeablePolicyDoc) throws PolicyUpdateException {
+            public void prePolicySave(@NotNull BundleInfo bundleInfo, @NotNull Element entityDetailElmReadOnly, @NotNull Document writeablePolicyDoc) throws CallbackException {
 
                 // add in the version comment for every policy saved, whether it's a policy fragment or a service policy.
-                final String version = bundleInfo.getVersion();
-                final CommentAssertion ca = new CommentAssertion("Component version " + version + " installed by OAuth installer version " + getVersion());
-
-                final Element governingAllAssertion = XmlUtil.findFirstChildElement(writeablePolicyDoc.getDocumentElement());
-                final Element firstChild = XmlUtil.findFirstChildElement(governingAllAssertion);
-
-                final Document assertionDoc = WspWriter.getPolicyDocument(ca);
-                final Element commentDocElement = assertionDoc.getDocumentElement();
-                final Element versionCommentAssertion = XmlUtil.findFirstChildElement(commentDocElement);
-                final Node node = firstChild.getParentNode().getOwnerDocument().importNode(versionCommentAssertion, true);
-                governingAllAssertion.insertBefore(node, firstChild);
+                addVersionCommentAssertionsToPolicy(bundleInfo, writeablePolicyDoc.getDocumentElement());
 
                 if (installationPrefix != null) {
-                    // if we have prefixed the installation, then we need to be able to update routing assertions to route to the
-                    // prefixed URIs
+                    // if we have prefixed the installation, then we need to be able to update routing assertions to route to the prefixed URIs
 
                     // 1 - find routing URIs
-                    final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(writeablePolicyDoc.getDocumentElement());
-                    for (Element protectedUrl : protectedUrls) {
-                        final String routingUrlValue = protectedUrl.getAttribute("stringValue");
-                        final String updatedHostValue = getUpdatedHostValue(installationPrefix, routingUrlValue);
-                        if (updatedHostValue != null) {
-                            protectedUrl.setAttribute("stringValue", updatedHostValue);
-                            logger.fine("Updated routing URL from '" + routingUrlValue + "' to '" + updatedHostValue + "'");
-                        }
-                    }
+                    updateProtectedServiceUrlForHost(writeablePolicyDoc.getDocumentElement(), installationPrefix);
 
                     // 2 - find context variables
-                    final List<Element> contextVariables = PolicyUtils.findContextVariables(writeablePolicyDoc.getDocumentElement());
-                    for (Element contextVariable : contextVariables) {
-                        final Element variableToSetElm;
-                        final Element base64ExpressionElm;
-                        try {
-                            base64ExpressionElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
-                            variableToSetElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
-                        } catch (TooManyChildElementsException | MissingRequiredElementException e) {
-                            throw new PolicyUpdateException("Problem finding variable value: " + ExceptionUtils.getMessage(e));
-                        }
-                        final String variableName = variableToSetElm.getAttribute("stringValue");
-                        if (!variableName.startsWith("host_")) {
-                            final String base64Value = base64ExpressionElm.getAttribute("stringValue");
-                            final String decodedValue = new String(HexUtils.decodeBase64(base64Value, true), Charsets.UTF8);
-                            final String updatedHostValue = getUpdatedHostValue(installationPrefix, decodedValue);
-                            if (updatedHostValue != null) {
-                                base64ExpressionElm.setAttribute("stringValue", HexUtils.encodeBase64(HexUtils.encodeUtf8(updatedHostValue), true));
-                                logger.fine("Updated context variable value from from '" + decodedValue + "' to '" + updatedHostValue + "'");
-                            }
-                        }
-                    }
+                    updateBase64ContextVariableExpressionForHost(writeablePolicyDoc.getDocumentElement(), installationPrefix);
                 }
 
                 // Is the API portal being integrated? If not then we need to remove assertions from the policy
                 if (SECURE_ZONE_STORAGE_COMP_ID.equals(bundleInfo.getId()) && !integrateApiPortal) {
                     // check the service being published
                     final String entityName = getEntityName(entityDetailElmReadOnly);
-                    if ("oauth/clients".equals(entityName)) {
+                    if (OAUTH_SLASH_CLIENTS.equals(entityName)) {
                         // we do not need to check for modular assertion dependencies, like any other
                         // if the user wants the API Portal integrated, then we will do that, it can be fixed manually later.
-                        removeApiPortalIntegration(writeablePolicyDoc);
+                        removeApiPortalIntegration(writeablePolicyDoc.getDocumentElement());
                     }
                 }
             }
         };
+    }
+
+    protected void addVersionCommentAssertionsToPolicy(final BundleInfo bundleInfo, final Element policyElement) {
+        final CommentAssertion ca = new CommentAssertion("Component version " + bundleInfo.getVersion() + " installed by OAuth installer version " + getVersion());
+
+        final Element governingAllAssertion = XmlUtil.findFirstChildElement(policyElement);
+        final Element firstChild = XmlUtil.findFirstChildElement(governingAllAssertion);
+
+        final Document assertionDoc = WspWriter.getPolicyDocument(ca);
+        final Element commentDocElement = assertionDoc.getDocumentElement();
+        final Element versionCommentAssertion = XmlUtil.findFirstChildElement(commentDocElement);
+        final Node node = firstChild.getParentNode().getOwnerDocument().importNode(versionCommentAssertion, true);
+        governingAllAssertion.insertBefore(node, firstChild);
+    }
+
+    protected void updateProtectedServiceUrlForHost(final Element policyElement, final String installationPrefix) {
+        final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(policyElement);
+        for (Element protectedUrl : protectedUrls) {
+            final String routingUrlValue = protectedUrl.getAttribute("stringValue");
+            final String updatedHostValue = getUpdatedHostValue(installationPrefix, routingUrlValue);
+            if (updatedHostValue != null) {
+                protectedUrl.setAttribute("stringValue", updatedHostValue);
+                logger.fine("Updated routing URL from '" + routingUrlValue + "' to '" + updatedHostValue + "'");
+            }
+        }
+    }
+
+    protected void updateBase64ContextVariableExpressionForHost(final Element policyElement, final String installationPrefix) throws PolicyBundleInstallerCallback.CallbackException {
+        final List<Element> contextVariables = PolicyUtils.findContextVariables(policyElement);
+        for (Element contextVariable : contextVariables) {
+            final Element variableToSetElm;
+            final Element base64ExpressionElm;
+            try {
+                base64ExpressionElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
+                variableToSetElm = XmlUtil.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
+            } catch (TooManyChildElementsException | MissingRequiredElementException e) {
+                throw new PolicyBundleInstallerCallback.CallbackException("Problem finding variable value: " + ExceptionUtils.getMessage(e));
+            }
+            final String variableName = variableToSetElm.getAttribute("stringValue");
+            if (!variableName.startsWith("host_")) {
+                final String base64Value = base64ExpressionElm.getAttribute("stringValue");
+                final String decodedValue = new String(HexUtils.decodeBase64(base64Value, true), Charsets.UTF8);
+                final String updatedHostValue = getUpdatedHostValue(installationPrefix, decodedValue);
+                if (updatedHostValue != null) {
+                    base64ExpressionElm.setAttribute("stringValue", HexUtils.encodeBase64(HexUtils.encodeUtf8(updatedHostValue), true));
+                    logger.fine("Updated context variable value from from '" + decodedValue + "' to '" + updatedHostValue + "'");
+                }
+            }
+        }
     }
 
     /**
@@ -526,11 +537,10 @@ public class OAuthInstallerAdminImpl extends PolicyBundleInstallerAdminAbstractI
      * The policy has been written so that these items can be removed with no consequence on the remaining logic of the policy.
      * Note: This will remove 'branches' of policy in addition to individual assertions.
      *
-     * @param writeableDoc pre save writeable layer 7 policy document
+     * @param writeableDocElm pre save write-able layer 7 policy document
      */
-    private void removeApiPortalIntegration(Document writeableDoc) {
-        // find all portal assertions:
-        final List<Element> foundComments = XpathUtil.findElements(writeableDoc.getDocumentElement(), ".//L7p:value[@stringValue='PORTAL_INTEGRATION']", getNamespaceMap());
+    protected void removeApiPortalIntegration(Element writeableDocElm) {
+        final List<Element> foundComments = XpathUtil.findElements(writeableDocElm, ".//L7p:value[@stringValue='PORTAL_INTEGRATION']", getNamespaceMap());
         for (Element foundComment : foundComments) {
             // verify it's a left comment
             final Element entryParent = (Element) foundComment.getParentNode();

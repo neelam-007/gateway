@@ -8,8 +8,8 @@ import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
@@ -128,7 +128,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
     protected static void updatePolicyDoc(@NotNull final Element policyResourceElmWritable,
                                    @NotNull final Document policyDocumentFromResource,
-                                   @Nullable final String prefix) throws BundleResolver.InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
+                                   @Nullable final String prefix) throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException {
         // update encapsulated assertion name with prefix
         if (isValidVersionModifier(prefix)) {
             List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());

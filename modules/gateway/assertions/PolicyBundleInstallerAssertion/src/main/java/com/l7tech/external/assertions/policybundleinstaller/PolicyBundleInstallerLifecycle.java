@@ -21,8 +21,8 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -212,7 +212,6 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
     }
 
     private void processInstallEvent(final InstallPolicyBundleEvent installEvent) {
-        final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
         final PolicyBundleInstallerContext context = installEvent.getContext();
         final PolicyBundleInstaller installer = new PolicyBundleInstaller(
                 getGatewayMgmtInvoker(serverMgmtAssertion.get()), getGatewayMgmtInvoker(serverRestMgmtAssertion.get()), context, serviceManager.get(), new Nullary<Boolean>() {
@@ -221,7 +220,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
                 return installEvent.isCancelled();
             }
         });
-        installer.setSavePolicyCallback(savePolicyCallback);
+        installer.setPolicyBundleInstallerCallback(installEvent.getPolicyBundleInstallerCallback());
 
         try {
             installer.installBundle();
@@ -242,11 +241,12 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
                 return dryRunEvent.isCancelled();
             }
         });
+        installer.setPolicyBundleInstallerCallback(dryRunEvent.getPolicyBundleInstallerCallback());
 
         try {
             installer.dryRunInstallBundle(dryRunEvent);
         } catch (BundleResolver.BundleResolverException | BundleResolver.UnknownBundleException | BundleResolver.InvalidBundleException
-                | InterruptedException | AccessDeniedManagementResponse e) {
+                | InterruptedException | AccessDeniedManagementResponse | PolicyBundleInstallerCallback.CallbackException e) {
             dryRunEvent.setProcessingException(e);
         } finally {
             dryRunEvent.setProcessed(true);

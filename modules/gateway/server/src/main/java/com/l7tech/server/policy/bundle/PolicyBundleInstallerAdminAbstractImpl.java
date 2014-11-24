@@ -294,7 +294,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                             bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent =
-                            new DryRunInstallPolicyBundleEvent(bundleMappings, context);
+                            new DryRunInstallPolicyBundleEvent(bundleMappings, context, getPolicyBundleInstallerCallback(prefixToUse));
                     jobContext.currentEvent = dryRunEvent;
 
                     appEventPublisher.publishEvent(dryRunEvent);
@@ -484,7 +484,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                                     bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, migrationBundleOverrides);
                             final InstallPolicyBundleEvent installEvent =
-                                    new InstallPolicyBundleEvent(this, context, getSavePolicyCallback(prefixToUse));
+                                    new InstallPolicyBundleEvent(this, context, getPolicyBundleInstallerCallback(prefixToUse));
                             jobContext.currentEvent = installEvent;
 
                             appEventPublisher.publishEvent(installEvent);
@@ -518,9 +518,10 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     }
 
     /**
-     * Override in subclass to add pre policy save logic.
+     * Override in subclass for opportunity to configure of the contents of the installer bundle.
+     * See com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback for more detail, including supported events.
      */
-    protected PreBundleSavePolicyCallback getSavePolicyCallback(final String installationPrefix) throws PolicyBundleInstallerException {
+    protected PolicyBundleInstallerCallback getPolicyBundleInstallerCallback(final String versionModifier) throws PolicyBundleInstallerException {
         return null;
     }
 

@@ -31,11 +31,12 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
-import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static com.l7tech.server.policy.bundle.PolicyUtils.updatePolicyIncludes;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.CREATE_ENTITY_XML;
+import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.GATEWAY_MGMT_GET_ENTITY;
 
 /**
  * Install policy.
@@ -72,7 +73,7 @@ public class PolicyInstaller extends WsmanInstaller {
             "</env:Envelope>\n";
 
     @Nullable
-    private PreBundleSavePolicyCallback savePolicyCallback;
+    private PolicyBundleInstallerCallback policyBundleInstallerCallback;
 
     public PolicyInstaller(@NotNull final PolicyBundleInstallerContext context,
                            @NotNull final Functions.Nullary<Boolean> cancelledCallback,
@@ -80,8 +81,9 @@ public class PolicyInstaller extends WsmanInstaller {
         super(context, cancelledCallback, gatewayManagementInvoker);
     }
 
-    public void setSavePolicyCallback(@Nullable PreBundleSavePolicyCallback savePolicyCallback) {
-        this.savePolicyCallback = savePolicyCallback;
+    public void setPolicyBundleInstallerCallback(@Nullable PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+        // callback used for install only event (not dry run event)
+        this.policyBundleInstallerCallback = policyBundleInstallerCallback;
     }
 
     public Map<String, String> dryRunInstall(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent,
@@ -137,7 +139,7 @@ public class PolicyInstaller extends WsmanInstaller {
         } else {
             try {
                 installPolicies(oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids, policyBundle);
-            } catch (PreBundleSavePolicyCallback.PolicyUpdateException e) {
+            } catch (PolicyBundleInstallerCallback.CallbackException e) {
                 throw new InstallationException(e);
             }
         }
@@ -151,7 +153,7 @@ public class PolicyInstaller extends WsmanInstaller {
                                    final Document policyDocumentFromResource,
                                    @NotNull final List<Element> policyIncludesFromPolicyDocument,
                                    @NotNull final PolicyBundleInstallerContext context)
-            throws InvalidBundleException, PreBundleSavePolicyCallback.PolicyUpdateException {
+            throws InvalidBundleException, PolicyBundleInstallerCallback.CallbackException {
         updatePolicyIncludes(oldToNewGuids, identifier, entityType, policyIncludesFromPolicyDocument);
 
         BundleMapping bundleMapping = context.getBundleMapping();
@@ -160,8 +162,8 @@ public class PolicyInstaller extends WsmanInstaller {
             JdbcConnectionInstaller.setJdbcReferencesInPolicy(policyDocumentFromResource, mappedJdbcReferences);
         }
 
-        if (savePolicyCallback != null) {
-            savePolicyCallback.prePublishCallback(context.getBundleInfo(), entityDetailElmReadOnly, policyDocumentFromResource);
+        if (policyBundleInstallerCallback != null) {
+            policyBundleInstallerCallback.prePolicySave(context.getBundleInfo(), entityDetailElmReadOnly, policyDocumentFromResource);
         }
 
         //write changes back to the resource document
@@ -194,7 +196,7 @@ public class PolicyInstaller extends WsmanInstaller {
      * @param policyMgmtEnumeration the gateway mgmt enumeration containing all policy elements too publish.
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse
      *
-     * @throws com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback.PolicyUpdateException
+     * @throws com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback.CallbackException
      *
      * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      *
@@ -206,7 +208,7 @@ public class PolicyInstaller extends WsmanInstaller {
                                  @NotNull final Map<String, String> oldToNewPolicyGuids,
                                  @NotNull final Document policyMgmtEnumeration)
             throws GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
+            PolicyBundleInstallerCallback.CallbackException,
             InvalidBundleException,
             InterruptedException,
             AccessDeniedManagementResponse {
@@ -242,7 +244,7 @@ public class PolicyInstaller extends WsmanInstaller {
      * @param allPolicyElms oldToNewFolderIds
      * @param guidToName GUID to Name
      * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
-     * @throws com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback.PolicyUpdateException
+     * @throws com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback.CallbackException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse
      * @throws InterruptedException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
@@ -254,7 +256,7 @@ public class PolicyInstaller extends WsmanInstaller {
                                    @NotNull final Map<String, Element> allPolicyElms,
                                    @NotNull final Map<String, String> guidToName)
             throws InvalidBundleException,
-            PreBundleSavePolicyCallback.PolicyUpdateException,
+            PolicyBundleInstallerCallback.CallbackException,
             GatewayManagementDocumentUtilities.UnexpectedManagementResponse,
             InterruptedException,
             AccessDeniedManagementResponse {

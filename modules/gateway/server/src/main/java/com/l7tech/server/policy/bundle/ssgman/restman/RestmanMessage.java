@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.message.Message;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.util.DomUtils;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import java.io.IOException;
@@ -49,6 +52,14 @@ public class RestmanMessage {
 
     public RestmanMessage(final Document document) {
         this.document = document;
+    }
+
+    public RestmanMessage(final Message message) throws IOException, NoSuchPartException, SAXException {
+        this.document = XmlUtil.parse(message.getMimeKnob().getEntireMessageBodyAsInputStream());
+    }
+
+    public RestmanMessage(final String xml) throws SAXException {
+        this.document = XmlUtil.stringToDocument(xml);
     }
 
     /**
@@ -160,6 +171,14 @@ public class RestmanMessage {
         }
 
         return result;
+    }
+
+    public List<Element> getResourceSetPolicyElements() {
+        if (resourceSetPolicies == null) {
+            loadResourceSetPolicies();
+        }
+
+        return resourceSetPolicies;
     }
 
     /**

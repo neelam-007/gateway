@@ -53,7 +53,7 @@ public abstract class BaseInstaller {
     }
 
     protected static boolean isValidVersionModifier(@Nullable String versionModifier) {
-        return versionModifier != null && !versionModifier.trim().isEmpty();
+        return versionModifier != null && !versionModifier.isEmpty();
     }
 
     protected String getPolicyRevisionComment(final BundleInfo bundleInfo) {

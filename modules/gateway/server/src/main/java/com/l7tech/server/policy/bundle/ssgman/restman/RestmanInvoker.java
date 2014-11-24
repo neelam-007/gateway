@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.bundle.ssgman.restman;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -26,7 +25,6 @@ import com.l7tech.util.Pair;
 import org.apache.http.HttpHeaders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -74,11 +72,9 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
         } catch (IOException | PolicyAssertionException e) {
             throw new RuntimeException("Unexpected internal error invoking gateway management service: " + e.getMessage(), e);
         }
-        final Message response = context.getResponse();
         final RestmanMessage responseMessage;
         try {
-            final Document document = XmlUtil.parse(response.getMimeKnob().getEntireMessageBodyAsInputStream());
-            responseMessage = new RestmanMessage(document);
+            responseMessage = new RestmanMessage(context.getResponse());
 
             // check for unexpected internal error
             if (responseMessage == null) {

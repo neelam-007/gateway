@@ -1,6 +1,9 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,9 +11,15 @@ import java.util.List;
 
 public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
-    public DryRunInstallPolicyBundleEvent(final Object source,
-                                          final PolicyBundleInstallerContext context) {
-        super(source, context);
+    public DryRunInstallPolicyBundleEvent(@NotNull final Object source,
+                                          @NotNull final PolicyBundleInstallerContext context,
+                                          @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+        super(source, context, policyBundleInstallerCallback);
+    }
+
+    public DryRunInstallPolicyBundleEvent(@NotNull final Object source,
+                                          @NotNull final PolicyBundleInstallerContext context) {
+        super(source, context, null);
     }
 
     public void addServiceConflict(String urlPatternOrServiceName) {

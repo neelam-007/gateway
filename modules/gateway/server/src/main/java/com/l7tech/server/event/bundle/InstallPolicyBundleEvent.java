@@ -1,7 +1,8 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -9,21 +10,9 @@ import org.jetbrains.annotations.Nullable;
  */
 public class InstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
-    public InstallPolicyBundleEvent(final Object source,
-                                    final PolicyBundleInstallerContext context,
-                                    final PreBundleSavePolicyCallback preBundleSavePolicyCallback) {
-        super(source, context);
-        this.preBundleSavePolicyCallback = preBundleSavePolicyCallback;
+    public InstallPolicyBundleEvent(@NotNull final Object source,
+                                    @NotNull final PolicyBundleInstallerContext context,
+                                    @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+        super(source, context, policyBundleInstallerCallback);
     }
-
-    @Nullable
-    public PreBundleSavePolicyCallback getPreBundleSavePolicyCallback() {
-        return preBundleSavePolicyCallback;
-    }
-
-    // - PRIVATE
-
-    @Nullable
-    final PreBundleSavePolicyCallback preBundleSavePolicyCallback;
-
 }

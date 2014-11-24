@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
@@ -14,7 +13,8 @@ import java.io.IOException;
 import static com.l7tech.external.assertions.policybundleinstaller.installer.restman.VersionModifier.*;
 import static com.l7tech.objectmodel.EntityType.valueOf;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  *  Test version modifiers for different entities via restman migration bundle message.
@@ -52,7 +52,7 @@ public class VersionModifierTest extends PolicyBundleInstallerTestBase {
 
     @Test
     public void versionModifiedMessage() throws Exception {
-        final RestmanMessage requestMessage = new RestmanMessage(XmlUtil.stringToDocument(validRequestXml));
+        final RestmanMessage requestMessage = new RestmanMessage(validRequestXml);
         final String versionModifier = "v1";
 
         // apply version modifier to message

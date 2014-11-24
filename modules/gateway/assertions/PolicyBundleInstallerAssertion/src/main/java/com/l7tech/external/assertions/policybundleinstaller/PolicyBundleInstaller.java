@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
-import com.l7tech.server.policy.bundle.PreBundleSavePolicyCallback;
 import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.service.ServiceManager;
 import org.jetbrains.annotations.NotNull;
@@ -68,9 +68,9 @@ public class PolicyBundleInstaller {
         migrationBundleInstaller = new MigrationBundleInstaller(context, cancelledCallback, restmanInvoker);
     }
 
-    public void setSavePolicyCallback(@Nullable PreBundleSavePolicyCallback savePolicyCallback) {
-        policyInstaller.setSavePolicyCallback(savePolicyCallback);
-        migrationBundleInstaller.setPreImportCallback(savePolicyCallback);
+     public void setPolicyBundleInstallerCallback(@Nullable PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+         policyInstaller.setPolicyBundleInstallerCallback(policyBundleInstallerCallback);
+         migrationBundleInstaller.setPolicyBundleInstallerCallback(policyBundleInstallerCallback);
     }
 
     /**
@@ -83,13 +83,15 @@ public class PolicyBundleInstaller {
      * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
      * @throws InterruptedException
      * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
+     * @throws PolicyBundleInstallerCallback.CallbackException
      */
     public void dryRunInstallBundle(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
             throws BundleResolver.BundleResolverException,
             BundleResolver.UnknownBundleException,
             BundleResolver.InvalidBundleException,
             InterruptedException,
-            AccessDeniedManagementResponse {
+            AccessDeniedManagementResponse,
+            PolicyBundleInstallerCallback.CallbackException {
 
         logger.fine("Conflict checking bundle: " + context.getBundleInfo().getId());
 

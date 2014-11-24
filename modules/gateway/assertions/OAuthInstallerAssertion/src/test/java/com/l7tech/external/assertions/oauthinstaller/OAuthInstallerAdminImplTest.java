@@ -7,33 +7,28 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.event.admin.DetailedAdminEvent;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.*;
-import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.*;
-import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
-import static com.l7tech.util.Functions.toMap;
 import static org.junit.Assert.*;
 
 /**
- * Test tests are concerned with logic relating to either the contents of the OTK bundles or logic which is controlled
+ * These tests are concerned with logic relating to either the contents of the OTK bundles or logic which is controlled
  * by this module e.g. updating of policy xml before being published.
  */
 public class OAuthInstallerAdminImplTest {
@@ -44,7 +39,7 @@ public class OAuthInstallerAdminImplTest {
 
 
     // todo test - validate that each service in an enumeration contains a unique id.
-    // todo test coverage for reacahibility of folders
+    // todo test coverage for reachability of folders
     // todo test that all policies with the same name have the same guid.
     // todo check that logic for finding the new guid for a policy is based on the name and not the guid.
 
@@ -456,35 +451,6 @@ public class OAuthInstallerAdminImplTest {
 
     }
 
-    /**
-     * Validates the definition and usage (where possible) of any ${host_ variable.
-     *
-     * This is important as the OTK installer modifies , when requested, usages of these variable to inject the 'prefix'
-     * value to allow for side by side installs of the OTK. If the idiom is not followed correctly in the canned OTK
-     * policies, then this mechanism will not work.
-     *
-     * Rules are:
-     * Variables defined with a name of 'host_' must not end with a trailing slash.
-     * Usages of host_ variables, whether in another set variable assertion or in a HTTP routing assertion must follow
-     * the variable with a slash '/' character. This rule cannot be enforced when the usage is followed by another
-     * variable reference.
-     *
-     */
-    @Test
-    public void testHostnamesDoNotContainTraililngSlash() throws Exception {
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
-        final List<BundleInfo> allBundles = resolver.getResultList();
-
-        for (BundleInfo aBundle : allBundles) {
-            final Document policyDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.POLICY, false);
-            validateEnumerationDocForHostNames(policyDocument.getDocumentElement(), "Policy");
-
-            final Document serviceDocument = resolver.getBundleItem(aBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
-            validateEnumerationDocForHostNames(serviceDocument.getDocumentElement(), "Service");
-        }
-    }
-
     @Test
     public void testGetUpdatedHostValue() throws Exception {
         String test = "https://${host_target}${request.url.path}";
@@ -526,8 +492,8 @@ public class OAuthInstallerAdminImplTest {
 
                 if (applicationEvent instanceof InstallPolicyBundleEvent) {
                     InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
-                    final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
-                    if (savePolicyCallback == null) {
+                    final PolicyBundleInstallerCallback policyBundleInstallerCallback = installEvent.getPolicyBundleInstallerCallback();
+                    if (policyBundleInstallerCallback == null) {
                         fail("Policy call back should be configured.");
                     }
                     final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
@@ -543,7 +509,7 @@ public class OAuthInstallerAdminImplTest {
                                 final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Policy", "not used");
                                 final Element policyDetailElement = getPolicyDetailElement(policyElement);
 
-                                savePolicyCallback.prePublishCallback(bundleInfo, policyDetailElement, policyResource);
+                                policyBundleInstallerCallback.prePolicySave(bundleInfo, policyDetailElement, policyResource);
 
                                 verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numPolicyCommentsFound[0]++;
@@ -559,7 +525,7 @@ public class OAuthInstallerAdminImplTest {
                                 final Document policyResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
                                 final Element serviceDetailElement = getServiceDetailElement(serviceElement);
 
-                                savePolicyCallback.prePublishCallback(bundleInfo, serviceDetailElement, policyResource);
+                                policyBundleInstallerCallback.prePolicySave(bundleInfo, serviceDetailElement, policyResource);
                                 verifyCommentAdded(policyResource, bundleVersion, otkToolkitVersion[0]);
                                 numServiceCommentsFound[0]++;
                             }
@@ -605,279 +571,6 @@ public class OAuthInstallerAdminImplTest {
         assertFalse(dbSchema.trim().isEmpty());
     }
 
-    /**
-     * API Portal integration requires storing the policy with the API Portal integrated. At install time this option
-     * is off by default and if not chosen the sections of policy with deal with API Portal integration must be removed.
-     *
-     * This test is hardcoded with a list of folder assertions and individual comments with the left comment
-     * 'PORTAL_INTEGRATION'.
-     *
-     * If this test fails then update only when it's confirmed that the Secure Zone Storage clientstore service's policy
-     * was updated for API Portal integration.
-     *
-     * A future version of the API Portal may require a more complicated policy. The current version can support both
-     * versions 2.1 and 2.2 but future versions may not be backwards compatible, in which case the logic to remove
-     * support for the API Portal may be more complicated.
-     *
-     */
-    @Test
-    public void testVerifyExpectedPortalIntegrationCommentsExist() throws Exception {
-        // Set up
-
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
-
-        final Map<String, BundleInfo> bundleMap = toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
-            @Override
-            public Pair<String, BundleInfo> call(BundleInfo bundleInfo) {
-                return new Pair<>(bundleInfo.getId(), bundleInfo);
-            }
-        });
-
-        final BundleInfo secureZoneBundle = bundleMap.get(OAuthInstallerAssertion.SECURE_ZONE_STORAGE_COMP_ID);
-        assertNotNull(secureZoneBundle);
-
-        // Find the clientstore service's policy
-        final Document serviceDocMgmtEnum = resolver.getBundleItem(secureZoneBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
-        final List<Element> serviceElms = GatewayManagementDocumentUtilities.getEntityElements(serviceDocMgmtEnum.getDocumentElement(), "Service");
-        final Map<String, Document> serviceNameToPolicyMap = getServicesAndPolicyDocuments(serviceElms);
-        final Document clientStorePolicyDoc = serviceNameToPolicyMap.get("oauth/clients");
-        assertNotNull(clientStorePolicyDoc);
-
-        // Set up finished
-        // validate contents of policy
-        final Element policyElm = clientStorePolicyDoc.getDocumentElement();
-        // System.out.println(XmlUtil.nodeToFormattedString(policyElm));
-        validatePortalIntegrationComments(policyElm, 7, 1, 3, 3);
-    }
-
-    /**
-     * If the API Portal integration is not required, then the SecureZone clientstore policy needs to be updated
-     * to remove all assertions added for API Portal integration.
-     *
-     */
-    @Test
-    public void testApiPortalIntegrationNotRequested() throws Exception {
-        final boolean[] testPass = new boolean[1];
-        final OAuthInstallerAdminImpl admin = new OAuthInstallerAdminImpl(baseName, infoFileName, installerVersionNamespace, new ApplicationEventPublisher() {
-            @Override
-            public void publishEvent(ApplicationEvent applicationEvent) {
-
-                if (applicationEvent instanceof InstallPolicyBundleEvent) {
-                    InstallPolicyBundleEvent installEvent = (InstallPolicyBundleEvent) applicationEvent;
-                    final PreBundleSavePolicyCallback savePolicyCallback = installEvent.getPreBundleSavePolicyCallback();
-                    if (savePolicyCallback == null) {
-                        fail("Policy call back should be configured.");
-                    }
-                    final BundleInfo bundleInfo = installEvent.getContext().getBundleInfo();
-                    try {
-
-                        final Document serviceEnum = installEvent.getContext().getBundleResolver().getBundleItem(bundleInfo.getId(), BundleResolver.BundleItem.SERVICE, false);
-                        final List<Element> gatewayMgmtPolicyElments = getEntityElements(serviceEnum.getDocumentElement(), "Service");
-                        for (Element serviceEnumElm : gatewayMgmtPolicyElments) {
-                            final Element policyResourceElmWritable = getPolicyResourceElement(serviceEnumElm, "Service", "not used");
-                            final Document policyDocWriteable = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", "not used");
-                            final Element serviceDetailElement = getServiceDetailElement(serviceEnumElm);
-                            savePolicyCallback.prePublishCallback(bundleInfo, serviceDetailElement, policyDocWriteable);
-                            // Verify elements removed
-                            final String entityName = getEntityName(serviceDetailElement);
-                            if ("oauth/clients".equals(entityName)) {
-                                validatePortalIntegrationComments(policyDocWriteable.getDocumentElement(), 0, 0, 0, 0);
-                                testPass[0] = true;
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        fail("Unexpected exception: " + e.getMessage());
-                    }
-
-                    installEvent.setProcessed(true);
-                }
-            }
-        });
-
-        // Secure Zone Storage
-        // false to not integrate the API Portal
-        final AsyncAdminMethods.JobId<ArrayList> jobId =
-                admin.install(Arrays.asList("b082274b-f00e-4fbf-bbb7-395a95ca2a35"), new Goid(0, -5002), new HashMap<String, BundleMapping>(), null, false);
-
-        while (!admin.getJobStatus(jobId).startsWith("inactive")) {
-            Thread.sleep(10L);
-        }
-
-        assertTrue(testPass[0]);
-    }
-
-    /**
-     * The 'Manage Clients' button is not available when the API Portal is integrated with the OTK.
-     *
-     * This test is a heuristic, it looks for the presence of the variables and template responses needed and if it finds
-     * them it assumes that the policies contain the correct logic. It is possible that the policy logic is broken and
-     * this test will pass. The intent of this test is to avoid someone changing the error message or removing the
-     * required values entirely.
-     *
-     * This test validates the connection between the manager and clientstore endpoints.
-     */
-    @BugId("SSG-6456")
-    @Test
-    public void testManageClientsNotAvailableWhenPortalIntegrated() throws Exception {
-
-        final List<Pair<BundleInfo, String>> bundleInfos = BundleUtils.getBundleInfos(getClass(), baseName);
-        final BundleResolver resolver = new BundleResolverImpl(bundleInfos, getClass()) {};
-
-        final Map<String, BundleInfo> bundleMap = Functions.toMap(resolver.getResultList(), new Functions.Unary<Pair<String, BundleInfo>, BundleInfo>() {
-            @Override
-            public Pair<String, BundleInfo> call(BundleInfo bundleInfo) {
-                return new Pair<String, BundleInfo>(bundleInfo.getId(), bundleInfo);
-            }
-        });
-
-        final String expectedValue = "API Portal Integration is configured";
-        {
-            final BundleInfo clientStoreBundle = bundleMap.get("b082274b-f00e-4fbf-bbb7-395a95ca2a35");
-            assertNotNull(clientStoreBundle);
-
-            final Document serviceDocument = resolver.getBundleItem(clientStoreBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
-            final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
-            // find the client store policy
-
-            boolean foundVariable = false;
-            boolean foundTemplateResponse = false;
-            for (Element serviceElm : enumServiceElms) {
-                final Element serviceDetailElement = getServiceDetailElement(serviceElm);
-                final String entityName = getEntityName(serviceDetailElement);
-                if (!"oauth/clients".equals(entityName)) {
-                    continue;
-                }
-
-                final Element policyResourceElement = getPolicyResourceElement(serviceElm, "Service", "Not used");
-                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Service", "Not used");
-                final List<Element> contextVariables = PolicyUtils.findContextVariables(layer7Policy.getDocumentElement());
-                // find customError
-                for (Element contextVariable : contextVariables) {
-                    final Element variableToSet = DomUtils.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
-                    final String varName = variableToSet.getAttribute("stringValue");
-                    if ("customError".equals(varName)) {
-                        final Element base64Expression = DomUtils.findExactlyOneChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
-                        final byte[] value = HexUtils.decodeBase64(base64Expression.getAttribute("stringValue"));
-                        final String varValue = new String(value, Charsets.UTF8);
-
-                        if (varValue.contains(expectedValue)) {
-                            foundVariable = true;
-                        }
-                    }
-                }
-
-                final List<Element> templateResponses = PolicyUtils.findTemplateResponses(layer7Policy.getDocumentElement());
-                for (Element templateResponse : templateResponses) {
-                    final Element base64ResponseBody = DomUtils.findExactlyOneChildElementByName(templateResponse, "http://www.layer7tech.com/ws/policy", "Base64ResponseBody");
-                    final byte[] value = HexUtils.decodeBase64(base64ResponseBody.getAttribute("stringValue"));
-                    final String varValue = new String(value, Charsets.UTF8);
-                    if (varValue.contains("${customError}")) {
-                        foundTemplateResponse = true;
-                    }
-                }
-            }
-
-            assertTrue("Did not find customError variable with the correct value", foundVariable);
-            assertTrue("Did not find a template response which references ${customError}", foundTemplateResponse);
-        }
-
-        // client store has passed, now test the manager policy
-
-        {
-            final BundleInfo managerBundle = bundleMap.get("a07924c0-0265-42ea-90f1-2428e31ae5ae");
-            assertNotNull(managerBundle);
-
-            final Document serviceDocument = resolver.getBundleItem(managerBundle.getId(), BundleResolver.BundleItem.SERVICE, false);
-            final List<Element> enumServiceElms = getEntityElements(serviceDocument.getDocumentElement(), "Service");
-
-            boolean foundCorrectComparison = false;
-            for (Element serviceElm : enumServiceElms) {
-                final Element serviceDetailElement = getServiceDetailElement(serviceElm);
-                final String entityName = getEntityName(serviceDetailElement);
-                if (!"oauth/manager".equals(entityName)) {
-                    continue;
-                }
-
-                final Element policyResourceElement = getPolicyResourceElement(serviceElm, "Service", "Not used");
-                final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Service", "Not used");
-                final List<Element> comparisonAssertions = PolicyUtils.findComparisonAssertions(layer7Policy.getDocumentElement());
-                for (Element comparisonAssertion : comparisonAssertions) {
-                    final Element expression2 = DomUtils.findExactlyOneChildElementByName(comparisonAssertion, "http://www.layer7tech.com/ws/policy", "Expression2");
-                    final String expression2Value = expression2.getAttribute("stringValue");
-
-                    final Element rightValueElm = DomUtils.findFirstDescendantElement(comparisonAssertion, "http://www.layer7tech.com/ws/policy", "RightValue");
-                    final String rightValue = rightValueElm.getAttribute("stringValue");
-
-                    if (expectedValue.equals(expression2Value) && expectedValue.equals(rightValue)) {
-                        foundCorrectComparison = true;
-                    }
-                }
-            }
-
-            assertTrue("Did not find check for correct error message", foundCorrectComparison);
-        }
-
-    }
-
-    /**
-     * Comments are required on all portal integration assertions. The presence of the specific comment
-     * implies the assertion, all all it's childern if it's an All, are for portal integration only.
-     */
-    private void validatePortalIntegrationComments(Element policyElm,
-                                                   final int totalCommentsExpected,
-                                                   final int setVariableFoundExpected,
-                                                   final int comparisonFoundExpected,
-                                                   final int allFoundExpected) {
-        final List<Element> foundComments = XpathUtil.findElements(policyElm, ".//L7p:value[@stringValue='PORTAL_INTEGRATION']", getNamespaceMap());
-        assertEquals("Wrong number of PORTAL_INTEGRATION comments found", totalCommentsExpected, foundComments.size());
-
-        // verify they are all left comments
-        int setVariableFound = 0;
-        int comparionsFound = 0;
-        int allFound = 0;
-        for (Element foundComment : foundComments) {
-            final Element parentNode = (Element) foundComment.getParentNode();
-            final List<Element> elements = XpathUtil.findElements(parentNode, ".//L7p:key[@stringValue='LEFT.COMMENT']", getNamespaceMap());
-            assertNotNull(elements);
-            assertEquals(1, elements.size());
-            final Node assertionNode = parentNode.getParentNode().getParentNode().getParentNode();
-            final String assertionName = assertionNode.getLocalName();
-            System.out.println(assertionName);
-            if ("SetVariable".equals(assertionName)) {
-                setVariableFound++;
-            } else if ("ComparisonAssertion".equals(assertionName)) {
-                comparionsFound++;
-            } else if ("All".equals(assertionName)) {
-                allFound++;
-            }
-        }
-
-        // 3 assertions and 2 all folders
-        assertEquals(setVariableFoundExpected, setVariableFound);
-        assertEquals(comparisonFoundExpected, comparionsFound);
-        assertEquals(allFoundExpected, allFound);
-    }
-
-    private Map<String, Document> getServicesAndPolicyDocuments(List<Element> serviceMgmtElements) {
-        return toMap(serviceMgmtElements, new Functions.Unary<Pair<String, Document>, Element>() {
-            @Override
-            public Pair<String, Document> call(Element serviceElement) {
-                try {
-                    final Element serviceDetailElement = getServiceDetailElement(serviceElement);
-                    final String serviceName = getEntityName(serviceDetailElement);
-                    final Element resourceElement = getPolicyResourceElement(serviceElement, "Service", "Not Used");
-                    assertNotNull(resourceElement);
-                    final Document layer7Policy = getPolicyDocumentFromResource(resourceElement, "Policy", "Not Used");
-                    return new Pair<String, Document>(serviceName, layer7Policy);
-                } catch (BundleResolver.InvalidBundleException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-    }
-
     private void verifyCommentAdded(Document policyResource, String bundleVersion, String otkToolkitVersion) {
         // verify version was added
         final Element allElm = XmlUtil.findFirstChildElement(policyResource.getDocumentElement());
@@ -886,75 +579,5 @@ public class OAuthInstallerAdminImplTest {
         final Element commentValueElm = XmlUtil.findFirstChildElement(comment);
         final String commentValue = commentValueElm.getAttribute("stringValue");
         assertEquals("Invalid comment value found", "Component version " + bundleVersion + " installed by OAuth installer version " + otkToolkitVersion, commentValue);
-    }
-
-
-    // - PRIVATE
-//    private final static List<Pair<BundleInfo, String>> ALL_BUNDLE_NAMES =
-//            Collections.unmodifiableList(
-//                    Arrays.asList(
-//                            new Pair<BundleInfo, String>(new BundleInfo("1c2a2874-df8d-4e1d-b8b0-099b576407e1", "1.0", "OAuth_1_0", "Desc"), "OAuth_1_0"),
-//                            new Pair<BundleInfo, String>(new BundleInfo("ba525763-6e55-4748-9376-76055247c8b1", "1.0", "OAuth_2_0", "Desc"), "OAuth_2_0"),
-//                            new Pair<BundleInfo, String>(new BundleInfo("f69c7d15-4999-4761-ab26-d29d58c0dd57", "1.0", "SecureZone_OVP", "Desc"), "SecureZone_OVP"),
-//                            new Pair<BundleInfo, String>(new BundleInfo("b082274b-f00e-4fbf-bbb7-395a95ca2a35", "1.0", "SecureZone_Storage", "Desc"), "SecureZone_Storage"),
-//                            new Pair<BundleInfo, String>(new BundleInfo("a07924c0-0265-42ea-90f1-2428e31ae5ae", "1.0", "StorageManager", "Desc"), "StorageManager")
-//                    ));
-
-    private void validateEnumerationDocForHostNames(Element enumElement, String type) throws Exception {
-
-        final List<Element> enumPolicyElms = getEntityElements(enumElement, type);
-        for (Element policyElm : enumPolicyElms) {
-            final Element policyResourceElement = getPolicyResourceElement(policyElm, "policy", "Not needed");
-            final Document layer7Policy = getPolicyDocumentFromResource(policyResourceElement, "Policy", "Not Needed");
-            final List<Element> contextVariables = PolicyUtils.findContextVariables(layer7Policy.getDocumentElement());
-            validateSetVariableForHostVarUsage(contextVariables);
-            final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(layer7Policy.getDocumentElement());
-            for (Element protectedUrl : protectedUrls) {
-                System.out.println(XmlUtil.nodeToFormattedString(protectedUrl));
-                final String urlValue = protectedUrl.getAttribute("stringValue");
-                validateHostVariableUsage(urlValue, "ProtectedServiceUrl");
-            }
-        }
-    }
-
-    private void validateSetVariableForHostVarUsage(List<Element> contextVariables) {
-        for (Element contextVariable : contextVariables) {
-            final Element variableToSet = XmlUtil.findFirstChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "VariableToSet");
-            final String varName = variableToSet.getAttribute("stringValue");
-            final String varReference = Syntax.getVariableExpression(varName);
-            final Element expression = XmlUtil.findFirstChildElementByName(contextVariable, "http://www.layer7tech.com/ws/policy", "Base64Expression");
-            final String base64Value = expression.getAttribute("stringValue");
-            final byte[] decodedValue = HexUtils.decodeBase64(base64Value);
-            final String varValue = new String(decodedValue, Charsets.UTF8);
-            if (varName.startsWith("host_")) {
-                assertFalse("Host variable '" + varName + "'value should not contain a trailing slash: " + varValue, varValue.endsWith("/"));
-            } else if (varValue.contains("${host_")) {
-                validateHostVariableUsage(varValue, varName);
-            }
-        }
-    }
-
-    /**
-     * Validate the usage of a ${host_ variable in a policy. The same rules apply whether it is referneced from within
-     * a context variable or a protected service URL in a routing assertion. The ${host_ variable must be followed by
-     * a slash. If it is followed by a context variable then we cannot validate that particular usage.
-     *
-     * @param usageValue The value of the variable or protected service URL which references the ${host_ variable
-     * @param description A description of the usage used when test fails to identify the usage issue.
-     */
-    private void validateHostVariableUsage(String usageValue, String description) {
-        int index = usageValue.indexOf("${host_");
-        while (index != -1) {
-            int closeIndex = usageValue.indexOf("}", index + 1);
-            char nextChar = usageValue.charAt(closeIndex + 1);
-            if (nextChar == '$') {
-                System.out.println("Cannot verify '" + description + "' with value '" + usageValue + "' as host variable usage as it is followed by a context variable");
-            } else {
-                assertEquals("Invalid ${host_ var reference for '" + description + "' with value '" + usageValue + "'. " +
-                        "Usage must be followed by a trailing slash.", "/", String.valueOf(nextChar));
-            }
-            index = usageValue.indexOf("${host_", closeIndex + 1);
-        }
-
     }
 }
