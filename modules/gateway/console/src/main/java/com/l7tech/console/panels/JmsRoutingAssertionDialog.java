@@ -46,6 +46,7 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  * @version 1.0
  */
 public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
+    private static final int NOT_SELECTED_INDEX = -1;
 
     //- PUBLIC
 
@@ -273,6 +274,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
         samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
+        inputValidator.ensureComboBoxSelection("JMS Destination", queueComboBox);
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(samlExpiryInMinutesSpinner, "Ticket expiry"));
         inputValidator.constrainTextFieldToBeNonEmpty( "Initial Context Factory class name", dynamicICF, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "JNDI URL", dynamicJndiUrl, null );
@@ -529,7 +531,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private void populateReqMsgSrcComboBox() {
         requestTargetComboBox.removeAllItems();
-        requestTargetComboBox.setSelectedIndex( -1 );
+        requestTargetComboBox.setSelectedIndex(NOT_SELECTED_INDEX);
 
         MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
         TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
@@ -791,6 +793,9 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             } catch (Exception e) {
                 throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
             }
+        }
+        else {
+            queueComboBox.setSelectedIndex(NOT_SELECTED_INDEX);
         }
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
