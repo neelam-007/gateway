@@ -6,6 +6,7 @@ import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.bufferdata.BufferDataAssertion;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.NumberField;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -126,7 +127,12 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     @Override
     public BufferDataAssertion getData( BufferDataAssertion a ) throws ValidationException {
-        a.setBufferName( bufferNameTextField.getText() );
+        String bufferName = bufferNameTextField.getText();
+        if ( bufferName.trim().length() < 1 )
+            throw new ValidationException( "A buffer name is required." );
+        if ( bufferName.length() > BufferDataAssertion.MAX_BUFFER_NAME_LENGTH )
+            throw new ValidationException( "Buffer name is too long." );
+        a.setBufferName( bufferName );
         String err = variableNameField.getErrorMessage();
         if ( err != null )
             throw new ValidationException( err );
@@ -175,6 +181,8 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         explanatoryScrollPane.setBorder( null );
         explanatoryScrollPane.setBackground( bg );
         explanatoryScrollPane.setOpaque( false );
+
+        bufferNameTextField.setDocument( new MaxLengthDocument( BufferDataAssertion.MAX_BUFFER_NAME_LENGTH ) );
 
         variableNameField = new TargetVariablePanel();
         variableNameField.setValueWillBeRead( true );

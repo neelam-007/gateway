@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 public class BufferDataAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(BufferDataAssertion.class.getName());
 
+    public static final int MAX_BUFFER_NAME_LENGTH = 256;
+
     private String bufferName;
     private String newDataVarName;
     private long maxSizeBytes = 1024L * 1024;
