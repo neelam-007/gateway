@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author Jamie Williams - jamie.williams2@ca.com
  */
-public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
     private static final String ICON_FILE = "com/l7tech/external/assertions/retrieveservicewsdl/WSDL_File_16x16.png";
     private final static String BASE_NAME = "Retrieve Service WSDL";
     private final static String LONG_NAME = "Retrieve WSDL for Service";
@@ -96,6 +96,26 @@ public class RetrieveServiceWsdlAssertion extends Assertion implements UsesVaria
 
     public void setProxyDependencies(boolean proxyDependencies) {
         this.proxyDependencies = proxyDependencies;
+    }
+
+    @Override
+    public boolean initializesRequest() {
+        return TargetMessageType.REQUEST == messageTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedRequest() {
+        return false;
+    }
+
+    @Override
+    public boolean initializesResponse() {
+        return TargetMessageType.RESPONSE == messageTarget.getTarget();
+    }
+
+    @Override
+    public boolean needsInitializedResponse() {
+        return false;
     }
 
     public String[] getVariablesUsed() {
