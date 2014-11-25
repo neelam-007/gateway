@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.bufferdata;
 
-import com.l7tech.external.assertions.bufferdata.console.BufferDataPropertiesDialog;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.HashMap;
