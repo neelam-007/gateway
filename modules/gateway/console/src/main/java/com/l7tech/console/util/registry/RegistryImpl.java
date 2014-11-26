@@ -524,6 +524,7 @@ public final class RegistryImpl extends Registry
         emailAdmin = null;
         entityNameResolver = null;
         siteMinderAdmin = null;
+        cassandraConnectionAdmin = null;
     }
 
 
