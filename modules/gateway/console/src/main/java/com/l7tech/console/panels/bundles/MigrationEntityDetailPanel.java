@@ -4,22 +4,24 @@ import com.l7tech.console.panels.JdbcConnectionPropertiesDialog;
 import com.l7tech.console.panels.NewPrivateKeyDialog;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordPropertiesDialog;
-import com.l7tech.console.util.ActiveKeypairJob;
-import com.l7tech.console.util.KeystoreComboEntry;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.panels.policydiff.PolicyDiffWindow;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -58,16 +61,21 @@ public class MigrationEntityDetailPanel {
     private JButton createEntityButton;
     private JComboBox entitiesComboBox;
     private JRadioButton createRadioButton;
+    private JButton compareEntityButton;
     private String targetType;
+    private String name;
+    private String extraInfo;
 
     private JDialog parent;
     private Registry registry = Registry.getDefault();
 
     public MigrationEntityDetailPanel(final JDialog parent, final ConflictDisplayerDialog.ErrorType errorType,
-                                      final String targetType, final String name, final String id, boolean versionModified,
+                                      final String targetType, final String name, final String id, final boolean versionModified, final String extraInfo,
                                       final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
         this.targetType = targetType;
         this.parent = parent;
+        this.name = name;
+        this.extraInfo = extraInfo;
 
         $$$setupUI$$$();
 
@@ -77,6 +85,14 @@ public class MigrationEntityDetailPanel {
         useExistRadioButton.setVisible(errorType == TargetExists);
         updateRadioButton.setVisible(errorType == TargetExists);
         createRadioButton.setVisible(errorType == TargetExists);
+
+        compareEntityButton.setVisible(errorType == TargetExists && (EntityType.POLICY.toString().equals(targetType) || EntityType.SERVICE.toString().equals(targetType)));
+        compareEntityButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                compareEntity(id);
+            }
+        });
 
         entitiesComboBox.setVisible(errorType == TargetNotFound);
         createEntityButton.setVisible(errorType == TargetNotFound);
@@ -409,6 +425,42 @@ public class MigrationEntityDetailPanel {
                 }
             }
         });
+    }
+
+    private void compareEntity(final String policyGoid) {
+        if (extraInfo == null || extraInfo.trim().isEmpty()) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "The updated policy XML is not specified", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+            return;
+        }
+
+        try {
+            final String policyXml;
+
+            if (EntityType.POLICY.toString().equals(targetType)) {
+                final PolicyVersion existingPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(Goid.parseGoid(policyGoid));
+                policyXml = existingPolicyVersion.getXml();
+            } else if (EntityType.SERVICE.toString().equals(targetType)) {
+                final PublishedService publishedService = Registry.getDefault().getServiceManager().findServiceByID(policyGoid);
+                policyXml = publishedService.getPolicy().getXml();
+            } else {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                    "The compared entity is neither a policy nor a service.", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+                return;
+            }
+
+            new PolicyDiffWindow(
+                new Pair<>("Existing " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(policyXml, WspReader.Visibility.includeDisabled))),
+                new Pair<>("Updated " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(extraInfo, WspReader.Visibility.includeDisabled)))
+            ).setVisible(true);
+
+        } catch (IOException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+        } catch (FindException e) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                "Cannot find a published service", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+        }
     }
 
     private void showErrorMessage(String title, String msg, @Nullable Throwable e, @Nullable Runnable continuation) {

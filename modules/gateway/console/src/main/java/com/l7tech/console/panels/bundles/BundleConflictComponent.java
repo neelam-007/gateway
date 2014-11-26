@@ -174,7 +174,7 @@ public class BundleConflictComponent extends JPanel {
                     }
                 }
 
-                targetDetail.addMigrationError(dto.name, dto.srcId);
+                targetDetail.addMigrationError(dto.name, dto.srcId, dto.extraInfo);
             } catch (Exception e) {
                 logger.warning(ExceptionUtils.getMessage(e));
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
@@ -184,14 +184,15 @@ public class BundleConflictComponent extends JPanel {
     }
 
     private class Dto {
-        public String errorTypeStr, entityTypeStr, srcId, errorMessage, name;
+        public String errorTypeStr, entityTypeStr, srcId, errorMessage, name, extraInfo;
 
-        public Dto(String errorTypeStr, String entityTypeStr, String srcId, String errorMessage, String name) {
+        public Dto(String errorTypeStr, String entityTypeStr, String srcId, String errorMessage, String name, String extraInfo) {
             this.errorTypeStr = errorTypeStr;
             this.entityTypeStr = entityTypeStr;
             this.srcId = srcId;
             this.errorMessage = errorMessage;
             this.name = name;
+            this.extraInfo = extraInfo;
         }
     }
 
@@ -236,6 +237,13 @@ public class BundleConflictComponent extends JPanel {
             }
         }
 
-        return new Dto(errorTypeStr, entityTypeStr, srcId, errorMessage, name);
+        // Save policy xml into Dto.extraInfo
+        final Element resourceEl = XmlUtil.findFirstDescendantElement(mappingElement, MGMT_VERSION_NAMESPACE, "Resource");
+        String policyXml = null;
+        if (resourceEl != null) {
+            policyXml = resourceEl.getTextContent();
+        }
+
+        return new Dto(errorTypeStr, entityTypeStr, srcId, errorMessage, name, policyXml);
     }
 }

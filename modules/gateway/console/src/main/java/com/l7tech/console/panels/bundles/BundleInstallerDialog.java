@@ -67,7 +67,7 @@ public abstract class BundleInstallerDialog extends JDialog {
     protected JPanel customizableButtonPanel;
 
     public BundleInstallerDialog(@NotNull final Frame owner, @NotNull final String installFolder, @Nullable final String extensionInterfaceInstanceIdentifier) {
-        super(owner, installFolder + " Installer", true);
+        super(owner, installFolder + " Installer");
         this.installFolder = installFolder;
         this.extensionInterfaceInstanceIdentifier = extensionInterfaceInstanceIdentifier;
         setContentPane(contentPane);

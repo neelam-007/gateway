@@ -36,9 +36,9 @@ public class MigrationErrorTypePanel {
         }
     }
 
-    public void addMigrationError(final String name, final String srcId) {
+    public void addMigrationError(final String name, final String srcId, final String extraInfo) { // For Policy or Service entity, extraInfo is a policy xml.
         errorTypeContainerPanel.add(
-                new MigrationEntityDetailPanel(parent, errorType, targetType,name, srcId, versionModified, selectedMigrationResolutions).getContentPane()
+                new MigrationEntityDetailPanel(parent, errorType, targetType, name, srcId, versionModified, extraInfo, selectedMigrationResolutions).getContentPane()
         );
     }
 

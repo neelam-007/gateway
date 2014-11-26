@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -112,9 +113,15 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 // parse for mapping errors
                 if (dryRunMessage.hasMappingError()) {
                     final List<Element> mappingErrors = dryRunMessage.getMappingErrors();
+                    final Document requestDocument = XmlUtil.stringToDocument(requestXml);
+
                     for (Element mappingError : mappingErrors) {
                         // Add "l7" namespace into each mapping element
                         RestmanMessage.setL7XmlNs(mappingError);
+
+                        // Add policy xml resource into mappingError, if errorType is "TargetExists" and entity type is either Service or Policy.
+                        RestmanMessage.addPolicyResourceIntoMappingError(requestDocument, mappingError);
+
                         // Save the string of each mapping element
                         dryRunEvent.addMigrationErrorMapping(XmlUtil.nodeToFormattedString(mappingError));
                     }
@@ -123,6 +130,8 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 throw new RuntimeException("Unexpected exception serializing bundle document", e);
             } catch (UnexpectedManagementResponse e) {
                 throw new RuntimeException("Unexpected exception", e);
+            } catch (SAXException e) {
+                throw new RuntimeException("Invalid request xml format", e);
             }
         }
     }

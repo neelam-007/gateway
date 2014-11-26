@@ -42,7 +42,6 @@ public class ConflictDisplayerDialog extends JDialog {
                                    final boolean versionModified) throws PolicyBundleDryRunResult.UnknownBundleIdException {
         super(owner, "Conflicts detected");
         setContentPane(contentPane);
-        setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
         buttonOK.addActionListener(new ActionListener() {
