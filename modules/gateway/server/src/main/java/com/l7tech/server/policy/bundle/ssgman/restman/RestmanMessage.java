@@ -3,6 +3,7 @@ package com.l7tech.server.policy.bundle.ssgman.restman;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.util.DomUtils;
@@ -189,9 +190,9 @@ public class RestmanMessage {
             return;
         }
         boolean isServiceType;
-        if ("SERVICE".equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
+        if (EntityType.SERVICE.toString().equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
             isServiceType = true;
-        } else if ("POLICY".equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
+        } else if (EntityType.POLICY.toString().equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
             isServiceType = false;
         } else {
             return;

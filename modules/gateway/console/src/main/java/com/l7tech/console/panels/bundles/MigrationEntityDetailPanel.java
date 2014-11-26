@@ -63,8 +63,8 @@ public class MigrationEntityDetailPanel {
     private JRadioButton createRadioButton;
     private JButton compareEntityButton;
     private String targetType;
-    private String name;
     private String extraInfo;
+    private String existingEntityXml;
 
     private JDialog parent;
     private Registry registry = Registry.getDefault();
@@ -74,7 +74,6 @@ public class MigrationEntityDetailPanel {
                                       final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
         this.targetType = targetType;
         this.parent = parent;
-        this.name = name;
         this.extraInfo = extraInfo;
 
         $$$setupUI$$$();
@@ -86,11 +85,18 @@ public class MigrationEntityDetailPanel {
         updateRadioButton.setVisible(errorType == TargetExists);
         createRadioButton.setVisible(errorType == TargetExists);
 
-        compareEntityButton.setVisible(errorType == TargetExists && (EntityType.POLICY.toString().equals(targetType) || EntityType.SERVICE.toString().equals(targetType)));
+        compareEntityButton.setEnabled(compareEntityEnabled(errorType, id));
         compareEntityButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                compareEntity(id);
+                try {
+                    new PolicyDiffWindow(
+                        new Pair<>("Existing " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(getExistingEntityXml(id), WspReader.Visibility.includeDisabled))),
+                        new Pair<>("Updated " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(extraInfo, WspReader.Visibility.includeDisabled)))
+                    ).setVisible(true);
+                } catch (IOException ioe) {
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+                }
             }
         });
 
@@ -427,40 +433,57 @@ public class MigrationEntityDetailPanel {
         });
     }
 
-    private void compareEntity(final String policyGoid) {
+    private boolean compareEntityEnabled(final ConflictDisplayerDialog.ErrorType errorType, final String entityGoid) {
+        if (errorType != TargetExists || !(EntityType.POLICY.toString().equals(targetType) || EntityType.SERVICE.toString().equals(targetType))) {
+            logger.fine("The error type is not TargetExists or the entity type is either Service nor Policy, so 'Compare Entity' is disabled.");
+
+            // In this case, also set 'Compare Entity' to be invisible.
+            compareEntityButton.setVisible(false);
+
+            return false;
+        }
+
         if (extraInfo == null || extraInfo.trim().isEmpty()) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "The updated policy XML is not specified", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
-            return;
+            logger.warning("The updated policy XML is not specified, so 'Compare Entity' is disabled.");
+            return false;
+        }
+
+        final String currentActiveEntityXml = getExistingEntityXml(entityGoid);
+        if (currentActiveEntityXml == null) {
+            logger.warning("Cannot get the existing active entity XML, so 'Compare Entity' is disabled.");
+            return false;
+        }
+
+        if (extraInfo.equals(currentActiveEntityXml)) {
+            logger.fine("The existing entity XML is the same as the updated entity XML, so 'Compare Entity' is disabled.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private String getExistingEntityXml(final String entityGoid) {
+        if (existingEntityXml != null && !existingEntityXml.trim().isEmpty()) {
+            return existingEntityXml;
         }
 
         try {
-            final String policyXml;
-
             if (EntityType.POLICY.toString().equals(targetType)) {
-                final PolicyVersion existingPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(Goid.parseGoid(policyGoid));
-                policyXml = existingPolicyVersion.getXml();
+                final PolicyVersion existingPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(Goid.parseGoid(entityGoid));
+                existingEntityXml = existingPolicyVersion.getXml();
             } else if (EntityType.SERVICE.toString().equals(targetType)) {
-                final PublishedService publishedService = Registry.getDefault().getServiceManager().findServiceByID(policyGoid);
-                policyXml = publishedService.getPolicy().getXml();
+                final PublishedService publishedService = Registry.getDefault().getServiceManager().findServiceByID(entityGoid);
+                existingEntityXml = publishedService.getPolicy().getXml();
             } else {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                     "The compared entity is neither a policy nor a service.", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
-                return;
             }
-
-            new PolicyDiffWindow(
-                new Pair<>("Existing " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(policyXml, WspReader.Visibility.includeDisabled))),
-                new Pair<>("Updated " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(extraInfo, WspReader.Visibility.includeDisabled)))
-            ).setVisible(true);
-
-        } catch (IOException e) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
         } catch (FindException e) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                 "Cannot find a published service", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
         }
+
+        return existingEntityXml;
     }
 
     private void showErrorMessage(String title, String msg, @Nullable Throwable e, @Nullable Runnable continuation) {
