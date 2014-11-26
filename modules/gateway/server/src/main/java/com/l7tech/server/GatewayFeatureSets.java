@@ -578,6 +578,7 @@ public class GatewayFeatureSets {
             ass(OversizedTextAssertion.class),
             ass(RequestSizeLimit.class),
             ass(MessageBufferingAssertion.class),
+            mass("assertion:BufferData"),
             ass(ContentTypeAssertion.class),
             ass(SqlAttackAssertion.class),
             ass(SchemaValidation.class)); // TODO Assertion for XTM Signature goes here, as soon as it exists
