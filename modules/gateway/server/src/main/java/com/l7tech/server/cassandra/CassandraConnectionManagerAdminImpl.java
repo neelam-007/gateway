@@ -3,7 +3,6 @@ package com.l7tech.server.cassandra;
 import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -11,7 +10,6 @@ import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
-import javax.inject.Inject;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
