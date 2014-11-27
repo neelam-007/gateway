@@ -13,7 +13,6 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
-import org.xerial.snappy.Snappy;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -35,15 +34,6 @@ import java.util.logging.Logger;
  */
 public class CassandraConnectionManagerImpl implements CassandraConnectionManager {
     private static final Logger logger = Logger.getLogger(CassandraConnectionManagerImpl.class.getName());
-
-    static {
-        // Pre-loading Snappy lib
-        try {
-            Class.forName(Snappy.class.getName());
-        } catch (ClassNotFoundException e) {
-            logger.warning("Could not pre-load Snappy library.");
-        }
-    }
 
     public static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
     public static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
@@ -233,8 +223,8 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
         //TODO: check the policy type so we can determine host distance setting or default
 
-        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, maxConnectionPerHost);
         poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, coreConnectionPerHost);
+        poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, maxConnectionPerHost);
         poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, maxSimultaneousRequestsPerConnectionThreshold);
         poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, minSimultaneousRequestsPerConnectionThreshold);
 
