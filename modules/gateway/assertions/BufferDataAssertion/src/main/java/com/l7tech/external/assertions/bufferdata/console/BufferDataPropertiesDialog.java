@@ -82,7 +82,6 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         if ( err != null )
             throw new ValidationException( err );
         a.setNewDataVarName( variableNameField.getVariable() );
-        a.setExtractIfFull( true );
 
         TimeUnit timeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
         long timeUnitMultiplier = timeUnit == null ? 1 : timeUnit.getMultiplier();

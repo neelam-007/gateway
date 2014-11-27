@@ -47,7 +47,6 @@ public class BufferDataAssertion extends Assertion implements UsesVariables, Set
     private String newDataVarName;
     private long maxSizeBytes = 1024L * 1024;
     private long maxAgeMillis = 86400L * 1000L;
-    private boolean extractIfFull = true;
     private String variablePrefix = "buffer";
 
     public String getBufferName() {
@@ -80,14 +79,6 @@ public class BufferDataAssertion extends Assertion implements UsesVariables, Set
 
     public void setMaxAgeMillis( long maxAgeMillis ) {
         this.maxAgeMillis = maxAgeMillis;
-    }
-
-    public boolean isExtractIfFull() {
-        return extractIfFull;
-    }
-
-    public void setExtractIfFull( boolean extractIfFull ) {
-        this.extractIfFull = extractIfFull;
     }
 
     public String getVariablePrefix() {

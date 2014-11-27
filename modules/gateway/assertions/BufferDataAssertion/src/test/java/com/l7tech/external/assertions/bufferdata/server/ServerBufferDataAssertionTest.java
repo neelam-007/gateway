@@ -43,7 +43,6 @@ public class ServerBufferDataAssertionTest {
         ass.setNewDataVarName( "csv" );
         ass.setMaxSizeBytes( 20 );
         ass.setMaxAgeMillis( 1000 );
-        ass.setExtractIfFull( true );
         ass.setVariablePrefix( "buffer" );
         ServerBufferDataAssertion sass = new ServerBufferDataAssertion( ass );
 
@@ -111,7 +110,6 @@ public class ServerBufferDataAssertionTest {
         ass.setNewDataVarName( "csv" );
         ass.setMaxSizeBytes( 5 );
         ass.setMaxAgeMillis( 1000 );
-        ass.setExtractIfFull( true );
         ass.setVariablePrefix( "buffer" );
         ServerBufferDataAssertion sass = new ServerBufferDataAssertion( ass );
 
