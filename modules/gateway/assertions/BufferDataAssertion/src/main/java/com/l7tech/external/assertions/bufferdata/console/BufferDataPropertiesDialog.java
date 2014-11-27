@@ -18,6 +18,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ResourceBundle;
 
 public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSupport<BufferDataAssertion> {
     private JPanel contentPane;
@@ -30,10 +31,13 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JPanel targetVariablePanelPanel;
     private JComboBox<TimeUnit> timeUnitComboBox;
     private JComboBox<StorageUnit> storageUnitComboBox;
+    private JLabel targetVariablePanelLabel;
     private TargetVariablePanel variableNameField;
 
     static final StorageUnit[] STORAGE_UNITS = BufferDataAssertion.getStorageUnits();
     static final TimeUnit[] TIME_UNITS = BufferDataAssertion.getTimeUnits();
+
+    private static ResourceBundle bundle = ResourceBundle.getBundle( "com.l7tech.external.assertions.bufferdata.console.resources.BufferDataPropertiesDialog" );
 
     public BufferDataPropertiesDialog( Frame owner, final Assertion assertion ) {
         super( BufferDataAssertion.class, owner, assertion, true );
@@ -74,9 +78,9 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     public BufferDataAssertion getData( BufferDataAssertion a ) throws ValidationException {
         String bufferName = bufferNameTextField.getText();
         if ( bufferName.trim().length() < 1 )
-            throw new ValidationException( "A buffer name is required." );
+            throw new ValidationException( bundle.getString( "error.bufferName.required" ) );
         if ( bufferName.length() > BufferDataAssertion.MAX_BUFFER_NAME_LENGTH )
-            throw new ValidationException( "Buffer name is too long." );
+            throw new ValidationException( bundle.getString( "error.bufferName.tooLong" ) );
         a.setBufferName( bufferName );
         String err = variableNameField.getErrorMessage();
         if ( err != null )
@@ -129,10 +133,12 @@ public class BufferDataPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         bufferNameTextField.setDocument( new MaxLengthDocument( BufferDataAssertion.MAX_BUFFER_NAME_LENGTH ) );
 
         variableNameField = new TargetVariablePanel();
+        variableNameField.setToolTipText( targetVariablePanelLabel.getToolTipText() );
         variableNameField.setValueWillBeRead( true );
         variableNameField.setValueWillBeWritten( false );
         targetVariablePanelPanel.setLayout( new BorderLayout() );
         targetVariablePanelPanel.add( variableNameField, BorderLayout.CENTER );
+        targetVariablePanelLabel.setLabelFor( variableNameField );
 
         maximumBufferSizeTextField.setDocument( new NumberField() );
         maximumBufferTimeTextField.setDocument( new NumberField() );

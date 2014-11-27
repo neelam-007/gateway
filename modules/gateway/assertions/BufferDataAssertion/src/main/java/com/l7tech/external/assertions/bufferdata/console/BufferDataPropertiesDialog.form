@@ -22,7 +22,8 @@
             </constraints>
             <properties>
               <labelFor value="f8a38"/>
-              <text value="Buffer Name:"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="bufferName.label.text"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="bufferName.toolTipText"/>
             </properties>
           </component>
           <vspacer id="61c2">
@@ -36,7 +37,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="bufferName.toolTipText"/>
+            </properties>
           </component>
           <component id="6c5e3" class="javax.swing.JLabel">
             <constraints>
@@ -44,7 +47,8 @@
             </constraints>
             <properties>
               <labelFor value="a23fc"/>
-              <text value="Maximum Buffer Time:"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferTime.label.text"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferTime.toolTipText"/>
             </properties>
           </component>
           <component id="6ceaf" class="javax.swing.JLabel">
@@ -53,7 +57,8 @@
             </constraints>
             <properties>
               <labelFor value="2133f"/>
-              <text value="Maximum Buffer Size:"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferSize.label.text"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferSize.toolTipText"/>
             </properties>
           </component>
           <component id="2133f" class="javax.swing.JTextField" binding="maximumBufferSizeTextField" default-binding="true">
@@ -62,7 +67,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferSize.toolTipText"/>
+            </properties>
           </component>
           <component id="a23fc" class="javax.swing.JTextField" binding="maximumBufferTimeTextField" default-binding="true">
             <constraints>
@@ -70,7 +77,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="maximumBufferTime.toolTipText"/>
+            </properties>
           </component>
           <component id="76c9b" class="javax.swing.JLabel">
             <constraints>
@@ -78,7 +87,8 @@
             </constraints>
             <properties>
               <labelFor value="de21f"/>
-              <text value="Variable Prefix:"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="variablePrefix.label.text"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="variablePrefix.toolTipText"/>
             </properties>
           </component>
           <component id="de21f" class="javax.swing.JTextField" binding="variablePrefixTextField" default-binding="true">
@@ -87,7 +97,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="variablePrefix.toolTipText"/>
+            </properties>
           </component>
           <grid id="3ddf" binding="targetVariablePanelPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
@@ -98,12 +110,13 @@
             <border type="none"/>
             <children/>
           </grid>
-          <component id="892ab" class="javax.swing.JLabel">
+          <component id="892ab" class="javax.swing.JLabel" binding="targetVariablePanelLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Append Data from Variable:"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="variableName.label.text"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="variableName.toolTipText"/>
             </properties>
           </component>
           <component id="a5a1f" class="javax.swing.JComboBox" binding="timeUnitComboBox">
@@ -153,7 +166,7 @@
               <lineWrap value="true"/>
               <opaque value="false"/>
               <rows value="6"/>
-              <text value="Data in context variable will be appended to named buffer, which will accumulate across multiple requests. If buffer would thereby be too full, or if oldest buffered data is already too old, buffer will first be extracted to ${prefix}.extractedMessage"/>
+              <text resource-bundle="com/l7tech/external/assertions/bufferdata/console/resources/BufferDataPropertiesDialog" key="explanatoryText.label.text"/>
               <wrapStyleWord value="true"/>
             </properties>
           </component>
