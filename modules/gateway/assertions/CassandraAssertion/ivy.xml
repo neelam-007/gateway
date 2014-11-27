@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="CassandraAssertion"
+        status="integration"
+	>
+	</info>
+	<configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+	</configurations>
+	<publications>
+		<artifact name="CassandraAssertion" type="aar" ext="aar" conf="master"/>
+	</publications>
+	<dependencies>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test">
+            <exclude org="com.l7tech" module="layer7-gateway-rest-toolkit" name="*" type="*" ext="*" conf="" matcher="exact"/>
+        </dependency>
+        <dependency name="layer7-cassandra" rev="latest.integration" conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="com.datastax.cassandra" name="cassandra-driver-core"  rev="2.1.2" conf="core">
+            <!--<exclude org="jersey" module="guava" type="*" ext="*" conf="" matcher="exact"/>-->
+        </dependency>
+        <dependency org="com.google.guava" name="guava" rev="16.0.1" conf="core"/>
+        <dependency org="io.netty" name="netty" rev="3.9.0.Final" conf="core"/>
+        <dependency org="com.codahale.metrics" name="metrics-core" rev="3.0.2" conf="core"/>
+        <dependency org="net.jpountz.lz4" name="lz4" rev="1.2.0" conf="core"/>
+        <dependency org="org.xerial.snappy" name="snappy-java" rev="1.0.5" conf="core"/>
+        <dependency org="commons-io" name="commons-io" rev="latest.integration" force="true" conf="core"/>
+        <dependency org="org.powermock" name="powermock-mockito" rev="1.4.12" force="true" conf="test"/>
+
+	</dependencies>
+</ivy-module>
