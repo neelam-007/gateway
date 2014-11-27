@@ -473,7 +473,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableJdbcConnList() {
-        connectionComboBox.setEnabled(jdbcConnPermFlags.canReadAll());
+        connectionComboBox.setEnabled(jdbcConnPermFlags.canReadSome());
     }
 
     private boolean isNonEmptyRequiredTextField(String text) {
