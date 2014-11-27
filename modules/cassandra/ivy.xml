@@ -24,7 +24,7 @@
         <dependency org="io.netty" name="netty" rev="3.9.0.Final" conf="core"/>
         <dependency org="com.codahale.metrics" name="metrics-core" rev="3.0.2" conf="core"/>
         <dependency org="net.jpountz.lz4" name="lz4" rev="1.2.0" conf="core"/>
-        <dependency org="org.xerial.snappy" name="snappy-java" rev="1.0.5" conf="core"/>
+        <dependency org="org.xerial.snappy" name="snappy-java" rev="1.1.0.1" conf="core"/>
         <dependency org="commons-io" name="commons-io" rev="latest.integration" force="true" conf="core"/>
         <dependency name="junit" rev="4.10" org="junit" conf="test"/>
     </dependencies>
