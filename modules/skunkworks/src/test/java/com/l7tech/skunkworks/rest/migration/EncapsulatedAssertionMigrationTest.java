@@ -107,7 +107,6 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         assertOkCreatedResponse(response);
         policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         policyItem.setContent(policyMO);
-        Thread.sleep(1000);
     }
 
     @After

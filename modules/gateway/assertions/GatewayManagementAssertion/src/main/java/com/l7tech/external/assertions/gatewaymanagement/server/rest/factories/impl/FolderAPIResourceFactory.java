@@ -13,7 +13,6 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.DependencyCache;
 import com.l7tech.server.search.DependencySearchResultsUtils;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.Dependency;
@@ -43,7 +42,7 @@ import java.util.List;
 public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO, FolderResourceFactory> {
 
     @Inject
-    private DependencyCache dependencyCache;
+    private DependencyAnalyzer dependencyAnalyzer;
 
     @Inject
     private FolderManager folderManager;
@@ -92,7 +91,7 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
                     rbacAccessService.validatePermitted(folderToDelete, OperationType.DELETE);
 
                     //find the dependencies for the folder
-                    final List<DependencySearchResults> dependencySearchResults = dependencyCache.getDependencies(
+                    final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(
                             CollectionUtils.list(EntityHeaderUtils.fromEntity(folderToDelete)),
                             CollectionUtils.<String, Object>mapBuilder().put(DependencyAnalyzer.SearchEntityTypeOptionKey, CollectionUtils.list(EntityType.FOLDER)).map());
                     final List<Dependency> dependentObjects = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResults, true);

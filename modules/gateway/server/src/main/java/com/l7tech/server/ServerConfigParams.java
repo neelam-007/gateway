@@ -215,7 +215,4 @@ public interface ServerConfigParams {
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE = "custom.assertions.rescan.enable";
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS = "custom.assertions.rescan.millis";
     String PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE = "custom.assertions.scan.disable";
-
-    //dependency cache
-    String PARAM_DEPENDENCY_CACHE_ENABLED = "dependency.cache.enabled";
 }

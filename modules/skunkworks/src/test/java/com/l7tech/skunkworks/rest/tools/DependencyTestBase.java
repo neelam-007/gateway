@@ -98,9 +98,6 @@ public abstract class DependencyTestBase extends RestEntityTestBase{
         Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         policyGoids.add(Goid.parseGoid(policyItem.getId()));
 
-        //sleep for a second so the the dependency cache has time to properly build up
-        Thread.sleep(1000);
-
         //  get dependency
         RestResponse depResponse = getDatabaseBasedRestManagementEnvironment().processRequest("policies/" + policyItem.getId() + "/dependencies", HttpMethod.GET, null, "");
         assertOkResponse(depResponse);

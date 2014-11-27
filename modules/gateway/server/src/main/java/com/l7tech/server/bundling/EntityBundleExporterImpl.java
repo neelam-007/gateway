@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.DependencyCache;
 import com.l7tech.server.search.DependencySearchResultsUtils;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.BrokenDependency;
@@ -32,7 +31,7 @@ import java.util.*;
  */
 public class EntityBundleExporterImpl implements EntityBundleExporter {
     @Inject
-    private DependencyCache dependencyCache;
+    private DependencyAnalyzer dependencyAnalyzer;
     @Inject
     private EntityCrud entityCrud;
     @Inject
@@ -60,7 +59,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     @Override
     public EntityBundle exportBundle(@NotNull final Properties bundleExportProperties, @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
         //find the dependencies for the headers
-        final List<DependencySearchResults> dependencySearchResults = dependencyCache.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
+        final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(Arrays.asList(headers), buildDependencyAnalyzerOptions(bundleExportProperties));
         //create a flat dependency list
         final List<Dependency> dependentObjects = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResults, true);
 

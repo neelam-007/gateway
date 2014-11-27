@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.search.DependencyAnalyzer;
-import com.l7tech.server.search.DependencyCache;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.CollectionUtils;
@@ -30,7 +29,7 @@ import java.util.List;
 public class DependencyResource {
 
     @SpringBean
-    private DependencyCache dependencyCache;
+    private DependencyAnalyzer dependencyAnalyzer;
 
     @SpringBean
     private DependencyTransformer transformer;
@@ -51,31 +50,30 @@ public class DependencyResource {
     /**
      * Returns the list of dependencies for this entity.
      *
-     * @param resourceTypes   the resource types to search dependency for
-     * @param level   how deep to search for the dependencies. 0 for none, 1 for immediate dependencies
+     * @param resourceTypes the resource types to search dependency for
+     * @param level         how deep to search for the dependencies. 0 for none, 1 for immediate dependencies
      * @return The list of dependencies.
      * @throws FindException
-     *
      * @title Get Dependencies
      */
     @GET
     public Item getDependencies(@QueryParam("searchEntityType") @Since(RestManVersion.VERSION_1_0_1) List<String> resourceTypes,
                                 @QueryParam("level") @DefaultValue("-1") @Since(RestManVersion.VERSION_1_0_1) Integer level) throws FindException, CannotRetrieveDependenciesException {
-            rbacAccessService.validateFullAdministrator();
-            final DependencySearchResults dependencySearchResults = dependencyCache.getDependencies(entityHeader,
-                    CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false)
-                            .put(DependencyAnalyzer.SearchEntityTypeOptionKey, Functions.map(resourceTypes,new Functions.Unary<EntityType, String>() {
-                                @Override
-                                public EntityType call(String s) {
-                                    return EntityType.valueOf(s);
-                                }
-                            }))
-                            .put(DependencyAnalyzer.SearchDepthOptionKey, level).map());
-            DependencyListMO dependencyListMO = transformer.convertToMO(dependencySearchResults);
-            //hide the dependency search options, it is not usable in version 1.0 of the api
-            dependencyListMO.setOptions(null);
-            return new ItemBuilder<>(transformer.convertToItem(dependencyListMO))
-                    .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
-                    .build();
+        rbacAccessService.validateFullAdministrator();
+        final DependencySearchResults dependencySearchResults = dependencyAnalyzer.getDependencies(entityHeader,
+                CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false)
+                        .put(DependencyAnalyzer.SearchEntityTypeOptionKey, Functions.map(resourceTypes, new Functions.Unary<EntityType, String>() {
+                            @Override
+                            public EntityType call(String s) {
+                                return EntityType.valueOf(s);
+                            }
+                        }))
+                        .put(DependencyAnalyzer.SearchDepthOptionKey, level).map());
+        DependencyListMO dependencyListMO = transformer.convertToMO(dependencySearchResults);
+        //hide the dependency search options, it is not usable in version 1.0 of the api
+        dependencyListMO.setOptions(null);
+        return new ItemBuilder<>(transformer.convertToItem(dependencyListMO))
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
+                .build();
     }
 }
