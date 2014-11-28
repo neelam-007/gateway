@@ -5,10 +5,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
-import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
@@ -149,6 +149,16 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             }
         });
 
+        final RunOnChangeListener docListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableOrDisableButtons();
+            }
+        });
+        nameTextField.getDocument().addDocumentListener(docListener);
+        contactPointsTextField.getDocument().addDocumentListener(docListener);
+        portTextField.getDocument().addDocumentListener(docListener);
+
         initAdditionalPropertyTable();
 
         compressionComboBox.setModel(new DefaultComboBoxModel(new String[]{
@@ -261,14 +271,23 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             @Override
             public void run() {
                 securePasswordComboBox.reloadPasswordList();
-                enableDisableComponents();
                 DialogDisplayer.pack(CassandraConnectionPropertiesDialog.this);
 
             }
         });
     }
 
-    private void enableDisableComponents() {
+    private void enableOrDisableButtons() {
+        boolean enabled = isNonEmptyRequiredTextField(nameTextField.getText()) &&
+                isNonEmptyRequiredTextField(contactPointsTextField.getText())  &&
+                isNonEmptyRequiredTextField(portTextField.getText());
+
+        OKButton.setEnabled(enabled);
+        testConnectionButton.setEnabled(enabled);
+    }
+
+    private boolean isNonEmptyRequiredTextField(String text) {
+        return text != null && !text.trim().isEmpty();
     }
 
     private void onCancel() {
