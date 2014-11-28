@@ -152,8 +152,8 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         initAdditionalPropertyTable();
 
         compressionComboBox.setModel(new DefaultComboBoxModel(new String[]{
-                CassandraConnection.COMPRESS_LZ4,
                 CassandraConnection.COMPRESS_NONE,
+                CassandraConnection.COMPRESS_LZ4,
                 CassandraConnection.COMPRESS_SNAPPY
         }));
 
@@ -253,7 +253,6 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     }
 
     private void doManagePasswords() {
-        final SecurePassword password = securePasswordComboBox.getSelectedSecurePassword();
         final SecurePasswordManagerWindow securePasswordManagerWindow = new SecurePasswordManagerWindow(getOwner());
 
         securePasswordManagerWindow.pack();
