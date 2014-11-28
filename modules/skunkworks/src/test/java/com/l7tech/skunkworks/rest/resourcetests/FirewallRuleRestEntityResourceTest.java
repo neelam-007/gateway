@@ -452,4 +452,42 @@ public class FirewallRuleRestEntityResourceTest extends RestEntityTests<SsgFirew
             Assert.assertEquals("Ordinals should be in sequential order.", i+1, (((FirewallRuleMO)references.get(i).getContent()).getOrdinal()));
         }
     }
+
+
+    @Test
+    public void testCreateFirstRule() throws Exception {
+
+        // delete all rules
+        Collection<SsgFirewallRule> all = ssgFirewallRuleManager.findAll();
+        for (SsgFirewallRule firewallRule : all) {
+            ssgFirewallRuleManager.delete(firewallRule.getGoid());
+        }
+
+        // create rule
+        FirewallRuleMO firewallRule = ManagedObjectFactory.createFirewallRuleMO();
+        firewallRule.setName("First rule");
+        firewallRule.setOrdinal(10);
+        firewallRule.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                .put("jump", "REDIRECT")
+                .put("protocol", "tcp")
+                .map());
+
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(firewallRule)));
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 201, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item createdItem = MarshallingUtils.unmarshal(Item.class, source);
+
+        SsgFirewallRule createdRule = ssgFirewallRuleManager.findByPrimaryKey(Goid.parseGoid(createdItem.getId()));
+
+        Assert.assertEquals(firewallRule.getName(), createdRule.getName());
+        Assert.assertEquals(1, createdRule.getOrdinal());
+        Assert.assertEquals(firewallRule.isEnabled(), createdRule.isEnabled());
+        Assert.assertEquals(firewallRule.getProperties().size(), createdRule.getPropertyNames().size());
+        for (String key : firewallRule.getProperties().keySet()) {
+            Assert.assertEquals(firewallRule.getProperties().get(key),createdRule.getProperty(key) );
+        }
+
+    }
 }

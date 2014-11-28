@@ -86,6 +86,10 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
 
         // make ordinals sequential and reorder other rules
         final List<SsgFirewallRule> rules = getOrderedFirewallRules();
+        if(rules.isEmpty()){
+            entity.setOrdinal(1);
+            return;
+        }
         final int lastOrdinal = rules.get(rules.size() - 1).getOrdinal();
         if (entity.getOrdinal() > lastOrdinal) {
             entity.setOrdinal(lastOrdinal + 1);
