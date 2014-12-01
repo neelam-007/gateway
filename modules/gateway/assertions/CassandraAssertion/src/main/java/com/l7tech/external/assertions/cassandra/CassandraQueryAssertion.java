@@ -69,8 +69,6 @@ public class CassandraQueryAssertion extends Assertion implements JdbcConnection
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.CASSANDRA_CONNECTION)
-    @Dependency(type = Dependency.DependencyType.CASSANDRA_CONNECTION, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getConnectionName() {
         return connectionName;
     }
