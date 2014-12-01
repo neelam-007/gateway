@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.cassandra.server;
 
 import static org.junit.Assert.*;
 
-import com.ca.datasources.cassandra.connection.CassandraConnectionHolder;
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
+import com.l7tech.server.cassandra.CassandraConnectionHolder;
+import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.datastax.driver.core.*;
 import com.l7tech.external.assertions.cassandra.CassandraQueryAssertion;
 import com.l7tech.gateway.common.audit.Audit;

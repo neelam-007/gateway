@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.cassandra.server;
 
-import com.ca.datasources.cassandra.connection.CassandraConnectionHolder;
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
+import com.l7tech.server.cassandra.CassandraConnectionHolder;
+import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.l7tech.external.assertions.cassandra.CassandraQueryAssertion;

@@ -1,4 +1,4 @@
-package com.ca.datasources.cassandra.connection;
+package com.l7tech.server.cassandra;
 
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.objectmodel.Goid;

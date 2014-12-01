@@ -1,6 +1,5 @@
 package com.l7tech.server.cassandra;
 
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.objectmodel.*;

@@ -1,8 +1,6 @@
 package com.l7tech.server.cassandra;
 
 import com.ca.datasources.cassandra.CassandraUtil;
-import com.ca.datasources.cassandra.connection.CassandraConnectionHolder;
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
 import com.datastax.driver.core.*;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -179,7 +177,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             return null;
         }
 
-        return new CassandraConnectionHolder(cassandraConnectionEntity, cluster, session);
+        return new CassandraConnectionHolderImpl(cassandraConnectionEntity, cluster, session);
     }
 
     @Override
@@ -223,8 +221,8 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
         //TODO: check the policy type so we can determine host distance setting or default
 
-        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, coreConnectionPerHost);
         poolingOptions.setMaxConnectionsPerHost(HostDistance.LOCAL, maxConnectionPerHost);
+        poolingOptions.setCoreConnectionsPerHost(HostDistance.LOCAL, coreConnectionPerHost);
         poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, maxSimultaneousRequestsPerConnectionThreshold);
         poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, minSimultaneousRequestsPerConnectionThreshold);
 

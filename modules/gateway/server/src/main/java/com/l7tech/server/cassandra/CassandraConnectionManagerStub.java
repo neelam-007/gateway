@@ -1,10 +1,7 @@
 package com.l7tech.server.cassandra;
 
-import com.ca.datasources.cassandra.connection.CassandraConnectionHolder;
-import com.ca.datasources.cassandra.connection.CassandraConnectionManager;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.objectmodel.Goid;
-import org.mockito.Mock;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -13,7 +10,7 @@ import org.springframework.context.ApplicationEvent;
  * Date: 11/27/14
  */
 public class CassandraConnectionManagerStub implements CassandraConnectionManager{
-    @Mock
+
     private CassandraConnectionHolder connectionHolder = null;
 
     @Override
