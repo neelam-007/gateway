@@ -24,11 +24,12 @@ public class PasswordEncoder {
     /**
      * Obfuscate a password.
      * <p/>
-     * The password will be encrypted with AES 256 in CBC mode with a random IV, using a key
-     * derived from a randomly-chosen salt hashed with an internal constant string.
+     * The password will be encrypted with AES 256 in CBC mode, using a key
+     * derived from a randomly-chosen salt hashed with an internal constant string.  The IV
+     * is derived from the salt (without the internal constant string).
      * <p/>
      * The output is in the format SALT + '.' + CIPHERTEXT where SALT is the base64url encoding
-     * of the salt and CIPHERTEXT is the base64url encoding of the IV + ciphertext.
+     * of the salt and CIPHERTEXT is the base64url encoding of the ciphertext.
      * <p/>
      * Base64url encoding is a variant of Base-64 where - is used in place of + and _ is used in place
      * of / and trailing = padding is omitted.  It lacks shell metacharacters or characters that will
@@ -43,8 +44,9 @@ public class PasswordEncoder {
             random.nextBytes( saltBytes );
             String salt = base64url( saltBytes );
             Key key = generateKey( salt );
-            byte[] cipherTextWithIv = aes256cbc_encrypt( key, plaintextPassword );
-            return salt + "." + base64url( cipherTextWithIv );
+            byte[] iv = generateIv( salt );
+            byte[] cipherText = aes256cbc_encrypt( key, iv, plaintextPassword );
+            return salt + "." + base64url( cipherText );
 
         } catch ( GeneralSecurityException|IOException e ) {
             throw new RuntimeException( "Unable to encode password: " + e.getMessage(), e );
@@ -66,12 +68,13 @@ public class PasswordEncoder {
             String salt = parts[0];
             if ( salt.length() < 1 )
                 throw new IOException( "Encoded password contained an empty salt" ) ;
-            String cipherTextWithIvB64 = parts[1];
-            byte[] cipherTextWithIv = unbase64url( cipherTextWithIvB64 );
-            if ( cipherTextWithIv.length < 32 )
+            byte[] iv = generateIv( salt );
+            String cipherTextB64 = parts[1];
+            byte[] cipherText = unbase64url( cipherTextB64 );
+            if ( cipherText.length < 16 )
                 throw new IOException( "Encoded password is too short" );
             Key key = generateKey( salt );
-            return aes256cbc_decrypt( key, cipherTextWithIv );
+            return aes256cbc_decrypt( key, iv, cipherText );
 
         } catch ( GeneralSecurityException e ) {
             throw new IOException( "Unable to decode password: " + e.getMessage(), e );
@@ -83,11 +86,21 @@ public class PasswordEncoder {
         // to generate keys that are to be used for encrypting anything for real.
         MessageDigest md = MessageDigest.getInstance( "SHA-512" );
         md.update( salt.getBytes( ISO8859 ) );
-        md.update( "q8sN-j>s<lktAK=z2DcF9".getBytes( ISO8859 ) );
+        md.update( "q8sN-j>s<lktAK=z2DcF9".getBytes( ISO8859 ) );  // This our built-in hardcoded secret
         byte[] bytes = md.digest();
         return new SecretKeySpec( bytes, 0, 32, "AES" );
     }
 
+    private static byte[] generateIv( String salt ) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        // Since we aren't doing actual crypto here we can get away with just
+        // generating an IV from the salt.  In real life we'd want a random IV.
+        MessageDigest md = MessageDigest.getInstance( "SHA-512" );
+        md.update( salt.getBytes( ISO8859 ) );
+        byte[] bytes = md.digest();
+        byte[] iv = new byte[16];
+        System.arraycopy( bytes, 0, iv, 0, 16 );
+        return iv;
+    }
 
     static String base64url( byte[] bytes ) {
         return new BASE64Encoder().encode( bytes ).
@@ -117,27 +130,26 @@ public class PasswordEncoder {
         return new BASE64Decoder().decodeBuffer( value.replace( '-', '+' ).replace( '_', '/' ) + pad );
     }
 
-    static byte[] aes256cbc_encrypt( Key key, byte[] plaintext ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher aes = Cipher.getInstance( "AES/CBC/PKCS5Padding" );
-        aes.init( Cipher.ENCRYPT_MODE, key, random );
-        byte[] cipherText = aes.doFinal( plaintext );
-
-        byte[] iv = aes.getIV();
-        byte[] cipherTextWithIv = new byte[ iv.length + cipherText.length ];
-        System.arraycopy( iv, 0, cipherTextWithIv, 0, iv.length );
-        System.arraycopy( cipherText, 0, cipherTextWithIv, iv.length, cipherText.length );
-
-        return cipherTextWithIv;
+    static Cipher newAesCbc() throws NoSuchPaddingException, NoSuchAlgorithmException {
+        return Cipher.getInstance( "AES/CBC/PKCS5Padding" );
     }
 
-    static byte[] aes256cbc_decrypt( Key key, byte[] cipherTextWithIv ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        Cipher aes = Cipher.getInstance( "AES/CBC/PKCS5Padding" );
+    static byte[] aes256cbc_encrypt( Key key, byte[] iv, byte[] plaintext ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
+        Cipher aes = newAesCbc();
 
-        int ivSize = aes.getBlockSize();
-        IvParameterSpec spec = new IvParameterSpec( cipherTextWithIv, 0, ivSize );
+        IvParameterSpec spec = new IvParameterSpec(iv );
+        aes.init( Cipher.ENCRYPT_MODE, key, spec, random );
+
+        return aes.doFinal( plaintext );
+    }
+
+    static byte[] aes256cbc_decrypt( Key key, byte[] iv, byte[] cipherText ) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        Cipher aes = newAesCbc();
+
+        IvParameterSpec spec = new IvParameterSpec(iv );
         aes.init( Cipher.DECRYPT_MODE, key, spec );
 
-        return aes.doFinal( cipherTextWithIv, ivSize, cipherTextWithIv.length - ivSize );
+        return aes.doFinal( cipherText );
     }
 
 }

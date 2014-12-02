@@ -19,7 +19,6 @@ import static org.junit.Assert.fail;
  */
 public class PasswordEncoderTest {
 
-
     @Test
     public void testBase64url() throws Exception {
         assertEquals( "", PasswordEncoder.base64url( b( "" ) ) );
@@ -71,16 +70,18 @@ public class PasswordEncoderTest {
 
     @Test
     public void testAes256cbc_encrypt() throws Exception {
+        byte[] iv = HexUtils.unHexDump( "4a7df577978649cc6c3745475f376938" );
         SecretKeySpec key = new SecretKeySpec( HexUtils.unHexDump( "92f64099a7d93bddbbea1b5dac5147e74a7df577978649cc6c3745475f376938" ), "AES" );
-        byte[] got = PasswordEncoder.aes256cbc_encrypt( key, b( "sekrit" ) );
-        assertEquals( 32, got.length );
+        byte[] got = PasswordEncoder.aes256cbc_encrypt( key, iv, b( "sekrit" ) );
+        assertEquals( 16, got.length );
     }
 
     @Test
     public void testAes256cbc_decrypt() throws Exception {
+        byte[] iv = HexUtils.unHexDump( "4a7df577978649cc6c3745475f376938" );
         SecretKeySpec key = new SecretKeySpec( HexUtils.unHexDump( "92f64099a7d93bddbbea1b5dac5147e74a7df577978649cc6c3745475f376938" ), "AES" );
-        byte[] cipherTextWithIv = HexUtils.unHexDump( "85b95864e673c09ff1a536515ef66ffafb56e82cbbb152e214e9e02f747f2dd5" );
-        byte[] got = PasswordEncoder.aes256cbc_decrypt( key, cipherTextWithIv );
+        byte[] cipherText = HexUtils.unHexDump( "0ca73306af557aabe5c7b9d71c9ed22e" );
+        byte[] got = PasswordEncoder.aes256cbc_decrypt( key, iv, cipherText );
         assertTrue( Arrays.equals( b( "sekrit" ), got ) );
     }
 
@@ -94,14 +95,17 @@ public class PasswordEncoderTest {
             byte[] plaintext = new byte[ len ];
             r.nextBytes( plaintext );
 
+            byte[] iv = new byte[16];
+            r.nextBytes( iv );
+
             byte[] keyBytes = new byte[32];
             r.nextBytes( keyBytes );
             SecretKeySpec key = new SecretKeySpec( keyBytes, "AES" );
 
-            byte[] cipher1 = PasswordEncoder.aes256cbc_encrypt( key, plaintext );
-            byte[] plain2 = PasswordEncoder.aes256cbc_decrypt( key, cipher1 );
-            byte[] cipher2 = PasswordEncoder.aes256cbc_encrypt( key, plain2 );
-            byte[] plain3 = PasswordEncoder.aes256cbc_decrypt( key, cipher2 );
+            byte[] cipher1 = PasswordEncoder.aes256cbc_encrypt( key, iv, plaintext );
+            byte[] plain2 = PasswordEncoder.aes256cbc_decrypt( key, iv, cipher1 );
+            byte[] cipher2 = PasswordEncoder.aes256cbc_encrypt( key, iv, plain2 );
+            byte[] plain3 = PasswordEncoder.aes256cbc_decrypt( key, iv, cipher2 );
 
             assertEquals( plaintext.length, plain3.length );
             assertTrue( Arrays.equals( plaintext, plain3 ) );
@@ -121,10 +125,10 @@ public class PasswordEncoderTest {
 
     @Test
     public void testDecodePassword() throws Exception {
-        byte[] decoded = PasswordEncoder.decodePassword( "_8S_lX4rITU.tUl3synfUC7qrVcG4f4h1J_LiVjYYCXOc-jEqJ97lVY" );
+        byte[] decoded = PasswordEncoder.decodePassword( "45LCIWYgEbE.-3Z9-sIGN0F7Bdq8rFxn-w" );
         assertEquals( "", new String( decoded, "UTF-8" ) );
 
-        decoded = PasswordEncoder.decodePassword( "hSpA0doc9o8.jaT7Vf4TmFN4Uaic3QWTamwAXSjpfD0CtoEGTfjQr4U" );
+        decoded = PasswordEncoder.decodePassword( "cUlSZjf7Big.jwKfburLztN-JNVmhg7zGw" );
         assertEquals( "sekrit", new String( decoded, "UTF-8" ) );
     }
 
@@ -171,7 +175,7 @@ public class PasswordEncoderTest {
     @Test
     public void testDecodePassword_tooShort() throws Exception {
         try {
-            PasswordEncoder.decodePassword( "hSpA0doc9o8.jaT7Vf4TmFN4Uaic3QWTamwAXSjpfD" );
+            PasswordEncoder.decodePassword( "hSpA0doc9o8.jaT7Vf4TmFN4UXSjpfD" );
             fail( "expected exception not thrown" );
         } catch ( IOException e ) {
             assertEquals( "Encoded password is too short", e.getMessage() );
