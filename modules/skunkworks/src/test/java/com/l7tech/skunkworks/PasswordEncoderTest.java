@@ -145,7 +145,7 @@ public class PasswordEncoderTest {
     @Test
     public void testDecodePassword_noDot() throws Exception {
         try {
-            PasswordEncoder.decodePassword( "hSpA0doc9o8jaT7Vf4TmFN4Uaic3QWTamwAXSjpfD0CtoEGTfjQr4U" );
+            PasswordEncoder.decodePassword( "cUlSZjf7BigjwKfburLztN-JNVmhg7zGw" );
             fail( "expected exception not thrown" );
         } catch ( IOException e ) {
             assertEquals( "Encoded password did not contain two dot-delimited components", e.getMessage() );
@@ -155,7 +155,7 @@ public class PasswordEncoderTest {
     @Test
     public void testDecodePassword_extraDot() throws Exception {
         try {
-            PasswordEncoder.decodePassword( "hSpA0doc9o8.jaT7Vf4TmFN4Uaic.3QWTamwAXSjpfD0CtoEGTfjQr4U" );
+            PasswordEncoder.decodePassword( "cUlSZjf7Big.jwKfburLztN-J.NVmhg7zGw" );
             fail( "expected exception not thrown" );
         } catch ( IOException e ) {
             assertEquals( "Encoded password did not contain two dot-delimited components", e.getMessage() );
@@ -165,7 +165,7 @@ public class PasswordEncoderTest {
     @Test
     public void testDecodePassword_noSalt() throws Exception {
         try {
-            PasswordEncoder.decodePassword( ".jaT7Vf4TmFN4Uaic3QWTamwAXSjpfD0CtoEGTfjQr4U" );
+            PasswordEncoder.decodePassword( ".cUlSZjf7BigjwKfburLztN-JNVmhg7zGw" );
             fail( "expected exception not thrown" );
         } catch ( IOException e ) {
             assertEquals( "Encoded password contained an empty salt", e.getMessage() );
@@ -175,7 +175,7 @@ public class PasswordEncoderTest {
     @Test
     public void testDecodePassword_tooShort() throws Exception {
         try {
-            PasswordEncoder.decodePassword( "hSpA0doc9o8.jaT7Vf4TmFN4UXSjpfD" );
+            PasswordEncoder.decodePassword( "cUlSZjf7Big.jwKfburLztN-JNVmhg7z" );
             fail( "expected exception not thrown" );
         } catch ( IOException e ) {
             assertEquals( "Encoded password is too short", e.getMessage() );
