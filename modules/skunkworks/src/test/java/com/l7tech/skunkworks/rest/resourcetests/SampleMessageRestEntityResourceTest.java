@@ -67,7 +67,7 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
         sampleMessageManager.save(sampleMessage);
         messages.add(sampleMessage);
 
-        sampleMessage = new SampleMessage(services.get(1).getGoid(), "message 3", null, "<xml/>");
+        sampleMessage = new SampleMessage(PersistentEntity.DEFAULT_GOID, "message 3", null, "<xml/>");
         sampleMessageManager.save(sampleMessage);
         messages.add(sampleMessage);
 
@@ -105,6 +105,13 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
         sampleMessage.setName("Test Sample Message created");
         sampleMessage.setServiceId(services.get(0).getId());
         sampleMessage.setXml("<stuff/>");
+
+        messages.add(sampleMessage);
+
+        sampleMessage = ManagedObjectFactory.createSampleMessageMO();
+        sampleMessage.setId(getGoid().toString());
+        sampleMessage.setName("Test Sample Message created for policy");
+        sampleMessage.setXml("<morestuff/>");
 
         messages.add(sampleMessage);
 
@@ -246,7 +253,11 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getName());
             Assert.assertEquals(entity.getOperationName(), managedObject.getOperation());
-            Assert.assertEquals(entity.getServiceGoid().toString(), managedObject.getServiceId());
+            if(entity.getServiceGoid()==null){
+                Assert.assertEquals(entity.getServiceGoid(), managedObject.getServiceId());
+            }else {
+                Assert.assertEquals(entity.getServiceGoid().toString(), managedObject.getServiceId());
+            }
             Assert.assertEquals(entity.getXml(), managedObject.getXml());
         }
     }

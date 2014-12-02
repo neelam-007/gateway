@@ -45,7 +45,7 @@ public class SampleMessageTransformer implements EntityAPITransformer<SampleMess
         sampleMessageMO.setName(sampleMessage.getName());
         sampleMessageMO.setXml(sampleMessage.getXml());
         sampleMessageMO.setOperation(sampleMessage.getOperationName());
-        sampleMessageMO.setServiceId(sampleMessage.getServiceGoid().toString());
+        sampleMessageMO.setServiceId(sampleMessage.getServiceGoid()==null? null : sampleMessage.getServiceGoid().toString());
         doSecurityZoneToMO(sampleMessageMO,sampleMessage);
 
         return sampleMessageMO;
@@ -69,15 +69,17 @@ public class SampleMessageTransformer implements EntityAPITransformer<SampleMess
         sampleMessage.setXml(sampleMessageMO.getXml());
         sampleMessage.setOperationName(sampleMessageMO.getOperation());
 
-        Goid serviceGoid = Goid.parseGoid(sampleMessageMO.getServiceId());
-        try {
-            serviceManager.findByPrimaryKey(serviceGoid);
-        } catch (FindException e) {
-            if(strict){
-                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot find published service with id: "+e.getMessage());
+        if(sampleMessageMO.getServiceId()!=null) {
+            Goid serviceGoid = Goid.parseGoid(sampleMessageMO.getServiceId());
+            try {
+                serviceManager.findByPrimaryKey(serviceGoid);
+            } catch (FindException e) {
+                if (strict) {
+                    throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot find published service with id: " + e.getMessage());
+                }
             }
+            sampleMessage.setServiceGoid(serviceGoid);
         }
-        sampleMessage.setServiceGoid(serviceGoid);
 
         doSecurityZoneFromMO(sampleMessageMO,sampleMessage,strict);
 

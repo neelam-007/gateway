@@ -83,13 +83,13 @@ public class SampleMessageMO extends ElementExtendableAccessibleObject {
      *
      * @return The service id
      */
-    @XmlElement(name = "ServiceId", required=true)
+    @XmlElement(name = "ServiceId")
     public String getServiceId() {
         return serviceId;
     }
 
     /**
-     * Sets the id to to which this message belongs. Required.
+     * Sets the id to to which this message belongs.
      *
      * @param serviceId The service's id
      */
