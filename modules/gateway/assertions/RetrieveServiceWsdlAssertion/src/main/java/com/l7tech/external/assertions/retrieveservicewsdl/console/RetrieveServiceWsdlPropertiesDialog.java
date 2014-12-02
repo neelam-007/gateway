@@ -38,6 +38,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     private static final String PROTOCOL_FROM_VARIABLE_OPTION = getResourceString("protocolFromVariable");
 
     private static final String COMPONENT_LABEL_SUFFIX = ":";
+    private static final String COMPONENT_LABEL_REQUIRED_SUFFIX = ":*";
 
     private JPanel contentPane;
     private JTextField serviceIdTextField;
@@ -49,6 +50,9 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     private JComboBox<String> protocolComboBox;
     private JPanel protocolVariablePanelHolder;
     private JCheckBox proxyDependenciesCheckBox;
+    private JTextField serviceDocumentIdTextField;
+    private JRadioButton wsdlRadioButton;
+    private JRadioButton dependencyRadioButton;
     private TargetVariablePanel protocolVariablePanel;
     private TargetVariablePanel targetVariablePanel;
 
@@ -64,6 +68,8 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     @Override
     protected void initComponents() {
         super.initComponents();
+
+        // TODO jwilliams: add change listener to radio buttons for enable/disable service document id text field
 
         DocumentListener urlComponentDocumentListener = new DocumentListener() {
             @Override
@@ -169,6 +175,31 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
             }
         });
 
+        // service document ID is required when dependency radio button selected, must be a single context variable or a valid GOID
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (dependencyRadioButton.isSelected()) {
+                    String serviceDocumentId = serviceDocumentIdTextField.getText().trim();
+
+                    if (serviceDocumentId.isEmpty()) {
+                        return resources.getString("serviceDocumentIdRequiredErrMsg");
+                    }
+
+                    // see if a context variable is present
+                    if (Syntax.getReferencedNames(serviceDocumentId).length > 0) {
+                        if (!Syntax.isOnlyASingleVariableReferenced(serviceDocumentId)) {
+                            return resources.getString("serviceDocumentIdNotOnlyOneVariableErrMsg");
+                        }
+                    } else if (!ValidationUtils.isValidGoid(serviceDocumentId, false)) {  // if not a variable, must be a GOID
+                        return MessageFormat.format(resources.getString("serviceDocumentIdInvalidErrMsg"), serviceDocumentId);
+                    }
+                }
+
+                return null;
+            }
+        });
+
         // protocol option is required
         inputValidator.ensureComboBoxSelection(getResourceString("protocolLabel"), protocolComboBox);
 
@@ -228,6 +259,14 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
         // service ID
         serviceIdTextField.setText(assertion.getServiceId());
 
+        // service document ID & retrieval type
+        if (assertion.isRetrieveDependency()) {
+            dependencyRadioButton.doClick(0);
+            serviceDocumentIdTextField.setText(assertion.getServiceDocumentId());
+        } else {
+            wsdlRadioButton.doClick(0);
+        }
+
         // endpoint fields
         protocolVariablePanel.setAssertion(assertion, getPreviousAssertion());
 
@@ -279,6 +318,16 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
 
         // service ID
         assertion.setServiceId(serviceIdTextField.getText().trim());
+
+        // service document ID
+        if (dependencyRadioButton.isSelected()) {
+            assertion.setServiceDocumentId(serviceDocumentIdTextField.getText());
+        } else {
+            assertion.setServiceDocumentId(null);
+        }
+
+        // retrieval type
+        assertion.setRetrieveDependency(dependencyRadioButton.isSelected());
 
         // endpoint fields
         if (protocolComboBox.getSelectedIndex() == PROTOCOL_FROM_VARIABLE_OPTION_INDEX) {
@@ -395,7 +444,7 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     private static String getResourceString(String key) {
         final String value = resources.getString(key);
 
-        if (value.endsWith(COMPONENT_LABEL_SUFFIX)) {
+        if (value.endsWith(COMPONENT_LABEL_SUFFIX) || value.endsWith(COMPONENT_LABEL_REQUIRED_SUFFIX)) {
             return value.substring(0, value.lastIndexOf(COMPONENT_LABEL_SUFFIX));
         }
 

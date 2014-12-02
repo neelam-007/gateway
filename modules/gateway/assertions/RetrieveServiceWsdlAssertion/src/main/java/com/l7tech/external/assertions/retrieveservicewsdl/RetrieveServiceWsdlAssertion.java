@@ -23,6 +23,8 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
     @NotNull
     private String serviceId = "${service.oid}";
 
+    private String serviceDocumentId = null;
+
     private String protocol = null;
 
     private String protocolVariable = "request.url.protocol";
@@ -38,6 +40,8 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
 
     private boolean proxyDependencies = false;
 
+    private boolean retrieveDependency = false;
+
     @NotNull
     public String getServiceId() {
         return serviceId;
@@ -45,6 +49,14 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
 
     public void setServiceId(@NotNull String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public String getServiceDocumentId() {
+        return serviceDocumentId;
+    }
+
+    public void setServiceDocumentId(String serviceDocumentId) {
+        this.serviceDocumentId = serviceDocumentId;
     }
 
     public String getProtocol() {
@@ -96,6 +108,14 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
 
     public void setProxyDependencies(boolean proxyDependencies) {
         this.proxyDependencies = proxyDependencies;
+    }
+
+    public boolean isRetrieveDependency() {
+        return retrieveDependency;
+    }
+
+    public void setRetrieveDependency(boolean retrieveDependency) {
+        this.retrieveDependency = retrieveDependency;
     }
 
     @Override
