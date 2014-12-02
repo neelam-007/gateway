@@ -4,12 +4,15 @@ import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAsserti
 import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAssertion;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocumentResources;
+import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -23,9 +26,10 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.xml.bind.JAXBException;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -232,13 +236,14 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
 
     private static String getDefaultRestPolicyXml() throws IOException {
         final AuthenticationAssertion authenticationAssertion = new AuthenticationAssertion();
-        authenticationAssertion.setIdentityProviderOid( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID );
-        final Assertion allAss = new AllAssertion( Arrays.asList(
-                new SslAssertion(),
-                new HttpBasic(),
+        authenticationAssertion.setIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
+        final AllAssertion basic = new AllAssertion(Arrays.asList(new SslAssertion(), new HttpBasic()));
+        final OneOrMoreAssertion mutualOrBasic = new OneOrMoreAssertion(Arrays.asList(new SslAssertion(true), basic));
+        final Assertion allAss = new AllAssertion(Arrays.asList(
+                mutualOrBasic,
                 authenticationAssertion,
                 new RESTGatewayManagementAssertion()
-        ) );
+        ));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         WspWriter.writePolicy(allAss, outputStream);
         return HexUtils.decodeUtf8(outputStream.toByteArray());
