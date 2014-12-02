@@ -26,7 +26,7 @@ public class MemoryBufferManager {
     private static final Logger logger = Logger.getLogger( MemoryBufferManager.class.getName() );
 
     // Scan about every 7 minutes for old idle buffers
-    private static long CLEANUP_DELAY = SyspropUtil.getLong( "com.l7tech.assertions.bufferdata.cleanupDelay", 4265083L );
+    private static long CLEANUP_DELAY = SyspropUtil.getLong( "com.l7tech.assertions.bufferdata.cleanupDelay", 426527L );
 
     private static final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     private static ConcurrentMap<String, Buffer> bufferMap = new ConcurrentHashMap<>();
