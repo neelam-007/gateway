@@ -90,4 +90,57 @@
             <column name="security_zone_goid" type="${goid.type}"/>
         </createTable>
     </changeSet>
+	<changeSet id="create-manage-cassandra-connection-role" author="acheuk">
+        <comment>Manage Cassandra Configuration</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Cassandra Connection"/>
+            <column name="tag"/>
+            <column name="entity_type" value="CASSANDRA_CONFIGURATION"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete Cassandra connection."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1601)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CASSANDRA_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1602)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CASSANDRA_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1603)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CASSANDRA_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1604)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CASSANDRA_CONFIGURATION"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1605)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1600)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SECURE_PASSWORD"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>
