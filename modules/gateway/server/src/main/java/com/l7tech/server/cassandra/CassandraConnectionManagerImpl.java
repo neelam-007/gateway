@@ -2,6 +2,9 @@ package com.l7tech.server.cassandra;
 
 import com.ca.datasources.cassandra.CassandraUtil;
 import com.datastax.driver.core.*;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
@@ -22,7 +25,6 @@ import java.text.ParseException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -57,6 +59,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final SecurePasswordManager securePasswordManager;
     private final TrustManager trustManager;
     private final SecureRandom secureRandom;
+    private final Audit auditor = new LoggingAudit(logger);
 
     public CassandraConnectionManagerImpl(CassandraConnectionEntityManager cassandraEntityManager, SecurePasswordManager securePasswordManager,
                                        TrustManager trustManager,
@@ -77,11 +80,16 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             try {
                 entity = cassandraEntityManager.getCassandraConnectionEntity(name);
             } catch (FindException e) {
-                logger.log(Level.FINE, "Unable to find Cassandra connection name:" + name );
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Unable to find Cassandra connection name:" + name}, ExceptionUtils.getDebugException(e) );
                 return null;
             }
             //create a holder and add it to the list of connections
-            connectionHolder = createConnection(entity);
+            if(entity.isEnabled()) {
+                connectionHolder = createConnection(entity);
+            }
+            else {
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
+            }
         }
         return connectionHolder;
     }
@@ -101,10 +109,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     @Override
     public void addConnection(CassandraConnection cassandraConnectionEntity) {
         CassandraConnectionHolder connection = getConnection(cassandraConnectionEntity.getName());
-        if(connection == null) {
-
-        }
-
     }
 
     @Override
@@ -123,7 +127,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             entity = cassandraEntityManager.findByPrimaryKey(goid);
             removeConnection(entity);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to find appropriate connection in the data source.", ExceptionUtils.getDebugException(e));
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{"Unable to find appropriate connection in the data source."}, ExceptionUtils.getDebugException(e) );
         }
         //this should never happen
         if(entity == null) {
@@ -173,7 +177,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
 
         } catch (Exception e){
-            logger.log(Level.WARNING, "Unable to connect to cassandra cluster. Connection = " + cassandraConnectionEntity.getName(), e);
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[] {cassandraConnectionEntity.getName(), e.getMessage()}, ExceptionUtils.getDebugException(e));
             return null;
         }
 
@@ -255,7 +259,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propInt != null) {
                         socketOptions.setConnectTimeoutMillis(propInt);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -264,7 +268,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propBool) {
                         socketOptions.setKeepAlive(propBool);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -273,7 +277,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propInt != null) {
                         socketOptions.setReceiveBufferSize(propInt);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -282,7 +286,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propBool) {
                         socketOptions.setReuseAddress(propBool);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -291,7 +295,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propInt != null) {
                         socketOptions.setSendBufferSize(propInt);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -300,7 +304,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propInt != null) {
                         socketOptions.setSoLinger(propInt);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
@@ -309,12 +313,12 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     if (propBool) {
                         socketOptions.setTcpNoDelay(propBool);
                     } else {
-                        logger.log(Level.FINE, "Unable to read property " + propName + ". Using default value.");
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
                     break;
 
                 default:
-                    logger.log(Level.FINE, "Unrecognized property " + propName + ". Ignored.");
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unrecognized property " + propName + ". Ignored.");
 
             }
         }

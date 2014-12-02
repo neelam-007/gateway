@@ -1288,6 +1288,7 @@
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
+        <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->

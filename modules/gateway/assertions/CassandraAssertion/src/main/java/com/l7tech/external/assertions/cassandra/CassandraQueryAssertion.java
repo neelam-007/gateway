@@ -26,7 +26,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FAC
  *
  */
 //TODO: replace JdbcConnectionable with DataSourceConnectionable
-public class CassandraQueryAssertion extends Assertion implements JdbcConnectionable, UsesVariables, SetsVariables {
+public class CassandraQueryAssertion extends Assertion implements CassandraConnectionable, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(CassandraQueryAssertion.class.getName());
 
     public static final String CORE_CONNECTION_PER_HOST = "cassandra.coreConnectionsPerHost";
@@ -47,6 +47,7 @@ public class CassandraQueryAssertion extends Assertion implements JdbcConnection
     public static final String SO_LINGER = "cassandra.soLinger";
     public static final String TCP_NO_DELAY = "cassandra.tcpNoDelay";
     public static final String DEFAULT_QUERY_PREFIX = "cassandraQuery";
+    public static final String QUERYRESULT_COUNT = ".queryresult.count";
 
     private String connectionName;
     private String queryDocument;
@@ -69,6 +70,8 @@ public class CassandraQueryAssertion extends Assertion implements JdbcConnection
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.CASSANDRA_CONNECTION)
+    @Dependency(type = Dependency.DependencyType.CASSANDRA_CONNECTION, methodReturnType = Dependency.MethodReturnType.NAME)
     public String getConnectionName() {
         return connectionName;
     }
@@ -111,7 +114,7 @@ public class CassandraQueryAssertion extends Assertion implements JdbcConnection
     @Override
        public VariableMetadata[] getVariablesSet() {
            List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
-           varMeta.add(new VariableMetadata(prefix + ".queryresult.count", false, false, null, false, DataType.INTEGER));
+           varMeta.add(new VariableMetadata(prefix + QUERYRESULT_COUNT, false, false, null, false, DataType.INTEGER));
 
            return varMeta.toArray(new VariableMetadata[varMeta.size()]);
        }

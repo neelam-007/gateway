@@ -1319,5 +1319,13 @@ public class AssertionMessages extends Messages {
     public static final M ODATA_VALIDATION_INVALID_HTTP_METHOD = m(10608, Level.WARNING, "Invalid OData HTTP method: ''{0}''");
     public static final M ODATA_VALIDATION_EMPTY_HTTP_METHOD = m(10609, Level.WARNING, "HTTP method is null or empty.");
 
+    // CassandraQuery Assertion
+    public static final  M CASSANDRA_CONNECTION_CANNOT_CONNECT = m(10700, Level.WARNING, "Connection to Cassandra cluster associated with connection {0} not available due to {1}");
+    public static final M CASSANDRA_CONNECTION_DISABLED = m(10702, Level.INFO, "The Gateway would not connect via disabled Cassandra connection {0}");
+    public static final M CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED = m(10703, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to: {0}");
+    public static final M CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED = m(10704, Level.INFO, "\"Perform Cassandra Query\" assertion failed due to no query results via a connection {0}");
+    public static final M CASSANDRA_CANNOT_REMOVE_CONNECTION = m(10705, Level.WARNING, "Unable to remove Cassandra connection due to: {0}");
+    public static final M CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE = m(10706, Level.FINE, "Cassandra Connection Manager: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

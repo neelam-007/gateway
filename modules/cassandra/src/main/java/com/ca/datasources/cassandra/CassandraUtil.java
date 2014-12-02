@@ -11,6 +11,22 @@ import com.datastax.driver.core.Row;
  */
 public class CassandraUtil {
 
+    public static Object javaType2CassandraDataType(ColumnDefinitions.Definition definition, Object value ) {
+        Class clazz = definition.getType().asJavaClass();
+        if(clazz.isAssignableFrom(Integer.class)){
+            return Integer.valueOf(value.toString());
+        }
+        else if(clazz.isAssignableFrom(Long.class)) {
+            return Long.valueOf(value.toString());
+        }
+        else if(clazz.isAssignableFrom(String.class)) {
+            return value.toString();
+        }
+        else {
+            return value;
+        }
+    }
+
     public static Object cassandraDataType2JavaType(ColumnDefinitions.Definition definition, Row row){
         Object o = null;
         String columnName = definition.getName();

@@ -66,7 +66,8 @@ public @interface Dependency {
         SITEMINDER_CONFIGURATION(EntityType.SITEMINDER_CONFIGURATION),
         CUSTOM_KEY_VALUE_STORE(EntityType.CUSTOM_KEY_VALUE_STORE),
         RBAC_ROLE(EntityType.RBAC_ROLE),
-        EMAIL_LISTENER(EntityType.EMAIL_LISTENER);
+        EMAIL_LISTENER(EntityType.EMAIL_LISTENER),
+        CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;
