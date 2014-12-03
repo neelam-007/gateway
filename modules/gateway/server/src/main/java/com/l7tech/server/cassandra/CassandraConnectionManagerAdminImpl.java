@@ -62,6 +62,9 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         if (connection.getGoid().equals(Goid.DEFAULT_GOID)) {
             goid = cassandraEntityManager.save(connection);
         } else {
+            // Update cached connection if exists
+            cassandraConnectionManager.updateConnection(connection);
+
             cassandraEntityManager.update(connection);
             goid = connection.getGoid();
         }
@@ -70,6 +73,9 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public void deleteCassandraConnection(CassandraConnection connection) throws DeleteException {
+        // Remove old cached connection
+        cassandraConnectionManager.removeConnection(connection);
+
         cassandraEntityManager.delete(connection);
     }
 
@@ -82,7 +88,6 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
                 try {
                     cassandraConnectionManager.testConnection(connection);
-
                 } catch (FindException | ParseException e) {
                     return "Invalid username or password setting. \n" + ExceptionUtils.getMessage(e);
                 } catch (Throwable e) {

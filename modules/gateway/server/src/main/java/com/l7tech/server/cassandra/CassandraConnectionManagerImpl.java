@@ -9,8 +9,8 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -54,7 +54,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public static final String SO_LINGER = "soLinger";
     public static final String TCP_NO_DELAY = "tcpNoDelay";
 
-
     private final Map<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
     private final CassandraConnectionEntityManager cassandraEntityManager;
     private final SecurePasswordManager securePasswordManager;
@@ -84,9 +83,16 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                 auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Unable to find Cassandra connection name:" + name}, ExceptionUtils.getDebugException(e) );
                 return null;
             }
+
+            if (entity == null) {
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Cassandra connection does not exist."});
+                return null;
+            }
+
             //create a holder and add it to the list of connections
             if(entity.isEnabled()) {
                 connectionHolder = createConnection(entity);
+                cassandraConnections.put(entity.getName(), connectionHolder);
             }
             else {
                 auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
@@ -146,9 +152,17 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     @Override
-    public void updateConnection(CassandraConnection cassandraConnectionEntity) {
-        removeConnection(cassandraConnectionEntity);
-        cassandraConnections.put(cassandraConnectionEntity.getName(), createConnection(cassandraConnectionEntity));
+    public void updateConnection(CassandraConnection cassandraConnectionEntity) throws UpdateException {
+        if (cassandraConnections.get(cassandraConnectionEntity.getName()) != null) {
+            CassandraConnectionHolder cassandraConnectionHolder = createConnection(cassandraConnectionEntity);
+            if  (cassandraConnectionHolder != null) {
+                removeConnection(cassandraConnectionEntity);
+                cassandraConnections.put(cassandraConnectionEntity.getName(), cassandraConnectionHolder);
+            }
+            else {
+                throw new UpdateException("New cached connection cannot be created. Please check the settings.");
+            }
+        }
     }
 
     private CassandraConnectionHolder createConnection(CassandraConnection cassandraConnectionEntity){
@@ -373,15 +387,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        // if a SiteMinderConfiguration has been modified, remove it from the cache
-        if (event instanceof EntityInvalidationEvent) {
-            final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
-            if (CassandraConnection.class.equals(entityInvalidationEvent.getEntityClass())) {
-                final Goid[] ids = entityInvalidationEvent.getEntityIds();
-                for (final Goid id : ids) {
-                    removeConnection(id);
-                }
-            }
-        }
+        // Do nothing
     }
 }

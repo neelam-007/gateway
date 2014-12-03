@@ -2,6 +2,7 @@ package com.l7tech.server.cassandra;
 
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import org.springframework.context.ApplicationListener;
 
 /**
@@ -22,5 +23,5 @@ public interface CassandraConnectionManager extends ApplicationListener {
 
     void removeConnection(Goid goid);
 
-    void updateConnection(CassandraConnection cassandraConnectionEntity);
+    void updateConnection(CassandraConnection cassandraConnectionEntity) throws UpdateException;
 }
