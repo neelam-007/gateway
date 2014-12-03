@@ -185,6 +185,9 @@
 
                 <!-- Custom Key Value Store -->
                 <value>com.l7tech.policy.CustomKeyValueStore</value>
+
+                <!-- Solution Kit -->
+                <value>com.l7tech.gateway.common.solutionkit.SolutionKit</value>
             </list>
         </property>
         <property name="dataSource" ref="hibernateDataSource"/>

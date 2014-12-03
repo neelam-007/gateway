@@ -53,4 +53,38 @@
             </update>
         </rollback>
     </changeSet>
+    <changeSet id="create_solution_kit_table" author="kpak">
+        <createTable tableName="solution_kit">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sk_guid" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sk_version" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="properties" type="${mediumtext.type}"/>
+            <column name="install_properties" type="${mediumtext.type}"/>
+            <column name="mappings" type="${mediumtext.type}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_update_time" type="BIGINT(19)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="solution_kit_index" tableName="solution_kit" unique="false">
+            <column name="sk_guid"/>
+        </createIndex>
+        <rollback>
+            <dropIndex indexName="solution_kit_index" tableName="solution_kit"/>
+            <dropTable tableName="solution_kit"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

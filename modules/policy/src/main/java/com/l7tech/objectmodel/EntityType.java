@@ -98,6 +98,7 @@ public enum EntityType implements Comparable<EntityType> {
     SECURITY_ZONE("Security Zone", "Security Zones", true, true),
     CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, false),
     LICENSE_DOCUMENT("License Document", false, false),
+    SOLUTION_KIT("Solution Kit", false, false),
     ;
 
     private final String name;
