@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -23,6 +24,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.WsdlUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -156,7 +158,8 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return document;
     }
 
-    private Document retrieveWsdlDocument(PolicyEnforcementContext context, PublishedService service, URL endpointUrl) throws IOException {
+    private Document retrieveWsdlDocument(PolicyEnforcementContext context,
+                                          PublishedService service, URL endpointUrl) throws IOException {
         Document document;
 
         // parse service WSDL xml
@@ -211,7 +214,19 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private PublishedService getService(Map<String, Object> vars) {
-        String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true); // TODO jwilliams: add check for null or empty result?
+        String serviceIdString;
+
+        try {
+            serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true);
+        } catch (VariableNameSyntaxException e) {
+            logAndAudit(NO_SUCH_VARIABLE_WARNING, assertion.getServiceId());
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        if (StringUtils.isBlank(serviceIdString)) {
+            logAndAudit(RETRIEVE_WSDL_NO_SERVICE_ID);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
 
         Goid serviceGoid;
 
@@ -283,7 +298,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
             }
         }
 
-        if (null == protocol || protocol.isEmpty()) {
+        if (StringUtils.isBlank(protocol)) {
             logAndAudit(RETRIEVE_WSDL_NO_PROTOCOL);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -294,7 +309,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     private String getHost(Map<String, Object> vars) {
         final String host = ExpandVariables.process(assertion.getHost(), vars, getAudit(), true);
 
-        if (null == host || host.isEmpty()) {
+        if (StringUtils.isBlank(host)) {
             logAndAudit(RETRIEVE_WSDL_NO_HOSTNAME);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -305,7 +320,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     private int getPort(Map<String, Object> vars) {
         final String portString = ExpandVariables.process(assertion.getPort(), vars, getAudit(), true);
 
-        if (portString.isEmpty()) {
+        if (StringUtils.isBlank(portString)) {
             logAndAudit(RETRIEVE_WSDL_NO_PORT);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
@@ -328,7 +343,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         return port;
     }
 
-    private String getRoutingUri(PublishedService service) { // TODO jwilliams: change this back to use the routing URI if available
+    private String getRoutingUri(PublishedService service) {
         return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
     }
 

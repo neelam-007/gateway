@@ -1339,6 +1339,7 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_INVALID_SERVICE_DOCUMENT_ID = m(10712, Level.WARNING, "Invalid Service Document ID: {0}");
     public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND = m(10713, Level.WARNING, "Could not find Service Document with ID: {0}");
     public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
+    public static final M RETRIEVE_WSDL_NO_SERVICE_ID = m(10715, Level.WARNING, "Service ID is null or empty.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
