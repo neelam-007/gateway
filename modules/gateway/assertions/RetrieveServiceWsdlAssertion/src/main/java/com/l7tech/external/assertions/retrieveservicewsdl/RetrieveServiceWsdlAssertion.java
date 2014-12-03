@@ -170,7 +170,11 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
             public String getAssertionName(final RetrieveServiceWsdlAssertion assertion, final boolean decorate) {
                 if (!decorate) return BASE_NAME;
 
-                return LONG_NAME + " [" + assertion.getServiceId() + "]";
+                String baseDescription = assertion.isRetrieveDependency()
+                        ? "Retrieve WSDL Dependency [" + assertion.getServiceDocumentId() + "] for Service"
+                        : LONG_NAME;
+
+                return baseDescription + " [" + assertion.getServiceId() + "]";
             }
         });
 
