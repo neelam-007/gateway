@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -265,6 +266,14 @@ public abstract class Registry {
     public abstract CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin();
 
     /**
+     * Get the {@link SolutionKitAdmin} interface implementation.
+     *
+     * @return the solution kit admin interface implementation. Never null.
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    public abstract SolutionKitAdmin getSolutionKitAdmin();
+
+    /**
      * Get an EntityNameResolver which can be used to determine display names for entities and/or headers.
      *
      * @return an EntityNameResolver which can be used to determine display names for entities and/or headers.
@@ -464,6 +473,11 @@ public abstract class Registry {
 
         @Override
         public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public SolutionKitAdmin getSolutionKitAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

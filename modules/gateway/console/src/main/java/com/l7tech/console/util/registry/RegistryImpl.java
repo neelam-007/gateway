@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -88,6 +89,7 @@ public final class RegistryImpl extends Registry
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
     private EntityNameResolver entityNameResolver;
+    private SolutionKitAdmin solutionKitAdmin;
 
     @Override
     public boolean isAdminContextPresent() {
@@ -402,6 +404,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public SolutionKitAdmin getSolutionKitAdmin() {
+        checkAdminContext();
+        if (solutionKitAdmin != null) {
+            return solutionKitAdmin;
+        }
+        solutionKitAdmin = adminContext.getAdminInterface(SolutionKitAdmin.class);
+        return solutionKitAdmin;
+    }
+
+    @Override
     public EntityNameResolver getEntityNameResolver() {
         checkAdminContext();
         if (entityNameResolver == null) {
@@ -512,6 +524,7 @@ public final class RegistryImpl extends Registry
         emailAdmin = null;
         entityNameResolver = null;
         siteMinderAdmin = null;
+        solutionKitAdmin = null;
     }
 
 

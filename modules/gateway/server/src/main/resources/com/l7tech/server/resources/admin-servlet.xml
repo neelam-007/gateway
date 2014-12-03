@@ -146,4 +146,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
     </bean>
 
+    <bean name="/SolutionKitAdmin" parent="httpInvokerParent">
+        <property name="service" ref="solutionKitAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.solutionkit.SolutionKitAdmin"/>
+    </bean>
+
 </beans>

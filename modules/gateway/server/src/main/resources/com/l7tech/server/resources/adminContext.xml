@@ -510,5 +510,7 @@
 
     </bean>
 
+    <!-- Solution kit admin imple -->
+    <bean id="solutionKitAdmin" class="com.l7tech.server.solutionkit.SolutionKitAdminImpl"/>
 
 </beans>
