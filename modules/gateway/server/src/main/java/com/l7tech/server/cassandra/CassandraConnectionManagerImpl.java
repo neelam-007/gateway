@@ -13,6 +13,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationEvent;
 
 import javax.net.ssl.SSLContext;
@@ -174,7 +175,12 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             cluster = clusterBuilder.build();
 
             //create our cassandra session
-            session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+            if(StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
+                session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
+            }
+            else {
+                session = cluster.connect();
+            }
 
         } catch (Exception e){
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[] {cassandraConnectionEntity.getName(), e.getMessage()}, ExceptionUtils.getDebugException(e));
