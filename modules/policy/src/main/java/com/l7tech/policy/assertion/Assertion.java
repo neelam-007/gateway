@@ -562,8 +562,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * where {@link #isEnabled()} is false, or CommentAssertion subclasses, will treated as though they were never
      * present in the policy in the first place.
      * <p/>
-     * This is a static method because it may need to replace an Assertion with a null reference if it is disabled,
-     * or if it is a composite assertion and all of its children are disabled.
+     * This is a static method because it may need to replace an Assertion with a null reference if it is disabled.
      *
      * @param assertionTree  an assertion or assertion tree to filter.  May be null.
      * @return the assertion tree with all disabled assertions filtered out.  May be null.
@@ -589,11 +588,8 @@ public abstract class Assertion implements Cloneable, Serializable {
             CompositeAssertion comp = (CompositeAssertion)arg;
             List kids = comp.getChildren();
             Iterator i = kids.iterator();
-            //noinspection WhileLoopReplaceableByForEach
             while (i.hasNext())
                 recursiveFilterOutDisabledAssertionsAndComments((Assertion)i.next(), i);
-            if (kids.isEmpty())
-                parentIterator.remove();
         }
     }
 

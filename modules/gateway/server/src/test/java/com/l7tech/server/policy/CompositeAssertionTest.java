@@ -11,6 +11,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -24,10 +25,12 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
+import com.l7tech.test.BugId;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -172,5 +175,33 @@ public class CompositeAssertionTest {
         }
 
         assertEquals(4, ca.getChildren().size());
+    }
+
+    @Test
+    @BugId( "SSG-9757" )
+    public void testEmptyAllSucceeds() throws Exception {
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                                ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
+                        new Message(),
+                        false);
+
+        AllAssertion all = new AllAssertion( Collections.<Assertion>emptyList() );
+        ServerAllAssertion sAll = new ServerAllAssertion( all, applicationContext );
+        assertEquals( AssertionStatus.NONE, sAll.checkRequest( context ) );
+    }
+
+    @Test
+    @BugId( "SSG-9757" )
+    public void testEmptyOrFails() throws Exception {
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+                                ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
+                        new Message(),
+                        false);
+
+        OneOrMoreAssertion oom = new OneOrMoreAssertion( Collections.<Assertion>emptyList() );
+        ServerOneOrMoreAssertion sOom = new ServerOneOrMoreAssertion( oom, applicationContext );
+        assertEquals( AssertionStatus.FALSIFIED, sOom.checkRequest( context ) );
     }
 }

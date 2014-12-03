@@ -1088,8 +1088,8 @@ public class WspReaderTest {
     public static final String ALL_DISABLED =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-            "    <wsp:ExactlyOne wsp:Usage=\"Required\">\n" +
-            "        <wsp:All wsp:Usage=\"Required\">\n" +
+            "    <wsp:ExactlyOne wsp:Usage=\"Required\" L7p:Enabled=\"false\">\n" +
+            "        <wsp:All wsp:Usage=\"Required\" L7p:Enabled=\"false\">\n" +
             "            <L7p:TrueAssertion><L7p:Enabled booleanValue=\"false\"/></L7p:TrueAssertion>\n" +
             "            <wsp:OneOrMore wsp:Usage=\"Required\" L7p:Enabled=\"false\">\n" +
             "                <L7p:HttpBasic/>\n" +
