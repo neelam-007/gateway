@@ -48,9 +48,6 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
     }
 
     public void addMigrationErrorMapping(MigrationDryRunResult migrationErrorMapping) {
-        if (migrationErrorMappings == null) {
-            migrationErrorMappings = new ArrayList<>();
-        }
         migrationErrorMappings.add(migrationErrorMapping);
     }
 
