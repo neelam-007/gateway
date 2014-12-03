@@ -69,7 +69,16 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
     protected void initComponents() {
         super.initComponents();
 
-        // TODO jwilliams: add change listener to radio buttons for enable/disable service document id text field
+        ItemListener retrievalTypeItemListener = new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (dependencyRadioButton.isSelected()) {
+                    proxyDependenciesCheckBox.setSelected(true);
+                }
+
+                proxyDependenciesCheckBox.setEnabled(!dependencyRadioButton.isSelected());
+            }
+        };
 
         DocumentListener urlComponentDocumentListener = new DocumentListener() {
             @Override
@@ -87,6 +96,10 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
                 updateUrlPreview();
             }
         };
+
+        // retrieval type
+        wsdlRadioButton.addItemListener(retrievalTypeItemListener);
+        dependencyRadioButton.addItemListener(retrievalTypeItemListener);
 
         // protocol
         DefaultComboBoxModel<String> protocolComboBoxModel = new DefaultComboBoxModel<>();
