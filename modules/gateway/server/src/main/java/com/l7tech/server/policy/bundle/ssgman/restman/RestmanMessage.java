@@ -184,35 +184,19 @@ public class RestmanMessage {
         return resourceSetPolicies;
     }
 
-    public static void addPolicyResourceIntoMappingError(Document requestDocument, Element mappingError) {
-        // Return immediately if errorType is not "TargetExists" or type is neither Service nor Policy.
-        if (! "TargetExists".equals(mappingError.getAttribute(MAPPING_ERROR_TYPE_ATTRIBUTE))) {
-            return;
-        }
-        boolean isServiceType;
-        if (EntityType.SERVICE.toString().equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
-            isServiceType = true;
-        } else if (EntityType.POLICY.toString().equals(mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
-            isServiceType = false;
+    /**
+     * Get the policy resource set from either a Policy or Service entity.
+     */
+    public String getResourceSetPolicy(@NotNull final String id) throws IOException {
+        final List<Element> policies = XpathUtil.findElements(document.getDocumentElement(),
+                "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Resource/child::*/l7:Resources/l7:ResourceSet/l7:Resource",
+                getNamespaceMap());
+
+        if (policies.size() > 0) {
+            return DomUtils.getTextValue(policies.get(0)).trim();
         } else {
-            return;
+            return null;
         }
-
-        final String entityType = isServiceType? "Service" : "Policy";
-        final String id = mappingError.getAttribute(MAPPING_SRC_ID_ATTRIBUTE);
-
-        final List<Element> entities = XpathUtil.findElements(requestDocument.getDocumentElement(), "//l7:Item/l7:Resource/l7:" + entityType + "[@id=\"" + id + "\"]", getNamespaceMap());
-        if (entities.size() != 1) {
-            throw new RuntimeException("There should be only one " + entityType + " element with id = " + id + ".");
-        }
-
-        final List<Element> policies = XpathUtil.findElements(entities.get(0), "l7:Resources/l7:ResourceSet/l7:Resource[@type=\"policy\"]", getNamespaceMap());
-        if (policies.size() != 1) {
-            throw new RuntimeException("There should be only one wsp:Policy element for id = " + id + ".");
-        }
-
-        final Node insertedPolicyNode = DomUtils.getOwnerDocument(mappingError).importNode(policies.get(0), true);
-        mappingError.appendChild(insertedPolicyNode);
     }
 
     /**

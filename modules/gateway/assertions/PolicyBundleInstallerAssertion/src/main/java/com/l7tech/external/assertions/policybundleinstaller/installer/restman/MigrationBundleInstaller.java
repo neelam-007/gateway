@@ -2,8 +2,10 @@ package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -16,11 +18,11 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -30,7 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
-import static com.l7tech.objectmodel.EntityType.valueOf;
+import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.MIGRATION_BUNDLE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
@@ -113,27 +115,75 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 // parse for mapping errors
                 if (dryRunMessage.hasMappingError()) {
                     final List<Element> mappingErrors = dryRunMessage.getMappingErrors();
-                    final Document requestDocument = XmlUtil.stringToDocument(requestXml);
 
                     for (Element mappingError : mappingErrors) {
                         // Add "l7" namespace into each mapping element
                         RestmanMessage.setL7XmlNs(mappingError);
 
-                        // Add policy xml resource into mappingError, if errorType is "TargetExists" and entity type is either Service or Policy.
-                        RestmanMessage.addPolicyResourceIntoMappingError(requestDocument, mappingError);
-
-                        // Save the string of each mapping element
-                        dryRunEvent.addMigrationErrorMapping(XmlUtil.nodeToFormattedString(mappingError));
+                        // Save a representation of each mapping element
+                        dryRunEvent.addMigrationErrorMapping(convertToDryRunResult(mappingError, requestMessage));
                     }
                 }
             } catch (IOException e) {
                 throw new RuntimeException("Unexpected exception serializing bundle document", e);
             } catch (UnexpectedManagementResponse e) {
                 throw new RuntimeException("Unexpected exception", e);
-            } catch (SAXException e) {
-                throw new RuntimeException("Invalid request xml format", e);
             }
         }
+    }
+
+    /**
+     * Parse error mapping for error type, entity type, source id.  And get resource policy xml.
+     */
+    private MigrationDryRunResult convertToDryRunResult(final Element mappingError, RestmanMessage restmanMessage) throws IOException, UnexpectedManagementResponse {
+        final String errorTypeStr = mappingError.getAttribute(MAPPING_ERROR_TYPE_ATTRIBUTE);
+        if (StringUtils.isEmpty(errorTypeStr)) {
+            throw new UnexpectedManagementResponse("Unexpected mapping format: errorType attribute missing.");
+        }
+
+        final String entityTypeStr = mappingError.getAttribute(MAPPING_TYPE_ATTRIBUTE);
+        if (StringUtils.isEmpty(entityTypeStr)) {
+            throw new UnexpectedManagementResponse("Unexpected mapping format: type attribute missing.");
+        }
+
+        final String srcId = mappingError.getAttribute(MAPPING_SRC_ID_ATTRIBUTE);
+        if (StringUtils.isEmpty(srcId)) {
+            throw new UnexpectedManagementResponse("Unexpected mapping format: srcId attribute missing.");
+        }
+
+        final Element errorMessageElement = XmlUtil.findFirstDescendantElement(mappingError, MGMT_VERSION_NAMESPACE, "StringValue");
+        String errorMessage = "";
+        String name = null;
+        if (errorMessageElement != null) {
+            errorMessage = errorMessageElement.getFirstChild().getNodeValue();
+            int nameStartIdx = errorMessage.indexOf("Name=");
+
+            if (nameStartIdx >= 0){
+                int nameEndIdx = errorMessage.indexOf(", ", nameStartIdx);
+                name = errorMessage.substring(nameStartIdx + 5, nameEndIdx);
+                if (name != null && "null".equals(name)) {
+                    name = "N/A";
+                }
+            }
+        }
+
+        final String policyResourceXml = getPolicyXmlForErrorMapping(errorTypeStr, EntityType.valueOf(entityTypeStr), srcId, restmanMessage);
+
+        return new MigrationDryRunResult(errorTypeStr, entityTypeStr, srcId, errorMessage, name, policyResourceXml);
+    }
+
+    /**
+     *  Get policy xml if errorType is "TargetExists" and entity type is either Service or Policy.
+     *  This is can be used for comparing bundle policy with existing target policy.
+     */
+    private String getPolicyXmlForErrorMapping(final String errorTypeStr, final EntityType entityType,
+                                               final String srcId, RestmanMessage restmanMessage) throws IOException {
+        // com.l7tech.gateway.api.Mapping.ErrorType.TargetExists not accessible from this class
+        if (!"TargetExists".equals(errorTypeStr) || (entityType != SERVICE && entityType != POLICY)) {
+            return null;
+        }
+
+        return restmanMessage.getResourceSetPolicy(srcId);
     }
 
     public void install() throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse {

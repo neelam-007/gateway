@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.bundles;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Pair;
 
 import javax.swing.*;
@@ -17,11 +18,11 @@ public class MigrationErrorTypePanel {
 
     private final JDialog parent;
     private final ConflictDisplayerDialog.ErrorType errorType;
-    private final String targetType;
+    private final EntityType targetType;
     private final boolean versionModified;
     private final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions;
 
-    public MigrationErrorTypePanel(JDialog parent, ConflictDisplayerDialog.ErrorType errorType, String targetType,
+    public MigrationErrorTypePanel(JDialog parent, ConflictDisplayerDialog.ErrorType errorType, EntityType targetType,
                                    boolean versionModified,
                                    Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
         this.parent = parent;
@@ -32,7 +33,7 @@ public class MigrationErrorTypePanel {
 
         Border border = contentPane.getBorder();
         if (border instanceof TitledBorder) {
-            ((TitledBorder) border).setTitle(targetType);
+            ((TitledBorder) border).setTitle(targetType.toString());
         }
     }
 

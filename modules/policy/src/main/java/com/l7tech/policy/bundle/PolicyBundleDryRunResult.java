@@ -1,5 +1,8 @@
 package com.l7tech.policy.bundle;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -8,17 +11,22 @@ import java.util.*;
  */
 public class PolicyBundleDryRunResult implements Serializable {
 
-    public enum DryRunItem { SERVICES, POLICIES, CERTIFICATES, ENCAPSULATED_ASSERTION, JDBC_CONNECTIONS, ASSERTIONS, MIGRATION }
+    public enum DryRunItem { SERVICES, POLICIES, CERTIFICATES, ENCAPSULATED_ASSERTION, JDBC_CONNECTIONS, ASSERTIONS }
 
-    public static class UnknownBundleIdException extends Exception{
+    public static class UnknownBundleIdException extends Exception {
         public UnknownBundleIdException(String message) {
             super(message);
         }
     }
 
+    @NotNull
     private final Map<String, Map<DryRunItem, List<String>>> conflictsForItemMap = new HashMap<>();
+    @Nullable
+    private final Map<String, List<MigrationDryRunResult>> migrationDryRunResultsMap;
 
-    public PolicyBundleDryRunResult(final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts) {
+    public PolicyBundleDryRunResult(@NotNull final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts,
+                                    @Nullable final Map<String, List<MigrationDryRunResult>> migrationDryRunResultsMap) {
+        // do we really need to copy the map?  it's probably safe to work directly with original map
         for (Map.Entry<String, Map<DryRunItem, List<String>>> entry : bundleToConflicts.entrySet()) {
             final Map<DryRunItem, List<String>> itemsForBundle = entry.getValue();
             final Map<DryRunItem, List<String>> copiedItems = new HashMap<>();
@@ -28,6 +36,16 @@ public class PolicyBundleDryRunResult implements Serializable {
 
             conflictsForItemMap.put(entry.getKey(), copiedItems);
         }
+
+        this.migrationDryRunResultsMap = migrationDryRunResultsMap;
+    }
+
+    @NotNull
+    public List<MigrationDryRunResult> getMigrationDryRunResults(String bundleId) {
+        if (migrationDryRunResultsMap == null) {
+            return new ArrayList<>();
+        }
+        return migrationDryRunResultsMap.get(bundleId);
     }
 
     /**
@@ -38,19 +56,17 @@ public class PolicyBundleDryRunResult implements Serializable {
      * @param bundleId bundleId to check for
      * @return true if any conflicts, false otherwise.
      */
-    public boolean anyConflictsForBundle(String bundleId) throws UnknownBundleIdException {
-        if (!conflictsForItemMap.containsKey(bundleId)) {
-            throw new UnknownBundleIdException("Unknown bundle id #{" + bundleId + "}");
-        }
-
+    public boolean anyConflictsForBundle(String bundleId) {
         final Map<DryRunItem, List<String>> itemMap = conflictsForItemMap.get(bundleId);
-        for (Map.Entry<DryRunItem, List<String>> entry : itemMap.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                return true;
+        if (itemMap != null) {
+            for (Map.Entry<DryRunItem, List<String>> entry : itemMap.entrySet()) {
+                if (!entry.getValue().isEmpty()) {
+                    return true;
+                }
             }
         }
 
-        return false;
+        return migrationDryRunResultsMap != null && migrationDryRunResultsMap.containsKey(bundleId);
     }
 
     /**

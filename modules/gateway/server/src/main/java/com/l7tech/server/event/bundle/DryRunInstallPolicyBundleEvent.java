@@ -1,5 +1,6 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
         encapsulatedAssertionConflict.add(conflict);
     }
 
-    public void addMigrationErrorMapping(String migrationErrorMapping) {
+    public void addMigrationErrorMapping(MigrationDryRunResult migrationErrorMapping) {
+        if (migrationErrorMappings == null) {
+            migrationErrorMappings = new ArrayList<>();
+        }
         migrationErrorMappings.add(migrationErrorMapping);
     }
 
@@ -74,7 +78,7 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
         return Collections.unmodifiableList(encapsulatedAssertionConflict);
     }
 
-    public List<String> getMigrationErrorMappings() {
+    public List<MigrationDryRunResult> getMigrationErrorMappings() {
         return Collections.unmodifiableList(migrationErrorMappings);
     }
 
@@ -85,6 +89,5 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
     private List<String> jdbcConnsThatDontExist = new ArrayList<>();
     private List<String> missingAssertions = new ArrayList<>();
     private List<String> encapsulatedAssertionConflict = new ArrayList<>();
-    private List<String> migrationErrorMappings = new ArrayList<>();
-
+    private List<MigrationDryRunResult> migrationErrorMappings = new ArrayList<>();
 }

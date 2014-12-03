@@ -102,7 +102,6 @@ public class OAuthInstallerAdminImplCallbackCustomizationTest {
             validateSetVariableForHostVarUsage(contextVariables);
             final List<Element> protectedUrls = PolicyUtils.findProtectedUrls(layer7Policy);
             for (Element protectedUrl : protectedUrls) {
-                System.out.println(XmlUtil.nodeToFormattedString(protectedUrl));
                 final String urlValue = protectedUrl.getAttribute("stringValue");
                 validateHostVariableUsage(urlValue, "ProtectedServiceUrl");
             }

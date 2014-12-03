@@ -8,7 +8,10 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -21,6 +24,7 @@ public class RestmanMessageTest {
             "   <l7:Link rel=\"self\" uri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/bundle?versionComment=MyComment\"/>\n"+
             "   <l7:Detail>HTTP 400 Bad Request. Caused by: The prefix \"l7\" for element \"l7:Bundle\" is not bound.</l7:Detail>\n"+
             "</l7:Error>";
+    private static final String POLICY_ELEMENT = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">";
     private final String validRequestXml;
     private final String errorMappingResponseXml;
 
@@ -96,5 +100,22 @@ public class RestmanMessageTest {
 
         // hasMappingError() and getMappingErrors() should reuse results from loadMappingErrors(), which should be called only once
         verify(responseMessage, times(1)).loadMappingErrors();
+    }
+
+    @Test
+    public void resourceSetPolicy() throws Exception {
+        final RestmanMessage requestMessage = spy(new RestmanMessage(validRequestXml));
+
+        // get policy resource from a policy
+        assertThat(requestMessage.getResourceSetPolicy("f1649a0664f1ebb6235ac238a6f71b61"), startsWith(POLICY_ELEMENT));
+
+        // get policy resource from a service
+        assertThat(requestMessage.getResourceSetPolicy("f1649a0664f1ebb6235ac238a6f71ba9"), startsWith(POLICY_ELEMENT));
+
+        // verify list sizes are the same
+        assertEquals(requestMessage.getResourceSetPolicies().size(), requestMessage.getResourceSetPolicyElements().size());
+
+        // should reuse results from loadResourceSetPolicies(), which should be called only once
+        verify(requestMessage, times(1)).loadResourceSetPolicies();
     }
 }

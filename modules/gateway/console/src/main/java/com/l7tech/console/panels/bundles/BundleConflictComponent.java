@@ -1,17 +1,14 @@
 package com.l7tech.console.panels.bundles;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import javax.swing.*;
 import java.util.*;
@@ -26,7 +23,6 @@ import static com.l7tech.objectmodel.EntityType.JDBC_CONNECTION;
  */
 public class BundleConflictComponent extends JPanel {
     private static final Logger logger = Logger.getLogger(BundleConflictComponent.class.getName());
-    private static final String MGMT_VERSION_NAMESPACE = "http://ns.l7tech.com/2010/04/gateway-management";
 
     private JList<String> serviceConflictList;
     private JList<String> policyConflictList;
@@ -57,7 +53,7 @@ public class BundleConflictComponent extends JPanel {
         this.selectedMigrationResolutions = selectedMigrationResolutions;
 
         // actionable conflicts
-        final List<String> migrationErrorMappings = dryRunResult.getConflictsForItem(bundleId, PolicyBundleDryRunResult.DryRunItem.MIGRATION);
+        final List<MigrationDryRunResult> migrationErrorMappings = dryRunResult.getMigrationDryRunResults(bundleId);
         actionableConflictScrollPane.setVisible(!migrationErrorMappings.isEmpty());
         buildMigrationConflicts(parent, versionModified, migrationErrorMappings);
 
@@ -135,31 +131,29 @@ public class BundleConflictComponent extends JPanel {
         }
     }
 
-    private void buildMigrationConflicts(final JDialog parent, final boolean versionModified, List<String> migrationErrorMappings) throws PolicyBundleDryRunResult.UnknownBundleIdException {
+    private void buildMigrationConflicts(final JDialog parent, final boolean versionModified, List<MigrationDryRunResult> migrationErrorMappings) throws PolicyBundleDryRunResult.UnknownBundleIdException {
         final SortedMap<String, SortedMap<String, MigrationErrorTypePanel>> errorTargetMapping = new TreeMap<>();
 
-        for (String migrationErrorMapping: migrationErrorMappings) {
+        for (MigrationDryRunResult migrationErrorMapping : migrationErrorMappings) {
             try {
-                final Dto dto = parseMappingXml(migrationErrorMapping);
-
-                final ConflictDisplayerDialog.ErrorType errorType = ConflictDisplayerDialog.ErrorType.valueOf(dto.errorTypeStr);
-                final EntityType entityType = EntityType.valueOf(dto.entityTypeStr);
+                final ConflictDisplayerDialog.ErrorType errorType = ConflictDisplayerDialog.ErrorType.valueOf(migrationErrorMapping.getErrorTypeStr());
+                final EntityType entityType = EntityType.valueOf(migrationErrorMapping.getEntityTypeStr());
 
                 // treat this error and entity type combo like TargetNotFound
                 if (errorType == InvalidResource && entityType == JDBC_CONNECTION) {
-                    dto.errorTypeStr = TargetNotFound.toString();
+                    migrationErrorMapping.setErrorTypeStr(TargetNotFound.toString());
                 }
 
-                SortedMap<String, MigrationErrorTypePanel> typeTargetMapping = errorTargetMapping.get(dto.errorTypeStr);
+                SortedMap<String, MigrationErrorTypePanel> typeTargetMapping = errorTargetMapping.get(migrationErrorMapping.getErrorTypeStr());
                 if (typeTargetMapping == null) {
                     typeTargetMapping = new TreeMap<>();
-                    errorTargetMapping.put(dto.errorTypeStr, typeTargetMapping);
+                    errorTargetMapping.put(migrationErrorMapping.getErrorTypeStr(), typeTargetMapping);
                 }
 
-                MigrationErrorTypePanel targetDetail = typeTargetMapping.get(dto.entityTypeStr);
+                MigrationErrorTypePanel targetDetail = typeTargetMapping.get(migrationErrorMapping.getEntityTypeStr());
                 if (targetDetail == null) {
-                    targetDetail = new MigrationErrorTypePanel(parent, errorType, dto.entityTypeStr, versionModified, selectedMigrationResolutions);
-                    typeTargetMapping.put(dto.entityTypeStr, targetDetail);
+                    targetDetail = new MigrationErrorTypePanel(parent, errorType, EntityType.valueOf(migrationErrorMapping.getEntityTypeStr()), versionModified, selectedMigrationResolutions);
+                    typeTargetMapping.put(migrationErrorMapping.getEntityTypeStr(), targetDetail);
 
                     switch (errorType) {
                         case TargetExists:
@@ -169,81 +163,18 @@ public class BundleConflictComponent extends JPanel {
                             entityNotFoundPanel.add(targetDetail.getContentPane());
                             break;
                         default:
-                            resolutionErrorPanel.add(new JLabel(dto.errorTypeStr + ": type=" + dto.entityTypeStr + ", srcId=" + dto.srcId + ", " + dto.errorMessage));
+                            resolutionErrorPanel.add(new JLabel(migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() +
+                                    ", srcId=" + migrationErrorMapping.getSrcId() + ", " + migrationErrorMapping.getErrorMessage()));
                             break;
                     }
                 }
 
-                targetDetail.addMigrationError(dto.name, dto.srcId, dto.extraInfo);
+                targetDetail.addMigrationError(migrationErrorMapping.getName(), migrationErrorMapping.getSrcId(), migrationErrorMapping.getPolicyResourceXml());
             } catch (Exception e) {
                 logger.warning(ExceptionUtils.getMessage(e));
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                         ExceptionUtils.getMessage(e), "Resolving Migration Issues Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
-    }
-
-    private class Dto {
-        public String errorTypeStr, entityTypeStr, srcId, errorMessage, name, extraInfo;
-
-        public Dto(String errorTypeStr, String entityTypeStr, String srcId, String errorMessage, String name, String extraInfo) {
-            this.errorTypeStr = errorTypeStr;
-            this.entityTypeStr = entityTypeStr;
-            this.srcId = srcId;
-            this.errorMessage = errorMessage;
-            this.name = name;
-            this.extraInfo = extraInfo;
-        }
-    }
-
-    /**
-     * Parse mapping xml for error type, entity type, source id
-     *      TODO we should be able to move this XML parsing logic to the server?
-     *          i.e. MigrationBundleInstaller via DryRunInstallPolicyBundleEvent (server only package visibility) to
-     *               PolicyBundleInstallerAdminAbstractImpl via PolicyBundleDryRunResult (visible to both server and console)
-     */
-    private Dto parseMappingXml(final String migrationErrorMapping) throws Exception {
-        final Document issueDoc = XmlUtil.stringToDocument(migrationErrorMapping);
-        final Element mappingElement = (Element) issueDoc.getFirstChild();
-
-        final String errorTypeStr = mappingElement.getAttribute("errorType");
-        if (StringUtils.isEmpty(errorTypeStr)) {
-            throw new Exception("Unexpected mapping format: errorType attribute missing.");
-        }
-
-        final String entityTypeStr = mappingElement.getAttribute("type");
-        if (StringUtils.isEmpty(entityTypeStr)) {
-            throw new Exception("Unexpected mapping format: type attribute missing.");
-        }
-
-        final String srcId = mappingElement.getAttribute("srcId");
-        if (StringUtils.isEmpty(srcId)) {
-            throw new Exception("Unexpected mapping format: srcId attribute missing.");
-        }
-
-        final Element errorMessageElement = XmlUtil.findFirstDescendantElement(mappingElement, MGMT_VERSION_NAMESPACE, "StringValue");
-        String errorMessage = "";
-        String name = null;
-        if (errorMessageElement != null) {
-            errorMessage = errorMessageElement.getFirstChild().getNodeValue();
-            int nameStartIdx = errorMessage.indexOf("Name=");
-
-            if (nameStartIdx >= 0){
-                int nameEndIdx = errorMessage.indexOf(", ", nameStartIdx);
-                name = errorMessage.substring(nameStartIdx + 5, nameEndIdx);
-                if (name == null || "null".equals(name)) {
-                    name = "N/A";
-                }
-            }
-        }
-
-        // Save policy xml into Dto.extraInfo
-        final Element resourceEl = XmlUtil.findFirstDescendantElement(mappingElement, MGMT_VERSION_NAMESPACE, "Resource");
-        String policyXml = null;
-        if (resourceEl != null) {
-            policyXml = resourceEl.getTextContent();
-        }
-
-        return new Dto(errorTypeStr, entityTypeStr, srcId, errorMessage, name, policyXml);
     }
 }

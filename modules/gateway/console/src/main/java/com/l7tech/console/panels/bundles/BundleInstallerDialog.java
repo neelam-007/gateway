@@ -365,17 +365,9 @@ public abstract class BundleInstallerDialog extends JDialog {
                 boolean areConflicts = false;
                 final PolicyBundleDryRunResult dryRunResult = dryRunEither.right();
                 for (String bundleId : bundlesToInstall) {
-                    try {
-                        if (dryRunResult.anyConflictsForBundle(bundleId)) {
-                            areConflicts = true;
-                            break;
-                        }
-                    } catch (PolicyBundleDryRunResult.UnknownBundleIdException e) {
-                        DialogDisplayer.showMessageDialog(this, "Could not check for conflicts: " + e.getMessage(),
-                                "Pre check installation problem",
-                                JOptionPane.WARNING_MESSAGE, null);
-                        logger.warning(e.getMessage());
-                        return;
+                    if (dryRunResult.anyConflictsForBundle(bundleId)) {
+                        areConflicts = true;
+                        break;
                     }
                 }
 

@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
+import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
@@ -278,7 +279,9 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
         appEventPublisher.publishEvent(startedEvent);
 
         final HashMap<String, Map<PolicyBundleDryRunResult.DryRunItem, List<String>>> bundleToConflicts = new HashMap<>();
+        Map<String, List<MigrationDryRunResult>> migrationResultsMap = new HashMap<>();
         final Set<String> processedComponents = new HashSet<>();
+
         outer:
         for (String bundleId : componentIds) {
             final List<BundleInfo> resultList = bundleResolver.getResultList();
@@ -364,7 +367,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                         missingRequiredAssertions.toString()));
                     }
 
-                    final List<String> migrationErrorMappings = dryRunEvent.getMigrationErrorMappings();
+                    final List<MigrationDryRunResult> migrationErrorMappings = dryRunEvent.getMigrationErrorMappings();
                     if (! migrationErrorMappings.isEmpty()) {
                         details.add(
                                 new AuditDetail(
@@ -381,9 +384,9 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.ENCAPSULATED_ASSERTION, encapsulatedAssertionWithConflict);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.JDBC_CONNECTIONS, jdbcConnsThatDontExist);
                     itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.ASSERTIONS, missingRequiredAssertions);
-                    itemToConflicts.put(PolicyBundleDryRunResult.DryRunItem.MIGRATION, migrationErrorMappings);
 
                     bundleToConflicts.put(bundleId, itemToConflicts);
+                    migrationResultsMap.put(bundleId, migrationErrorMappings);
 
                     // any conflicts found?
                     if (!details.isEmpty()) {
@@ -409,7 +412,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             appEventPublisher.publishEvent(cancelledEvent);
         }
 
-        return new PolicyBundleDryRunResult(bundleToConflicts);
+        return new PolicyBundleDryRunResult(bundleToConflicts, migrationResultsMap.size() > 0 ? migrationResultsMap : null);
     }
 
     public static boolean validateEventProcessed(PolicyBundleInstallerEvent bundleInstallerEvent) throws PolicyBundleInstallerException {

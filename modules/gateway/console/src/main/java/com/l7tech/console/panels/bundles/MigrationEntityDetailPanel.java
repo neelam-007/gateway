@@ -42,6 +42,7 @@ import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorTyp
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MAPPING_TARGET_ID_ATTRIBUTE;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MappingAction.*;
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  *  A class holds a panel containing migration target details such as
@@ -62,19 +63,19 @@ public class MigrationEntityDetailPanel {
     private JComboBox entitiesComboBox;
     private JRadioButton createRadioButton;
     private JButton compareEntityButton;
-    private String targetType;
-    private String extraInfo;
+    private EntityType targetType;
+    private String policyResourceXml;
     private String existingEntityXml;
 
     private JDialog parent;
     private Registry registry = Registry.getDefault();
 
     public MigrationEntityDetailPanel(final JDialog parent, final ConflictDisplayerDialog.ErrorType errorType,
-                                      final String targetType, final String name, final String id, final boolean versionModified, final String extraInfo,
+                                      final EntityType targetType, final String name, final String id, final boolean versionModified, final String policyResourceXml,
                                       final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
         this.targetType = targetType;
         this.parent = parent;
-        this.extraInfo = extraInfo;
+        this.policyResourceXml = policyResourceXml;
 
         $$$setupUI$$$();
 
@@ -91,8 +92,8 @@ public class MigrationEntityDetailPanel {
             public void actionPerformed(ActionEvent e) {
                 try {
                     new PolicyDiffWindow(
-                        new Pair<>("Existing " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(getExistingEntityXml(id), WspReader.Visibility.includeDisabled))),
-                        new Pair<>("Updated " + targetType.toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(extraInfo, WspReader.Visibility.includeDisabled)))
+                        new Pair<>("Existing " + targetType.toString().toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(getExistingEntityXml(id), WspReader.Visibility.includeDisabled))),
+                        new Pair<>("Updated " + targetType.toString().toLowerCase() + ": " + name, new PolicyTreeModel(WspReader.getDefault().parsePermissively(policyResourceXml, WspReader.Visibility.includeDisabled)))
                     ).setVisible(true);
                 } catch (IOException ioe) {
                     DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Cannot parse the policy XML", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
@@ -143,7 +144,7 @@ public class MigrationEntityDetailPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final Properties properties = new Properties();
-                if (EntityType.JDBC_CONNECTION.toString().equals(targetType)) {
+                if (targetType == JDBC_CONNECTION) {
                     String selectedJdbcConnName = (String) entitiesComboBox.getSelectedItem();
 
                     JdbcAdmin admin = getJdbcConnectionAdmin();
@@ -155,12 +156,12 @@ public class MigrationEntityDetailPanel {
                     } catch (FindException e1) {
                         showErrorMessage("Error Resolving Migration Issues", "Cannot find a JDBC Connection.", e1, null);
                     }
-                } else if (EntityType.SSG_KEY_ENTRY.toString().equals(targetType)) {
+                } else if (targetType == SSG_KEY_ENTRY) {
                     final KeystoreComboEntry keystoreEntry = (KeystoreComboEntry) entitiesComboBox.getSelectedItem();
 
                     properties.put(MAPPING_TARGET_ID_ATTRIBUTE, keystoreEntry.getKeystoreid().toString() + ":" + keystoreEntry.getAlias());
                     selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, properties));
-                } else if (EntityType.SECURE_PASSWORD.toString().equals(targetType)) {
+                } else if (targetType == SECURE_PASSWORD) {
                     final SecurePassword securePassword = ((SecurePasswordComboBox) entitiesComboBox).getSelectedSecurePassword();
 
                     if (securePassword != null) {
@@ -186,7 +187,7 @@ public class MigrationEntityDetailPanel {
     }
 
     private void createUIComponents() {
-        if (EntityType.SECURE_PASSWORD.toString().equals(targetType)) {
+        if (targetType == SECURE_PASSWORD) {
             entitiesComboBox = new SecurePasswordComboBox();
         } else {
             entitiesComboBox = new JComboBox();
@@ -198,18 +199,18 @@ public class MigrationEntityDetailPanel {
     }
 
     private void initializeEntityComponents() {
-        if (targetType == null || targetType.trim().isEmpty()) return;
+        if (targetType == null) return;
 
         populateEntitiesList();
         initializeCreatingEntityButtons();
     }
 
     private void populateEntitiesList() {
-        if (EntityType.JDBC_CONNECTION.toString().equals(targetType)) {
+        if (targetType == JDBC_CONNECTION) {
             populateJdbcConnectionComboBox();
-        } else if (EntityType.SSG_KEY_ENTRY.toString().equals(targetType)) {
+        } else if (targetType == SSG_KEY_ENTRY) {
             populatePrivateKeyComboBox();
-        } else if (EntityType.SECURE_PASSWORD.toString().equals(targetType)) {
+        } else if (targetType == SECURE_PASSWORD) {
             populateSecurePasswordComboBox();
         }
     }
@@ -283,7 +284,7 @@ public class MigrationEntityDetailPanel {
     }
 
     private void initializeCreatingEntityButtons() {
-        if (EntityType.JDBC_CONNECTION.toString().equals(targetType)) {
+        if (targetType == JDBC_CONNECTION) {
             createEntityButton.setText("Create JDBC Connection");
             createEntityButton.addActionListener(new ActionListener() {
                 @Override
@@ -291,7 +292,7 @@ public class MigrationEntityDetailPanel {
                     createJdbcConnection(new JdbcConnection());
                 }
             });
-        } else if (EntityType.SSG_KEY_ENTRY.toString().equals(targetType)) {
+        } else if (targetType == SSG_KEY_ENTRY) {
             createEntityButton.setText("Create Private Key");
             createEntityButton.addActionListener(new ActionListener() {
                 @Override
@@ -299,7 +300,7 @@ public class MigrationEntityDetailPanel {
                     createPrivateKey();
                 }
             });
-        } else if (EntityType.SECURE_PASSWORD.toString().equals(targetType)) {
+        } else if (targetType == SECURE_PASSWORD) {
             createEntityButton.setText("Create Stored Password");
             createEntityButton.addActionListener(new ActionListener() {
                 @Override
@@ -434,7 +435,7 @@ public class MigrationEntityDetailPanel {
     }
 
     private boolean compareEntityEnabled(final ConflictDisplayerDialog.ErrorType errorType, final String entityGoid) {
-        if (errorType != TargetExists || !(EntityType.POLICY.toString().equals(targetType) || EntityType.SERVICE.toString().equals(targetType))) {
+        if (errorType != TargetExists || !(targetType == POLICY || targetType == SERVICE)) {
             logger.fine("The error type is not TargetExists or the entity type is either Service nor Policy, so 'Compare Entity' is disabled.");
 
             // In this case, also set 'Compare Entity' to be invisible.
@@ -443,7 +444,7 @@ public class MigrationEntityDetailPanel {
             return false;
         }
 
-        if (extraInfo == null || extraInfo.trim().isEmpty()) {
+        if (policyResourceXml == null || policyResourceXml.trim().isEmpty()) {
             logger.warning("The updated policy XML is not specified, so 'Compare Entity' is disabled.");
             return false;
         }
@@ -454,7 +455,7 @@ public class MigrationEntityDetailPanel {
             return false;
         }
 
-        if (extraInfo.equals(currentActiveEntityXml)) {
+        if (policyResourceXml.equals(currentActiveEntityXml)) {
             logger.fine("The existing entity XML is the same as the updated entity XML, so 'Compare Entity' is disabled.");
             return false;
         }
@@ -468,10 +469,10 @@ public class MigrationEntityDetailPanel {
         }
 
         try {
-            if (EntityType.POLICY.toString().equals(targetType)) {
+            if (targetType == POLICY) {
                 final PolicyVersion existingPolicyVersion = Registry.getDefault().getPolicyAdmin().findLatestRevisionForPolicy(Goid.parseGoid(entityGoid));
                 existingEntityXml = existingPolicyVersion.getXml();
-            } else if (EntityType.SERVICE.toString().equals(targetType)) {
+            } else if (targetType == SERVICE) {
                 final PublishedService publishedService = Registry.getDefault().getServiceManager().findServiceByID(entityGoid);
                 existingEntityXml = publishedService.getPolicy().getXml();
             } else {
@@ -481,6 +482,10 @@ public class MigrationEntityDetailPanel {
         } catch (FindException e) {
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                 "Cannot find a published service", "Policy Comparison Error", JOptionPane.WARNING_MESSAGE, null);
+        }
+
+        if (existingEntityXml != null) {
+            existingEntityXml = existingEntityXml.trim();
         }
 
         return existingEntityXml;
