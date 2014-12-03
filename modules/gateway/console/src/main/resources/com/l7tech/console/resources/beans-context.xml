@@ -39,6 +39,7 @@
                 <ref bean="siteMinderAdmin" />
                 <ref bean="customKeyValueStoreAdmin" />
                 <ref bean="debugAdmin" />
+                <ref bean="solutionKitAdmin" />
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="httpRequestExecutor"/>
@@ -194,6 +195,11 @@
     <bean id="debugAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/DebugAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
+    </bean>
+
+    <bean id="solutionKitAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/SolutionKitAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.solutionkit.SolutionKitAdmin"/>
     </bean>
 
 </beans>
