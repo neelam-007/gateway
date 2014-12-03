@@ -29,6 +29,24 @@ public class RetrieveServiceWsdlAssertionTest {
     }
 
     @Test
+    public void testGetVariablesUsed_WithServiceDocumentId() {
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setServiceDocumentId("${foo}");
+
+        List<String> variablesUsed = Arrays.asList(assertion.getVariablesUsed());
+
+        assertEquals(5, variablesUsed.size());
+
+        assertTrue(variablesUsed.contains("foo")); // non-default, expected variable
+
+        assertTrue(variablesUsed.contains("service.oid"));
+        assertTrue(variablesUsed.contains("gateway.cluster.hostname"));
+        assertTrue(variablesUsed.contains("request.url.protocol"));
+        assertTrue(variablesUsed.contains("request.tcp.localPort"));
+    }
+
+    @Test
     public void testGetVariablesUsed_WithServiceIdButNotHostnameOrPortVariables() {
         RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
 

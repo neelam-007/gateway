@@ -140,7 +140,7 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
 
     public String[] getVariablesUsed() {
         return messageTarget.getMessageTargetVariablesUsed()
-                .withExpressions(serviceId, host, port)
+                .withExpressions(serviceId, serviceDocumentId, host, port)
                 .withVariables(protocolVariable)
                 .asArray();
     }

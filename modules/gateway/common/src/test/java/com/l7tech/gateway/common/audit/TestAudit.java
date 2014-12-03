@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -55,17 +56,27 @@ public class TestAudit implements Audit, AuditHaver, Iterable<String> {
     }
 
     public boolean isAuditPresent( final AuditDetailMessage message ) {
-        return isAuditPresent( message, false );
+        return isAuditPresent(message, false);
     }
 
     public boolean isAuditPresent( final AuditDetailMessage message, final boolean mustIncludeStack ) {
-        return matchAudit( new Functions.Unary<Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
+        return matchAudit(new Functions.Unary<Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
             @Override
-            public Boolean call( final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple ) {
+            public Boolean call(final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple) {
                 return auditDetailMessageThrowableTriple.left.getId() == message.getId() &&
                         (!mustIncludeStack || auditDetailMessageThrowableTriple.right != null);
             }
-        } );
+        });
+    }
+
+    public boolean isAuditPresentWithParameters(final AuditDetailMessage message, final String... parameters) {
+        return matchAudit(new Functions.Unary<Boolean, Triple<AuditDetailMessage, String[], Throwable>>() {
+            @Override
+            public Boolean call( final Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple ) {
+                return auditDetailMessageThrowableTriple.left.getId() == message.getId() &&
+                        Arrays.equals(auditDetailMessageThrowableTriple.middle, parameters);
+            }
+        });
     }
 
     public boolean isAuditPresentContaining( final String text ) {

@@ -579,7 +579,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
         });
 
-        WsdlUtil.addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId.toString());
+        WsdlUtil.addOrUpdateEndpoints(wsdlDoc, ssgurl, null == serviceId ? null : serviceId.toString());
         addSecurityPolicy(wsdlDoc, svc);
 
         // output the wsdl

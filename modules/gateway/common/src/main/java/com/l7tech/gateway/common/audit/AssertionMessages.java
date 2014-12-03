@@ -1334,6 +1334,11 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_INVALID_ENDPOINT_URL = m(10707, Level.WARNING, "Invalid endpoint URL: {0}");
     public static final M RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE = m(10708, Level.WARNING, "Failed to create proxy URL for reference: {0}");
     public static final M RETRIEVE_WSDL_NO_HOSTNAME = m(10709, Level.WARNING, "No host name specified.");
+    public static final M RETRIEVE_WSDL_NO_SERVICE_DOCUMENT_ID = m(10710, Level.WARNING, "No Service Document ID specified.");
+    public static final M RETRIEVE_WSDL_PROXYING_DISABLED_FOR_DEPENDENCY = m(10711, Level.WARNING, "Dependency reference proxying must be enabled in order to retrieve Service Documents.");
+    public static final M RETRIEVE_WSDL_INVALID_SERVICE_DOCUMENT_ID = m(10712, Level.WARNING, "Invalid Service Document ID: {0}");
+    public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND = m(10713, Level.WARNING, "Could not find Service Document with ID: {0}");
+    public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

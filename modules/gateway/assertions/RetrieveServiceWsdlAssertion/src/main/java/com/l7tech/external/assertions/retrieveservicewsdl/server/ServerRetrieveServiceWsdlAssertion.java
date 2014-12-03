@@ -23,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.WsdlUtil;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -66,92 +67,117 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
             throws IOException, PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
-        final String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true);
-        final String host = ExpandVariables.process(assertion.getHost(), vars, getAudit(), true);
-        final String portString = ExpandVariables.process(assertion.getPort(), vars, getAudit(), true);
-
-        // get protocol
-        final String protocol = getProtocol(context);
-
-        if (null == protocol || protocol.isEmpty()) {
-            logAndAudit(RETRIEVE_WSDL_NO_PROTOCOL);
-            return AssertionStatus.FAILED;
-        }
-
-        // check host
-        if (null == host || host.isEmpty()) {
-            logAndAudit(RETRIEVE_WSDL_NO_HOSTNAME);
-            return AssertionStatus.FAILED;
-        }
-
-        // get port
-        if (portString.isEmpty()) {
-            logAndAudit(RETRIEVE_WSDL_NO_PORT);
-            return AssertionStatus.FAILED;
-        }
-
-        final int port = getPort(portString);
-
-        // get target message
-        Message targetMessage;
-
-        try {
-            targetMessage = context.getOrCreateTargetMessage(assertion.getMessageTarget(), false);
-        } catch (NoSuchVariableException e) {
-            logAndAudit(NO_SUCH_VARIABLE_WARNING, new String[] {e.getMessage()}, getDebugException(e));
-            return AssertionStatus.FAILED;
-        }
-
         // parse service goid
-        Goid serviceGoid;
+        final PublishedService service = getService(vars);
+
+        // construct endpoint URL
+        final URL endpointUrl = getEndpointUrl(context, vars, service);
+
+        // retrieve the requested document
+        Document document;
+
+        if (assertion.isRetrieveDependency()) {
+            document = retrieveWsdlDependencyDocument(context, vars, service, endpointUrl);
+        } else {
+            document = retrieveWsdlDocument(context, service, endpointUrl);
+        }
+
+        // save document to target message
+        Message targetMessage = getTargetMessage(context);
+
+        targetMessage.initialize(document, ContentTypeHeader.XML_DEFAULT);
+
+        return AssertionStatus.NONE;
+    }
+
+    private Document retrieveWsdlDependencyDocument(PolicyEnforcementContext context, Map<String, Object> vars,
+                                                    PublishedService service, URL endpointUrl) throws IOException {
+        Document document = null;
+
+        // get service document goid
+        Goid serviceDocumentGoid;
+
+        if (null == assertion.getServiceDocumentId()) {
+            logAndAudit(RETRIEVE_WSDL_NO_SERVICE_DOCUMENT_ID);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        String serviceDocumentIdString = ExpandVariables.process(assertion.getServiceDocumentId(), vars, getAudit(), true);
 
         try {
-            serviceGoid = Goid.parseGoid(serviceIdString);
+            serviceDocumentGoid = Goid.parseGoid(serviceDocumentIdString);
         } catch (IllegalArgumentException e) {
-            logAndAudit(RETRIEVE_WSDL_INVALID_SERVICE_ID,
+            logAndAudit(RETRIEVE_WSDL_INVALID_SERVICE_DOCUMENT_ID,
+                    new String[]{ExceptionUtils.getMessage(e)}, getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // check assertion is properly configured - proxying must be enabled for dependency requests
+        if (!assertion.isProxyDependencies()) {
+            logAndAudit(RETRIEVE_WSDL_PROXYING_DISABLED_FOR_DEPENDENCY);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // get any dependency service documents
+        final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
+
+        for (ServiceDocument dependency : dependencyDocuments) {
+            if (dependency.getServiceId().equals(serviceDocumentGoid)) {
+                try {
+                    document = parseDocument(dependency.getUri(), dependency.getContents());
+                } catch (SAXException e) {
+                    logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT,
+                            new String[]{ExceptionUtils.getMessage(e)}, getDebugException(e));
+                    throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+                }
+            }
+        }
+
+        if (null == document) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // get a routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
+        String proxyUri = getDependencyProxyUri(context);
+
+        // rewrite references
+        rewriteReferences(service, document, dependencyDocuments, proxyUri, new Functions.UnaryVoid<Exception>() {
+            @Override
+            public void call(Exception e) {
+                logAndAudit(AssertionMessages.RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE,
+                        new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
+            }
+        });
+
+        // update endpoints - specifying null for the service ID means endpoints should not be added
+        WsdlUtil.addOrUpdateEndpoints(document, endpointUrl, null);
+
+        return document;
+    }
+
+    private Document retrieveWsdlDocument(PolicyEnforcementContext context, PublishedService service, URL endpointUrl) throws IOException {
+        Document document;
+
+        // parse service WSDL xml
+        try {
+            document = parseDocument(service.getWsdlUrl(), service.getWsdlXml());
+        } catch (SAXException e) {
+            logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_WSDL,
                     new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
-
-        // get published service by goid
-        PublishedService service = serviceCache.getCachedService(serviceGoid);
-
-        if (null == service) {
-            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_FOUND, serviceIdString);
-            return AssertionStatus.FAILED;
-        }
-
-        // does the service have a WSDL?
-        if (!service.isSoap()) {
-            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_SOAP);
-            return AssertionStatus.FAILED;
-        }
-
-        // get & parse WSDL xml
-        Document wsdlDoc = getWsdlDocument(service);
 
         // perform reference rewriting, if proxying is necessary or enabled
         if (isProxyingRequired(service)) {
             // get any dependency service documents
-            final Collection<ServiceDocument> documents = getImportedDocumentsToProxy(service);
+            final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
 
-            // get the routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
-            String wsdlProxyUri;
-
-            try {
-                String wsdlHandlerServiceRoutingUri = getRoutingUri(context.getService());
-
-                wsdlProxyUri = new URI(context.getRequest().getHttpRequestKnob().getRequestUrl())
-                        .resolve(wsdlHandlerServiceRoutingUri).toString();
-            } catch (Exception e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {"Unable to determine absolute URL for WSDL Proxy: " + ExceptionUtils.getMessage(e)},
-                        ExceptionUtils.getDebugException(e));
-                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
-            }
+            // get a routing uri for the service we are running in the context of, e.g. the WSDL Query Handler service
+            String proxyUri = getDependencyProxyUri(context);
 
             // rewrite references
-            rewriteReferences(service, wsdlDoc, documents, wsdlProxyUri, new Functions.UnaryVoid<Exception>() {
+            rewriteReferences(service, document, dependencyDocuments, proxyUri, new Functions.UnaryVoid<Exception>() {
                         @Override
                         public void call(Exception e) {
                             logAndAudit(AssertionMessages.RETRIEVE_WSDL_PROXY_URL_CREATION_FAILURE,
@@ -160,26 +186,163 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
                     });
         }
 
-        // construct endpoint URL
-        String routingUri = getRoutingUri(service);
+        // add/update endpoints
+        WsdlUtil.addOrUpdateEndpoints(document, endpointUrl, service.getId());
 
-        URL endpointUrl;
+        return document;
+    }
+
+    private String getDependencyProxyUri(PolicyEnforcementContext context) {
+        String proxyUri;
 
         try {
-            endpointUrl = new URL(protocol, host, port, routingUri);
+            String wsdlHandlerServiceRoutingUri = getRoutingUri(context.getService());
+
+            proxyUri = new URI(context.getRequest().getHttpRequestKnob().getRequestUrl())
+                    .resolve(wsdlHandlerServiceRoutingUri).toString();
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] {"Unable to determine absolute URL for WSDL Proxy: " + ExceptionUtils.getMessage(e)},
+                    ExceptionUtils.getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+        }
+
+        return proxyUri;
+    }
+
+    private PublishedService getService(Map<String, Object> vars) {
+        String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true); // TODO jwilliams: add check for null or empty result?
+
+        Goid serviceGoid;
+
+        try {
+            serviceGoid = Goid.parseGoid(serviceIdString);
+        } catch (IllegalArgumentException e) {
+            logAndAudit(RETRIEVE_WSDL_INVALID_SERVICE_ID,
+                    new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // get published service by goid
+        PublishedService service = serviceCache.getCachedService(serviceGoid);
+
+        if (null == service) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_FOUND, serviceGoid.toString());
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        // does the service have a WSDL?
+        if (!service.isSoap()) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_NOT_SOAP);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return service;
+    }
+
+    private URL getEndpointUrl(PolicyEnforcementContext context, Map<String, Object> vars, PublishedService service) {
+        URL endpointUrl;
+
+        String protocol = getProtocol(context);
+        String host = getHost(vars);
+        int port = getPort(vars);
+        String path = getRoutingUri(service);
+
+        try {
+            endpointUrl = new URL(protocol, host, port, path);
         } catch (MalformedURLException e) {
             logAndAudit(RETRIEVE_WSDL_INVALID_ENDPOINT_URL,
                     new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
-            return AssertionStatus.FAILED;
+            throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
-        // add/update endpoints
-        WsdlUtil.addOrUpdateEndpoints(wsdlDoc, endpointUrl, serviceIdString);
+        return endpointUrl;
+    }
 
-        // save wsdl to target message
-        targetMessage.initialize(wsdlDoc, ContentTypeHeader.XML_DEFAULT);
+    private @NotNull String getProtocol(final PolicyEnforcementContext context) {
+        final String protocol;
 
-        return AssertionStatus.NONE;
+        if (null == assertion.getProtocolVariable()) {
+            protocol = assertion.getProtocol();
+        } else {
+            final Object value;
+            final String protocolVariable = assertion.getProtocolVariable();
+
+            try {
+                value = context.getVariable(protocolVariable);
+            } catch (NoSuchVariableException e) {
+                logAndAudit(NO_SUCH_VARIABLE_WARNING, protocolVariable);
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+
+            if (value instanceof String) {
+                protocol = ((String) value).trim();
+            } else {
+                logAndAudit(VARIABLE_INVALID_VALUE, protocolVariable, "String");
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        }
+
+        if (null == protocol || protocol.isEmpty()) {
+            logAndAudit(RETRIEVE_WSDL_NO_PROTOCOL);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return protocol;
+    }
+
+    private String getHost(Map<String, Object> vars) {
+        final String host = ExpandVariables.process(assertion.getHost(), vars, getAudit(), true);
+
+        if (null == host || host.isEmpty()) {
+            logAndAudit(RETRIEVE_WSDL_NO_HOSTNAME);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return host;
+    }
+
+    private int getPort(Map<String, Object> vars) {
+        final String portString = ExpandVariables.process(assertion.getPort(), vars, getAudit(), true);
+
+        if (portString.isEmpty()) {
+            logAndAudit(RETRIEVE_WSDL_NO_PORT);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        int port;
+
+        try {
+            port = Integer.parseInt(portString);
+        } catch (NumberFormatException e) {
+            logAndAudit(RETRIEVE_WSDL_INVALID_PORT, portString);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        if (port < RetrieveServiceWsdlAssertion.PORT_RANGE_START ||
+                port > RetrieveServiceWsdlAssertion.PORT_RANGE_END) {
+            logAndAudit(RETRIEVE_WSDL_INVALID_PORT, Integer.toString(port));
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return port;
+    }
+
+    private String getRoutingUri(PublishedService service) { // TODO jwilliams: change this back to use the routing URI if available
+        return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+    }
+
+    private Message getTargetMessage(PolicyEnforcementContext context) {
+        Message targetMessage;
+
+        try {
+            targetMessage = context.getOrCreateTargetMessage(assertion.getMessageTarget(), false);
+        } catch (NoSuchVariableException e) {
+            logAndAudit(NO_SUCH_VARIABLE_WARNING, new String[] {e.getMessage()}, getDebugException(e));
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
+
+        return targetMessage;
     }
 
     private void rewriteReferences(final PublishedService service,
@@ -217,63 +380,11 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
                 || assertion.isProxyDependencies();
     }
 
-    private String getProtocol(final PolicyEnforcementContext context) {
-        if (null == assertion.getProtocolVariable()) {
-            return assertion.getProtocol();
-        }
-
-        final Object value;
-        final String protocolVariable = assertion.getProtocolVariable();
-
-        try {
-            value = context.getVariable(protocolVariable);
-        } catch (NoSuchVariableException e) {
-            logAndAudit(NO_SUCH_VARIABLE_WARNING, protocolVariable);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
-
-        if (value instanceof String) {
-            return ((String) value).trim();
-        } else {
-            logAndAudit(VARIABLE_INVALID_VALUE, protocolVariable, "String");
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
-    }
-
-    private int getPort(String portString) {
-        int port;
-
-        try {
-            port = Integer.parseInt(portString);
-        } catch (NumberFormatException e) {
-            logAndAudit(RETRIEVE_WSDL_INVALID_PORT, portString);
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
-
-        if (port < RetrieveServiceWsdlAssertion.PORT_RANGE_START ||
-                port > RetrieveServiceWsdlAssertion.PORT_RANGE_END) {
-            logAndAudit(RETRIEVE_WSDL_INVALID_PORT, Integer.toString(port));
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
-
-        return port;
-    }
-
-    private Document getWsdlDocument(PublishedService service) throws IOException {
+    private Document parseDocument(String url, String xml) throws IOException, SAXException {
         InputSource input = new InputSource();
-        input.setSystemId(service.getWsdlUrl());
-        input.setCharacterStream(new StringReader(service.getWsdlXml()));
+        input.setSystemId(url);
+        input.setCharacterStream(new StringReader(xml));
 
-        try {
-            return XmlUtil.parse(input, false);
-        } catch (SAXException e) {
-            logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_WSDL,
-                    new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
-            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
-        }
-    }
-
-    private String getRoutingUri(PublishedService service) {
-        return SecureSpanConstants.SERVICE_FILE + service.getId(); // refer to service by its ID
+        return XmlUtil.parse(input, false);
     }
 }
