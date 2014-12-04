@@ -7,8 +7,9 @@ import com.l7tech.objectmodel.EntityType;
  * Entity header for {@link com.l7tech.gateway.common.solutionkit.SolutionKit} entity.
  */
 public class SolutionKitHeader extends EntityHeader {
-    private String solutionKitGuid;
-    private String solutionKitVersion;
+    private final String solutionKitGuid;
+    private final String solutionKitVersion;
+    private final long lastUpdateTime;
 
     public SolutionKitHeader(SolutionKit solutionKit) {
         this(solutionKit.getId(),
@@ -16,28 +17,26 @@ public class SolutionKitHeader extends EntityHeader {
             solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY),
             solutionKit.getVersion(),
             solutionKit.getSolutionKitGuid(),
-            solutionKit.getSolutionKitVersion());
+            solutionKit.getSolutionKitVersion(),
+            solutionKit.getLastUpdateTime());
     }
 
-    public SolutionKitHeader(String id, String name, String description, Integer version, String solutionKitGuid, String solutionKitVersion) {
+    public SolutionKitHeader(String id, String name, String description, Integer version, String solutionKitGuid, String solutionKitVersion, long lastUpdateTime) {
         super(id, EntityType.SOLUTION_KIT, name, description, version);
         this.solutionKitGuid = solutionKitGuid;
         this.solutionKitVersion = solutionKitVersion;
+        this.lastUpdateTime = lastUpdateTime;
     }
 
     public String getSolutionKitGuid() {
         return solutionKitGuid;
     }
 
-    public void setSolutionKitGuid(String solutionKitGuid) {
-        this.solutionKitGuid = solutionKitGuid;
-    }
-
     public String getSolutionKitVersion() {
         return solutionKitVersion;
     }
 
-    public void setSolutionKitVersion(String solutionKitVersion) {
-        this.solutionKitVersion = solutionKitVersion;
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
     }
 }

@@ -49,16 +49,17 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     }
 
     @Override
-    public void install(@NotNull SolutionKit solutionKit, @NotNull String bundle) throws SaveException, SolutionKitException {
+    public String install(@NotNull SolutionKit solutionKit, @NotNull String bundle) throws SaveException, SolutionKitException {
         // Install bundle.
         //
-        String result = this.installBundle(solutionKit, bundle);
-
+        String mappings = this.installBundle(bundle);
         // Save solution kit entity.
         //
         solutionKit.setLastUpdateTime(System.currentTimeMillis());
-        solutionKit.setMappings(result);
+        solutionKit.setMappings(mappings);
         save(solutionKit);
+
+        return mappings;
     }
 
     @Override
@@ -111,19 +112,20 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }, invoker);
     }
 
-    private String installBundle(SolutionKit solutionKit, String bundle) throws SolutionKitException {
+    private String installBundle(String bundle) throws SolutionKitException {
         final RestmanInvoker restmanInvoker = createRestmanInvoker();
         final PolicyEnforcementContext pec = restmanInvoker.getContext(bundle);
 
         try {
             Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
             if (AssertionStatus.NONE != result.left) {
-                String msg = "Unable to install bundle: " + result.left.getMessage();
+                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion. " + result.left.getMessage();
                 logger.log(Level.WARNING, msg);
                 throw new SolutionKitException(msg);
             }
+
             if (result.right.hasMappingError()) {
-                String msg = "Unable to install bundle due to mapping error.";
+                String msg = "Unable to install bundle due to mapping error." + result.right.getAsString();
                 logger.log(Level.WARNING, msg);
                 throw new SolutionKitException(msg);
             }

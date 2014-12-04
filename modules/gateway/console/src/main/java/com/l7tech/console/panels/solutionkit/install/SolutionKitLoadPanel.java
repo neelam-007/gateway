@@ -87,6 +87,11 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     }
 
     @Override
+    public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
+        loadedSolutionKits.clear();
+    }
+
+    @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setLoadedSolutionKits(loadedSolutionKits);
     }
@@ -95,12 +100,12 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     public boolean onNextButton() {
         File file = new File(fileTextField.getText().trim());
         if (!file.exists()) {
-            DialogDisplayer.showMessageDialog(this, "The file does not exist.", "Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this.getOwner(), "The file does not exist.", "Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
         if (!file.isFile()) {
-            DialogDisplayer.showMessageDialog(this, "The file must be a file type.", "Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this.getOwner(), "The file must be a file type.", "Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
@@ -128,7 +133,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             loadedSolutionKits.clear();
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         } finally {
             ResourceUtils.closeQuietly(zis);

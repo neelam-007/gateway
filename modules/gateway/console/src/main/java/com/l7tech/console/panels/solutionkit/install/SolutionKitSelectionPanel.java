@@ -56,6 +56,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
+        solutionKitsModel.deselectAll();
+        settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
     }
 

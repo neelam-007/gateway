@@ -21,7 +21,8 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
     }
 
     @Override
-    public void install(@NotNull SolutionKit solutionKit, @NotNull String migrationBundle) throws SaveException, SolutionKitException {
+    public String install(@NotNull SolutionKit solutionKit, @NotNull String migrationBundle) throws SaveException, SolutionKitException {
+        return "";
     }
 
     @Override

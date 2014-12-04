@@ -3,6 +3,7 @@ package com.l7tech.console.panels.solutionkit;
 import com.l7tech.console.panels.solutionkit.install.InstallSolutionKitWizard;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.SimpleTableModel;
@@ -55,22 +56,28 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private void initialize() {
         solutionKitsModel = TableUtil.configureTable(solutionKitsTable,
-            column("Name", 30, 100, 99999, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Name", 25, 200, 99999, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getName();
                 }
             }),
-            column("Version", 30, 100, 99999, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Version", 25, 200, 99999, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getSolutionKitVersion();
                 }
             }),
-            column("Description", 30, 100, 99999, new Functions.Unary<String, SolutionKitHeader>() {
+            column("Description", 25, 400, 99999, new Functions.Unary<String, SolutionKitHeader>() {
                 @Override
                 public String call(SolutionKitHeader solutionKitHeader) {
                     return solutionKitHeader.getDescription();
+                }
+            }),
+            column("Last Updated", 25, 300, 99999, new Functions.Unary<String, SolutionKitHeader>() {
+                @Override
+                public String call(SolutionKitHeader solutionKitHeader) {
+                    return new Date(solutionKitHeader.getLastUpdateTime()).toString();
                 }
             })
         );
@@ -136,8 +143,9 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onInstall() {
-        final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this);
+        final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this.getOwner());
         wizard.pack();
+        Utilities.centerOnParentWindow(wizard);
         DialogDisplayer.display(wizard, new Runnable() {
             @Override
             public void run() {
@@ -191,18 +199,19 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUpgrade() {
-        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void onProperties() {
-        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void onCreate() {
-        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void onClose() {
+        TopComponents.getInstance().refreshPoliciesFolderNode();
         dispose();
     }
 

@@ -31,7 +31,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     private SolutionKitAdmin solutionKitAdmin;
 
-    public static InstallSolutionKitWizard getInstance(Dialog parent) {
+    public static InstallSolutionKitWizard getInstance(Window parent) {
         final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel();
 
         final SolutionKitLoadPanel first = new SolutionKitLoadPanel();
@@ -40,7 +40,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         return new InstallSolutionKitWizard(parent, first);
     }
 
-    private InstallSolutionKitWizard(Dialog parent, WizardStepPanel<SolutionKitsConfig> panel) {
+    private InstallSolutionKitWizard(Window parent, WizardStepPanel<SolutionKitsConfig> panel) {
         super(parent, panel, new SolutionKitsConfig());
 
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
