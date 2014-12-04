@@ -1,8 +1,12 @@
 package com.l7tech.server.cassandra;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Copyright: Layer 7 Technologies, 2014
@@ -10,9 +14,10 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
  * Date: 12/1/14
  */
 public class CassandraConnectionHolderImpl implements CassandraConnectionHolder {
-    final private CassandraConnection connectionConfig;
-    final private Cluster cluster;
-    final private Session session;
+    private final CassandraConnection connectionConfig;
+    private final Cluster cluster;
+    private final Session session;
+    private final Map<String, PreparedStatement> statementMap = new ConcurrentHashMap<>();
 
 
     public CassandraConnectionHolderImpl(CassandraConnection connectionConfig, Cluster cluster, Session session){
@@ -31,5 +36,10 @@ public class CassandraConnectionHolderImpl implements CassandraConnectionHolder 
 
     public Session getSession() {
         return session;
+    }
+
+    @Override
+    public Map<String, PreparedStatement> getPreparedStatementMap() {
+        return statementMap;
     }
 }

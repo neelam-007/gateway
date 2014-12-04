@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -114,8 +113,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         Iterator<CassandraConnectionHolder> iter = cassandraConnections.values().iterator();
         while(iter.hasNext()) {
             final CassandraConnectionHolder connectionHolder = iter.next();
-            connectionHolder.getSession().close();
-            connectionHolder.getCluster().close();
+            closeConnection(connectionHolder);
             iter.remove();
         }
 
@@ -129,10 +127,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     @Override
     public void removeConnection(CassandraConnection cassandraConnectionEntity) {
         CassandraConnectionHolder connection = cassandraConnections.remove(cassandraConnectionEntity.getName());
-        if(connection != null) {
-            connection.getSession().close();
-            connection.getCluster().close();
-        }
+        closeConnection(connection);
     }
 
     @Override
@@ -150,8 +145,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             while(iter.hasNext()) {
                 CassandraConnectionHolder holder = iter.next();
                 if(holder.getCassandraConnectionEntity().getGoid().equals(goid)){
-                    holder.getSession().close();
-                    holder.getCluster().close();
+                    closeConnection(holder);
                     iter.remove();
                 }
             }
@@ -422,6 +416,15 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             return securePasswordManager.decryptPassword(securePassword.getEncodedPassword());
         } else {
             return new char[]{};
+        }
+    }
+
+    private void closeConnection(CassandraConnectionHolder connection) {
+        if(connection != null) {
+            Session session = connection.getSession();
+            if(session != null) session.close();
+            Cluster cluster = connection.getCluster();
+            if(cluster != null) cluster.close();
         }
     }
 

@@ -12,6 +12,7 @@ import com.datastax.driver.core.Row;
 public class CassandraUtil {
 
     public static Object javaType2CassandraDataType(ColumnDefinitions.Definition definition, Object value ) {
+        //TODO: implement mapping to Cassandra data types
         Class clazz = definition.getType().asJavaClass();
         if(clazz.isAssignableFrom(Integer.class)){
             return Integer.valueOf(value.toString());

@@ -54,8 +54,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         }
 
         Session session = cassandraConnection.getSession();
-
-        //extract parameters from the query
+        //extract parameters from the query only the first time it should be used afterwords until someone changes the assertion
         final Pair<String, List<Object>> pair;
         if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
             pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, Collections.EMPTY_LIST, getAudit());
@@ -64,20 +63,21 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         }
 
         final String plainQuery = pair.left;
-        final List<Object> preparedStmtParams = pair.right;
+        final  List<Object> preparedStmtParams = pair.right;
+        boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
 
-        final boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
+        Map<String, PreparedStatement> stmtMap = cassandraConnection.getPreparedStatementMap();
+        PreparedStatement preparedStatement = stmtMap.get(plainQuery);
+
         int resultSize = 0;
         try {
-            BoundStatement boundStatement = null;
-            try {
-                PreparedStatement preparedStatement = session.prepare(plainQuery);
-                boundStatement = new BoundStatement(preparedStatement);
-            } catch (Exception e){
-                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FAILED;
+            if(preparedStatement == null ) {
+                preparedStatement = session.prepare(plainQuery);
+                stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
             }
 
+            //construct BoundStatement
+            BoundStatement boundStatement = new BoundStatement(preparedStatement);
 
             List<ColumnDefinitions.Definition> cdlist = boundStatement.preparedStatement().getVariables().asList();
             List<Object> convertedStmtParams = new ArrayList<>();
