@@ -74,9 +74,12 @@ public class RetrieveServiceWsdlPropertiesDialog extends AssertionPropertiesOkCa
             public void itemStateChanged(ItemEvent e) {
                 if (dependencyRadioButton.isSelected()) {
                     proxyDependenciesCheckBox.setSelected(true);
+                } else {
+                    serviceDocumentIdTextField.setText("");
                 }
 
                 proxyDependenciesCheckBox.setEnabled(!dependencyRadioButton.isSelected());
+                serviceDocumentIdTextField.setEnabled(dependencyRadioButton.isSelected());
             }
         };
 
