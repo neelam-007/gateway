@@ -2670,7 +2670,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageGlobalResourcesMenuItem());
                 manageMenu.add(getManageClusterPropertiesActionMenuItem());
                 manageMenu.add(getManageSsgConnectorsAction());
-                manageMenu.add(getManageJdbcConnectionsAction());
+                manageMenu.add(getManageDataSourcesAction());
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());
