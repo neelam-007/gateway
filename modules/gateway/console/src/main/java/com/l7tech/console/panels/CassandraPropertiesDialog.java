@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 
 public class CassandraPropertiesDialog extends JDialog {
     // Connection pooling options
+    public static final String HOST_DISTANCE = "hostDistance";
     private static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
     private static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
     private static final String MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "maxSimultaneousRequestsPerConnectionThreshold";
@@ -90,7 +91,7 @@ public class CassandraPropertiesDialog extends JDialog {
     @SuppressWarnings("unchecked")
     private void populatePropNameComboBox() {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
-                CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
+                HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
                 MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS,
                 KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY
         }));

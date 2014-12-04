@@ -127,33 +127,8 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         // Cluster properties used by this assertion
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
-        props.put(CORE_CONNECTION_PER_HOST, new String[] {
-                "The core number of connections per host.",
-                "1"
-        });
-
-        props.put(MAX_CONNECTION_PER_HOST, new String[] {
-                "The maximum number of connections per host.",
-                "2"
-        });
-
-        props.put(MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, new String[] {
-                "The number of simultaneous requests on all connections to an host after which more connections are created.",
-                "128"
-        });
-
-        props.put(MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, new String[]{
-                "The number of simultaneous requests on a connection below which connections in excess are reclaimed.",
-                "25"
-        } );
-
         props.put(CONNECTION_TIMEOUT_MILLIS, new String[] {
                 "The connect timeout in milliseconds for the underlying Netty channel.",
-                "n/a"
-        });
-
-        props.put(KEEP_ALIVE, new String[] {
-                "",
                 "n/a"
         });
 

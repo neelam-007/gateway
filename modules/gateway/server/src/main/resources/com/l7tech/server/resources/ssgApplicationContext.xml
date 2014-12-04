@@ -1937,6 +1937,7 @@
 
     <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerImpl">
         <constructor-arg ref="cassandraEntityManager"/>
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="securePasswordManager" />
         <constructor-arg ref="trustManager" />
         <constructor-arg ref="secureRandom" />
