@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="JwtAssertion"
+          status="integration"
+            >
+    </info>
+    <configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+    </configurations>
+    <publications>
+        <artifact name="JwtAssertion" type="aar" ext="aar" conf="master"/>
+    </publications>
+    <dependencies>
+        <dependency org="org.jose4j" name="jose4j" rev="0.3.9" force="true" conf="core"/>
+        <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.7" force="true" conf="core"/>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+    </dependencies>
+</ivy-module>

@@ -820,6 +820,14 @@ public class GatewayFeatureSets {
                         mass("assertion:JwtDecode"),
                         mass("assertion:JwtEncode"));
 
+        GatewayFeatureSet jwtAssertion =
+                fsr("set:Jwt:Assertions",
+                        "Assertions to enable JWT functionality.",
+                        mass("assertion:EncodeJsonWebToken"),
+                        mass("assertion:DecodeJsonWebToken"),
+                        mass("assertion:CreateJsonWebKey")
+                );
+
         GatewayFeatureSet openIDConnectAssertions =
                 fsr("set:OpenIDConnect:Assertions",
                         "Assertions to enable OpenIDConnect functionality, including policy dependencies",
@@ -987,6 +995,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
             fs(retrieveServiceWsdlAssertion),
+            fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONNECT, "CloudSpan CloudConnect",
@@ -1054,6 +1063,7 @@ public class GatewayFeatureSets {
             fs(csrfProtectionAssertion),
             fs(radiusAssertions),
             fs(retrieveServiceWsdlAssertion),
+            fs(jwtAssertion),
             mass("assertion:ValidateCertificate"));
 
         fsp(PROFILE_CLOUD_CONTROL, "CloudSpan CloudControl",
@@ -1178,7 +1188,8 @@ public class GatewayFeatureSets {
                 fs(siteMinderAssertions),
                 fs(sophosAssertions),
                 fs(csrfProtectionAssertion),
-                fs(retrieveServiceWsdlAssertion));
+                fs(retrieveServiceWsdlAssertion),
+                fs(jwtAssertion));
 
         /**
          * ### FEATURE PACK DEFINITIONS BEGIN ###

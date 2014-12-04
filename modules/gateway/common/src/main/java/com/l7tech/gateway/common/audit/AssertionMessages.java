@@ -1341,5 +1341,22 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
     public static final M RETRIEVE_WSDL_NO_SERVICE_ID = m(10715, Level.WARNING, "Service ID is null or empty.");
 
+    public static final M JWT_MISSING_SOURCE_PAYLOAD = m(10800, Level.WARNING, "Source payload is required.");
+    public static final M JWT_MISSING_HEADERS = m(10801, Level.WARNING, "Assertion was instructed to {0} headers, but no headers were found.");
+    public static final M JWT_PRIVATE_KEY_NOT_FOUND = m(10802, Level.WARNING, "Could not find the specified private key.");
+    public static final M JWT_KEYSTORE_ERROR = m(10803, Level.WARNING, "Could not access keystore to find private key.");
+    public static final M JWT_KEY_RECOVERY_ERROR = m(10804, Level.WARNING, "Could not recover private key.");
+    public static final M JWT_JOSE_ERROR = m(10805, Level.WARNING, "JOSE Error: {0}");
+    public static final M JWT_SOURCE_HEADERS_ERROR = m(10806, Level.WARNING, "Invalid header found: {0}");
+
+    public static final M JWT_MISSING_JWS_HMAC_SECRET = m(10810, Level.WARNING, "Key is required when using creating MAC.");
+    public static final M JWT_MISSING_JWS_PRIVATE_KEY = m(10811, Level.WARNING, "Private Key is required when using creating a digitial signature.");
+    public static final M JWT_MISSING_JWS_KID = m(10812, Level.WARNING, "Key ID is required for retrieval of key from a JSON Web Key Set.");
+    public static final M JWT_JWS_KEY_ERROR = m(10813, Level.WARNING, "Could not find signing key for JWS operation.");
+
+    public static final M JWT_JWE_KEY_ERROR = m(10820, Level.WARNING, "Could not find encryption key for JWE operation.");
+    public static final M JWT_JWE_PUBLIC_KEY_ERROR = m(10821, Level.WARNING, "Could not get the public key as specified.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }
+
