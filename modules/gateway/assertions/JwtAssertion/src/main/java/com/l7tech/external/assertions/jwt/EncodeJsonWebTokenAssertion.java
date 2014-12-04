@@ -220,8 +220,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[]{
-                new VariableMetadata(getTargetVariable() + ".compact", true, false, null, false),
-                new VariableMetadata(getTargetVariable() + ".json", true, false, null, false)
+                new VariableMetadata(getTargetVariable() + ".compact", true, false, null, false)
         };
     }
 
