@@ -34,4 +34,8 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @NotNull
     @Secured(stereotype = MethodStereotype.DELETE_BY_ID)
     JobId<String> uninstall(@NotNull Goid goid);
+
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_ENTITY)
+    SolutionKit get(@NotNull Goid goid) throws FindException;
 }

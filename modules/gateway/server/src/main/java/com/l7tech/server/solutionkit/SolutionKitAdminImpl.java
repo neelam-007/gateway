@@ -72,4 +72,9 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
         return registerJob(task, String.class);
     }
+
+    @Override
+    public SolutionKit get(@NotNull Goid goid) throws FindException {
+        return solutionKitManager.findByPrimaryKey(goid);
+    }
 }

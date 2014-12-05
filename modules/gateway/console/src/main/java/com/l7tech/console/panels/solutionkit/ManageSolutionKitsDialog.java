@@ -4,6 +4,7 @@ import com.l7tech.console.panels.solutionkit.install.InstallSolutionKitWizard;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gui.SimpleTableModel;
@@ -52,6 +53,7 @@ public class ManageSolutionKitsDialog extends JDialog {
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         initialize();
         refreshSolutionKitsTable();
+        refreshSolutionKitTableButtons();
     }
 
     private void initialize() {
@@ -91,7 +93,6 @@ public class ManageSolutionKitsDialog extends JDialog {
         });
 
         Utilities.setRowSorter(solutionKitsTable, solutionKitsModel, new int[]{0, 1, 2}, new boolean[]{true, true, true}, new Comparator[]{null, null, null});
-        Utilities.setDoubleClickAction(solutionKitsTable, propertiesButton);
 
         installButton.addActionListener(new ActionListener() {
             @Override
@@ -135,11 +136,10 @@ public class ManageSolutionKitsDialog extends JDialog {
             }
         });
 
+        Utilities.setDoubleClickAction(solutionKitsTable, propertiesButton);
         Utilities.setEscKeyStrokeDisposes(this);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setContentPane(mainPanel);
-
-        refreshSolutionKitTableButtons();
     }
 
     private void onInstall() {
@@ -203,7 +203,22 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onProperties() {
-        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        int rowIndex = solutionKitsTable.getSelectedRow();
+        if (rowIndex != -1) {
+            int modelIndex = solutionKitsTable.getRowSorter().convertRowIndexToModel(rowIndex);
+            SolutionKitHeader header = solutionKitsModel.getRowObject(modelIndex);
+            try {
+                SolutionKit solutionKit = solutionKitAdmin.get(header.getGoid());
+                final SolutionKitPropertiesDialog dlg = new SolutionKitPropertiesDialog(this, solutionKit);
+                dlg.pack();
+                Utilities.centerOnParentWindow(dlg);
+                DialogDisplayer.display(dlg);
+            } catch (FindException e) {
+                final String msg = "Unable to view solution kit properties: " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        }
     }
 
     private void onCreate() {
