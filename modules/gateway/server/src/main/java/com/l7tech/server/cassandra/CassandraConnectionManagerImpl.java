@@ -121,7 +121,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
     @Override
     public void addConnection(CassandraConnection cassandraConnectionEntity) {
-        CassandraConnectionHolder connection = getConnection(cassandraConnectionEntity.getName());
+        getConnection(cassandraConnectionEntity.getName());
     }
 
     @Override
@@ -155,19 +155,33 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
     @Override
     public void updateConnection(CassandraConnection cassandraConnectionEntity) throws UpdateException {
-        if (cassandraConnections.get(cassandraConnectionEntity.getName()) != null) {
-            CassandraConnectionHolder cassandraConnectionHolder = createConnection(cassandraConnectionEntity);
-            if  (cassandraConnectionHolder != null) {
-                removeConnection(cassandraConnectionEntity);
-                cassandraConnections.put(cassandraConnectionEntity.getName(), cassandraConnectionHolder);
-            }
-            else {
+        // Search through cached connections by goid because the name field could have been updated.
+        CassandraConnectionHolder cachedConnection = getCachedConnection(cassandraConnectionEntity.getGoid());
+
+        // If cache exists, remove it and add back an updated one.
+        if (cachedConnection != null) {
+            CassandraConnectionHolder newConnectionHolder = createConnection(cassandraConnectionEntity);
+            if (newConnectionHolder != null) {
+                removeConnection(cachedConnection.getCassandraConnectionEntity());
+                if (cassandraConnectionEntity.isEnabled()) {
+                    cassandraConnections.put(cassandraConnectionEntity.getName(), newConnectionHolder);
+                }
+            } else {
                 throw new UpdateException("New cached connection cannot be created. Please check the settings.");
             }
         }
     }
 
-    private CassandraConnectionHolder createConnection(CassandraConnection cassandraConnectionEntity){
+    private CassandraConnectionHolder getCachedConnection(Goid goid) {
+        for (CassandraConnectionHolder holder : cassandraConnections.values()) {
+            if (holder.getCassandraConnectionEntity().getGoid().equals(goid)) {
+                return holder;
+            }
+        }
+        return null;
+    }
+
+    protected CassandraConnectionHolder createConnection(CassandraConnection cassandraConnectionEntity){
         Cluster cluster;
         Session session;
 
@@ -431,5 +445,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         // Do nothing
+    }
+
+    // For unit testing
+    public int getConnectionCacheSize() {
+        return cassandraConnections.size();
     }
 }

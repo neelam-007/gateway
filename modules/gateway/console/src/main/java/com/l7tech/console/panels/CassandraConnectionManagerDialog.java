@@ -181,14 +181,14 @@ public class CassandraConnectionManagerDialog extends JDialog {
 
     private void doAdd() {
         CassandraConnection connection = new CassandraConnection();
-        editAndSave(connection, true, false);
+        editAndSave(connection, true);
     }
 
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
 
-        editAndSave(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)), false, true);
+        editAndSave(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)), false);
     }
 
     private void doClone() {
@@ -198,7 +198,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
         CassandraConnection newConnection = new CassandraConnection();
         newConnection.copyFrom(cassandraConnectionsTableModel.getRowObject(connectionTable.convertRowIndexToModel(selectedRow)));
         EntityUtils.updateCopy(newConnection);
-        editAndSave(newConnection, true, false);
+        editAndSave(newConnection, true);
     }
 
     private void doRemove() {
@@ -236,9 +236,9 @@ public class CassandraConnectionManagerDialog extends JDialog {
         }
     }
 
-    private void editAndSave(final CassandraConnection connection, final boolean selectName, final boolean isEdit) {
+    private void editAndSave(final CassandraConnection connection, final boolean selectName) {
         final CassandraConnectionPropertiesDialog dlg =
-                new CassandraConnectionPropertiesDialog(CassandraConnectionManagerDialog.this, connection, isEdit);
+                new CassandraConnectionPropertiesDialog(CassandraConnectionManagerDialog.this, connection);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         if (selectName)
@@ -250,7 +250,7 @@ public class CassandraConnectionManagerDialog extends JDialog {
                     Runnable reedit = new Runnable() {
                         public void run() {
                             loadCassandraConnections();
-                            editAndSave(connection, selectName, isEdit);
+                            editAndSave(connection, selectName);
                         }
                     };
 

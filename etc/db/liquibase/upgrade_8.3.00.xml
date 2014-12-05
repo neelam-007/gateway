@@ -90,6 +90,11 @@
             <column name="security_zone_goid" type="${goid.type}"/>
         </createTable>
     </changeSet>
+	<changeSet id="create-index-cassandra-connection-name" author="acheuk">
+        <createIndex indexName="index_cassandra_connection_name" tableName="cassandra_connection" unique="true">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
 	<changeSet id="create-manage-cassandra-connection-role" author="acheuk">
         <comment>Manage Cassandra Configuration</comment>
         <insert tableName="rbac_role">

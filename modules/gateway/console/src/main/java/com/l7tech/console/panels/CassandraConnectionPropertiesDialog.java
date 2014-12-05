@@ -67,15 +67,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     private PermissionFlags flags;
     private boolean confirmed;
 
-    public CassandraConnectionPropertiesDialog(Dialog owner, CassandraConnection connection, boolean isEdit) {
+    public CassandraConnectionPropertiesDialog(Dialog owner, CassandraConnection connection) {
         super(owner, resources.getString("dialog.title.manage.cassandra.connection.properties"), true);
         this.connection = connection;
-
-        // Do not allow user to edit the name of the connection because the name is used to lookup the cached connection
-        if (isEdit) {
-            nameTextField.setEditable(false);
-        }
-
         initialize();
     }
 
@@ -482,7 +476,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         CassandraConnectionManagerAdmin admin = getCassandraManagerAdmin();
         if (admin == null) return "Cannot get Cassandra Connection Admin.  Check the log and try again.";
 
+        String originalConnName = connection.getName();
         String connName = nameTextField.getText();
+        if (originalConnName.compareToIgnoreCase(connName) == 0) return null;
 
         try {
             for (String name : admin.getAllCassandraConnectionNames()) {
