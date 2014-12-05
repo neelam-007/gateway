@@ -1339,7 +1339,8 @@ public class AssertionMessages extends Messages {
     public static final M RETRIEVE_WSDL_INVALID_SERVICE_DOCUMENT_ID = m(10712, Level.WARNING, "Invalid Service Document ID: {0}");
     public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND = m(10713, Level.WARNING, "Could not find Service Document with ID: {0}");
     public static final M RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT = m(10714, Level.WARNING, "Could not parse Service Document XML: {0}");
-    public static final M RETRIEVE_WSDL_NO_SERVICE_ID = m(10715, Level.WARNING, "Service ID is null or empty.");
+    public static final M RETRIEVE_WSDL_SERVICE_ID_BLANK = m(10715, Level.WARNING, "Service ID is empty.");
+    public static final M RETRIEVE_WSDL_SERVICE_DOCUMENT_ID_BLANK = m(10716, Level.WARNING, "Service Document ID is empty.");
 
     public static final M JWT_MISSING_SOURCE_PAYLOAD = m(10800, Level.WARNING, "Source payload is required.");
     public static final M JWT_MISSING_HEADERS = m(10801, Level.WARNING, "Assertion was instructed to {0} headers, but no headers were found.");

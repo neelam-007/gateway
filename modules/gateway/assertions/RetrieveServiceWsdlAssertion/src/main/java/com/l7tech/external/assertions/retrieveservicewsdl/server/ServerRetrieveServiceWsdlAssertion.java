@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -65,8 +64,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
         Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         // parse service goid
@@ -93,18 +91,23 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private Document retrieveWsdlDependencyDocument(PolicyEnforcementContext context, Map<String, Object> vars,
-                                                    PublishedService service, URL endpointUrl) throws IOException {
+                                                    PublishedService service, URL endpointUrl) {
         Document document = null;
 
         // get service document goid
         Goid serviceDocumentGoid;
 
-        if (null == assertion.getServiceDocumentId()) {
+        if (StringUtils.isBlank(assertion.getServiceDocumentId())) {
             logAndAudit(RETRIEVE_WSDL_NO_SERVICE_DOCUMENT_ID);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
         String serviceDocumentIdString = ExpandVariables.process(assertion.getServiceDocumentId(), vars, getAudit(), true);
+
+        if (StringUtils.isBlank(serviceDocumentIdString)) {
+            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_ID_BLANK);
+            throw new AssertionStatusException(AssertionStatus.FAILED);
+        }
 
         try {
             serviceDocumentGoid = Goid.parseGoid(serviceDocumentIdString);
@@ -127,7 +130,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
             if (dependency.getGoid().equals(serviceDocumentGoid)) {
                 try {
                     document = parseDocument(dependency.getUri(), dependency.getContents());
-                } catch (SAXException e) {
+                } catch (IOException | SAXException e) {
                     logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT,
                             new String[]{ExceptionUtils.getMessage(e)}, getDebugException(e));
                     throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
@@ -159,13 +162,13 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private Document retrieveWsdlDocument(PolicyEnforcementContext context,
-                                          PublishedService service, URL endpointUrl) throws IOException {
+                                          PublishedService service, URL endpointUrl) {
         Document document;
 
         // parse service WSDL xml
         try {
             document = parseDocument(service.getWsdlUrl(), service.getWsdlXml());
-        } catch (SAXException e) {
+        } catch (IOException | SAXException e) {
             logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_WSDL,
                     new String[] {ExceptionUtils.getMessage(e)}, getDebugException(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
@@ -214,17 +217,10 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
     }
 
     private PublishedService getService(Map<String, Object> vars) {
-        String serviceIdString;
-
-        try {
-            serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true);
-        } catch (VariableNameSyntaxException e) {
-            logAndAudit(NO_SUCH_VARIABLE_WARNING, assertion.getServiceId());
-            throw new AssertionStatusException(AssertionStatus.FAILED);
-        }
+        String serviceIdString = ExpandVariables.process(assertion.getServiceId(), vars, getAudit(), true);
 
         if (StringUtils.isBlank(serviceIdString)) {
-            logAndAudit(RETRIEVE_WSDL_NO_SERVICE_ID);
+            logAndAudit(RETRIEVE_WSDL_SERVICE_ID_BLANK);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
