@@ -416,7 +416,7 @@ public class WsdlUtilTest {
                     public void call(Exception e) {
                         errorCount.incrementAndGet();
                     }
-                });
+                }, true);
 
         assertEquals(0, errorCount.get());
 
@@ -460,7 +460,7 @@ public class WsdlUtilTest {
                     public void call(Exception e) {
                         errorCount.incrementAndGet();
                     }
-                });
+                }, true);
 
         assertEquals(0, errorCount.get());
 
@@ -496,14 +496,13 @@ public class WsdlUtilTest {
 
         final AtomicInteger errorCount = new AtomicInteger(0);
 
-        WsdlUtil.rewriteReferences(serviceId, wsdlUrl, wsdlDoc,
-                dependencies, requestUri,
+        WsdlUtil.rewriteReferences(serviceId, wsdlUrl, wsdlDoc, dependencies, requestUri,
                 new Functions.UnaryVoid<Exception>() {
                     @Override
                     public void call(Exception e) {
                         errorCount.incrementAndGet();
                     }
-                });
+                }, false);
 
         assertEquals(1, errorCount.get());
 

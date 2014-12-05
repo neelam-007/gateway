@@ -53,6 +53,8 @@ import java.util.Arrays;
 public class ServerRetrieveServiceWsdlAssertionTest {
     private static final String ACME_WAREHOUSE_WSDL = "ACMEWarehouse.wsdl";
     private static final String ID_SERVICE_WSDL = "IDService.wsdl";
+    private static final String ID_SERVICE_XSD_1 = "IDService_1.xsd";
+    private static final String ID_SERVICE_XSD_2 = "IDService_2.xsd";
 
     private static final String WSDL_QUERY_HANDLER_SERVICE_ID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     private static final String WSDL_QUERY_HANDLER_SERVICE_ROUTING_URI = "/wsdlHandler";
@@ -494,7 +496,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
         } catch (AssertionStatusException e) {
             assertEquals(AssertionStatus.FAILED, e.getAssertionStatus());
             assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.RETRIEVE_WSDL_INVALID_SERVICE_ID,
-                            "Cannot create goid from this String. Invalid hex data: " + invalidServiceId));
+                    "Cannot create goid from this String. Invalid hex data: " + invalidServiceId));
         }
     }
 
@@ -761,7 +763,7 @@ public class ServerRetrieveServiceWsdlAssertionTest {
 
         // confirm the dependency reference was rewritten correctly
         String dependencyProxyLocation = "http://localhost:80/service/" + WSDL_QUERY_HANDLER_SERVICE_ID +
-                "/IDService?serviceoid=" + soapServiceId + "&servdocoid=" + serviceDocumentId;
+                "?serviceoid=" + soapServiceId + "&servdocoid=" + serviceDocumentId;
 
         NodeList nl = storedWsdl.getElementsByTagName("*");
 
@@ -772,6 +774,128 @@ public class ServerRetrieveServiceWsdlAssertionTest {
                 assertEquals(dependencyProxyLocation, element.getAttribute("schemaLocation"));
             }
         }
+    }
+
+    @Test
+    public void testCheckRequest_RetrieveDependency_StoredToResponse() throws Exception {
+        ServiceDocument serviceDocument2 = mock(ServiceDocument.class);
+
+        String idServiceXsd1XmlString = getTestDocumentAsString(ID_SERVICE_XSD_1);
+        String idServiceXsd2XmlString = getTestDocumentAsString(ID_SERVICE_XSD_2);
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff";
+        String serviceDocumentId1 = "124b55f4e9320bdab071f5b4ffaf72b5";
+        String serviceDocumentId2 = "124b55f4e9320bdab071f5b4ffaf72b6";
+        String importUrl1 = "http://www.predic8.com:8080/base/IDService?xsd=1";
+        String importUrl2 = "http://www.predic8.com:8080/base/IDService?xsd=2";
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
+                .thenReturn(Arrays.asList(serviceDocument, serviceDocument2));
+
+        when(service.isSoap()).thenReturn(true);
+        when(service.getRoutingUri()).thenReturn("/svc");
+        when(service.getId()).thenReturn(soapServiceId);
+
+        when(serviceDocument.getId()).thenReturn(serviceDocumentId1);
+        when(serviceDocument.getGoid()).thenReturn(Goid.parseGoid(serviceDocumentId1));
+        when(serviceDocument.getUri()).thenReturn(importUrl1);
+        when(serviceDocument.getContents()).thenReturn(idServiceXsd1XmlString);
+
+        when(serviceDocument2.getId()).thenReturn(serviceDocumentId2);
+        when(serviceDocument2.getGoid()).thenReturn(Goid.parseGoid(serviceDocumentId2));
+        when(serviceDocument2.getUri()).thenReturn(importUrl2);
+        when(serviceDocument2.getContents()).thenReturn(idServiceXsd2XmlString);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("serviceDocumentId", serviceDocumentId1);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setRetrieveDependency(true);
+        assertion.setProxyDependencies(true);
+        assertion.setServiceId("${serviceId}");
+        assertion.setServiceDocumentId("${serviceDocumentId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedDependency = context.getResponse().getXmlKnob().getDocumentReadOnly();
+
+        System.out.println(XmlUtil.nodeToFormattedString(storedDependency));
+
+        assertFalse(storedDependency.isEqualNode(XmlUtil.parse(idServiceXsd1XmlString)));
+
+        // confirm the dependency reference was rewritten correctly
+        String dependencyProxyLocation = "http://localhost:80/service/" + WSDL_QUERY_HANDLER_SERVICE_ID +
+                "?serviceoid=" + soapServiceId + "&servdocoid=" + serviceDocumentId2;
+
+        NodeList nl = storedDependency.getElementsByTagName("*");
+
+        for (int i = 0; i < nl.getLength(); i++) {
+            Element element = (Element) nl.item(i);
+
+            if ("import".equals(element.getLocalName())) {
+                assertEquals(dependencyProxyLocation, element.getAttribute("schemaLocation"));
+            }
+        }
+    }
+
+    @Test
+    public void testCheckRequest_RetrieveDependencyWithDependency_RewrittenAndStoredToResponse() throws Exception {
+        String idServiceXsdXmlString = getTestDocumentAsString(ID_SERVICE_XSD_2);
+
+        String soapServiceId = "ffffffffffffffffffffffffffffffff";
+        String serviceDocumentId = "124b55f4e9320bdab071f5b4ffaf72b5";
+        String importUrl = "http://www.predic8.com:8080/base/IDService?xsd=2";
+
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(serviceDocumentManager.findByServiceIdAndType(any(Goid.class), any(String.class)))
+                .thenReturn(Arrays.asList(serviceDocument));
+
+        when(service.isSoap()).thenReturn(true);
+        when(service.getRoutingUri()).thenReturn("/svc");
+        when(service.getId()).thenReturn(soapServiceId);
+
+        when(serviceDocument.getId()).thenReturn(serviceDocumentId);
+        when(serviceDocument.getGoid()).thenReturn(Goid.parseGoid(serviceDocumentId));
+        when(serviceDocument.getUri()).thenReturn(importUrl);
+        when(serviceDocument.getContents()).thenReturn(idServiceXsdXmlString);
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        context.setVariable("serviceId", soapServiceId);
+        context.setVariable("serviceDocumentId", serviceDocumentId);
+        context.setVariable("portVar", "8443");
+
+        RetrieveServiceWsdlAssertion assertion = new RetrieveServiceWsdlAssertion();
+
+        assertion.setRetrieveDependency(true);
+        assertion.setProxyDependencies(true);
+        assertion.setServiceId("${serviceId}");
+        assertion.setServiceDocumentId("${serviceDocumentId}");
+        assertion.setHost("localhost");
+        assertion.setPort("${portVar}");
+        assertion.setMessageTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
+
+        ServerRetrieveServiceWsdlAssertion serverAssertion = createServer(assertion);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+
+        Document storedDependency = context.getResponse().getXmlKnob().getDocumentReadOnly();
+
+        assertTrue(storedDependency.isEqualNode(XmlUtil.parse(idServiceXsdXmlString)));
     }
 
     @Test

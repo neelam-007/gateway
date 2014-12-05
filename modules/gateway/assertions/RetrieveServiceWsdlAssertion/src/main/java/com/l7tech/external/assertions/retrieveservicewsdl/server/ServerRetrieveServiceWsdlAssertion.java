@@ -124,7 +124,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         final Collection<ServiceDocument> dependencyDocuments = getImportedDocumentsToProxy(service);
 
         for (ServiceDocument dependency : dependencyDocuments) {
-            if (dependency.getServiceId().equals(serviceDocumentGoid)) {
+            if (dependency.getGoid().equals(serviceDocumentGoid)) {
                 try {
                     document = parseDocument(dependency.getUri(), dependency.getContents());
                 } catch (SAXException e) {
@@ -136,7 +136,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         if (null == document) {
-            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND);
+            logAndAudit(RETRIEVE_WSDL_SERVICE_DOCUMENT_NOT_FOUND, serviceDocumentIdString);
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
@@ -372,7 +372,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
         }
 
         WsdlUtil.rewriteReferences(service.getId(), service.getWsdlUrl(),
-                wsdlDoc, dependencies, wsdlProxyUri, errorHandler);
+                wsdlDoc, dependencies, wsdlProxyUri, errorHandler, false);
     }
 
     private Collection<ServiceDocument> getImportedDocumentsToProxy(PublishedService service) {
