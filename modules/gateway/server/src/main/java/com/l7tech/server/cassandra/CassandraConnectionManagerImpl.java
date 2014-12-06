@@ -185,35 +185,17 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         Cluster cluster;
         Session session;
 
-        try{
-            //start cluster creation
-            Cluster.Builder clusterBuilder = Cluster.builder();
-
-            //add basic cluster info
-            addBasicClusterInfo(clusterBuilder, cassandraConnectionEntity, cassandraConnectionEntity.getContactPointsAsArray());
-
-            //add pooling option
-            addPoolingOptions(clusterBuilder, cassandraConnectionEntity);
-
-            //add socket option
-            addSocketOptions(clusterBuilder, cassandraConnectionEntity);
-
-            //add ssl option
-            addSSLOptions(clusterBuilder, cassandraConnectionEntity);
-
-            //build cluster
-            cluster = clusterBuilder.build();
+        try {
+            cluster = this.buildCluster(cassandraConnectionEntity);
 
             //create our cassandra session
-            if(StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
+            if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
                 session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
-            }
-            else {
+            } else {
                 session = cluster.connect();
             }
-
-        } catch (Exception e){
-            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[] {cassandraConnectionEntity.getName(), e.getMessage()}, ExceptionUtils.getDebugException(e));
+        } catch (Exception e) {
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnectionEntity.getName(), e.getMessage()}, ExceptionUtils.getDebugException(e));
             return null;
         }
 
@@ -226,12 +208,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         Session session = null;
 
         try {
-            Cluster.Builder builder = Cluster.builder();
-            addBasicClusterInfo(builder, cassandraConnectionEntity, cassandraConnectionEntity.getContactPointsAsArray());
-            addSSLOptions(builder, cassandraConnectionEntity);
-            cluster = builder.build();
+            cluster = this.buildCluster(cassandraConnectionEntity);
 
-            if (!cassandraConnectionEntity.getKeyspaceName().isEmpty()) {
+            //create our cassandra session
+            if (StringUtils.isNotBlank(cassandraConnectionEntity.getKeyspaceName())) {
                 session = cluster.connect(cassandraConnectionEntity.getKeyspaceName());
             } else {
                 session = cluster.connect();
@@ -240,6 +220,21 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             if (session != null) session.close();
             if (cluster != null) cluster.close();
         }
+    }
+
+    private Cluster buildCluster(CassandraConnection cassandraConnectionEntity) throws Exception {
+        //start cluster creation
+        Cluster.Builder clusterBuilder = Cluster.builder();
+        //add basic cluster info
+        addBasicClusterInfo(clusterBuilder, cassandraConnectionEntity, cassandraConnectionEntity.getContactPointsAsArray());
+        //add pooling option
+        addPoolingOptions(clusterBuilder, cassandraConnectionEntity);
+        //add socket option
+        addSocketOptions(clusterBuilder, cassandraConnectionEntity);
+        //add ssl option
+        addSSLOptions(clusterBuilder, cassandraConnectionEntity);
+        //build cluster
+        return clusterBuilder.build();
     }
 
     private void addBasicClusterInfo(Cluster.Builder clusterBuilder,
