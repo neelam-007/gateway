@@ -1358,6 +1358,11 @@ public class AssertionMessages extends Messages {
     public static final M JWT_JWE_KEY_ERROR = m(10820, Level.WARNING, "Could not find encryption key for JWE operation.");
     public static final M JWT_JWE_PUBLIC_KEY_ERROR = m(10821, Level.WARNING, "Could not get the public key as specified.");
 
+    public static final M JWT_DECODE_ERROR = m(10830, Level.WARNING, "Source payload is neither JWS or JWE.");
+    public static final M JWT_DECODE_INVALID_TYPE = m(10831, Level.WARNING, "Can not decode JWE using a secret, please reconfigure the assertion to use a Recipient key or JWK/JWKS.");
+    public static final M JWT_INVALID_ALGORITHM = m(10832, Level.WARNING, "Invalid algorithm: {0}");
+    public static final M JWT_DECODE_MISSING_SECRET = m(10833, Level.WARNING, "Missing 'secret' to verify JWS signature.");
+    public static final M JWT_GENERAL_DECODE_ERROR = m(10834, Level.WARNING, "Error decoding: {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
 

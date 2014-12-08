@@ -4,6 +4,7 @@ package com.l7tech.external.assertions.jwt;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
+import org.jose4j.jwk.Use;
 
 import java.util.List;
 
@@ -59,13 +60,43 @@ public final class JsonWebTokenConstants {
             .put("A256GCM", "AES GCM using 256 bit key")
             .build();
 
+    public static final BiMap<String, String> KEY_TYPES = ImmutableBiMap.<String, String>builder()
+            .put("EC", "Elliptic Curve")
+            .put("RSA", "RSA")
+            .put("oct", "Octet sequence")
+            .build();
+
+    public static final BiMap<String, String> KEY_OPERATIONS = ImmutableBiMap.<String, String>builder()
+            .put("sign", "Compute digital signature or MAC")
+            .put("verify", "Verify digital signature or MAC")
+
+            .put("encrypt", "Encrypt Content")
+            .put("decrypt", "Decrypt content and validate decryption, if applicable")
+            .put("wrapKey", "Encrypt Key")
+            .put("unwrapKey", "Decrypt key and validate decryption, if applicable")
+            .put("deriveKey", "Derive key")
+            .put("deriveBits", "Derive bits not to be used as a key")
+            .build();
+
+    public static final BiMap<String, String> PUBLIC_KEY_USE = ImmutableBiMap.<String, String>builder()
+            .put(Use.ENCRYPTION, "Encryption")
+            .put(Use.SIGNATURE, "Signature")
+            .build();
+
     public static final List<String> SIGNATURE_KEY_TYPES = ImmutableList.of("JSON Web Key", "JSON Web Key Set");
 
     public static final List<String> ENCRYPTION_KEY_TYPES = ImmutableList.of("Certificate", "JSON Web Key", "JSON Web Key Set");
 
-    public static String HEADERS_USE_DEFAULT = "Use Default";
-    public static String HEADERS_MERGE = "Merge";
-    public static String HEADERS_REPLACE = "Replace";
+    public static final String HEADERS_USE_DEFAULT = "Use Default";
+    public static final String HEADERS_MERGE = "Merge";
+    public static final String HEADERS_REPLACE = "Replace";
     public static final List<String> HEADER_ACTION = ImmutableList.of(HEADERS_USE_DEFAULT, HEADERS_MERGE, HEADERS_REPLACE);
+
+    public static final String VALIDATION_NONE = "None";
+    public static final String VALIDATION_USING_SECRET = "Using Secret";
+    public static final String VALIDATION_USING_PK = "Using Recipient Key From List";
+    public static final String VALIDATION_USING_CV = "Using Recipient Key From Context Variable";
+
+    public static final List<String> VALIDATION_TYPE = ImmutableList.of(VALIDATION_NONE, VALIDATION_USING_SECRET, VALIDATION_USING_PK, VALIDATION_USING_CV);
 
 }

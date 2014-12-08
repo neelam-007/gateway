@@ -3,9 +3,8 @@ package com.l7tech.external.assertions.jwt.server;
 
 import com.l7tech.external.assertions.jwt.EncodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
+import com.l7tech.external.assertions.jwt.JwtUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -15,8 +14,9 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
-import org.jose4j.jwk.*;
+import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
@@ -25,15 +25,8 @@ import org.jose4j.lang.InvalidAlgorithmException;
 import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.Key;
-import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.Map;
 
 
@@ -65,6 +58,18 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             }
         }
         String jwsCompact = null;
+        if ( (assertion.getSignatureAlgorithm() == null || "None".equals(assertion.getSignatureAlgorithm())) && (assertion.getKeyManagementAlgorithm() == null || "None".equals(assertion.getKeyManagementAlgorithm())) ){
+            final JsonWebSignature str = new JsonWebSignature();
+            str.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+            str.setHeader(HeaderParameterNames.ALGORITHM, AlgorithmIdentifiers.NONE);
+            str.setPayload(sourcePayload);
+            try {
+                context.setVariable(assertion.getTargetVariable() + ".compact", str.getCompactSerialization());
+            } catch (JoseException e) {
+                logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
+                return AssertionStatus.FAILED;
+            }
+        }
         //create JWS if set
         if (assertion.getSignatureAlgorithm() != null && !"None".equals(assertion.getSignatureAlgorithm())) {
             try {
@@ -120,6 +125,8 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 return AssertionStatus.FAILED;
             }
         }
+
+
         return AssertionStatus.NONE;
     }
 
@@ -144,17 +151,17 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 }
                 final String keyType = assertion.getSignatureKeyType();
                 if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-                    return getKeyFromJWK(key, true);
+                    return JwtUtils.getKeyFromJWK(getAudit(), key, true);
                 } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
                     final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), true);
                     if (kid == null || kid.trim().isEmpty()) {
                         logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                         return null;
                     }
-                    return getKeyFromJWKS(key, kid, jws.getKeyType(), null, true);
+                    return JwtUtils.getKeyFromJWKS(getAudit(), jws, key, kid, true);
                 }
             } else {
-                return getKeyFromStore(Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                return JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
             }
         }
         return null;
@@ -170,16 +177,16 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         }
         final String keyType = assertion.getEncryptionKeyType();
         if (JsonWebTokenConstants.KEY_TYPE_CERTIFICATE.equals(keyType)) {
-            return getPublicKeyFromPem(key);
+            return JwtUtils.getPublicKeyFromPem(getAudit(), key);
         } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-            return getKeyFromJWK(key, false);
+            return JwtUtils.getKeyFromJWK(getAudit(), key, false);
         } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
             final String kid = ExpandVariables.process(assertion.getEncryptionKeyId(), variables, getAudit(), true);
             if (kid == null || kid.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                 return null;
             }
-            return getKeyFromJWKS(key, kid, null, null, false);
+            return JwtUtils.getKeyFromJWKS(getAudit(), jwe, key, kid, false);
         }
         return null;
     }
@@ -203,73 +210,5 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         return AssertionStatus.NONE;
     }
 
-    private Key getKeyFromStore(final Goid goid, final String alias) {
-        try {
-            final SsgKeyEntry ssgKeyEntry = ssgKeyStoreManager.findByPrimaryKey(goid).getCertificateChain(alias);
-            return ssgKeyEntry.getPrivateKey();
-        } catch (FindException e) {
-            logAndAudit(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND);
-        } catch (KeyStoreException e) {
-            logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
-        } catch (UnrecoverableKeyException e) {
-            logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
-        }
-        return null;
-    }
 
-    private Key getPublicKeyFromPem(final String pem) {
-        try {
-            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(pem.getBytes()));
-            return cert.getPublicKey();
-        } catch (CertificateException e) {
-            logAndAudit(AssertionMessages.JWT_JWE_PUBLIC_KEY_ERROR);
-        }
-        return null;
-    }
-
-    private Key getKeyFromJWK(final String json, final boolean getPrivate) {
-        try {
-            final JsonWebKey jwk = JsonWebKey.Factory.newJwk(json);
-            if(getPrivate){
-                return getPrivateKey(jwk);
-            }
-            return jwk.getKey();
-        } catch (JoseException e) {
-            logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
-        }
-        return null;
-    }
-
-    private Key getKeyFromJWKS(final String json, final String kid, final String kty, final String algo, final boolean getPrivate) {
-        try {
-            final JsonWebKeySet jwks = new JsonWebKeySet(json);
-            List<JsonWebKey> found = jwks.findJsonWebKeys(kid, kty, getPrivate ? Use.SIGNATURE : Use.ENCRYPTION, algo);
-            //nothing was found
-            if(found.isEmpty()) return null;
-
-            //one or more was found, for now just return the first key found
-            if(getPrivate){
-                return getPrivateKey(found.get(0));
-            }
-            return found.get(0).getKey();
-
-        } catch (JoseException e) {
-            logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
-        }
-        return null;
-    }
-
-    private Key getPrivateKey(final JsonWebKey jwk){
-        if(jwk instanceof RsaJsonWebKey){
-            return ((RsaJsonWebKey) jwk).getRsaPrivateKey();
-        } else if(jwk instanceof EllipticCurveJsonWebKey){
-            return ((EllipticCurveJsonWebKey) jwk).getEcPrivateKey();
-        } else if(jwk instanceof OctetSequenceJsonWebKey){
-            return jwk.getKey();
-        }
-        //should never be
-        logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unknown key algorithm found.");
-        return null;
-    }
 }
