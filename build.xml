@@ -3180,6 +3180,7 @@
                 <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.help}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
+		<mkdir dir="@{dir}/${install.src.ssg.nativelib}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.libalt}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.logs}"/>
@@ -3247,6 +3248,27 @@
                         <include name="jms-1.1.jar"/>
                     </fileset>
                 </copy>
+
+		<!-- Unpack Libraries with embedded *.so components and copy to native-lib dir -->
+		<delete dir="/tmp/build-so"/>
+		<mkdir dir="/tmp/build-so"/>
+		<unzip src="${build.dir}/gateway/lib/lz4-1.3-fix.jar" dest="/tmp/build-so">
+		  <patternset>
+		    <include name="linux/amd64/liblz4-java.so"/>
+		  </patternset>
+		</unzip>
+		<unzip src="${build.dir}/gateway/lib/snappy-java-1.1.0.1.jar" dest="/tmp/build-so">
+		  <patternset>
+		    <include name="org/xerial/snappy/native/Linux/x86_64/libsnappyjava.so"/>
+		  </patternset>
+		</unzip>
+		<copy todir="@{dir}/${install.src.ssg.nativelib}" flatten="true">
+		  <fileset dir="/tmp/build-so">
+		    <patternset>
+		      <include name="**/*.so"/>
+		    </patternset>
+		  </fileset>
+		</copy>
 
                 <!-- Copy misc. stuff -->
                 <copy todir="@{dir}/${install.src.ssg.sql}">
