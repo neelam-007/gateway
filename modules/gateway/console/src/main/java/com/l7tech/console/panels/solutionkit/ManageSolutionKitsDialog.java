@@ -143,7 +143,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onInstall() {
-        final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this.getOwner());
+        final InstallSolutionKitWizard wizard = InstallSolutionKitWizard.getInstance(this);
         wizard.pack();
         Utilities.centerOnParentWindow(wizard);
         DialogDisplayer.display(wizard, new Runnable() {
@@ -166,7 +166,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             try {
                 Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
                     solutionKitAdmin,
-                    this.getOwner(),
+                    this,
                     "Uninstall Solution Kit",
                     "The gateway is uninstalling selected solution kit",
                     solutionKitAdmin.uninstall(header.getGoid()));
@@ -188,9 +188,9 @@ public class ManageSolutionKitsDialog extends JDialog {
 
             if (!cancelled) {
                 if (successful) {
-                    DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(this, msg, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
                 } else {
-                    DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(this, msg, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
                 }
             }
 
@@ -199,7 +199,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUpgrade() {
-        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void onProperties() {
@@ -216,13 +216,13 @@ public class ManageSolutionKitsDialog extends JDialog {
             } catch (FindException e) {
                 final String msg = "Unable to view solution kit properties: " + ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }
 
     private void onCreate() {
-        DialogDisplayer.showMessageDialog(this.getOwner(), "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
+        DialogDisplayer.showMessageDialog(this, "Not implemented yet.", "Solution Kit Manager", JOptionPane.ERROR_MESSAGE, null);
     }
 
     private void onClose() {

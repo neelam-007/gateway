@@ -1,5 +1,7 @@
 package com.l7tech.console.panels.solutionkit;
 
+import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.Utilities;
 
@@ -18,8 +20,10 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private JLabel nameFieldLabel;
     private JLabel descriptionFieldLabel;
     private JLabel createdTimeFieldLabel;
-    private JTextArea mappingsTextArea;
+    private JPanel mappingsPanel;
     private JButton closeButton;
+
+    private XMLContainer mappingsXmlContainer;
 
     public SolutionKitPropertiesDialog(Dialog owner, SolutionKit solutionKit) {
         super(owner, "Solution Kit Properties", true);
@@ -29,8 +33,13 @@ public class SolutionKitPropertiesDialog extends JDialog {
     }
 
     private void initialize() {
+        mappingsXmlContainer = XMLContainerFactory.createXmlContainer(true);
+        mappingsXmlContainer.getUIAccessibility().setPopupAvailable(false);
+        mappingsXmlContainer.setEditableDocumentMode(false);
+        mappingsXmlContainer.setEditable(false);
+        mappingsPanel.setLayout(new BorderLayout());
+        mappingsPanel.add(mappingsXmlContainer.getView(), BorderLayout.CENTER);
 
-        mappingsTextArea.setEditable(false);
         closeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -51,8 +60,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
         createdTimeFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
 
         // todo (kpak) - change to table format.
-        mappingsTextArea.setText(solutionKit.getMappings());
-        mappingsTextArea.setCaretPosition(0);
+        mappingsXmlContainer.getAccessibility().setText(solutionKit.getMappings());
     }
 
     private void onClose() {
