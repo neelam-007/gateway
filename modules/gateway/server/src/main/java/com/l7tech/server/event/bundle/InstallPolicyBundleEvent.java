@@ -11,8 +11,7 @@ import org.jetbrains.annotations.Nullable;
 public class InstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
     public InstallPolicyBundleEvent(@NotNull final Object source,
-                                    @NotNull final PolicyBundleInstallerContext context,
-                                    @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
-        super(source, context, policyBundleInstallerCallback);
+                                    @NotNull final PolicyBundleInstallerContext context) {
+        super(source, context);
     }
 }

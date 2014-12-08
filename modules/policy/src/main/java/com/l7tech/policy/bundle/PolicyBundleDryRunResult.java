@@ -23,9 +23,13 @@ public class PolicyBundleDryRunResult implements Serializable {
     private final Map<String, Map<DryRunItem, List<String>>> conflictsForItemMap = new HashMap<>();
     @Nullable
     private final Map<String, List<MigrationDryRunResult>> migrationDryRunResultsMap;
+    @Nullable
+    private final Map<String, String> componentIdToBundleXmlMap;
 
     public PolicyBundleDryRunResult(@NotNull final Map<String, Map<DryRunItem, List<String>>> bundleToConflicts,
-                                    @Nullable final Map<String, List<MigrationDryRunResult>> migrationDryRunResultsMap) {
+                                    @Nullable final Map<String, List<MigrationDryRunResult>> migrationDryRunResultsMap,
+                                    @Nullable final Map<String, String> componentIdToBundleXmlMap) {
+
         // do we really need to copy the map?  it's probably safe to work directly with original map
         for (Map.Entry<String, Map<DryRunItem, List<String>>> entry : bundleToConflicts.entrySet()) {
             final Map<DryRunItem, List<String>> itemsForBundle = entry.getValue();
@@ -38,14 +42,20 @@ public class PolicyBundleDryRunResult implements Serializable {
         }
 
         this.migrationDryRunResultsMap = migrationDryRunResultsMap;
+        this.componentIdToBundleXmlMap = componentIdToBundleXmlMap;
     }
-
+    
     @NotNull
     public List<MigrationDryRunResult> getMigrationDryRunResults(String bundleId) {
         if (migrationDryRunResultsMap == null) {
             return new ArrayList<>();
         }
         return migrationDryRunResultsMap.get(bundleId);
+    }
+
+    @Nullable
+    public Map<String, String> getComponentIdToBundleXmlMap() {
+        return componentIdToBundleXmlMap;
     }
 
     /**

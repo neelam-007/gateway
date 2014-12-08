@@ -109,6 +109,9 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 final String revisionComment = getPolicyRevisionComment(bundleInfo);
                 pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + "?test=true&versionComment=" + URLEncoder.encode(revisionComment, UTF_8));   // test=true will perform the import but not commit it
 
+                // save bundle xml for headless command line
+                dryRunEvent.addComponentIdToBundleXml(bundleInfo.getId(), requestXml);
+
                 final Pair<AssertionStatus, RestmanMessage> dryRunResult = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
                 final RestmanMessage dryRunMessage = dryRunResult.right;
 
@@ -204,7 +207,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
     @NotNull
     @Override
-    protected BaseGatewayManagementInvoker getManagementClient() {
+    public BaseGatewayManagementInvoker getManagementClient() {
         return restmanInvoker;
     }
 

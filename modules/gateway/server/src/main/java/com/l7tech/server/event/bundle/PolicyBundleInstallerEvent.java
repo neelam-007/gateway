@@ -1,5 +1,6 @@
 package com.l7tech.server.event.bundle;
 
+import com.l7tech.identity.UserBean;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
@@ -8,11 +9,9 @@ import org.jetbrains.annotations.Nullable;
 public abstract class PolicyBundleInstallerEvent extends PolicyBundleEvent {
 
     public PolicyBundleInstallerEvent(@NotNull final Object source,
-                                      @NotNull final PolicyBundleInstallerContext context,
-                                      @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+                                      @NotNull final PolicyBundleInstallerContext context) {
         super(source);
         this.context = context;
-        this.policyBundleInstallerCallback = policyBundleInstallerCallback;
     }
 
     /**
@@ -30,9 +29,24 @@ public abstract class PolicyBundleInstallerEvent extends PolicyBundleEvent {
         return policyBundleInstallerCallback;
     }
 
+    @Nullable
+    public UserBean getAuthenticatedUser() {
+        return authenticatedUser;
+    }
+
+    public void setPolicyBundleInstallerCallback(@Nullable PolicyBundleInstallerCallback policyBundleInstallerCallback) {
+        this.policyBundleInstallerCallback = policyBundleInstallerCallback;
+    }
+
+    public void setAuthenticatedUser(@Nullable UserBean authenticatedUser) {
+        this.authenticatedUser = authenticatedUser;
+    }
+
     // - PRIVATE
     @NotNull
     private final PolicyBundleInstallerContext context;
     @Nullable
-    private final PolicyBundleInstallerCallback policyBundleInstallerCallback;
+    private PolicyBundleInstallerCallback policyBundleInstallerCallback;
+    @Nullable
+    private UserBean authenticatedUser;
 }

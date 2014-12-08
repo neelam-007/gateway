@@ -51,7 +51,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     public void testInstall() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
@@ -75,7 +75,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
     public void testPrerequisiteFolderInstall() throws Exception {
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));
@@ -104,7 +104,7 @@ public class EncapsulatedAssertionInstallerTest extends PolicyBundleInstallerTes
         final String prefix = "version1a";
         final BundleResolver bundleResolver = getBundleResolver(SIMPLE_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(getBundleInfo(SIMPLE_TEST_BUNDLE_BASE_NAME), new BundleMapping(), prefix, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
         final Map<String, String> idToName = new HashMap<>();
         final Map<String, String> idToGuid = new HashMap<>();
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(stubGatewayManagementInvoker(idToName, idToGuid), doNothingInvoker(), context, serviceManager, getCancelledCallback(installEvent));

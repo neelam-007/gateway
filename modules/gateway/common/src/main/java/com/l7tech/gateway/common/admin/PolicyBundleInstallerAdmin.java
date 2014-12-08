@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
@@ -57,6 +58,13 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
     @NotNull
     @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
     List<BundleInfo> getAllComponents() throws PolicyBundleInstallerException;
+
+    /**
+     * Optionally pass in the authenticated user from a service using authentication assertions (e.g. from the PolicyEnforcementContext).
+     * @param authenticatedUser authenticated user from the PolicyEnforcementContext
+     */
+    @Secured(stereotype = MethodStereotype.UNCHECKED_WIDE_OPEN)
+    void setAuthenticatedUser(@Nullable UserBean authenticatedUser);
 
     /**
      * Dry run the installation.

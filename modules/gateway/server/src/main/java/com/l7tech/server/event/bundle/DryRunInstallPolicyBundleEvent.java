@@ -1,26 +1,16 @@
 package com.l7tech.server.event.bundle;
 
 import com.l7tech.policy.bundle.MigrationDryRunResult;
-import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
 
     public DryRunInstallPolicyBundleEvent(@NotNull final Object source,
-                                          @NotNull final PolicyBundleInstallerContext context,
-                                          @Nullable final PolicyBundleInstallerCallback policyBundleInstallerCallback) {
-        super(source, context, policyBundleInstallerCallback);
-    }
-
-    public DryRunInstallPolicyBundleEvent(@NotNull final Object source,
                                           @NotNull final PolicyBundleInstallerContext context) {
-        super(source, context, null);
+        super(source, context);
     }
 
     public void addServiceConflict(String urlPatternOrServiceName) {
@@ -51,6 +41,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
         migrationErrorMappings.add(migrationErrorMapping);
     }
 
+    public void addComponentIdToBundleXml(String componentId, String bundleXml) {
+        componentIdToBundleXmlMap.put(componentId, bundleXml);
+    }
+
     public List<String> getServiceConflict() {
         return Collections.unmodifiableList(serviceConflict);
     }
@@ -79,6 +73,10 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
         return Collections.unmodifiableList(migrationErrorMappings);
     }
 
+    public Map<String, String> getComponentIdToBundleXmlMap() {
+        return componentIdToBundleXmlMap;
+    }
+
     // - PRIVATE
     private List<String> serviceConflict = new ArrayList<>();
     private List<String> policyConflict = new ArrayList<>();
@@ -87,4 +85,5 @@ public class DryRunInstallPolicyBundleEvent extends PolicyBundleInstallerEvent {
     private List<String> missingAssertions = new ArrayList<>();
     private List<String> encapsulatedAssertionConflict = new ArrayList<>();
     private List<MigrationDryRunResult> migrationErrorMappings = new ArrayList<>();
+    private Map<String, String> componentIdToBundleXmlMap = new HashMap<>();
 }

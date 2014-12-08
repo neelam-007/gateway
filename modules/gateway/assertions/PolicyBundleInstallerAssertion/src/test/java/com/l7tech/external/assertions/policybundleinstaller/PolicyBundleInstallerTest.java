@@ -299,7 +299,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);
 
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         PolicyBundleInstaller installer = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override

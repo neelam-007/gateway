@@ -44,7 +44,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
         //OAuth_1_0
         final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override
@@ -72,7 +72,7 @@ public class ServiceInstallerTest extends PolicyBundleInstallerTestBase {
         final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         final String prefix = "version1a";
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new BundleMapping(), prefix, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override

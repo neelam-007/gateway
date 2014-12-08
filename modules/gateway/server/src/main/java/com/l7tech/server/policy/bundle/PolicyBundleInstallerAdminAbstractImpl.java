@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
@@ -58,8 +59,10 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     private final ApplicationEventPublisher appEventPublisher;
     private final Map<String, JobContext> taskToJobContext = new ConcurrentHashMap<>();
     private final BundleResolver bundleResolver;
+    @Nullable
+    private UserBean authenticatedUser;
 
-    protected final ExecutorService executorService;   // TODO make private once create database moved? (OAuthInstallerImpl to here)
+    protected final ExecutorService executorService;
     protected boolean checkingAssertionExistenceRequired = true;
 
     public static synchronized void onModuleLoaded(ApplicationContext context) {
@@ -201,6 +204,11 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
         return bundleResolver.getResultList();
     }
 
+    @Override
+    public void setAuthenticatedUser(@Nullable UserBean authenticatedUser) {
+        this.authenticatedUser = authenticatedUser;
+    }
+
     @NotNull
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
                                                          @NotNull final Map<String, BundleMapping> bundleMappings,
@@ -280,6 +288,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
         final HashMap<String, Map<PolicyBundleDryRunResult.DryRunItem, List<String>>> bundleToConflicts = new HashMap<>();
         Map<String, List<MigrationDryRunResult>> migrationResultsMap = new HashMap<>();
+        Map<String, String> componentIdToBundleXmlMap = null;
         final Set<String> processedComponents = new HashSet<>();
 
         outer:
@@ -296,8 +305,9 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                             bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired);
 
-                    final DryRunInstallPolicyBundleEvent dryRunEvent =
-                            new DryRunInstallPolicyBundleEvent(bundleMappings, context, getPolicyBundleInstallerCallback(prefixToUse));
+                    final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(bundleMappings, context);
+                    dryRunEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));
+                    dryRunEvent.setAuthenticatedUser(authenticatedUser);
                     jobContext.currentEvent = dryRunEvent;
 
                     appEventPublisher.publishEvent(dryRunEvent);
@@ -398,6 +408,8 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                         appEventPublisher.publishEvent(problemEvent);
                     }
                     processedComponents.add(bundleId);
+
+                    componentIdToBundleXmlMap = dryRunEvent.getComponentIdToBundleXmlMap();
                 }
             }
         }
@@ -412,7 +424,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             appEventPublisher.publishEvent(cancelledEvent);
         }
 
-        return new PolicyBundleDryRunResult(bundleToConflicts, migrationResultsMap.size() > 0 ? migrationResultsMap : null);
+        return new PolicyBundleDryRunResult(bundleToConflicts, migrationResultsMap.size() > 0 ? migrationResultsMap : null, componentIdToBundleXmlMap);
     }
 
     public static boolean validateEventProcessed(PolicyBundleInstallerEvent bundleInstallerEvent) throws PolicyBundleInstallerException {
@@ -487,7 +499,9 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                                     bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, migrationBundleOverrides);
                             final InstallPolicyBundleEvent installEvent =
-                                    new InstallPolicyBundleEvent(this, context, getPolicyBundleInstallerCallback(prefixToUse));
+                                    new InstallPolicyBundleEvent(this, context);
+                            installEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));
+                            installEvent.setAuthenticatedUser(authenticatedUser);
                             jobContext.currentEvent = installEvent;
 
                             appEventPublisher.publishEvent(installEvent);

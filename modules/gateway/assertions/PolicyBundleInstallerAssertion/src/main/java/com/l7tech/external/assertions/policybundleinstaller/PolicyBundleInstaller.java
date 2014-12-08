@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.policybundleinstaller;
 
 import com.l7tech.external.assertions.policybundleinstaller.installer.restman.MigrationBundleInstaller;
 import com.l7tech.external.assertions.policybundleinstaller.installer.wsman.*;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
@@ -71,6 +72,17 @@ public class PolicyBundleInstaller {
      public void setPolicyBundleInstallerCallback(@Nullable PolicyBundleInstallerCallback policyBundleInstallerCallback) {
          policyInstaller.setPolicyBundleInstallerCallback(policyBundleInstallerCallback);
          migrationBundleInstaller.setPolicyBundleInstallerCallback(policyBundleInstallerCallback);
+    }
+
+    public void setAuthenticatedUser(@Nullable final UserBean authenticatedUser) {
+        folderInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        policyInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        encapsulatedAssertionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        serviceInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        trustedCertificateInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        jdbcConnectionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        assertionInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
+        migrationBundleInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
     }
 
     /**

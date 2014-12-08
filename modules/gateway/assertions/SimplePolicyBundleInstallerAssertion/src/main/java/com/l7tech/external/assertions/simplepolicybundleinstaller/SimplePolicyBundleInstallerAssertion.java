@@ -21,6 +21,8 @@ public class SimplePolicyBundleInstallerAssertion extends Assertion {
     protected static final Logger logger = Logger.getLogger(SimplePolicyBundleInstallerAssertion.class.getName());
     private static final String META_INITIALIZED = SimplePolicyBundleInstallerAssertion.class.getName() + ".metadataInitialized";
 
+    PolicyBundleInstallerAdmin policyBundleInstallerAdmin;
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -30,16 +32,15 @@ public class SimplePolicyBundleInstallerAssertion extends Assertion {
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                final PolicyBundleInstallerAdmin instance;
                 try {
-                    instance = new SimplePolicyBundleInstallerAdminImpl("/com/l7tech/external/assertions/simplepolicybundleinstaller/bundles/", "SimplePolicyBundleInfo.xml", "http://ns.l7tech.com/2013/10/simple-policy-bundle", appContext);
+                    policyBundleInstallerAdmin = new SimplePolicyBundleInstallerAdminImpl("/com/l7tech/external/assertions/simplepolicybundleinstaller/bundles/", "SimplePolicyBundleInfo.xml", "http://ns.l7tech.com/2013/10/simple-policy-bundle", appContext);
                     final Injector injector = appContext.getBean("injector", Injector.class);
-                    injector.inject(instance);
+                    injector.inject(policyBundleInstallerAdmin);
                 } catch (PolicyBundleInstallerAdmin.PolicyBundleInstallerException e) {
                     logger.warning("Could not load Simple Policy Bundle Installer: " + ExceptionUtils.getMessage(e));
                     throw new RuntimeException(e);
                 }
-                final ExtensionInterfaceBinding<PolicyBundleInstallerAdmin> binding = new ExtensionInterfaceBinding<>(PolicyBundleInstallerAdmin.class,  SimplePolicyBundleInstallerAssertion.class.getName(), instance);
+                final ExtensionInterfaceBinding<PolicyBundleInstallerAdmin> binding = new ExtensionInterfaceBinding<>(PolicyBundleInstallerAdmin.class,  SimplePolicyBundleInstallerAssertion.class.getName(), policyBundleInstallerAdmin);
                 return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });

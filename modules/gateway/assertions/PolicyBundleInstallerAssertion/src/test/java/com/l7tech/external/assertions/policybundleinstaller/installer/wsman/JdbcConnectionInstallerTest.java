@@ -50,7 +50,7 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME),
                 null, null, bundleResolver, true);
-        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context, null);
+        final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {
             @Override

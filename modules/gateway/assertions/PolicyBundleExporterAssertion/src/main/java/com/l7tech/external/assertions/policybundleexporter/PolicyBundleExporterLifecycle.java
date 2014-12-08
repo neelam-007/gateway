@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.server.policy.bundle.BundleUtils.NS_BUNDLE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
 
@@ -72,7 +73,7 @@ public class PolicyBundleExporterLifecycle implements ApplicationListener {
             // process event
             final PolicyBundleEvent bundleEvent = (PolicyBundleEvent) applicationEvent;
 
-            if (!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleEvent.getPolicyBundleVersionNs())) {
+            if (!NS_BUNDLE.equals(bundleEvent.getPolicyBundleVersionNs())) {
                 // not applicable
                 return;
             }

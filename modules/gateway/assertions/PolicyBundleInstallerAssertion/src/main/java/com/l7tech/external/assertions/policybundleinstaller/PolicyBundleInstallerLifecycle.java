@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.server.policy.bundle.BundleUtils.NS_BUNDLE;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.UnexpectedManagementResponse;
 import static com.l7tech.util.Functions.Nullary;
@@ -78,7 +79,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             // process event
             final PolicyBundleInstallerEvent bundleInstallerEvent = (PolicyBundleInstallerEvent) applicationEvent;
 
-            if (!"http://ns.l7tech.com/2012/09/policy-bundle".equals(bundleInstallerEvent.getPolicyBundleVersionNs())) {
+            if (!NS_BUNDLE.equals(bundleInstallerEvent.getPolicyBundleVersionNs())) {
                 // not applicable
                 return;
             }
@@ -221,6 +222,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             }
         });
         installer.setPolicyBundleInstallerCallback(installEvent.getPolicyBundleInstallerCallback());
+        installer.setAuthenticatedUser(installEvent.getAuthenticatedUser());
 
         try {
             installer.installBundle();
@@ -242,6 +244,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             }
         });
         installer.setPolicyBundleInstallerCallback(dryRunEvent.getPolicyBundleInstallerCallback());
+        installer.setAuthenticatedUser(dryRunEvent.getAuthenticatedUser());
 
         try {
             installer.dryRunInstallBundle(dryRunEvent);
