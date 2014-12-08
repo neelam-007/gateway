@@ -24,15 +24,13 @@ import java.util.*;
 
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleMessage, SampleMessageMO> {
+    private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
     private SampleMessageManager sampleMessageManager;
     private List<SampleMessage> messages = new ArrayList<>();
     private List<PublishedService> services = new ArrayList<>();
     private ServiceManager serviceManager;
     private PolicyVersionManager policyVersionManager;
     private Folder rootFolder;
-
-    private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
-
 
     @Before
     public void before() throws Exception {
@@ -286,8 +284,9 @@ public class SampleMessageRestEntityResourceTest extends RestEntityTests<SampleM
                         return message.getId();
                     }
                 }))
-                .put("service.id="+ services.get(0).getGoid(), Arrays.asList(messages.get(0).getId(),messages.get(1).getId()))
+                .put("service.id="+ services.get(0).getGoid(), Arrays.asList(messages.get(0).getId(), messages.get(1).getId()))
                 .put("name=" + URLEncoder.encode(messages.get(0).getName()) + "&name=" + URLEncoder.encode(messages.get(1).getName()) + "&sort=name&order=desc", Arrays.asList(messages.get(1).getId(), messages.get(0).getId()))
+                .put("sort=service.id", Arrays.asList(messages.get(1).getId(),messages.get(0).getId(), messages.get(2).getId()))
                 .map();
     }
 }
