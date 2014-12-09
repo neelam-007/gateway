@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Copyright: Layer 7 Technologies, 2014
@@ -18,7 +19,8 @@ public class CassandraConnectionHolderImpl implements CassandraConnectionHolder 
     private final Cluster cluster;
     private final Session session;
     private final Map<String, PreparedStatement> statementMap = new ConcurrentHashMap<>();
-
+    private final long createdTime = System.currentTimeMillis();
+    private final AtomicLong lastAccessTime = new AtomicLong(createdTime);
 
     public CassandraConnectionHolderImpl(CassandraConnection connectionConfig, Cluster cluster, Session session){
         this.connectionConfig= connectionConfig;
@@ -41,5 +43,13 @@ public class CassandraConnectionHolderImpl implements CassandraConnectionHolder 
     @Override
     public Map<String, PreparedStatement> getPreparedStatementMap() {
         return statementMap;
+    }
+
+    public long getCreatedTime() {
+        return createdTime;
+    }
+
+    public AtomicLong getLastAccessTime() {
+        return lastAccessTime;
     }
 }

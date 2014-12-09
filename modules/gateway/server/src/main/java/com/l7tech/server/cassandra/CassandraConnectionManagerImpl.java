@@ -13,21 +13,27 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeUnit;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationEvent;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.text.ParseException;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,7 +41,7 @@ import java.util.logging.Logger;
  * User: ymoiseyenko
  * Date: 10/30/14
  */
-public class CassandraConnectionManagerImpl implements CassandraConnectionManager {
+public class CassandraConnectionManagerImpl implements CassandraConnectionManager, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(CassandraConnectionManagerImpl.class.getName());
 
     public static final String HOST_DISTANCE = "hostDistance";
@@ -59,22 +65,33 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public static final String SO_LINGER = "soLinger";
     public static final String TCP_NO_DELAY = "tcpNoDelay";
 
-    private final Map<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
+    private static final long DEFAULT_CONNECTION_MAX_AGE = 0L;
+    private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis(30);
+    private static final int DEFAULT_CONNECTION_CACHE_SIZE = 20;
+
+    private final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
     private final CassandraConnectionEntityManager cassandraEntityManager;
     private final Config config;
     private final SecurePasswordManager securePasswordManager;
     private final TrustManager trustManager;
     private final SecureRandom secureRandom;
     private final Audit auditor = new LoggingAudit(logger);
+    private final Timer timer;
+    private final AtomicReference<ConnectionCacheConfig> connectionCacheConfig = new AtomicReference<>(new ConnectionCacheConfig(0, 30, 20));
+    private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
+    private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
 
-    public CassandraConnectionManagerImpl(CassandraConnectionEntityManager cassandraEntityManager, Config config, SecurePasswordManager securePasswordManager,
-                                       TrustManager trustManager,
-                                       SecureRandom secureRandom) {
+    public CassandraConnectionManagerImpl(CassandraConnectionEntityManager cassandraEntityManager, Config config,
+                                          SecurePasswordManager securePasswordManager, TrustManager trustManager,
+                                          SecureRandom secureRandom) {
         this.cassandraEntityManager = cassandraEntityManager;
         this.config = config;
         this.securePasswordManager = securePasswordManager;
         this.trustManager = trustManager;
         this.secureRandom = secureRandom;
+        this.timer = new ManagedTimer("CassandraConnectionManager-CacheCleanup");
+        timer.schedule(new CacheCleanupTask(cassandraConnections, connectionCacheConfig), 30797, CACHE_CLEAN_INTERVAL);
+        updateConfig();
     }
 
     @Override
@@ -442,8 +459,119 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         // Do nothing
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        updateConfig();
+    }
+
+    private void updateConfig() {
+        logger.config("(Re)loading cache configuration.");
+
+        final long maximumAge = config.getTimeUnitProperty("cassandra.maxConnectionCacheAge", DEFAULT_CONNECTION_MAX_AGE);
+        final long maximumIdleTime = config.getTimeUnitProperty("cassandra.maxConnectionCacheIdleTime", DEFAULT_CONNECTION_MAX_IDLE);
+        final int maximumSize = config.getIntProperty("cassandra.maxConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE);
+
+        connectionCacheConfig.set(new ConnectionCacheConfig(
+                        rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "Cassandra Connection Maximum Age"),
+                        rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "Cassandra Connection Maximum Idle"),
+                        rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "Cassandra Connection Cache Size"))
+        );
+    }
+
+    private <T extends Number> T rangeValidate(final T value,
+                                               final T defaultValue,
+                                               final T min,
+                                               final T max,
+                                               final String description) {
+        T validatedValue;
+
+        if (value.longValue() < min.longValue()) {
+            logger.log(Level.WARNING,
+                    "Configuration value for {0} is invalid ({1} minimum is {2}), using default value ({3}).",
+                    new Object[]{description, value, min, defaultValue});
+            validatedValue = defaultValue;
+        } else if (value.longValue() > max.longValue()) {
+            logger.log(Level.WARNING,
+                    "Configuration value for {0} is invalid ({1} maximum is {2}), using default value ({3}).",
+                    new Object[]{description, value, max, defaultValue});
+            validatedValue = defaultValue;
+        } else {
+            validatedValue = value;
+        }
+
+        return validatedValue;
+    }
+
+    /**
+     * Bean for cache configuration.
+     */
+    private static final class ConnectionCacheConfig {
+        private final long maximumAge;
+        private final long maximumIdleTime;
+        private final int maximumSize;
+
+        private ConnectionCacheConfig(final long maximumAge,
+                                      final long maximumIdleTime,
+                                      final int maximumSize) {
+            this.maximumAge = maximumAge;
+            this.maximumIdleTime = maximumIdleTime;
+            this.maximumSize = maximumSize;
+        }
+    }
+
     // For unit testing
     public int getConnectionCacheSize() {
         return cassandraConnections.size();
+    }
+
+    /**
+     * Timer task to remove expired or surplus connections from the cache.
+     *
+     * <p>When the cache size is exceeded the oldest Cassandra connections are
+     * removed first.</p>
+     */
+    private static final class CacheCleanupTask extends TimerTask {
+        private final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections;
+        private final AtomicReference<ConnectionCacheConfig> cacheConfigReference;
+
+        private CacheCleanupTask(final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections,
+                                 final AtomicReference<ConnectionCacheConfig> cacheConfigReference) {
+            this.cassandraConnections = cassandraConnections;
+            this.cacheConfigReference = cacheConfigReference;
+        }
+
+        @Override
+        public void run() {
+            final ConnectionCacheConfig cacheConfig = cacheConfigReference.get();
+            final long timeNow = System.currentTimeMillis();
+            final int overSize = cassandraConnections.size() - cacheConfig.maximumSize;
+            final Set<Map.Entry<String, CassandraConnectionHolder>> evictionCandidates = new TreeSet<>(
+                    new Comparator<Map.Entry<String, CassandraConnectionHolder>>() {
+                        @Override
+                        public int compare(final Map.Entry<String, CassandraConnectionHolder> e1,
+                                           final Map.Entry<String, CassandraConnectionHolder> e2) {
+                            return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
+                        }
+                    }
+            );
+
+            for (final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry : cassandraConnections.entrySet()) {
+                if (cacheConfig.maximumAge > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getCreatedTime()) > cacheConfig.maximumAge) {
+                    cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                } else if (cacheConfig.maximumIdleTime > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getLastAccessTime().get()) > cacheConfig.maximumIdleTime) {
+                    cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                } else if (overSize > 0) {
+                    evictionCandidates.add(cassandraConnectionHolderEntry);
+                }
+            }
+
+            // evict oldest first to reduce cache size
+            final Iterator<Map.Entry<String, CassandraConnectionHolder>> evictionIterator = evictionCandidates.iterator();
+            for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
+
+                final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry = evictionIterator.next();
+                cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+            }
+        }
     }
 }

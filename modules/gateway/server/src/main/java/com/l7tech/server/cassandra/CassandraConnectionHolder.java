@@ -6,6 +6,7 @@ import com.datastax.driver.core.Session;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,4 +24,8 @@ public interface CassandraConnectionHolder {
     public Session getSession();
 
     public Map<String, PreparedStatement> getPreparedStatementMap();
+
+    public long getCreatedTime();
+
+    public AtomicLong getLastAccessTime();
 }
