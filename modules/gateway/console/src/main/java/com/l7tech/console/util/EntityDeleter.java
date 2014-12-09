@@ -23,5 +23,6 @@ public interface EntityDeleter<ET> {
      * @param afterDeleteListener a callback to invoke when the deletion is confirmed.
      *                            Implementors must invoke this with either the entity to delete if deletion was confirmed or null if the deletion was cancelled.
      */
+    // TODO move this functionality to the EntityCrudController as some kind of DeleteConfirmer interface, with an overridable default impl
     void displayDeleteDialog(@NotNull final ET entity, @NotNull final Functions.UnaryVoid<ET> afterDeleteListener);
 }

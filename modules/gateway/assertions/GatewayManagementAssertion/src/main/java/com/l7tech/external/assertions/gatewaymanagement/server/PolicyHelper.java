@@ -228,6 +228,7 @@ public class PolicyHelper {
         // Get request values
         PolicyType policyType = getPolicyType( policyValidationContext.getPolicyType() );
         String policyInternalTag = null;
+        String policyInternalSubTag = null;
         boolean soap = isSoap( policyValidationContext.getProperties() );
         SoapVersion soapVersion = soap ? getSoapVersion( policyValidationContext.getProperties() ) : null;
         final Map<String, ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( policyValidationContext.getResourceSets() );
@@ -245,6 +246,7 @@ public class PolicyHelper {
             }
             policyType = policy.getType();
             policyInternalTag = policy.getInternalTag();
+            policyInternalSubTag = policy.getInternalSubTag();
             soap = policy.isSoap();
             wsdl = resolver.resolveWsdl();
             soapVersion = resolver.resolveSoapVersion();
@@ -253,7 +255,7 @@ public class PolicyHelper {
         // Run the validator
         final PolicyValidatorResult result;
         try {
-            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, wsdl, soap, soapVersion), licenseManager );
+            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, policyInternalSubTag, wsdl, soap, soapVersion), licenseManager );
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new ResourceFactory.ResourceAccessException(e);

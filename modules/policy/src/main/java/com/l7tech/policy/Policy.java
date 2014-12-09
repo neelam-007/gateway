@@ -51,6 +51,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     private PolicyType type;
     private boolean soap;
     private String internalTag;
+    private String internalSubTag;
     private Folder folder;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
@@ -99,6 +100,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         setSoap(policy.isSoap());
         setType(policy.getType());
         setInternalTag(policy.getInternalTag());
+        setInternalSubTag(policy.getInternalSubTag());
         setVersionActive(isVersionActive());
         setVersionOrdinal(getVersionOrdinal());
         setXml(policy.getXml());
@@ -305,13 +307,18 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     }
 
     /**
-     * When {@link #getType()} is {@link PolicyType#INTERNAL}, this field can be used
-     * to distinguish between different types of internal policy.  Try to avoid stuffing too much data into the tag,
-     * as it's limited in the database to 64 characters.
+     * When {@link #getType()} is of a type that uses an internal tag (such as {@link PolicyType#INTERNAL}), this field can be used
+     * to distinguish between different types of policy.  Try to avoid stuffing too much data into the tag,
+     * as it's limited in the database to 255 characters.
+     * <p/>
+     * For a policy-backed service policy, this field contains the name of the interface class that declares
+     * the operation implemented by the policy.
      *
-     * Suggested naming convention: moduleName-type[-subtype], e.g. esm-notification
+     * Suggested naming convention for INTERNAL policies: moduleName-type[-subtype], e.g. esm-notification
+     *
+     * @return the internal tag, or null.
      */
-    @Size(min=1,max=64)
+    @Size(min=1,max=255)
     @Pattern(regexp="message-received|pre-security|pre-service|post-security|post-service|message-completed", groups={GlobalPolicyValidationGroup.class})
     public String getInternalTag() {
         return internalTag;
@@ -320,6 +327,25 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
     public void setInternalTag(String internalTag) {
         checkLocked();
         this.internalTag = internalTag;
+    }
+
+    /**
+     * When {@link #getType()} is of a type that uses an internal tag (such as {@link PolicyType#INTERNAL}), and
+     * the {@link #getInternalTag()} is not sufficient to fully specify the intended use of the policy,
+     * this field can be used to further distinguish it.
+     * <p/>
+     * For a policy-backed service policy, this field contains the name of the method that declares the operation
+     * implemented by this policy.
+     *
+     * @return the internal sub tag, or null.
+     */
+    @Size(min=1,max=255)
+    public String getInternalSubTag() {
+        return internalSubTag;
+    }
+
+    public void setInternalSubTag( String internalSubTag ) {
+        this.internalSubTag = internalSubTag;
     }
 
     @Override
@@ -345,6 +371,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
 
         if (guid != null ? !guid.equals(policy.guid) : policy.guid != null) return false;
         if (internalTag != null ? !internalTag.equals(policy.internalTag) : policy.internalTag != null) return false;
+        if (internalSubTag != null ? !internalSubTag.equals(policy.internalSubTag) : policy.internalSubTag != null) return false;
         if (type != policy.type) return false;
         if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
         if (securityZone != null ? !securityZone.equals(policy.securityZone) : policy.securityZone != null) return false;
@@ -358,6 +385,7 @@ public class Policy extends ZoneableNamedEntityImp implements Flushable, HasFold
         result = 31 * result + (xml != null ? xml.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (internalTag != null ? internalTag.hashCode() : 0);
+        result = 31 * result + (internalSubTag != null ? internalSubTag.hashCode() : 0);
         result = 31 * result + (securityZone != null ? securityZone.hashCode() : 0);
         return result;
     }

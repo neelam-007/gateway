@@ -133,7 +133,7 @@ public class CustomAssertionHolderValidatorTest {
         Registry.setDefault(mockRegistry);
 
         policyValidator = Registry.getDefault().getPolicyValidator();
-        pvc = new PolicyValidationContext(PolicyType.PRIVATE_SERVICE, null, (Wsdl) null, false, null);
+        pvc = new PolicyValidationContext(PolicyType.PRIVATE_SERVICE, null, null, (Wsdl) null, false, null);
         assertionLicense = new AssertionLicense() {
             @Override
             public boolean isAssertionEnabled(Assertion assertion) {

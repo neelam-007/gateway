@@ -257,6 +257,12 @@ public abstract class Registry {
     public abstract EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin();
 
     /**
+     * @return the policy backed service admin interface.
+     * @throws IllegalStateException if the admin context is not present
+     */
+    public abstract PolicyBackedServiceAdmin getPolicyBackedServiceAdmin();
+
+    /**
      * Get the {@link CustomKeyValueStoreAdmin} interface implementation.
      *
      * @return the custom key value store admin interface implementation. Never null.
@@ -459,6 +465,11 @@ public abstract class Registry {
 
         @Override
         public EncapsulatedAssertionAdmin getEncapsulatedAssertionAdmin() {
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public PolicyBackedServiceAdmin getPolicyBackedServiceAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

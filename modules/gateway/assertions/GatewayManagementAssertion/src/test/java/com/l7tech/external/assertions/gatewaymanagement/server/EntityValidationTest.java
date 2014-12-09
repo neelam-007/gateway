@@ -209,7 +209,7 @@ public class EntityValidationTest {
         policy.setInternalTag( "1" );
         valid( policy, "short tag" );
 
-        policy.setInternalTag( string(65, '1') );
+        policy.setInternalTag( string(256, '1') );
         invalid( policy, "long tag" );
 
         policy.setInternalTag( string(64, '1') );

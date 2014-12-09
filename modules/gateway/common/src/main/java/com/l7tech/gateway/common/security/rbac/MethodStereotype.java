@@ -67,7 +67,8 @@ public enum MethodStereotype {
     SAVE_OR_UPDATE,
 
     /**
-     * A {@link Secured#relevantArg} argument must be a <code>long</code>, and the caller must hold
+     * A {@link Secured#relevantArg} argument must be a <code>long</code>, <code>String</code> or <code>Goid</code>,
+     * and the caller must hold
      * {@link OperationType#DELETE} permission on the corresonding {@link com.l7tech.objectmodel.Entity}.
      */
     DELETE_BY_ID,

@@ -53,4 +53,48 @@
             </update>
         </rollback>
     </changeSet>
+    <changeSet id="introduce_policy_backed_services" author="mlyons">
+        <comment>Adds subtags to the policy table, and introduces the policy_backed_service and policy_backed_service_operation tables</comment>
+        <addColumn tableName="policy">
+            <column name="internal_sub_tag" type="VARCHAR(255)"/>
+        </addColumn>
+        <modifyDataType tableName="policy" columnName="internal_tag" newDataType="VARCHAR(255)"/>
+        <createTable tableName="policy_backed_service">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="interface_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="security_zone_goid" type="${goid.type}"/>
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="security_zone_goid" baseTableName="policy_backed_service" constraintName="policy_backed_service_security_zone" deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid" referencedTableName="security_zone"/>
+        <createTable tableName="policy_backed_service_operation">
+            <column name="goid" type="${goid.type}">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="policy_backed_service_goid" type="${goid.type}">
+                <constraints nullable="false" references="policy_backed_service(goid)" foreignKeyName="fk_pbs_operation_pbs_service"/>
+            </column>
+            <column name="policy_goid" type="${goid.type}">
+                <constraints references="policy(goid)" foreignKeyName="fk_pbs_operation_policy" deleteCascade="true"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="policy_backed_service_operation" columnNames="policy_backed_service_goid, name" constraintName="i_pbs_operation_goid_name"/>
+        <rollback>
+            <modifyDataType tableName="policy" columnName="internal_tag" newDataType="VARCHAR(64)"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

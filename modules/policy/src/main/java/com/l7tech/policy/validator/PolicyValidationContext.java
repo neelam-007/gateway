@@ -3,8 +3,6 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.Either;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
@@ -21,6 +19,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+
 /**
  * Context for use with policy validation.
  *
@@ -31,6 +32,7 @@ public class PolicyValidationContext implements Serializable {
 
     private final @NotNull PolicyType policyType;
     private final @Nullable String policyInternalTag;
+    private final @Nullable String policyInternalSubTag;
     private final @Nullable SerializableWSDLLocator wsdlLocator;
     private final boolean soap;
     private final @Nullable SoapVersion soapVersion;
@@ -48,13 +50,15 @@ public class PolicyValidationContext implements Serializable {
      *
      * @param policyType   policy type.  Generally required.
      * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
+     * @param policyInternalSubTag policy internal sub tag, if applicable and available.  May be null.
      * @param wsdl  policy WSDL, if a soap policy and if available.  May be null.
      * @param soap  true if this is known to be a SOAP policy
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
-    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable String policyInternalSubTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
+        this.policyInternalSubTag = policyInternalSubTag;
         this.wsdlLocator = null;
         this.wsdl = wsdl == null ? null : Either.<WSDLException,Wsdl>right(wsdl);
         this.soap = soap;
@@ -64,13 +68,15 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @param policyType   policy type.  Generally required.
      * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
+     * @param policyInternalSubTag policy internal sub tag, if applicable and available.  May be null.
      * @param wsdlLocator  policy WSDLLocator, if a soap policy and if available.  May be null.
      * @param soap  true if this is known to be a SOAP policy
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
-    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable SerializableWSDLLocator wsdlLocator, boolean soap, @Nullable SoapVersion soapVersion) {
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable String policyInternalSubTag, @Nullable SerializableWSDLLocator wsdlLocator, boolean soap, @Nullable SoapVersion soapVersion) {
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
+        this.policyInternalSubTag = policyInternalSubTag;
         this.wsdlLocator = wsdlLocator;
         this.soap = soap;
         this.soapVersion = soapVersion;
@@ -90,6 +96,14 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public String getPolicyInternalTag() {
         return policyInternalTag;
+    }
+
+    /**
+     * @return the policy internal sub tag name if applicable and available, otherwise null.
+     */
+    @Nullable
+    public String getPolicyInternalSubTag() {
+        return policyInternalSubTag;
     }
 
     /**

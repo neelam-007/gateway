@@ -200,6 +200,7 @@ class EntityPropertiesHelper {
             .put( "versionOrdinal", "revision" )
             .put( "soap", null )
             .put( "internalTag", "tag" )
+            .put( "internalSubTag", "subtag" )
             .unmodifiableMap() )
         .put( PublishedService.class, MapBuilder.<String,String>builder()
             .put( "internal", null )

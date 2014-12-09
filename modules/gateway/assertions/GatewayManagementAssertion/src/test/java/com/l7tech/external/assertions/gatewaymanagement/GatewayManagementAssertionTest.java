@@ -24,7 +24,7 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, (Wsdl)null, true, null), result );
+        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, null, (Wsdl)null, true, null), result );
 
         assertEquals( "Validation warning present", 1L, (long) result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());
@@ -37,7 +37,7 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, (Wsdl)null, true, null), result );
+        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, null, (Wsdl)null, true, null), result );
 
         assertEquals( "Validation warning present", 2L, (long) result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());

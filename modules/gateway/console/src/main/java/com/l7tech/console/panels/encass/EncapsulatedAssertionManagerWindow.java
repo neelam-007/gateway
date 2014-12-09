@@ -81,7 +81,7 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
     private FilterPanel filterPanel;
 
     private SimpleTableModel<EncapsulatedAssertionConfig> eacTableModel;
-    private Map<String, ImageIcon> iconCache = new HashMap<String, ImageIcon>();
+    private Map<String, ImageIcon> iconCache = new HashMap<>();
     private PermissionFlags flags;
 
     public EncapsulatedAssertionManagerWindow(Window parent) {

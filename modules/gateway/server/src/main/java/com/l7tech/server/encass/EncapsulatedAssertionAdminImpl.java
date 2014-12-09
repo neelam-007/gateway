@@ -103,7 +103,10 @@ public class EncapsulatedAssertionAdminImpl implements EncapsulatedAssertionAdmi
         checkLicenseEncAss();
         Goid goid;
 
-        if (config.getGoid().equals(EncapsulatedAssertionConfig.DEFAULT_GOID)) {
+        if ( Boolean.valueOf( config.getProperty( EncapsulatedAssertionConfig.PROP_EPHEMERAL ) ) )
+            throw new SaveException( "Encapsulated assertion config with ephemeral=true may not be saved" );
+
+        if (config.getGoid().equals( EncapsulatedAssertionConfig.DEFAULT_GOID )) {
             if (config.getGuid() == null) {
                 config.setGuid(UUID.randomUUID().toString());
             }

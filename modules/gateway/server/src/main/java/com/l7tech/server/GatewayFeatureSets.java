@@ -99,6 +99,7 @@ public class GatewayFeatureSets {
     public static final String UI_MANAGE_AUDIT_SINK = "ui:ManageAuditSink";
     public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
+    public static final String UI_MANAGE_POLICY_BACKED_SERVICES = "ui:ManagePolicyBackedServices";
     public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
@@ -278,6 +279,11 @@ public class GatewayFeatureSets {
             ass(EncapsulatedAssertion.class),
             ui(UI_MANAGE_ENCAPSULATED_ASSERTIONS, "Ability to use Manage Encapsulated Assertions GUI"),
             srv(SERVICE_ENCAPSULATED_ASSERTION, "Ability to use encapsulated assertions"));
+
+        GatewayFeatureSet polback =
+        fsr("set:polback", "Enable Policy-Backed Services support",
+            "Enables Gateway to create and use policy-backed services such as key-value stores.",
+            ui(UI_MANAGE_POLICY_BACKED_SERVICES, "Ability to use Manage Policy-Backed Services GUI"));
 
         GatewayFeatureSet seczones =
         fsr("set:seczones", "Enable Security Zones support",
@@ -910,6 +916,7 @@ public class GatewayFeatureSets {
             fs(uiDs),
             fs(customDs),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
@@ -966,6 +973,7 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(esmAssertions),
             fs(samlpAssertions),
@@ -1022,6 +1030,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(ssb),
             fs(modularAssertions),
@@ -1096,6 +1105,7 @@ public class GatewayFeatureSets {
             fs(threatFw),
             fs(customFw),
             fs(encass),
+            fs(polback),
             fs(seczones),
             fs(ssb),
             fs(modularAssertions),
@@ -1165,6 +1175,7 @@ public class GatewayFeatureSets {
                 mass("assertion:SetSamlStatus"),
                 mass("assertion:ValidateCertificate"),
                 fs(encass),
+                fs(polback),
                 fs(seczones),
                 fs(modularAssertions),
                 fs(oAuthInstaller),

@@ -65,6 +65,15 @@ public class EncapsulatedAssertionConfig extends ZoneableNamedEntityImp implemen
     /** Flag to indicate if debug tracing is allowed into the encapsulated assertion backing policy. */
     public static final String PROP_ALLOW_TRACING = "allowTracing";
 
+    /** Name of a registered policy-backed service interface, or null. */
+    public static final String PROP_SERVICE_INTERFACE = "serviceInterface";
+
+    /** Name of a method in a registered policy-backed service interface, or null. */
+    public static final String PROP_SERVICE_METHOD = "serviceMethod";
+
+    /** The string "true" if this encapsulated assertion config was created on the fly as a service method descriptor, and should not be persisted. */
+    public static final String PROP_EPHEMERAL = "ephemeral";
+
     private String guid;
     private Policy policy;
     private Set<EncapsulatedAssertionArgumentDescriptor> argumentDescriptors = new HashSet<EncapsulatedAssertionArgumentDescriptor>();

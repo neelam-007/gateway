@@ -335,7 +335,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), policy.getInternalSubTag(), wsdlLocator, soap, soapVersion);
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
@@ -976,6 +976,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final SoapVersion soapVersion;
         final PolicyType type;
         final String internalTag;
+        final String internalSubTag;
         final PublishedService service;
         final HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
         final Set<PolicyValidatorResult.Warning> extraWarnings = new LinkedHashSet<PolicyValidatorResult.Warning>();
@@ -1014,12 +1015,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 soapVersion = null;
                 type = getPolicyNode().getPolicy().getType();
                 internalTag = getPolicyNode().getPolicy().getInternalTag();
+                internalSubTag = getPolicyNode().getPolicy().getInternalSubTag();
             } else {
                 wsdlLocator = service.wsdlLocator();
                 soap = service.isSoap();
                 soapVersion = service.getSoapVersion();
                 type = PolicyType.PRIVATE_SERVICE;
                 internalTag = null;
+                internalSubTag = null;
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't parse policy or WSDL", e);
@@ -1034,7 +1037,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdlLocator, soap, soapVersion);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, internalSubTag, wsdlLocator, soap, soapVersion);
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);

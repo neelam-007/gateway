@@ -5,9 +5,8 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -16,6 +15,7 @@ import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import org.apache.commons.lang.StringUtils;
@@ -31,24 +31,28 @@ import java.util.List;
 /**
  * @author alex
  */
-public class PolicyPropertiesPanel extends ValidatedPanel {
+public class PolicyPropertiesPanel extends ValidatedPanel<Policy> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PolicyPropertiesPanel");
 
     private JPanel mainPanel;
     private JTextField nameField;
     private JTextField guidField;
     private JCheckBox soapCheckbox;
-    private JComboBox typeCombo;
-    private JComboBox tagCombo;
+    private JComboBox<PolicyType> typeCombo;
+    private JComboBox<String> tagCombo;
     private JLabel unsavedWarningLabel;
     private JTextField oidField;
     private SecurityZoneWidget zoneControl;
+    private JLabel policyTagLabel;
+    private JLabel policySubTagLabel;
+    private JComboBox<String> subTagCombo;
     // TODO include a policy panel
 
     private final Policy policy;
     private final boolean canUpdate;
-    private final Map<PolicyType,Map<String, String>> policyTagsByType = new HashMap<PolicyType,Map<String, String>>();
-    
+
+    private final Map<PolicyType,Collection<PolicyAdmin.PolicyTagInfo>> policyTagsByType = new HashMap<>();
+
     private RunOnChangeListener syntaxListener = new RunOnChangeListener(new Runnable() {
         @Override
         public void run() {
@@ -108,7 +112,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     }
 
     @Override
-    protected Object getModel() {
+    protected Policy getModel() {
         return policy;
     }
 
@@ -126,49 +130,50 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             }
         }, false) );
 
-        typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
+        typeCombo.setModel(new DefaultComboBoxModel<>(types.toArray(new PolicyType[types.size()])));
 
         final String policyInternalTag = policy.getInternalTag();
         for ( final PolicyType type : PolicyType.values() ) {
-            final Map<String,String> policyTags = new LinkedHashMap<String, String>();
-            this.policyTagsByType.put( type, policyTags );
+            Collection<PolicyAdmin.PolicyTagInfo> tagInfos = new ArrayList<>();
+
+            if ( type.isDynamicTags() ) {
+                Collection<PolicyAdmin.PolicyTagInfo> moreTags = Registry.getDefault().getPolicyAdmin().getPolicyTags( type );
+                tagInfos.addAll( moreTags );
+            }
 
             if ( type == PolicyType.INTERNAL ) {
-                ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
-                Set<ServiceTemplate> templates = svcManager.findAllTemplates();
-                for (ServiceTemplate template : templates) {
-                    Map<String, String> templateTags = template.getPolicyTags();
-                    if (templateTags != null) {
-                        policyTags.putAll(templateTags);
-                    }
+                if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null) {
+                    PolicyAdmin.PolicyTagInfo info = new PolicyAdmin.PolicyTagInfo( policyInternalTag, null, null );
+                    tagInfos.add( info );
                 }
 
-                if (looksLikeAuditSinkPolicy(policy) && policyInternalTag != null)
-                    policyTags.put(policyInternalTag, null);
+                if (looksLikeAuditLookupPolicy(policy) && policyInternalTag != null) {
+                    PolicyAdmin.PolicyTagInfo info = new PolicyAdmin.PolicyTagInfo( policyInternalTag, null, null );
+                    tagInfos.add( info );
+                }
 
-                if (looksLikeAuditLookupPolicy(policy) && policyInternalTag != null)
-                    policyTags.put(policyInternalTag, null);
-
-                if (looksLikeDebugTracePolicy(policy) && policyInternalTag != null)
-                    policyTags.put(policyInternalTag, null);
+                if (looksLikeDebugTracePolicy(policy) && policyInternalTag != null) {
+                    PolicyAdmin.PolicyTagInfo info = new PolicyAdmin.PolicyTagInfo( policyInternalTag, null, null );
+                    tagInfos.add( info );
+                }
 
             }
 
             for ( final String tag : type.getGuiTags() ) {
-                policyTags.put( tag, null );
+                PolicyAdmin.PolicyTagInfo info = new PolicyAdmin.PolicyTagInfo( tag, null, null );
+                tagInfos.add( info );
             }
+
+            policyTagsByType.put( type, tagInfos );
         }
 
-        final List<String> tagList = new ArrayList<String>();
-        tagList.addAll( policyTagsByType.get(selectedType).keySet());
-        tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[tagList.size()])));
+        populateTagComboBox( selectedType );
+        tagCombo.setSelectedItem( policyInternalTag );
 
-        if (policyInternalTag != null)
-            tagCombo.setSelectedItem(policyInternalTag);
-        else
-            tagCombo.setSelectedIndex(-1);
-        
-        // The max length of a policy name is 255. 
+        populateSubTagComboBox( selectedType, policyInternalTag );
+        subTagCombo.setSelectedItem( policy.getInternalSubTag() );
+
+        // The max length of a policy name is 255.
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
 
         guidField.setText(policy.getGuid() == null ? "" : policy.getGuid());
@@ -188,16 +193,31 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         typeCombo.setSelectedItem(policy.getType());
 
         soapCheckbox.addChangeListener(syntaxListener);
-        typeCombo.addItemListener(syntaxListener);
+        typeCombo.addItemListener( syntaxListener );
         tagCombo.addItemListener(syntaxListener);
-        nameField.getDocument().addDocumentListener(syntaxListener);
+        subTagCombo.addItemListener( syntaxListener );
+        nameField.getDocument().addDocumentListener( syntaxListener );
 
-        zoneControl.configure(Goid.isDefault(policy.getGoid()) ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, policy);
+        zoneControl.configure( Goid.isDefault( policy.getGoid() ) ? OperationType.CREATE : canUpdate ? OperationType.UPDATE : OperationType.READ, policy );
 
         typeCombo.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
+                    final PolicyType policyType = (PolicyType) e.getItem();
+                    populateTagComboBox( policyType );
+                    populateSubTagComboBox( policyType, (String) tagCombo.getSelectedItem() );
+                    enableDisable();
+                }
+            }
+        });
+        tagCombo.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    final PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
+                    final String policyTag = (String) tagCombo.getSelectedItem();
+                    populateSubTagComboBox( policyType, policyTag );
                     enableDisable();
                 }
             }
@@ -214,36 +234,72 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    private Functions.Unary<String, PolicyAdmin.PolicyTagInfo> transformPolicyTagName() {
+        return new Functions.Unary<String, PolicyAdmin.PolicyTagInfo>() {
+            @Override
+            public String call( PolicyAdmin.PolicyTagInfo policyTagInfo ) {
+                return policyTagInfo.policyTag;
+            }
+        };
+    }
+
+    private static Functions.Unary<Boolean, PolicyAdmin.PolicyTagInfo> predicatePolicyTagNameEquals( final String tag ) {
+        return new Functions.Unary<Boolean, PolicyAdmin.PolicyTagInfo>() {
+            @Override
+            public Boolean call( PolicyAdmin.PolicyTagInfo policyTagInfo ) {
+                return tag.equals( policyTagInfo.policyTag );
+            }
+        };
+    }
+
     private void enableDisable() {
         PolicyType type = (PolicyType) typeCombo.getSelectedItem();
         zoneControl.setEnabled(type != null && type.isSecurityZoneable());
-        zoneControl.setToolTipText(zoneControl.isEnabled() ? null : "Policy type not zoneable");
-        enableTagChooser();
+        zoneControl.setToolTipText( zoneControl.isEnabled() ? null : "Policy type not zoneable" );
 
-        // If policy has already been created, its type and tag may no longer be changed.  (SSM-4318)
+        tagCombo.setEnabled( tagCombo.getModel().getSize() > 0 && canUpdate );
+        subTagCombo.setEnabled( tagCombo.isEnabled() && subTagCombo.getModel().getSize() > 0 && canUpdate );
+
+        // If policy has already been created, its type and tag and subtag may no longer be changed.  (SSM-4318)
         // This is to prevent eg. changing the backing policy of an encapsulated assertion into a global policy.
         if ( !policy.isUnsaved() ) {
             typeCombo.setEnabled( false );
             tagCombo.setEnabled( false );
+            subTagCombo.setEnabled( false );
         }
     }
 
-    private void enableTagChooser() {
-        final PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
-        final boolean enableTags = !policyTagsByType.get( policyType ).isEmpty() && canUpdate;
-        if ( enableTags ) {
-            final List<String> tagList = new ArrayList<String>();
-            tagList.addAll( policyTagsByType.get(policyType).keySet());
-            tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[tagList.size()])));
+    private void populateTagComboBox( PolicyType policyType ) {
+        final List<String> tagList = new ArrayList<>();
+
+        final Collection<PolicyAdmin.PolicyTagInfo> tagInfos = policyTagsByType.get( policyType );
+        tagList.addAll( Functions.map( tagInfos, transformPolicyTagName() ) );
+
+        tagCombo.setModel( new DefaultComboBoxModel<>( tagList.toArray( new String[tagList.size()] ) ) );
+    }
+
+    private void populateSubTagComboBox( PolicyType policyType, String policyTag ) {
+        final List<String> subTagList = new ArrayList<>();
+
+        if ( policyTag != null ) {
+            Collection<PolicyAdmin.PolicyTagInfo> tagInfos = policyTagsByType.get( policyType );
+            if ( tagInfos != null ) {
+                PolicyAdmin.PolicyTagInfo tagInfo = Functions.grepFirst( tagInfos, predicatePolicyTagNameEquals( policyTag ) );
+
+                if ( tagInfo != null ) {
+                    Set<String> subTags = tagInfo.policySubTags;
+                    if ( !subTags.isEmpty() ) {
+                        subTagList.addAll( subTags );
+                    }
+                }
+            }
         }
-        if ( policy.getInternalTag() != null ) {
-            tagCombo.setSelectedItem( policy.getInternalTag() );                
-        }
-        tagCombo.setEnabled(enableTags);
+
+        subTagCombo.setModel( new DefaultComboBoxModel<>( subTagList.toArray( new String[subTagList.size()] ) ) );
     }
 
     @Override
-    protected String getSyntaxError(Object model) {
+    protected String getSyntaxError(Policy model) {
         if (nameField.getText().trim().length() > 0) return null;
         PolicyType type = (PolicyType) typeCombo.getSelectedItem();
         if (type == null) return resources.getString("typeRequiredError");
@@ -266,10 +322,20 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         if (policy.getType() == PolicyType.INTERNAL || policy.getType().getGuiTags() != null) {
             String tag = (String) tagCombo.getSelectedItem();
             policy.setInternalTag(tag);
-            final Map<String,String> policyTags = this.policyTagsByType.get( policy.getType() );
-            if (policyTags.get(tag) != null) {
-                if (StringUtils.isEmpty(policy.getXml())) //only update the policy the tag specific policy if there aren't any policy contents already
-                    policy.setXml(policyTags.get(tag));
+
+            String subTag = (String) subTagCombo.getSelectedItem();
+            policy.setInternalSubTag( subTag );
+
+            final Collection<PolicyAdmin.PolicyTagInfo> tagInfos = this.policyTagsByType.get( policy.getType() );
+
+            PolicyAdmin.PolicyTagInfo tagInfo = tagInfos == null
+                    ? null
+                    : Functions.grepFirst( tagInfos, predicatePolicyTagNameEquals( tag ) );
+            if ( tagInfo != null ) {
+                //only update the policy the tag specific policy if there aren't any policy contents already
+                if ( StringUtils.isEmpty( policy.getXml() ) && tagInfo.defaultPolicyXml != null ) {
+                    policy.setXml( tagInfo.defaultPolicyXml );
+                }
             }
         }
     }

@@ -213,6 +213,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageUDDIRegistriesAction manageUDDIRegistriesAction = null;
     private ManageHttpConfigurationAction manageHttpConfigurationAction = null;
     private ManageEncapsulatedAssertionsAction manageEncapsulatedAssertionsAction = null;
+    private ManagePolicyBackedServicesAction managePolicyBackedServicesAction = null;
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
 
@@ -1061,6 +1062,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
             menu.add(getManageEncapsulatedAssertionsAction());
+            menu.add(getManagePolicyBackedServicesAction());
             menu.add(getSiteMinderConfigurationAction());
 
             menu.add(getCustomGlobalActionsMenu());
@@ -2271,6 +2273,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageEncapsulatedAssertionsAction;
     }
 
+    private Action getManagePolicyBackedServicesAction() {
+        if ( managePolicyBackedServicesAction == null ) {
+            managePolicyBackedServicesAction = new ManagePolicyBackedServicesAction();
+            disableUntilLogin( managePolicyBackedServicesAction );
+        }
+        return managePolicyBackedServicesAction;
+    }
+
     private Action getManageSecurityZonesAction() {
         if (manageSecurityZonesAction == null) {
             manageSecurityZonesAction = new ManageSecurityZonesAction();
@@ -2668,6 +2678,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageHttpConfigurationAction());
                 manageMenu.add(getManageServiceResolutionMenuItem());
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
+                manageMenu.add(getManagePolicyBackedServicesAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
 
                 manageMenu.add(getCustomGlobalActionsMenu());

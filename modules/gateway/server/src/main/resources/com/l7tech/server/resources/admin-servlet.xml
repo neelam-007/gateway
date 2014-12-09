@@ -129,6 +129,10 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.EncapsulatedAssertionAdmin"/>
     </bean>
 
+    <bean name="/PolicyBackedServiceAdmin" parent="httpInvokerParent">
+        <property name="service" ref="policyBackedServiceAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin"/>
+    </bean>
 
     <bean name="/SiteMinderAdmin" parent="httpInvokerParent">
         <property name="service" ref="siteMinderAdmin"/>

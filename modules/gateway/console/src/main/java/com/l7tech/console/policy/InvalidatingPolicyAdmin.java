@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -37,6 +39,12 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     @Override
     public Policy findPolicyByGuid(String guid) throws FindException {
         return delegate.findPolicyByGuid(guid);
+    }
+
+    @NotNull
+    @Override
+    public Collection<Policy> findPoliciesByTypeTagAndSubTag( @NotNull PolicyType policyType, @Nullable String internalTag, @Nullable String internalSubTag ) throws FindException {
+        return delegate.findPoliciesByTypeTagAndSubTag( policyType, internalTag, internalSubTag );
     }
 
     @Override
@@ -143,6 +151,12 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     @Override
     public String getDefaultPolicyXml(PolicyType type, String internalTag) {
         return delegate.getDefaultPolicyXml(type, internalTag);
+    }
+
+    @NotNull
+    @Override
+    public Collection<PolicyTagInfo> getPolicyTags( @NotNull PolicyType policyType ) {
+        return delegate.getPolicyTags( policyType );
     }
 
     @Override

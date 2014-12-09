@@ -120,7 +120,7 @@ public class PolicyHelper {
             final PolicyValidatorResult result;
             try {
                 Wsdl wsdl = null;//just because
-                result = policyValidator.validate(assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyCheck.getType(), policyCheck.getInternalTag(), wsdl, false, null), licenseManager);
+                result = policyValidator.validate(assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyCheck.getType(), policyCheck.getInternalTag(), policyCheck.getInternalSubTag(), wsdl, false, null), licenseManager);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ResourceAccessException(e);

@@ -492,7 +492,9 @@
 
     <!-- Encapsulated assertion admin impl -->
     <bean id="encapsulatedAssertionAdmin" class="com.l7tech.server.encass.EncapsulatedAssertionAdminImpl">
+    </bean>
 
+    <bean id="policyBackedServiceAdmin" class="com.l7tech.server.polback.PolicyBackedServiceAdminImpl">
     </bean>
 
     <!-- jdbc admin servant -->

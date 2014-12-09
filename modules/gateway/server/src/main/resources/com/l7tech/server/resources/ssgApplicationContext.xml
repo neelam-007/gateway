@@ -1693,6 +1693,7 @@
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="ssgFirewallRuleManager"/>
                 <ref bean="encapsulatedAssertionConfigManager"/>
+                <ref bean="policyBackedServiceManager"/>
                 <ref bean="jmsConnectionManager"/>
                 <ref bean="roleManager"/>
                 <ref bean="passwordPolicyManger"/>
@@ -2333,12 +2334,18 @@
     <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.encass.EncapsulatedAssertionConfigManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerImpl" parent="hibernateBean">
+    </bean>
+
     <bean id="customKeyValueStoreManager" class="com.l7tech.server.store.CustomKeyValueStoreManagerImpl" parent="hibernateBean">
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerImpl">
         <constructor-arg ref="auditFactory"/>
+    </bean>
+
+    <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
     </bean>
 
     <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">

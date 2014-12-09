@@ -83,11 +83,14 @@ public final class RegistryImpl extends Registry
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
     private EncapsulatedAssertionAdmin encapsulatedAssertionAdmin;
+    private PolicyBackedServiceAdmin policyBackedServiceAdmin;
     private CustomKeyValueStoreAdmin customKeyValueStoreAdmin;
     private PolicyValidator policyValidator;
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
     private EntityNameResolver entityNameResolver;
+    // When you add an admin interface don't forget to
+    // add it to the reset method
 
     @Override
     public boolean isAdminContextPresent() {
@@ -392,6 +395,16 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
+    public PolicyBackedServiceAdmin getPolicyBackedServiceAdmin() {
+        checkAdminContext();
+        if (policyBackedServiceAdmin != null) {
+            return policyBackedServiceAdmin;
+        }
+        policyBackedServiceAdmin = adminContext.getAdminInterface(PolicyBackedServiceAdmin.class);
+        return policyBackedServiceAdmin;
+    }
+
+    @Override
     public CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin() {
         checkAdminContext();
         if (customKeyValueStoreAdmin != null) {
@@ -507,6 +520,7 @@ public final class RegistryImpl extends Registry
         logSinkAdmin = null;
         uddiRegistryAdmin = null;
         encapsulatedAssertionAdmin = null;
+        policyBackedServiceAdmin = null;
         customKeyValueStoreAdmin = null;
         emailListenerAdmin = null;
         emailAdmin = null;

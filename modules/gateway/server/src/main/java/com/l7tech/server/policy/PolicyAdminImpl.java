@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
@@ -25,12 +26,15 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.external.PolicyBackedIdentityProvider;
+import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -52,6 +56,9 @@ import static com.l7tech.util.Pair.pair;
 public class PolicyAdminImpl implements PolicyAdmin {
     protected static final Logger logger = Logger.getLogger(PolicyAdminImpl.class.getName());
 
+    // TODO these are still hardcoded in various places, and should be centralized somewhere that both the SSG and SSM can use
+    private static final String INTERNAL_TAG_AUDIT_SINK = "audit-sink";
+
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
     private final PolicyVersionManager policyVersionManager;
@@ -69,6 +76,14 @@ public class PolicyAdminImpl implements PolicyAdmin {
     @Inject
     @Named("identityProviderFactory")
     private IdentityProviderFactory identityProviderFactory;
+
+    @Inject
+    @Named("policyBackedServiceRegistry")
+    private PolicyBackedServiceRegistry policyBackedServiceRegistry;
+
+    @Inject
+    @Named("serviceTemplateManager")
+    private ServiceTemplateManager serviceTemplateManager;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -152,6 +167,24 @@ public class PolicyAdminImpl implements PolicyAdmin {
             policy.setVersionActive(true);
         }
         return policy;
+    }
+
+    @NotNull
+    @Override
+    public Collection<Policy> findPoliciesByTypeTagAndSubTag( @NotNull PolicyType policyType, @Nullable String internalTag, @Nullable String internalSubTag ) throws FindException {
+        Map<String, List<Object>> props = new HashMap<>();
+
+        props.put( "type", Arrays.<Object>asList( policyType ) );
+
+        if ( internalTag != null ) {
+            props.put( "internalTag", Arrays.<Object>asList( internalTag ) );
+        }
+
+        if ( internalSubTag != null ) {
+            props.put( "internalSubTag", Arrays.<Object>asList( internalSubTag ) );
+        }
+
+        return policyManager.findPagedMatching( 0, Integer.MAX_VALUE, null, null, props );
     }
 
     @Override
@@ -662,6 +695,54 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return null;
     }
 
+    @NotNull
+    @Override
+    public Collection<PolicyTagInfo> getPolicyTags( @NotNull PolicyType policyType ) {
+        List<PolicyTagInfo> ret = new ArrayList<>();
+
+        if ( policyType == PolicyType.INTERNAL ) {
+            Set<ServiceTemplate> templates = serviceTemplateManager.findAll();
+            for (ServiceTemplate template : templates) {
+                Map<String, String> templateTags = template.getPolicyTags();
+                if (templateTags != null) {
+                    for ( Map.Entry<String, String> entry : templateTags.entrySet() ) {
+                        String tagName = entry.getKey();
+                        String defaultXml = entry.getValue();
+                        PolicyTagInfo info = new PolicyTagInfo( tagName, defaultXml, Collections.<String>emptySet() );
+                        ret.add( info );
+                    }
+                }
+            }
+        }
+
+        if ( policyType == PolicyType.POLICY_BACKED_OPERATION ) {
+            Set<String> policyBackedServiceClassNames = policyBackedServiceRegistry.getPolicyBackedServiceTemplates();
+            for ( String interfaceName : policyBackedServiceClassNames ) {
+                List<EncapsulatedAssertionConfig> ops;
+                try {
+                    ops = policyBackedServiceRegistry.getTemplateOperations( interfaceName );
+                } catch ( ObjectNotFoundException e ) {
+                    ops = Collections.emptyList();
+                }
+
+                Set<String> subTags = new LinkedHashSet<>();
+                for ( EncapsulatedAssertionConfig op : ops ) {
+                    // We want the raw method name here, not the GUI name
+                    String name = op.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD );
+                    if ( name == null )
+                        name = op.getName();
+
+                    subTags.add( name );
+                }
+
+                PolicyTagInfo info = new PolicyTagInfo( interfaceName, null, subTags );
+                ret.add( info );
+            }
+        }
+
+        return ret;
+    }
+
     private String getAuditMessageFilterDefaultPolicy(){
         //By using XML, which should always be backwards compatible, we don't need to add dependencies for
         //modular assertions
@@ -741,7 +822,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     private boolean isAuditSinkPolicy(Policy policy) {
-        return policy != null && PolicyType.INTERNAL.equals(policy.getType()) && "audit-sink".equals(policy.getInternalTag());
+        return policy != null && PolicyType.INTERNAL.equals(policy.getType()) && INTERNAL_TAG_AUDIT_SINK.equals( policy.getInternalTag() );
     }
 
     private static final String AMF_COMMENT_FRAGMENT =

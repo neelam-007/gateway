@@ -61,7 +61,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JTextField nameField;
-    private JComboBox paletteFolderComboBox;
+    private JComboBox<String> paletteFolderComboBox;
     private JButton changePolicyButton;
     private JLabel policyNameLabel;
     private JButton selectIconButton;
@@ -82,9 +82,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
     private JScrollPane artifactVersionScrollPane;
     private SecurityZoneWidget zoneControl;
     private JCheckBox allowTracingCheckBox;
+    private JComboBox<EncapsulatedAssertionConfig> templateComboBox;
 
     private SimpleTableModel<EncapsulatedAssertionArgumentDescriptor> inputsTableModel;
     private SimpleTableModel<EncapsulatedAssertionResultDescriptor> outputsTableModel;
+
+    private List<EncapsulatedAssertionArgumentDescriptor> savedInputs;
+    private List<EncapsulatedAssertionResultDescriptor> savedOutputs;
 
     private final EncapsulatedAssertionConfig config;
     private final boolean readOnly;
@@ -162,6 +166,13 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
                         : "A palette folder must be specified.";
             }
         });
+        inputValidator.addRule( new InputValidator.ComponentValidationRule( templateComboBox ) {
+            @Override
+            public String getValidationError() {
+
+                return null;
+            }
+        } );
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -203,6 +214,34 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         });
         inputsTable.getSelectionModel().addListSelectionListener(enabler);
         outputsTable.getSelectionModel().addListSelectionListener(enabler);
+        templateComboBox.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+                EncapsulatedAssertionConfig template = (EncapsulatedAssertionConfig) templateComboBox.getSelectedItem();
+                if ( template != null ) {
+                    if ( savedInputs == null ) {
+                        // Save inputs and outputs so we have something to restore later, if template turned off
+                        savedInputs = new ArrayList<>( inputsTableModel.getRows() );
+                        savedOutputs = new ArrayList<>( outputsTableModel.getRows() );
+                    }
+
+                    inputsTableModel.setRows( template.sortedArguments() );
+                    outputsTableModel.setRows( new ArrayList<>( template.getResultDescriptors() ) );
+                    sortOutputsTableModel();
+                } else {
+                    if ( savedInputs != null ) {
+                        // Restore saved inputs and outputs
+                        inputsTableModel.setRows( savedInputs );
+                        savedInputs = null;
+
+                        outputsTableModel.setRows( savedOutputs );
+                        savedOutputs = null;
+                    }
+                }
+
+                enableOrDisableThings();
+            }
+        } );
 
         deleteInputButton.addActionListener(makeDeleteRowListener(inputsTable, inputsTableModel));
         addInputButton.addActionListener(new ActionListener() {
@@ -317,33 +356,33 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         final EncapsulatedAssertionResultDescriptorPropertiesDialog dlg = new EncapsulatedAssertionResultDescriptorPropertiesDialog(this, output, usedNames);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
+        DialogDisplayer.display( dlg, new Runnable() {
             @Override
             public void run() {
-                if (!dlg.isConfirmed())
+                if ( !dlg.isConfirmed() )
                     return;
 
-                output.setEncapsulatedAssertionConfig(config);
-                if (needsInsert) {
-                    outputsTableModel.addRow(output);
+                output.setEncapsulatedAssertionConfig( config );
+                if ( needsInsert ) {
+                    outputsTableModel.addRow( output );
                 }
                 sortOutputsTableModel();
-                int index = outputsTableModel.getRowIndex(output);
-                if (index >= 0) {
-                    outputsTableModel.fireTableRowsUpdated(index, index);
-                    outputsTable.getSelectionModel().setSelectionInterval(index, index);
+                int index = outputsTableModel.getRowIndex( output );
+                if ( index >= 0 ) {
+                    outputsTableModel.fireTableRowsUpdated( index, index );
+                    outputsTable.getSelectionModel().setSelectionInterval( index, index );
                 }
             }
-        });
+        } );
     }
 
     private void sortOutputsTableModel() {
-        outputsTableModel.setRows(Functions.sort(outputsTableModel.getRows(), new Comparator<EncapsulatedAssertionResultDescriptor>() {
+        outputsTableModel.setRows( Functions.sort( outputsTableModel.getRows(), new Comparator<EncapsulatedAssertionResultDescriptor>() {
             @Override
-            public int compare(EncapsulatedAssertionResultDescriptor a, EncapsulatedAssertionResultDescriptor b) {
-                return String.CASE_INSENSITIVE_ORDER.compare(a.getResultName(), b.getResultName());
+            public int compare( EncapsulatedAssertionResultDescriptor a, EncapsulatedAssertionResultDescriptor b ) {
+                return String.CASE_INSENSITIVE_ORDER.compare( a.getResultName(), b.getResultName() );
             }
-        }));
+        } ) );
     }
 
     private <RT> ActionListener makeDeleteRowListener(final JTable table, final SimpleTableModel<RT> tableModel) {
@@ -381,7 +420,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setIcon(EncapsulatedAssertionConsoleUtil.findIcon(iconResourceFilename, iconBase64).right);
 
         inputsTableModel.setRows(config.sortedArguments());
-        outputsTableModel.setRows(new ArrayList<>(config.getResultDescriptors()));
+        outputsTableModel.setRows(new ArrayList<EncapsulatedAssertionResultDescriptor>(config.getResultDescriptors()));
         sortOutputsTableModel();
 
         if (config.getGuid() == null && config.getPolicy() != null) {
@@ -399,6 +438,40 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         }
 
         allowTracingCheckBox.setSelected(config.getBooleanProperty(PROP_ALLOW_TRACING));
+
+        loadTemplates();
+
+        final String interfaceName = config.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE );
+        final String methodName = config.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD );
+
+        setSelectedTemplate( interfaceName, methodName );
+
+        if ( interfaceName != null && methodName != null && !config.isUnsaved() ) {
+            // TODO should we prevent changing the backing policy of an encass once it has been saved?
+            //changePolicyButton.setEnabled( false );
+        }
+
+
+        templateComboBox.setEnabled( config.isUnsaved() );
+    }
+
+    private void setSelectedTemplate( String interfaceName, String methodName ) {
+        if ( interfaceName == null || methodName == null ) {
+            templateComboBox.setSelectedItem( null );
+            return;
+        }
+
+        int items = templateComboBox.getItemCount();
+        for ( int i = 0; i < items; ++i ) {
+            EncapsulatedAssertionConfig template = templateComboBox.getItemAt( i );
+            if ( template != null && interfaceName.equals( template.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE ) ) &&
+                 methodName.equals( template.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD ) ) ) {
+                templateComboBox.setSelectedIndex( i );
+                return;
+            }
+        }
+
+        templateComboBox.setSelectedItem( null );
     }
 
     private void setPolicyAndPolicyNameLabel(Policy policy) {
@@ -429,27 +502,45 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
             config.removeProperty(PROP_ICON_BASE64);
         }
 
-        int ord = 1;
-        final List<EncapsulatedAssertionArgumentDescriptor> inputs = inputsTableModel.getRows();
-        for (EncapsulatedAssertionArgumentDescriptor input : inputs) {
-            input.setOrdinal(ord++);
+        EncapsulatedAssertionConfig templateConfig = (EncapsulatedAssertionConfig) templateComboBox.getSelectedItem();
+        if ( templateConfig != null ) {
+            final String interfaceName = templateConfig.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE );
+            final String methodName = templateConfig.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD );
+            if ( interfaceName != null && methodName != null ) {
+                config.putProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE, interfaceName );
+                config.putProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD, methodName );
+            }
+            config.setArgumentDescriptors( Collections.<EncapsulatedAssertionArgumentDescriptor>emptySet() );
+            config.setResultDescriptors( Collections.<EncapsulatedAssertionResultDescriptor>emptySet() );
+        } else {
+            config.removeProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE );
+            config.removeProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD );
+            int ord = 1;
+            final List<EncapsulatedAssertionArgumentDescriptor> inputs = inputsTableModel.getRows();
+            for (EncapsulatedAssertionArgumentDescriptor input : inputs) {
+                input.setOrdinal(ord++);
+            }
+
+            config.setArgumentDescriptors( new HashSet<EncapsulatedAssertionArgumentDescriptor>( inputs ) );
+            config.setResultDescriptors( new HashSet<EncapsulatedAssertionResultDescriptor>( outputsTableModel.getRows() ) );
         }
-        config.setArgumentDescriptors(new HashSet<>(inputs));
-        config.setResultDescriptors(new HashSet<>(outputsTableModel.getRows()));
+
         config.setSecurityZone(zoneControl.getSelectedZone());
         config.putBooleanProperty(PROP_ALLOW_TRACING, allowTracingCheckBox.isSelected());
     }
 
     private void enableOrDisableThings() {
+        boolean argsReadOnly = readOnly || templateComboBox.getSelectedItem() != null;
+
         boolean haveInput = getSelectedInput() != null;
-        editInputButton.setEnabled(!readOnly && haveInput);
-        deleteInputButton.setEnabled(!readOnly && haveInput);
-        moveInputUpButton.setEnabled(!readOnly && haveInput && inputsTable.getSelectedRow() > 0);
-        moveInputDownButton.setEnabled(!readOnly && haveInput && !inputsTable.getSelectionModel().isSelectedIndex(inputsTable.getRowCount() - 1));
+        editInputButton.setEnabled(!argsReadOnly && haveInput);
+        deleteInputButton.setEnabled(!argsReadOnly && haveInput);
+        moveInputUpButton.setEnabled( !argsReadOnly && haveInput && inputsTable.getSelectedRow() > 0 );
+        moveInputDownButton.setEnabled(!argsReadOnly && haveInput && !inputsTable.getSelectionModel().isSelectedIndex(inputsTable.getRowCount() - 1));
 
         boolean haveOutput = getSelectedOutput() != null;
-        editOutputButton.setEnabled(!readOnly && haveOutput);
-        deleteOutputButton.setEnabled(!readOnly && haveOutput);
+        editOutputButton.setEnabled(!argsReadOnly && haveOutput);
+        deleteOutputButton.setEnabled(!argsReadOnly && haveOutput);
 
         final String artifactVersion = config.getProperty(EncapsulatedAssertionConfig.PROP_ARTIFACT_VERSION);
         final boolean arty = artifactVersion != null;
@@ -460,7 +551,8 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         artifactVersionScrollPane.setEnabled(arty);
         artifactVersionScrollPane.setVisible(arty);
 
-        setEnabled(!readOnly, addInputButton, addOutputButton, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField);
+        setEnabled( !readOnly, changePolicyButton, selectIconButton, paletteFolderComboBox, nameField );
+        setEnabled( !argsReadOnly, addInputButton, addOutputButton, inputsTable, outputsTable );
     }
 
     private void setEnabled(boolean enabled, JComponent... components) {
@@ -477,6 +569,39 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         return outputsTableModel.getRowObject(outputsTable.getSelectedRow());
     }
 
+    private void loadTemplates() {
+
+        Collection<EncapsulatedAssertionConfig> templates = new ArrayList<>();
+        try {
+            // TODO do this in a more efficient way, maybe select interface first, then pick operation
+            Collection<String> interfaceNames = Registry.getDefault().getPolicyBackedServiceAdmin().findAllTemplateInterfaceNames();
+            for ( String interfaceName : interfaceNames ) {
+                Collection<EncapsulatedAssertionConfig> ops = Registry.getDefault().getPolicyBackedServiceAdmin().getInterfaceDescription( interfaceName );
+                templates.addAll( ops );
+            }
+        } catch ( FindException e ) {
+            logger.log( Level.WARNING, "Unable to load encapsulated assertion config templates: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
+        }
+
+        ArrayList<EncapsulatedAssertionConfig> comboList = new ArrayList<>();
+        comboList.add(null);
+        comboList.addAll( templates );
+        templateComboBox.setModel( new DefaultComboBoxModel<>( comboList.toArray( new EncapsulatedAssertionConfig[comboList.size()] ) ) );
+        templateComboBox.setSelectedItem(null);
+        templateComboBox.setRenderer( new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                return super.getListCellRendererComponent(list, asDisplayName(value), index, isSelected, cellHasFocus);
+            }
+
+            private Object asDisplayName(Object value) {
+                return value instanceof EncapsulatedAssertionConfig
+                        ? ((EncapsulatedAssertionConfig) value).getName()
+                        : value;
+            }
+        });
+    }
+
     private void loadPaletteFolders(String currentName) {
         final PaletteFolderRegistry paletteFolderRegistry = TopComponents.getInstance().getPaletteFolderRegistry();
         List<String> folderNames = new ArrayList<String>(paletteFolderRegistry.getAssertionPaletteFolderIds());
@@ -484,7 +609,7 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         if (currentName != null && currentName.trim().length() > 0 && !folderNames.contains(currentName))
             folderNames.add(currentName);
 
-        paletteFolderComboBox.setModel(new DefaultComboBoxModel(folderNames.toArray(new String[0])));
+        paletteFolderComboBox.setModel(new DefaultComboBoxModel<>( folderNames.toArray( new String[folderNames.size()] ) ));
         paletteFolderComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
