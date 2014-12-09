@@ -138,16 +138,44 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
 
         //Get results map into context variable
         String prefix = assertion.getPrefix();
+        Map<String, String> namingMap = assertion.getNamingMap();
 
         for(String key: resultMap.keySet()){
+            String columnName = namingMap.containsKey(key.toLowerCase()) ? namingMap.get(key) : key;
             if (resultMap.get(key) != null) {
-                context.setVariable(prefix + "." + key, resultMap.get(key).toArray());
+                context.setVariable(prefix + "." + columnName, resultMap.get(key).toArray());
             }
 
         }
         //set query result count
         context.setVariable(prefix + CassandraQueryAssertion.QUERYRESULT_COUNT, resultSize);
         return resultSize;
+    }
+
+    /**
+     * build newNameMapping from map type resultSet
+     */
+    Map<String, String> getNewMapping(Map<String, List<Object>> resultSet) {
+        Map<String, String> namingMap = assertion.getNamingMap();
+        Map<String, String> newNamingMap = new TreeMap<String, String>();
+
+        // Get mappings of column names and context variable names
+        for (String columnName : resultSet.keySet()) {
+            boolean found = false;
+            for (final Map.Entry e : namingMap.entrySet()) {
+                String key = e.getKey().toString();
+                String value = e.getValue().toString();
+                if (key.equalsIgnoreCase(columnName)) {
+                    found = true;
+                    newNamingMap.put(columnName.toLowerCase(), value);
+                    break;
+                }
+            }
+            if (!found) {
+                newNamingMap.put(columnName.toLowerCase(), columnName);
+            }
+        }
+        return newNamingMap;
     }
 
     /*

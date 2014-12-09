@@ -54,7 +54,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     private boolean failIfNoResults = false;
     String prefix = DEFAULT_QUERY_PREFIX;
 
-    List<CassandraNamedParameter> namedParameterList = new ArrayList<>();
+    Map<String, String> namingMap = new HashMap<>();
 
     //
     // Metadata
@@ -98,12 +98,12 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         this.prefix = prefix;
     }
 
-    public List<CassandraNamedParameter> getNamedParameterList() {
-        return namedParameterList;
+    public Map<String, String> getNamingMap() {
+        return namingMap;
     }
 
-    public void setNamedParameterList(List<CassandraNamedParameter> namedParameterList) {
-        this.namedParameterList = namedParameterList;
+    public void setNamingMap(Map<String, String> namedMap) {
+        this.namingMap = namedMap;
     }
 
     @Override

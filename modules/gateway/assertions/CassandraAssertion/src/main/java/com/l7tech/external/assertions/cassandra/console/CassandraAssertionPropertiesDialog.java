@@ -12,13 +12,17 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
+import com.l7tech.util.MutablePair;
+import org.apache.commons.collections.map.HashedMap;
+
+import java.util.*;
 
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -43,14 +47,15 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JButton okButton;
     private JCheckBox failIfNoResultsCheckBox;
     private JTextField prefixTextField;
-    private JTable parameterTable;
+    private JTable variableNamingTable;
     private TableRowSorter<SimpleTableModel<CassandraNamedParameter>> rowSorter;
-    private SimpleTableModel<CassandraNamedParameter> parameterTableModel;
+    private SimpleTableModel<MutablePair<String, String>> variableNamingTableModel;
     private JButton addParameterButton;
     private JButton removeParameterButton;
     private JButton editParameterButton;
     private CassandraQueryAssertion assertion;
     private boolean confirmed;
+    private Map<String, String> variableNamingMap;
 
     public CassandraAssertionPropertiesDialog(Window owner, CassandraQueryAssertion assertion) {
         super(owner, assertion);
@@ -81,32 +86,26 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
        enableOrDisableOkButton();
     }
 
-    private SimpleTableModel<CassandraNamedParameter> buildServersTableModel() {
+    private SimpleTableModel<MutablePair<String,String>> buildVariableNamingTableModel() {
         return TableUtil.configureTable(
-                parameterTable,
-                TableUtil.column("Name", 40, 200, 1000000, new Functions.Unary<String, CassandraNamedParameter>() {
+                variableNamingTable,
+                TableUtil.column("Column Label", 40, 200, 1000000, new Functions.Unary<String, MutablePair<String,String>>() {
                     @Override
-                    public String call(CassandraNamedParameter cassandraNamedParameter) {
-                        return cassandraNamedParameter.getParameterName();
+                    public String call(MutablePair<String, String> row) {
+                        return row.left;
                     }
                 }, String.class),
-                TableUtil.column("Value", 40, 100, 180, new Functions.Unary<String, CassandraNamedParameter>() {
+                TableUtil.column("Variable Name", 40, 100, 180, new Functions.Unary<String, MutablePair<String,String>>() {
                     @Override
-                    public String call(CassandraNamedParameter cassandraNamedParameter) {
-                        return cassandraNamedParameter.getParameterValue();
-                    }
-                }, String.class),
-                TableUtil.column("Type", 40, 100, 180, new Functions.Unary<String, CassandraNamedParameter>() {
-                    @Override
-                    public String call(CassandraNamedParameter cassandraNamedParameter) {
-                        return cassandraNamedParameter.getParameterDataType();
+                    public String call(MutablePair<String,String> row) {
+                        return row.right;
                     }
                 }, String.class)
         );
     }
 
     private void enableDisableComponents() {
-        final int[] selectedRows = parameterTable.getSelectedRows();
+        final int[] selectedRows = variableNamingTable.getSelectedRows();
         editParameterButton.setEnabled(selectedRows.length == 1);
         removeParameterButton.setEnabled(selectedRows.length > 0);
     }
@@ -126,12 +125,12 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
 
 
         //table
-        parameterTableModel = buildServersTableModel();
-        parameterTable.setModel(parameterTableModel);
-        parameterTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        parameterTable.getSelectionModel().addListSelectionListener(enableDisableListener);
-        Utilities.setRowSorter(parameterTable, parameterTableModel, new int[] {0}, new boolean[] {true}, new Comparator[]{String.CASE_INSENSITIVE_ORDER});
-        rowSorter = (TableRowSorter<SimpleTableModel<CassandraNamedParameter>>)parameterTable.getRowSorter();
+        variableNamingTableModel = buildVariableNamingTableModel();
+        variableNamingTable.setModel(variableNamingTableModel);
+        variableNamingTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        variableNamingTable.getSelectionModel().addListSelectionListener(enableDisableListener);
+        Utilities.setRowSorter(variableNamingTable, variableNamingTableModel, new int[] {0}, new boolean[] {true}, new Comparator[]{String.CASE_INSENSITIVE_ORDER});
+        rowSorter = (TableRowSorter<SimpleTableModel<CassandraNamedParameter>>) variableNamingTable.getRowSorter();
         rowSorter.setSortsOnUpdates(true);
 
 
@@ -139,16 +138,16 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         addParameterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                CassandraNamedParameter cassandraNamedParameter = new CassandraNamedParameter();
-                CassandraNamedParameterDialog dialog = new CassandraNamedParameterDialog(CassandraAssertionPropertiesDialog.this, cassandraNamedParameter);
+                MutablePair<String, String> columnAlias = new MutablePair<>();
+                ContextVariableNamingDialog dialog = new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias);
                 Utilities.centerOnParentWindow(dialog);
                 dialog.setVisible(true);
                 if (dialog.isConfirmed()) {
-                    cassandraNamedParameter = dialog.getData(cassandraNamedParameter);
-                    if(cassandraNamedParameter != null) {
+                    columnAlias = dialog.getData(columnAlias);
+                    if(columnAlias != null) {
                         try {
-                            assertion.getNamedParameterList().add(cassandraNamedParameter);
-                            parameterTableModel.setRows(assertion.getNamedParameterList());
+                            variableNamingMap.put(columnAlias.getKey(), columnAlias.getValue());
+                            variableNamingTableModel.setRows(getNamedMappingList());
                         } catch(Exception ex) {
                             JOptionPane.showMessageDialog(CassandraAssertionPropertiesDialog.this, "Failed to save new Cassandra named parameter.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
@@ -160,15 +159,16 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         editParameterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                CassandraNamedParameter cassandraNamedParameter = parameterTableModel.getRowObject(rowSorter.convertRowIndexToModel(parameterTable.getSelectedRow()));
-                CassandraNamedParameterDialog dialog =
-                        new CassandraNamedParameterDialog(CassandraAssertionPropertiesDialog.this, cassandraNamedParameter);
+                final int rowIndex = rowSorter.convertRowIndexToModel(variableNamingTable.getSelectedRow());
+                MutablePair<String, String> columnAlias = variableNamingTableModel.getRowObject(rowIndex);
+                ContextVariableNamingDialog dialog =
+                        new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias);
                 Utilities.centerOnParentWindow(dialog);
                 dialog.setVisible(true);
                 if(dialog.isConfirmed()){
-                    cassandraNamedParameter = dialog.getData(cassandraNamedParameter);
-                    assertion.getNamedParameterList().set(rowSorter.convertRowIndexToModel(parameterTable.getSelectedRow()), cassandraNamedParameter); //this is the problem
-                    parameterTableModel.setRows(assertion.getNamedParameterList());
+                    columnAlias = dialog.getData(columnAlias);
+                    variableNamingMap.put(columnAlias.getKey(), columnAlias.getValue()); //this is the problem
+                    variableNamingTableModel.setRowObject(rowIndex, columnAlias);
                 }
             }
         });
@@ -176,10 +176,11 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         removeParameterButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                CassandraNamedParameter cassandraNamedParameter = parameterTableModel.getRowObject(rowSorter.convertRowIndexToModel(parameterTable.getSelectedRow()));
-                parameterTableModel.removeRow(cassandraNamedParameter);
-                assertion.getNamedParameterList().remove(cassandraNamedParameter);
-                parameterTableModel.setRows(assertion.getNamedParameterList());
+                final int rowIndex = rowSorter.convertRowIndexToModel(variableNamingTable.getSelectedRow());
+                MutablePair<String, String> cassandraNamedParameter = variableNamingTableModel.getRowObject(rowIndex);
+                variableNamingTableModel.removeRow(cassandraNamedParameter);
+                variableNamingMap.remove(cassandraNamedParameter.getKey());
+                variableNamingTableModel.setRows(getNamedMappingList());
             }
         });
 
@@ -224,8 +225,21 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         setContentPane(mainPanel);
         pack();
 
-        parameterTableModel.setRows(assertion.getNamedParameterList());
         enableDisableComponents();
+    }
+
+    private List<MutablePair<String, String>> getNamedMappingList() {
+        List<MutablePair<String, String>> namedMapingList = new ArrayList<>();
+        for(String key : variableNamingMap.keySet()) {
+            namedMapingList.add(new MutablePair<String, String>(key, variableNamingMap.get(key)));
+        }
+        Collections.sort(namedMapingList, new Comparator<MutablePair<String, String>>() {
+            @Override
+            public int compare(MutablePair<String, String> o1, MutablePair<String, String> o2) {
+                return o1.getKey().compareTo(o2.getKey());
+            }
+        });
+        return namedMapingList;
     }
 
     private void ok(){
@@ -242,6 +256,10 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
         prefixTextField.setText(assertion.getPrefix());
 
+        variableNamingMap = assertion.getNamingMap();
+        List<MutablePair<String, String>> namedMapingList = getNamedMappingList();
+        variableNamingTableModel.setRows(namedMapingList);
+
     }
 
     private void viewToModel(final CassandraQueryAssertion assertion) {
@@ -252,6 +270,11 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
 
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
         assertion.setPrefix(prefixTextField.getText());
+        variableNamingMap = new HashMap<>();
+        for(MutablePair<String,String> pair : variableNamingTableModel.getRows()) {
+            variableNamingMap.put(pair.left, pair.right);
+        }
+        assertion.setNamingMap(variableNamingMap);
 
     }
 
