@@ -25,6 +25,11 @@ import java.util.Properties;
  * This is used to create a bundle export.
  */
 public class BundleExporter {
+    //DEFAULTS and options
+    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
+    public static final String DefaultMappingActionOption = "DefaultMappingAction";
+    public static final String DefaultMapByOption = "DefaultMapBy";
+    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject
@@ -33,14 +38,6 @@ public class BundleExporter {
     private DependencyAnalyzer dependencyAnalyzer;
     @Inject
     private DependencyTransformer dependencyTransformer;
-
-
-
-    //DEFAULTS and options
-    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
-    public static final String DefaultMappingActionOption = "DefaultMappingAction";
-    public static final String DefaultMapByOption = "DefaultMapBy";
-    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
 
     /**
      * Creates a bundle export given the export options
@@ -55,9 +52,7 @@ public class BundleExporter {
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         Bundle bundle = bundleTransformer.convertToMO(entityBundle);
         if(includeDependencies){
-            final List<DependencySearchResults> dependencySearchResults = dependencyAnalyzer.getDependencies(CollectionUtils.list(headers),
-                    CollectionUtils.MapBuilder.<String, Object>builder().put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false).map());
-            final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(dependencySearchResults);
+            final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults());
             bundle.setDependencyGraph(dependencyMOs);
         }
         return bundle;

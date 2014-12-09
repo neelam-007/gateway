@@ -17,6 +17,7 @@ import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsExcepti
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -37,16 +38,15 @@ import java.util.Map;
 @Component
 public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
 
-    @Inject
-    private APIUtilityLocator apiUtilityLocator;
-    @Inject
-    private URLAccessibleLocator urlAccessibleLocator;
-
     //Theses are the different properties that can be in a Mapping
     private static final String FailOnNew = "FailOnNew";
     private static final String FailOnExisting = "FailOnExisting";
     private static final String MapBy = "MapBy";
     private static final String MapTo = "MapTo";
+    @Inject
+    private APIUtilityLocator apiUtilityLocator;
+    @Inject
+    private URLAccessibleLocator urlAccessibleLocator;
 
     @NotNull
     @Override
@@ -151,7 +151,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
         });
 
-        return new EntityBundle(entityContainers, mappingInstructions);
+        // not transform dependency results, not used by import
+        return new EntityBundle(entityContainers, mappingInstructions, new ArrayList<DependencySearchResults>() );
     }
 
     @Override

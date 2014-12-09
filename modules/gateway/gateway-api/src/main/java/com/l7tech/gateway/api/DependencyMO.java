@@ -30,7 +30,7 @@ public class DependencyMO {
         this.name = name;
     }
 
-    @XmlElement(name = "Id", required = true)
+    @XmlElement(name = "Id")
     public String getId() {
         return id;
     }

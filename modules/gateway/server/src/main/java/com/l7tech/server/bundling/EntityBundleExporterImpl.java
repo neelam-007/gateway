@@ -30,6 +30,14 @@ import java.util.*;
  * The bundle exporter will export an entity bundle from this gateway.
  */
 public class EntityBundleExporterImpl implements EntityBundleExporter {
+    //DEFAULTS and options
+    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
+    public static final String DefaultMappingActionOption = "DefaultMappingAction";
+    public static final String DefaultMapByOption = "DefaultMapBy";
+    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    private static final String IncludeRequestFolder = "false";
+    private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
+    private static final String DefaultMapBy = "ID";
     @Inject
     private DependencyAnalyzer dependencyAnalyzer;
     @Inject
@@ -37,14 +45,22 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     @Inject
     private MappingInstructionsBuilder mappingInstructionsBuilder;
 
-    //DEFAULTS and options
-    public static final String IncludeRequestFolderOption = "IncludeRequestFolder";
-    private static final String IncludeRequestFolder = "false";
-    public static final String DefaultMappingActionOption = "DefaultMappingAction";
-    private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
-    public static final String DefaultMapByOption = "DefaultMapBy";
-    private static final String DefaultMapBy = "ID";
-    public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    /**
+     * Builder the dependency analyzer options from the bundleExportProperties
+     *
+     * @param bundleExportProperties The bundle export properties
+     * @return The dependency analyzer options.
+     */
+    @NotNull
+    private static Map<String, Object> buildDependencyAnalyzerOptions(@NotNull final Properties bundleExportProperties) {
+        final CollectionUtils.MapBuilder<String, Object> optionBuilder = CollectionUtils.MapBuilder.builder();
+        if (bundleExportProperties.containsKey(IgnoredEntityIdsOption)) {
+            optionBuilder.put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(bundleExportProperties.getProperty(IgnoredEntityIdsOption).split(",")));
+        }
+        // do not need assertion dependency results for building export bundle
+        optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
+        return optionBuilder.map();
+    }
 
     /**
      * Exports a bundle given a list of entity headers to export. This will find all the dependencies needed to import
@@ -117,7 +133,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             }
         }
 
-        return new EntityBundle(entityContainers, mappings);
+        return new EntityBundle(entityContainers, mappings, dependencySearchResults);
     }
 
     /**
@@ -197,20 +213,5 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }else{
             mappings.add(mapping);
         }
-    }
-
-    /**
-     * Builder the dependency analyzer options from the bundleExportProperties
-     *
-     * @param bundleExportProperties The bundle export properties
-     * @return The dependency analyzer options.
-     */
-    @NotNull
-    private static Map<String, Object> buildDependencyAnalyzerOptions(@NotNull final Properties bundleExportProperties) {
-        final CollectionUtils.MapBuilder<String, Object> optionBuilder = CollectionUtils.MapBuilder.builder();
-        if (bundleExportProperties.containsKey(IgnoredEntityIdsOption)) {
-            optionBuilder.put(DependencyAnalyzer.IgnoreSearchOptionKey, Arrays.asList(bundleExportProperties.getProperty(IgnoredEntityIdsOption).split(",")));
-        }
-        return optionBuilder.map();
     }
 }
