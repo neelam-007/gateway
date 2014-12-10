@@ -94,7 +94,12 @@ public class CassandraConnectionManagerDialog extends JDialog {
 
         };
         connectionTable.getSelectionModel().addListSelectionListener(enableDisableListener);
-        connectionTable.setRowSorter(new TableRowSorter<TableModel>(cassandraConnectionsTableModel));
+
+        final RowSorter.SortKey sortKey = new RowSorter.SortKey(1, SortOrder.ASCENDING);
+        final TableRowSorter<TableModel> sorter = new TableRowSorter<TableModel>(cassandraConnectionsTableModel);
+        sorter.setSortKeys(java.util.Arrays.asList(sortKey));
+        sorter.setSortsOnUpdates(true);
+        connectionTable.setRowSorter(sorter);
 
         addButton.addActionListener(new ActionListener() {
             @Override
