@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.cassandra.console;
 
-import com.datastax.driver.core.DataType;
-import com.l7tech.external.assertions.cassandra.CassandraNamedParameter;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.MutablePair;
@@ -9,8 +8,6 @@ import com.l7tech.util.MutablePair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,27 +21,27 @@ public class ContextVariableNamingDialog extends JDialog {
     private JTextField nameTextField;
     private JButton okButton;
     private JButton cancelButton;
-    private JTextField valueTextField;
     private JLabel nameLabel;
     private JLabel valueLabel;
+    private TargetVariablePanel variableNamePanel;
 
     private static final String TITLE = "Context Variable Naming";
 
     private final InputValidator validator = new InputValidator(this, TITLE);
     private boolean confirmed = false;
 
-    public ContextVariableNamingDialog(Dialog parent, MutablePair<String, String> columnAlias) {
+    public ContextVariableNamingDialog(Dialog parent, MutablePair<String, String> columnAlias, String prefix) {
         super(parent, TITLE, true);
 
         initComponents();
-        setData(columnAlias);
+        setData(prefix, columnAlias);
     }
 
-    public ContextVariableNamingDialog(Dialog parent, MutablePair<String, String> columnAlias, boolean edit) {
+    public ContextVariableNamingDialog(Dialog parent, MutablePair<String, String> columnAlias, String prefix, boolean edit) {
         super(parent, TITLE, true);
 
             initComponents();
-            setData(columnAlias);
+            setData(prefix, columnAlias);
             if (edit){
                 nameTextField.setEditable(false);
             }
@@ -54,6 +51,14 @@ public class ContextVariableNamingDialog extends JDialog {
         setContentPane(mainPanel);
         setModal(true);
         getRootPane().setDefaultButton(okButton);
+
+        validator.constrainTextFieldToBeNonEmpty(nameLabel.getText(), nameTextField, null);
+        validator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return !variableNamePanel.isEntryValid() ? valueLabel.getText() + " " + variableNamePanel.getErrorMessage() : null;
+            }
+        });
 
         validator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -77,8 +82,6 @@ public class ContextVariableNamingDialog extends JDialog {
             }
         });
 
-        validator.constrainTextFieldToBeNonEmpty(nameLabel.getText(), nameTextField, null);
-
         Utilities.setEscKeyStrokeDisposes(this);
 
         pack();
@@ -98,20 +101,21 @@ public class ContextVariableNamingDialog extends JDialog {
         return confirmed;
     }
 
-    private void setData(MutablePair<String, String> columnAlias) {
+    private void setData(String prefix, MutablePair<String, String> columnAlias) {
         if(columnAlias == null) {
             return;
         }
 
         nameTextField.setText(columnAlias.left);
-        valueTextField.setText(columnAlias.right);
+        variableNamePanel.setPrefix(prefix);
+        variableNamePanel.setVariable(columnAlias.right);
 
         pack();
     }
 
     public MutablePair<String, String> getData(MutablePair<String, String> cassandraNamedParameter) {
         cassandraNamedParameter.setKey(nameTextField.getText().trim());
-        cassandraNamedParameter.setValue(valueTextField.getText());
+        cassandraNamedParameter.setValue(variableNamePanel.getSuffix());
 
         return cassandraNamedParameter;
     }

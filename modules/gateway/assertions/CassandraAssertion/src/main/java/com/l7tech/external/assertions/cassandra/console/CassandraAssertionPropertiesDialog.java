@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.cassandra.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.cassandra.CassandraQueryAssertion;
 import com.l7tech.external.assertions.cassandra.CassandraNamedParameter;
@@ -13,7 +14,6 @@ import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MutablePair;
-import org.apache.commons.collections.map.HashedMap;
 
 import java.util.*;
 
@@ -46,16 +46,18 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JButton cancelButton;
     private JButton okButton;
     private JCheckBox failIfNoResultsCheckBox;
-    private JTextField prefixTextField;
     private JTable variableNamingTable;
     private TableRowSorter<SimpleTableModel<CassandraNamedParameter>> rowSorter;
     private SimpleTableModel<MutablePair<String, String>> variableNamingTableModel;
-    private JButton addParameterButton;
-    private JButton removeParameterButton;
-    private JButton editParameterButton;
+    private JButton addMappingButton;
+    private JButton removeMappingButton;
+    private JButton editMappingButton;
+    private TargetVariablePanel variablePrefixPanel;
+    private JLabel connectionLabel;
     private CassandraQueryAssertion assertion;
     private boolean confirmed;
-    private Map<String, String> variableNamingMap;
+    private Map<String, String> variableNamingMap = new HashMap<>();
+    private InputValidator inputValidator;
 
     public CassandraAssertionPropertiesDialog(Window owner, CassandraQueryAssertion assertion) {
         super(owner, assertion);
@@ -105,12 +107,16 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableDisableComponents() {
+        boolean isValidPrefix = variablePrefixPanel.isEntryValid();
         final int[] selectedRows = variableNamingTable.getSelectedRows();
-        editParameterButton.setEnabled(selectedRows.length == 1);
-        removeParameterButton.setEnabled(selectedRows.length > 0);
+        addMappingButton.setEnabled(isValidPrefix);
+        editMappingButton.setEnabled(isValidPrefix & selectedRows.length == 1);
+        removeMappingButton.setEnabled(isValidPrefix & selectedRows.length > 0);
     }
 
     private void initialize() {
+        inputValidator = new InputValidator(this, this.getTitle());
+
         setModal(true);
         getRootPane().setDefaultButton(okButton);
         Utilities.centerOnScreen(this);
@@ -123,8 +129,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         };
 
-
-        //table
+        //mapping table
         variableNamingTableModel = buildVariableNamingTableModel();
         variableNamingTable.setModel(variableNamingTableModel);
         variableNamingTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -133,22 +138,22 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         rowSorter = (TableRowSorter<SimpleTableModel<CassandraNamedParameter>>) variableNamingTable.getRowSorter();
         rowSorter.setSortsOnUpdates(true);
 
+        inputValidator.constrainTextFieldToBeNonEmpty("Query", cqlQueryTextArea, null);
 
-
-        addParameterButton.addActionListener(new ActionListener() {
+        addMappingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 MutablePair<String, String> columnAlias = new MutablePair<>();
-                ContextVariableNamingDialog dialog = new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias);
+                ContextVariableNamingDialog dialog = new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias, variablePrefixPanel.getVariable());
                 Utilities.centerOnParentWindow(dialog);
                 dialog.setVisible(true);
                 if (dialog.isConfirmed()) {
                     columnAlias = dialog.getData(columnAlias);
-                    if(columnAlias != null) {
+                    if (columnAlias != null) {
                         try {
                             variableNamingMap.put(columnAlias.getKey(), columnAlias.getValue());
                             variableNamingTableModel.setRows(getNamedMappingList());
-                        } catch(Exception ex) {
+                        } catch (Exception ex) {
                             JOptionPane.showMessageDialog(CassandraAssertionPropertiesDialog.this, "Failed to save new Cassandra named parameter.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     }
@@ -156,24 +161,26 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         });
 
-        editParameterButton.addActionListener(new ActionListener() {
+        editMappingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final int rowIndex = rowSorter.convertRowIndexToModel(variableNamingTable.getSelectedRow());
                 MutablePair<String, String> columnAlias = variableNamingTableModel.getRowObject(rowIndex);
+                final String prevKey = columnAlias.getKey();
                 ContextVariableNamingDialog dialog =
-                        new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias);
+                        new ContextVariableNamingDialog(CassandraAssertionPropertiesDialog.this, columnAlias, variablePrefixPanel.getVariable());
                 Utilities.centerOnParentWindow(dialog);
                 dialog.setVisible(true);
                 if(dialog.isConfirmed()){
                     columnAlias = dialog.getData(columnAlias);
+                    variableNamingMap.remove(prevKey);//remove previous mapping
                     variableNamingMap.put(columnAlias.getKey(), columnAlias.getValue()); //this is the problem
                     variableNamingTableModel.setRowObject(rowIndex, columnAlias);
                 }
             }
         });
 
-        removeParameterButton.addActionListener(new ActionListener() {
+        removeMappingButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final int rowIndex = rowSorter.convertRowIndexToModel(variableNamingTable.getSelectedRow());
@@ -185,6 +192,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
 
         cqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
+        inputValidator.constrainTextFieldToBeNonEmpty("Query", cqlQueryTextArea, null);
+        inputValidator.ensureComboBoxSelection(connectionLabel.getText(), connectionComboBox);
 
         final RunOnChangeListener connectionListener = new RunOnChangeListener(new Runnable() {
             public void run() {
@@ -204,7 +213,9 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
 
         cqlQueryTextArea.getDocument().addDocumentListener(changeListener);
 
-        okButton.addActionListener(new ActionListener() {
+        variablePrefixPanel.addChangeListener(changeListener);
+
+        inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -218,14 +229,12 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         });
 
-        populateConnectionCombobox();
+        addMappingButton.setEnabled(true);
 
-        addParameterButton.setEnabled(true);
+        Utilities.setDoubleClickAction(variableNamingTable, editMappingButton);
 
         setContentPane(mainPanel);
         pack();
-
-        enableDisableComponents();
     }
 
     private List<MutablePair<String, String>> getNamedMappingList() {
@@ -249,33 +258,26 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     private void modelToView() {
         populateConnectionCombobox();
-
         cqlQueryTextArea.setText(assertion.getQueryDocument());
         cqlQueryTextArea.setCaretPosition(0);
-
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
-        prefixTextField.setText(assertion.getPrefix());
-
-        variableNamingMap = assertion.getNamingMap();
-        List<MutablePair<String, String>> namedMapingList = getNamedMappingList();
-        variableNamingTableModel.setRows(namedMapingList);
-
+        variablePrefixPanel.setVariable(assertion.getPrefix());
+        variableNamingMap.clear();
+        variableNamingMap.putAll(assertion.getNamingMap());
+        variableNamingTableModel.setRows(getNamedMappingList());
+        enableDisableComponents();
     }
 
     private void viewToModel(final CassandraQueryAssertion assertion) {
-
         assertion.setConnectionName((String)connectionComboBox.getSelectedItem());
-
         assertion.setQueryDocument(cqlQueryTextArea.getText());
-
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
-        assertion.setPrefix(prefixTextField.getText());
+        assertion.setPrefix(variablePrefixPanel.getVariable());
         variableNamingMap = new HashMap<>();
         for(MutablePair<String,String> pair : variableNamingTableModel.getRows()) {
             variableNamingMap.put(pair.left, pair.right);
         }
         assertion.setNamingMap(variableNamingMap);
-
     }
 
     private void populateConnectionCombobox() {
@@ -301,15 +303,10 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableOkButton() {
-        boolean enabled = isNonEmptyRequiredTextField(cqlQueryTextArea.getText()) &&
-                connectionComboBox.getSelectedItem() != null &&
-                isNonEmptyRequiredTextField(prefixTextField.getText());
-
+        boolean enabled = inputValidator.isValid() &&
+                variablePrefixPanel.isEntryValid();
+        enableDisableComponents();
         okButton.setEnabled(enabled);
-    }
-
-    private boolean isNonEmptyRequiredTextField(String text) {
-        return text != null && !text.trim().isEmpty();
     }
 
     private void doCancel() {
