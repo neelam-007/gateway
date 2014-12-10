@@ -116,7 +116,9 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             //create a holder and add it to the list of connections
             if(entity.isEnabled()) {
                 connectionHolder = createConnection(entity);
-                cassandraConnections.put(name, connectionHolder);
+                if(connectionHolder != null) {
+                    cassandraConnections.put(name, connectionHolder);
+                }
             }
             else {
                 auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
