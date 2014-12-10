@@ -115,6 +115,13 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
        public VariableMetadata[] getVariablesSet() {
            List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
            varMeta.add(new VariableMetadata(prefix + QUERYRESULT_COUNT, false, false, null, false, DataType.INTEGER));
+           Set<String> varSet = new HashSet<>();
+           for(String var : namingMap.values()) {
+                varSet.add(var);
+           }
+           for(String varName : varSet) {
+                varMeta.add(new VariableMetadata(prefix + "." + varName, false, true, null, false, DataType.STRING));
+           }
 
            return varMeta.toArray(new VariableMetadata[varMeta.size()]);
        }
