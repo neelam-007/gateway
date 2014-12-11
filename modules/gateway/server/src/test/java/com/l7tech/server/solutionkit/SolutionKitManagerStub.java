@@ -20,12 +20,13 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
         super(solutionKitsIn);
     }
 
+    @NotNull
     @Override
-    public String install(@NotNull SolutionKit solutionKit, @NotNull String migrationBundle) throws SaveException, SolutionKitException {
+    public String installBundle(@NotNull SolutionKit solutionKit, @NotNull String migrationBundle, boolean isTest) throws SaveException, SolutionKitException {
         return "";
     }
 
     @Override
-    public void uninstall(@NotNull Goid goid) throws FindException, DeleteException, SolutionKitException {
+    public void uninstallBundle(@NotNull Goid goid) throws FindException, DeleteException, SolutionKitException {
     }
 }

@@ -20,6 +20,8 @@ import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -49,27 +51,51 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     }
 
     @Override
-    public String install(@NotNull SolutionKit solutionKit, @NotNull String bundle) throws SaveException, SolutionKitException {
-        // Install bundle.
-        //
-        String mappings = this.installBundle(bundle);
-        // Save solution kit entity.
-        //
-        solutionKit.setLastUpdateTime(System.currentTimeMillis());
-        solutionKit.setMappings(mappings);
-        save(solutionKit);
+    public Goid save(SolutionKit entity) throws SaveException {
+        entity.setLastUpdateTime(System.currentTimeMillis());
+        return super.save(entity);
+    }
 
-        return mappings;
+    @NotNull
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String installBundle(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException {
+        final RestmanInvoker restmanInvoker = createRestmanInvoker();
+        final PolicyEnforcementContext pec = restmanInvoker.getContext(bundle);
+
+        if (isTest) {
+            pec.setVariable("RestGatewayMan.uri", "1.0/bundle?test=true");
+        }
+
+        try {
+            Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
+            if (AssertionStatus.NONE != result.left) {
+                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion. " + result.left.getMessage();
+                logger.log(Level.WARNING, msg);
+                throw new SolutionKitException(msg);
+            }
+
+            if (!isTest && result.right.hasMappingError()) {
+                String msg = "Unable to install bundle due to mapping error." + result.right.getAsString();
+                logger.log(Level.WARNING, msg);
+                throw new SolutionKitException(msg);
+            }
+            return result.right.getAsString();
+        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new SolutionKitException(ExceptionUtils.getMessage(e), e);
+        } catch (InterruptedException e) {
+            // do nothing.
+        }
+
+        return "";
     }
 
     @Override
-    public void uninstall(@NotNull Goid goid) throws DeleteException, FindException, SolutionKitException {
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void uninstallBundle(@NotNull Goid goid) throws DeleteException, FindException, SolutionKitException {
         // todo (kpak) - uninstall bundle.
         //
-
-        // Delete solution kit entity.
-        //
-        delete(goid);
     }
 
     @Override
@@ -110,32 +136,5 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 return true;
             }
         }, invoker);
-    }
-
-    private String installBundle(String bundle) throws SolutionKitException {
-        final RestmanInvoker restmanInvoker = createRestmanInvoker();
-        final PolicyEnforcementContext pec = restmanInvoker.getContext(bundle);
-
-        try {
-            Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
-            if (AssertionStatus.NONE != result.left) {
-                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion. " + result.left.getMessage();
-                logger.log(Level.WARNING, msg);
-                throw new SolutionKitException(msg);
-            }
-
-            if (result.right.hasMappingError()) {
-                String msg = "Unable to install bundle due to mapping error." + result.right.getAsString();
-                logger.log(Level.WARNING, msg);
-                throw new SolutionKitException(msg);
-            }
-            return result.right.getAsString();
-        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new SolutionKitException(ExceptionUtils.getMessage(e), e);
-        } catch (InterruptedException e) {
-            // do nothing.
-        }
-        return "";
     }
 }

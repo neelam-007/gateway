@@ -32,12 +32,40 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
+    public JobId<String> testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
+        final FutureTask<String> task =
+            new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    boolean isTest = true;
+                    //noinspection ConstantConditions
+                    return solutionKitManager.installBundle(solutionKit, bundle, isTest);
+                }
+            }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                task.run();
+            }
+        }, 0L);
+
+        return registerJob(task, String.class);
+    }
+
+    @NotNull
+    @Override
     public JobId<String> install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
         final FutureTask<String> task =
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    return solutionKitManager.install(solutionKit, bundle);
+                    boolean isTest = false;
+                    //noinspection ConstantConditions
+                    String mappings = solutionKitManager.installBundle(solutionKit, bundle, isTest);
+                    solutionKit.setMappings(mappings);
+                    solutionKitManager.save(solutionKit);
+                    return mappings;
                 }
             }));
 
@@ -58,7 +86,8 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    solutionKitManager.uninstall(goid);
+                    solutionKitManager.uninstallBundle(goid);
+                    solutionKitManager.delete(goid);
                     return "";
                 }
             }));

@@ -11,7 +11,25 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionKitHeader> {
 
-    String install(@NotNull SolutionKit solutionKit, @NotNull String bundle) throws SaveException, SolutionKitException;
+    /**
+     * Installs specified bundle. Does not save solution kit entity.
+     *
+     * @param solutionKit
+     * @param bundle
+     * @param isTest
+     * @return
+     * @throws SaveException
+     * @throws SolutionKitException
+     */
+    @NotNull
+    String installBundle(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException;
 
-    void uninstall(@NotNull Goid goid) throws FindException, DeleteException, SolutionKitException;
+    /**
+     * Uninstalled bundle associated with the specified solution kit GOID. Does delete solution kit entity.
+     * @param goid
+     * @throws FindException
+     * @throws DeleteException
+     * @throws SolutionKitException
+     */
+    void uninstallBundle(@NotNull Goid goid) throws FindException, DeleteException, SolutionKitException;
 }

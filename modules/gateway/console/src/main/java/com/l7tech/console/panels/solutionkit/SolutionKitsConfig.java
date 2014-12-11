@@ -12,6 +12,7 @@ import java.util.*;
 public class SolutionKitsConfig {
     private Map<SolutionKit, String> loadedSolutionKits = new HashMap<>();
     private Set<SolutionKit> selectedSolutionKits = new HashSet<>();
+    private Map<SolutionKit, String> testMappingResults = new HashMap<>();
 
     public SolutionKitsConfig() {
     }
@@ -37,5 +38,14 @@ public class SolutionKitsConfig {
 
     public void setSelectedSolutionKits(@NotNull Set<SolutionKit> selectedSolutionKits) {
         this.selectedSolutionKits = selectedSolutionKits;
+    }
+
+    @NotNull
+    public Map<SolutionKit, String> getTestMappingResults() {
+        return testMappingResults;
+    }
+
+    public void setTetMappingResults(@NotNull Map<SolutionKit, String> testMappingResults) {
+        this.testMappingResults = testMappingResults;
     }
 }

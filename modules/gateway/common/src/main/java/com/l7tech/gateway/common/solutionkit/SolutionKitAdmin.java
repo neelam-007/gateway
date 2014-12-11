@@ -18,7 +18,7 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
  * Remote admin interface for managing {@link com.l7tech.gateway.common.solutionkit.SolutionKit}.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-@Secured(types= EntityType.SOLUTION_KIT)
+@Secured(types=EntityType.SOLUTION_KIT)
 @Administrative
 public interface SolutionKitAdmin extends AsyncAdminMethods {
 
@@ -26,6 +26,11 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Collection<SolutionKitHeader> findSolutionKits() throws FindException;
+
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    JobId<String> testInstall(@NotNull SolutionKit solutionKit, @NotNull String bundle);
 
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)

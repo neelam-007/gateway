@@ -32,7 +32,10 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private SolutionKitAdmin solutionKitAdmin;
 
     public static InstallSolutionKitWizard getInstance(Window parent) {
+        final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
+
         final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel();
+        second.setNextPanel(third);
 
         final SolutionKitLoadPanel first = new SolutionKitLoadPanel();
         first.setNextPanel(second);

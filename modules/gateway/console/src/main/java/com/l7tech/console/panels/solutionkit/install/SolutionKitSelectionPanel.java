@@ -2,10 +2,16 @@ package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
+import com.l7tech.console.util.AdminGuiUtils;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gui.SelectableTableModel;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Either;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
@@ -14,7 +20,9 @@ import javax.swing.event.TableModelListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
@@ -34,8 +42,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private SelectableTableModel<SolutionKit> solutionKitsModel;
 
+    private final SolutionKitAdmin solutionKitAdmin;
+    private SolutionKitsConfig settings = null;
+    private Map<SolutionKit, String> testMappingResults = null;
+
     public SolutionKitSelectionPanel() {
         super(null);
+        solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         initialize();
     }
 
@@ -55,15 +68,65 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     @Override
+    public boolean canFinish() {
+        return false;
+    }
+
+    @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         solutionKitsModel.deselectAll();
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
+        this.settings = settings;
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setSelectedSolutionKits(new HashSet<>(solutionKitsModel.getSelected()));
+        settings.setTetMappingResults(testMappingResults);
+    }
+
+    @Override
+    public boolean onNextButton() {
+        Map<SolutionKit, String> solutionsKits = new HashMap<>();
+        for (SolutionKit aSolutionKit : solutionKitsModel.getSelected()) {
+            solutionsKits.put(aSolutionKit, settings.getMigrationBundle(aSolutionKit));
+        }
+
+        boolean success = false;
+        String errorMessage = "";
+
+        // todo (kpak) - handle multiple kits. for now, install first one.
+        //
+        Map.Entry<SolutionKit, String> entry = solutionsKits.entrySet().iterator().next();
+        try {
+            Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
+                solutionKitAdmin,
+                this.getOwner(),
+                "Testing Solution Kit",
+                "The gateway is testing selected solution kit(s)",
+                solutionKitAdmin.testInstall(entry.getKey(), entry.getValue()));
+
+            if (result.isLeft()) {
+                errorMessage = result.left();
+                logger.log(Level.WARNING, errorMessage);
+            } else if (result.isRight()) {
+                testMappingResults = new HashMap<>();
+                testMappingResults.put(entry.getKey(), result.right());
+                success = true;
+            }
+        } catch (InvocationTargetException e) {
+            errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+        } catch (InterruptedException e) {
+            return false;
+        }
+
+        if (!success) {
+            DialogDisplayer.showMessageDialog(this, errorMessage, "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+        }
+
+        return success;
     }
 
     private void initialize() {
@@ -124,4 +187,5 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         setLayout(new BorderLayout());
         add(mainPanel);
     }
+
 }
