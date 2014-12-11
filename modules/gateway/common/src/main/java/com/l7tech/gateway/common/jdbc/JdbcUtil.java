@@ -11,8 +11,6 @@ public class JdbcUtil {
     public final static String FUNC = "func"; //keyword to indicate that we are calling a function instead of a stored procedure
 
     public final static String EMPTY_STRING = "";
-    public final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:jdbcQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/jdbc-query-result\">";
-    public final static String XML_RESULT_TAG_CLOSE = "</L7j:jdbcQueryResult>";
     public final static String XML_RESULT_COL_OPEN = "<L7j:col ";
     public final static String XML_RESULT_COL_CLOSE = "</L7j:col>";
     public final static String XML_RESULT_ROW_OPEN = "<L7j:row>";
