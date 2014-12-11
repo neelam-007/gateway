@@ -48,13 +48,15 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     public static final String TCP_NO_DELAY = "cassandra.tcpNoDelay";
     public static final String DEFAULT_QUERY_PREFIX = "cassandraQuery";
     public static final String QUERYRESULT_COUNT = ".queryresult.count";
+    public static final String VARIABLE_XML_RESULT = ".xmlResult";
 
     private String connectionName;
     private String queryDocument;
     private boolean failIfNoResults = false;
-    String prefix = DEFAULT_QUERY_PREFIX;
+    private boolean isGenerateXmlResult = false;
+    private Map<String, String> namingMap = new HashMap<>();
 
-    Map<String, String> namingMap = new HashMap<>();
+    String prefix = DEFAULT_QUERY_PREFIX;
 
     //
     // Metadata
@@ -106,6 +108,13 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         this.namingMap = namedMap;
     }
 
+    public boolean isGenerateXmlResult() {
+        return isGenerateXmlResult;
+    }
+
+    public void setGenerateXmlResult(boolean isGenerateXmlResult) {
+        this.isGenerateXmlResult = isGenerateXmlResult;
+    }
     @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(queryDocument);

@@ -13,6 +13,7 @@
         <artifact name="layer7-cassandra-test" type="jar" ext="jar" conf="test"/>
     </publications>
     <dependencies>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core; test->default,test"/>
         <dependency org="com.datastax.cassandra" name="cassandra-driver-core"  rev="2.1.2" conf="core">
             <!--<exclude org="jersey" module="guava" type="*" ext="*" conf="" matcher="exact"/>-->
         </dependency>

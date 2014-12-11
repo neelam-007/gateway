@@ -57,6 +57,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private TargetVariablePanel variablePrefixPanel;
     private JLabel connectionLabel;
     private JPanel queryPanel;
+    private JCheckBox generateXMLResultCheckBox;
     private CassandraQueryAssertion assertion;
     private boolean confirmed;
     private Map<String, String> variableNamingMap = new HashMap<>();
@@ -271,6 +272,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         cqlQueryTextArea.setText(assertion.getQueryDocument());
         cqlQueryTextArea.setCaretPosition(0);
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
+        generateXMLResultCheckBox.setSelected(assertion.isGenerateXmlResult());
         variablePrefixPanel.setVariable(assertion.getPrefix());
         variableNamingMap.clear();
         variableNamingMap.putAll(assertion.getNamingMap());
@@ -282,6 +284,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setConnectionName((String)connectionComboBox.getSelectedItem());
         assertion.setQueryDocument(cqlQueryTextArea.getText());
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
+        assertion.setGenerateXmlResult(generateXMLResultCheckBox.isSelected());
         assertion.setPrefix(variablePrefixPanel.getVariable());
         variableNamingMap = new HashMap<>();
         for(MutablePair<String,String> pair : variableNamingTableModel.getRows()) {

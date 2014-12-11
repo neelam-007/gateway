@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.cassandra.server;
 
-import com.ca.datasources.cassandra.CassandraUtil;
+import com.ca.datasources.cassandra.CassandraQueryManager;
+import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.datastax.driver.core.*;
@@ -32,10 +33,14 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
  *
  */
 public class ServerCassandraQueryAssertion extends AbstractServerAssertion<CassandraQueryAssertion> {
+    private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:cassandraQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/cassandra-query-result\">";
+    private final static String XML_RESULT_TAG_CLOSE = "</L7j:cassandraQueryResult>";
+
 
     private final String[] variablesUsed;
     private CassandraQueryAssertion assertion = null;
     private final CassandraConnectionManager connectionManager;
+    private final CassandraQueryManager cassandraQueryManager;
 
     public ServerCassandraQueryAssertion(final CassandraQueryAssertion assertion, ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
@@ -43,6 +48,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         this.variablesUsed = assertion.getVariablesUsed();
         this.assertion = assertion;
         this.connectionManager = applicationContext.getBean("cassandraConnectionManager", CassandraConnectionManager.class);
+        this.cassandraQueryManager = applicationContext.getBean("cassandraQueryManager", CassandraQueryManager.class);
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -53,7 +59,6 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             return AssertionStatus.FAILED;
         }
 
-        Session session = cassandraConnection.getSession();
         //extract parameters from the query only the first time it should be used afterwords until someone changes the assertion
         final Pair<String, List<Object>> pair;
         if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
@@ -65,33 +70,44 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         final String plainQuery = pair.left;
         final  List<Object> preparedStmtParams = pair.right;
         boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
-
         Map<String, PreparedStatement> stmtMap = cassandraConnection.getPreparedStatementMap();
         PreparedStatement preparedStatement = stmtMap.get(plainQuery);
 
         int resultSize = 0;
         try {
+            Session session = cassandraConnection.getSession(); //get the session
+
             if(preparedStatement == null ) {
-                preparedStatement = session.prepare(plainQuery);
+                preparedStatement = cassandraQueryManager.buildPreparedStatement(session, plainQuery);
+                if(preparedStatement == null) {
+                    logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "PreparedStatement is null.");
+                    return AssertionStatus.FAILED;
+                }
                 stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
             }
 
-            //construct BoundStatement
-            BoundStatement boundStatement = new BoundStatement(preparedStatement);
+            Map<String, List<Object>> resultMap =  new TreeMap<>();
+            resultSize = cassandraQueryManager.executeStatement(session, preparedStatement, preparedStmtParams, resultMap);
 
-            List<ColumnDefinitions.Definition> cdlist = boundStatement.preparedStatement().getVariables().asList();
-            List<Object> convertedStmtParams = new ArrayList<>();
-            for(int i = 0; i < cdlist.size(); i++){
-                convertedStmtParams.add(CassandraUtil.javaType2CassandraDataType(cdlist.get(i), preparedStmtParams.get(i)));
+            //Get results map into context variable
+            String prefix = assertion.getPrefix();
+            Map<String, String> namingMap = assertion.getNamingMap();
+            //map results to the appropriate context variables
+            for(String key: resultMap.keySet()){
+                String columnName = namingMap.containsKey(key.toLowerCase()) ? namingMap.get(key) : key;
+                if (resultMap.get(key) != null) {
+                    context.setVariable(prefix + "." + columnName, resultMap.get(key).toArray());
+                }
+
             }
-
-            boundStatement.bind(convertedStmtParams.toArray());
-
-            ResultSetFuture result = cassandraConnection.getSession().executeAsync(boundStatement);
-
-            if(isSelectQuery) {
-                resultSize = retriveResults(result.getUninterruptibly(), context);
+            if (assertion.isGenerateXmlResult()) {
+                final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
+                JdbcUtil.buildXmlResultString(resultMap, xmlResult);
+                xmlResult.append(XML_RESULT_TAG_CLOSE);
+                context.setVariable(prefix + CassandraQueryAssertion.VARIABLE_XML_RESULT, xmlResult.toString());
             }
+            //set query result count
+            context.setVariable(prefix + CassandraQueryAssertion.QUERYRESULT_COUNT, resultSize);
 
         }  catch (NoHostAvailableException nhe) {
             for (Map.Entry<InetSocketAddress, Throwable> entry: nhe.getErrors().entrySet()) {
@@ -105,77 +121,12 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             return AssertionStatus.FAILED;
         }
 
-
-        if(resultSize < 1 && assertion.isFailIfNoResults()){
+        if(isSelectQuery && resultSize < 1 && assertion.isFailIfNoResults()){
             logAndAudit(AssertionMessages.CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED, cassandraConnection.getCassandraConnectionEntity().getName());
             return AssertionStatus.FALSIFIED;
         }
 
         return AssertionStatus.NONE;
-    }
-
-    private int retriveResults(ResultSet rows, PolicyEnforcementContext context) {
-        int resultSize = 0;
-         Map<String,List<Object>> resultMap = new HashMap<>();
-
-        Iterator<Row> resultSetIterator = rows.iterator();
-        // Get resultSet into map
-        while(resultSetIterator.hasNext()){
-            Row row = resultSetIterator.next();
-            for(ColumnDefinitions.Definition definition: row.getColumnDefinitions()){
-                List<Object> col  = resultMap.get(definition.getName());
-
-                if (col == null){
-                    col = new ArrayList();
-                    resultMap.put(definition.getName(),col);
-                }
-
-                Object o = CassandraUtil.cassandraDataType2JavaType(definition, row);
-                col.add(o);
-            }
-            resultSize++;
-        }
-
-        //Get results map into context variable
-        String prefix = assertion.getPrefix();
-        Map<String, String> namingMap = assertion.getNamingMap();
-
-        for(String key: resultMap.keySet()){
-            String columnName = namingMap.containsKey(key.toLowerCase()) ? namingMap.get(key) : key;
-            if (resultMap.get(key) != null) {
-                context.setVariable(prefix + "." + columnName, resultMap.get(key).toArray());
-            }
-
-        }
-        //set query result count
-        context.setVariable(prefix + CassandraQueryAssertion.QUERYRESULT_COUNT, resultSize);
-        return resultSize;
-    }
-
-    /**
-     * build newNameMapping from map type resultSet
-     */
-    Map<String, String> getNewMapping(Map<String, List<Object>> resultSet) {
-        Map<String, String> namingMap = assertion.getNamingMap();
-        Map<String, String> newNamingMap = new TreeMap<String, String>();
-
-        // Get mappings of column names and context variable names
-        for (String columnName : resultSet.keySet()) {
-            boolean found = false;
-            for (final Map.Entry e : namingMap.entrySet()) {
-                String key = e.getKey().toString();
-                String value = e.getValue().toString();
-                if (key.equalsIgnoreCase(columnName)) {
-                    found = true;
-                    newNamingMap.put(columnName.toLowerCase(), value);
-                    break;
-                }
-            }
-            if (!found) {
-                newNamingMap.put(columnName.toLowerCase(), columnName);
-            }
-        }
-        return newNamingMap;
     }
 
     /*
