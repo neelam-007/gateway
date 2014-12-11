@@ -14,10 +14,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationEvent;
 
@@ -25,6 +22,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.Field;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -80,6 +78,37 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final AtomicReference<ConnectionCacheConfig> connectionCacheConfig = new AtomicReference<>(new ConnectionCacheConfig(0, 30, 20));
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
     private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
+
+
+    static {
+        if (!JdkLoggerConfigurator.debugState()) {
+            disableCassandraConnectionLogger();
+        }
+    }
+
+    private static void disableCassandraConnectionLogger() {
+        try {
+            // Suppresses stack trace from Datastax Cassandra driver during conenction failover.
+            org.slf4j.Logger connLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+
+            if (connLogger == null) {
+                logger.log(Level.WARNING, "Unable to get slf4j root logger.");
+                return;
+            }
+
+            Field field = connLogger.getClass().getDeclaredField("logger");
+
+            if (field != null) {
+                field.setAccessible(true);
+                Logger javaLogger = (Logger) field.get(connLogger);
+                javaLogger.setLevel(Level.OFF);
+            } else {
+                logger.log(Level.WARNING, "Unable to get logger field from " + connLogger.getClass().getName());
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to turn off logs from Datastax Cassandra driver Connection: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+    }
 
     public CassandraConnectionManagerImpl(CassandraConnectionEntityManager cassandraEntityManager, Config config,
                                           SecurePasswordManager securePasswordManager, TrustManager trustManager,
