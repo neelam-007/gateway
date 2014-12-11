@@ -76,7 +76,8 @@ public class PolicyBundleDryRunResult implements Serializable {
             }
         }
 
-        return migrationDryRunResultsMap != null && migrationDryRunResultsMap.containsKey(bundleId);
+        // Check any conflicts for migration dry run
+        return migrationDryRunResultsMap != null && migrationDryRunResultsMap.containsKey(bundleId) && !migrationDryRunResultsMap.get(bundleId).isEmpty();
     }
 
     /**
