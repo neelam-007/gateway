@@ -89,7 +89,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private static void disableCassandraConnectionLogger() {
         try {
             // Suppresses stack trace from Datastax Cassandra driver during conenction failover.
-            org.slf4j.Logger connLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            org.slf4j.Logger connLogger = org.slf4j.LoggerFactory.getLogger("com.datastax.driver.core");
 
             if (connLogger == null) {
                 logger.log(Level.WARNING, "Unable to get slf4j root logger.");
