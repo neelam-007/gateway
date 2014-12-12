@@ -1,7 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
@@ -24,6 +29,8 @@ public class CassandraPropertiesDialog extends JDialog {
     private static final String SEND_BUFFER_SIZE = "sendBufferSize";
     private static final String SO_LINGER = "soLinger";
     private static final String TCP_NO_DELAY = "tcpNoDelay";
+    // Query options
+    private static final String QUERY_FETCH_SIZE = "maxRecords";
 
     private JPanel mainPanel;
     private JTextField propValueTextField;
@@ -38,6 +45,7 @@ public class CassandraPropertiesDialog extends JDialog {
     public CassandraPropertiesDialog(Dialog owner, MutablePair<String, String> property) {
         super(owner, "Additional Properties");
         initialize(property);
+        modelToView();
     }
 
     private void initialize(MutablePair<String, String> property) {
@@ -69,7 +77,24 @@ public class CassandraPropertiesDialog extends JDialog {
             }
         });
 
-        modelToView();
+        final RunOnChangeListener propNameListener = new RunOnChangeListener(new Runnable() {
+            public void run() {
+                String propName = (String) propNameComboBox.getSelectedItem();
+                if (propName != null) {
+                    ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
+                    try {
+                        ClusterProperty clusterProperty = clusterStatusAdmin.findPropertyByName("cassandra." + propName);
+                        if(clusterProperty != null && clusterProperty.getValue() != null) {
+                            propValueTextField.setText(clusterProperty.getValue());
+                        }
+                    } catch (FindException fe) {
+                        JOptionPane.showMessageDialog(CassandraPropertiesDialog.this, "Unable to retrieve defaults for property " + propName, "Error", JOptionPane.ERROR);
+                    }
+                }
+            }
+        });
+//        ((JTextField)propNameComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(propNameListener);
+        propNameComboBox.addItemListener(propNameListener);
     }
 
     private void modelToView() {
@@ -93,7 +118,7 @@ public class CassandraPropertiesDialog extends JDialog {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
                 MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS,
-                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY
+                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,QUERY_FETCH_SIZE
         }));
     }
 

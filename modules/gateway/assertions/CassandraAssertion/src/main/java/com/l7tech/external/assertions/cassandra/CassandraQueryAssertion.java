@@ -29,16 +29,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FAC
 public class CassandraQueryAssertion extends Assertion implements CassandraConnectionable, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(CassandraQueryAssertion.class.getName());
 
-    public static final String CORE_CONNECTION_PER_HOST = "cassandra.coreConnectionsPerHost";
-    public static final String MAX_CONNECTION_PER_HOST = "cassandra.maxConnectionPerHost";
-    public static final String MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "cassandra.maxSimultaneousRequestsPerConnectionThreshold";
-    public static final String MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "cassandra.minSimultaneousRequestsPerConnectionThreshold";
-
-    public static final int CORE_CONNECTION_PER_HOST_DEF = 1;
-    public static final int MAX_CONNECTION_PER_HOST_DEF = 2;
-    public static final int MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF = 128;
-    public static final int MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF = 25;
-
     public static final String CONNECTION_TIMEOUT_MILLIS = "cassandra.connectTimeoutMillis";
     public static final String KEEP_ALIVE = "cassandra.keepAlive";
     public static final String RECEIVE_BUFFER_SIZE = "cassandra.receiveBufferSize";
@@ -54,10 +44,10 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     private String queryDocument;
     private boolean failIfNoResults = false;
     private boolean isGenerateXmlResult = false;
+    private int fetchSize;
     private Map<String, String> namingMap = new HashMap<>();
 
     String prefix = DEFAULT_QUERY_PREFIX;
-
     //
     // Metadata
     //
@@ -228,5 +218,11 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         };
 
 
+    public int getFetchSize() {
+        return fetchSize;
+    }
 
+    public void setFetchSize(int fetchSize) {
+        this.fetchSize = fetchSize;
+    }
 }

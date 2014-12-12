@@ -213,6 +213,7 @@ public interface ServerConfigParams {
     String PARAM_CASSANDRA_MIN_SIMULTANEOUS_REQUESTS = "cassandra.minSimultaneousRequestsPerConnectionThreshold";
     String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";
     String PARAM_CASSANDRA_KEEP_ALIVE = "cassandra.keepAlive";
+    String PARAM_CASSANDRA_MAX_RECORDS = "cassandra.maxRecords.defaultValue";
 
     // Adding custom assertions system properties
     String PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE = "custom.assertions.file";

@@ -86,8 +86,10 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
                 stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
             }
 
+            BoundStatement boundStatement = cassandraQueryManager.buildBoundStatement(preparedStatement, preparedStmtParams);
+            boundStatement.setFetchSize(assertion.getFetchSize());
             Map<String, List<Object>> resultMap =  new TreeMap<>();
-            resultSize = cassandraQueryManager.executeStatement(session, preparedStatement, preparedStmtParams, resultMap);
+            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap);
 
             //Get results map into context variable
             String prefix = assertion.getPrefix();
