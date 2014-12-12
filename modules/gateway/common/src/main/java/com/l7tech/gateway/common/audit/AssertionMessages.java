@@ -1368,7 +1368,7 @@ public class AssertionMessages extends Messages {
     public static final M JWT_GENERAL_DECODE_ERROR = m(10834, Level.WARNING, "Error decoding: {0}");
 
     public static final M JWT_JWK_ERROR = m(10840, Level.WARNING, "Error creating JWK: {0}");
-    public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of '{0}'");
+    public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
 
