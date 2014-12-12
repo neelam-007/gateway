@@ -51,7 +51,11 @@ public class PolicyBundleInstallerContext {
                                         @Nullable Map<String, Pair<String, Properties>> migrationBundleOverrides) {
         this.bundleInfo = bundleInfo;
         this.folderGoid = folderGoid;
-        this.bundleMapping = bundleMapping;
+        if (bundleMapping != null) {
+            this.bundleMapping = bundleMapping;
+        } else {
+            this.bundleMapping = new BundleMapping();
+        }
         this.bundleResolver = bundleResolver;
         this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
         this.migrationBundleOverrides = migrationBundleOverrides;
@@ -70,7 +74,7 @@ public class PolicyBundleInstallerContext {
         return folderGoid;
     }
 
-    @Nullable
+    @NotNull
     public BundleMapping getBundleMapping() {
         return bundleMapping;
     }
@@ -104,7 +108,7 @@ public class PolicyBundleInstallerContext {
     @NotNull
     private final BundleInfo bundleInfo;
     private final Goid folderGoid;
-    @Nullable
+    @NotNull
     private final BundleMapping bundleMapping;
     @Nullable
     private final String installationPrefix;

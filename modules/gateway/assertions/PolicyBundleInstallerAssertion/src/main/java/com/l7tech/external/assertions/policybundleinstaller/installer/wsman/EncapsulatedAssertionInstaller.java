@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstalle
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
+import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.policy.bundle.BundleResolver;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
@@ -31,7 +32,9 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.l7tech.policy.bundle.BundleMapping.Type.ENCAPSULATE_ASSERTION_GUID;
 import static com.l7tech.server.policy.bundle.ssgman.wsman.WsmanInvoker.*;
 import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.ENCAPSULATED_ASSERTION;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
@@ -68,7 +71,9 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                 String encapsulatedAssertionGuid = GatewayManagementDocumentUtilities.getEntityGuid(encapsulatedAssertionElm);
                 if (isValidVersionModifier(prefix)) {
                     encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
-                    encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
+                    final String newEncapsulatedAssertionGuid = UUID.randomUUID().toString();
+                    context.getBundleMapping().addMapping(ENCAPSULATE_ASSERTION_GUID, encapsulatedAssertionGuid, newEncapsulatedAssertionGuid);
+                    encapsulatedAssertionGuid = newEncapsulatedAssertionGuid;
                 }
 
                 try {
@@ -128,12 +133,13 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
     protected static void updatePolicyDoc(@NotNull final Element policyResourceElmWritable,
                                    @NotNull final Document policyDocumentFromResource,
-                                   @Nullable final String prefix) throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException {
+                                   @Nullable final String prefix,
+                                   @NotNull final BundleMapping bundleMapping) throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException {
         // update encapsulated assertion name with prefix
         if (isValidVersionModifier(prefix)) {
             List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
             for (Element encapsulatedAssertion : encapsulatedAssertions) {
-                encapsulatedAssertion.setAttribute("stringValue", getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
+                encapsulatedAssertion.setAttribute("stringValue", bundleMapping.getMapping(ENCAPSULATE_ASSERTION_GUID, encapsulatedAssertion.getAttribute("stringValue")));
             }
 
             encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
@@ -213,8 +219,9 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                         encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
                         DomUtils.setTextContent(nameElementWritable, encapsulatedAssertionName);
 
-                        encapsulatedAssertionGuid = getPrefixedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
-                        DomUtils.setTextContent(guidElementWritable, encapsulatedAssertionGuid);
+                        String newEncapsulatedAssertionGuid = UUID.randomUUID().toString();
+                        context.getBundleMapping().addMapping(ENCAPSULATE_ASSERTION_GUID, encapsulatedAssertionGuid, newEncapsulatedAssertionGuid);
+                        DomUtils.setTextContent(guidElementWritable, newEncapsulatedAssertionGuid);
                     }
 
                     // create encapsulated assertion
@@ -233,9 +240,5 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                 throw new RuntimeException("Unexpected exception getting a writable encapsulated assertion element", e);
             }
         }
-    }
-
-    public static String getPrefixedEncapsulatedAssertionGuid(@Nullable String prefix, @NotNull String guid) {
-        return prefix == null ? guid : (prefix + guid).substring(0, guid.length());
     }
 }

@@ -362,7 +362,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                 final String newName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection.map." + componentId + ".new_name").toString();
 
                 final BundleMapping mapping = new BundleMapping();
-                mapping.addMapping(BundleMapping.EntityType.JDBC_CONNECTION, oldName, newName);
+                mapping.addMapping(BundleMapping.Type.JDBC_CONNECTION_NAME, oldName, newName);
 
                 mappings.put(componentId, mapping);
             } catch (NoSuchVariableException e) {

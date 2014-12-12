@@ -36,7 +36,7 @@ import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import static com.l7tech.gateway.common.AsyncAdminMethods.JobId;
 import static com.l7tech.gateway.common.admin.PolicyBundleInstallerAdmin.PolicyBundleInstallerException;
 import static com.l7tech.policy.bundle.BundleInfo.getPrefixedUrlErrorMsg;
-import static com.l7tech.policy.bundle.BundleMapping.EntityType.JDBC_CONNECTION;
+import static com.l7tech.policy.bundle.BundleMapping.Type.JDBC_CONNECTION_NAME;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
@@ -320,7 +320,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                 final Map<String, String> mappedJdbcConnections = bundleComponent.getMappedJdbcConnections();
                 final BundleMapping bundleMapping = new BundleMapping();
                 for (Map.Entry<String, String> mappedEntry : mappedJdbcConnections.entrySet()) {
-                    bundleMapping.addMapping(JDBC_CONNECTION, mappedEntry.getKey(), mappedEntry.getValue());
+                    bundleMapping.addMapping(JDBC_CONNECTION_NAME, mappedEntry.getKey(), mappedEntry.getValue());
                 }
                 bundleMappings.put(componentId, bundleMapping);
 
