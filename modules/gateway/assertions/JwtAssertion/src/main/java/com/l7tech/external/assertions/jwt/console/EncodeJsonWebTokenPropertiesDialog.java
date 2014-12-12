@@ -86,6 +86,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         encryptionKeyType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.toArray(new String[JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.size()])));
         encryptionKeyType.addActionListener(encryptionKeyTypeActionListener);
 
+        encryptionKeyWarningLabel.setVisible(false);
+
         //validators
         validators = new InputValidator(this, getTitle());
 
@@ -161,50 +163,50 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         sourceVariableTextField.setText(assertion.getSourceVariable());
         //headers
         headerActionComboBox.setSelectedItem(assertion.getHeaderAction());
-        if(!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(headerActionComboBox.getSelectedItem())){
+        if (!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(headerActionComboBox.getSelectedItem())) {
             headersTextField.setText(assertion.getSourceHeaders());
         }
 
         //signature
-        if(assertion.getSignatureAlgorithm() != null){
+        if (assertion.getSignatureAlgorithm() != null) {
             signatureAlgorithmComboBox.setSelectedItem(JsonWebTokenConstants.SIGNATURE_ALGORITHMS.get(assertion.getSignatureAlgorithm()));
         }
 
         signaturePasswordField.setText(assertion.getSignatureSecretKey());
         signatureSourceVariable.setText(assertion.getSignatureSourceVariable());
 
-        if(assertion.isPrivateKeyFromVariable()){
+        if (assertion.isPrivateKeyFromVariable()) {
             fromVariableRadioButton.setSelected(true);
             signatureSourceVariable.setEnabled(true);
             keyTypeComboBox.setEnabled(true);
             privateKeysComboBox.setEnabled(false);
             signatureAlgorithmKeyIdTextField.setEnabled(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getSignatureKeyType()));
-            if(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getSignatureKeyType())){
+            if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getSignatureKeyType())) {
                 signatureAlgorithmKeyIdTextField.setText(assertion.getSignatureJwksKeyId());
             }
-            if(assertion.getSignatureKeyType() != null){
+            if (assertion.getSignatureKeyType() != null) {
                 keyTypeComboBox.setSelectedItem(assertion.getSignatureKeyType());
             }
         } else {
             fromListRadioButton.setSelected(true);
-            if(assertion.getPrivateKeyGoid() != null && !assertion.getPrivateKeyGoid().trim().isEmpty()){
+            if (assertion.getPrivateKeyGoid() != null && !assertion.getPrivateKeyGoid().trim().isEmpty()) {
                 int sel = privateKeysComboBox.select(Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
                 privateKeysComboBox.setSelectedIndex(sel < 0 ? 0 : sel);
             }
         }
 
-        if(assertion.getKeyManagementAlgorithm() != null){
+        if (assertion.getKeyManagementAlgorithm() != null) {
             keyManagementAlgorithmComboBox.setSelectedItem(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.get(assertion.getKeyManagementAlgorithm()));
         }
-        if(assertion.getContentEncryptionAlgorithm() != null){
+        if (assertion.getContentEncryptionAlgorithm() != null) {
             contentEncryptionAlgorithmComboBox.setSelectedItem(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.get(assertion.getContentEncryptionAlgorithm()));
         }
 
         encryptionKeyTextField.setText(assertion.getEncryptionKey());
-        if(assertion.getEncryptionKeyType() != null){
+        if (assertion.getEncryptionKeyType() != null) {
             encryptionKeyType.setSelectedItem(assertion.getEncryptionKeyType());
         }
-        if(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getEncryptionKeyType())){
+        if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getEncryptionKeyType())) {
             encryptionKeyId.setText(assertion.getEncryptionKeyId());
         }
 
@@ -221,29 +223,28 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         //ui to assertion
         assertion.setSourceVariable(sourceVariableTextField.getText());
         assertion.setHeaderAction(headerActionComboBox.getSelectedItem().toString());
-        if(!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(headerActionComboBox.getSelectedItem())){
+        if (!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(headerActionComboBox.getSelectedItem())) {
             assertion.setSourceHeaders(headersTextField.getText().trim());
         }
 
         final String algo = signatureAlgorithmComboBox.getSelectedItem().toString();
         assertion.setSignatureAlgorithm(JsonWebTokenConstants.SIGNATURE_ALGORITHMS.inverse().get(algo));
 
-        if(!"None".equals(algo) && algo.startsWith("HMAC")){
+        if (!"None".equals(algo) && algo.startsWith("HMAC")) {
             assertion.setSignatureSecretKey(String.valueOf(signaturePasswordField.getPassword()));
             //clear the other fields
             assertion.setSignatureSourceVariable(null);
             assertion.setSignatureKeyType(null);
             assertion.setSignatureJwksKeyId(null);
-        }
-        else if(!"None".equals(algo) && !algo.startsWith("HMAC")){
-            if(fromListRadioButton.isSelected()){
+        } else if (!"None".equals(algo) && !algo.startsWith("HMAC")) {
+            if (fromListRadioButton.isSelected()) {
                 assertion.setPrivateKeyFromVariable(false);
                 assertion.setPrivateKeyGoid(privateKeysComboBox.getSelectedKeystoreId().toHexString());
                 assertion.setPrivateKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
             } else {
                 assertion.setPrivateKeyFromVariable(true);
                 assertion.setSignatureKeyType(keyTypeComboBox.getSelectedItem().toString());
-                if(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyTypeComboBox.getSelectedItem())){
+                if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyTypeComboBox.getSelectedItem())) {
                     assertion.setSignatureJwksKeyId(signatureAlgorithmKeyIdTextField.getText().trim());
                 }
             }
@@ -256,7 +257,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setContentEncryptionAlgorithm(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.inverse().get(contentEncryptionAlgorithmComboBox.getSelectedItem().toString()));
 
         assertion.setEncryptionKey(encryptionKeyTextField.getText().trim());
-        if(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(encryptionKeyType.getSelectedItem())){
+        if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(encryptionKeyType.getSelectedItem())) {
             assertion.setEncryptionKeyId(encryptionKeyId.getText().trim());
         }
         assertion.setEncryptionKeyType(encryptionKeyType.getSelectedItem().toString());
@@ -287,13 +288,13 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             final Object kty = keyTypeComboBox.getSelectedItem();
             signatureAlgorithmKeyIdTextField.setEnabled(fromVariableRadioButton.isSelected() && !sa.toString().startsWith("None") && !sa.toString().startsWith("HMAC") && JsonWebTokenConstants.KEY_TYPE_JWKS.equals(kty));
 
-            if("RSASSA-PKCS-v1_5 using SHA-256".equals(sa)){
+            if ("RSASSA-PKCS-v1_5 using SHA-256".equals(sa)) {
                 signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-256 and MGF1 with SHA-256'.");
             }
-            if("RSASSA-PKCS-v1_5 using SHA-384".equals(sa)){
+            if ("RSASSA-PKCS-v1_5 using SHA-384".equals(sa)) {
                 signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-384 and MGF1 with SHA-384'.");
             }
-            if("RSASSA-PKCS-v1_5 using SHA-512".equals(sa)){
+            if ("RSASSA-PKCS-v1_5 using SHA-512".equals(sa)) {
                 signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-512 and MGF1 with SHA-512'.");
             }
             signatureAlgorithmWarningLabel.setVisible("<HTML><FONT COLOR=\"RED\">WARNING: RSASSA-PKCS-v1_5 using SHA-256".equals(sa) || "RSASSA-PKCS-v1_5 using SHA-384".equals(sa) || "RSASSA-PKCS-v1_5 using SHA-512".equals(sa));
@@ -308,7 +309,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             final Object km = keyManagementAlgorithmComboBox.getSelectedItem();
             contentEncryptionAlgorithmComboBox.setEnabled(!"None".equals(km));
             encryptionKeyWarningLabel.setVisible("RSAES-PKCS1-V1_5".equals(km));
-            if("RSAES-PKCS1-V1_5".equals(km)){
+            if ("RSAES-PKCS1-V1_5".equals(km)) {
                 encryptionKeyWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSAES OAEP using SHA-256 and MGF1 with SHA-256'.");
             }
             EncodeJsonWebTokenPropertiesDialog.this.pack();

@@ -15,6 +15,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCancelSupport<DecodeJsonWebTokenAssertion> {
+
     private JPanel contentPane;
     private JTextField sourcePayloadTextField;
     private TargetVariablePanel targetVariable;
@@ -28,9 +29,8 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JLabel secretWarningLabel;
 
     private JComboBox validationType;
-
-
     private InputValidator validators;
+
 
     public DecodeJsonWebTokenPropertiesDialog(final Frame parent, final DecodeJsonWebTokenAssertion assertion) {
         super(DecodeJsonWebTokenAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
@@ -53,7 +53,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(sourcePayloadTextField.getText().trim().isEmpty()){
+                if (sourcePayloadTextField.getText().trim().isEmpty()) {
                     return "Source Payload is required.";
                 }
                 return null;
@@ -62,7 +62,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(secretPasswordField.isEnabled() && (secretPasswordField.getPassword() == null || secretPasswordField.getPassword().length == 0)) {
+                if (secretPasswordField.isEnabled() && (secretPasswordField.getPassword() == null || secretPasswordField.getPassword().length == 0)) {
                     return "Secret is required.";
                 }
                 return null;
@@ -71,7 +71,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(sourceVariableTextField.isEnabled() && sourceVariableTextField.getText().trim().isEmpty()){
+                if (sourceVariableTextField.isEnabled() && sourceVariableTextField.getText().trim().isEmpty()) {
                     return "Recipient Key Context Variable is required.";
                 }
                 return null;
@@ -80,7 +80,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(keyIdTextField.isEnabled() && keyIdTextField.getText().trim().isEmpty()){
+                if (keyIdTextField.isEnabled() && keyIdTextField.getText().trim().isEmpty()) {
                     return "Key ID is required.";
                 }
                 return null;
@@ -141,7 +141,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             assertion.setPrivateKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(vt)) {
             assertion.setKeyType(keyType.getSelectedItem().toString());
-            if(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem())){
+            if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem())) {
                 assertion.setKeyId(keyIdTextField.getText().trim());
             }
         }

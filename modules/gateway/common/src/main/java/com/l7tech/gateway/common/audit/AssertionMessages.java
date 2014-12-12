@@ -1345,10 +1345,13 @@ public class AssertionMessages extends Messages {
     public static final M JWT_MISSING_SOURCE_PAYLOAD = m(10800, Level.WARNING, "Source payload is required.");
     public static final M JWT_MISSING_HEADERS = m(10801, Level.WARNING, "Assertion was instructed to {0} headers, but no headers were found.");
     public static final M JWT_PRIVATE_KEY_NOT_FOUND = m(10802, Level.WARNING, "Could not find the specified private key.");
-    public static final M JWT_KEYSTORE_ERROR = m(10803, Level.WARNING, "Could not access keystore to find private key.");
+    public static final M JWT_KEYSTORE_ERROR = m(10803, Level.WARNING, "Could not access keystore to find the specified key.");
     public static final M JWT_KEY_RECOVERY_ERROR = m(10804, Level.WARNING, "Could not recover private key.");
     public static final M JWT_JOSE_ERROR = m(10805, Level.WARNING, "JOSE Error: {0}");
     public static final M JWT_SOURCE_HEADERS_ERROR = m(10806, Level.WARNING, "Invalid header found: {0}");
+    public static final M JWT_INVALID_KEY = m(10807, Level.WARNING, "Invalid Key: The given key '{0} is not valid for use with '{1}.");
+
+    public static final M JWT_INVALID_KEY_USAGE = m(10808, Level.WARNING, "{0}");
 
     public static final M JWT_MISSING_JWS_HMAC_SECRET = m(10810, Level.WARNING, "Key is required when using creating MAC.");
     public static final M JWT_MISSING_JWS_PRIVATE_KEY = m(10811, Level.WARNING, "Private Key is required when using creating a digitial signature.");
@@ -1363,6 +1366,9 @@ public class AssertionMessages extends Messages {
     public static final M JWT_INVALID_ALGORITHM = m(10832, Level.WARNING, "Invalid algorithm: {0}");
     public static final M JWT_DECODE_MISSING_SECRET = m(10833, Level.WARNING, "Missing 'secret' to verify JWS signature.");
     public static final M JWT_GENERAL_DECODE_ERROR = m(10834, Level.WARNING, "Error decoding: {0}");
+
+    public static final M JWT_JWK_ERROR = m(10840, Level.WARNING, "Error creating JWK: {0}");
+    public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of '{0}'");
     // Highest ID reserved for AssertionMessages = 99999
 }
 

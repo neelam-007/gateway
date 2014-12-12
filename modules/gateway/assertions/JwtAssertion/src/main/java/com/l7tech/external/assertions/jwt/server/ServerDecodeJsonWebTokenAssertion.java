@@ -7,9 +7,13 @@ import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwtUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -29,6 +33,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateParsingException;
 import java.util.List;
 import java.util.Map;
 
@@ -60,22 +66,26 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         if(status.equals(AssertionStatus.FAILED)){
             return status;
         }
+        KeyUsageActivity keyUsageActivity = KeyUsageActivity.verifyXml;
         if (parts.length == JsonWebEncryption.COMPACT_SERIALIZATION_PARTS) {
             context.setVariable(assertion.getTargetVariablePrefix() + ".type", "JWE");
             context.setVariable(assertion.getTargetVariablePrefix() + ".encrypted_key", parts[1]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".initialization_vector", parts[2]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".cipher_text", parts[3]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".authentication_tag", parts[4]);
+            keyUsageActivity = KeyUsageActivity.decryptXml;
         } else if (parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS) {
             context.setVariable(assertion.getTargetVariablePrefix() + ".type", "JWS");
             context.setVariable(assertion.getTargetVariablePrefix() + ".payload", new String(BaseEncoding.base64Url().decode(parts[1])));
             context.setVariable(assertion.getTargetVariablePrefix() + ".signature", parts[2]);
+            keyUsageActivity = KeyUsageActivity.verifyXml;
         }
         final JsonWebStructure structure = getJWT(sourcePayload);
-        structure.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
         if (structure == null) {
             return AssertionStatus.FAILED;
         }
+        structure.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+        structure.setDoKeyValidation(true);
         final String validate = assertion.getValidationType();
         //no validation - just exit as we have the context vars set already
         if (JsonWebTokenConstants.VALIDATION_NONE.equals(validate)) {
@@ -91,7 +101,17 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         //validate with KEY
         Key key = null;
         if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(validate)) {
-            key = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+            try {
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                KeyUsageChecker.requireActivity(keyUsageActivity, ssgKeyEntry.getCertificate());
+                key = ssgKeyEntry.getPrivateKey();
+            } catch (KeyUsageException e) {
+                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
+            } catch (CertificateParsingException e) {
+                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Could not determine key usage: " + e.getMessage());
+            } catch (UnrecoverableKeyException e) {
+                logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
+            }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(validate)) {
             final String keySource = ExpandVariables.process(assertion.getPrivateKeySource(), variables, getAudit(), true);
             if (keySource == null || keySource.trim().isEmpty()) {

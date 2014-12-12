@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.jose4j.jwa.Algorithm;
 import org.jose4j.jwa.AlgorithmFactoryFactory;
@@ -27,16 +28,14 @@ import java.util.List;
 
 public final class JwtUtils {
 
-    public static Key getKeyFromStore(final SsgKeyStoreManager ssgKeyStoreManager, final Audit audit, final Goid goid, final String alias) {
+    public static SsgKeyEntry getKeyFromStore(final SsgKeyStoreManager ssgKeyStoreManager, final Audit audit, final Goid goid, final String alias) {
         try {
             final SsgKeyEntry ssgKeyEntry = ssgKeyStoreManager.findByPrimaryKey(goid).getCertificateChain(alias);
-            return ssgKeyEntry.getPrivateKey();
+            return ssgKeyEntry;
         } catch (FindException e) {
             audit.logAndAudit(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND);
         } catch (KeyStoreException e) {
             audit.logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
-        } catch (UnrecoverableKeyException e) {
-            audit.logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
         }
         return null;
     }
