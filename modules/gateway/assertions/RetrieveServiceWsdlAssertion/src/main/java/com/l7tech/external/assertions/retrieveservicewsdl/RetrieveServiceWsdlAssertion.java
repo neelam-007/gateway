@@ -5,6 +5,8 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.GLOBAL_ACTION_CLASSNAMES;
+
 /**
  * Retrieves a WSDL for a service and rewrites the endpoints and references.
  *
@@ -181,6 +183,9 @@ public class RetrieveServiceWsdlAssertion extends RoutingAssertion implements Us
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, ICON_FILE);
         meta.put(AssertionMetadata.POLICY_NODE_ICON, ICON_FILE);
+
+        meta.put(GLOBAL_ACTION_CLASSNAMES,
+                new String[] {"com.l7tech.external.assertions.retrieveservicewsdl.console.PublishWsdlQueryHandlerAction"});
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 

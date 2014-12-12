@@ -114,7 +114,7 @@ public class PublishReverseWebProxyWizard extends AbstractPublishServiceWizard {
         service.setName(config.getName());
         service.setSoap(false);
         service.setWssProcessingEnabled(false);
-        service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
+        service.setFolder((com.l7tech.objectmodel.folder.Folder) folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
         service.setHttpMethods(new HashSet<>(Arrays.asList(HttpMethod.values())));
         String routingUri = config.getRoutingUri();
         if (!routingUri.startsWith("/")) {

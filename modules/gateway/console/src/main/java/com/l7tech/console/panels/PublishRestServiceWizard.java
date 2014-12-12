@@ -115,7 +115,7 @@ public class PublishRestServiceWizard extends AbstractPublishServiceWizard {
 
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
-            service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
+            service.setFolder((com.l7tech.objectmodel.folder.Folder) folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
             final Policy servicePolicy = new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false);
             // service policy inherits same security zone as the service
             servicePolicy.setSecurityZone(authorizationPanel.getSelectedSecurityZone());
