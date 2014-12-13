@@ -324,7 +324,7 @@ public final class RootNode extends FolderNode {
             List<OrganizationHeader> allFolderEntities = new ArrayList<OrganizationHeader>();
             ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices(true);
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
-            EnumSet<PolicyType> policyTypes = EnumSet.of( INCLUDE_FRAGMENT, INTERNAL, GLOBAL_FRAGMENT, IDENTITY_PROVIDER_POLICY);
+            EnumSet<PolicyType> policyTypes = EnumSet.of( INCLUDE_FRAGMENT, INTERNAL, GLOBAL_FRAGMENT, IDENTITY_PROVIDER_POLICY, POLICY_BACKED_OPERATION );
             Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(policyTypes, true);
 
             allFolderEntities.addAll(serviceHeadersList);
