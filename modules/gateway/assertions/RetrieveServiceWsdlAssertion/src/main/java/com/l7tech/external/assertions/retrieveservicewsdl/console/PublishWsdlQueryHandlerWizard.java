@@ -43,6 +43,8 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
                                           @NotNull WizardStepPanel<WsdlQueryHandlerConfig> firstPanel) {
         super(parent, firstPanel, new WsdlQueryHandlerConfig(), "Publish WSDL Query Handler Wizard");
 
+        addValidationRulesDefinedInWizardStepPanel(firstPanel.getClass(), firstPanel);
+
         addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {
@@ -62,7 +64,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
         handlerService.setName(wizardInput.getServiceName());
         handlerService.setRoutingUri(wizardInput.getRoutingUri());
 
-        handlerService.getPolicy().setXml(generatePolicyXml());
+        handlerService.getPolicy().setXml(generateServicePolicyXml());
 
         handlerService.setSoap(false);
 
@@ -149,15 +151,15 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
         }
     }
 
-    private String generatePolicyXml() {    // TODO jwilliams: implement policy building - currently returns a stub
+    private String generateServicePolicyXml() {    // TODO jwilliams: implement policy building - currently returns a stub
         return WspWriter.getPolicyXml(
                 new AllAssertion(Arrays.<Assertion>asList(
                         new AuditDetailAssertion("Success! Published \"" + wizardInput.getServiceName() + "\"."))));
     }
 
     public static class WsdlQueryHandlerConfig {
-        private String serviceName;
-        private String routingUri;
+        private String serviceName = "WSDL Query Handler";
+        private String routingUri = "/wsdlQueryHandler";
 
         public String getServiceName() {
             return serviceName;

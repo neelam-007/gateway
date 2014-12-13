@@ -41,7 +41,7 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
 
         add(contentPanel);
 
-        urlPrefix = "http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]/";
+        urlPrefix = "http(s)://" + TopComponents.getInstance().ssgURL().getHost() + ":[port]";
 
         // listener updates service URL preview label as routing URI is updated
         routingUriTextField.getDocument().addDocumentListener(new DocumentListener() {
@@ -87,14 +87,11 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
 
                 if (StringUtils.isBlank(routingUri)) {
                     return resources.getString("routingUriNotSpecifiedError");
-                } else if (StringUtils.startsWith(routingUri, "/")) {
-                    return resources.getString("routingUriStartsWithSlashError");
-                } else if (routingUri.length() + 1 > ROUTING_URI_MAX_LENGTH) {
+                } else if (!StringUtils.startsWith(routingUri, "/")) {
+                    return resources.getString("routingUriMissingLeadingSlashError");
+                } else if (routingUri.length() > ROUTING_URI_MAX_LENGTH) {
                     return MessageFormat.format(resources.getString("routingUriTooLongError"), ROUTING_URI_MAX_LENGTH);
                 }
-
-                // prefix slash for further testing
-                routingUri = "/" + routingUri;
 
                 errorMsg = ValidationUtils.isValidUriString(routingUri);
 
@@ -108,12 +105,13 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     @Override
     public void storeSettings(WsdlQueryHandlerConfig settings) throws IllegalArgumentException {
         settings.setServiceName(serviceNameTextField.getText().trim());
-        settings.setRoutingUri("/" + routingUriTextField.getText().trim());
+        settings.setRoutingUri(routingUriTextField.getText().trim());
     }
 
     @Override
     public void readSettings(WsdlQueryHandlerConfig settings) throws IllegalArgumentException {
-        super.readSettings(settings);
+        serviceNameTextField.setText(settings.getServiceName());
+        routingUriTextField.setText(settings.getRoutingUri());
 
         updateUrlPreview();
     }
@@ -123,7 +121,7 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
 
         urlPreviewLabel.setText(urlPrefix + routingUri);
 
-        if (!routingUri.isEmpty() && ValidationUtils.isValidUri(routingUri)) {
+        if (!routingUri.isEmpty() && ValidationUtils.isValidUri(routingUri) && routingUri.startsWith("/")) {
             urlPreviewLabel.setForeground(Color.BLACK);
         } else {
             urlPreviewLabel.setForeground(Color.RED);
