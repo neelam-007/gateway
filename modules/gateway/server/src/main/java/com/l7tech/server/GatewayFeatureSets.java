@@ -91,6 +91,7 @@ public class GatewayFeatureSets {
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
     public static final String UI_PUBLISH_INTERNAL_WIZARD = "ui:PublishInternalWizard";
+    public static final String UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD = "ui:PublishWsdlQueryHandlerWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
@@ -321,6 +322,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
         GatewayFeatureSet uiPublishInternalWizard = ui(UI_PUBLISH_INTERNAL_WIZARD, "Enable the SSM Publish Internal Service Wizard");
+        GatewayFeatureSet uiPublishWsdlQueryHandlerWizard = ui(UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD, "Enable the SSM Publish Wsdl Query Handler Service Wizard");
         GatewayFeatureSet uiWsdlCreateWizard = ui(UI_WSDL_CREATE_WIZARD, "Enable the SSM WSDL Create Wizard");
         GatewayFeatureSet uiAuditWindow = ui(UI_AUDIT_WINDOW, "Enable the SSM Audit Window");
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
@@ -874,7 +876,8 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet retrieveServiceWsdlAssertion = fsr("set:RetrieveServiceWsdl:Assertions",
                 "Assertions to enable service WSDL retrieval functionality.",
-                mass("assertion:RetrieveServiceWsdl"));
+                mass("assertion:RetrieveServiceWsdl"),
+                uiPublishWsdlQueryHandlerWizard);
 
         // US (NCES)
         GatewayFeatureSet usAssertions =
