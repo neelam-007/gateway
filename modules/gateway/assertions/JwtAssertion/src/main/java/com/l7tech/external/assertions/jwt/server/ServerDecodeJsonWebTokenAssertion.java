@@ -66,19 +66,17 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         if(status.equals(AssertionStatus.FAILED)){
             return status;
         }
-        KeyUsageActivity keyUsageActivity = KeyUsageActivity.verifyXml;
         if (parts.length == JsonWebEncryption.COMPACT_SERIALIZATION_PARTS) {
             context.setVariable(assertion.getTargetVariablePrefix() + ".type", "JWE");
             context.setVariable(assertion.getTargetVariablePrefix() + ".encrypted_key", parts[1]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".initialization_vector", parts[2]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".cipher_text", parts[3]);
             context.setVariable(assertion.getTargetVariablePrefix() + ".authentication_tag", parts[4]);
-            keyUsageActivity = KeyUsageActivity.decryptXml;
         } else if (parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS) {
             context.setVariable(assertion.getTargetVariablePrefix() + ".type", "JWS");
             context.setVariable(assertion.getTargetVariablePrefix() + ".payload", new String(BaseEncoding.base64Url().decode(parts[1])));
             context.setVariable(assertion.getTargetVariablePrefix() + ".signature", parts[2]);
-            keyUsageActivity = KeyUsageActivity.verifyXml;
+
         }
         final JsonWebStructure structure = getJWT(sourcePayload);
         if (structure == null) {
@@ -103,12 +101,21 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(validate)) {
             try {
                 final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
-                KeyUsageChecker.requireActivity(keyUsageActivity, ssgKeyEntry.getCertificate());
-                key = ssgKeyEntry.getPrivateKey();
-            } catch (KeyUsageException e) {
-                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
-            } catch (CertificateParsingException e) {
-                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Could not determine key usage: " + e.getMessage());
+                //jws
+                if(parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS){
+                    try {
+                        KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, ssgKeyEntry.getCertificate());
+                        key = ssgKeyEntry.getPublic();
+                    } catch (KeyUsageException e) {
+                        logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
+                    } catch (CertificateParsingException e) {
+                        logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Could not determine key usage: " + e.getMessage());
+                    }
+                }
+                //jwe
+                else if (parts.length == JsonWebEncryption.COMPACT_SERIALIZATION_PARTS){
+                    key = ssgKeyEntry.getPrivateKey();
+                }
             } catch (UnrecoverableKeyException e) {
                 logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
             }

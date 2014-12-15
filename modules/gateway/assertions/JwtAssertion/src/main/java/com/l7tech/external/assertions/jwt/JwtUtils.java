@@ -6,21 +6,16 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import org.jose4j.jwa.Algorithm;
-import org.jose4j.jwa.AlgorithmFactoryFactory;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
 import org.jose4j.lang.JoseException;
 
 import java.io.ByteArrayInputStream;
 import java.security.Key;
 import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -40,11 +35,10 @@ public final class JwtUtils {
         return null;
     }
 
-    public static Key getPublicKeyFromPem(final Audit audit, final String pem) {
+    public static X509Certificate getPublicKeyFromPem(final Audit audit, final String pem) {
         try {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(pem.getBytes()));
-            return cert.getPublicKey();
+            return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(pem.getBytes()));
         } catch (CertificateException e) {
             audit.logAndAudit(AssertionMessages.JWT_JWE_PUBLIC_KEY_ERROR);
         }

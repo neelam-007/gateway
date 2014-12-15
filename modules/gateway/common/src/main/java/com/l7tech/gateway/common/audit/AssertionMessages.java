@@ -1349,7 +1349,7 @@ public class AssertionMessages extends Messages {
     public static final M JWT_KEY_RECOVERY_ERROR = m(10804, Level.WARNING, "Could not recover private key.");
     public static final M JWT_JOSE_ERROR = m(10805, Level.WARNING, "JOSE Error: {0}");
     public static final M JWT_SOURCE_HEADERS_ERROR = m(10806, Level.WARNING, "Invalid header found: {0}");
-    public static final M JWT_INVALID_KEY = m(10807, Level.WARNING, "Invalid Key: The given key '{0} is not valid for use with '{1}.");
+    public static final M JWT_INVALID_KEY = m(10807, Level.WARNING, "Invalid Key: The given key {0} is not valid for use with {1}.");
 
     public static final M JWT_INVALID_KEY_USAGE = m(10808, Level.WARNING, "{0}");
 
@@ -1364,10 +1364,10 @@ public class AssertionMessages extends Messages {
     public static final M JWT_DECODE_ERROR = m(10830, Level.WARNING, "Source payload is neither JWS or JWE.");
     public static final M JWT_DECODE_INVALID_TYPE = m(10831, Level.WARNING, "Can not decode JWE using a secret, please reconfigure the assertion to use a Recipient key or JWK/JWKS.");
     public static final M JWT_INVALID_ALGORITHM = m(10832, Level.WARNING, "Invalid algorithm: {0}");
-    public static final M JWT_DECODE_MISSING_SECRET = m(10833, Level.WARNING, "Missing 'secret' to verify JWS signature.");
+    public static final M JWT_DECODE_MISSING_SECRET = m(10833, Level.WARNING, "Missing secret to verify JWS signature.");
     public static final M JWT_GENERAL_DECODE_ERROR = m(10834, Level.WARNING, "Error decoding: {0}");
 
-    public static final M JWT_JWK_ERROR = m(10840, Level.WARNING, "Error creating JWK: {0}");
+    public static final M JWT_JWK_ERROR = m(10840, Level.WARNING, "Error creating JWKS: {0}");
     public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
