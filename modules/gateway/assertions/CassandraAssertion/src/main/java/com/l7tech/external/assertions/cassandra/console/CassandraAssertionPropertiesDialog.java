@@ -232,7 +232,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
                                 }
                             }
 
-                            maxRecordsSpinner.setValue(getIntOrDefault(maxRecords, LOWER_BOUND_MAX_RECORDS));
+                            maxRecordsSpinner.setValue(getIntOrDefault(maxRecords, CassandraQueryAssertion.MAX_RECORDS_DEF));
                         } catch (FindException e) {
                             JOptionPane.showMessageDialog(CassandraAssertionPropertiesDialog.this, resources.getString("message.error.find.maxrecords.prop"), "Error", JOptionPane.ERROR);
                             maxRecordsSpinner.setValue(LOWER_BOUND_MAX_RECORDS);

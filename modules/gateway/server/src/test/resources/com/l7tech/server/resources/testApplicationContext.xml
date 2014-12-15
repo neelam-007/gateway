@@ -417,6 +417,8 @@
 
     <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerStub"/>
 
+    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerStub"/>
+
     <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.policy.MockEncapsulatedAssertionConfigManager"/>
 
     <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerStub">

@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.cassandra.server;
 
 import static org.junit.Assert.*;
 
+import com.ca.datasources.cassandra.CassandraQueryManager;
+import com.ca.datasources.cassandra.CassandraQueryManagerStub;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.datastax.driver.core.*;
@@ -54,6 +56,7 @@ public class ServerCassandraQueryAssertionTest {
     @Before
     public void setup() throws Exception {
         CassandraConnectionManagerStub cassandraConnectionManager = (CassandraConnectionManagerStub)applicationContext.getBean("cassandraConnectionManager", CassandraConnectionManager.class);
+        CassandraQueryManagerStub cassandraQueryManager = (CassandraQueryManagerStub)applicationContext.getBean("cassandraQueryManager", CassandraQueryManager.class);
         mockPolicyEnforcementContext = mock(PolicyEnforcementContext.class);
         mockCassandraConnectionHolder = mock(CassandraConnectionHolder.class);
         mockResultSetFuture = mock(ResultSetFuture.class);
@@ -66,6 +69,8 @@ public class ServerCassandraQueryAssertionTest {
         mockPreparedStatement = mock(PreparedStatement.class);
         mockBoundStatement = mock(BoundStatement.class);
         cassandraConnectionManager.setMockConnection(mockCassandraConnectionHolder);
+        cassandraQueryManager.setPreparedStatement(mockPreparedStatement);
+        cassandraQueryManager.setBoundStatement(mockBoundStatement);
         when(mockCassandraConnectionHolder.getSession()).thenReturn(mockSession);
         when(mockResultSetFuture.getUninterruptibly()).thenReturn(mockResultSet);
     }
@@ -77,7 +82,7 @@ public class ServerCassandraQueryAssertionTest {
         cassandraAssertion.setPrefix(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX);
         cassandraAssertion.setQueryDocument(queryDocument);
 
-        when(mockSession.executeAsync(any(BoundStatement.class))).thenReturn(mockResultSetFuture);
+        when(mockSession.executeAsync(mockBoundStatement)).thenReturn(mockResultSetFuture);
         when(mockSession.prepare(queryDocument)).thenReturn(mockPreparedStatement);
         when(mockPreparedStatement.getConsistencyLevel()).thenReturn(ConsistencyLevel.LOCAL_QUORUM);
         when(mockPreparedStatement.getSerialConsistencyLevel()).thenReturn(ConsistencyLevel.LOCAL_SERIAL);
@@ -105,7 +110,6 @@ public class ServerCassandraQueryAssertionTest {
         verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".otk_token_id", new Object[]{"bbc3cf8d-63d0-4a21-b57e-2ae9e0646b9e"});
     }
 
-    @Ignore("Needs to be fixed")
     @Test
     public void testPreparedStatementQueryExecutionWithBindVariables() throws Exception {
         CassandraQueryAssertion cassandraAssertion = new CassandraQueryAssertion();
@@ -116,7 +120,7 @@ public class ServerCassandraQueryAssertionTest {
         Map<String, Object> varMap = new HashMap();
         varMap.put("myvar", "bbc3cf8d-63d0-4a21-b57e-2ae9e0646b9e");
         when(mockPolicyEnforcementContext.getVariableMap(eq(new String[]{"myVar"}), any(Audit.class))).thenReturn(varMap);
-        when(mockSession.execute(any(BoundStatement.class))).thenReturn(mockResultSet);
+        when(mockSession.executeAsync(mockBoundStatement)).thenReturn(mockResultSetFuture);
         when(mockSession.prepare("Select * from oauth_token where otk_token_id = ?")).thenReturn(mockPreparedStatement);
         PreparedId mockPreparedId = new MockPreparedId(null, mockColumnDefinitions, mockColumnDefinitions, new int[0] , ProtocolVersion.V3);
         when(mockPreparedStatement.getPreparedId()).thenReturn(mockPreparedId);
@@ -142,6 +146,8 @@ public class ServerCassandraQueryAssertionTest {
         AssertionStatus status = fixture.checkRequest(mockPolicyEnforcementContext);
 
         assertEquals(AssertionStatus.NONE, status);
+        verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".queryresult.count", 1);
+        verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".otk_token_id", new Object[]{"bbc3cf8d-63d0-4a21-b57e-2ae9e0646b9e"});
     }
 
 

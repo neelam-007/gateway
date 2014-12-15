@@ -39,12 +39,13 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     public static final String DEFAULT_QUERY_PREFIX = "cassandraQuery";
     public static final String QUERYRESULT_COUNT = ".queryresult.count";
     public static final String VARIABLE_XML_RESULT = ".xmlResult";
+    public static final int MAX_RECORDS_DEF = 10;
 
     private String connectionName;
     private String queryDocument;
     private boolean failIfNoResults = false;
     private boolean isGenerateXmlResult = false;
-    private int fetchSize;
+    private int fetchSize = MAX_RECORDS_DEF;
     private Map<String, String> namingMap = new HashMap<>();
 
     String prefix = DEFAULT_QUERY_PREFIX;

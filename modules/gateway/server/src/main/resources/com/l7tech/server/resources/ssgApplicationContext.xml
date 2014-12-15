@@ -1950,7 +1950,7 @@
         <constructor-arg ref="secureRandom" />
     </bean>
 
-    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManager"/>
+    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerImpl"/>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
