@@ -4,6 +4,9 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gui.SelectableTableModel;
@@ -17,9 +20,12 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Level;
@@ -44,7 +50,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private final SolutionKitAdmin solutionKitAdmin;
     private SolutionKitsConfig settings = null;
-    private Map<SolutionKit, String> testMappingResults = null;
+    private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
 
     public SolutionKitSelectionPanel() {
         super(null);
@@ -74,6 +80,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
+        testMappings.clear();
         solutionKitsModel.deselectAll();
         settings.setSelectedSolutionKits(Collections.<SolutionKit>emptySet());
         solutionKitsModel.setRows(new ArrayList<>(settings.getLoadedSolutionKits()));
@@ -83,42 +90,41 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
         settings.setSelectedSolutionKits(new HashSet<>(solutionKitsModel.getSelected()));
-        settings.setTetMappingResults(testMappingResults);
+        settings.setTestMappings(testMappings);
     }
 
     @Override
     public boolean onNextButton() {
-        Map<SolutionKit, String> solutionsKits = new HashMap<>();
-        for (SolutionKit aSolutionKit : solutionKitsModel.getSelected()) {
-            solutionsKits.put(aSolutionKit, settings.getMigrationBundle(aSolutionKit));
-        }
-
         boolean success = false;
         String errorMessage = "";
 
         // todo (kpak) - handle multiple kits. for now, install first one.
         //
-        Map.Entry<SolutionKit, String> entry = solutionsKits.entrySet().iterator().next();
+        SolutionKit solutionKit = solutionKitsModel.getSelected().get(0);
+        String bundle = settings.getBundleAsString(solutionKit);
         try {
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Testing Solution Kit",
                 "The gateway is testing selected solution kit(s)",
-                solutionKitAdmin.testInstall(entry.getKey(), entry.getValue()));
+                solutionKitAdmin.testInstall(solutionKit, bundle));
 
             if (result.isLeft()) {
                 errorMessage = result.left();
                 logger.log(Level.WARNING, errorMessage);
             } else if (result.isRight()) {
-                testMappingResults = new HashMap<>();
-                testMappingResults.put(entry.getKey(), result.right());
+                Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(result.right())));
+                Mappings mappings = (Mappings)item.getContent();
+                testMappings.put(solutionKit, mappings);
                 success = true;
             }
-        } catch (InvocationTargetException e) {
+        } catch (InvocationTargetException | IOException e) {
+            testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
         } catch (InterruptedException e) {
+            testMappings.clear();
             return false;
         }
 
@@ -187,5 +193,4 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         setLayout(new BorderLayout());
         add(mainPanel);
     }
-
 }

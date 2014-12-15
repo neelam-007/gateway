@@ -3,6 +3,8 @@ package com.l7tech.console.panels.solutionkit.install;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -17,15 +19,12 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.JTextComponent;
 import javax.xml.XMLConstants;
+import javax.xml.transform.dom.DOMSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -59,7 +58,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private JTextField fileTextField;
     private JButton fileButton;
 
-    private final Map<SolutionKit, String> loadedSolutionKits = new HashMap<>();
+    private final Map<SolutionKit, Bundle> loaded = new HashMap<>();
 
     public SolutionKitLoadPanel() {
         super(null);
@@ -88,12 +87,12 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        loadedSolutionKits.clear();
+        loaded.clear();
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        settings.setLoadedSolutionKits(loadedSolutionKits);
+        settings.setLoadedSolutionKits(loaded);
     }
 
     @Override
@@ -130,7 +129,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                 entry = zis.getNextEntry();
             }
         } catch (IOException | SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
-            loadedSolutionKits.clear();
+            loaded.clear();
             final String msg = "Unable to open solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
             DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Error", JOptionPane.ERROR_MESSAGE, null);
@@ -202,8 +201,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         if (bundleEle.getAttributeNodeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "l7") == null) {
             bundleEle.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + "l7", SK_NS);
         }
-        String migrationBundle = XmlUtil.nodeToString(bundleEle);
-
-        loadedSolutionKits.put(solutionKit, migrationBundle);
+        DOMSource source = new DOMSource();
+        source.setNode(bundleEle);
+        Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, source, true);
+        loaded.put(solutionKit, bundle);
     }
 }

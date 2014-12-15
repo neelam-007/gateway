@@ -33,6 +33,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     }
 
     private void initialize() {
+        // todo (kpak) - change to use SolutionKitMappingPanel.
         mappingsXmlContainer = XMLContainerFactory.createXmlContainer(true);
         mappingsXmlContainer.getUIAccessibility().setPopupAvailable(false);
         mappingsXmlContainer.setEditableDocumentMode(false);

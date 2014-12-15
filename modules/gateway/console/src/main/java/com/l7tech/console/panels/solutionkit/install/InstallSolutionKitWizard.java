@@ -17,8 +17,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,11 +54,6 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             this.getSelectedWizardPanel().storeSettings(wizardInput);
         }
 
-        Map<SolutionKit, String> solutionsKits = new HashMap<>();
-        for (SolutionKit aSolutionKit : wizardInput.getSelectedSolutionKits()) {
-            solutionsKits.put(aSolutionKit, wizardInput.getMigrationBundle(aSolutionKit));
-        }
-
         boolean cancelled = false;
         boolean successful = false;
         String msg = "";
@@ -68,14 +61,15 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         try {
             // todo (kpak) - handle multiple kits. for now, install first one.
             //
-            Map.Entry<SolutionKit, String> entry = solutionsKits.entrySet().iterator().next();
+            SolutionKit solutionKit = wizardInput.getSelectedSolutionKits().iterator().next();
+            String bundle = wizardInput.getBundleAsString(solutionKit);
 
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Install Solution Kit",
                 "The gateway is installing selected solution kit(s)",
-                solutionKitAdmin.install(entry.getKey(), entry.getValue()));
+                solutionKitAdmin.install(solutionKit, bundle));
 
             if (result.isLeft()) {
                 msg = result.left();

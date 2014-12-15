@@ -1,51 +1,76 @@
 package com.l7tech.console.panels.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 
+import javax.xml.transform.dom.DOMResult;
+import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *  POJO to store user inputs for InstallSolutionKitWizard.
  */
 public class SolutionKitsConfig {
-    private Map<SolutionKit, String> loadedSolutionKits = new HashMap<>();
-    private Set<SolutionKit> selectedSolutionKits = new HashSet<>();
-    private Map<SolutionKit, String> testMappingResults = new HashMap<>();
+    private static final Logger logger = Logger.getLogger(SolutionKitsConfig.class.getName());
+
+    private Map<SolutionKit, Bundle> loaded = new HashMap<>();
+    private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
+    private Set<SolutionKit> selected = new HashSet<>();
 
     public SolutionKitsConfig() {
     }
 
     @NotNull
     public Set<SolutionKit> getLoadedSolutionKits() {
-        return loadedSolutionKits.keySet();
+        return loaded.keySet();
     }
 
-    @NotNull
-    public String getMigrationBundle(@NotNull SolutionKit solutionKit) {
-        return loadedSolutionKits.get(solutionKit);
+    public void setLoadedSolutionKits(@NotNull Map<SolutionKit, Bundle> loaded) {
+        this.loaded = loaded;
     }
 
-    public void setLoadedSolutionKits(@NotNull Map<SolutionKit, String> loadedSolutionKits) {
-        this.loadedSolutionKits = loadedSolutionKits;
+    public Bundle getBundle(@NotNull SolutionKit solutionKit) {
+        return loaded.get(solutionKit);
+    }
+
+    public String getBundleAsString(@NotNull SolutionKit solutionKit) {
+        Bundle bundle = getBundle(solutionKit);
+        if (bundle != null) {
+            DOMResult result = new DOMResult();
+            try {
+                MarshallingUtils.marshal(bundle, result, false);
+                return XmlUtil.nodeToString(result.getNode());
+            } catch (IOException e) {
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 
     @NotNull
     public Set<SolutionKit> getSelectedSolutionKits() {
-        return selectedSolutionKits;
+        return selected;
     }
 
     public void setSelectedSolutionKits(@NotNull Set<SolutionKit> selectedSolutionKits) {
-        this.selectedSolutionKits = selectedSolutionKits;
+        this.selected = selectedSolutionKits;
     }
 
-    @NotNull
-    public Map<SolutionKit, String> getTestMappingResults() {
-        return testMappingResults;
+    public Mappings getTestMappings(@NotNull SolutionKit solutionKit) {
+        return testMappings.get(solutionKit);
     }
 
-    public void setTetMappingResults(@NotNull Map<SolutionKit, String> testMappingResults) {
-        this.testMappingResults = testMappingResults;
+    public void setTestMappings(@NotNull Map<SolutionKit, Mappings> testMappings) {
+        this.testMappings = testMappings;
     }
 }
