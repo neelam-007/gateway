@@ -1,5 +1,6 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -76,6 +77,11 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public JdbcConnection getJdbcConnection( final String name ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public CassandraConnection getCassandraConnection(final String name) throws FindException {
         return null;
     }
 

@@ -67,6 +67,12 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     private PermissionFlags flags;
     private boolean confirmed;
 
+    public CassandraConnectionPropertiesDialog(Frame owner, CassandraConnection connection) {
+        super(owner, resources.getString("dialog.title.manage.cassandra.connection.properties"), true);
+        this.connection = connection;
+        initialize();
+    }
+
     public CassandraConnectionPropertiesDialog(Dialog owner, CassandraConnection connection) {
         super(owner, resources.getString("dialog.title.manage.cassandra.connection.properties"), true);
         this.connection = connection;

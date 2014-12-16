@@ -2307,6 +2307,7 @@
         <constructor-arg ref="resourceEntryManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="jdbcConnectionManager"/>
+        <constructor-arg ref="cassandraEntityManager"/>
     </bean>
 
     <bean id="serviceExternalEntityHeaderEnhancer"
