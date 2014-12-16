@@ -45,6 +45,8 @@ public class BundleConflictComponent extends JPanel {
     private JPanel existingEntityTitlePanel;
     private JPanel entityNotFoundTitlePanel;
     private JPanel resolutionErrorTitlePanel;
+    private JPanel deletedEntityTitlePanel;
+    private JPanel deletedEntityPanel;
 
     final private Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions;
 
@@ -60,6 +62,7 @@ public class BundleConflictComponent extends JPanel {
         // hide actionable title panels if there's no actionable content
         existingEntityTitlePanel.setVisible(existingEntityPanel.getComponentCount() > 0);
         entityNotFoundTitlePanel.setVisible(entityNotFoundPanel.getComponentCount() > 0);
+        deletedEntityTitlePanel.setVisible(deletedEntityPanel.getComponentCount() > 0);
         resolutionErrorTitlePanel.setVisible(resolutionErrorPanel.getComponentCount() > 0);
 
         // initialize to not show infoOnlyConflictPanel (until one of the info-only list below is not empty)
@@ -104,6 +107,9 @@ public class BundleConflictComponent extends JPanel {
 
         entityNotFoundPanel = new JPanel();
         entityNotFoundPanel.setLayout(new BoxLayout(entityNotFoundPanel, BoxLayout.Y_AXIS));
+
+        deletedEntityPanel = new JPanel();
+        deletedEntityPanel.setLayout(new BoxLayout(deletedEntityPanel, BoxLayout.Y_AXIS));
 
         resolutionErrorPanel = new JPanel();
         resolutionErrorPanel.setLayout(new BoxLayout(resolutionErrorPanel, BoxLayout.Y_AXIS));
@@ -161,6 +167,9 @@ public class BundleConflictComponent extends JPanel {
                             break;
                         case TargetNotFound:
                             entityNotFoundPanel.add(targetDetail.getContentPane());
+                            break;
+                        case EntityDeleted:
+                            deletedEntityPanel.add(targetDetail.getContentPane());
                             break;
                         default:
                             resolutionErrorPanel.add(new JLabel(migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() +

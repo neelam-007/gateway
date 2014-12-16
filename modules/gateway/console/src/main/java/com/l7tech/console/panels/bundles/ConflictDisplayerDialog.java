@@ -16,12 +16,12 @@ import java.util.Properties;
 public class ConflictDisplayerDialog extends JDialog {
     public static enum MappingAction {
         // com.l7tech.server.bundling.EntityMappingInstructions.MappingAction not accessible in console packages
-        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore
+        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Delete, Ignore
     }
 
     public static enum ErrorType {
         // com.l7tech.gateway.api.Mapping.ErrorType not accessible in console packages
-        TargetExists, TargetNotFound, UniqueKeyConflict, CannotReplaceDependency, ImproperMapping, InvalidResource, Unknown
+        TargetExists, TargetNotFound, EntityDeleted, UniqueKeyConflict, CannotReplaceDependency, ImproperMapping, InvalidResource, Unknown
     }
 
     public static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";

@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.EntityDeleted;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetExists;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetNotFound;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.MAPPING_TARGET_ID_ATTRIBUTE;
@@ -63,6 +64,7 @@ public class MigrationEntityDetailPanel {
     private JComboBox entitiesComboBox;
     private JRadioButton createRadioButton;
     private JButton compareEntityButton;
+    private JCheckBox deleteEntityCheckBox;
     private EntityType targetType;
     private String policyResourceXml;
     private String existingEntityXml;
@@ -103,6 +105,7 @@ public class MigrationEntityDetailPanel {
 
         entitiesComboBox.setVisible(errorType == TargetNotFound);
         createEntityButton.setVisible(errorType == TargetNotFound);
+        deleteEntityCheckBox.setVisible(errorType == EntityDeleted);
 
         // default to "Use Existing", unless there's a version modifier (prefix) default to "Create New"
         if (versionModified) {
@@ -168,6 +171,21 @@ public class MigrationEntityDetailPanel {
                         properties.put(MAPPING_TARGET_ID_ATTRIBUTE, securePassword.getGoid().toString());
                         selectedMigrationResolutions.put(idLabel.getText(), new Pair<>(NewOrExisting, properties));
                     }
+                }
+            }
+        });
+
+        deleteEntityCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final String id = idLabel.getText();
+
+                if (deleteEntityCheckBox.isSelected()) {
+                    Properties properties = new Properties();
+                    properties.setProperty(id, targetType.toString());
+                    selectedMigrationResolutions.put(id, new Pair<>(Delete, properties));
+                } else {
+                    selectedMigrationResolutions.remove(id);
                 }
             }
         });
@@ -456,7 +474,9 @@ public class MigrationEntityDetailPanel {
         }
 
         if (policyResourceXml.equals(currentActiveEntityXml)) {
-            logger.fine("The existing entity XML is the same as the updated entity XML, so 'Compare Entity' is disabled.");
+            String message = "The existing entity is identical to the updated entity, so comparing entity is not necessary.";
+            logger.fine(message);
+            compareEntityButton.setToolTipText(message);
             return false;
         }
 

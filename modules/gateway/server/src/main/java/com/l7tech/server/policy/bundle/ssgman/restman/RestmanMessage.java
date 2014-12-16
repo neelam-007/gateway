@@ -158,6 +158,11 @@ public class RestmanMessage {
         return bundleReferenceItems;
     }
 
+    public boolean hasRootNodeItem() {
+        final List<Element> rootNodeIds = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='0000000000000000ffffffffffffec76']//l7:Id", getNamespaceMap());
+        return rootNodeIds != null && rootNodeIds.size() == 1;
+    }
+
     public static Element setL7XmlNs(@NotNull final Element element) {
         element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLNS_L7, GatewayManagementDocumentUtilities.getNamespaceMap().get(NS_L7));
         return element;
@@ -194,6 +199,26 @@ public class RestmanMessage {
 
         if (policies.size() > 0) {
             return DomUtils.getTextValue(policies.get(0)).trim();
+        } else {
+            return null;
+        }
+    }
+
+    public String getEntityName(@NotNull final String id) {
+        final List<Element> names = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Name", getNamespaceMap());
+
+        if (names.size() > 0) {
+            return DomUtils.getTextValue(names.get(0)).trim();
+        } else {
+            return null;
+        }
+    }
+
+    public String getEntityType(@NotNull final String id) {
+        final List<Element> types = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Type", getNamespaceMap());
+
+        if (types.size() > 0) {
+            return DomUtils.getTextValue(types.get(0)).trim();
         } else {
             return null;
         }

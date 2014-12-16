@@ -16,6 +16,7 @@ import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -23,13 +24,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXParseException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import static com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstaller.InstallationException;
 import static com.l7tech.objectmodel.EntityType.*;
@@ -85,7 +85,10 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 }
 
                 // get mappings, set action, add Properties, add Property
+                final List<String> entityIdsInBundleMapping = new ArrayList<>();
                 for (Element mapping : requestMessage.getMappings()) {
+                    entityIdsInBundleMapping.add(mapping.getAttribute("srcId"));
+
                     Element propertiesElement = DomUtils.findFirstChildElementByName(mapping, MGMT_VERSION_NAMESPACE, "Properties");
                     if (propertiesElement == null) {
                         propertiesElement = DomUtils.createAndAppendElement(mapping, "Properties");
@@ -127,6 +130,9 @@ public class MigrationBundleInstaller extends BaseInstaller {
                         dryRunEvent.addMigrationErrorMapping(convertToDryRunResult(mappingError, requestMessage));
                     }
                 }
+
+                // Find entities deleted from the bundle, while they are still in the target gateway.
+                findDeletedEntities(dryRunEvent, entityIdsInBundleMapping, requestMessage.hasRootNodeItem());
             } catch (IOException e) {
                 throw new RuntimeException("Unexpected exception serializing bundle document", e);
             } catch (UnexpectedManagementResponse e) {
@@ -173,6 +179,55 @@ public class MigrationBundleInstaller extends BaseInstaller {
         final String policyResourceXml = getPolicyXmlForErrorMapping(errorTypeStr, EntityType.valueOf(entityTypeStr), srcId, restmanMessage);
 
         return new MigrationDryRunResult(errorTypeStr, entityTypeStr, srcId, errorMessage, name, policyResourceXml);
+    }
+
+    /**
+     * Find entities deleted from the bundle, while they are still in the target gateway.
+     */
+    private void findDeletedEntities(final DryRunInstallPolicyBundleEvent dryRunEvent, final List<String> entityIdsInBundleMapping, final boolean isRootNodeTargetFold)
+        throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
+        if (entityIdsInBundleMapping == null || entityIdsInBundleMapping.isEmpty()) return;
+
+        final String targetFoldGoid = isRootNodeTargetFold? entityIdsInBundleMapping.get(0) : entityIdsInBundleMapping.get(1);
+        if (targetFoldGoid == null || targetFoldGoid.trim().isEmpty()) return;
+
+        final String requestXml = "";
+        final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
+        pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + "?folder=" + targetFoldGoid);
+        pec.setVariable(VAR_RESTMAN_ACTION, "GET");
+
+        final Pair<AssertionStatus, RestmanMessage> restmanRetrievingEntitiesResult = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
+        final RestmanMessage restmanMessage = restmanRetrievingEntitiesResult.right;
+        if (restmanMessage == null) {
+            throw new RuntimeException("Retrieving Entities failed: response from restman is null.");
+        } else if (restmanMessage.hasMappingError()) {
+            try {
+                throw new RuntimeException("Retrieving Entities failed: " + restmanMessage.getMappingErrorsAsString());
+            } catch (IOException e) {
+                throw new RuntimeException("Retrieving Entities failed:", e);
+            }
+        }
+
+        List<String> targetEntityIds = new ArrayList<>();
+        for (Element mapping: restmanMessage.getMappings()) {
+            targetEntityIds.add(mapping.getAttribute("srcId"));
+        }
+
+        // Make a copy of targetEntityIds
+        List<String> deletedEntityIds = new ArrayList<>();
+        deletedEntityIds.addAll(targetEntityIds);
+
+        // Remove from targetEntityIds all of its elements that are not contained in entityIdsInBundleMapping
+        targetEntityIds.retainAll(entityIdsInBundleMapping);
+
+        // Get all elements not contained in entityIdsInBundleMapping
+        deletedEntityIds.removeAll(targetEntityIds);
+
+        for (String srcId: deletedEntityIds) {
+            dryRunEvent.addMigrationErrorMapping(
+                new MigrationDryRunResult("EntityDeleted", restmanMessage.getEntityType(srcId), srcId, null, restmanMessage.getEntityName(srcId), null)
+            );
+        }
     }
 
     /**
@@ -229,10 +284,10 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 }
             }
 
+            final Map<String, String> deletedEntities = new HashMap<>();
             String requestXml;
+            final RestmanMessage requestMessage = new RestmanMessage(bundle);
             try {
-                final RestmanMessage requestMessage = new RestmanMessage(bundle);
-
                 // handle version modifier
                 final String versionModifier = context.getInstallationPrefix();
                 if (isValidVersionModifier(versionModifier)) {
@@ -244,7 +299,13 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 if (migrationOverrides != null && !migrationOverrides.isEmpty()) {
                     for (String id : migrationOverrides.keySet()) {
                         Pair<String, Properties> mapping = migrationOverrides.get(id);
-                        requestMessage.setMappingAction(id, EntityMappingInstructions.MappingAction.valueOf(mapping.left), mapping.right);
+
+                        EntityMappingInstructions.MappingAction mappingAction = EntityMappingInstructions.MappingAction.valueOf(mapping.left);
+                        requestMessage.setMappingAction(id, mappingAction, mapping.right);
+
+                        if (mappingAction == EntityMappingInstructions.MappingAction.Delete) {
+                            deletedEntities.put(id, (String) mapping.right.get(id));
+                        }
                     }
                 }
 
@@ -254,7 +315,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
             }
 
             // set policy revision comment
-            final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
+            PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
             final String policyRevisionComment = getPolicyRevisionComment(bundleInfo);
             try {
                 pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + "?versionComment=" + URLEncoder.encode(policyRevisionComment, UTF_8));
@@ -273,6 +334,98 @@ public class MigrationBundleInstaller extends BaseInstaller {
                     throw new RuntimeException(" installation failed. ", e);
                 }
             }
+
+            // Delete entities selected by users from the migration conflicts window
+            requestXml = "";
+            pec = restmanInvoker.getContext(requestXml);
+            for (String deletedEntityId: deletedEntities.keySet()) {
+                String entityTypeName = deletedEntities.get(deletedEntityId);
+
+                pec.setVariable(VAR_RESTMAN_URI, "1.0/" + getEntityTypeUriName(entityTypeName) + "/" + deletedEntityId);
+                pec.setVariable(VAR_RESTMAN_ACTION, "DELETE");
+
+                try {
+                    restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
+                } catch (Exception e) {
+                    boolean throwException = true;
+                    if (ExceptionUtils.causedBy(e, SAXParseException.class)) {
+                        String errorMessage = e.getMessage();
+                        if (errorMessage != null && errorMessage.contains("Premature end of file")) {
+                            // For REST Management deletion, there is no response message back.
+                            // So in this case, ignore a SAXParseException exception with a message "Premature end of file".
+                            throwException = false;
+                        }
+                    }
+                    if (throwException) {
+                        throw e;
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * Get a uri name for an entity type
+     * Note: "Assertion Security Zone", "Group", "Interface Tag", and "Resource Document" are not handled in this method.
+     * In REST Management API, "Assertion Security Zone" and "Group" don't have "Delete" operation.
+     * In EntityType, there are no entity types matched to "Interface Tag" and "Resource Document", even though they are defined in REST Management API.
+     *
+     * @param entityTypeName: the name of an entity type
+     * @return a uri string representing entity type
+     */
+    private String getEntityTypeUriName(@NotNull String entityTypeName) {
+        EntityType entityType = EntityType.valueOf(entityTypeName);
+
+        if (entityType == EntityType.SSG_ACTIVE_CONNECTOR) {
+            return "activeConnectors";
+        } else if (entityType == EntityType.TRUSTED_CERT) {
+            return "trustedCertificates";
+        } else if (entityType == EntityType.CLUSTER_PROPERTY) {
+            return "clusterProperties";
+        } else if (entityType == EntityType.CUSTOM_KEY_VALUE_STORE) {
+            return "customKeyValues";
+        } else if (entityType == EntityType.EMAIL_LISTENER) {
+            return "emailListeners";
+        } else if (entityType == EntityType.ENCAPSULATED_ASSERTION) {
+            return "encapsulatedAssertions";
+        } else if (entityType == EntityType.FOLDER) {
+            return "folders";
+        } else if (entityType == EntityType.GENERIC) {
+            return "genericEntities";
+        } else if (entityType == EntityType.HTTP_CONFIGURATION) {
+            return "httpConfigurations";
+        } else if (entityType == EntityType.ID_PROVIDER_CONFIG) {
+            return "identityProviders";
+        } else if (entityType == EntityType.JDBC_CONNECTION) {
+            return "jdbcConnections";
+        } else if (entityType == EntityType.JMS_CONNECTION) {
+            return "jmsDestinations";
+        } else if (entityType == EntityType.SSG_CONNECTOR) {
+            return "listenPorts";
+        } else if (entityType == EntityType.POLICY) {
+            return "policies";
+        } else if (entityType == EntityType.POLICY_ALIAS) {
+            return "policyAliases";
+        } else if (entityType == EntityType.SSG_KEY_ENTRY) {
+            return "privateKeys";
+        } else if (entityType == EntityType.SERVICE) {
+            return "services";
+        } else if (entityType == EntityType.REVOCATION_CHECK_POLICY) {
+            return "revocationCheckingPolicies";
+        } else if (entityType == EntityType.RBAC_ROLE) {
+            return "roles";
+        } else if (entityType == EntityType.SECURE_PASSWORD) {
+            return "passwords";
+        } else if (entityType == EntityType.SECURITY_ZONE) {
+            return "securityZones";
+        } else if (entityType == EntityType.SERVICE_ALIAS) {
+            return "serviceAliases";
+        } else if (entityType == EntityType.SITEMINDER_CONFIGURATION) {
+            return "siteMinderConfigurations";
+        } else if (entityType == EntityType.USER) {
+            return "users";
+        }
+
+        throw new RuntimeException("Not supported entity type: " + entityTypeName);
     }
 }
