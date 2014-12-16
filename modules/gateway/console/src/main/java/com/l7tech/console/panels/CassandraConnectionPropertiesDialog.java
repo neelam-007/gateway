@@ -170,7 +170,6 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         compressionComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 CassandraConnection.COMPRESS_NONE,
                 CassandraConnection.COMPRESS_LZ4,
-                CassandraConnection.COMPRESS_SNAPPY
         }));
 
         zoneControl.configure(connection);

@@ -33,7 +33,6 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
 
     public static final String COMPRESS_LZ4 = "LZ4";
     public static final String COMPRESS_NONE = "NONE";
-    public static final String COMPRESS_SNAPPY = "SNAPPY";
 
     private String keyspaceName = "";
     private String contactPoints = "";

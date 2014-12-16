@@ -74,7 +74,7 @@ public class CassandraConnectionManagerTest {
         cassandraConnection3.setContactPoints("localhost");
         cassandraConnection3.setPort("9042");
         cassandraConnection3.setUsername("cassandra");
-        cassandraConnection3.setCompression(CassandraConnection.COMPRESS_SNAPPY);
+        cassandraConnection3.setCompression(CassandraConnection.COMPRESS_LZ4);
         cassandraConnection3.setSsl(false);
         cassandraConnection3.setEnabled(false);
 
