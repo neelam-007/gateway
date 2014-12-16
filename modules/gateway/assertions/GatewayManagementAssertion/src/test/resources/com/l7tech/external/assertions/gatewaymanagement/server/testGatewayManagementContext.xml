@@ -39,6 +39,8 @@
 
     <bean id="revocationCheckPolicyManager" class="com.l7tech.server.identity.cert.TestRevocationCheckPolicyManager"/>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
+
     <bean id="gatewayExternalReferenceFinder" class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyHelper$GatewayExternalReferenceFinder">
         <constructor-arg index="0"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
         <constructor-arg index="1"><bean class="com.l7tech.server.security.rbac.RbacServicesStub"/></constructor-arg>
