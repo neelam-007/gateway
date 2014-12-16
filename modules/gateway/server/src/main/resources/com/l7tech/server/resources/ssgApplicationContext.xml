@@ -2297,6 +2297,7 @@
                 <ref bean="securityZoneManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </constructor-arg>
     </bean>

@@ -2,9 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.CassandraConnectionAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.CassandraConnectionTransformer;
 import com.l7tech.gateway.api.CassandraConnectionMO;
 import com.l7tech.gateway.api.Item;
@@ -29,6 +27,7 @@ import java.util.List;
 @Provider
 @Path(RestEntityResource.RestEntityResource_version_URI + CassandraConnectionResource.cassandraConnections_URI)
 @Singleton
+@Since(RestManVersion.VERSION_1_0_1)
 public class CassandraConnectionResource extends RestEntityResource<CassandraConnectionMO, CassandraConnectionAPIResourceFactory, CassandraConnectionTransformer> {
 
     protected static final String cassandraConnections_URI = "cassandraConnections";

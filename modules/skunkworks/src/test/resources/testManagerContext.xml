@@ -584,6 +584,8 @@
         <constructor-arg ref="secureRandom"/>
     </bean>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
     <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
         <constructor-arg ref="entityFinder"/>
@@ -647,6 +649,7 @@
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="securityZoneManager"/>
                 <ref bean="genericEntityManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </constructor-arg>
     </bean>
