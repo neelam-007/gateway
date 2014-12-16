@@ -199,6 +199,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurePasswordsAction manageSecurePasswordsAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
     private ManageJdbcConnectionsAction manageJdbcConnectionsAction = null;
+    private ManageCassandraConnectionAction manageCassandraConnectionAction = null;
     private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalResourcesAction manageGlobalResourcesAction = null;
@@ -1048,7 +1049,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageGlobalResourcesMenuItem());
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageSsgConnectorsAction());
-            menu.add(getManageJdbcConnectionsAction());
+            menu.add(getManageDataSourcesAction());
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
@@ -1073,6 +1074,13 @@ public class MainWindow extends JFrame implements SheetHolder {
             tasksMenu = menu;
         }
         return tasksMenu;
+    }
+
+    private JMenu getManageDataSourcesAction() {
+        JMenu dataSourcesMenu = new JMenu("Manage Data Sources");
+        dataSourcesMenu.add(getManageJdbcConnectionsAction());
+        dataSourcesMenu.add(getManageCassandraConnectionsAction());
+        return dataSourcesMenu;
     }
 
     private JMenuItem getManageAuditAlertOptionsMenuItem() {
@@ -2314,6 +2322,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageJdbcConnectionsAction;
     }
 
+    private Action getManageCassandraConnectionsAction() {
+        if(manageCassandraConnectionAction != null) {
+            return manageCassandraConnectionAction;
+        }
+
+        manageCassandraConnectionAction = new ManageCassandraConnectionAction();
+        disableUntilLogin(manageCassandraConnectionAction);
+        return manageCassandraConnectionAction;
+    }
+
     private Action getSiteMinderConfigurationAction() {
         if (manageSiteMinderConfigurationAction != null)
             return manageSiteMinderConfigurationAction;
@@ -2662,7 +2680,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageGlobalResourcesMenuItem());
                 manageMenu.add(getManageClusterPropertiesActionMenuItem());
                 manageMenu.add(getManageSsgConnectorsAction());
-                manageMenu.add(getManageJdbcConnectionsAction());
+                manageMenu.add(getManageDataSourcesAction());
                 manageMenu.add(getManageJmsEndpointsMenuItem());
                 manageMenu.add(getManageKerberosMenuItem());
                 manageMenu.add(getManageRolesMenuItem());

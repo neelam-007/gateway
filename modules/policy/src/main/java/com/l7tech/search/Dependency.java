@@ -68,7 +68,8 @@ public @interface Dependency {
         RBAC_ROLE(EntityType.RBAC_ROLE),
         EMAIL_LISTENER(EntityType.EMAIL_LISTENER),
         FIREWALL_RULE(EntityType.FIREWALL_RULE),
-        SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE);
+        SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE),
+        CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

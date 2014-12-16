@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.admin;
 
+import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -52,6 +53,12 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     JdbcAdmin getJdbcConnectionAdmin() throws SecurityException;
+
+    /**
+     * @return the Cassandra connection configuration manager
+     * @throws SecurityException on security error accessing the interface
+     */
+    CassandraConnectionManagerAdmin getCassandraConnecitonAdmin() throws SecurityException;
 
     /**
      *

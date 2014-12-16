@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.PolicyValidationContext;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.export.ExternalReferenceFactory;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -36,6 +37,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.globalresources.HttpConfigurationManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
@@ -376,6 +378,7 @@ public class PolicyHelper {
         private final RoleManager roleManager;
         private final SecurePasswordManager securePasswordManager;
         private final CustomKeyValueStoreManager customKeyValueStoreManager;
+        private final CassandraConnectionEntityManager cassandraEntityManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -396,7 +399,8 @@ public class PolicyHelper {
                                                final HttpConfigurationManager httpConfigurationManager,
                                                final RoleManager roleManager,
                                                final SecurePasswordManager securePasswordManager,
-                                               final CustomKeyValueStoreManager customKeyValueStoreManager) {
+                                               final CustomKeyValueStoreManager customKeyValueStoreManager,
+                                               final CassandraConnectionEntityManager cassandraEntityManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -417,6 +421,7 @@ public class PolicyHelper {
             this.roleManager = roleManager;
             this.securePasswordManager = securePasswordManager;
             this.customKeyValueStoreManager = customKeyValueStoreManager;
+            this.cassandraEntityManager = cassandraEntityManager;
         }
 
         private User getUser() {
@@ -527,6 +532,11 @@ public class PolicyHelper {
         @Override
         public JdbcConnection getJdbcConnection( final String name ) throws FindException {
             return filter( jdbcConnectionManager.findByUniqueName( name ) );
+        }
+
+        @Override
+        public CassandraConnection getCassandraConnection(final String name) throws FindException {
+            return filter(cassandraEntityManager.findByUniqueName(name));
         }
 
         @Override

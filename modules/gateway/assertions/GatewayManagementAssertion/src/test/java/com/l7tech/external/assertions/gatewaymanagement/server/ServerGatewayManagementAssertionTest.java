@@ -46,6 +46,7 @@ import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditRecordManagerStub;
 import com.l7tech.server.bundling.EntityBundleExporterStub;
 import com.l7tech.server.bundling.EntityBundleImporterStub;
+import com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.encass.EncapsulatedAssertionConfigManagerStub;
@@ -5600,6 +5601,7 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
         applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
+        applicationContext.getBeanFactory().registerSingleton("cassandraConnectionEntityManager", new CassandraConnectionEntityManagerStub());
 
         applicationContext.refresh();
 

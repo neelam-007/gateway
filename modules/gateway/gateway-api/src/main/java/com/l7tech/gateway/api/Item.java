@@ -24,6 +24,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = ActiveConnectorMO.class),
             @XmlElementRef(type = AssertionSecurityZoneMO.class),
             @XmlElementRef(type = TrustedCertificateMO.class),
+            @XmlElementRef(type = CassandraConnectionMO.class),
             @XmlElementRef(type = ClusterPropertyMO.class),
             @XmlElementRef(type = CustomKeyValueStoreMO.class),
             @XmlElementRef(type = ResourceDocumentMO.class),

@@ -159,9 +159,12 @@ public class PolicyExporter {
             }
         }
 
-        if ( assertion instanceof JdbcConnectionable ) {
-            final JdbcConnectionable connectionable = (JdbcConnectionable)assertion;
-            addReference( new JdbcConnectionReference( finder, connectionable), refs );
+        if (assertion instanceof JdbcConnectionable) {
+            final JdbcConnectionable connectionable = (JdbcConnectionable) assertion;
+            addReference(new JdbcConnectionReference(finder, connectionable), refs);
+        } else if (assertion instanceof CassandraConnectionable) {
+            final CassandraConnectionable connectionable = (CassandraConnectionable) assertion;
+            addReference(new CassandraConnectionReference(finder, connectionable), refs);
         }
 
         processAssertionEntityHeaders(refs, assertion);

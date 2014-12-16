@@ -208,6 +208,14 @@ public interface ServerConfigParams {
     String PARAM_IO_JMS_CONSUMER_CONNECTIONS = "ioJmsConsumerConnections";
     String PARAM_IO_HTTP_ALLOW_BACKSLASH = "io.httpAllowBackslash";
 
+    String PARAM_CASSANDRA_CORE_CONNECTIONS_PER_HOST = "cassandra.coreConnectionsPerHost";
+    String PARAM_CASSANDRA_MAX_CONNECTIONS_PER_HOST = "cassandra.maxConnectionPerHost";
+    String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQUESTS = "cassandra.maxSimultaneousRequestsPerConnectionThreshold";
+    String PARAM_CASSANDRA_MIN_SIMULTANEOUS_REQUESTS = "cassandra.minSimultaneousRequestsPerConnectionThreshold";
+    String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";
+    String PARAM_CASSANDRA_KEEP_ALIVE = "cassandra.keepAlive";
+    String PARAM_CASSANDRA_MAX_RECORDS = "cassandra.maxRecords.defaultValue";
+
     // Adding custom assertions system properties
     String PARAM_CUSTOM_ASSERTIONS_PROPERTIES_FILE = "custom.assertions.file";
     String PARAM_CUSTOM_ASSERTIONS_MODULES_DIRECTORY = "custom.assertions.modules";

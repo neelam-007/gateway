@@ -538,6 +538,13 @@
                                 <value>ssh.session.pool.numTestsPerEvictionRun</value>
                             </list>
                         </entry>
+                        <entry key="cassandraConnectionManager">
+                            <list>
+                                <value>cassandra.maxConnectionCacheAge</value>
+                                <value>cassandra.maxConnectionCacheIdleTime</value>
+                                <value>cassandra.maxConnectionCacheSize</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1288,6 +1295,7 @@
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
+        <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -1934,6 +1942,18 @@
 
     <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
+
+    <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerImpl">
+        <constructor-arg ref="cassandraEntityManager"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="securePasswordManager" />
+        <constructor-arg ref="trustManager" />
+        <constructor-arg ref="secureRandom" />
+    </bean>
+
+    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerImpl"/>
+
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
         <constructor-arg index="0">
             <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
@@ -2289,6 +2309,7 @@
         <constructor-arg ref="resourceEntryManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="jdbcConnectionManager"/>
+        <constructor-arg ref="cassandraEntityManager"/>
     </bean>
 
     <bean id="serviceExternalEntityHeaderEnhancer"

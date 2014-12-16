@@ -413,6 +413,12 @@
 
     <bean id="mockJdbcDatabaseManager" class="com.l7tech.server.jdbc.MockJdbcDatabaseManager"/>
 
+    <bean id="cassandraEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
+
+    <bean id="cassandraConnectionManager" class="com.l7tech.server.cassandra.CassandraConnectionManagerStub"/>
+
+    <bean id="cassandraQueryManager" class="com.ca.datasources.cassandra.CassandraQueryManagerStub"/>
+
     <bean id="encapsulatedAssertionConfigManager" class="com.l7tech.server.policy.MockEncapsulatedAssertionConfigManager"/>
 
     <bean id="jdbcQueryingManager" class="com.l7tech.server.jdbc.JdbcQueryingManagerStub">
@@ -754,5 +760,7 @@
     <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerStub"/>
 
     <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub"/>
+
+    <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerStub"/>
 
 </beans>

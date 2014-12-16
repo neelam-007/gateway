@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0">
-	<info organisation="jersey"
+<ivy-module version="2.0">
+	<info organisation="com.google.guava"
 		module="guava"
-		revision="14.0.1"
+		revision="16.0.1"
 		status="release"
-		publication="20090911102516"
+		publication="20141017104923"
 		default="true"
 	/>
 	<configurations>
