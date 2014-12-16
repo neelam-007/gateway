@@ -130,6 +130,7 @@ public class ServerRetrieveServiceWsdlAssertion extends AbstractServerAssertion<
             if (dependency.getGoid().equals(serviceDocumentGoid)) {
                 try {
                     document = parseDocument(dependency.getUri(), dependency.getContents());
+                    break;
                 } catch (IOException | SAXException e) {
                     logAndAudit(RETRIEVE_WSDL_ERROR_PARSING_SERVICE_DOCUMENT,
                             new String[]{ExceptionUtils.getMessage(e)}, getDebugException(e));
