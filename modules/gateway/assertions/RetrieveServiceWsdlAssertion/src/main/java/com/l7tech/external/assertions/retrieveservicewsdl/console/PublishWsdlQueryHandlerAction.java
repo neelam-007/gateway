@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.util.Option;
-import com.l7tech.util.Pair;
 
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -33,7 +32,9 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
                 Option.<Folder>none(), Option.<AbstractTreeNode>none(),
                 GatewayFeatureSets.UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD);
 
-        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        ServicesAndPoliciesTree tree =
+                (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+
         tree.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent e) {
@@ -49,10 +50,10 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
 
     @Override
     public String getName() {
-        Pair<String, FolderNode> selectedFolder = getSelectedFolder();
+        String selectedFolderPath = getSelectedFolderPath();
 
-        if (selectedFolder.left != null) {
-            return NAME_PREFIX + selectedFolder.left + WSDL_FOLDER;
+        if (selectedFolderPath != null) {
+            return NAME_PREFIX + selectedFolderPath + WSDL_FOLDER;
         } else {
             return NAME_PREFIX + WSDL_FOLDER;
         }
@@ -68,16 +69,13 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
         return ICON;
     }
 
-    private Pair<String, FolderNode> getSelectedFolder() {
+    private static String getSelectedFolderPath() {
         ServicesAndPoliciesTree tree =
                 (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
         String folderPath = null;
-        FolderNode selectedFolder = null;
 
         if (tree != null) {
-            FolderNode lastFolderNode = tree.getRootNode();
-
             final TreePath selectionPath = tree.getSelectionPath();
 
             if (selectionPath != null) {
@@ -94,18 +92,14 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
                             FolderNode folderNode = (FolderNode) o;
                             builder.append("/");
                             builder.append(folderNode.getName());
-
-                            lastFolderNode = folderNode;
                         }
                     }
 
                     folderPath = builder.toString();
                 }
             }
-
-            selectedFolder = lastFolderNode;
         }
 
-        return new Pair<>(folderPath, selectedFolder);
+        return folderPath;
     }
 }

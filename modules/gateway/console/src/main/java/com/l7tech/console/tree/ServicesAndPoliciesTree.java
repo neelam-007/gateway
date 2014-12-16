@@ -37,7 +37,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -837,6 +836,32 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 return abstractTreeNodes;
             }
         } );
+    }
+
+    /**
+     * Returns the selected FolderNode, or the parent FolderNode of the selected item.
+     * @see JTree#getSelectionPath()
+     * @return the deepest FolderNode in the selection path of the first selected node, or null if there is no selection
+     */
+    public FolderNode getDeepestFolderNodeInSelectionPath() {
+        FolderNode selectedFolderNode = null;
+
+        final TreePath selectionPath = getSelectionPath();
+
+        if (selectionPath != null) {
+            final Object[] path = selectionPath.getPath();
+
+            for (int i = path.length - 1; i >= 0; i--) {
+                Object o = path[i];
+
+                if (o instanceof FolderNode) {
+                    selectedFolderNode = (FolderNode) o;
+                    break;
+                }
+            }
+        }
+
+        return selectedFolderNode;
     }
 
     /**
