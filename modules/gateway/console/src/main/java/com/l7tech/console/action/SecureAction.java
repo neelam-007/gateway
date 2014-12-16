@@ -52,6 +52,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
     public static final String UI_MANAGE_POLICY_BACKED_SERVICES = "ui:ManagePolicyBackedServices";
     public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
+    public static final String UI_MANAGE_CASSANDRA_CONNECTIONS = "ui:ManageCassandraConnections";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =

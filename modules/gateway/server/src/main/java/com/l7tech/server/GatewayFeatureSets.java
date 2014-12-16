@@ -84,6 +84,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
     public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
     public static final String SERVICE_ENCAPSULATED_ASSERTION = "service:EncapsulatedAssertion"; // Ability to use encapsulated assertions
+    public static final String SERVICE_CASSANDRA = "service:Cassandra"; // Ability to configure Cassandra connections
 
     // Constants for flag names
     public static final String FLAG_PERMAFIPS = "flag:FipsModeAlways";
@@ -102,6 +103,7 @@ public class GatewayFeatureSets {
     public static final String UI_MANAGE_ENCAPSULATED_ASSERTIONS = "ui:ManageEncapsulatedAssertions";
     public static final String UI_MANAGE_POLICY_BACKED_SERVICES = "ui:ManagePolicyBackedServices";
     public static final String UI_MANAGE_SECURITY_ZONES = "ui:ManageSecurityZones";
+    public static final String UI_MANAGE_CASSANDRA_CONNECTIONS = "ui:ManageCassandraConnections";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
@@ -330,6 +332,12 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiLogSinksDialog = ui(UI_MANAGE_LOG_SINKS, "Enable the SSM Log Sinks Dialog");
         GatewayFeatureSet uiAuditSinkDialog = ui(UI_MANAGE_AUDIT_SINK, "Enable the SSM Audit Sink Dialog");
         GatewayFeatureSet uiEmailListenersDialog = ui(UI_MANAGE_EMAIL_LISTENERS, "Enable the SSM Email Listeners Dialog");
+
+        GatewayFeatureSet cassandraConnections = fsr("set:Cassandra",
+                "Enable Cassandra support",
+                "Enables Gateway to create and use Cassandra connections.",
+                ui(UI_MANAGE_CASSANDRA_CONNECTIONS, "Enable the Manage Cassandra Connections Dialog"),
+                srv(SERVICE_CASSANDRA, "Ability to manage Cassandra connections"));
 
         GatewayFeatureSet flagPermaFips = flag(FLAG_PERMAFIPS, "FIPS mode is always required.");
 
@@ -879,6 +887,10 @@ public class GatewayFeatureSets {
                 mass("assertion:RetrieveServiceWsdl"),
                 uiPublishWsdlQueryHandlerWizard);
 
+        GatewayFeatureSet cassandraAssertions = fsr("set:Cassandra:Assertions",
+                "The necessary assertions to support Cassandra functionality",
+                mass("assertion:CassandraQuery"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -992,6 +1004,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -1062,6 +1076,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -1133,6 +1149,8 @@ public class GatewayFeatureSets {
             fs(oAuthValidationAssertions),
             fs(jsonSchemaAssertion),
             fs(jsonDocumentStructureAssertion),
+            fs(cassandraConnections),
+            fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
@@ -1185,6 +1203,8 @@ public class GatewayFeatureSets {
                 fs(oAuthValidationAssertions),
                 fs(jsonSchemaAssertion),
                 fs(jsonDocumentStructureAssertion),
+                fs(cassandraConnections),
+                fs(cassandraAssertions),
                 fs(oDataValidationAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),

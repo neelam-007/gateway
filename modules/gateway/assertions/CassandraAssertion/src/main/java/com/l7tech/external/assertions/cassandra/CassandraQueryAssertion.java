@@ -189,11 +189,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.cassandra.console.CassandraAssertionPropertiesDialog");
 
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:MongoDB" rather than "set:modularAssertions"
-        //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-
-        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
+        Collection<TypeMapping> othermappings = new ArrayList<>();
         othermappings.add(new BeanTypeMapping(CassandraNamedParameter.class, "namedParameter"));
         othermappings.add(new CollectionTypeMapping(List.class, CassandraNamedParameter.class , ArrayList.class , "namedParameterList"));
         othermappings.add(new BeanTypeMapping(com.datastax.driver.core.DataType.Name.class, "parameterDataType"));

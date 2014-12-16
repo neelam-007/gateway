@@ -19,7 +19,7 @@ public class ManageCassandraConnectionAction extends SecureAction {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.resources.CassandraConnectionManagerDialog");
 
     public ManageCassandraConnectionAction() {
-        super(new AttemptedAnyOperation(EntityType.CASSANDRA_CONFIGURATION), "service:Admin");
+        super(new AttemptedAnyOperation(EntityType.CASSANDRA_CONFIGURATION), UI_MANAGE_CASSANDRA_CONNECTIONS);
     }
 
     @Override

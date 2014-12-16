@@ -19,13 +19,15 @@ import java.security.SecureRandom;
  */
 public class CassandraAssertionModuleLoadListener {
 
-    public static synchronized void onModuleUnloaded() {
-        //TODO: perform module initialization
+    // inject licenseManager
 
+    public static synchronized void onModuleUnloaded() {
+        //TODO: perform module unload
     }
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
-         //TODO: clean up
-
+        // if (licenseManager.isFeatureEnabled(new CassandraQueryAssertion().getFeatureSetName()) {
+        // do module load steps
+        // }
     }
 }

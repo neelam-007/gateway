@@ -1,13 +1,18 @@
 package com.l7tech.server.cassandra;
 
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -23,6 +28,9 @@ import static com.l7tech.server.event.AdminInfo.find;
  */
 public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl implements CassandraConnectionManagerAdmin {
 
+    @Autowired
+    private LicenseManager licenseManager;
+
     private final CassandraConnectionEntityManager cassandraEntityManager;
     private SecurePasswordManager securePasswordManager;
     private CassandraConnectionManager cassandraConnectionManager;
@@ -37,11 +45,13 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public CassandraConnection getCassandraConnection(String connectionName) throws FindException {
+        checkLicense();
         return cassandraEntityManager.findByUniqueName(connectionName);
     }
 
     @Override
     public List<CassandraConnection> getAllCassandraConnections() throws FindException {
+        checkLicense();
         List<CassandraConnection> connections = new ArrayList<>();
         connections.addAll(cassandraEntityManager.findAll());
         return connections;
@@ -49,6 +59,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public List<String> getAllCassandraConnectionNames() throws FindException {
+        checkLicense();
         List<String> names = new ArrayList<>();
         for (CassandraConnection entity : getAllCassandraConnections()) {
             names.add(entity.getName());
@@ -58,6 +69,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public Goid saveCassandraConnection(CassandraConnection connection) throws UpdateException, SaveException {
+        checkLicense();
         Goid goid = null;
         if (connection.getGoid().equals(Goid.DEFAULT_GOID)) {
             goid = cassandraEntityManager.save(connection);
@@ -73,6 +85,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public void deleteCassandraConnection(CassandraConnection connection) throws DeleteException {
+        checkLicense();
         // Remove old cached connection
         cassandraConnectionManager.removeConnection(connection);
 
@@ -81,7 +94,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public JobId<String> testCassandraConnection(final CassandraConnection connection) {
-
+        checkLicense();
         final FutureTask<String> connectTask = new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
             @Override
             public String call() throws Exception {
@@ -109,6 +122,16 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
 
     @Override
     public JobId<String> testCassandraQuery(String connectionName, String query, @Nullable String schemaName, int queryTimeout) {
+        checkLicense();
         return null;
+    }
+
+    private void checkLicense() {
+        try {
+            licenseManager.requireFeature(GatewayFeatureSets.SERVICE_CASSANDRA);
+        } catch ( LicenseException e) {
+            // New exception to conceal original stack trace from LicenseManager
+            throw new LicenseRuntimeException(e);
+        }
     }
 }
