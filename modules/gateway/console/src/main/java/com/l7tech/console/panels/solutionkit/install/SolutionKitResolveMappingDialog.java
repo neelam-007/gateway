@@ -1,11 +1,12 @@
 package com.l7tech.console.panels.solutionkit.install;
 
-import com.l7tech.console.panels.PrivateKeysComboBox;
-import com.l7tech.console.panels.SecurePasswordComboBox;
+import com.l7tech.console.panels.*;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -27,7 +28,7 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     private JLabel entityTypeFieldLabel;
     private JLabel errorTypeFieldLabel;
     private JComboBox entityComboBox;
-    private JButton createEntityButton;
+    private JButton manageButton;
     private JButton okButton;
     private JButton cancelButton;
 
@@ -39,8 +40,9 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     //
     private SecurePasswordComboBox securePasswordComboBox;
     private PrivateKeysComboBox privateKeysComboBox;
+    private JdbcConnectionComboBox jdbcConnectionComboBox;
 
-    public SolutionKitResolveMappingDialog(@NotNull Dialog owner, @NotNull Mapping mapping, @NotNull Item item) {
+    public SolutionKitResolveMappingDialog(@NotNull Dialog owner, @NotNull Mapping mapping, Item item) {
         super(owner, "Resolve Entity Conflict", true);
         this.mapping = mapping;
         this.item = item;
@@ -61,17 +63,22 @@ public class SolutionKitResolveMappingDialog extends JDialog {
         if (securePasswordComboBox != null) {
             return securePasswordComboBox.getSelectedSecurePassword().getGoid().toString();
         } else if (privateKeysComboBox != null) {
-            return privateKeysComboBox.getSelectedKeyAlias();
-        } else {
-            return entityComboBox.getSelectedItem().toString();
+            Goid keyStoreId = privateKeysComboBox.getSelectedKeystoreId();
+            String keyAlias = privateKeysComboBox.getSelectedKeyAlias();
+            return keyStoreId.toString() + ":" + keyAlias;
+        } else if (jdbcConnectionComboBox != null) {
+            return jdbcConnectionComboBox.getSelectedJdbcConnection().toString();
+        }
+        else {
+            return null;
         }
     }
 
     private void initialize() {
-        createEntityButton.addActionListener(new ActionListener() {
+        manageButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onCreateEntity();
+                onMangeEntities();
             }
         });
 
@@ -95,7 +102,9 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     }
 
     private void populateFields() {
-        nameFieldLabel.setText(item.getName());
+        if (item != null) {
+            nameFieldLabel.setText(item.getName());
+        }
         idFieldLabel.setText(mapping.getSrcId());
         entityTypeFieldLabel.setText(mapping.getType());
         errorTypeFieldLabel.setText(mapping.getErrorType().toString());
@@ -104,25 +113,38 @@ public class SolutionKitResolveMappingDialog extends JDialog {
             securePasswordComboBox.reloadPasswordList();
         } else if (privateKeysComboBox != null) {
             privateKeysComboBox.repopulate();
+        } else if (jdbcConnectionComboBox != null) {
+            jdbcConnectionComboBox.reload();
         }
         // else, unsupported entity type. Do nothing.
     }
 
-    private void onCreateEntity() {
+    private void onMangeEntities() {
+        JDialog dlg = null;
         if (securePasswordComboBox != null) {
-            createSecurePassword();
+            dlg = new SecurePasswordManagerWindow(this.getOwner());
         } else if (privateKeysComboBox != null) {
-            createPrivateKey();
+            dlg = new PrivateKeyManagerWindow(this.getOwner());
+        } else if (jdbcConnectionComboBox != null) {
+            dlg = new JdbcConnectionManagerWindow(this);
         }
         // else, unsupported entity type. Do nothing.
-    }
 
-    private void createSecurePassword() {
-        // todo (kpak) - implement.
-    }
+        if (dlg != null) {
+            dlg.pack();
+            Utilities.centerOnParentWindow(dlg);
+            DialogDisplayer.display(dlg);
 
-    private void createPrivateKey() {
-        // todo (kpak) - implement.
+            // refresh combo box.
+            if (securePasswordComboBox != null) {
+                securePasswordComboBox.reloadPasswordList();
+            } else if (privateKeysComboBox != null) {
+                privateKeysComboBox.repopulate();
+            } else if (jdbcConnectionComboBox != null) {
+                jdbcConnectionComboBox.reload();
+            }
+            // else, unsupported entity type. Do nothing.
+        }
     }
 
     private void onOk() {
@@ -145,16 +167,21 @@ public class SolutionKitResolveMappingDialog extends JDialog {
         EntityType entityType = EntityType.valueOf(mapping.getType());
         switch (entityType) {
             case SECURE_PASSWORD:
-                entityComboBox = new SecurePasswordComboBox();
-                securePasswordComboBox = (SecurePasswordComboBox) entityComboBox;
+                securePasswordComboBox = new SecurePasswordComboBox();
+                entityComboBox = securePasswordComboBox;
                 break;
 
             case SSG_KEY_ENTRY:
-                entityComboBox = new PrivateKeysComboBox();
-                privateKeysComboBox = (PrivateKeysComboBox) entityComboBox;
+                privateKeysComboBox = new PrivateKeysComboBox();
+                // Hide default SSL key. Cannot update mapping to default SSL key.
+                privateKeysComboBox.setIncludeDefaultSslKey(false);
+                entityComboBox = privateKeysComboBox;
                 break;
 
-            // todo (kpak) - JDBC Connection.
+            case JDBC_CONNECTION:
+                jdbcConnectionComboBox = new JdbcConnectionComboBox();
+                entityComboBox = jdbcConnectionComboBox;
+                break;
 
             default:
                 logger.log(Level.WARNING, "Unsupported entity type: " + mapping.getType());

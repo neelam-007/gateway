@@ -142,12 +142,12 @@
               <model/>
             </properties>
           </component>
-          <component id="e9f7d" class="javax.swing.JButton" binding="createEntityButton">
+          <component id="e9f7d" class="javax.swing.JButton" binding="manageButton">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Create"/>
+              <text value="Manage"/>
             </properties>
           </component>
         </children>

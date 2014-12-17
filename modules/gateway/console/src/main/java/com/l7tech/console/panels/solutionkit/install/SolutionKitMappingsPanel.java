@@ -24,16 +24,22 @@ public class SolutionKitMappingsPanel extends JPanel {
     private JTable mappingsTable;
 
     private SimpleTableModel<Mapping> mappingsModel;
-    private Map<String, Item> bundleItems; // key = bundle reference item id. value = bundle reference item.
+    private Map<String, Item> bundleItems;          // key = bundle reference item id. value = bundle reference item.
+    private Map<String, String> resolvedEntityIds;  // key = from id. value  = to id.
 
     public SolutionKitMappingsPanel() {
         super();
         initialize();
     }
 
-    public void setData(@NotNull Mappings mappings, @NotNull Map<String, Item> bundleItems) {
+    public void setData(@NotNull Mappings mappings, @NotNull Map<String, Item> bundleItems, @NotNull Map<String, String> resolvedEntityIds) {
         this.bundleItems = bundleItems;
+        this.resolvedEntityIds = resolvedEntityIds;
         mappingsModel.setRows(mappings.getMappings());
+    }
+
+    public void reload() {
+        mappingsModel.fireTableDataChanged();
     }
 
     public Mapping getSelectedMapping() {
@@ -107,13 +113,27 @@ public class SolutionKitMappingsPanel extends JPanel {
                     }
                     return "None";
                 }
+            }),
+            TableUtil.column("Resolved", 50, 200, 99999, new Functions.Unary<String, Mapping>() {
+                @Override
+                public String call(Mapping mapping) {
+                    Mapping.ErrorType errorType = mapping.getErrorType();
+                    if (errorType == null) {
+                        return "N/A";
+                    }
+                    if (resolvedEntityIds.get(mapping.getSrcId()) == null) {
+                        return "No";
+                    }
+                    return "Yes";
+                }
             })
         );
+
         mappingsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.setRowSorter(mappingsTable, mappingsModel,
-            new int[]{0, 1, 2, 3, 4},
-            new boolean[]{true, true, true, true, true},
-            new Comparator[]{null, null, null, null, null});
+            new int[]{0},
+            new boolean[]{true},
+            new Comparator[]{null});
 
         setLayout(new BorderLayout());
         add(mainPanel);

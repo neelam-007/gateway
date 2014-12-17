@@ -22,8 +22,9 @@ public class SolutionKitsConfig {
     private static final Logger logger = Logger.getLogger(SolutionKitsConfig.class.getName());
 
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
-    private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Set<SolutionKit> selected = new HashSet<>();
+    private Map<SolutionKit, Mappings> testMappings = new HashMap<>();
+    private Map<SolutionKit, Map<String, String>> resolvedEntityIds = new HashMap<>();
 
     public SolutionKitsConfig() {
     }
@@ -72,5 +73,18 @@ public class SolutionKitsConfig {
 
     public void setTestMappings(@NotNull Map<SolutionKit, Mappings> testMappings) {
         this.testMappings = testMappings;
+    }
+
+    @NotNull
+    public Map<String, String> getResolvedEntityIds(@NotNull SolutionKit solutionKit) {
+        Map<String, String> result = resolvedEntityIds.get(solutionKit);
+        if (result == null) {
+            return Collections.emptyMap();
+        }
+        return result;
+    }
+
+    public void setResolvedEntityIds(@NotNull Map<SolutionKit, Map<String, String>> resolvedEntityIds) {
+        this.resolvedEntityIds = resolvedEntityIds;
     }
 }

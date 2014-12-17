@@ -6,6 +6,8 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -17,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,14 +65,24 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             // todo (kpak) - handle multiple kits. for now, install first one.
             //
             SolutionKit solutionKit = wizardInput.getSelectedSolutionKits().iterator().next();
-            String bundle = wizardInput.getBundleAsString(solutionKit);
 
+            // Update resolved mapping target IDs.
+            Map<String, String> resolvedEntityIds = wizardInput.getResolvedEntityIds(solutionKit);
+            Bundle bundle = wizardInput.getBundle(solutionKit);
+            for (Mapping mapping : bundle.getMappings()) {
+                String resolvedId = resolvedEntityIds.get(mapping.getSrcId());
+                if (resolvedId != null) {
+                    mapping.setTargetId(resolvedId);
+                }
+            }
+
+            String bundleStr = wizardInput.getBundleAsString(solutionKit);
             Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Install Solution Kit",
                 "The gateway is installing selected solution kit(s)",
-                solutionKitAdmin.install(solutionKit, bundle));
+                solutionKitAdmin.install(solutionKit, bundleStr));
 
             if (result.isLeft()) {
                 msg = result.left();

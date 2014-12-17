@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 
@@ -31,14 +32,12 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     private SolutionKitMappingsPanel solutionKitMappingsPanel;
     private JButton resolveButton;
 
-    private Map<String, Item> bundleItems; // key = bundle reference item id. value = bundle reference item.
-
-    private Map<String, String> resolvedIds = new HashMap<>();
+    private Map<String, Item> bundleItems = new HashMap<>();            // key = bundle reference item id. value = bundle reference item.
+    private Map<String, String> resolvedEntityIds = new HashMap<>();    // key = from id. value  = to id.
 
     public SolutionKitResolveMappingErrorsPanel() {
         super(null);
         initialize();
-        refreshMappingsTableButtons();
     }
 
     @Override
@@ -63,24 +62,24 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         Bundle bundle = settings.getBundle(settings.getSelectedSolutionKits().iterator().next());
         Mappings mappings = settings.getTestMappings(settings.getSelectedSolutionKits().iterator().next());
 
-        bundleItems = new HashMap<>();
+        bundleItems.clear();
+        resolvedEntityIds.clear();
+
         for (Item aItem : bundle.getReferences()) {
             bundleItems.put(aItem.getId(), aItem);
         }
+        solutionKitMappingsPanel.setData(mappings, bundleItems, resolvedEntityIds);
 
-        solutionKitMappingsPanel.setData(mappings, bundleItems);
+        refreshMappingsTableButtons();
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        // Update mapping target ID.
-        Bundle bundle = settings.getBundle(settings.getSelectedSolutionKits().iterator().next());
-        for (Mapping mapping : bundle.getMappings()) {
-            String resolvedId = resolvedIds.get(mapping.getSrcId());
-            if (resolvedId != null) {
-                mapping.setTargetId(resolvedId);
-            }
-        }
+        // todo (kpak) - add support for multi solution kits.
+        SolutionKit solutionKit = settings.getSelectedSolutionKits().iterator().next();
+        Map<SolutionKit, Map<String, String>> map = new HashMap<>();
+        map.put(solutionKit, resolvedEntityIds);
+        settings.setResolvedEntityIds(map);
     }
 
     private void initialize() {
@@ -133,7 +132,8 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
         DialogDisplayer.display(dlg);
 
         if (dlg.isConfirmed()) {
-            resolvedIds.put(mapping.getSrcId(), dlg.getResolvedId());
+            resolvedEntityIds.put(mapping.getSrcId(), dlg.getResolvedId());
+            solutionKitMappingsPanel.reload();
         }
     }
 }
