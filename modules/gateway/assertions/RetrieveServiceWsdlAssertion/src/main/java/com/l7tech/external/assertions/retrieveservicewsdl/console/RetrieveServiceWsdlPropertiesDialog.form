@@ -138,6 +138,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdToolTip"/>
             </properties>
           </component>
           <component id="e5e85" class="javax.swing.JTextField" binding="serviceDocumentIdTextField">
@@ -154,6 +155,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="wsdlRadioButtonLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="retrieveWsdlOptionToolTip"/>
             </properties>
           </component>
           <component id="60b2c" class="javax.swing.JRadioButton" binding="dependencyRadioButton">
@@ -162,6 +164,7 @@
             </constraints>
             <properties>
               <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="dependencyRadioButtonLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="retrieveDependencyOptionToolTip"/>
             </properties>
           </component>
         </children>
