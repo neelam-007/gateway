@@ -9,7 +9,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.util.Option;
 
 import javax.swing.event.TreeSelectionEvent;
@@ -30,7 +29,7 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
     public PublishWsdlQueryHandlerAction() {
         super(new AttemptedCreate(EntityType.FOLDER),
                 Option.<Folder>none(), Option.<AbstractTreeNode>none(),
-                GatewayFeatureSets.UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD);
+                UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD);
 
         init();
     }
