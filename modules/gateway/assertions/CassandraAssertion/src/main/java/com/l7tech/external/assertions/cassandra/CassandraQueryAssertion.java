@@ -25,7 +25,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FAC
  * Time: 5:03 PM
  *
  */
-//TODO: replace JdbcConnectionable with DataSourceConnectionable
 public class CassandraQueryAssertion extends Assertion implements CassandraConnectionable, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(CassandraQueryAssertion.class.getName());
 
@@ -39,13 +38,15 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     public static final String DEFAULT_QUERY_PREFIX = "cassandraQuery";
     public static final String QUERYRESULT_COUNT = ".queryresult.count";
     public static final String VARIABLE_XML_RESULT = ".xmlResult";
-    public static final int MAX_RECORDS_DEF = 10;
+    public static final int DEFAULT_MAX_RECORDS = 10;
+    public static final int DEFAULT_FETCH_SIZE = 5000;
 
     private String connectionName;
     private String queryDocument;
     private boolean failIfNoResults = false;
     private boolean isGenerateXmlResult = false;
-    private int fetchSize = MAX_RECORDS_DEF;
+    private int fetchSize = DEFAULT_FETCH_SIZE;
+    private int maxRecords = DEFAULT_MAX_RECORDS;
     private Map<String, String> namingMap = new HashMap<>();
     private long queryTimeout = 0;
 
@@ -115,6 +116,24 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     public void setGenerateXmlResult(boolean isGenerateXmlResult) {
         this.isGenerateXmlResult = isGenerateXmlResult;
     }
+
+    public int getFetchSize() {
+        return fetchSize;
+    }
+
+    public void setFetchSize(int fetchSize) {
+        this.fetchSize = fetchSize;
+    }
+
+
+    public int getMaxRecords() {
+        return maxRecords;
+    }
+
+    public void setMaxRecords(int maxRecords) {
+        this.maxRecords = maxRecords;
+    }
+
     @Override
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(queryDocument);
@@ -131,7 +150,9 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
            for(String varName : varSet) {
                 varMeta.add(new VariableMetadata(prefix + "." + varName, false, true, null, false, DataType.STRING));
            }
-
+           if(isGenerateXmlResult) {
+               varMeta.add(new VariableMetadata(prefix + VARIABLE_XML_RESULT, false, false, null, false, DataType.STRING));
+           }
            return varMeta.toArray(new VariableMetadata[varMeta.size()]);
        }
 
@@ -220,15 +241,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
                 builder.append(": ").append(assertion.getQueryDocument());
 
                 return builder.toString();
-            }
-        };
+        }
+    };
 
-
-    public int getFetchSize() {
-        return fetchSize;
-    }
-
-    public void setFetchSize(int fetchSize) {
-        this.fetchSize = fetchSize;
-    }
 }

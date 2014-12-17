@@ -8,6 +8,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.MutablePair;
+import org.apache.commons.lang.math.NumberUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +31,8 @@ public class CassandraPropertiesDialog extends JDialog {
     private static final String SO_LINGER = "soLinger";
     private static final String TCP_NO_DELAY = "tcpNoDelay";
     // Query options
-    private static final String QUERY_FETCH_SIZE = "maxRecords";
+    private static final String QUERY_FETCH_SIZE = "fetchSize";
+    private static final String MAX_RECORDS = "maxRecords";
 
     private JPanel mainPanel;
     private JTextField propValueTextField;
@@ -57,7 +59,20 @@ public class CassandraPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         inputValidator = new InputValidator(this, this.getTitle());
-        inputValidator.constrainTextFieldToBeNonEmpty("Value", propValueTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty("Value", propValueTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String propName = (String) propNameComboBox.getSelectedItem();
+                if(QUERY_FETCH_SIZE.equals(propName)) {
+                    return getNumberValidationErrorString(propName, Integer.MAX_VALUE);
+                }
+                else if(MAX_RECORDS.equals(propName)) {
+                    return getNumberValidationErrorString(propName, 10000);
+                }
+
+                return null;
+            }
+        });
 
         populatePropNameComboBox();
 
@@ -88,13 +103,20 @@ public class CassandraPropertiesDialog extends JDialog {
                             propValueTextField.setText(clusterProperty.getValue());
                         }
                     } catch (FindException fe) {
-                        JOptionPane.showMessageDialog(CassandraPropertiesDialog.this, "Unable to retrieve defaults for property " + propName, "Error", JOptionPane.ERROR);
+                        JOptionPane.showMessageDialog(CassandraPropertiesDialog.this, "Unable to retrieve defaults for property " + propName, "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
         });
 //        ((JTextField)propNameComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(propNameListener);
         propNameComboBox.addItemListener(propNameListener);
+    }
+
+    private String getNumberValidationErrorString(String propName, int maxVal) {
+        if(!NumberUtils.isNumber(propValueTextField.getText()) || (NumberUtils.toInt(propValueTextField.getText()) < 1 || NumberUtils.toInt(propValueTextField.getText()) > maxVal)) {
+            return propName + " value must be the number between 1 and " + Integer.toString(maxVal);
+        }
+        return null;
     }
 
     private void modelToView() {
@@ -118,7 +140,7 @@ public class CassandraPropertiesDialog extends JDialog {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
                 MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS,
-                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,QUERY_FETCH_SIZE
+                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,MAX_RECORDS, QUERY_FETCH_SIZE
         }));
     }
 

@@ -80,12 +80,11 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
      * @param session - Session object
      * @param boundStatement - BoundStatement object
      * @param resultMap - Map containing the query result where the keys are columns
+     * @param maxRecords
      * @return
      */
     @Override
-    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String,
-            List<Object>> resultMap, long queryTimeout) throws TimeoutException {
-
+    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String, List<Object>> resultMap, int maxRecords, long queryTimeout) throws TimeoutException {
         int rowCount = 0;
         ResultSetFuture result = session.executeAsync(boundStatement);
         ResultSet rows;
@@ -97,7 +96,7 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
 
         Iterator<Row> resultSetIterator = rows.iterator();
         // Get resultSet into map
-        while(resultSetIterator.hasNext()){
+        while(resultSetIterator.hasNext() && (rowCount < maxRecords || maxRecords == 0)){
             Row row = resultSetIterator.next();
             for(ColumnDefinitions.Definition definition: row.getColumnDefinitions()){
                 List<Object> col  = resultMap.get(definition.getName());
@@ -114,6 +113,4 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
         }
         return rowCount;
     }
-
-
 }

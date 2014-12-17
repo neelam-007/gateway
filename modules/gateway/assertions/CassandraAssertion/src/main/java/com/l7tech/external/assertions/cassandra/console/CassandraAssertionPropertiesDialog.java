@@ -47,7 +47,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.cassandra.console.CassandraQueryAssertionPropertiesDialog");
     private static final int LOWER_BOUND_MAX_RECORDS = 1;
     private static final int UPPER_BOUND_MAX_RECORDS = 10000;
-    private static final String QUERY_FETCH_SIZE = "maxRecords";
+    private static final String MAX_RECORDS_SIZE = "maxRecords";
+    private static final String FETCH_SIZE = "fetchSize";
 
     private JPanel mainPanel;
     /**
@@ -69,6 +70,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JPanel queryPanel;
     private JCheckBox generateXMLResultCheckBox;
     private JSpinner maxRecordsSpinner;
+    private JSpinner fetchSizeSpinner;
     private JButton testQueryButton;
     private JTextField queryTimeoutTextField;
     private CassandraQueryAssertion assertion;
@@ -150,6 +152,9 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         };
         maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, UPPER_BOUND_MAX_RECORDS, 1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("validator.max.records")));
+
+        fetchSizeSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, Integer.MAX_VALUE, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(fetchSizeSpinner, resources.getString("validator.fetch.size")));
         //mapping table
         variableNamingTableModel = buildVariableNamingTableModel();
         variableNamingTable.setModel(variableNamingTableModel);
@@ -237,26 +242,25 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         final RunOnChangeListener connectionListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 if (connectionComboBox.getSelectedIndex() != -1) {
-                    if(!connectionComboBox.getSelectedItem().equals(assertion.getFetchSize())) {
-                        try {
-                            CassandraConnection cassandraConnection = cassandraConnectionEntityAdmin.getCassandraConnection((String) connectionComboBox.getSelectedItem());
-                            Map<String, String> props = cassandraConnection.getProperties();
-                            String maxRecords = props.get(QUERY_FETCH_SIZE);
-                            if (maxRecords == null) {
-                                ClusterProperty maxRecordsClusterProp = clusterStatusAdmin.findPropertyByName("cassandra.maxRecords");
-                                if (maxRecordsClusterProp != null && maxRecordsClusterProp.getValue() != null) {
-                                    maxRecords = maxRecordsClusterProp.getValue();
-                                }
-                            }
+                    if(!connectionComboBox.getSelectedItem().equals(assertion.getConnectionName())) {
+                        String connName = (String) connectionComboBox.getSelectedItem();
 
-                            maxRecordsSpinner.setValue(getIntOrDefault(maxRecords, CassandraQueryAssertion.MAX_RECORDS_DEF));
+                        CassandraConnection cassandraConnection = null;
+                        try {
+                            cassandraConnection = cassandraConnectionEntityAdmin.getCassandraConnection(connName);
                         } catch (FindException e) {
-                            JOptionPane.showMessageDialog(CassandraAssertionPropertiesDialog.this, resources.getString("message.error.find.maxrecords.prop"), "Error", JOptionPane.ERROR);
-                            maxRecordsSpinner.setValue(LOWER_BOUND_MAX_RECORDS);
+                            JOptionPane.showMessageDialog(CassandraAssertionPropertiesDialog.this, MessageFormat.format(resources.getString("message.error.find.connection"), connName), "Error", JOptionPane.ERROR);
+                            return;
                         }
+
+                        Map<String, String> props = cassandraConnection.getProperties();
+
+                        setSpinnerValue(props.get(MAX_RECORDS_SIZE), maxRecordsSpinner, "cassandra.maxRecords", CassandraQueryAssertion.DEFAULT_MAX_RECORDS);
+                        setSpinnerValue(props.get(FETCH_SIZE), fetchSizeSpinner, "cassandra.fetchSize", CassandraQueryAssertion.DEFAULT_FETCH_SIZE);
                     }
                     else {
-                        maxRecordsSpinner.setValue(assertion.getFetchSize());
+                        maxRecordsSpinner.setValue(assertion.getMaxRecords());
+                        fetchSizeSpinner.setValue(assertion.getFetchSize());
                     }
                     enableOrDisableOkButton();
                 }
@@ -293,11 +297,33 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
 
         addMappingButton.setEnabled(true);
-
+        //==================================================================
+        //TODO: once query testing is implemented remove the statement below
+        testQueryButton.setEnabled(false);
+        //==================================================================
         Utilities.setDoubleClickAction(variableNamingTable, editMappingButton);
 
         setContentPane(mainPanel);
         pack();
+    }
+
+    private void setSpinnerValue(String connectionPropValue, JSpinner spinner, String clusterPropName, int spinnerDefault) {
+        String propName = null;
+        try {
+            if (connectionPropValue == null) {
+                ClusterProperty property = clusterStatusAdmin.findPropertyByName(clusterPropName);
+                if (property != null && property.getValue() != null) {
+                    connectionPropValue = property.getValue();
+                    propName = property.getName();
+
+                }
+            }
+
+            spinner.setValue(getIntOrDefault(connectionPropValue, spinnerDefault));
+        } catch (FindException e) {
+            JOptionPane.showMessageDialog(this, MessageFormat.format(resources.getString("message.error.find.prop"), propName), "Error", JOptionPane.ERROR);
+            maxRecordsSpinner.setValue(LOWER_BOUND_MAX_RECORDS);
+        }
     }
 
     private Integer getIntOrDefault(String s, int defaultValue) {
@@ -334,7 +360,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
         generateXMLResultCheckBox.setSelected(assertion.isGenerateXmlResult());
         variablePrefixPanel.setVariable(assertion.getPrefix());
-        maxRecordsSpinner.setValue(assertion.getFetchSize());
+        maxRecordsSpinner.setValue(assertion.getMaxRecords());
+        fetchSizeSpinner.setValue(assertion.getFetchSize());
         variableNamingMap.clear();
         variableNamingMap.putAll(assertion.getNamingMap());
         variableNamingTableModel.setRows(getNamedMappingList());
@@ -348,7 +375,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
         assertion.setGenerateXmlResult(generateXMLResultCheckBox.isSelected());
         assertion.setPrefix(variablePrefixPanel.getVariable());
-        assertion.setFetchSize((Integer)maxRecordsSpinner.getValue());
+        assertion.setMaxRecords((Integer)maxRecordsSpinner.getValue());
+        assertion.setFetchSize((Integer)fetchSizeSpinner.getValue());
         variableNamingMap = new HashMap<>();
         for(MutablePair<String,String> pair : variableNamingTableModel.getRows()) {
             variableNamingMap.put(pair.left, pair.right);
