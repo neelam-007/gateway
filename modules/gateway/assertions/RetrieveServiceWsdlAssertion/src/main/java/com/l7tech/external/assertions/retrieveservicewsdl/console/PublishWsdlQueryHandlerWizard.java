@@ -22,7 +22,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.retrieveservicewsdl.console.PublishWsdlQueryHandlerWizard.WsdlQueryHandlerConfig;
@@ -61,12 +63,18 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
         addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {
-                publishWsdlQueryHandler();
+                try {
+                    publishWsdlQueryHandler();
+                } catch (IOException ioe) {
+                    logger.log(Level.WARNING, ioe.getMessage(), ioe);
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                            "Error publishing reverse web proxy.", "Error", JOptionPane.ERROR_MESSAGE, null);
+                }
             }
         });
     }
 
-    private void publishWsdlQueryHandler() {
+    private void publishWsdlQueryHandler() throws IOException {
         final PublishedService handlerService = new PublishedService();
 
         handlerService.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
@@ -74,7 +82,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
         handlerService.setRoutingUri(wizardInput.getRoutingUri());
         handlerService.setSoap(false);
 
-        handlerService.getPolicy().setXml(generateServicePolicyXml());
+        handlerService.getPolicy().setXml(generateHandlerServicePolicyXml());
 
 //        service.setSecurityZone(wizardInput.getSelectedSecurityZone());
 //        service.getPolicy().setSecurityZone(wizardInput.getSelectedSecurityZone());
@@ -100,7 +108,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
         });
     }
 
-    private String generateServicePolicyXml() {    // TODO jwilliams: implement policy building - currently returns a stub
+    private String generateHandlerServicePolicyXml() {    // TODO jwilliams: implement policy building - currently returns a stub
         return WspWriter.getPolicyXml(
                 new AllAssertion(Arrays.<Assertion>asList(
                         new AuditDetailAssertion("Published \"" + wizardInput.getServiceName() + "\"."))));

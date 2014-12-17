@@ -32,13 +32,27 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
                 Option.<Folder>none(), Option.<AbstractTreeNode>none(),
                 GatewayFeatureSets.UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD);
 
-        ServicesAndPoliciesTree tree =
+        init();
+    }
+
+    private void init() {
+        final ServicesAndPoliciesTree tree =
                 (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
 
         tree.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent e) {
                 PublishWsdlQueryHandlerAction.this.setActionValues();
+
+                FolderNode folderNode = tree.getDeepestFolderNodeInSelectionPath();
+
+                if (null == folderNode) {
+                    setFolder(Option.<Folder>none());
+                    setParentNode(Option.<AbstractTreeNode>none());
+                } else {
+                    setFolder(new Option<>(folderNode.getFolder()));
+                    setParentNode(new Option<AbstractTreeNode>(folderNode));
+                }
             }
         });
     }

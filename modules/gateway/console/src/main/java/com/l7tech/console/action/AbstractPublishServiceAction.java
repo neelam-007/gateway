@@ -30,8 +30,8 @@ import java.util.logging.Level;
  * Parent class for all actions which publish a service.
  */
 public abstract class AbstractPublishServiceAction extends SecureAction {
-    @NotNull private final Option<Folder> folder;
-    @NotNull private final Option<AbstractTreeNode> parentNode;
+    @NotNull private Option<Folder> folder = Option.none();
+    @NotNull private Option<AbstractTreeNode> parentNode = Option.none();
 
     public AbstractPublishServiceAction(@NotNull final AttemptedOperation attemptedOperation,
                                         @NotNull final Option<Folder> folder,
@@ -67,6 +67,24 @@ public abstract class AbstractPublishServiceAction extends SecureAction {
         dialog.setModal(true);
         Utilities.centerOnScreen(dialog);
         DialogDisplayer.display(dialog);
+    }
+
+    @NotNull
+    protected Option<Folder> getFolder() {
+        return folder;
+    }
+
+    protected void setFolder(@NotNull Option<Folder> folder) {
+        this.folder = folder;
+    }
+
+    @NotNull
+    protected Option<AbstractTreeNode> getParentNode() {
+        return parentNode;
+    }
+
+    protected void setParentNode(@NotNull Option<AbstractTreeNode> parentNode) {
+        this.parentNode = parentNode;
     }
 
     private EntityListener listener = new EntityListenerAdapter() {
