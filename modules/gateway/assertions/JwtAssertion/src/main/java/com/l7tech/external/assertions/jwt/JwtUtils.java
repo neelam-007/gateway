@@ -65,7 +65,8 @@ public final class JwtUtils {
             String usage = null;
             String keyType = null;
             if (jwt instanceof JsonWebSignature) {
-                usage = Use.SIGNATURE;
+                //no need to set 'usage' here as 'use' is use to convey public key usage
+                //since we sign, we need private key
                 keyType = ((JsonWebSignature) jwt).getKeyType();
             } else if (jwt instanceof JsonWebEncryption) {
                 usage = Use.ENCRYPTION;
