@@ -174,7 +174,9 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             } else {
                 try {
                     final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
-                    return ssgKeyEntry.getPrivateKey();
+                    if(ssgKeyEntry != null){
+                        return ssgKeyEntry.getPrivateKey();
+                    }
                 } catch (UnrecoverableKeyException e) {
                     logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
                 }
