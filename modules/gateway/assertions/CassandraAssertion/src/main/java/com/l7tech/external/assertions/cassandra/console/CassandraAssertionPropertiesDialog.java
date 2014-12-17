@@ -17,6 +17,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MutablePair;
+import com.l7tech.util.ValidationUtils;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -28,6 +29,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.variable.Syntax.getReferencedNames;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 
 
 /**
@@ -65,6 +69,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JPanel queryPanel;
     private JCheckBox generateXMLResultCheckBox;
     private JSpinner maxRecordsSpinner;
+    private JButton testQueryButton;
+    private JTextField queryTimeoutTextField;
     private CassandraQueryAssertion assertion;
     private boolean confirmed;
     private Map<String, String> variableNamingMap = new HashMap<>();
@@ -154,6 +160,17 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         rowSorter.setSortsOnUpdates(true);
 
         inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), cqlQueryTextArea, null);
+        inputValidator.constrainTextFieldToBeNonEmpty("Query Timeout", queryTimeoutTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                final String timeout = queryTimeoutTextField.getText().trim();
+                if (!ValidationUtils.isValidLong(timeout, true, 0L, Long.MAX_VALUE) && getReferencedNames(timeout).length == 0) {
+                    errMsg = "The value for the timeout must be a valid positive number.";
+                }
+                return errMsg;
+            }
+        });
 
         addMappingButton.addActionListener(new ActionListener() {
             @Override
@@ -322,6 +339,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         variableNamingMap.putAll(assertion.getNamingMap());
         variableNamingTableModel.setRows(getNamedMappingList());
         enableDisableComponents();
+        queryTimeoutTextField.setText(String.valueOf(assertion.getQueryTimeout()));
     }
 
     private void viewToModel(final CassandraQueryAssertion assertion) {
@@ -336,6 +354,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             variableNamingMap.put(pair.left, pair.right);
         }
         assertion.setNamingMap(variableNamingMap);
+        assertion.setQueryTimeout(Long.parseLong(queryTimeoutTextField.getText()));
     }
 
     private void populateConnectionCombobox() {

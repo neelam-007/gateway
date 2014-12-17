@@ -1371,7 +1371,7 @@ public class AssertionMessages extends Messages {
     public static final M JWT_JWK_NOT_FOUND = m(10841, Level.WARNING, "Could not find key with the alias of {0}");
 
     // CassandraQuery Assertion
-    public static final  M CASSANDRA_CONNECTION_CANNOT_CONNECT = m(10900, Level.WARNING, "Connection to Cassandra cluster associated with connection {0} not available due to {1}");
+    public static final M CASSANDRA_CONNECTION_CANNOT_CONNECT = m(10900, Level.WARNING, "Connection to Cassandra cluster associated with connection {0} not available due to {1}");
     public static final M CASSANDRA_CONNECTION_DISABLED = m(10902, Level.INFO, "The Gateway would not connect via disabled Cassandra connection {0}");
     public static final M CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED = m(10903, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to: {0}");
     public static final M CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED = m(10904, Level.INFO, "\"Perform Cassandra Query\" assertion failed due to no query results via a connection {0}");

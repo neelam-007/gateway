@@ -3,6 +3,8 @@ package com.ca.datasources.cassandra;
 import com.datastax.driver.core.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,10 +83,17 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
      * @return
      */
     @Override
-    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String, List<Object>> resultMap) {
+    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String,
+            List<Object>> resultMap, long queryTimeout) throws TimeoutException {
+
         int rowCount = 0;
         ResultSetFuture result = session.executeAsync(boundStatement);
-        ResultSet rows = result.getUninterruptibly();
+        ResultSet rows;
+        if (queryTimeout > 0) {
+            rows = result.getUninterruptibly(queryTimeout, TimeUnit.SECONDS);
+        } else {
+            rows = result.getUninterruptibly();
+        }
 
         Iterator<Row> resultSetIterator = rows.iterator();
         // Get resultSet into map

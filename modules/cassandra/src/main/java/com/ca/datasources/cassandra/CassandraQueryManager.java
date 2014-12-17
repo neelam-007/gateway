@@ -6,6 +6,7 @@ import com.datastax.driver.core.Session;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Copyright: Layer 7 Technologies, 2014
@@ -17,5 +18,5 @@ public interface CassandraQueryManager {
 
     BoundStatement buildBoundStatement(PreparedStatement preparedStatement, List<Object> preparedStmtParams);
 
-    int executeStatement(Session session, BoundStatement boundStatement, Map<String, List<Object>> resultMap);
+    int executeStatement(Session session, BoundStatement boundStatement, Map<String, List<Object>> resultMap, long queryTimeout) throws TimeoutException;
 }

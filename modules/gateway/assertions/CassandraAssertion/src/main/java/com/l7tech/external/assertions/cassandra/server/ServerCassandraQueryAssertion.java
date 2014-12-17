@@ -22,6 +22,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutContextVariables;
 
@@ -89,7 +90,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             BoundStatement boundStatement = cassandraQueryManager.buildBoundStatement(preparedStatement, preparedStmtParams);
             boundStatement.setFetchSize(assertion.getFetchSize());
             Map<String, List<Object>> resultMap =  new TreeMap<>();
-            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap);
+            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getQueryTimeout());
 
             //Get results map into context variable
             String prefix = assertion.getPrefix();

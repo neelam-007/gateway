@@ -47,6 +47,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     private boolean isGenerateXmlResult = false;
     private int fetchSize = MAX_RECORDS_DEF;
     private Map<String, String> namingMap = new HashMap<>();
+    private long queryTimeout = 0;
 
     String prefix = DEFAULT_QUERY_PREFIX;
     //
@@ -97,6 +98,14 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
 
     public void setNamingMap(Map<String, String> namedMap) {
         this.namingMap = namedMap;
+    }
+
+    public long getQueryTimeout() {
+        return queryTimeout;
+    }
+
+    public void setQueryTimeout(long queryTimeout) {
+        this.queryTimeout = queryTimeout;
     }
 
     public boolean isGenerateXmlResult() {
