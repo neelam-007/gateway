@@ -1,5 +1,6 @@
 package com.l7tech.server.cassandra;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
@@ -103,6 +104,8 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
                     cassandraConnectionManager.testConnection(connection);
                 } catch (FindException | ParseException e) {
                     return "Invalid username or password setting. \n" + ExceptionUtils.getMessage(e);
+                } catch (NoHostAvailableException e) {
+                    return "Cannot connect to any Cassandra Server.";
                 } catch (Throwable e) {
                     return "Unexpected error, " + e.getClass().getSimpleName() + " thrown";
                 }
