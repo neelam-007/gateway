@@ -140,7 +140,7 @@ public final class ImageCache {
                 imageMap.put(name, imgRef);
                 return image;
             } catch (final Exception e) {
-                logger.log( Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
+                logger.log( Level.WARNING, "Unable to load image resource " + name + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
             }
         }
         return null;
