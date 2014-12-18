@@ -2,9 +2,9 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import org.apache.commons.lang.Validate;
 import org.jetbrains.annotations.NotNull;
@@ -46,5 +46,10 @@ public class CreateEncapsulatedAssertionAction extends AbstractEncapsulatedAsser
         } else {
             showConfigDialog(false, config, false);
         }
+    }
+
+    @Override
+    protected boolean policiesFolderNodeRefreshRequired( @NotNull EncapsulatedAssertionConfig savedConfig, @Nullable Goid oldConfigGoid, @Nullable String oldPolicyGuid ) {
+        return true;
     }
 }

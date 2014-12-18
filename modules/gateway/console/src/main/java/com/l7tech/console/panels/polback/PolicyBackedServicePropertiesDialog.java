@@ -215,7 +215,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
     private void populateOperationsTable( String templateInterfaceName ) {
         operationsTableModel = TableUtil.configureTable( operationsTable,
                 TableUtil.column( "Operation", 100, 200, 9999, Functions.propertyTransform( OperationRow.class, "operationName" ) ),
-                TableUtil.column( "Encapsulated Assertion", 100, 200, 9999, Functions.propertyTransform( OperationRow.class, "implementationName" ) ) );
+                TableUtil.column( "Backing Policy", 100, 200, 9999, Functions.propertyTransform( OperationRow.class, "implementationName" ) ) );
 
         if ( templateInterfaceName != null ) {
             final Collection<EncapsulatedAssertionConfig> templateEacs;

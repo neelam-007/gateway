@@ -565,6 +565,13 @@ public class EncapsulatedAssertionManagerWindow extends JDialog {
         }
         if (numDeleted > 0) {
             loadEncapsulatedAssertionConfigs(true);
+            SwingUtilities.invokeLater( new Runnable() {
+                @Override
+                public void run() {
+                    TopComponents.getInstance().refreshPoliciesFolderNode();
+                    TopComponents.getInstance().getTopParent().repaint();
+                }
+            } );
         }
         if (errors.size() == 1) {
             final Exception error = errors.get(0);
