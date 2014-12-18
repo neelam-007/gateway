@@ -66,8 +66,8 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private static final long DEFAULT_CONNECTION_MAX_AGE = 0L;
     private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis(30);
     private static final int DEFAULT_CONNECTION_CACHE_SIZE = 20;
-    public static final int MAX_RECORDS_DEF = 10;
-    public static final String QUERY_FETCH_SIZE = "maxRecords";
+    public static final int DEFAULT_FETCH_SIZE = 5000;
+    public static final String QUERY_FETCH_SIZE = "fetchSize";
 
     private final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
     private final CassandraConnectionEntityManager cassandraEntityManager;
@@ -290,11 +290,11 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     private void addQueryOptions(Cluster.Builder clusterBuilder, CassandraConnection cassandraConnectionEntity) {
-        int defaultFetchSize = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_RECORDS, MAX_RECORDS_DEF);
+        int defaultFetchSize = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_RECORDS, DEFAULT_FETCH_SIZE);
         Map<String, String> connectionProperties = cassandraConnectionEntity.getProperties();
-        int maxRecords = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(QUERY_FETCH_SIZE), defaultFetchSize) : defaultFetchSize;
+        int fetchSize = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(QUERY_FETCH_SIZE), defaultFetchSize) : defaultFetchSize;
         QueryOptions options = new QueryOptions();
-        options.setFetchSize(maxRecords);
+        options.setFetchSize(fetchSize);
         clusterBuilder.withQueryOptions(options);
     }
 
