@@ -10,7 +10,6 @@ import java.awt.*;
 public class ResolveServiceAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<ResolveServiceAssertion> {
     private JPanel contentPane;
     private JTextField uriField;
-    private JPanel prefixVariablePanelHolder;
     private TargetVariablePanel prefixVariablePanel;
 
     private InputValidator inputValidator;
@@ -29,9 +28,6 @@ public class ResolveServiceAssertionPropertiesDialog extends AssertionProperties
         prefixVariablePanel = new TargetVariablePanel();
         prefixVariablePanel.setValueWillBeRead(false);
         prefixVariablePanel.setValueWillBeWritten(true);
-
-        prefixVariablePanelHolder.setLayout(new BorderLayout());
-        prefixVariablePanelHolder.add(prefixVariablePanel, BorderLayout.CENTER);
 
         // input validation
         inputValidator = new InputValidator(this, "Resolve Service Assertion Validation");
