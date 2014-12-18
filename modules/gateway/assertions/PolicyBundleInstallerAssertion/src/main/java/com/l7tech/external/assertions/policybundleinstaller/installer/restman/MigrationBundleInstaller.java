@@ -85,9 +85,9 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 }
 
                 // get mappings, set action, add Properties, add Property
-                final List<String> entityIdsInBundleMapping = new ArrayList<>();
+                final List<String> entityIdsFromBundleRequestMessageMappings = new ArrayList<>();
                 for (Element mapping : requestMessage.getMappings()) {
-                    entityIdsInBundleMapping.add(mapping.getAttribute("srcId"));
+                    entityIdsFromBundleRequestMessageMappings.add(mapping.getAttribute("srcId"));
 
                     Element propertiesElement = DomUtils.findFirstChildElementByName(mapping, MGMT_VERSION_NAMESPACE, "Properties");
                     if (propertiesElement == null) {
@@ -117,6 +117,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
                 final Pair<AssertionStatus, RestmanMessage> dryRunResult = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
                 final RestmanMessage dryRunMessage = dryRunResult.right;
+                final List<String> idListOfExistingTargetFolders = new ArrayList<>();
 
                 // parse for mapping errors
                 if (dryRunMessage.hasMappingError()) {
@@ -127,12 +128,17 @@ public class MigrationBundleInstaller extends BaseInstaller {
                         RestmanMessage.setL7XmlNs(mappingError);
 
                         // Save a representation of each mapping element
-                        dryRunEvent.addMigrationErrorMapping(convertToDryRunResult(mappingError, requestMessage));
+                        MigrationDryRunResult convertedResult = convertToDryRunResult(mappingError, requestMessage);
+                        dryRunEvent.addMigrationErrorMapping(convertedResult);
+
+                        if (convertedResult.getEntityTypeStr().equals(EntityType.FOLDER.toString()) && convertedResult.getErrorTypeStr().equals("TargetExists")) {
+                            idListOfExistingTargetFolders.add(convertedResult.getSrcId());
+                        }
                     }
                 }
 
                 // Find entities deleted from the bundle, while they are still in the target gateway.
-                findDeletedEntities(dryRunEvent, entityIdsInBundleMapping, requestMessage.hasRootNodeItem());
+                findDeletedEntities(dryRunEvent, entityIdsFromBundleRequestMessageMappings, idListOfExistingTargetFolders, requestMessage.hasRootFolderItem());
             } catch (IOException e) {
                 throw new RuntimeException("Unexpected exception serializing bundle document", e);
             } catch (UnexpectedManagementResponse e) {
@@ -183,13 +189,23 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
     /**
      * Find entities deleted from the bundle, while they are still in the target gateway.
+     *
+     * @param dryRunEvent: used to add MigrationErrorMapping
+     * @param entityIdsFromBundleRequestMessageMappings: all entity ids defined in the mappings from the bundle request message
+     * @param idListOfExistingTargetFolders: ids of the folders, which exist in the target gateway
+     * @param isRootNodeTargetFold: a flag indicates if the installed folder is a root folder or not.
      */
-    private void findDeletedEntities(final DryRunInstallPolicyBundleEvent dryRunEvent, final List<String> entityIdsInBundleMapping, final boolean isRootNodeTargetFold)
-        throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
-        if (entityIdsInBundleMapping == null || entityIdsInBundleMapping.isEmpty()) return;
+    private void findDeletedEntities(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent,
+                                     @NotNull final List<String> entityIdsFromBundleRequestMessageMappings,
+                                     @NotNull final List<String> idListOfExistingTargetFolders,
+                                     final boolean isRootNodeTargetFold) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
+        if (entityIdsFromBundleRequestMessageMappings.isEmpty()) return;
 
-        final String targetFoldGoid = isRootNodeTargetFold? entityIdsInBundleMapping.get(0) : entityIdsInBundleMapping.get(1);
-        if (targetFoldGoid == null || targetFoldGoid.trim().isEmpty()) return;
+        final String targetFoldGoid = isRootNodeTargetFold? entityIdsFromBundleRequestMessageMappings.get(0) : entityIdsFromBundleRequestMessageMappings.get(1);
+        if (StringUtils.isEmpty(targetFoldGoid)) return;
+
+        // If the target folder does not exist in the target gateway, ignore this method
+        if (! idListOfExistingTargetFolders.contains(targetFoldGoid)) return;
 
         final String requestXml = "";
         final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
@@ -217,8 +233,8 @@ public class MigrationBundleInstaller extends BaseInstaller {
         List<String> deletedEntityIds = new ArrayList<>();
         deletedEntityIds.addAll(targetEntityIds);
 
-        // Remove from targetEntityIds all of its elements that are not contained in entityIdsInBundleMapping
-        targetEntityIds.retainAll(entityIdsInBundleMapping);
+        // Remove from targetEntityIds all of its elements that are not contained in entityIdsFromBundleRequestMessageMappings
+        targetEntityIds.retainAll(entityIdsFromBundleRequestMessageMappings);
 
         // Get all elements not contained in entityIdsInBundleMapping
         deletedEntityIds.removeAll(targetEntityIds);

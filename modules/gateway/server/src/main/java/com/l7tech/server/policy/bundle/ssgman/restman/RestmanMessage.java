@@ -3,7 +3,7 @@ package com.l7tech.server.policy.bundle.ssgman.restman;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.util.DomUtils;
@@ -44,6 +44,7 @@ public class RestmanMessage {
     private static final String XMLNS_L7 = "xmlns:" + NS_L7;
     private static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
     private static final String NODE_ATTRIBUTE_NAME_KEY = "key";
+    private static final String ROOT_FOLDER_ID = Folder.ROOT_FOLDER_ID.toHexString();
 
     private List<Element> mappingErrors;
     private List<Element> bundles;
@@ -158,9 +159,9 @@ public class RestmanMessage {
         return bundleReferenceItems;
     }
 
-    public boolean hasRootNodeItem() {
-        final List<Element> rootNodeIds = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='0000000000000000ffffffffffffec76']//l7:Id", getNamespaceMap());
-        return rootNodeIds != null && rootNodeIds.size() == 1;
+    public boolean hasRootFolderItem() {
+        final List<Element> rootNodeIds = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + ROOT_FOLDER_ID + "']//l7:Id", getNamespaceMap());
+        return rootNodeIds.size() == 1;
     }
 
     public static Element setL7XmlNs(@NotNull final Element element) {
@@ -234,7 +235,7 @@ public class RestmanMessage {
 
         Set<String> result = new HashSet<>();
         for (Element mappingEle : mappings) {
-            if (!"0000000000000000ffffffffffffec76".equals(mappingEle.getAttribute("srcId")) &&
+            if (!ROOT_FOLDER_ID.equals(mappingEle.getAttribute("srcId")) &&
                 "FOLDER".equals(mappingEle.getAttribute("type")) &&
                 "NewOrExisting".equals(mappingEle.getAttribute("action"))) {
                 List<Element> propertiesEleList = DomUtils.findChildElementsByName(mappingEle, MGMT_VERSION_NAMESPACE, NODE_NAME_PROPERTIES);
