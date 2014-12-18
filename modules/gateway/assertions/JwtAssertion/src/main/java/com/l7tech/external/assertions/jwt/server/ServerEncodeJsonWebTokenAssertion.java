@@ -49,7 +49,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
         //find the payload
-        final String sourcePayload = ExpandVariables.process(assertion.getSourceVariable(), variables, getAudit(), true);
+        final String sourcePayload = ExpandVariables.process(assertion.getSourceVariable(), variables, getAudit(), false);
         if (sourcePayload == null || sourcePayload.trim().isEmpty()) {
             logAndAudit(AssertionMessages.JWT_MISSING_SOURCE_PAYLOAD);
             return AssertionStatus.FAILED;
@@ -57,7 +57,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         //determine what to do with header and possibly get header
         String sourceHeaders = null;
         if (!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(assertion.getHeaderAction())) {
-            sourceHeaders = ExpandVariables.process(assertion.getSourceHeaders(), variables, getAudit(), true);
+            sourceHeaders = ExpandVariables.process(assertion.getSourceHeaders(), variables, getAudit(), false);
             if (sourceHeaders == null || sourceHeaders.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_HEADERS, assertion.getHeaderAction());
                 return AssertionStatus.FAILED;
@@ -147,7 +147,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
 
         //set key base in configuration
         if (signatureAlgorithm.startsWith("HS")) {
-            final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), true);
+            final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), false);
             if (secretKey == null || secretKey.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
                 return null;
@@ -155,7 +155,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             return new HmacKey(secretKey.getBytes());
         } else if (!signatureAlgorithm.equals("None")) {
             if (assertion.isPrivateKeyFromVariable()) {
-                String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), true);
+                String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
                 if (key == null || key.trim().isEmpty()) {
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
                     return null;
@@ -164,7 +164,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
                     return JwtUtils.getKeyFromJWK(getAudit(), key, true);
                 } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
-                    final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), true);
+                    final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), false);
                     if (kid == null || kid.trim().isEmpty()) {
                         logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                         return null;
@@ -188,7 +188,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     private Key getEncryptionKey(final JsonWebEncryption jwe, final PolicyEnforcementContext context) {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
-        Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), true);
+        Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
         if (key == null) {
             logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
             return null;
@@ -218,7 +218,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                 return null;
             }
-            final String kid = ExpandVariables.process(assertion.getEncryptionKeyId(), variables, getAudit(), true);
+            final String kid = ExpandVariables.process(assertion.getEncryptionKeyId(), variables, getAudit(), false);
             if (kid == null || kid.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                 return null;

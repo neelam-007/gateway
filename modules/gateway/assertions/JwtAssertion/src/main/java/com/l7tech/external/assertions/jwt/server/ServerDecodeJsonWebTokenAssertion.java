@@ -51,7 +51,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
         //find the payload
-        final String sourcePayload = ExpandVariables.process(assertion.getSourcePayload(), variables, getAudit(), true);
+        final String sourcePayload = ExpandVariables.process(assertion.getSourcePayload(), variables, getAudit(), false);
         if (sourcePayload == null || sourcePayload.trim().isEmpty()) {
             logAndAudit(AssertionMessages.JWT_MISSING_SOURCE_PAYLOAD);
             return AssertionStatus.FAILED;
@@ -120,7 +120,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                 logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
             }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(validate)) {
-            final String keySource = ExpandVariables.process(assertion.getPrivateKeySource(), variables, getAudit(), true);
+            final String keySource = ExpandVariables.process(assertion.getPrivateKeySource(), variables, getAudit(), false);
             if (keySource == null || keySource.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND);
                 return AssertionStatus.FAILED;
@@ -129,7 +129,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                 //when we decrypt and it's a JWE we want the private key, otherwise get the public key
                 key = JwtUtils.getKeyFromJWK(getAudit(), keySource, structure instanceof JsonWebEncryption);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getKeyType())) {
-                final String kid = ExpandVariables.process(assertion.getKeyId(), variables, getAudit(), true);
+                final String kid = ExpandVariables.process(assertion.getKeyId(), variables, getAudit(), false);
                 if (kid == null || kid.trim().isEmpty()) {
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                     return AssertionStatus.FAILED;
