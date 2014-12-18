@@ -1378,6 +1378,7 @@ public class AssertionMessages extends Messages {
     public static final M CASSANDRA_CANNOT_REMOVE_CONNECTION = m(10905, Level.WARNING, "Unable to remove Cassandra connection due to: {0}");
     public static final M CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE = m(10906, Level.FINE, "Cassandra Connection Manager: {0}");
 
+    public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
     // Highest ID reserved for AssertionMessages = 99999
 }
 

@@ -12,8 +12,8 @@ public class RaiseErrorAssertion extends Assertion {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"policyLogic"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
-        meta.put(AssertionMetadata.SHORT_NAME, "Raise error");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Stop16.gif");
+        meta.put(AssertionMetadata.SHORT_NAME, "Raise Error");
         meta.put(AssertionMetadata.DESCRIPTION, "Raise error(s) to terminate processing.");
 
 
