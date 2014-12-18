@@ -280,20 +280,6 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         context.getVariable("result.compact");
     }
 
-    @Test(expected = VariableNameSyntaxException.class)
-    public void testJWS_secretFromNonExistentVariable() throws Exception {
-        PolicyEnforcementContext context = getContext();
-        context.setVariable("testpayload", "yabbadabbadoo");
-        EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
-        ass.setSourceVariable("${testpayload}");
-        ass.setSignatureAlgorithm("HS256");
-        ass.setSignatureSecretKey("${my.secret}");
-        ass.setTargetVariable("result");
-
-        ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
-        sass.checkRequest(context);
-    }
-
     @Test
     public void testJWS_usingJWK() throws Exception {
         PolicyEnforcementContext context = getContext();
