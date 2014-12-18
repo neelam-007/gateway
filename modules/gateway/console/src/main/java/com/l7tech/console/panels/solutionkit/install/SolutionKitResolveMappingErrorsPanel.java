@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.solutionkit.install;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.console.panels.solutionkit.SolutionKitsConfig;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
@@ -83,6 +84,7 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
     }
 
     private void initialize() {
+        solutionKitMappingsPanel.hideTargetIdColumn();
         solutionKitMappingsPanel.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {

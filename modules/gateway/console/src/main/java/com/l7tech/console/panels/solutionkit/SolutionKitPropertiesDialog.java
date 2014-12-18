@@ -1,29 +1,36 @@
 package com.l7tech.console.panels.solutionkit;
 
-import com.japisoft.xmlpad.XMLContainer;
-import com.l7tech.console.util.XMLContainerFactory;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
+import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class SolutionKitPropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(SolutionKitPropertiesDialog.class.getName());
+
     private JPanel mainPanel;
     private JLabel idFieldLabel;
     private JLabel versionFieldLabel;
     private JLabel nameFieldLabel;
     private JLabel descriptionFieldLabel;
     private JLabel createdTimeFieldLabel;
-    private JPanel mappingsPanel;
+    private SolutionKitMappingsPanel solutionKitMappingsPanel;
     private JButton closeButton;
-
-    private XMLContainer mappingsXmlContainer;
 
     public SolutionKitPropertiesDialog(Dialog owner, SolutionKit solutionKit) {
         super(owner, "Solution Kit Properties", true);
@@ -33,13 +40,9 @@ public class SolutionKitPropertiesDialog extends JDialog {
     }
 
     private void initialize() {
-        // todo (kpak) - change to use SolutionKitMappingPanel.
-        mappingsXmlContainer = XMLContainerFactory.createXmlContainer(true);
-        mappingsXmlContainer.getUIAccessibility().setPopupAvailable(false);
-        mappingsXmlContainer.setEditableDocumentMode(false);
-        mappingsXmlContainer.setEditable(false);
-        mappingsPanel.setLayout(new BorderLayout());
-        mappingsPanel.add(mappingsXmlContainer.getView(), BorderLayout.CENTER);
+        solutionKitMappingsPanel.hideNameColumn();
+        solutionKitMappingsPanel.hideErrorTypeColumn();
+        solutionKitMappingsPanel.hideResolvedColumn();
 
         closeButton.addActionListener(new ActionListener() {
             @Override
@@ -60,8 +63,13 @@ public class SolutionKitPropertiesDialog extends JDialog {
         descriptionFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
         createdTimeFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
 
-        // todo (kpak) - change to table format.
-        mappingsXmlContainer.getAccessibility().setText(solutionKit.getMappings());
+        try {
+            Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKit.getMappings())));
+            Mappings mappings = (Mappings)item.getContent();
+            solutionKitMappingsPanel.setData(mappings);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     private void onClose() {
