@@ -58,6 +58,10 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     @Override
     protected void initComponents() {
         super.initComponents();
+
+        privateKeysComboBox.setIncludeDefaultSslKey(false);
+        privateKeysComboBox.repopulate();
+
         //headers
         headerActionComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.HEADER_ACTION.toArray(new String[JsonWebTokenConstants.HEADER_ACTION.size()])));
 
@@ -255,8 +259,9 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
         assertion.setKeyManagementAlgorithm(JsonWebTokenConstants.KEY_MANAGEMENT_ALGORITHMS.inverse().get(keyManagementAlgorithmComboBox.getSelectedItem().toString()));
         assertion.setContentEncryptionAlgorithm(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.inverse().get(contentEncryptionAlgorithmComboBox.getSelectedItem().toString()));
-
-        assertion.setEncryptionKey(encryptionKeyTextField.getText().trim());
+        if(encryptionKeyTextField.isEnabled()){
+            assertion.setEncryptionKey(encryptionKeyTextField.getText().trim());
+        }
         if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(encryptionKeyType.getSelectedItem())) {
             assertion.setEncryptionKeyId(encryptionKeyId.getText().trim());
         }
