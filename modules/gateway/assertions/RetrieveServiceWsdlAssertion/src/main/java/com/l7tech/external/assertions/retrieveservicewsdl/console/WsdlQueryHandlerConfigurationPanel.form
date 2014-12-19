@@ -30,6 +30,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="serviceNameLabel"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="serviceNameToolTip"/>
                 </properties>
               </component>
               <component id="31145" class="javax.swing.JTextField" binding="serviceNameTextField">
@@ -38,7 +39,9 @@
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="serviceNameToolTip"/>
+                </properties>
               </component>
               <component id="50d29" class="javax.swing.JLabel">
                 <constraints>
@@ -46,6 +49,7 @@
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="routingUriLabel"/>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="routingUriToolTip"/>
                 </properties>
               </component>
               <component id="db65f" class="javax.swing.JTextField" binding="routingUriTextField">
@@ -54,7 +58,9 @@
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
-                <properties/>
+                <properties>
+                  <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/WsdlQueryHandlerConfigurationPanel" key="routingUriToolTip"/>
+                </properties>
               </component>
               <component id="d7231" class="javax.swing.JLabel" binding="urlPreviewLabel">
                 <constraints>
