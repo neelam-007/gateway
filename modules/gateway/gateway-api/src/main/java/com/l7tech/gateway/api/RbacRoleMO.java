@@ -14,7 +14,7 @@ import java.util.List;
  * The RbacRoleMO object represents an rbac role entity.
  */
 @XmlRootElement(name = "Role")
-@XmlType(name = "RbacRoleType", propOrder = {"name", "description", "userCreated", "entityType", "entityID", "permissions", "assignments", "extension", "extensions"})
+@XmlType(name = "RbacRoleType", propOrder = {"name", "description", "userCreated", "permissions", "assignments", "extension", "extensions", "entityType", "entityID"})
 @AccessorSupport.AccessibleResource(name = "roles")
 public class RbacRoleMO extends ElementExtendableAccessibleObject {
 
