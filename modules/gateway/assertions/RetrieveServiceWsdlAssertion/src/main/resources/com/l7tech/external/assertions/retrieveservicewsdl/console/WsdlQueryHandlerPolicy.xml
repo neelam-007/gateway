@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:All wsp:Usage="Required">
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="WSDL Query Handler Policy"/>
+        </L7p:CommentAssertion>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="This Policy is called by the global message-received policy"/>
+        </L7p:CommentAssertion>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="In general this policy shouldn't be modified"/>
+        </L7p:CommentAssertion>
         <L7p:AuditAssertion/>
         <L7p:CustomizeErrorResponse>
             <L7p:Content stringValue="Page not found."/>
@@ -9,6 +18,9 @@
         </L7p:CustomizeErrorResponse>
         <wsp:OneOrMore wsp:Usage="Required">
             <wsp:All wsp:Usage="Required">
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="First Branch - request URL already contains serviceOid"/>
+                </L7p:CommentAssertion>
                 <L7p:AuditDetailAssertion>
                     <L7p:Detail stringValue="Checking for Service ID parameter"/>
                 </L7p:AuditDetailAssertion>
@@ -68,6 +80,9 @@
                 </wsp:OneOrMore>
             </wsp:All>
             <wsp:All wsp:Usage="Required">
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="Second Branch - request URL doesn't contain serviceOid"/>
+                </L7p:CommentAssertion>
                 <L7p:AuditDetailAssertion>
                     <L7p:Detail stringValue="Need to resolve Service ID from request URI"/>
                 </L7p:AuditDetailAssertion>
@@ -98,12 +113,18 @@
         <L7p:AuditDetailAssertion>
             <L7p:Detail stringValue="Handler Service = ${service.oid}"/>
         </L7p:AuditDetailAssertion>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Execute WSDL Query Authentication Fragment"/>
+        </L7p:CommentAssertion>
         <L7p:Include>
             <L7p:Enabled booleanValue="false"/>
             <L7p:PolicyGuid stringValue="AUTH_FRAGMENT_GUID"/>
         </L7p:Include>
         <wsp:OneOrMore wsp:Usage="Required">
             <wsp:All wsp:Usage="Required">
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="Branch 1 - Retrieve WSDL Document for service"/>
+                </L7p:CommentAssertion>
                 <L7p:ComparisonAssertion>
                     <L7p:CaseSensitive booleanValue="false"/>
                     <L7p:Expression1 stringValue="${docId}"/>
@@ -132,6 +153,9 @@
                 </L7p:RetrieveServiceWsdl>
             </wsp:All>
             <wsp:All wsp:Usage="Required">
+                <L7p:CommentAssertion>
+                    <L7p:Comment stringValue="Branch 2 - Retrieve Dependent Document for service"/>
+                </L7p:CommentAssertion>
                 <L7p:AuditDetailAssertion>
                     <L7p:Detail stringValue="Retrieving WSDL Dependency"/>
                 </L7p:AuditDetailAssertion>

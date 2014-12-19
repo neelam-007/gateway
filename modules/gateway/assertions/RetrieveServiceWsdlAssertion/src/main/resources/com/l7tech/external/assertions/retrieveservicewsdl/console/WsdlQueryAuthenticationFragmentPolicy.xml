@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:All wsp:Usage="Required">
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="WSDL Query Authentication Policy Fragment"/>
+        </L7p:CommentAssertion>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Configure the required security policy for the WSDL Query Handler in this policy"/>
+        </L7p:CommentAssertion>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Default policy is HTTP Basic Authentication over SSL"/>
+        </L7p:CommentAssertion>
         <L7p:AuditDetailAssertion>
             <L7p:Detail stringValue="Policy Fragment: WSDL Query Authentication"/>
         </L7p:AuditDetailAssertion>

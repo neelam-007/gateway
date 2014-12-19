@@ -1,28 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
-    <wsp:All wsp:Usage="Required">
-        <wsp:OneOrMore wsp:Usage="Required">
-            <wsp:All wsp:Usage="Required">
-                <L7p:ComparisonAssertion>
-                    <L7p:CaseSensitive booleanValue="false"/>
-                    <L7p:Expression1 stringValue="${request.url.query}"/>
-                    <L7p:Expression2 stringValue="wsdl"/>
-                    <L7p:MultivaluedComparison multivaluedComparison="FAIL"/>
-                    <L7p:Predicates predicates="included">
-                        <L7p:item binary="included">
-                            <L7p:CaseSensitive booleanValue="false"/>
-                            <L7p:RightValue stringValue="wsdl"/>
-                        </L7p:item>
-                    </L7p:Predicates>
-                </L7p:ComparisonAssertion>
-                <L7p:AuditDetailAssertion>
-                    <L7p:Detail stringValue="WSDL query detected"/>
-                </L7p:AuditDetailAssertion>
-                <L7p:ResolveService>
-                    <L7p:Uri stringValue="ROUTING_URI"/>
-                </L7p:ResolveService>
-            </wsp:All>
-            <L7p:TrueAssertion/>
-        </wsp:OneOrMore>
-    </wsp:All>
+<wsp:All wsp:Usage="Required">
+    <L7p:CommentAssertion>
+        <L7p:Comment stringValue="WSDL Query Intercept &amp; Redirect Policy"/>
+    </L7p:CommentAssertion>
+    <L7p:CommentAssertion>
+        <L7p:Comment stringValue="Add to message-received global policy."/>
+    </L7p:CommentAssertion>
+    <L7p:CommentAssertion>
+        <L7p:Comment stringValue="Resolve Service Assertion used to redirect request to WSDL Query Handler policy"/>
+    </L7p:CommentAssertion>
+    <wsp:OneOrMore wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
+            <L7p:CommentAssertion>
+                <L7p:Comment stringValue="Recognize a wsdl request as URL path followed by '?wsdl'"/>
+            </L7p:CommentAssertion>
+            <L7p:ComparisonAssertion>
+                <L7p:CaseSensitive booleanValue="false"/>
+                <L7p:Expression1 stringValue="${request.url.query}"/>
+                <L7p:Expression2 stringValue="wsdl"/>
+                <L7p:MultivaluedComparison multivaluedComparison="FAIL"/>
+                <L7p:Predicates predicates="included">
+                    <L7p:item binary="included">
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:RightValue stringValue="wsdl"/>
+                    </L7p:item>
+                </L7p:Predicates>
+            </L7p:ComparisonAssertion>
+            <L7p:AuditDetailAssertion>
+                <L7p:Detail stringValue="WSDL query detected"/>
+            </L7p:AuditDetailAssertion>
+            <L7p:CommentAssertion>
+                <L7p:Comment stringValue="Forward request to WSDL Query Handler"/>
+            </L7p:CommentAssertion>
+            <L7p:ResolveService>
+                <L7p:Uri stringValue="ROUTING_URI"/>
+            </L7p:ResolveService>
+        </wsp:All>
+        <L7p:TrueAssertion/>
+    </wsp:OneOrMore>
+</wsp:All>
 </wsp:Policy>
