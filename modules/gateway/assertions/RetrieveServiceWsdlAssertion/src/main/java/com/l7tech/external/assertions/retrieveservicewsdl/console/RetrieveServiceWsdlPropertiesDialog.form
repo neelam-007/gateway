@@ -147,7 +147,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/retrieveservicewsdl/console/RetrieveServiceWsdlPropertiesDialog" key="serviceDocumentIdToolTip"/>
+            </properties>
           </component>
           <component id="2443d" class="javax.swing.JRadioButton" binding="wsdlRadioButton">
             <constraints>
