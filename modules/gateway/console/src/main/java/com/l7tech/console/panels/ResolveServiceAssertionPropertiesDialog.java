@@ -25,7 +25,6 @@ public class ResolveServiceAssertionPropertiesDialog extends AssertionProperties
         super.initComponents();
 
         // prefix variable panel
-        prefixVariablePanel = new TargetVariablePanel();
         prefixVariablePanel.setValueWillBeRead(false);
         prefixVariablePanel.setValueWillBeWritten(true);
 
