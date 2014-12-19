@@ -86,7 +86,7 @@ public class ServerHandleErrorsAssertionTest {
         hea.setVariablePrefix("foobar");
         ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
         AssertionStatus status = shea.checkRequest(context());
-        Assert.assertEquals(AssertionStatus.FAILED, status);
+        Assert.assertEquals(AssertionStatus.NONE, status);
         Object m = context.getVariable("foobar.message");
         Assert.assertNotNull(m);
     }
@@ -97,7 +97,7 @@ public class ServerHandleErrorsAssertionTest {
         hea.setVariablePrefix("foobar");
         ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
         AssertionStatus status = shea.checkRequest(context());
-        Assert.assertEquals(AssertionStatus.FAILED, status);
+        Assert.assertEquals(AssertionStatus.NONE, status);
         Object m = context.getVariable("foobar.message");
         Assert.assertNotNull(m);
         //foo doesn't exist as execution would have stopped
@@ -110,7 +110,7 @@ public class ServerHandleErrorsAssertionTest {
         hea.setVariablePrefix("foobar");
         ServerHandleErrorsAssertion shea = (ServerHandleErrorsAssertion) policyFactory.compilePolicy(hea, false);
         AssertionStatus status = shea.checkRequest(context());
-        Assert.assertEquals(AssertionStatus.FAILED, status);
+        Assert.assertEquals(AssertionStatus.NONE, status);
         Object m = context.getVariable("foobar.message");
         Assert.assertNotNull(m);
         Object n = context.getVariable("foo");

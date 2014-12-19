@@ -38,10 +38,12 @@ public class ServerHandleErrorsAssertion extends ServerCompositeAssertion<Handle
         } catch (PolicyAssertionException e) {
             context.setVariable(assertion.getVariablePrefix() + ".message", ExceptionUtils.getMessage(e));
             logAndAudit(AssertionMessages.HANDLE_ERRORS_MSG, ExceptionUtils.getMessage(e));
+            return AssertionStatus.NONE;
         } catch (IOException e) {
             if (assertion.isIncludeIOException()) {
                 context.setVariable(assertion.getVariablePrefix() + ".message", ExceptionUtils.getMessage(e));
                 logAndAudit(AssertionMessages.HANDLE_ERRORS_MSG, ExceptionUtils.getMessage(e));
+                return AssertionStatus.NONE;
             } else {
                 throw e;
             }
