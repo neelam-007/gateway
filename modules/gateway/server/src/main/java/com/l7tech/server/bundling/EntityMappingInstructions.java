@@ -34,7 +34,7 @@ public class EntityMappingInstructions {
     private final TargetMapping targetMapping;
 
     public enum MappingAction {
-        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Delete, Ignore
+        NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore
     }
 
     /**

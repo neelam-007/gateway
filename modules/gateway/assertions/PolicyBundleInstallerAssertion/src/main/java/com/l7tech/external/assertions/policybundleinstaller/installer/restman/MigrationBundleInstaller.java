@@ -319,11 +319,10 @@ public class MigrationBundleInstaller extends BaseInstaller {
                     for (String id : migrationOverrides.keySet()) {
                         Pair<String, Properties> mapping = migrationOverrides.get(id);
 
-                        EntityMappingInstructions.MappingAction mappingAction = EntityMappingInstructions.MappingAction.valueOf(mapping.left);
-                        requestMessage.setMappingAction(id, mappingAction, mapping.right);
-
-                        if (mappingAction == EntityMappingInstructions.MappingAction.Delete) {
+                        if (mapping.left.equals("Delete")) {
                             deletedEntities.put(id, (String) mapping.right.get(id));
+                        } else {
+                            requestMessage.setMappingAction(id, EntityMappingInstructions.MappingAction.valueOf(mapping.left), mapping.right);
                         }
                     }
                 }
