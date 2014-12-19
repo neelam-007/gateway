@@ -80,8 +80,8 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
      * @param session - Session object
      * @param boundStatement - BoundStatement object
      * @param resultMap - Map containing the query result where the keys are columns
-     * @param maxRecords
-     * @return
+     * @param maxRecords - Maximum records to return
+     * @return Row count
      */
     @Override
     public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String, List<Object>> resultMap, int maxRecords, long queryTimeout) throws TimeoutException {
@@ -112,5 +112,15 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
             rowCount++;
         }
         return rowCount;
+    }
+
+    @Override
+    public void testQuery(Session session, String queryString, long timeout) throws Exception {
+        ResultSetFuture future = session.executeAsync(queryString);//the query will throw RuntimeException if something happened
+        if (timeout > 0L) {
+            future.getUninterruptibly(timeout, TimeUnit.SECONDS);
+        } else {
+            future.getUninterruptibly();
+        }
     }
 }

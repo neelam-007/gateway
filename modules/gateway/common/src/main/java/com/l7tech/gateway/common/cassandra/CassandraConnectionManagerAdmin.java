@@ -88,5 +88,5 @@ public interface CassandraConnectionManagerAdmin extends AsyncAdminMethods {
      */
     @Transactional(readOnly=true)
     @Secured(types = EntityType.CASSANDRA_CONFIGURATION, stereotype = MethodStereotype.TEST_CONFIGURATION)
-    AsyncAdminMethods.JobId<String> testCassandraQuery(String connectionName, String query, int queryTimeout);
+    AsyncAdminMethods.JobId<String> testCassandraQuery(String connectionName, String query, long queryTimeout);
 }

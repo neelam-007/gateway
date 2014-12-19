@@ -305,10 +305,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
 
         addMappingButton.setEnabled(true);
-        //==================================================================
-        //TODO: once query testing is implemented remove the statement below
-        testQueryButton.setEnabled(false);
-        //==================================================================
+
         Utilities.setDoubleClickAction(variableNamingTable, editMappingButton);
 
         setContentPane(mainPanel);
@@ -376,7 +373,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
                             displayQueryTestingResult("Unable to evaluate a query with an invalid query timeout.");
                             return;
                         }
-                        final int queryTimeout = Integer.parseInt(queryTimeoutTextField.getText());
+                        final long queryTimeout = Long.parseLong(queryTimeoutTextField.getText());
 
                         final CassandraConnectionManagerAdmin admin = getCassandraConnectionAdmin();
                         try {
@@ -416,9 +413,10 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
 
         DialogDisplayer.showMessageDialog(
                 CassandraAssertionPropertiesDialog.this,
-                (resultMessage == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + resultMessage,
+                (resultMessage != null && resultMessage.isEmpty()) ?
+                        resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + resultMessage,
                 resources.getString("dialog.title.test.query"),
-                (resultMessage == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                (resultMessage != null && resultMessage.isEmpty()) ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
                 null);
     }
 

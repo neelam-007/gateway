@@ -19,4 +19,6 @@ public interface CassandraQueryManager {
     BoundStatement buildBoundStatement(PreparedStatement preparedStatement, List<Object> preparedStmtParams);
 
     int executeStatement(Session session, BoundStatement boundStatement, Map<String, List<Object>> resultMap, int maxRecords, long queryTimeout) throws TimeoutException;
+
+    void testQuery(Session session, String queryString, long timeout) throws Exception;
 }

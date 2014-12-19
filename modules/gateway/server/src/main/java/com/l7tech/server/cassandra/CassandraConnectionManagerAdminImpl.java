@@ -1,5 +1,6 @@
 package com.l7tech.server.cassandra;
 
+import com.ca.datasources.cassandra.CassandraQueryManager;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
@@ -32,15 +33,18 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     private LicenseManager licenseManager;
 
     private final CassandraConnectionEntityManager cassandraEntityManager;
-    private SecurePasswordManager securePasswordManager;
-    private CassandraConnectionManager cassandraConnectionManager;
+    private final SecurePasswordManager securePasswordManager;
+    private final CassandraConnectionManager cassandraConnectionManager;
+    private final CassandraQueryManager cassandraQueryManager;
 
     public CassandraConnectionManagerAdminImpl(CassandraConnectionEntityManager cassandraEntityManager,
                                                SecurePasswordManager securePasswordManager,
-                                               CassandraConnectionManager cassandraConnectionManager) {
+                                               CassandraConnectionManager cassandraConnectionManager,
+                                               CassandraQueryManager cassandraQueryManager) {
         this.cassandraEntityManager = cassandraEntityManager;
         this.securePasswordManager = securePasswordManager;
         this.cassandraConnectionManager = cassandraConnectionManager;
+        this.cassandraQueryManager = cassandraQueryManager;
     }
 
     @Override
@@ -123,9 +127,32 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     }
 
     @Override
-    public JobId<String> testCassandraQuery(String connectionName, String query, int queryTimeout) {
+    public JobId<String> testCassandraQuery(final String connectionName, final String query, final long queryTimeout) {
         checkLicense();
-        return null;
+        final FutureTask<String> queryTask = new FutureTask<>(find(true).wrapCallable(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                try {
+                    CassandraConnectionHolder testConnection = cassandraConnectionManager.getConnection(connectionName);
+                    if(testConnection == null || testConnection.getSession() == null) {
+                        return "Unable to establish connection to Cassandra server";
+                    }
+                    cassandraQueryManager.testQuery(testConnection.getSession(), query, queryTimeout);
+                } catch (Exception e) {
+                    return "Test query failed: " + ExceptionUtils.getMessage(e);
+                }
+                return "";
+            }
+        }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                queryTask.run();
+            }
+        }, 0L);
+
+        return registerJob(queryTask, String.class);
     }
 
     private void checkLicense() {

@@ -396,6 +396,7 @@
         <constructor-arg ref="cassandraEntityManager"/>
         <constructor-arg ref="securePasswordManager"/>
         <constructor-arg ref="cassandraConnectionManager"/>
+        <constructor-arg ref="cassandraQueryManager"/>
     </bean>
 
     <!-- FTP admin servant -->
