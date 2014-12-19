@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.cassandra.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.cassandra.CassandraQueryAssertion;
 import com.l7tech.external.assertions.cassandra.CassandraNamedParameter;
 
@@ -15,10 +16,13 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MutablePair;
 import com.l7tech.util.ValidationUtils;
+import org.apache.commons.lang.StringUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -30,8 +34,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static com.l7tech.policy.variable.Syntax.getReferencedNames;
-import static com.l7tech.util.ValidationUtils.isValidInteger;
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 
 
 /**
@@ -107,6 +110,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     @Override
     protected void configureView() {
        enableOrDisableOkButton();
+       enableOrDisableTestQueryButton();
     }
 
     private SimpleTableModel<MutablePair<String,String>> buildVariableNamingTableModel() {
@@ -164,18 +168,11 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         rowSorter = (TableRowSorter<SimpleTableModel<CassandraNamedParameter>>) variableNamingTable.getRowSorter();
         rowSorter.setSortsOnUpdates(true);
 
+        final String queryTimeout = assertion.getQueryTimeout();
+        queryTimeoutTextField.setText((queryTimeout != null) ? queryTimeout : "0");
+
         inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), cqlQueryTextArea, null);
-        inputValidator.constrainTextFieldToBeNonEmpty("Query Timeout", queryTimeoutTextField, new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                String errMsg = null;
-                final String timeout = queryTimeoutTextField.getText().trim();
-                if (!ValidationUtils.isValidLong(timeout, true, 0L, Long.MAX_VALUE) && getReferencedNames(timeout).length == 0) {
-                    errMsg = "The value for the timeout must be a valid positive number.";
-                }
-                return errMsg;
-            }
-        });
+        inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), queryTimeoutTextField, null);
 
         addMappingButton.addActionListener(new ActionListener() {
             @Override
@@ -263,6 +260,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
                         fetchSizeSpinner.setValue(assertion.getFetchSize());
                     }
                     enableOrDisableOkButton();
+                    enableOrDisableTestQueryButton();
                 }
             }
         });
@@ -275,12 +273,15 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             @Override
             public void run() {
                 enableOrDisableOkButton();
+                enableOrDisableTestQueryButton();
             }
         });
 
         cqlQueryTextArea.getDocument().addDocumentListener(changeListener);
 
         variablePrefixPanel.addChangeListener(changeListener);
+
+        queryTimeoutTextField.getDocument().addDocumentListener(changeListener);
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -293,6 +294,13 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
+            }
+        });
+
+        testQueryButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doTest();
             }
         });
 
@@ -324,6 +332,94 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             JOptionPane.showMessageDialog(this, MessageFormat.format(resources.getString("message.error.find.prop"), propName), "Error", JOptionPane.ERROR);
             maxRecordsSpinner.setValue(LOWER_BOUND_MAX_RECORDS);
         }
+    }
+
+    private void doTest() {
+        DialogDisplayer.showSafeConfirmDialog(
+                TopComponents.getInstance().getTopParent(),
+                MessageFormat.format(resources.getString("confirmation.test.query"), connectionComboBox.getSelectedItem().toString()),
+                resources.getString("dialog.title.test.query"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.CANCEL_OPTION) {
+                            displayQueryTestingResult("TestingCanceled");
+                            return;
+                        }
+
+                        final String connName = connectionComboBox.getSelectedItem().toString();
+                        if ("".equals(connName)) {
+                            displayQueryTestingResult("Please select a Cassandra Connection to test against.");
+                            return;
+                        }
+
+                        if (Syntax.getReferencedNames(connName).length > 0) {
+                            displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
+                            return;
+                        }
+
+                        final String query = cqlQueryTextArea.getText();
+                        final int numOfContextVariablesUsed = Syntax.getReferencedNames(query).length;
+                        if (numOfContextVariablesUsed > 0) {
+                            displayQueryTestingResult("Unable to evaluate a query containing context variable" + (numOfContextVariablesUsed > 1 ? "s." : "."));
+                            return;
+                        }
+
+                        if (Syntax.getReferencedNames(queryTimeoutTextField.getText()).length > 0) {
+                            displayQueryTestingResult("Unable to evaluate a query with a context variable for query timeout.");
+                            return;
+                        }
+
+                        if (!isQueryTimeoutValid()) {
+                            displayQueryTestingResult("Unable to evaluate a query with an invalid query timeout.");
+                            return;
+                        }
+                        final int queryTimeout = Integer.parseInt(queryTimeoutTextField.getText());
+
+                        final CassandraConnectionManagerAdmin admin = getCassandraConnectionAdmin();
+                        try {
+                            displayQueryTestingResult(admin == null ?
+                                    "Cannot process testing due to Cassandra Connection Admin unavailable." : doAsyncAdmin(
+                                    admin,
+                                    CassandraAssertionPropertiesDialog.this,
+                                    resources.getString("dialog.title.test.query"),
+                                    resources.getString("dialog.title.test.query"),
+                                    admin.testCassandraQuery(connName, query, queryTimeout)).right());
+                        } catch (InterruptedException e) {
+                            // operation cancelled by user, do nothing
+                        } catch (InvocationTargetException e) {
+                            displayQueryTestingResult(e.getMessage());
+                        }
+                    }
+                }
+        );
+    }
+
+    private boolean isQueryTimeoutValid() {
+        boolean isQueryValid = true;
+        final String text = queryTimeoutTextField.getText().trim();
+        if (!Syntax.isOnlyASingleVariableReferenced(text)) {
+            isQueryValid = false;
+        }
+
+        if (Syntax.getReferencedNames(text).length == 0) {
+            isQueryValid = ValidationUtils.isValidInteger(text, false, 0, Integer.MAX_VALUE);
+        }
+
+        return isQueryValid;
+    }
+
+    private void displayQueryTestingResult(String resultMessage) {
+        if ("TestingCanceled".equals(resultMessage)) return;
+
+        DialogDisplayer.showMessageDialog(
+                CassandraAssertionPropertiesDialog.this,
+                (resultMessage == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + resultMessage,
+                resources.getString("dialog.title.test.query"),
+                (resultMessage == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+                null);
     }
 
     private Integer getIntOrDefault(String s, int defaultValue) {
@@ -365,8 +461,9 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         variableNamingMap.clear();
         variableNamingMap.putAll(assertion.getNamingMap());
         variableNamingTableModel.setRows(getNamedMappingList());
+        final String queryTimeout = assertion.getQueryTimeout();
+        queryTimeoutTextField.setText(StringUtils.isNotBlank(queryTimeout) ? queryTimeout : "0");
         enableDisableComponents();
-        queryTimeoutTextField.setText(String.valueOf(assertion.getQueryTimeout()));
     }
 
     private void viewToModel(final CassandraQueryAssertion assertion) {
@@ -382,7 +479,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             variableNamingMap.put(pair.left, pair.right);
         }
         assertion.setNamingMap(variableNamingMap);
-        assertion.setQueryTimeout(Long.parseLong(queryTimeoutTextField.getText()));
+        final String queryTimeout = queryTimeoutTextField.getText().trim();
+        assertion.setQueryTimeout(("0".equals(queryTimeout)) ? null : queryTimeout);
     }
 
     private void populateConnectionCombobox() {
@@ -414,8 +512,20 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         okButton.setEnabled(enabled);
     }
 
+    private void enableOrDisableTestQueryButton() {
+        testQueryButton.setEnabled(inputValidator.isValid());
+    }
+
     private void doCancel() {
         CassandraAssertionPropertiesDialog.this.dispose();
     }
 
+    private CassandraConnectionManagerAdmin getCassandraConnectionAdmin() {
+        Registry reg = Registry.getDefault();
+        if (!reg.isAdminContextPresent()) {
+            logger.warning("Cannot get Cassandra Connection Admin due to no Admin Context present.");
+            return null;
+        }
+        return reg.getCassandraConnectionAdmin();
+    }
 }

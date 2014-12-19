@@ -88,7 +88,7 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
         int rowCount = 0;
         ResultSetFuture result = session.executeAsync(boundStatement);
         ResultSet rows;
-        if (queryTimeout > 0) {
+        if (queryTimeout > 0L) {
             rows = result.getUninterruptibly(queryTimeout, TimeUnit.SECONDS);
         } else {
             rows = result.getUninterruptibly();

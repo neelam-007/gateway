@@ -12,7 +12,6 @@ import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.ParseException;
@@ -124,7 +123,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     }
 
     @Override
-    public JobId<String> testCassandraQuery(String connectionName, String query, @Nullable String schemaName, int queryTimeout) {
+    public JobId<String> testCassandraQuery(String connectionName, String query, int queryTimeout) {
         checkLicense();
         return null;
     }

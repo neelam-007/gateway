@@ -48,7 +48,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     private int fetchSize = DEFAULT_FETCH_SIZE;
     private int maxRecords = DEFAULT_MAX_RECORDS;
     private Map<String, String> namingMap = new HashMap<>();
-    private long queryTimeout = 0;
+    private String queryTimeout = "0";
 
     String prefix = DEFAULT_QUERY_PREFIX;
     //
@@ -101,11 +101,11 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         this.namingMap = namedMap;
     }
 
-    public long getQueryTimeout() {
+    public String getQueryTimeout() {
         return queryTimeout;
     }
 
-    public void setQueryTimeout(long queryTimeout) {
+    public void setQueryTimeout(String queryTimeout) {
         this.queryTimeout = queryTimeout;
     }
 
@@ -136,7 +136,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
 
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(queryDocument);
+        return Syntax.getReferencedNames(queryDocument, queryTimeout);
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -84,11 +83,10 @@ public interface CassandraConnectionManagerAdmin extends AsyncAdminMethods {
      *
      * @param connectionName: the name of a Cassandra Connection entity.
      * @param query: a SQL query statement.
-     * @param schemaName explicit name of the schema. Applies only to Oracle
      * @param queryTimeout maximum query execution time in seconds.
      * @return null if the testing is successful.  Otherwise, return an error message with testing failure detail.
      */
     @Transactional(readOnly=true)
     @Secured(types = EntityType.CASSANDRA_CONFIGURATION, stereotype = MethodStereotype.TEST_CONFIGURATION)
-    AsyncAdminMethods.JobId<String> testCassandraQuery(String connectionName, String query, @Nullable String schemaName, int queryTimeout);
+    AsyncAdminMethods.JobId<String> testCassandraQuery(String connectionName, String query, int queryTimeout);
 }

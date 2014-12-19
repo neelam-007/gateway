@@ -15,14 +15,16 @@ import com.l7tech.server.audit.AuditLookupPolicyEnforcementContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ValidationUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 
 import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutContextVariables;
 
@@ -68,6 +70,15 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(),context, variablesUsed, false, getAudit());
         }
 
+        final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
+        final String queryTimeoutString = StringUtils.isNotBlank(assertion.getQueryTimeout()) ? assertion.getQueryTimeout() : "0";
+        final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
+        if (!ValidationUtils.isValidLong(resolvedQueryTimeout, false, 0, Long.MAX_VALUE)) {
+            logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
+            return AssertionStatus.FAILED;
+        }
+        final long queryTimeout = Long.parseLong(resolvedQueryTimeout);
+
         final String plainQuery = pair.left;
         final  List<Object> preparedStmtParams = pair.right;
         boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
@@ -91,7 +102,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             boundStatement.setFetchSize(assertion.getFetchSize());
             Map<String, List<Object>> resultMap =  new TreeMap<>();
 
-            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), assertion.getQueryTimeout());
+            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), queryTimeout);
 
             //Get results map into context variable
             String prefix = assertion.getPrefix();
