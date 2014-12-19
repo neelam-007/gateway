@@ -7,14 +7,11 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -27,8 +24,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.gui.util.TableUtil.column;
-
 /**
  *
  */
@@ -36,7 +31,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ManageSolutionKitsDialog.class.getName());
 
     private JPanel mainPanel;
-    private JTable solutionKitsTable;
+    private SolutionKitTablePanel solutionKitTablePanel;
     private JButton installButton;
     private JButton uninstallButton;
     private JButton upgradeButton;
@@ -44,7 +39,6 @@ public class ManageSolutionKitsDialog extends JDialog {
     private JButton createButton;
     private JButton closeButton;
 
-    private SimpleTableModel<SolutionKitHeader> solutionKitsModel;
     private final SolutionKitAdmin solutionKitAdmin;
 
     public ManageSolutionKitsDialog(Frame owner) {
@@ -53,46 +47,16 @@ public class ManageSolutionKitsDialog extends JDialog {
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         initialize();
         refreshSolutionKitsTable();
-        refreshSolutionKitTableButtons();
+        refreshSolutionKitsTableButtons();
     }
 
     private void initialize() {
-        solutionKitsModel = TableUtil.configureTable(solutionKitsTable,
-            column("Name", 25, 200, 99999, new Functions.Unary<String, SolutionKitHeader>() {
-                @Override
-                public String call(SolutionKitHeader solutionKitHeader) {
-                    return solutionKitHeader.getName();
-                }
-            }),
-            column("Version", 25, 200, 99999, new Functions.Unary<String, SolutionKitHeader>() {
-                @Override
-                public String call(SolutionKitHeader solutionKitHeader) {
-                    return solutionKitHeader.getSolutionKitVersion();
-                }
-            }),
-            column("Description", 25, 400, 99999, new Functions.Unary<String, SolutionKitHeader>() {
-                @Override
-                public String call(SolutionKitHeader solutionKitHeader) {
-                    return solutionKitHeader.getDescription();
-                }
-            }),
-            column("Last Updated", 25, 300, 99999, new Functions.Unary<String, SolutionKitHeader>() {
-                @Override
-                public String call(SolutionKitHeader solutionKitHeader) {
-                    return new Date(solutionKitHeader.getLastUpdateTime()).toString();
-                }
-            })
-        );
-
-        solutionKitsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        solutionKitsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        solutionKitTablePanel.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                refreshSolutionKitTableButtons();
+                refreshSolutionKitsTableButtons();
             }
         });
-
-        Utilities.setRowSorter(solutionKitsTable, solutionKitsModel, new int[]{0, 1, 2}, new boolean[]{true, true, true}, new Comparator[]{null, null, null});
 
         installButton.addActionListener(new ActionListener() {
             @Override
@@ -136,7 +100,8 @@ public class ManageSolutionKitsDialog extends JDialog {
             }
         });
 
-        Utilities.setDoubleClickAction(solutionKitsTable, propertiesButton);
+        solutionKitTablePanel.setDoubleClickAction(propertiesButton);
+
         Utilities.setEscKeyStrokeDisposes(this);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setContentPane(mainPanel);
@@ -155,11 +120,8 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUnintall() {
-        int rowIndex = solutionKitsTable.getSelectedRow();
-        if (rowIndex != -1) {
-            int modelIndex = solutionKitsTable.getRowSorter().convertRowIndexToModel(rowIndex);
-            SolutionKitHeader header = solutionKitsModel.getRowObject(modelIndex);
-
+        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        if (header != null) {
             boolean cancelled = false;
             boolean successful = false;
             String msg = "";
@@ -203,10 +165,8 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onProperties() {
-        int rowIndex = solutionKitsTable.getSelectedRow();
-        if (rowIndex != -1) {
-            int modelIndex = solutionKitsTable.getRowSorter().convertRowIndexToModel(rowIndex);
-            SolutionKitHeader header = solutionKitsModel.getRowObject(modelIndex);
+        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        if (header != null) {
             try {
                 SolutionKit solutionKit = solutionKitAdmin.get(header.getGoid());
                 final SolutionKitPropertiesDialog dlg = new SolutionKitPropertiesDialog(this, solutionKit);
@@ -232,14 +192,14 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private void refreshSolutionKitsTable() {
         try {
-            solutionKitsModel.setRows(new ArrayList<>(solutionKitAdmin.findSolutionKits()));
+            solutionKitTablePanel.setData(new ArrayList<>(solutionKitAdmin.findSolutionKits()));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Error loading solution kits.", ExceptionUtils.getDebugException(e));
         }
     }
 
-    private void refreshSolutionKitTableButtons() {
-        boolean selected = solutionKitsTable.getSelectedRowCount() > 0;
+    private void refreshSolutionKitsTableButtons() {
+        boolean selected = solutionKitTablePanel.isSolutionKitSelected();
         uninstallButton.setEnabled(selected);
         upgradeButton.setEnabled(selected);
         propertiesButton.setEnabled(selected);

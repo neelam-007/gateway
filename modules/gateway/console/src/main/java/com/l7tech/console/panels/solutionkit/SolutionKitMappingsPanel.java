@@ -90,7 +90,7 @@ public class SolutionKitMappingsPanel extends JPanel {
 
     private void initialize() {
         mappingsModel = TableUtil.configureTable(mappingsTable,
-            TableUtil.column("Name", 200, 200, 1000, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Name", 50, 200, 1000, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     if ("0000000000000000ffffffffffffec76".equals(mapping.getSrcId()) &&
@@ -110,13 +110,13 @@ public class SolutionKitMappingsPanel extends JPanel {
                     return "---";
                 }
             }),
-            TableUtil.column("Type", 150, 150, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Type", 50, 150, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     return mapping.getType();
                 }
             }),
-            TableUtil.column("Action", 100, 100, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Action", 50, 100, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     Mapping.Action action = mapping.getAction();
@@ -126,7 +126,7 @@ public class SolutionKitMappingsPanel extends JPanel {
                     return "---";
                 }
             }),
-            TableUtil.column("Action Taken", 100, 100, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Action Taken", 50, 100, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     Mapping.ActionTaken actionTaken = mapping.getActionTaken();
@@ -136,7 +136,7 @@ public class SolutionKitMappingsPanel extends JPanel {
                     return "---";
                 }
             }),
-            TableUtil.column("Error Type", 100, 100, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Error Type", 50, 100, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     Mapping.ErrorType errorType = mapping.getErrorType();
@@ -146,7 +146,7 @@ public class SolutionKitMappingsPanel extends JPanel {
                     return "---";
                 }
             }),
-            TableUtil.column("Resolved", 100, 100, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Resolved", 50, 100, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     Mapping.ErrorType errorType = mapping.getErrorType();
@@ -159,13 +159,13 @@ public class SolutionKitMappingsPanel extends JPanel {
                     return "Yes";
                 }
             }),
-            TableUtil.column("Source ID", 200, 200, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Source ID", 50, 200, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     return mapping.getSrcId();
                 }
             }),
-            TableUtil.column("Target ID", 200, 200, 500, new Functions.Unary<String, Mapping>() {
+            TableUtil.column("Target ID", 50, 200, 500, new Functions.Unary<String, Mapping>() {
                 @Override
                 public String call(Mapping mapping) {
                     return mapping.getTargetId();

@@ -153,25 +153,25 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         });
 
         solutionKitsModel = TableUtil.configureSelectableTable(solutionKitsTable, true, 0,
-            column("", 30, 30, 99999, new Functions.Unary<Boolean, SolutionKit>() {
+            column("", 50, 50, 100, new Functions.Unary<Boolean, SolutionKit>() {
                 @Override
                 public Boolean call(SolutionKit solutionKit) {
                     return solutionKitsModel.isSelected(solutionKit);
                 }
             }),
-            column("Name", 30, 100, 99999, new Functions.Unary<String, SolutionKit>() {
+            column("Name", 50, 400, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
                     return solutionKit.getName();
                 }
             }),
-            column("Version", 30, 100, 99999, new Functions.Unary<String, SolutionKit>() {
+            column("Version", 50, 100, 500, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
                     return solutionKit.getSolutionKitVersion();
                 }
             }),
-            column("Description", 30, 100, 99999, new Functions.Unary<String, SolutionKit>() {
+            column("Description", 50, 500, 5000, new Functions.Unary<String, SolutionKit>() {
                 @Override
                 public String call(SolutionKit solutionKit) {
                     return solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY);
@@ -180,15 +180,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         );
 
         solutionKitsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         solutionKitsModel.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
                 notifyListeners();
             }
         });
-        // todo (kpak) - row sorter
-        //Utilities.setRowSorter(componentsTable, componentsModel, new int[]{0}, new boolean[]{true}, new Comparator[]{String.CASE_INSENSITIVE_ORDER});
+        Utilities.setRowSorter(solutionKitsTable, solutionKitsModel, new int[]{0}, new boolean[]{true}, new Comparator[]{null});
 
         setLayout(new BorderLayout());
         add(mainPanel);

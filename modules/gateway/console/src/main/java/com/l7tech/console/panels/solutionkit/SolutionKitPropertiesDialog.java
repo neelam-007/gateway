@@ -14,6 +14,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +30,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private JLabel nameFieldLabel;
     private JLabel descriptionFieldLabel;
     private JLabel createdTimeFieldLabel;
+    private JLabel lastUpdatedFieldLabel;
     private SolutionKitMappingsPanel solutionKitMappingsPanel;
     private JButton closeButton;
 
@@ -63,6 +65,7 @@ public class SolutionKitPropertiesDialog extends JDialog {
         descriptionFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
         createdTimeFieldLabel.setText(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
 
+        lastUpdatedFieldLabel.setText(new Date(solutionKit.getLastUpdateTime()).toString());
         try {
             Item item = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(solutionKit.getMappings())));
             Mappings mappings = (Mappings)item.getContent();

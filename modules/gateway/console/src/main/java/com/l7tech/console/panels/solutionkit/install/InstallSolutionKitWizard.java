@@ -11,6 +11,7 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 
@@ -59,7 +60,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         boolean cancelled = false;
         boolean successful = false;
-        String msg = "";
+        String errorMsg = "";
 
         try {
             // todo (kpak) - handle multiple kits. for now, install first one.
@@ -77,7 +78,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             }
 
             String bundleStr = wizardInput.getBundleAsString(solutionKit);
-            Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
+            Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
                 solutionKitAdmin,
                 this.getOwner(),
                 "Install Solution Kit",
@@ -85,15 +86,16 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 solutionKitAdmin.install(solutionKit, bundleStr));
 
             if (result.isLeft()) {
-                msg = result.left();
-                logger.log(Level.WARNING, msg);
+                // Solution kit failed to install.
+                errorMsg = result.left();
+                logger.log(Level.WARNING, errorMsg);
             } else if (result.isRight()) {
-                msg = result.right();
+                // Solution kit installed successfully.
                 successful = true;
             }
         } catch (InvocationTargetException e) {
-            msg = ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+            errorMsg = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMsg, ExceptionUtils.getDebugException(e));
         } catch (InterruptedException e) {
             // do nothing.
             cancelled = true;
@@ -101,9 +103,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         if (!cancelled) {
             if (successful) {
-                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Install Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(this.getOwner(), "Solution kit(s) installed successfully.", "Install Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
             } else {
-                DialogDisplayer.showMessageDialog(this.getOwner(), msg, "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(this.getOwner(), errorMsg, "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
             }
             super.finish(evt);
         }

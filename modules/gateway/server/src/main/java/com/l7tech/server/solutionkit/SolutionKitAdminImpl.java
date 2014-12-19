@@ -55,17 +55,16 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public JobId<String> install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
-        final FutureTask<String> task =
-            new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
+    public JobId<Goid> install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
+        final FutureTask<Goid> task =
+            new FutureTask<>(find(false).wrapCallable(new Callable<Goid>() {
                 @Override
-                public String call() throws Exception {
+                public Goid call() throws Exception {
                     boolean isTest = false;
                     //noinspection ConstantConditions
                     String mappings = solutionKitManager.installBundle(solutionKit, bundle, isTest);
                     solutionKit.setMappings(mappings);
-                    solutionKitManager.save(solutionKit);
-                    return mappings;
+                    return solutionKitManager.save(solutionKit);
                 }
             }));
 
@@ -76,7 +75,7 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
             }
         }, 0L);
 
-        return registerJob(task, String.class);
+        return registerJob(task, Goid.class);
     }
 
     @NotNull

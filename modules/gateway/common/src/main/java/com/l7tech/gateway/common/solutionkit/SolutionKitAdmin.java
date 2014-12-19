@@ -34,7 +34,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
 
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
-    JobId<String> install(@NotNull SolutionKit solutionKit, @NotNull String bundle);
+    JobId<Goid> install(@NotNull SolutionKit solutionKit, @NotNull String bundle);
 
     @NotNull
     @Secured(stereotype = MethodStereotype.DELETE_BY_ID)
