@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
@@ -232,7 +231,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
             }
         });
 
-        cqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
+        cqlQueryTextArea.setDocument(new MaxLengthDocument(CassandraConnectionManagerAdmin.MAX_QUERY_LENGTH));
         inputValidator.constrainTextFieldToBeNonEmpty("Query", cqlQueryTextArea, null);
         inputValidator.ensureComboBoxSelection(connectionLabel.getText(), connectionComboBox);
 

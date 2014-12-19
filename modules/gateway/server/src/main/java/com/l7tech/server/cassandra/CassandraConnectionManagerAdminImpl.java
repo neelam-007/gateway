@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
@@ -58,6 +59,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         checkLicense();
         List<CassandraConnection> connections = new ArrayList<>();
         connections.addAll(cassandraEntityManager.findAll());
+        Collections.sort(connections);
         return connections;
     }
 

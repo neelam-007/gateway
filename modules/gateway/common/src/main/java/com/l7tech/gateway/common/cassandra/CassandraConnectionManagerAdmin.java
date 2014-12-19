@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -18,6 +19,10 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 @Secured(types = EntityType.CASSANDRA_CONFIGURATION)
 @Administrative
 public interface CassandraConnectionManagerAdmin extends AsyncAdminMethods {
+
+    // The original maximum length of a query statement
+    static final int MAX_QUERY_LENGTH = ConfigFactory.getIntProperty("com.l7tech.cassandraquery.maxquerylength", 4 * 1024);
+
     /**
      * Retrieve a Cassandra Connection entity from the database by using a connection name.
      *
