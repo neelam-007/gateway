@@ -11,6 +11,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 
 import java.util.UUID;
@@ -22,6 +23,8 @@ import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities
  */
 public abstract class WsmanInstaller extends BaseInstaller {
     protected final WsmanInvoker wsmanInvoker;
+    @Nullable
+    protected String nodeId;
 
     public WsmanInstaller(@NotNull final PolicyBundleInstallerContext context,
                           @NotNull final Functions.Nullary<Boolean> cancelledCallback,
@@ -54,5 +57,9 @@ public abstract class WsmanInstaller extends BaseInstaller {
     @Override
     public BaseGatewayManagementInvoker getManagementClient() {
         return wsmanInvoker;
+    }
+
+    public void setNodeId(@Nullable String nodeId) {
+        this.nodeId = nodeId;
     }
 }

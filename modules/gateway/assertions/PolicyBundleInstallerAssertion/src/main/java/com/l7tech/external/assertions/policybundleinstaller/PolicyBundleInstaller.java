@@ -85,20 +85,18 @@ public class PolicyBundleInstaller {
         migrationBundleInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
     }
 
+    public void setNodeId(@Nullable final String nodeId) {
+        policyInstaller.setNodeId(nodeId);
+        encapsulatedAssertionInstaller.setNodeId(nodeId);
+        serviceInstaller.setNodeId(nodeId);
+    }
+
     /**
      * Dry run the installation looking for conflicts. Any conflicts found are updated in the dry run event.
-     *
-     * @param dryRunEvent event used to capture any conflicts.
-     *
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.BundleResolverException
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.UnknownBundleException
-     * @throws com.l7tech.server.policy.bundle.BundleResolver.InvalidBundleException
-     * @throws InterruptedException
-     * @throws com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.AccessDeniedManagementResponse
-     * @throws PolicyBundleInstallerCallback.CallbackException
      */
     public void dryRunInstallBundle(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent)
-            throws BundleResolver.BundleResolverException,
+            throws PolicyBundleInstaller.InstallationException,
+            BundleResolver.BundleResolverException,
             BundleResolver.UnknownBundleException,
             BundleResolver.InvalidBundleException,
             InterruptedException,

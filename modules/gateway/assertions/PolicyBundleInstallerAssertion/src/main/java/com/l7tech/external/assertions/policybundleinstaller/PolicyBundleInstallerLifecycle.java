@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.cluster.ClusterIDManager;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.event.bundle.GatewayManagementRequestEvent;
 import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
@@ -16,7 +17,6 @@ import com.l7tech.server.event.bundle.PolicyBundleInstallerEvent;
 import com.l7tech.server.event.system.DetailedSystemEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -132,7 +132,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
     private final AtomicReference<ServerAssertion> serverRestMgmtAssertion = new AtomicReference<>();
     private final AtomicBoolean isLicensed = new AtomicBoolean(false);
     private final AtomicReference<ServiceManager> serviceManager = new AtomicReference<>();
-    private final AtomicReference<ServerAssertionRegistry> assertionRegistry = new AtomicReference<>();
+    private final AtomicReference<ClusterIDManager> clusterIDManager = new AtomicReference<>();
 
     private static final String GATEWAY_MGMT_POLICY_XML = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -168,7 +168,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
             if (isLicensed.compareAndSet(false, true)) {
                 logger.info("Bundle Installer module is now licensed.");
             }
-            if (serverMgmtAssertion.get() == null || serviceManager.get() == null) {
+            if (serverMgmtAssertion.get() == null || serviceManager.get() == null || clusterIDManager.get() == null) {
                 logger.info("Initializing Bundle Installer.");
 
                 if (serverMgmtAssertion.get() == null) {
@@ -192,8 +192,8 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
                     serviceManager.set(spring.getBean("serviceManager", ServiceManager.class));
                 }
 
-                if (assertionRegistry.get() == null) {
-                    assertionRegistry.set(spring.getBean("assertionRegistry", ServerAssertionRegistry.class));
+                if (clusterIDManager.get() == null) {
+                    clusterIDManager.set(spring.getBean("clusterIDManager", ClusterIDManager.class));
                 }
             }
         }
@@ -223,6 +223,7 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
         });
         installer.setPolicyBundleInstallerCallback(installEvent.getPolicyBundleInstallerCallback());
         installer.setAuthenticatedUser(installEvent.getAuthenticatedUser());
+        installer.setNodeId(clusterIDManager.get().thisNodeId());
 
         try {
             installer.installBundle();
@@ -245,10 +246,11 @@ public class PolicyBundleInstallerLifecycle implements ApplicationListener {
         });
         installer.setPolicyBundleInstallerCallback(dryRunEvent.getPolicyBundleInstallerCallback());
         installer.setAuthenticatedUser(dryRunEvent.getAuthenticatedUser());
+        installer.setNodeId(clusterIDManager.get().thisNodeId());
 
         try {
             installer.dryRunInstallBundle(dryRunEvent);
-        } catch (BundleResolver.BundleResolverException | BundleResolver.UnknownBundleException | BundleResolver.InvalidBundleException
+        } catch (PolicyBundleInstaller.InstallationException | BundleResolver.BundleResolverException | BundleResolver.UnknownBundleException | BundleResolver.InvalidBundleException
                 | InterruptedException | AccessDeniedManagementResponse | PolicyBundleInstallerCallback.CallbackException e) {
             dryRunEvent.setProcessingException(e);
         } finally {
