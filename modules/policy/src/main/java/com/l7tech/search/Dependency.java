@@ -69,7 +69,8 @@ public @interface Dependency {
         EMAIL_LISTENER(EntityType.EMAIL_LISTENER),
         FIREWALL_RULE(EntityType.FIREWALL_RULE),
         SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE),
-        CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION);
+        CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION),
+        HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

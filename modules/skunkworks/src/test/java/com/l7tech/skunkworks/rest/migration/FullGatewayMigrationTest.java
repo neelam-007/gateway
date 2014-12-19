@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.JVMDatabaseBasedRestManagementEnvironment;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -491,7 +492,56 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         }
     }
 
-    private Item<ServiceMO> createService(JVMDatabaseBasedRestManagementEnvironment sourceEnvironment) throws Exception {
+    /**
+     * Test migrating a full gateway with one created http configuration.
+     */
+    @Test
+    @BugId("SSG-10177")
+    public void testFullGatewayExportImportOneHttpConfiguration() throws Exception {
+        Item<HttpConfigurationMO> httpConfigurationItem = null;
+        try {
+            httpConfigurationItem = createHttpConfiguration(getSourceEnvironment());
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+        } finally {
+            if (httpConfigurationItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("httpConfigurations/" + httpConfigurationItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("httpConfigurations/" + httpConfigurationItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    private Item<HttpConfigurationMO> createHttpConfiguration(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+        HttpConfigurationMO httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
+        httpConfiguration.setUsername("userNew");
+        httpConfiguration.setPort(333);
+        httpConfiguration.setHost("newHost");
+        httpConfiguration.setProtocol(HttpConfigurationMO.Protocol.HTTP);
+        httpConfiguration.setPath("path");
+        httpConfiguration.setTlsKeyUse(HttpConfigurationMO.Option.DEFAULT);
+
+        RestResponse response = environment.processRequest("httpConfigurations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(httpConfiguration)));
+
+        assertOkCreatedResponse(response);
+
+        Item<HttpConfigurationMO> httpConfigurationItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        httpConfigurationItem.setContent(httpConfiguration);
+        return httpConfigurationItem;
+
+    }
+
+    private Item<ServiceMO> createService(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
         //create service
         final String assXml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -534,7 +584,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         wsdlResource.setContent("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>" );
         serviceMO.setResourceSets(Arrays.asList(policyResourceSet,wsdlResourceSet));
 
-        RestResponse response = getSourceEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = environment.processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
 
         assertOkCreatedResponse(response);
