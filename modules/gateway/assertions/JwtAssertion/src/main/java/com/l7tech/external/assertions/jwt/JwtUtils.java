@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.DefaultKey;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.JsonWebSignature;
@@ -14,6 +14,7 @@ import org.jose4j.jwx.JsonWebStructure;
 import org.jose4j.lang.JoseException;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
@@ -23,13 +24,15 @@ import java.util.List;
 
 public final class JwtUtils {
 
-    public static SsgKeyEntry getKeyFromStore(final SsgKeyStoreManager ssgKeyStoreManager, final Audit audit, final Goid goid, final String alias) {
+    public static SsgKeyEntry getKeyFromStore(final DefaultKey defaultKey, final Audit audit, final Goid goid, final String alias) {
         try {
-            final SsgKeyEntry ssgKeyEntry = ssgKeyStoreManager.findByPrimaryKey(goid).getCertificateChain(alias);
+            final SsgKeyEntry ssgKeyEntry = defaultKey.lookupKeyByKeyAlias(alias, goid);
             return ssgKeyEntry;
         } catch (FindException e) {
             audit.logAndAudit(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND);
         } catch (KeyStoreException e) {
+            audit.logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
+        } catch (IOException e) {
             audit.logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
         }
         return null;

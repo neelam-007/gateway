@@ -11,10 +11,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -39,7 +39,7 @@ import java.util.Map;
 public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<EncodeJsonWebTokenAssertion> {
 
     @Inject
-    private SsgKeyStoreManager ssgKeyStoreManager;
+    private DefaultKey defaultKey;
 
     public ServerEncodeJsonWebTokenAssertion(@NotNull EncodeJsonWebTokenAssertion assertion) {
         super(assertion);
@@ -173,7 +173,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 }
             } else {
                 try {
-                    final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                    final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
                     if(ssgKeyEntry != null){
                         return ssgKeyEntry.getPrivateKey();
                     }

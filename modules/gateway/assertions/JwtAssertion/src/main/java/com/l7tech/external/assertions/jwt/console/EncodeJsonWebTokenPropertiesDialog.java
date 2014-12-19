@@ -59,9 +59,6 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     protected void initComponents() {
         super.initComponents();
 
-        privateKeysComboBox.setIncludeDefaultSslKey(false);
-        privateKeysComboBox.repopulate();
-
         //headers
         headerActionComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.HEADER_ACTION.toArray(new String[JsonWebTokenConstants.HEADER_ACTION.size()])));
 

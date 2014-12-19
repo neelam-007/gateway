@@ -14,10 +14,10 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -41,7 +41,7 @@ import java.util.Map;
 public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<DecodeJsonWebTokenAssertion> {
 
     @Inject
-    private SsgKeyStoreManager ssgKeyStoreManager;
+    private DefaultKey defaultKey;
 
     public ServerDecodeJsonWebTokenAssertion(@NotNull DecodeJsonWebTokenAssertion assertion) {
         super(assertion);
@@ -99,7 +99,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         Key key = null;
         if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(validate)) {
             try {
-                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(ssgKeyStoreManager, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
                 //jws
                 if(parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS){
                     try {
