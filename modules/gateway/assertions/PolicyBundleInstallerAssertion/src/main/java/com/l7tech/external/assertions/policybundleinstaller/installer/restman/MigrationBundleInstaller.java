@@ -133,8 +133,8 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
                         if (convertedResult.getEntityTypeStr().equals(EntityType.FOLDER.toString()) && convertedResult.getErrorTypeStr().equals("TargetExists")) {
                             idListOfExistingTargetFolders.add(convertedResult.getSrcId());
-                        }
                     }
+                }
                 }
 
                 // Find entities deleted from the bundle, while they are still in the target gateway.
@@ -201,47 +201,50 @@ public class MigrationBundleInstaller extends BaseInstaller {
                                      final boolean isRootNodeTargetFold) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
         if (entityIdsFromBundleRequestMessageMappings.isEmpty()) return;
 
-        final String targetFoldGoid = isRootNodeTargetFold? entityIdsFromBundleRequestMessageMappings.get(0) : entityIdsFromBundleRequestMessageMappings.get(1);
-        if (StringUtils.isEmpty(targetFoldGoid)) return;
+        // Assume the 1st request mapping is ALWAYS the root folder and the 2nd request mapping is ALWAYS the top level bundle folder
+        final String targetFolderGoid = isRootNodeTargetFold? entityIdsFromBundleRequestMessageMappings.get(0) : entityIdsFromBundleRequestMessageMappings.get(1);
+        if (StringUtils.isEmpty(targetFolderGoid)) return;
 
         // If the target folder does not exist in the target gateway, ignore this method
-        if (! idListOfExistingTargetFolders.contains(targetFoldGoid)) return;
+        if (! idListOfExistingTargetFolders.contains(targetFolderGoid)) return;
 
+        // get migration bundle for the target folder
         final String requestXml = "";
         final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
-        pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + "?folder=" + targetFoldGoid);
+        pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + "?folder=" + targetFolderGoid);
         pec.setVariable(VAR_RESTMAN_ACTION, "GET");
 
-        final Pair<AssertionStatus, RestmanMessage> restmanRetrievingEntitiesResult = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
-        final RestmanMessage restmanMessage = restmanRetrievingEntitiesResult.right;
-        if (restmanMessage == null) {
+        final Pair<AssertionStatus, RestmanMessage> targetFolderBundleResult = restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
+        final RestmanMessage targetFolderBundle = targetFolderBundleResult.right;
+        if (targetFolderBundle == null) {
             throw new RuntimeException("Retrieving Entities failed: response from restman is null.");
-        } else if (restmanMessage.hasMappingError()) {
+        } else if (targetFolderBundle.hasMappingError()) {
             try {
-                throw new RuntimeException("Retrieving Entities failed: " + restmanMessage.getMappingErrorsAsString());
+                throw new RuntimeException("Retrieving Entities failed: " + targetFolderBundle.getMappingErrorsAsString());
             } catch (IOException e) {
                 throw new RuntimeException("Retrieving Entities failed:", e);
             }
         }
 
-        List<String> targetEntityIds = new ArrayList<>();
-        for (Element mapping: restmanMessage.getMappings()) {
-            targetEntityIds.add(mapping.getAttribute("srcId"));
+        final List<Element> targetFolderBundleMappings = targetFolderBundle.getMappings();
+        final List<String> entityIdsInTargetFolderBundle = new ArrayList<>(targetFolderBundleMappings.size());
+        for (Element mapping : targetFolderBundleMappings) {
+            entityIdsInTargetFolderBundle.add(mapping.getAttribute("srcId"));
         }
 
-        // Make a copy of targetEntityIds
-        List<String> deletedEntityIds = new ArrayList<>();
-        deletedEntityIds.addAll(targetEntityIds);
+        // Make a copy of entityIdsInTargetFolderBundle
+        final List<String> deletedEntityIds = new ArrayList<>();
+        deletedEntityIds.addAll(entityIdsInTargetFolderBundle);
 
-        // Remove from targetEntityIds all of its elements that are not contained in entityIdsFromBundleRequestMessageMappings
-        targetEntityIds.retainAll(entityIdsFromBundleRequestMessageMappings);
+        // Remove from entityIdsInTargetFolderBundle all of its elements that are not contained in entityIdsFromBundleRequestMessageMappings
+        entityIdsInTargetFolderBundle.retainAll(entityIdsFromBundleRequestMessageMappings);
 
-        // Get all elements not contained in entityIdsInBundleMapping
-        deletedEntityIds.removeAll(targetEntityIds);
+        // Get all elements not contained in entityIdsFromBundleRequestMessageMappings
+        deletedEntityIds.removeAll(entityIdsInTargetFolderBundle);
 
         for (String srcId: deletedEntityIds) {
             dryRunEvent.addMigrationErrorMapping(
-                new MigrationDryRunResult("EntityDeleted", restmanMessage.getEntityType(srcId), srcId, null, restmanMessage.getEntityName(srcId), null)
+                new MigrationDryRunResult("EntityDeleted", targetFolderBundle.getEntityType(srcId), srcId, null, targetFolderBundle.getEntityName(srcId), null)
             );
         }
     }
@@ -386,62 +389,65 @@ public class MigrationBundleInstaller extends BaseInstaller {
      * In REST Management API, "Assertion Security Zone" and "Group" don't have "Delete" operation.
      * In EntityType, there are no entity types matched to "Interface Tag" and "Resource Document", even though they are defined in REST Management API.
      *
+     * Restman URI constants are not accessible from this modular assertion.
+     * URIs are defined in package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl.
+     * For example ActiveConnectorResource.activeConnectors_URI = "activeConnectors";
+     *
      * @param entityTypeName: the name of an entity type
      * @return a uri string representing entity type
      */
     private String getEntityTypeUriName(@NotNull String entityTypeName) {
-        EntityType entityType = EntityType.valueOf(entityTypeName);
-
-        if (entityType == EntityType.SSG_ACTIVE_CONNECTOR) {
-            return "activeConnectors";
-        } else if (entityType == EntityType.TRUSTED_CERT) {
-            return "trustedCertificates";
-        } else if (entityType == EntityType.CLUSTER_PROPERTY) {
-            return "clusterProperties";
-        } else if (entityType == EntityType.CUSTOM_KEY_VALUE_STORE) {
-            return "customKeyValues";
-        } else if (entityType == EntityType.EMAIL_LISTENER) {
-            return "emailListeners";
-        } else if (entityType == EntityType.ENCAPSULATED_ASSERTION) {
-            return "encapsulatedAssertions";
-        } else if (entityType == EntityType.FOLDER) {
-            return "folders";
-        } else if (entityType == EntityType.GENERIC) {
-            return "genericEntities";
-        } else if (entityType == EntityType.HTTP_CONFIGURATION) {
-            return "httpConfigurations";
-        } else if (entityType == EntityType.ID_PROVIDER_CONFIG) {
-            return "identityProviders";
-        } else if (entityType == EntityType.JDBC_CONNECTION) {
-            return "jdbcConnections";
-        } else if (entityType == EntityType.JMS_CONNECTION) {
-            return "jmsDestinations";
-        } else if (entityType == EntityType.SSG_CONNECTOR) {
-            return "listenPorts";
-        } else if (entityType == EntityType.POLICY) {
-            return "policies";
-        } else if (entityType == EntityType.POLICY_ALIAS) {
-            return "policyAliases";
-        } else if (entityType == EntityType.SSG_KEY_ENTRY) {
-            return "privateKeys";
-        } else if (entityType == EntityType.SERVICE) {
-            return "services";
-        } else if (entityType == EntityType.REVOCATION_CHECK_POLICY) {
-            return "revocationCheckingPolicies";
-        } else if (entityType == EntityType.RBAC_ROLE) {
-            return "roles";
-        } else if (entityType == EntityType.SECURE_PASSWORD) {
-            return "passwords";
-        } else if (entityType == EntityType.SECURITY_ZONE) {
-            return "securityZones";
-        } else if (entityType == EntityType.SERVICE_ALIAS) {
-            return "serviceAliases";
-        } else if (entityType == EntityType.SITEMINDER_CONFIGURATION) {
-            return "siteMinderConfigurations";
-        } else if (entityType == EntityType.USER) {
-            return "users";
+        switch (EntityType.valueOf(entityTypeName)) {
+            case CLUSTER_PROPERTY:
+                return "clusterProperties";
+            case CUSTOM_KEY_VALUE_STORE:
+                return "customKeyValues";
+            case EMAIL_LISTENER:
+                return "emailListeners";
+            case ENCAPSULATED_ASSERTION:
+                return "encapsulatedAssertions";
+            case FOLDER:
+                return "folders";
+            case GENERIC:
+                return "genericEntities";
+            case HTTP_CONFIGURATION:
+                return "httpConfigurations";
+            case ID_PROVIDER_CONFIG:
+                return "identityProviders";
+            case JDBC_CONNECTION:
+                return "jdbcConnections";
+            case JMS_CONNECTION:
+                return "jmsDestinations";
+            case POLICY:
+                return "policies";
+            case POLICY_ALIAS:
+                return "policyAliases";
+            case REVOCATION_CHECK_POLICY:
+                return "revocationCheckingPolicies";
+            case RBAC_ROLE:
+                return "roles";
+            case SECURE_PASSWORD:
+                return "passwords";
+            case SECURITY_ZONE:
+                return "securityZones";
+            case SERVICE:
+                return "services";
+            case SERVICE_ALIAS:
+                return "serviceAliases";
+            case SITEMINDER_CONFIGURATION:
+                return "siteMinderConfigurations";
+            case SSG_ACTIVE_CONNECTOR:
+                return "activeConnectors";
+            case SSG_CONNECTOR:
+                return "listenPorts";
+            case SSG_KEY_ENTRY:
+                return "privateKeys";
+            case TRUSTED_CERT:
+                return "trustedCertificates";
+            case USER:
+                return "users";
+            default:
+                throw new RuntimeException("Not supported entity type: " + entityTypeName);
         }
-
-        throw new RuntimeException("Not supported entity type: " + entityTypeName);
     }
 }
