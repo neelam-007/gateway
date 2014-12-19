@@ -110,13 +110,13 @@ public class PolicyMigrationTest extends MigrationTestBase {
         RestResponse response;
 
         response = getSourceEnvironment().processRequest("policyAliases/" + policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -286,10 +286,10 @@ public class PolicyMigrationTest extends MigrationTestBase {
         }finally{
 
             response = getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -421,13 +421,13 @@ public class PolicyMigrationTest extends MigrationTestBase {
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("policyAliases/" + policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -471,7 +471,7 @@ public class PolicyMigrationTest extends MigrationTestBase {
             Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
         }finally{
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -540,7 +540,7 @@ public class PolicyMigrationTest extends MigrationTestBase {
 
         }finally{
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -600,7 +600,7 @@ public class PolicyMigrationTest extends MigrationTestBase {
 
         }finally{
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -818,13 +818,13 @@ public class PolicyMigrationTest extends MigrationTestBase {
         }finally{
 
             response = getTargetEnvironment().processRequest("policyAliases/" + policyAliasCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/" + folderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
     }
@@ -906,7 +906,7 @@ public class PolicyMigrationTest extends MigrationTestBase {
         }finally{
 
             response = getTargetEnvironment().processRequest("policies/" + policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
     }

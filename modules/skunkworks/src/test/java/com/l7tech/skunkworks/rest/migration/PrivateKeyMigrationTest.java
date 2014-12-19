@@ -3,7 +3,6 @@ package com.l7tech.skunkworks.rest.migration;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -148,16 +147,16 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
         RestResponse response;
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("activeConnectors/" + mqNativeItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("privateKeys/" + targetPrivateKeyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("policies/" , HttpMethod.GET, null, "");
         response = getTargetEnvironment().processRequest("privateKeys/" , HttpMethod.GET, null, "");
@@ -340,7 +339,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         }finally{
             response = getTargetEnvironment().processRequest("privateKeys/" + createdKeyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 

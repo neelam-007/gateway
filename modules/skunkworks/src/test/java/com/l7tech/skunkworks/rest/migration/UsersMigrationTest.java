@@ -146,10 +146,10 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/" + userItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -286,7 +286,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
 
@@ -369,7 +369,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
 
@@ -452,7 +452,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
 
@@ -568,7 +568,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("identityProviders/"+idProviderItem.getId()+"/users/"+createdUser.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
 

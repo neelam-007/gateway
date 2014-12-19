@@ -165,13 +165,13 @@ public class PolicyIncludeFragmentMigrationTest extends MigrationTestBase {
 
 
         response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem1.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @BugId("SSG-8584")
@@ -333,7 +333,7 @@ public class PolicyIncludeFragmentMigrationTest extends MigrationTestBase {
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("policies/" + policyItem1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 

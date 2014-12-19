@@ -116,13 +116,13 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
 
         RestResponse response;
         response = getSourceEnvironment().processRequest("encapsulatedAssertions/" + encassItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + encassPolicyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -346,13 +346,13 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ encassItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdEncassPolicy.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -469,13 +469,13 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ createdEncass.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdEncassPolicy.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -594,16 +594,16 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ createdEncass.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdEncassPolicy.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ encassPolicyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -751,13 +751,13 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ createdTargetEncass1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdTargetEncassPolicy1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -913,7 +913,7 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             Assert.assertEquals(2, policyVersions.getContent().size());
 
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/versions/2/activate/", HttpMethod.POST, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
             assertOkResponse(response);
@@ -925,13 +925,13 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ createdTargetEncass1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdTargetEncassPolicy1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdTargetPolicy1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -1049,10 +1049,10 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }finally{
 
             response = getTargetEnvironment().processRequest("encapsulatedAssertions/"+ createdEncass.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+ createdEncassPolicy.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1137,10 +1137,10 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
 
         // delete encass
         response = getSourceEnvironment().processRequest("encapsulatedAssertions/" + createdEncass.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
         // delete backing policy
         response = getSourceEnvironment().processRequest("policies/" + createdEncassPolicy.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         try{
             response = getSourceEnvironment().processRequest("bundle/policy/" + createdPolicy.getId(), HttpMethod.GET, null, "");
@@ -1180,7 +1180,7 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
 
             // clean up
             response = getSourceEnvironment().processRequest("policies/"+ createdPolicy.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
 
 

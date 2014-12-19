@@ -90,10 +90,10 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("clusterProperties/"+clusterPropertyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -225,7 +225,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -304,7 +304,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -382,7 +382,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
         }finally{
             response = getTargetEnvironment().processRequest("clusterProperties/"+createdClusterPropertyItem.getId(), HttpMethod.DELETE, null , "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

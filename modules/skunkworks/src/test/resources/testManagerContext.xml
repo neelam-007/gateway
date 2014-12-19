@@ -469,6 +469,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.SSG_PRIVATE_KEY"/></key>
                     <bean class="com.l7tech.server.search.processors.SsgKeyEntryDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.RBAC_ROLE"/></key>
+                    <bean class="com.l7tech.server.search.processors.RoleDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>

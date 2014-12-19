@@ -183,32 +183,32 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         RestResponse response;
 
         response = getSourceEnvironment().processRequest("policyAliases/" + policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + sourceChild2FolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + sourceChild1FolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + sourceParentFolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         // target
 
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("folders/" + targetChild2FolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("folders/" + targetChild1FolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("folders/" + targetParentFolderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -671,16 +671,16 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         }finally{
 
             response = getTargetEnvironment().processRequest("policyAliases/"+policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+sourceChild1FolderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -804,16 +804,16 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         }finally{
 
             response = getTargetEnvironment().processRequest("policyAliases/"+policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+sourceChild1FolderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -984,25 +984,25 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         }finally{
 
             response = getSourceEnvironment().processRequest("policyAliases/"+policyAliasCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("policies/"+policyCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("serviceAliases/"+serviceAlias.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("services/"+service.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("folders/"+child2.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("folders/"+child1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("folders/"+parent.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1135,16 +1135,16 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         }finally{
 
             response = getTargetEnvironment().processRequest("policyAliases/"+policyAliasItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+folderCopied.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }

@@ -117,13 +117,13 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("revocationCheckingPolicies/" + revCheckItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -251,13 +251,13 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
         } finally {
 
             response = getTargetEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + targetRevCheckItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -333,13 +333,13 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
         } finally {
 
             response = getTargetEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("revocationCheckingPolicies/" + targetRevCheckItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             mappingsToClean = null;
         }
@@ -431,7 +431,7 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
         } finally {
 
             response = getSourceEnvironment().processRequest("trustedCertificates/" + srcTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -543,10 +543,10 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
         } finally {
 
             response = getTargetEnvironment().processRequest("trustedCertificates/" + targetTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("trustedCertificates/" + srcTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -644,7 +644,7 @@ public class RevocationCheckMigrationTest extends MigrationTestBase {
         } finally {
 
             response = getTargetEnvironment().processRequest("trustedCertificates/" + targetTrustedCertSignerItem.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
     }

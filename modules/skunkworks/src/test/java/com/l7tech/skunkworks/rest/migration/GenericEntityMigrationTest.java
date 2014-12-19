@@ -140,16 +140,16 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("policies/" + policyItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("genericEntities/" + genericEntityItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("genericEntities/" + genericEntityItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -274,7 +274,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -351,7 +351,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -424,7 +424,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -540,7 +540,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
 
         } finally {
             response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -668,7 +668,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
 
         } finally {
             response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -796,7 +796,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
 
         } finally {
             response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -937,7 +937,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
 
         } finally {
             response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1097,7 +1097,7 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1287,10 +1287,10 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity2.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1402,10 +1402,10 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity1.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity2.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

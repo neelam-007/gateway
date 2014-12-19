@@ -97,10 +97,10 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("trustedCertificates/" + trustedCertItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -234,7 +234,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -317,7 +317,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -360,7 +360,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(0).<String>getProperty("ErrorMessage").contains("must be unique"));
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -508,7 +508,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -588,7 +588,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -669,7 +669,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -777,7 +777,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -920,7 +920,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1030,7 +1030,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1142,7 +1142,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
     @Test
@@ -1252,7 +1252,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
     @Test
@@ -1362,7 +1362,7 @@ public class TrustedCertificateMigrationTest extends com.l7tech.skunkworks.rest.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("trustedCertificates/" + certCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 

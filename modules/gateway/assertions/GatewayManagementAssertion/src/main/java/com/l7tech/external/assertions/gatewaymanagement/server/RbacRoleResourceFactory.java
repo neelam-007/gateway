@@ -152,6 +152,12 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         rbacRoleMO.setName(role.getName());
         rbacRoleMO.setDescription(role.getDescription());
         rbacRoleMO.setUserCreated(role.isUserCreated());
+        if(role.getEntityType() != null) {
+            rbacRoleMO.setEntityType(role.getEntityType().name());
+        }
+        if(role.getEntityGoid() != null) {
+            rbacRoleMO.setEntityID(role.getEntityGoid().toString());
+        }
         rbacRoleMO.setAssignments(assignmentsAsResource(role.getRoleAssignments()));
         rbacRoleMO.setPermissions(permissionsAsResource(role.getPermissions()));
         return rbacRoleMO;
@@ -242,6 +248,12 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         final Role role = new Role();
         role.setName(rbacRoleMO.getName());
         role.setDescription(rbacRoleMO.getDescription());
+        if(rbacRoleMO.getEntityType() != null) {
+            role.setEntityType(getEntityTypeFromString(rbacRoleMO.getEntityType()));
+        }
+        if(rbacRoleMO.getEntityID() != null) {
+            role.setEntityGoid(Goid.parseGoid(rbacRoleMO.getEntityID()));
+        }
         // Note do not use the userCreated flag from the resource. Roles created using wsman will automatically have this flag set to true.
         try {
             assignmentsFromResource(role, rbacRoleMO.getAssignments());

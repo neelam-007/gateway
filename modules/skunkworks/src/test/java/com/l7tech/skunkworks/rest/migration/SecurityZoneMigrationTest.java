@@ -64,10 +64,10 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("folders/" + folderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -175,7 +175,7 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
             Assert.assertEquals(securityZoneItemTarget.getId(), securityZoneDependency.getId());
         }finally{
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -277,10 +277,10 @@ public class SecurityZoneMigrationTest extends com.l7tech.skunkworks.rest.tools.
 
         } finally {
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneItemTarget.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
         }
     }

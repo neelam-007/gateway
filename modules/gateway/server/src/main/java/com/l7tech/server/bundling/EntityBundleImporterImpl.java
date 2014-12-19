@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -19,9 +22,9 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.audit.AuditsCollector;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.AuditsCollector;
 import com.l7tech.server.bundling.exceptions.BundleImportException;
 import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
@@ -31,6 +34,8 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
+import com.l7tech.server.search.processors.DependencyProcessorUtils;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
@@ -74,6 +79,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private PolicyManager policyManager;
     @Inject
     private ServiceManager serviceManager;
+    @Inject
+    private RoleManager roleManager;
     @Inject
     private PolicyVersionManager policyVersionManager;
     @Inject
@@ -193,7 +200,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         } else {
                             if (mapping.shouldFailOnNew()) {
-                                mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target."));
+                                mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
                             } else {
@@ -561,6 +568,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                             serviceManager.save(id,(PublishedService) policyOrService);
                                             importedID = id;
                                         }
+                                        //create the roles for the service
+                                        serviceManager.createRoles((PublishedService) policyOrService);
                                     }else {
                                         policyOrService.setGoid(id);
                                         policyOrService.setVersion(((PublishedService) existingEntity).getVersion());
@@ -575,6 +584,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                             policyManager.save(id,(Policy) policyOrService);
                                             importedID = id;
                                         }
+                                        //create the roles for the policy
+                                        policyManager.createRoles((Policy) policyOrService);
                                     }else {
                                         policyOrService.setGoid(id);
                                         policyOrService.setVersion(((Policy) existingEntity).getVersion());
@@ -585,7 +596,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 policyVersionManager.checkpointPolicy(policy, true, versionComment, existingEntity == null);
                             }
                         } else {
-                            importedID = saveOrUpdateEntity(entityContainer, id, existingEntity);
+                            importedID = saveOrUpdateEntity(entityContainer.getEntity(), id, existingEntity);
                         }
                     } catch (ObjectModelException e) {
                         return Either.left(e);
@@ -617,7 +628,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     /**
      * This will save or updated a entity
      *
-     * @param entityContainer The entity to save of update.
+     * @param entity The entity to save of update.
      * @param id              The id of the entity to save or update.
      * @param existingEntity  The existing entity if one exists.
      * @return Return the id that the entity was saved with or the id of the entity that was updated
@@ -625,24 +636,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @throws UpdateException
      */
     @NotNull
-    private Goid saveOrUpdateEntity(@NotNull final EntityContainer entityContainer, @Nullable final Goid id, @Nullable final Entity existingEntity) throws SaveException, UpdateException {
+    private Goid saveOrUpdateEntity(@NotNull final Entity entity, @Nullable final Goid id, @Nullable final Entity existingEntity) throws SaveException, UpdateException {
         @NotNull
         final Goid importedID;
         if (existingEntity == null) {
             //save a new entity
             if (id == null) {
-                importedID = (Goid) entityCrud.save(entityContainer.getEntity());
+                importedID = (Goid) entityCrud.save(entity);
             } else {
-                entityCrud.save(id, entityContainer.getEntity());
+                entityCrud.save(id, entity);
                 importedID = id;
             }
         } else {
             //existing entity is not null so this will be an update
-            if (entityContainer.getEntity() instanceof PersistentEntity) {
-                ((PersistentEntity) entityContainer.getEntity()).setGoid(id);
-                ((PersistentEntity) entityContainer.getEntity()).setVersion(((PersistentEntity) existingEntity).getVersion());
+            if (entity instanceof PersistentEntity) {
+                ((PersistentEntity) entity).setGoid(id);
+                ((PersistentEntity) entity).setVersion(((PersistentEntity) existingEntity).getVersion());
             }
-            entityCrud.update(entityContainer.getEntity());
+            entityCrud.update(entity);
             //this will not be null if the existing entity is specified
             //noinspection ConstantConditions
             importedID = id;
@@ -698,6 +709,21 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             if (encassPolicy != null) {
                 final Policy policyFound = policyManager.findByPrimaryKey(encassPolicy.getGoid());
                 encassConfig.setPolicy(policyFound);
+            }
+        } else if (entityContainer.getEntity() instanceof Role && !((Role) entityContainer.getEntity()).isUserCreated()) {
+            //if this is not a user created role copy the permissions for the target to updating role
+            if(existingEntity != null){
+                //set the role permissions to those of the target role
+                final Set<Permission> permissions = ((Role)entityContainer.getEntity()).getPermissions();
+                permissions.clear();
+                for(final Permission permission : ((Role)existingEntity).getPermissions()){
+                    permissions.add(permission);
+                }
+
+                //if this is the admin role we need to add the admin tag
+                if(Role.Tag.ADMIN.equals(((Role) existingEntity).getTag())){
+                    ((Role) entityContainer.getEntity()).setTag(Role.Tag.ADMIN);
+                }
             }
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
@@ -890,6 +916,20 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         } else {
                             return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping for an Identity: " + mapping.getTargetMapping().getType() + ". Only id and name are supported"));
                         }
+                    } else if (EntityType.RBAC_ROLE.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(mapping.getTargetMapping().getType())) {
+                        if(entity == null){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role is not in the bundle"));
+                        } else if(((Role) entity).isUserCreated()){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role is a user created role. Can only map auto created roles this way"));
+                        } else if(((Role) entity).getEntityGoid() == null || ((Role) entity).getEntityType() == null){
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role does not specify both the entity type and id"));
+                        } else {
+                            try {
+                                resource = findExistingRole((Role)entity, resourceMapping);
+                            } catch (Exception e) {
+                                return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error finding auto generated role to map to: " + ExceptionUtils.getMessage(e)));
+                            }
+                        }
                     } else {
                         if (mapping.getTargetMapping() != null) {
                             switch (mapping.getTargetMapping().getType()) {
@@ -922,6 +962,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     break;
                                 }
+                                case MAP_BY_ROLE_ENTITY: {
+                                    return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping by role entity but the source entity is not appropriate. The source entity should be a role that is not user created and specifies both entity id and entity type" ));
+                                }
                                 default: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping: " + mapping.getTargetMapping().getType() + ". Only id, name, and guid are supported"));
                                 }
@@ -938,6 +981,49 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
             }
         })).toNull();
+    }
+
+    /**
+     * This will locate an existing role by looking at the given roles entity goid and entity type, finding the mapped entity and finding the same role associated to that mapped entity
+     * @param role Thr role to find the existing role for
+     * @param resourceMapping The mapped entities
+     * @return The existing mapped role. Or null if one cant be found
+     * @throws FindException
+     */
+    @Nullable
+    private Entity findExistingRole(@NotNull final Role role, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws FindException {
+        if(role.getEntityGoid() != null && role.getEntityType() != null){
+            //find if this is a manage or view role
+            final String rolePrefix;
+            if(role.getName().startsWith(RbacAdmin.ROLE_NAME_PREFIX_READ)){
+                rolePrefix = RbacAdmin.ROLE_NAME_PREFIX_READ;
+            } else if(role.getName().startsWith(RbacAdmin.ROLE_NAME_PREFIX)){
+                rolePrefix = RbacAdmin.ROLE_NAME_PREFIX;
+            } else {
+                rolePrefix = null;
+            }
+
+            if(rolePrefix != null) {
+                //Build the header for the roles role.
+                final EntityHeader roleEntityHeader = new EntityHeader(role.getEntityGoid(), role.getEntityType(), null, null);
+                // find if the role entity has been mapped.
+                EntityHeader mappedRoleEntity = DependencyProcessorUtils.findMappedHeader(resourceMapping, roleEntityHeader);
+                //if there wasn't a mapped header then use the original header. This could be because the id's didn't change.
+                if (mappedRoleEntity == null) {
+                    mappedRoleEntity = roleEntityHeader;
+                }
+                //find all roles for this entity.
+                final Collection<Role> roles = roleManager.findEntitySpecificRoles(mappedRoleEntity.getType(), mappedRoleEntity.getGoid());
+                if (roles != null && !roles.isEmpty()) {
+                    for (Role possibleRole : roles) {
+                        if(possibleRole.getName().startsWith(rolePrefix)){
+                            return possibleRole;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -967,6 +1053,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.GUID.equals(type) && mapping.getSourceEntityHeader() instanceof GuidEntityHeader && ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid() != null) {
                 // mapping by guid so get the target guid from the source.
                 targetMapTo = ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid();
+            } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
+                // set the target mapping to the id of the role, this should be the default.
+                targetMapTo = mapping.getSourceEntityHeader().getStrId();
             } else {
                 //cannot find a target id.
                 throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to.");

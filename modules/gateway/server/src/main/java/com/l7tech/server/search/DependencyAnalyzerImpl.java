@@ -84,13 +84,14 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SsgKeyEntry.class,
             RevocationCheckPolicy.class,
             PublishedService.class,
+            InternalUser.class,
+            InternalGroup.class,
+            //Users and groups need to come before roles! This is so that role assignments can be properly mapped on import
             Role.class,
             SiteMinderConfiguration.class,
             SecurePassword.class,
             SecurityZone.class,
             PublishedServiceAlias.class,
-            InternalUser.class,
-            InternalGroup.class,
             SsgFirewallRule.class,
             SampleMessage.class
     );
@@ -218,6 +219,20 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             } else if (Folder.class.equals(entityClass)) {
                 //folders only need to include the root folder.
                 entityHeaders = new EntityHeaderSet<>(EntityHeaderUtils.fromEntity(folderManager.findRootFolder()));
+            } else if (ClusterProperty.class.equals(entityClass)){
+                //should not export hidden cluster properties
+                @SuppressWarnings("unchecked")
+                final List<ClusterProperty> clusterProperties = (List<ClusterProperty>) entityCrud.findAll(entityClass, null, 0, -1, null, null);
+                //remove the hidden cluster properties
+                entityHeaders = Functions.reduce(clusterProperties, new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, ClusterProperty>() {
+                    @Override
+                    public EntityHeaderSet<EntityHeader> call(final EntityHeaderSet<EntityHeader> entityHeaders, ClusterProperty clusterProperty) {
+                        if (!clusterProperty.isHiddenProperty()) {
+                            entityHeaders.add(EntityHeaderUtils.fromEntity(clusterProperty));
+                        }
+                        return entityHeaders;
+                    }
+                });
             } else {
                 entityHeaders = entityCrud.findAll(entityClass);
             }

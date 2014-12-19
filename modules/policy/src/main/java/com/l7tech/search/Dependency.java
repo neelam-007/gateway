@@ -91,6 +91,20 @@ public @interface Dependency {
             }
             throw new IllegalArgumentException("No known dependency type for entity type: " + entityType);
         }
+
+        /**
+         * Finds if the given entity type is mapped to a dependency type
+         * @param entityType The entity type to check a dependency type for
+         * @return Returns true if the entity type has an associated dependency type. Returns false otherwise.
+         */
+        public static boolean hasDependencyType(@NotNull final EntityType entityType) {
+            for(final DependencyType dependencyType : DependencyType.values()){
+                if(entityType.equals(dependencyType.getEntityType())){
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     /**

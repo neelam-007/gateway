@@ -112,10 +112,10 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("policies/" , HttpMethod.GET, null, "");
         response = getTargetEnvironment().processRequest("passwords/" , HttpMethod.GET, null, "");
@@ -259,7 +259,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -348,7 +348,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -400,7 +400,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -557,7 +557,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -644,7 +644,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -732,7 +732,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -855,7 +855,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -979,7 +979,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1104,7 +1104,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1225,7 +1225,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

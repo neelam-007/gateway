@@ -121,13 +121,13 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("resources/" + resourceDocItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -260,7 +260,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -353,7 +353,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -403,7 +403,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -570,7 +570,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -665,7 +665,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -715,7 +715,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             assertTrue("Error message:", mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("Could not locate entity"));
         } finally {
             response = getTargetEnvironment().processRequest("resources/" + docCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -806,7 +806,7 @@ public class DocumentResourceMigrationTest extends com.l7tech.skunkworks.rest.to
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("securityZones/" + securityZoneCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

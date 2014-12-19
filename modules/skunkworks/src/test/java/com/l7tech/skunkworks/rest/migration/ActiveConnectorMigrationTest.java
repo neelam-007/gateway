@@ -126,13 +126,13 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("activeConnectors/" + mqNativeItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -289,7 +289,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("activeConnectors/"+ mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -392,7 +392,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -445,7 +445,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             assertTrue("Error message:",mappingsReturned.getContent().getMappings().get(1).<String>getProperty("ErrorMessage").contains("must be unique"));
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/" + mqCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -633,7 +633,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -737,7 +737,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -842,7 +842,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("activeConnectors/"+mqCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -947,7 +947,7 @@ public class ActiveConnectorMigrationTest extends com.l7tech.skunkworks.rest.too
             validate(mappings);
         }finally {
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(),"");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

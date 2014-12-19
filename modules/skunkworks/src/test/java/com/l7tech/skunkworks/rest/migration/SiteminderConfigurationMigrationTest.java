@@ -117,13 +117,13 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("siteMinderConfigurations/" + siteminderItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + passwordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
     }
 
@@ -292,10 +292,10 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -409,10 +409,10 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -517,10 +517,10 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
 
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -608,10 +608,10 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
         } finally {
             //need to delete the siteminder configuration here before we can delete the password for avoid foreign constraint errors
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
             mappingsToClean.getContent().getMappings().remove(1);
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

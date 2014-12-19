@@ -114,13 +114,13 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -226,7 +226,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -285,7 +285,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -369,7 +369,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -431,7 +431,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -492,7 +492,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -553,7 +553,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -636,7 +636,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + securePasswordItem.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -699,7 +699,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
 
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -784,7 +784,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -845,7 +845,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -908,7 +908,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
         } finally {
             response = getTargetEnvironment().processRequest("passwords/" + storedPasswordMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -997,7 +997,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1087,7 +1087,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1178,7 +1178,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1272,7 +1272,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1367,7 +1367,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1462,7 +1462,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1555,7 +1555,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -1649,7 +1649,7 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }

@@ -76,6 +76,10 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 }
                 //get the MO from the entity
                 final Object mo = transformer.convertToMO(entityResource.getEntity());
+                //remove the permissions from system created roles in the bundle (makes the bundle easier to read as these permissions are not required.)
+                if(mo instanceof RbacRoleMO && !((RbacRoleMO)mo).isUserCreated()){
+                    ((RbacRoleMO)mo).setPermissions(null);
+                }
                 //create an item from the mo
                 final Item<?> item = transformer.convertToItem(mo);
                 //add the item to the bundle items list
@@ -234,6 +238,9 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                         mapping.addProperty(MapBy, "id");
                     }
                     break;
+                case MAP_BY_ROLE_ENTITY:
+                    mapping.addProperty(MapBy, "mapByRoleEntity");
+                    break;
             }
             if (entityMappingInstructions.getTargetMapping().getTargetID() != null) {
                 mapping.addProperty(MapTo, entityMappingInstructions.getTargetMapping().getTargetID());
@@ -294,6 +301,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "guid".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MapTo));
+        } else if (mapping.getProperties() != null && "mapByRoleEntity".equals(mapping.getProperties().get(MapBy))) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY, mapping.getTargetId());
         } else if (mapping.getTargetId() != null) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ID, mapping.getTargetId());
         } else {

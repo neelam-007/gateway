@@ -187,7 +187,6 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         if (entity instanceof SsgKeyEntry ||
                 entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity ||
-                entity instanceof Role ||
                 entity instanceof SecurePassword ||
                 (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID))) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
@@ -197,6 +196,24 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     EntityMappingInstructions.MappingAction.NewOrExisting,
                     true,
                     false);
+        } else if (entity instanceof Role && !((Role)entity).isUserCreated()){
+            if(((Role)entity).getEntityGoid() != null && ((Role)entity).getEntityType() != null) {
+                // These are auto generated roles for managing specific entities. Map them with the MAP_BY_ROLE_ENTITY option, and set fail on new to true
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY),
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        true,
+                        false);
+            } else {
+                // These are other built in roles. They should fail on new.
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        true,
+                        false);
+            }
         } else {
             //create the default mapping instructions
             mapping = mappingInstructionsBuilder.createDefaultMapping(dependentObject.getEntityHeader(),

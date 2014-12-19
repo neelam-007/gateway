@@ -61,7 +61,7 @@ public class RoleAssignment extends PersistentEntityImp {
         return providerId;
     }
 
-    protected void setProviderId(Goid providerId) {
+    public void setProviderId(Goid providerId) {
         this.providerId = providerId;
     }
 

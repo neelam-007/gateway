@@ -251,31 +251,31 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             cleanupAll(mappingsToClean);
 
         RestResponse response = getSourceEnvironment().processRequest("policies/" + policyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("jmsDestinations/" + jmsItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("services/" + serviceItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("passwords/" + storedPasswordItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getSourceEnvironment().processRequest("privateKeys/" + privateKeyItem2.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItemTarget.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
 
         response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem2Target.getId(), HttpMethod.DELETE, null, "");
-        assertOkDeleteResponse(response);
+        assertOkEmptyResponse(response);
     }
 
     @Test
@@ -500,7 +500,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -739,7 +739,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 
@@ -880,7 +880,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
 
     }
@@ -1012,7 +1012,7 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             validate(mappings);
         }finally{
             response = getTargetEnvironment().processRequest("jmsDestinations/" + jmsCreated.getId(), HttpMethod.DELETE, null, "");
-            assertOkDeleteResponse(response);
+            assertOkEmptyResponse(response);
         }
     }
 }
