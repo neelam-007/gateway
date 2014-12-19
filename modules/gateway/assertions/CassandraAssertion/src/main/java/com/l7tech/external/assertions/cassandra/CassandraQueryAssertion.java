@@ -28,13 +28,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FAC
 public class CassandraQueryAssertion extends Assertion implements CassandraConnectionable, UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(CassandraQueryAssertion.class.getName());
 
-    public static final String CONNECTION_TIMEOUT_MILLIS = "cassandra.connectTimeoutMillis";
-    public static final String KEEP_ALIVE = "cassandra.keepAlive";
-    public static final String RECEIVE_BUFFER_SIZE = "cassandra.receiveBufferSize";
-    public static final String REUSE_ADDRESS = "cassandra.reuseAddress";
-    public static final String SEND_BUFFER_SIZE = "cassandra.sendBufferSize";
-    public static final String SO_LINGER = "cassandra.soLinger";
-    public static final String TCP_NO_DELAY = "cassandra.tcpNoDelay";
     public static final String DEFAULT_QUERY_PREFIX = "cassandraQuery";
     public static final String QUERYRESULT_COUNT = ".queryresult.count";
     public static final String VARIABLE_XML_RESULT = ".xmlResult";
@@ -160,42 +153,6 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
-
-        // Cluster properties used by this assertion
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        props.put(CONNECTION_TIMEOUT_MILLIS, new String[] {
-                "The connect timeout in milliseconds for the underlying Netty channel.",
-                "n/a"
-        });
-
-        props.put(REUSE_ADDRESS, new String[] {
-                "Whether to allow the same port to be bound to multiple times.",
-                "n/a"
-        });
-
-        props.put(SEND_BUFFER_SIZE, new String[]{
-                "A hint on the size of the buffer used to send data.",
-                "n/a"
-        } );
-
-        props.put(RECEIVE_BUFFER_SIZE, new String[]{
-                "A hint on the size of the buffer used to receive data.",
-                "n/a"
-        } );
-
-        props.put(SO_LINGER, new String[]{
-                "When specified, disables the immediate return from a call to close() on a TCP socket.",
-                "n/a"
-        } );
-
-        props.put(TCP_NO_DELAY, new String[]{
-                "Disables Nagle's algorithm on the underlying socket.",
-                "n/a"
-        } );
-
-
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
