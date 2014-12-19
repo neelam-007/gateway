@@ -87,8 +87,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         final String validate = assertion.getValidationType();
         //no validation - just exit as we have the context vars set already
         if (JsonWebTokenConstants.VALIDATION_NONE.equals(validate)) {
-            //unsecure - always valid
-            context.setVariable(assertion.getTargetVariablePrefix() + ".valid", "true");
+            //no validation
             return AssertionStatus.NONE;
         }
 
@@ -155,7 +154,8 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                 context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(true));
             }
         } catch (JoseException e) {
-            logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "could not validate JWT payload: " + e.getMessage());
+            logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Could not validate JWT payload: " + e.getMessage());
+            return AssertionStatus.FAILED;
         }
         return AssertionStatus.NONE;
     }

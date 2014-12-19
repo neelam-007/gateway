@@ -333,6 +333,6 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         Assert.assertEquals("none", context.getVariable("result.header.alg"));
         Assert.assertEquals(Lists.newArrayList("alg"), context.getVariable("result.header.names"));
         Assert.assertEquals("yabbadabbadoo", context.getVariable("result.payload"));
-        Assert.assertEquals("true", context.getVariable("result.valid"));
+
     }
 }
