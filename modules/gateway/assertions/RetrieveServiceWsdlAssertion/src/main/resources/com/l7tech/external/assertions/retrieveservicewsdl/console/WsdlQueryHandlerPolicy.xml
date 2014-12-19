@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:AuditAssertion/>
+        <L7p:CustomizeErrorResponse>
+            <L7p:Content stringValue="Page not found."/>
+            <L7p:ExtraHeaders nameValuePairArray="included"/>
+            <L7p:HttpStatus stringValue="404"/>
+        </L7p:CustomizeErrorResponse>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="Checking for Service ID parameter"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${request.http.parameter.serviceoid}"/>
+                    <L7p:ExpressionIsVariable booleanValue="false"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:Negated booleanValue="true"/>
+                            <L7p:Operator operator="EMPTY"/>
+                            <L7p:RightValue stringValue="x"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlcnZpY2VvaWR9"/>
+                    <L7p:VariableToSet stringValue="serviceId"/>
+                </L7p:SetVariable>
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="Service ID specified: ${serviceId}"/>
+                </L7p:AuditDetailAssertion>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <wsp:All wsp:Usage="Required">
+                        <L7p:AuditDetailAssertion>
+                            <L7p:Detail stringValue="Checking for Service Document ID parameter"/>
+                        </L7p:AuditDetailAssertion>
+                        <L7p:ComparisonAssertion>
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:Expression1 stringValue="${request.http.parameter.servdocoid}"/>
+                            <L7p:ExpressionIsVariable booleanValue="false"/>
+                            <L7p:Operator operatorNull="null"/>
+                            <L7p:Predicates predicates="included">
+                                <L7p:item dataType="included">
+                                    <L7p:Type variableDataType="string"/>
+                                </L7p:item>
+                                <L7p:item binary="included">
+                                    <L7p:Negated booleanValue="true"/>
+                                    <L7p:Operator operator="EMPTY"/>
+                                    <L7p:RightValue stringValue="x"/>
+                                </L7p:item>
+                            </L7p:Predicates>
+                        </L7p:ComparisonAssertion>
+                        <L7p:SetVariable>
+                            <L7p:Base64Expression stringValue="JHtyZXF1ZXN0Lmh0dHAucGFyYW1ldGVyLnNlcnZkb2NvaWR9"/>
+                            <L7p:VariableToSet stringValue="docId"/>
+                        </L7p:SetVariable>
+                        <L7p:AuditDetailAssertion>
+                            <L7p:Detail stringValue="Service Document ID specified: ${docId}"/>
+                        </L7p:AuditDetailAssertion>
+                    </wsp:All>
+                    <L7p:TrueAssertion/>
+                </wsp:OneOrMore>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="Need to resolve Service ID from request URI"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${serviceId}"/>
+                    <L7p:ExpressionIsVariable booleanValue="false"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:Operator operator="EMPTY"/>
+                            <L7p:RightValue stringValue="x"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:ResolveService>
+                    <L7p:Uri stringValue="${request.http.uri}"/>
+                </L7p:ResolveService>
+                <L7p:SetVariable>
+                    <L7p:Base64Expression stringValue="JHtyZXNvbHZlZFNlcnZpY2Uub2lkfQ=="/>
+                    <L7p:VariableToSet stringValue="serviceId"/>
+                </L7p:SetVariable>
+            </wsp:All>
+        </wsp:OneOrMore>
+        <L7p:AuditDetailAssertion>
+            <L7p:Detail stringValue="Handler Service = ${service.oid}"/>
+        </L7p:AuditDetailAssertion>
+        <L7p:Include>
+            <L7p:Enabled booleanValue="false"/>
+            <L7p:PolicyGuid stringValue="AUTH_FRAGMENT_GUID"/>
+        </L7p:Include>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${docId}"/>
+                    <L7p:ExpressionIsVariable booleanValue="false"/>
+                    <L7p:MultivaluedComparison multivaluedComparison="FAIL"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:Operator operator="EMPTY"/>
+                            <L7p:RightValue stringValue="x"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="Retrieving WSDL"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:RetrieveServiceWsdl>
+                    <L7p:MessageTarget MessageTarget="included">
+                        <L7p:Target target="RESPONSE"/>
+                    </L7p:MessageTarget>
+                    <L7p:ProxyDependencies booleanValue="true"/>
+                    <L7p:ServiceId stringValue="${serviceId}"/>
+                </L7p:RetrieveServiceWsdl>
+            </wsp:All>
+            <wsp:All wsp:Usage="Required">
+                <L7p:AuditDetailAssertion>
+                    <L7p:Detail stringValue="Retrieving WSDL Dependency"/>
+                </L7p:AuditDetailAssertion>
+                <L7p:RetrieveServiceWsdl>
+                    <L7p:MessageTarget MessageTarget="included">
+                        <L7p:Target target="RESPONSE"/>
+                    </L7p:MessageTarget>
+                    <L7p:Port stringValue="${request.url.port}"/>
+                    <L7p:ProxyDependencies booleanValue="true"/>
+                    <L7p:RetrieveDependency booleanValue="true"/>
+                    <L7p:ServiceDocumentId stringValue="${docId}"/>
+                    <L7p:ServiceId stringValue="${serviceId}"/>
+                </L7p:RetrieveServiceWsdl>
+            </wsp:All>
+        </wsp:OneOrMore>
+    </wsp:All>
+</wsp:Policy>
