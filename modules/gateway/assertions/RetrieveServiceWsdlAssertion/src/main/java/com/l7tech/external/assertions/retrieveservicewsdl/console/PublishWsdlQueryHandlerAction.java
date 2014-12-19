@@ -21,8 +21,7 @@ import javax.swing.tree.TreePath;
  * @author Jamie Williams - jamie.williams2@ca.com
  */
 public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction {
-    private static final String NAME_PREFIX = "Publish WSDL Query Handler in ";
-    private static final String WSDL_FOLDER = "/WSDL";
+    private static final String NAME = "Publish WSDL Query Handler";
     private static final String DESCRIPTION = "Publish a WSDL Query Handler service";
     private static final String ICON = "com/l7tech/console/resources/services16.png";
 
@@ -65,11 +64,7 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
     public String getName() {
         String selectedFolderPath = getSelectedFolderPath();
 
-        if (selectedFolderPath != null) {
-            return NAME_PREFIX + selectedFolderPath + WSDL_FOLDER;
-        } else {
-            return NAME_PREFIX + WSDL_FOLDER;
-        }
+        return null == selectedFolderPath ? NAME : NAME + " in " + selectedFolderPath;
     }
 
     @Override

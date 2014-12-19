@@ -1,9 +1,13 @@
 package com.l7tech.external.assertions.retrieveservicewsdl.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -14,10 +18,13 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.retrieveservicewsdl.console.PublishWsdlQueryHandlerWizard.WsdlQueryHandlerConfig;
 
 public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQueryHandlerConfig> {
+    private static final Logger logger = Logger.getLogger(WsdlQueryHandlerConfigurationPanel.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(WsdlQueryHandlerConfigurationPanel.class.getName());
 
     private static final int SERVICE_NAME_MAX_LENGTH = 255;
@@ -100,6 +107,39 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
                         : errorMsg;
             }
         });
+
+        // policy names must be unique
+        validationRules.add(new InputValidator.ComponentValidationRule(serviceNameTextField) {
+            @Override
+            public String getValidationError() {
+                try {
+                    String policyName = serviceNameTextField.getText().trim() +
+                            PublishWsdlQueryHandlerWizard.REDIRECTION_FRAGMENT_NAME_SUFFIX;
+
+                    if (!isPolicyNameUnique(policyName)) {
+                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), policyName);
+                    }
+
+                    policyName = serviceNameTextField.getText().trim() +
+                            PublishWsdlQueryHandlerWizard.AUTHENTICATION_FRAGMENT_NAME_SUFFIX;
+
+                    if (!isPolicyNameUnique(policyName)) {
+                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), policyName);
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
+                    return "Failed to validate service name " + serviceNameTextField.getText().trim();
+                }
+
+                return null;
+            }
+        });
+    }
+
+    private boolean isPolicyNameUnique(String policyName) throws FindException {
+        final Policy found = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(policyName);
+
+        return null == found;
     }
 
     @Override

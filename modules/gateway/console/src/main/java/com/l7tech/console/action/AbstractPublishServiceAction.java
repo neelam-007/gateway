@@ -95,8 +95,12 @@ public abstract class AbstractPublishServiceAction extends SecureAction {
          */
         @Override
         public void entityAdded(final EntityEvent ev) {
+//            TopComponents.getInstance().refreshPoliciesFolderNode();
+//            TopComponents.getInstance().getTopParent().repaint();
+// TODO jwilliams: get refreshing to work
             EntityHeader eh = (EntityHeader) ev.getEntity();
             final JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+
             if (tree != null) {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 AbstractTreeNode parentNode = AbstractPublishServiceAction.this.parentNode.orSome(root);
@@ -110,6 +114,7 @@ public abstract class AbstractPublishServiceAction extends SecureAction {
                 RootNode rootNode = (RootNode) model.getRoot();
                 rootNode.addEntity(eh.getGoid(), sn);
                 tree.setSelectionPath(new TreePath(sn.getPath()));
+
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -119,7 +124,6 @@ public abstract class AbstractPublishServiceAction extends SecureAction {
                         ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
                     }
                 });
-
             } else {
                 log.log(Level.WARNING, "Service tree unreachable.");
             }
