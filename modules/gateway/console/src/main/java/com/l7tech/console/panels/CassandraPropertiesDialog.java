@@ -24,6 +24,7 @@ public class CassandraPropertiesDialog extends JDialog {
     private static final String MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "minSimultaneousRequestsPerConnectionThreshold";
     // Socket options
     private static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
+    private static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
     private static final String KEEP_ALIVE = "keepAlive";
     private static final String RECEIVE_BUFFER_SIZE = "receiveBufferSize";
     private static final String REUSE_ADDRESS = "reuseAddress";
@@ -139,7 +140,7 @@ public class CassandraPropertiesDialog extends JDialog {
     private void populatePropNameComboBox() {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
-                MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS,
+                MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS,
                 KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,MAX_RECORDS, QUERY_FETCH_SIZE
         }));
     }

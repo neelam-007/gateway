@@ -2,9 +2,9 @@ package com.ca.datasources.cassandra;
 
 import com.datastax.driver.core.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,7 +84,7 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
      * @return Row count
      */
     @Override
-    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String, List<Object>> resultMap, int maxRecords, long queryTimeout) throws TimeoutException {
+    public final int executeStatement(final Session session, final BoundStatement boundStatement, final Map<String, List<Object>> resultMap, int maxRecords, long fieldLimit, long queryTimeout) throws Exception {
         int rowCount = 0;
         ResultSetFuture result = session.executeAsync(boundStatement);
         ResultSet rows;
@@ -107,6 +107,11 @@ public class CassandraQueryManagerImpl implements CassandraQueryManager{
                 }
 
                 Object o = CassandraUtil.cassandraDataType2JavaType(definition, row);
+                if(o instanceof byte[] ) {
+                    byte[] blob = (byte[])o;
+                    if(blob.length > fieldLimit)
+                        throw new IOException("BLOB value has exceeded maximum allowed size of " + fieldLimit + " bytes");
+                }
                 col.add(o);
             }
             rowCount++;

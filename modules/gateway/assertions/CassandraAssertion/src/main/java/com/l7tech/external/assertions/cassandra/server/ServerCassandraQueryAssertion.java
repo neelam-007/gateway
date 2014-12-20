@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.cassandra.server;
 
 import com.ca.datasources.cassandra.CassandraQueryManager;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.datastax.driver.core.*;
@@ -16,6 +17,7 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
@@ -38,12 +40,14 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
 public class ServerCassandraQueryAssertion extends AbstractServerAssertion<CassandraQueryAssertion> {
     private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:cassandraQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/cassandra-query-result\">";
     private final static String XML_RESULT_TAG_CLOSE = "</L7j:cassandraQueryResult>";
+    public static final long DEFAULT_BLOB_MAX_SIZE = 10485760L;
 
 
     private final String[] variablesUsed;
     private CassandraQueryAssertion assertion = null;
     private final CassandraConnectionManager connectionManager;
     private final CassandraQueryManager cassandraQueryManager;
+    private final Config config;
 
     public ServerCassandraQueryAssertion(final CassandraQueryAssertion assertion, ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
@@ -52,6 +56,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         this.assertion = assertion;
         this.connectionManager = applicationContext.getBean("cassandraConnectionManager", CassandraConnectionManager.class);
         this.cassandraQueryManager = applicationContext.getBean("cassandraQueryManager", CassandraQueryManager.class);
+        this.config = applicationContext.getBean("serverConfig", Config.class);
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -102,7 +107,8 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             boundStatement.setFetchSize(assertion.getFetchSize());
             Map<String, List<Object>> resultMap =  new TreeMap<>();
 
-            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), queryTimeout);
+            final long maxBlobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, DEFAULT_BLOB_MAX_SIZE);
+            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), maxBlobSize, queryTimeout);
 
             //Get results map into context variable
             String prefix = assertion.getPrefix();

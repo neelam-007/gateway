@@ -56,6 +56,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public static final int MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF = 25;
 
     public static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
+    public static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
     public static final String KEEP_ALIVE = "keepAlive";
     public static final String RECEIVE_BUFFER_SIZE = "receiveBufferSize";
     public static final String REUSE_ADDRESS = "reuseAddress";
@@ -355,6 +356,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         Map<String, String> connectionProperties = cassandraConnectionEntity.getProperties();
 
         setSocketOptionsProp(socketOptions, connectionProperties, CONNECTION_TIMEOUT_MILLIS);
+        setSocketOptionsProp(socketOptions, connectionProperties, READ_TIMEOUT_MILLIS);
         setSocketOptionsProp(socketOptions, connectionProperties, KEEP_ALIVE);
         setSocketOptionsProp(socketOptions, connectionProperties, RECEIVE_BUFFER_SIZE);
         setSocketOptionsProp(socketOptions, connectionProperties, REUSE_ADDRESS);
@@ -375,6 +377,15 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
                     if (propInt != null) {
                         socketOptions.setConnectTimeoutMillis(propInt);
+                    } else {
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
+                    }
+                    break;
+
+                case READ_TIMEOUT_MILLIS:
+                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+                    if (propInt != null) {
+                        socketOptions.setReadTimeoutMillis(propInt);
                     } else {
                         auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
                     }
