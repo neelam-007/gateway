@@ -45,7 +45,7 @@ public class Main {
     /**
      * Arguments are:
      *
-     *   0 - command (auto, wizard, edit, show), default is auto
+     *   0 - command (auto, wizard, edit, show, headless), default is auto
      *   1 - type (appliance, status), default is appliance
      *
      * @param args The program arguments
