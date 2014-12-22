@@ -3,6 +3,7 @@ package com.l7tech.console.panels.bundles;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
@@ -67,6 +68,12 @@ public class BundleConflictComponent extends JPanel {
         entityNotFoundTitlePanel.setVisible(entityNotFoundPanel.getComponentCount() > 0);
         deletedEntityTitlePanel.setVisible(deletedEntityPanel.getComponentCount() > 0);
         resolutionErrorTitlePanel.setVisible(resolutionErrorPanel.getComponentCount() > 0);
+
+        if (existingEntityTitlePanel.isVisible()) {
+            Utilities.buttonToLink(selectAllExistingButton);
+            Utilities.buttonToLink(selectAllUpdateButton);
+            Utilities.buttonToLink(selectAllCreateButton);
+        }
 
         // initialize to not show infoOnlyConflictPanel (until one of the info-only list below is not empty)
         infoOnlyConflictPanel.setVisible(false);
