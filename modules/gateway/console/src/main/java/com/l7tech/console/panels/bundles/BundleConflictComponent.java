@@ -47,6 +47,9 @@ public class BundleConflictComponent extends JPanel {
     private JPanel resolutionErrorTitlePanel;
     private JPanel deletedEntityTitlePanel;
     private JPanel deletedEntityPanel;
+    private JButton selectAllExistingButton;
+    private JButton selectAllUpdateButton;
+    private JButton selectAllCreateButton;
 
     final private Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions;
 
@@ -178,7 +181,7 @@ public class BundleConflictComponent extends JPanel {
                     }
                 }
 
-                targetDetail.addMigrationError(migrationErrorMapping.getName(), migrationErrorMapping.getSrcId(), migrationErrorMapping.getPolicyResourceXml());
+                targetDetail.addMigrationError(migrationErrorMapping.getName(), migrationErrorMapping.getSrcId(), migrationErrorMapping.getPolicyResourceXml(), new JButton[]{selectAllExistingButton, selectAllUpdateButton, selectAllCreateButton});
             } catch (Exception e) {
                 logger.warning(ExceptionUtils.getMessage(e));
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),

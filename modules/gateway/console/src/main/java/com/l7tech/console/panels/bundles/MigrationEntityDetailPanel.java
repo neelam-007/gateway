@@ -24,6 +24,7 @@ import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -74,7 +75,8 @@ public class MigrationEntityDetailPanel {
 
     public MigrationEntityDetailPanel(final JDialog parent, final ConflictDisplayerDialog.ErrorType errorType,
                                       final EntityType targetType, final String name, final String id, final boolean versionModified, final String policyResourceXml,
-                                      final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions) {
+                                      final Map<String, Pair<ConflictDisplayerDialog.MappingAction, Properties>> selectedMigrationResolutions,
+                                      @NotNull final JButton[] selectAllButtons) {
         this.targetType = targetType;
         this.parent = parent;
         this.policyResourceXml = policyResourceXml;
@@ -192,6 +194,26 @@ public class MigrationEntityDetailPanel {
 
         if (errorType == TargetNotFound) {
             initializeEntityComponents();
+        }
+
+        for (int i = 0; i < selectAllButtons.length; i++) {
+            final JButton selectAllButton = selectAllButtons[i];
+            final JRadioButton radioButton = i == 0? useExistRadioButton : (i == 1? updateRadioButton : createRadioButton);
+
+            final int index = i;
+            selectAllButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    radioButton.setSelected(true);
+
+                    // Don't directly call radioButton.doClick().
+                    // Otherwise, the UI shows very slow on selecting all radio buttons, if there are a large amount of radio buttons.
+                    selectedMigrationResolutions.put(
+                        idLabel.getText(),
+                        new Pair<>(index == 0? NewOrExisting : (index == 1? NewOrUpdate : AlwaysCreateNew), (Properties) null)
+                    );
+                }
+            });
         }
     }
 
