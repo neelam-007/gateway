@@ -70,15 +70,15 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         try {
             Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
             if (AssertionStatus.NONE != result.left) {
-                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion. " + result.left.getMessage();
+                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
                 logger.log(Level.WARNING, msg);
-                throw new SolutionKitException(msg);
+                throw new SolutionKitException(result.left.getMessage());
             }
 
             if (!isTest && result.right.hasMappingError()) {
-                String msg = "Unable to install bundle due to mapping error." + result.right.getAsString();
+                String msg = "Unable to install bundle due to mapping errors:\n" + result.right.getAsString();
                 logger.log(Level.WARNING, msg);
-                throw new SolutionKitException(msg);
+                throw new SolutionKitException(result.right.getAsString());
             }
             return result.right.getAsString();
         } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | GatewayManagementDocumentUtilities.UnexpectedManagementResponse | IOException e) {

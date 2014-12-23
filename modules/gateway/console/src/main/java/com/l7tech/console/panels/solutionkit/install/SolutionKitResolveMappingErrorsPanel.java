@@ -59,25 +59,22 @@ public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<Soluti
 
     @Override
     public void readSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        // todo (kpak) - add support for multi solution kits.
-        Bundle bundle = settings.getBundle(settings.getSelectedSolutionKits().iterator().next());
-        Mappings mappings = settings.getTestMappings(settings.getSelectedSolutionKits().iterator().next());
+        SolutionKit solutionKit = settings.getSingleSelectedSolutionKit();
+        Bundle bundle = settings.getBundle(solutionKit);
+        Mappings mappings = settings.getTestMappings(solutionKit);
 
         bundleItems.clear();
-        resolvedEntityIds.clear();
-
         for (Item aItem : bundle.getReferences()) {
             bundleItems.put(aItem.getId(), aItem);
         }
-        solutionKitMappingsPanel.setData(mappings, bundleItems, resolvedEntityIds);
-
+        resolvedEntityIds.clear();
+        solutionKitMappingsPanel.setData(mappings, bundle, resolvedEntityIds);
         refreshMappingsTableButtons();
     }
 
     @Override
     public void storeSettings(SolutionKitsConfig settings) throws IllegalArgumentException {
-        // todo (kpak) - add support for multi solution kits.
-        SolutionKit solutionKit = settings.getSelectedSolutionKits().iterator().next();
+        SolutionKit solutionKit = settings.getSingleSelectedSolutionKit();
         Map<SolutionKit, Map<String, String>> map = new HashMap<>();
         map.put(solutionKit, resolvedEntityIds);
         settings.setResolvedEntityIds(map);

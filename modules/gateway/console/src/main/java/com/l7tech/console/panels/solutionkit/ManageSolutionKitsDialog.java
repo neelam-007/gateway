@@ -120,44 +120,61 @@ public class ManageSolutionKitsDialog extends JDialog {
     }
 
     private void onUnintall() {
-        SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
-        if (header != null) {
-            boolean cancelled = false;
-            boolean successful = false;
-            String msg = "";
-            try {
-                Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
-                    solutionKitAdmin,
-                    this,
-                    "Uninstall Solution Kit",
-                    "The gateway is uninstalling selected solution kit",
-                    solutionKitAdmin.uninstall(header.getGoid()));
-
-                if (result.isLeft()) {
-                    msg = result.left();
-                    logger.log(Level.WARNING, msg);
-                } else if (result.isRight()) {
-                    msg = "Solution kit uninstalled successfully.";
-                    successful = true;
-                }
-            } catch (InvocationTargetException e) {
-                msg = ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            } catch (InterruptedException e) {
-                // do nothing.
-                cancelled = true;
-            }
-
-            if (!cancelled) {
-                if (successful) {
-                    DialogDisplayer.showMessageDialog(this, msg, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
-                } else {
-                    DialogDisplayer.showMessageDialog(this, msg, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
-                }
-            }
-
-            refreshSolutionKitsTable();
+        final SolutionKitHeader header = solutionKitTablePanel.getSelectedSolutionKit();
+        if (header == null) {
+            return;
         }
+
+        DialogDisplayer.showConfirmDialog(
+            this.getOwner(),
+            "Are you sure you want to unintall the selected solution kit?",
+            "Uninstall Solution Kit",
+            JOptionPane.YES_NO_OPTION,
+            new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if (option == JOptionPane.NO_OPTION) {
+                        return;
+                    }
+
+                    boolean cancelled = false;
+                    boolean successful = false;
+                    String msg = "";
+                    try {
+                        Either<String, String> result = AdminGuiUtils.doAsyncAdmin(
+                            solutionKitAdmin,
+                            ManageSolutionKitsDialog.this,
+                            "Uninstall Solution Kit",
+                            "The gateway is uninstalling selected solution kit",
+                            solutionKitAdmin.uninstall(header.getGoid()));
+
+                        if (result.isLeft()) {
+                            msg = result.left();
+                            logger.log(Level.WARNING, msg);
+                        } else if (result.isRight()) {
+                            msg = "Solution kit uninstalled successfully.";
+                            successful = true;
+                        }
+                    } catch (InvocationTargetException e) {
+                        msg = ExceptionUtils.getMessage(e);
+                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                    } catch (InterruptedException e) {
+                        // do nothing.
+                        cancelled = true;
+                    }
+
+                    if (!cancelled) {
+                        if (successful) {
+                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, msg, "Uninstall Solution Kit", JOptionPane.INFORMATION_MESSAGE, null);
+                        } else {
+                            DialogDisplayer.showMessageDialog(ManageSolutionKitsDialog.this, msg, "Uninstall Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                        }
+                    }
+
+                    refreshSolutionKitsTable();
+                }
+            }
+        );
     }
 
     private void onUpgrade() {

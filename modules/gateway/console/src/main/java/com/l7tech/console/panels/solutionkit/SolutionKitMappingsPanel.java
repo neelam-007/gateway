@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.solutionkit;
 
+import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.Mappings;
@@ -15,6 +16,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,16 +32,20 @@ public class SolutionKitMappingsPanel extends JPanel {
     private TableColumn targetIdColumn;
 
     private SimpleTableModel<Mapping> mappingsModel;
-    private Map<String, Item> bundleItems;          // key = bundle reference item id. value = bundle reference item.
-    private Map<String, String> resolvedEntityIds;  // key = from id. value  = to id.
+    private Map<String, Item> bundleItems = new HashMap<>();    // key = bundle reference item id. value = bundle reference item.
+    private Map<String, String> resolvedEntityIds;              // key = from id. value  = to id.
 
     public SolutionKitMappingsPanel() {
         super();
         initialize();
     }
 
-    public void setData(@NotNull Mappings mappings, @NotNull Map<String, Item> bundleItems, @NotNull Map<String, String> resolvedEntityIds) {
-        this.bundleItems = bundleItems;
+    public void setData(@NotNull Mappings mappings, @NotNull Bundle bundle, @NotNull Map<String, String> resolvedEntityIds) {
+        bundleItems.clear();
+        for (Item aItem : bundle.getReferences()) {
+            bundleItems.put(aItem.getId(), aItem);
+        }
+
         this.resolvedEntityIds = resolvedEntityIds;
         mappingsModel.setRows(mappings.getMappings());
     }

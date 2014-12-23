@@ -63,6 +63,16 @@ public class SolutionKitsConfig {
         return selected;
     }
 
+    public SolutionKit getSingleSelectedSolutionKit() {
+        if (!selected.isEmpty()) {
+            // todo (kpak): Multiple solution kits not supported. Return the first item.
+            // When multiple solution kits are supported, this method should be removed
+            // and replaced with #getSelectedSolutionKits().
+            return selected.iterator().next();
+        }
+        return null;
+    }
+
     public void setSelectedSolutionKits(@NotNull Set<SolutionKit> selectedSolutionKits) {
         this.selected = selectedSolutionKits;
     }
