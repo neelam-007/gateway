@@ -644,15 +644,21 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getVersionNumber();
     }
 
-    private long getLatestVersionNumber() {
+    @Nullable
+    private Long getLatestVersionNumber() {
         final Goid policyGoid;
         try {
             policyGoid = subject.getPolicyNode().getPolicy().getGoid();
         } catch (final FindException e) {
             throw new RuntimeException(e);
         }
-        final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy(policyGoid);
-        return latest.getOrdinal();
+        try {
+            final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy( policyGoid );
+            return latest.getOrdinal();
+        } catch ( RuntimeException e ) {
+            log.log( Level.WARNING, "Unable to look up latest policy revision number: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            return null;
+        }
     }
 
     public boolean isVersionActive() {
@@ -1857,7 +1863,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private void saveUnsavedPolicyChanges(ContainerEvent e) throws ContainerVetoException {
         if (! isUnsavedChanges()) return;
 
-        if (!TopComponents.getInstance().isConnectionLost()) {
+
+        boolean connectionLost = TopComponents.getInstance().isConnectionLost();
+        if ( !connectionLost && getLatestVersionNumber() == null ) {
+            String saveOption = "Save Policy";
+            String discardOption = "Discard Policy";
+            Object[] options = new String[] { saveOption, discardOption };
+
+            int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                    "<html><center><b>Policy Deleted on Server.  Do you want to save changes for" +
+                            "<br>'" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "'<br>" +
+                            "to service policy file?</b></center></html>",
+                    "Save Service Policy",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    options,
+                    saveOption);
+            if (answer != 1)
+                getSimpleExportAction().actionPerformed(null);
+        } else if (!connectionLost ) {
             int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                 "<html><center><b>Do you want to save changes to service policy " +
                     "for<br> '" + HtmlUtil.escapeHtmlCharacters(getDisplayName()) + "' ?</b><br>The changed policy will not be activated.</center></html>",
