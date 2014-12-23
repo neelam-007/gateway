@@ -352,7 +352,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
                         }
 
                         if (Syntax.getReferencedNames(connName).length > 0) {
-                            displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
+                            displayQueryTestingResult("Cannot process testing due to Cassandra Connection name containing context variable(s).");
                             return;
                         }
 
