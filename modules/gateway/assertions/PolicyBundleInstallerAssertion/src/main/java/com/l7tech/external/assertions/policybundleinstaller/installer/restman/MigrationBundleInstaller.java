@@ -234,7 +234,17 @@ public class MigrationBundleInstaller extends BaseInstaller {
         final List<Element> targetFolderBundleMappings = targetFolderBundle.getMappings();
         final List<String> entityIdsInTargetFolderBundle = new ArrayList<>(targetFolderBundleMappings.size());
         for (Element mapping : targetFolderBundleMappings) {
-            entityIdsInTargetFolderBundle.add(mapping.getAttribute("srcId"));
+            String action = mapping.getAttribute("action");
+            if (action == null || EntityMappingInstructions.MappingAction.valueOf(action) == EntityMappingInstructions.MappingAction.Ignore) {
+                continue;
+            }
+
+            String srcId = mapping.getAttribute("srcId");
+            if (StringUtils.isEmpty(srcId)) {
+                continue;
+            }
+
+            entityIdsInTargetFolderBundle.add(srcId);
         }
 
         // Make a copy of entityIdsInTargetFolderBundle
