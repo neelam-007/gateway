@@ -93,17 +93,22 @@ public class MigrationBundleInstaller extends BaseInstaller {
                     if (propertiesElement == null) {
                         propertiesElement = DomUtils.createAndAppendElement(mapping, "Properties");
                     }
-                    final Element property = DomUtils.createAndAppendElement(propertiesElement, "Property");
-                    switch (valueOf(mapping.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
-                        case JDBC_CONNECTION: case SECURE_PASSWORD:
-                            property.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_NEW);
-                            break;
-                        default:
-                            property.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING);
-                            break;
+
+                    // don't set mapping property if already set
+                    Element propertyElement = DomUtils.findFirstChildElementByName(propertiesElement, MGMT_VERSION_NAMESPACE, "Property");
+                    if (propertyElement == null ) {
+                        propertyElement = DomUtils.createAndAppendElement(propertiesElement, "Property");
+                        switch (valueOf(mapping.getAttribute(MAPPING_TYPE_ATTRIBUTE))) {
+                            case JDBC_CONNECTION: case SECURE_PASSWORD:
+                                propertyElement.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_NEW);
+                                break;
+                            default:
+                                propertyElement.setAttribute("key", MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING);
+                                break;
+                        }
+                        final Element booleanValue = DomUtils.createAndAppendElement(propertyElement, "BooleanValue");
+                        booleanValue.setTextContent(Boolean.toString(true));
                     }
-                    final Element booleanValue = DomUtils.createAndAppendElement(property, "BooleanValue");
-                    booleanValue.setTextContent(Boolean.toString(true));
                 }
 
                 final String requestXml = requestMessage.getAsString();
