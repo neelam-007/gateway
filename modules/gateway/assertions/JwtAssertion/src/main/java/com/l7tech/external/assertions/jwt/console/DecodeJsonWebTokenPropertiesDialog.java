@@ -109,6 +109,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 privateKeysComboBox.setSelectedIndex(sel < 0 ? 0 : sel);
             }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(assertion.getValidationType())) {
+            sourceVariableTextField.setText(assertion.getPrivateKeySource());
             if (assertion.getKeyType() == null || assertion.getKeyType().trim().isEmpty()) {
                 keyType.setSelectedIndex(0);
             } else {
@@ -140,6 +141,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             assertion.setPrivateKeyGoid(privateKeysComboBox.getSelectedKeystoreId().toHexString());
             assertion.setPrivateKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(vt)) {
+            assertion.setPrivateKeySource(sourceVariableTextField.getText().trim());
             assertion.setKeyType(keyType.getSelectedItem().toString());
             if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem())) {
                 assertion.setKeyId(keyIdTextField.getText().trim());

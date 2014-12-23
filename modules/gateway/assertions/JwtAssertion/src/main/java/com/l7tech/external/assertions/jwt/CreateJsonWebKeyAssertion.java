@@ -68,7 +68,7 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.jwt.console.CreateJsonWebKeyPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Create Json Web Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Create Json Web Key Properties");
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/jsonwebtoken/console/resources/openidConnect.gif");
 

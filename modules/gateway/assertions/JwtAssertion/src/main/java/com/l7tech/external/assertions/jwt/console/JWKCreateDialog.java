@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.jwt.console;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 
@@ -25,13 +26,15 @@ public class JWKCreateDialog extends JDialog {
     private boolean confirmed = false;
     private JwkKeyInfo jwkKeyInfo;
 
-    public JWKCreateDialog(Window owner) {
-        this(owner, null);
+    private SimpleTableModel tableModel;
+
+    public JWKCreateDialog(Window owner, SimpleTableModel<JwkKeyInfo> tableModel) {
+        this(owner, null, tableModel);
     }
 
-    public JWKCreateDialog(Window owner, JwkKeyInfo jwkKeyInfo) {
+    public JWKCreateDialog(Window owner, JwkKeyInfo jwkKeyInfo, SimpleTableModel<JwkKeyInfo> tableModel) {
         super(owner, "Key Information Dialog");
-
+        this.tableModel = tableModel;
         initComponents();
         setContentPane(contentPane);
         setModal(true);
@@ -85,6 +88,16 @@ public class JWKCreateDialog extends JDialog {
                     "Error",
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
+        }
+        for(int i = 0; i < tableModel.getRowCount(); i++){
+            JwkKeyInfo key = (JwkKeyInfo) tableModel.getRowObject(i);
+            if(key.getKeyId().equals(keyIdTextField.getText().trim())){
+                DialogDisplayer.showMessageDialog(this,
+                        "Existing key id of '" + keyIdTextField.getText().trim() + "' already exist.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
         }
         return true;
     }

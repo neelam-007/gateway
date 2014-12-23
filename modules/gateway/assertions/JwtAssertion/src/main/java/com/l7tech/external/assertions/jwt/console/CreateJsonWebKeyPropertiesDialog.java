@@ -61,7 +61,7 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner());
+                final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner(), tableModel);
                 jwkCreateDialog.pack();
                 Utilities.centerOnScreen(jwkCreateDialog);
                 jwkCreateDialog.setVisible(true);
@@ -78,12 +78,12 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
                 if(sel >= 0){
                     final int index = keysTable.getRowSorter().convertRowIndexToModel(sel);
                     final JwkKeyInfo keyInfo = tableModel.getRowObject(index);
-                    final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner(), keyInfo);
+                    final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner(), keyInfo, tableModel);
                     jwkCreateDialog.pack();
                     Utilities.centerOnScreen(jwkCreateDialog);
                     jwkCreateDialog.setVisible(true);
                     if(jwkCreateDialog.isConfirmed()){
-                        tableModel.setRowObject(sel, jwkCreateDialog.getJwkKeyInfo());
+                        tableModel.setRowObject(index, jwkCreateDialog.getJwkKeyInfo());
                     }
                 }
             }
