@@ -728,7 +728,7 @@
             <param name="idea.configwiz.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.pcconfig.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.server.controller.home=&quot;${dev.deploy.dir}/Controller&quot;"/>
             <param name="idea.client.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.manager.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.manager.vmOptions" expression="-ea -Dcom.l7tech.util.buildVersion=${build.version} -Dcom.l7tech.console.remoteInvocationTracing=true"/>
             <param name="idea.controller.home" expression="${dev.deploy.dir}/Controller"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
