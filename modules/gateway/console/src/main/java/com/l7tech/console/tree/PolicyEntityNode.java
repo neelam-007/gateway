@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -159,14 +160,25 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             // policy not yet associated with an EncapsulatedAssertionConfig
             // We will defer calling the Gateway to attach the policy until the action is actually activated
             final EncapsulatedAssertionConfig config = new EncapsulatedAssertionConfig();
-            Action action = new CreateEncapsulatedAssertionAction(config, null, true);
+
+            Action action = new CreateEncapsulatedAssertionAction(config, null, true) {
+                @Override
+                protected void performAction( ActionEvent ev ) {
+
+                    try {
+                        config.setPolicy( getPolicy() );
+                    } catch ( FindException e ) {
+                        logger.log( Level.WARNING, "Unable to get policy: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                    }
+
+                    super.performAction( ev );
+                }
+            };
             actions.add( action );
             return;
         }
 
         // policy is already associated with at least one EncapsulatedAssertionConfig
-        // We will avoid doing any remote calls to the Gateway until the action is activated
-        // This may cause us to offer an "Edit" action that degrades to a "View" action when activated, if not enough permission to edit
         EditEncapsulatedAssertionAction editAction = new EditEncapsulatedAssertionAction( found, null );
         if ( editAction.isAuthorized() ) {
             actions.add( editAction );
