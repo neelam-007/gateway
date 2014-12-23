@@ -141,6 +141,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private SearchForm searchForm;
     private SecureAction hideShowCommentsAction;
     private MigrateNamespacesAction migrateNamespacesAction;
+    private Long latestPolicyVersionNumber = null;
 
     public interface PolicyEditorSubject {
         /**
@@ -644,8 +645,22 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return subject.getVersionNumber();
     }
 
+    private void invalidateCachedInfo() {
+        latestPolicyVersionNumber = null;
+    }
+
+    @Nullable
+    private Long getLatestVersionNumberCached() {
+        if ( latestPolicyVersionNumber != null ) {
+            return latestPolicyVersionNumber;
+        } else {
+            return getLatestVersionNumber();
+        }
+    }
+
     @Nullable
     private Long getLatestVersionNumber() {
+        latestPolicyVersionNumber = null;
         final Goid policyGoid;
         try {
             policyGoid = subject.getPolicyNode().getPolicy().getGoid();
@@ -654,7 +669,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
         try {
             final PolicyVersion latest = policyAdmin.findLatestRevisionForPolicy( policyGoid );
-            return latest.getOrdinal();
+            return latestPolicyVersionNumber = latest.getOrdinal();
         } catch ( RuntimeException e ) {
             log.log( Level.WARNING, "Unable to look up latest policy revision number: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             return null;
@@ -675,7 +690,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public String getDisplayName() {
-        return PolicyRevisionUtils.getDisplayName(subjectName, getVersionNumber(), getLatestVersionNumber(), isVersionActive());
+        return PolicyRevisionUtils.getDisplayName(subjectName, getVersionNumber(), getLatestVersionNumberCached(), isVersionActive());
     }
 
     /** updates the policy name, tab name etc */
@@ -1633,11 +1648,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
          * Update the policy editor panel such as enabling save buttons and updating tab titles.
          */
         private void updatePolicyEditorPanel() {
+            // This will also call updateHeadings()
             enableButtonSave();
-
-            // If the policy tree node is changed, it means the policy is changed.
-            // Update the tab title by adding an asterisk if unsaved changes occur.
-            PolicyEditorPanel.this.updateHeadings();
         }
 
         private void enableButtonSave() {
@@ -1700,6 +1712,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (child == subject.getPolicyNode()) {
                     log.fine("Service or Policy node deleted, disabling save controls");
                     policyEditorToolbar.setSaveButtonsEnabled(false);
+                    invalidateCachedInfo();
                 }
             }
         }
@@ -1730,6 +1743,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   validatePolicy();
               } else if (TAB_TITLE_CHANGE_PROPERTY.equals(evt.getPropertyName())) {
                   subjectName = (String) evt.getNewValue();
+                  invalidateCachedInfo();
                   updateHeadings();
               }
           }
@@ -1996,6 +2010,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 xml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
                             }
                             super.performAction(xml, includedFragments);
+                            invalidateCachedInfo();
 
                             if(getFragmentNameGuidMap() != null && !getFragmentNameGuidMap().isEmpty()) {
                                 try {
