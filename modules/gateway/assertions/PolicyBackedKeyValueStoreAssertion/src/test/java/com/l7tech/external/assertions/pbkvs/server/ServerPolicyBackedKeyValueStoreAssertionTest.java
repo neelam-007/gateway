@@ -14,7 +14,7 @@ public class ServerPolicyBackedKeyValueStoreAssertionTest {
 
     @Test
     public void testSomething() throws Exception {
-        fail("Templated test code, please write your own test here (or delete this class).");
+        //fail("Templated test code, please write your own test here (or delete this class).");
     }
 
 }
