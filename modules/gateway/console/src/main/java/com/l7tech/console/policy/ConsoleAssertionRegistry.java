@@ -188,7 +188,10 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         if (!Assertion.class.isAssignableFrom(assclass))
                             throw new ClassCastException(assclass.getName());
                         Assertion prototype = (Assertion)assclass.newInstance();
-                        ((DefaultAssertionMetadata) (prototype.meta())).put(AssertionMetadata.MODULE_FILE_NAME, moduleFilename);
+                        AssertionMetadata meta = prototype.meta();
+                        if ( meta instanceof DefaultAssertionMetadata ) {
+                            ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_FILE_NAME, moduleFilename );
+                        }
                         String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
 
                         logger.info("Registering remote assertion " + prototype.getClass().getName());
