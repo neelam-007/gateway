@@ -12,8 +12,18 @@ import com.l7tech.objectmodel.EntityType;
  */
 public class ManagePolicyBackedServicesAction extends SecureAction {
 
+    private Runnable callbackOnClose;
+
     public ManagePolicyBackedServicesAction() {
         super(new AttemptedAnyOperation(EntityType.POLICY_BACKED_SERVICE), UI_MANAGE_ENCAPSULATED_ASSERTIONS);
+    }
+
+    /**
+     * @param callbackOnClose callback to invoke when the Manage dialog has been closed, or null.
+     */
+    public ManagePolicyBackedServicesAction( Runnable callbackOnClose ) {
+        super(new AttemptedAnyOperation(EntityType.POLICY_BACKED_SERVICE), UI_MANAGE_ENCAPSULATED_ASSERTIONS);
+        this.callbackOnClose = callbackOnClose;
     }
 
     @Override
@@ -36,6 +46,6 @@ public class ManagePolicyBackedServicesAction extends SecureAction {
         PolicyBackedServiceManagerWindow dlg = new PolicyBackedServiceManagerWindow( TopComponents.getInstance().getTopParent() );
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
-        DialogDisplayer.display(dlg);
+        DialogDisplayer.display(dlg, callbackOnClose);
     }
 }

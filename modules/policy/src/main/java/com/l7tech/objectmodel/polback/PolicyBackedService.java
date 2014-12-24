@@ -106,4 +106,9 @@ public class PolicyBackedService extends ZoneableNamedEntityImp {
         this.getOperations();
         this.lock();
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

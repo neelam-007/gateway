@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.admin.PolicyBackedServiceAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,6 +28,17 @@ public class PolicyBackedServiceAdminImpl implements PolicyBackedServiceAdmin {
     @Override
     public Collection<PolicyBackedService> findAll() throws FindException {
         return policyBackedServiceManager.findAll();
+    }
+
+    @NotNull
+    @Override
+    public Collection<PolicyBackedService> findAllForInterface( @NotNull final String interfaceClassName ) throws FindException {
+        return Functions.grep( policyBackedServiceManager.findAll(), new Functions.Unary<Boolean, PolicyBackedService>() {
+            @Override
+            public Boolean call( PolicyBackedService policyBackedService ) {
+                return policyBackedService.getServiceInterfaceName().equals( interfaceClassName );
+            }
+        } );
     }
 
     @NotNull

@@ -34,6 +34,18 @@ public interface PolicyBackedServiceAdmin {
     Collection<PolicyBackedService> findAll() throws FindException;
 
     /**
+     * Find all registered policy-backed services (NOT templates) that implement the named annotated interface class.
+     *
+     * @param interfaceClassName class name of @PolicyBacked annotated interface.  Required.
+     * @return a list of policy backed service instances implementing the specified interface.  May be empty but never null.
+     * @throws FindException if no policy backed interface with that name is registered, or there is some other problem finding the values.
+     */
+    @NotNull
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    Collection<PolicyBackedService> findAllForInterface( @NotNull String interfaceClassName ) throws FindException;
+
+    /**
      * Find all registered policy-backed service templates.
      *
      * @return a collection of PolicyBackedService templates.  Never null but may be empty.

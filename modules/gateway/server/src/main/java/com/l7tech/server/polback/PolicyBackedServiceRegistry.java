@@ -140,8 +140,19 @@ public class PolicyBackedServiceRegistry implements InitializingBean, PostStartu
         }
     }
 
+    /**
+     * Get an implementation proxy for a policy backed service.
+     * <p/>
+     * If only a single implementation of a given service interface is registered,
+     * the second argument may be null.
+     *
+     * @param interfaceClass  annotated interface class.  Required.
+     * @param implementationPolicyBackedServiceGoid  Goid of implementation to use.  May be omitted if only one is registered.
+     * @param <T>  interface class
+     * @return a proxy object that, when invoked, runs the appropriate backing policy.  Never null.
+     */
     @NotNull
-    public <T> T getImplementationProxy( @NotNull Class<T> interfaceClass, @NotNull Goid implementationPolicyBackedServiceGoid ) {
+    public <T> T getImplementationProxy( @NotNull Class<T> interfaceClass, @Nullable Goid implementationPolicyBackedServiceGoid ) {
         // TODO see if we really need to hold the read lock all the while through running the policy, which could take an arbitrarily long time
         // Can probably release earlier if info in Template and LiveInstance are never modified (or if defensively copied)
         rwlock.readLock().lock();
@@ -159,6 +170,14 @@ public class PolicyBackedServiceRegistry implements InitializingBean, PostStartu
             Set<PolicyBackedService> instances = implementations.get( interfaceClassName );
             if ( instances != null ) {
                 for ( PolicyBackedService instance : instances ) {
+                    if ( implementationPolicyBackedServiceGoid == null && instance.getServiceInterfaceName().equals( interfaceClassName ) ) {
+                        if ( ourInstance != null ) {
+                            throw new IllegalStateException( "More than one implementation of interface " + interfaceClassName + " is registered; must specify implementation Goid" );
+                        }
+                        ourInstance = instance;
+                        continue;
+                    }
+
                     if ( Goid.equals( instance.getGoid(), implementationPolicyBackedServiceGoid ) ) {
                         ourInstance = instance;
                         break;
@@ -167,6 +186,9 @@ public class PolicyBackedServiceRegistry implements InitializingBean, PostStartu
             }
 
             if ( null == ourInstance ) {
+                if ( implementationPolicyBackedServiceGoid == null )
+                    throw new IllegalArgumentException( "No implementations of interface " + interfaceClassName + " are registered" );
+
                 throw new IllegalArgumentException( "No implementation of interface " + interfaceClassName + " with policy backed service id " +
                         implementationPolicyBackedServiceGoid + " is registered" );
 
