@@ -2659,7 +2659,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         toolBarPane.setFloatable(false);
 
         tbadd(toolBarPane, getConnectAction());
-        tbadd(toolBarPane, getDisconnectAction());
+        //tbadd(toolBarPane, getDisconnectAction());   // SSM-2818
         tbadd(toolBarPane, getRefreshAction());
         tbadd(toolBarPane, getHomeAction());
 
