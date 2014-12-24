@@ -2659,7 +2659,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         toolBarPane.setFloatable(false);
 
         tbadd(toolBarPane, getConnectAction());
-        //tbadd(toolBarPane, getDisconnectAction());   // SSM-2818
+        if ( isApplet() ) {
+            // SSM-2818 - only show in applet, which has no File menu
+            tbadd( toolBarPane, getDisconnectAction() );
+        }
         tbadd(toolBarPane, getRefreshAction());
         tbadd(toolBarPane, getHomeAction());
 
