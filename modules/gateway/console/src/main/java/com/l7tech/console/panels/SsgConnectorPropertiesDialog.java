@@ -42,7 +42,6 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
-    private static final boolean ENABLE_FTPS_TLS12 = ConfigFactory.getBooleanProperty( "com.l7tech.console.connector.allowFtpsTls12", false );
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
@@ -929,13 +928,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableTlsVersions() {
-        // TODO remove this hack once a way has been found to resolve the compatibility problem between RSA SSL-J and Apache FtpServer MINA's use of the SSL socket (Bug #8493)
-        if (isFtpProto(getSelectedProtocol()) && !ENABLE_FTPS_TLS12) {
-            setEnableAndSelect(false, false, "Disabled because it is not currently supported with FTPS", tls11CheckBox, tls12CheckBox);
-            setEnableAndSelect(false, true, "Enabled because it is currently the only supported TLS version for FTPS", tls10CheckBox);
-        } else {
-            enableAndRestore(tls10CheckBox, tls11CheckBox, tls12CheckBox);
-        }
+        enableAndRestore(tls10CheckBox, tls11CheckBox, tls12CheckBox);
     }
 
     private void enableAndRestore(JCheckBox... boxes) {
