@@ -1372,11 +1372,11 @@ public class AssertionMessages extends Messages {
 
     // CassandraQuery Assertion
     public static final M CASSANDRA_CONNECTION_CANNOT_CONNECT = m(10900, Level.WARNING, "Connection to Cassandra cluster associated with connection {0} not available due to {1}");
+    public static final M CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE = m(10901, Level.FINE, "Cassandra Connection Manager: {0}");
     public static final M CASSANDRA_CONNECTION_DISABLED = m(10902, Level.INFO, "The Gateway would not connect via disabled Cassandra connection {0}");
     public static final M CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED = m(10903, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to: {0}");
-    public static final M CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED = m(10904, Level.INFO, "\"Perform Cassandra Query\" assertion failed due to no query results via a connection {0}");
+    public static final M CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED = m(10904, Level.WARNING, "\"Perform Cassandra Query\" assertion failed due to no query results via a connection {0}");
     public static final M CASSANDRA_CANNOT_REMOVE_CONNECTION = m(10905, Level.WARNING, "Unable to remove Cassandra connection due to: {0}");
-    public static final M CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE = m(10906, Level.FINE, "Cassandra Connection Manager: {0}");
 
     public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
     // Highest ID reserved for AssertionMessages = 99999
