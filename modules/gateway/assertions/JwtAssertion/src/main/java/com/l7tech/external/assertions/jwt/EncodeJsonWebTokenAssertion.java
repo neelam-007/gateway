@@ -15,19 +15,22 @@ import java.util.Map;
 
 public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables {
 
+    public static final String CLUSTER_PROPERTY_SHOW_ALL = "jwt.showAllAlgorithms";
     private String sourceVariable;
-    private String headerAction = "Use Default";
+    private String headerAction = JsonWebTokenConstants.HEADERS_USE_DEFAULT;
     private String sourceHeaders;
 
+    private boolean signPayload;
     private String signatureAlgorithm = "None";
     private String signatureSecretKey;
-    private boolean privateKeyFromVariable;
+
     private String signatureSourceVariable;
     private String privateKeyGoid;
     private String privateKeyAlias;
     private String signatureKeyType;
     private String signatureJwksKeyId;
 
+    private boolean encryptPayload;
     private String keyManagementAlgorithm;
     private String contentEncryptionAlgorithm;
     private String encryptionKey;
@@ -36,7 +39,31 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     private String targetVariable;
 
+    private int signatureSourceType;
 
+    public int getSignatureSourceType() {
+        return signatureSourceType;
+    }
+
+    public void setSignatureSourceType(int signatureSourceType) {
+        this.signatureSourceType = signatureSourceType;
+    }
+
+    public boolean isSignPayload() {
+        return signPayload;
+    }
+
+    public void setSignPayload(boolean signPayload) {
+        this.signPayload = signPayload;
+    }
+
+    public boolean isEncryptPayload() {
+        return encryptPayload;
+    }
+
+    public void setEncryptPayload(boolean encryptPayload) {
+        this.encryptPayload = encryptPayload;
+    }
 
     public String getSourceVariable() {
         return sourceVariable;
@@ -76,14 +103,6 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setSignatureSecretKey(String signatureSecretKey) {
         this.signatureSecretKey = signatureSecretKey;
-    }
-
-    public boolean isPrivateKeyFromVariable() {
-        return privateKeyFromVariable;
-    }
-
-    public void setPrivateKeyFromVariable(boolean privateKeyFromVariable) {
-        this.privateKeyFromVariable = privateKeyFromVariable;
     }
 
     public String getSignatureSourceVariable() {
@@ -186,6 +205,10 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
+        props.put(CLUSTER_PROPERTY_SHOW_ALL, new String[] {
+                "Show all algorithms, INCLUDING those not certified for use with the Encode Json Web Token assertion. Value is a Boolean.  Default: false",
+                "false"
+        });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
@@ -210,7 +233,12 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
+
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EncodeJsonWebTokenAssertion.Validator.class.getName());
+
+
+
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -245,7 +273,6 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setSourceHeaders(sourceHeaders);
         clone.setSignatureAlgorithm(signatureAlgorithm);
         clone.setSignatureSecretKey(signatureSecretKey);
-        clone.setPrivateKeyFromVariable(privateKeyFromVariable);
         clone.setSignatureSourceVariable(signatureSourceVariable);
         clone.setPrivateKeyGoid(privateKeyGoid);
         clone.setPrivateKeyAlias(privateKeyAlias);
@@ -259,6 +286,10 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setEncryptionKeyId(encryptionKeyId);
 
         clone.setTargetVariable(targetVariable);
+
+        clone.setSignPayload(signPayload);
+        clone.setEncryptPayload(encryptPayload);
+        clone.setSignatureSourceType(signatureSourceType);
         return clone;
     }
 
@@ -280,10 +311,33 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
             if("RSASSA-PKCS-v1_5 using SHA-512".equals(assertion.getSignatureAlgorithm())){
                 result.addError(new PolicyValidatorResult.Error(assertion, "The use of 'RSASSA-PKCS-v1_5 using SHA-256' for encryption is not recommended, please use 'RSASSA-PSS using SHA-512 and MGF1 with SHA-512'.", null));
             }
-            if(assertion.getKeyManagementAlgorithm().startsWith("RSAES-PKCS1-V1_5")){
+            if(assertion.getKeyManagementAlgorithm() != null && assertion.getKeyManagementAlgorithm().startsWith("RSAES-PKCS1-V1_5")){
                 result.addError(new PolicyValidatorResult.Error(assertion,
                         "The use of 'RSAES-PKCS1-V1_5' for encryption is not recommended, please use 'RSAES OAEP using default parameters' or 'RSAES OAEP using SHA-256 and MGF1 with SHA-256'.", null));
             }
         }
     }
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EncodeJsonWebTokenAssertion>(){
+        @Override
+        public String getAssertionName( final EncodeJsonWebTokenAssertion assertion, final boolean decorate) {
+            final StringBuilder sb = new StringBuilder("Encode Json Web Token");
+            if(decorate){
+                if(!assertion.isSignPayload() && !assertion.isEncryptPayload()){
+                    sb.append(": unsecure");
+                }
+                if(assertion.isSignPayload() && assertion.isEncryptPayload()){
+                    sb.append(": sign & encrypt payload");
+                } else {
+                    if(assertion.isSignPayload()){
+                        sb.append(": sign payload");
+                    }
+                    if(assertion.isEncryptPayload()){
+                        sb.append(": encrypt payload");
+                    }
+                }
+            }
+            return sb.toString();
+        }
+    };
 }

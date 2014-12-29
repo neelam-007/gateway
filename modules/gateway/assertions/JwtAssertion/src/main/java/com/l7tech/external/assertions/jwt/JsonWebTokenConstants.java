@@ -1,12 +1,13 @@
 package com.l7tech.external.assertions.jwt;
 
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.*;
+import com.l7tech.util.Pair;
 import org.jose4j.jwk.Use;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class JsonWebTokenConstants {
     public static final String KEY_TYPE_PRIVATE_KEY = "Private Key";
@@ -14,8 +15,29 @@ public final class JsonWebTokenConstants {
     public static final String KEY_TYPE_JWK = "JSON Web Key";
     public static final String KEY_TYPE_JWKS = "JSON Web Key Set";
 
+    public static final Set<String> UNSUPPORTED_ALGORITHMS = ImmutableSet.of(
+            //jws
+            "PS256",
+            "PS384",
+            "PS512",
+            //jwe
+            "RSA1_5",
+            "RSA-OAEP-256",
+            "A192KW",
+            "ECDH-ES+A192KW",
+            "A128GCMKW",
+            "A192GCMKW",
+            "A256GCMKW",
+            "PBES2-HS256+A128KW",
+            "PBES2-HS384+A192KW",
+            "PBES2-HS512+A256KW",
+            //cek
+            "A192CBC-HS384",
+            "A192GCM"
+
+    );
+
     public static final BiMap<String, String> SIGNATURE_ALGORITHMS = ImmutableBiMap.<String, String>builder()
-            .put("None", "None")
             .put("HS256", "HMAC Using SHA-256")
             .put("HS384", "HMAC Using SHA-384")
             .put("HS512", "HMAC Using SHA-512")
@@ -31,7 +53,6 @@ public final class JsonWebTokenConstants {
             .build();
 
     public static final BiMap<String, String> KEY_MANAGEMENT_ALGORITHMS = ImmutableBiMap.<String, String>builder()
-            .put("None", "None")
             .put("RSA1_5", "RSAES-PKCS1-V1_5")
             .put("RSA-OAEP", "RSAES OAEP using default parameters")
             .put("RSA-OAEP-256", "RSAES OAEP using SHA-256 and MGF1 with SHA-256")
@@ -60,24 +81,6 @@ public final class JsonWebTokenConstants {
             .put("A256GCM", "AES GCM using 256 bit key")
             .build();
 
-    public static final BiMap<String, String> KEY_TYPES = ImmutableBiMap.<String, String>builder()
-            .put("EC", "Elliptic Curve")
-            .put("RSA", "RSA")
-            .put("oct", "Octet sequence")
-            .build();
-
-    public static final BiMap<String, String> KEY_OPERATIONS = ImmutableBiMap.<String, String>builder()
-            .put("sign", "Compute digital signature or MAC")
-            .put("verify", "Verify digital signature or MAC")
-
-            .put("encrypt", "Encrypt Content")
-            .put("decrypt", "Decrypt content and validate decryption, if applicable")
-            .put("wrapKey", "Encrypt Key")
-            .put("unwrapKey", "Decrypt key and validate decryption, if applicable")
-            .put("deriveKey", "Derive key")
-            .put("deriveBits", "Derive bits not to be used as a key")
-            .build();
-
     public static final BiMap<String, String> PUBLIC_KEY_USE = ImmutableBiMap.<String, String>builder()
             .put(Use.ENCRYPTION, "Encryption")
             .put(Use.SIGNATURE, "Signature")
@@ -87,9 +90,9 @@ public final class JsonWebTokenConstants {
 
     public static final List<String> ENCRYPTION_KEY_TYPES = ImmutableList.of("Certificate", "JSON Web Key", "JSON Web Key Set");
 
-    public static final String HEADERS_USE_DEFAULT = "Use Default";
-    public static final String HEADERS_MERGE = "Merge";
-    public static final String HEADERS_REPLACE = "Replace";
+    public static final String HEADERS_USE_DEFAULT = "Use Generated Header";
+    public static final String HEADERS_MERGE = "Merge to Generated Header";
+    public static final String HEADERS_REPLACE = "Replace Generated Header";
     public static final List<String> HEADER_ACTION = ImmutableList.of(HEADERS_USE_DEFAULT, HEADERS_MERGE, HEADERS_REPLACE);
 
     public static final String VALIDATION_NONE = "None";
@@ -99,4 +102,7 @@ public final class JsonWebTokenConstants {
 
     public static final List<String> VALIDATION_TYPE = ImmutableList.of(VALIDATION_NONE, VALIDATION_USING_SECRET, VALIDATION_USING_PK, VALIDATION_USING_CV);
 
+    public static final int SIGNATURE_SOURCE_SECRET = 0;
+    public static final int SIGNATURE_SOURCE_PK = 1;
+    public static final int SIGNATURE_SOURCE_CV = 2;
 }

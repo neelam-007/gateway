@@ -63,28 +63,12 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 return AssertionStatus.FAILED;
             }
         }
+
         String jwsCompact = null;
-        //unsecure --- why are we even doing this?!
-        if ((assertion.getSignatureAlgorithm() == null || "None".equals(assertion.getSignatureAlgorithm())) && (assertion.getKeyManagementAlgorithm() == null || "None".equals(assertion.getKeyManagementAlgorithm()))) {
-            try {
-                final JsonWebSignature str = new JsonWebSignature();
-                str.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
-                str.setHeader(HeaderParameterNames.ALGORITHM, AlgorithmIdentifiers.NONE);
-                str.setPayload(sourcePayload);
-                AssertionStatus status = handleHeaders(str, sourceHeaders);
-                if (!AssertionStatus.NONE.equals(status)) {
-                    return status;
-                }
-                context.setVariable(assertion.getTargetVariable() + ".compact", str.getCompactSerialization());
-            } catch (JoseException e) {
-                logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
-                return AssertionStatus.FAILED;
-            }
-        }
-        //create JWS if set
-        if (assertion.getSignatureAlgorithm() != null && !"None".equals(assertion.getSignatureAlgorithm())) {
+        if(assertion.isSignPayload()){
             try {
                 final JsonWebSignature jws = new JsonWebSignature();
+                jws.setHeader(HeaderParameterNames.TYPE, "JWT");
                 jws.setPayload(sourcePayload);
                 jws.setAlgorithmHeaderValue(assertion.getSignatureAlgorithm());
                 final Key signingKey = getSigningKey(jws, context);
@@ -94,7 +78,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 }
                 jws.setKey(signingKey);
                 //we don't have an encryption operation...we're done...set context vars and what not
-                if (assertion.getKeyManagementAlgorithm() == null || "None".equals(assertion.getKeyManagementAlgorithm())) {
+                if (!assertion.isEncryptPayload()) {
                     AssertionStatus status = handleHeaders(jws, sourceHeaders);
                     if (!AssertionStatus.NONE.equals(status)) {
                         return status;
@@ -107,9 +91,10 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 return AssertionStatus.FAILED;
             }
         }
-        //encryption
-        if (assertion.getKeyManagementAlgorithm() != null && !"None".equals(assertion.getKeyManagementAlgorithm())) {
+        if(assertion.isEncryptPayload()){
             final JsonWebEncryption jwe = new JsonWebEncryption();
+            //type is different from CTY
+            jwe.setHeader(HeaderParameterNames.TYPE, "JWT");
             if (jwsCompact != null) {
                 jwe.setHeader(HeaderParameterNames.CONTENT_TYPE, "JWT");
                 jwe.setPayload(jwsCompact);
@@ -136,50 +121,65 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 return AssertionStatus.FAILED;
             }
         }
-
+        //create unsecure
+        if(!assertion.isSignPayload() && !assertion.isEncryptPayload()){
+            try {
+                final JsonWebSignature str = new JsonWebSignature();
+                str.setHeader(HeaderParameterNames.TYPE, "JWT");
+                str.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+                str.setHeader(HeaderParameterNames.ALGORITHM, AlgorithmIdentifiers.NONE);
+                str.setPayload(sourcePayload);
+                AssertionStatus status = handleHeaders(str, sourceHeaders);
+                if (!AssertionStatus.NONE.equals(status)) {
+                    return status;
+                }
+                context.setVariable(assertion.getTargetVariable() + ".compact", str.getCompactSerialization());
+            } catch (JoseException e) {
+                logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
+                return AssertionStatus.FAILED;
+            }
+        }
+        //do header things
 
         return AssertionStatus.NONE;
     }
 
     private Key getSigningKey(final JsonWebSignature jws, final PolicyEnforcementContext context) throws InvalidAlgorithmException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
-        final String signatureAlgorithm = assertion.getSignatureAlgorithm();
-
-        //set key base in configuration
-        if (signatureAlgorithm.startsWith("HS")) {
+        if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_SECRET){
             final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), false);
             if (secretKey == null || secretKey.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
                 return null;
             }
             return new HmacKey(secretKey.getBytes());
-        } else if (!signatureAlgorithm.equals("None")) {
-            if (assertion.isPrivateKeyFromVariable()) {
-                String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
-                if (key == null || key.trim().isEmpty()) {
-                    logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
+        }
+        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_PK){
+            try {
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                if(ssgKeyEntry != null){
+                    return ssgKeyEntry.getPrivateKey();
+                }
+            } catch (UnrecoverableKeyException e) {
+                logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
+            }
+        }
+        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_CV){
+            String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
+            if (key == null || key.trim().isEmpty()) {
+                logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
+                return null;
+            }
+            final String keyType = assertion.getSignatureKeyType();
+            if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
+                return JwtUtils.getKeyFromJWK(getAudit(), key, true);
+            } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
+                final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), false);
+                if (kid == null || kid.trim().isEmpty()) {
+                    logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                     return null;
                 }
-                final String keyType = assertion.getSignatureKeyType();
-                if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-                    return JwtUtils.getKeyFromJWK(getAudit(), key, true);
-                } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
-                    final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), false);
-                    if (kid == null || kid.trim().isEmpty()) {
-                        logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
-                        return null;
-                    }
-                    return JwtUtils.getKeyFromJWKS(getAudit(), jws, key, kid, true);
-                }
-            } else {
-                try {
-                    final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
-                    if(ssgKeyEntry != null){
-                        return ssgKeyEntry.getPrivateKey();
-                    }
-                } catch (UnrecoverableKeyException e) {
-                    logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
-                }
+                return JwtUtils.getKeyFromJWKS(getAudit(), jws, key, kid, true);
             }
         }
         return null;
