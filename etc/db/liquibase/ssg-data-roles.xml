@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet id="create-admin-role" author="vkazakov">
+    <changeSet id="create-admin-role" author="gateway">
         <comment>Create the Administrator role</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -100)"/>
@@ -61,7 +61,7 @@
             <column name="entity_type" value="POLICY"/>
         </insert>
     </changeSet>
-    <changeSet id="assign-administrator-role" author="vkazakov">
+    <changeSet id="assign-administrator-role" author="gateway">
         <comment>Assign Administrator role to existing admin user</comment>
         <insert tableName="rbac_assignment">
             <column name="goid" valueComputed="toGoid(0, -105)"/>
@@ -71,7 +71,7 @@
             <column name="entity_type" value="User"/>
         </insert>
     </changeSet>
-    <changeSet id="create-operator-role" author="vkazakov">
+    <changeSet id="create-operator-role" author="gateway">
         <comment>Create the Operator role</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -150)"/>
@@ -100,7 +100,7 @@
             <column name="entity_type" value="LOG_SINK"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-internal-users-and-groups-role" author="vkazakov">
+    <changeSet id="create-manage-internal-users-and-groups-role" author="gateway">
         <comment>Create the Manage Internal Users and Groups role</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0,-200)"/>
@@ -282,7 +282,7 @@
             <column name="mode" value="eq"/>
         </insert>
     </changeSet>
-    <changeSet id="create-publish-external-identity-providers-role" author="vkazakov">
+    <changeSet id="create-publish-external-identity-providers-role" author="gateway">
         <comment>Create the Publish External Identity Providers role</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0,-250)"/>
@@ -376,7 +376,7 @@
             <column name="entity_type" value="SSG_KEY_ENTRY"/>
         </insert>
     </changeSet>
-    <changeSet id="create-search-users-and-groups-role" author="vkazakov">
+    <changeSet id="create-search-users-and-groups-role" author="gateway">
         <comment>Search Users and Groups</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -300)"/>
@@ -413,7 +413,7 @@
             <column name="entity_type" value="GROUP"/>
         </insert>
     </changeSet>
-    <changeSet id="create-publish-webservices-role" author="vkazakov">
+    <changeSet id="create-publish-webservices-role" author="gateway">
         <comment>Publish Webservices</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -350)"/>
@@ -506,7 +506,7 @@
             <column name="entity_type" value="ASSERTION_ACCESS"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-webservices-role" author="vkazakov">
+    <changeSet id="create-manage-webservices-role" author="gateway">
         <comment>Manage Webservices</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -400)"/>
@@ -863,7 +863,7 @@
             <column name="entity_type" value="POLICY"/>
         </insert>
     </changeSet>
-    <changeSet id="create-view-audit-records-role" author="vkazakov">
+    <changeSet id="create-view-audit-records-role" author="gateway">
         <comment>View Audit Records</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -450)"/>
@@ -892,7 +892,7 @@
             <column name="entity_type" value="AUDIT_RECORD"/>
         </insert>
     </changeSet>
-    <changeSet id="create-view-service-metrics-role" author="vkazakov">
+    <changeSet id="create-view-service-metrics-role" author="gateway">
         <comment>View Audit Records</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -500)"/>
@@ -945,7 +945,7 @@
             <column name="entity_type" value="FOLDER"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-cluster-status-role" author="vkazakov">
+    <changeSet id="create-manage-cluster-status-role" author="gateway">
         <comment>Manage Cluster Status</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -550)"/>
@@ -990,7 +990,7 @@
             <column name="entity_type" value="METRICS_BIN"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-certificates-role" author="vkazakov">
+    <changeSet id="create-manage-certificates-role" author="gateway">
         <comment>Manage Certificates (truststore)</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -600)"/>
@@ -1067,7 +1067,7 @@
             <column name="entity_type" value="REVOCATION_CHECK_POLICY"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-message-destinations-role" author="vkazakov">
+    <changeSet id="create-manage-message-destinations-role" author="gateway">
         <comment>Manage Message Destinations</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -650)"/>
@@ -1252,7 +1252,7 @@
             <column name="entity_type" value="SECURE_PASSWORD"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-cluster-properties-role" author="vkazakov">
+    <changeSet id="create-manage-cluster-properties-role" author="gateway">
         <comment>Manage Cluster Properties</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -700)"/>
@@ -1297,7 +1297,7 @@
             <column name="entity_type" value="CLUSTER_PROPERTY"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-listen-ports-role" author="vkazakov">
+    <changeSet id="create-manage-listen-ports-role" author="gateway">
         <comment>Manage Listen Ports</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -750)"/>
@@ -1350,7 +1350,7 @@
             <column name="entity_type" value="SERVICE"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-log-sinks-role" author="vkazakov">
+    <changeSet id="create-manage-log-sinks-role" author="gateway">
         <comment>Manage Log Sinks</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -800)"/>
@@ -1475,7 +1475,7 @@
             <column name="entity_type" value="EMAIL_LISTENER"/>
         </insert>
     </changeSet>
-    <changeSet id="create-gateway-maintenance-role" author="vkazakov">
+    <changeSet id="create-gateway-maintenance-role" author="gateway">
         <comment>Create the Gateway Maintenance role</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0,-850)"/>
@@ -1553,7 +1553,7 @@
             <column name="entity_type" value="AUDIT_RECORD"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-email-listeners-role" author="vkazakov">
+    <changeSet id="create-manage-email-listeners-role" author="gateway">
         <comment>Manage Email Listeners</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -900)"/>
@@ -1606,7 +1606,7 @@
             <column name="entity_type" value="SERVICE"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-jdbc-connections-role" author="vkazakov">
+    <changeSet id="create-manage-jdbc-connections-role" author="gateway">
         <comment>Manage JDBC Connections</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -950)"/>
@@ -1651,7 +1651,7 @@
             <column name="entity_type" value="JDBC_CONNECTION"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-uddi-registries-role" author="vkazakov">
+    <changeSet id="create-manage-uddi-registries-role" author="gateway">
         <comment>Manage UDDI Registries</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1000)"/>
@@ -1704,7 +1704,7 @@
             <column name="entity_type" value="SERVICE"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-secure-passwords-role" author="vkazakov">
+    <changeSet id="create-manage-secure-passwords-role" author="gateway">
         <comment>Manage Secure Passwords</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1050)"/>
@@ -1749,7 +1749,7 @@
             <column name="entity_type" value="SECURE_PASSWORD"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-private-keys-role" author="vkazakov">
+    <changeSet id="create-manage-private-keys-role" author="gateway">
         <comment>Manage Private Keys</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1100)"/>
@@ -2114,7 +2114,7 @@
             <column name="mode" value="eq"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-password-policies-role" author="vkazakov">
+    <changeSet id="create-manage-password-policies-role" author="gateway">
         <comment>Manage Password Policies</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1150)"/>
@@ -2151,7 +2151,7 @@
             <column name="entity_type" value="ID_PROVIDER_CONFIG"/>
         </insert>
     </changeSet>
-    <changeSet id="create-invoke-audit-viewer-policy-role" author="vkazakov">
+    <changeSet id="create-invoke-audit-viewer-policy-role" author="gateway">
         <comment>Invoke Audit Viewer Policy</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1200)"/>
@@ -2188,7 +2188,7 @@
             <column name="entity_type" value="CLUSTER_INFO"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-administrative-accounts-configuration-role" author="vkazakov">
+    <changeSet id="create-manage-administrative-accounts-configuration-role" author="gateway">
         <comment>Manage Administrative Accounts Configuration</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1250)"/>
@@ -2429,7 +2429,7 @@
             <column name="mode" value="eq"/>
         </insert>
     </changeSet>
-    <changeSet id="create-view-ssg-log-sink-role" author="vkazakov">
+    <changeSet id="create-view-ssg-log-sink-role" author="gateway">
         <comment>View ssg Log Sink (#-1,300)</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1300)"/>
@@ -2475,7 +2475,7 @@
             <column name="entity_type" value="LOG_SINK"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-encapsulated-assertions-role" author="vkazakov">
+    <changeSet id="create-manage-encapsulated-assertions-role" author="gateway">
         <comment>Manage Encapsulated Assertions</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1350)"/>
@@ -2547,7 +2547,7 @@
             <column name="entity_type" value="ASSERTION_ACCESS"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-custom-key-value-store-role" author="vkazakov">
+    <changeSet id="create-manage-custom-key-value-store-role" author="gateway">
         <comment>Manage Custom Key Value Store</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1450)"/>
@@ -2592,7 +2592,7 @@
             <column name="entity_type" value="CUSTOM_KEY_VALUE_STORE"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-firewall-rules-role" author="vkazakov">
+    <changeSet id="create-manage-firewall-rules-role" author="gateway">
         <comment>Manage Firewall Rules</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1400)"/>
@@ -2637,7 +2637,7 @@
             <column name="entity_type" value="FIREWALL_RULE"/>
         </insert>
     </changeSet>
-    <changeSet id="create-manage-siteminder-configuration-role" author="vkazakov">
+    <changeSet id="create-manage-siteminder-configuration-role" author="gateway">
         <comment>Manage SiteMinder Configuration</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1500)"/>

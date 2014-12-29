@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet author="vkazakov" id="1408665436018-16" dbms="mysql">
+    <changeSet author="gateway" id="1408665436018-16" dbms="mysql">
         <insert tableName="replication_status">
             <column name="objectid" valueNumeric="1"/>
             <column name="sequence" valueNumeric="1"/>
@@ -9,7 +9,7 @@
             <column name="delay" valueNumeric="0"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-6">
+    <changeSet author="gateway" id="1408665436018-6">
         <comment>The Internal Identity Provider</comment>
         <insert tableName="identity_provider">
             <column name="goid" valueComputed="toGoid(0,-2)"/>
@@ -21,7 +21,7 @@
             <column name="security_zone_goid"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-7">
+    <changeSet author="gateway" id="1408665436018-7">
         <comment>The admin user. Password is 'password'</comment>
         <insert tableName="internal_user">
             <column name="goid" valueComputed="toGoid(0,3)"/>
@@ -41,7 +41,7 @@
             <column name="${properties.column.name}"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-3">
+    <changeSet author="gateway" id="1408665436018-3">
         <comment>The root folder</comment>
         <insert tableName="folder">
             <column name="goid" valueComputed="toGoid(0,-5002)"/>
@@ -51,7 +51,7 @@
             <column name="security_zone_goid"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-17">
+    <changeSet author="gateway" id="1408665436018-17">
         <insert tableName="resolution_configuration">
             <column name="goid" valueComputed="toGoid(0,-2)"/>
             <column name="version" valueNumeric="0"/>
@@ -64,14 +64,14 @@
             <column name="use_soap_namespace" valueNumeric="1"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-1">
+    <changeSet author="gateway" id="1408665436018-1">
         <insert tableName="cluster_master">
             <column name="nodeid"/>
             <column name="touched_time" valueNumeric="0"/>
             <column name="version" valueNumeric="0"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-18">
+    <changeSet author="gateway" id="1408665436018-18">
         <insert tableName="resource_entry">
             <column name="goid" valueComputed="toGoid(0,-3)"/>
             <column name="version" valueNumeric="0"/>
@@ -143,7 +143,7 @@
             <column name="security_zone_goid"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-2">
+    <changeSet author="gateway" id="1408665436018-2">
         <insert tableName="cluster_properties">
             <column name="goid" valueComputed="toGoid(0,-700001)"/>
             <column name="version" valueNumeric="0"/>
@@ -152,7 +152,7 @@
             <column name="${properties.column.name}"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-8">
+    <changeSet author="gateway" id="1408665436018-8">
         <insert tableName="keystore_file">
             <column name="goid" valueComputed="toGoid(0,0)"/>
             <column name="version" valueNumeric="0"/>
@@ -194,7 +194,7 @@
             <column name="${properties.column.name}"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-9">
+    <changeSet author="gateway" id="1408665436018-9">
         <insert tableName="password_policy">
             <column name="goid" valueComputed="toGoid(0,-2)"/>
             <column name="version" valueNumeric="0"/>
@@ -202,7 +202,7 @@
             <column name="internal_identity_provider_goid" valueComputed="toGoid(0,-2)"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-19">
+    <changeSet author="gateway" id="1408665436018-19">
         <insert tableName="sink_config">
             <column name="goid" valueComputed="toGoid(0, -810)"/>
             <column name="version" valueNumeric="0"/>
@@ -228,18 +228,18 @@
             <column name="security_zone_goid"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-4">
+    <changeSet author="gateway" id="1408665436018-4">
         <insert tableName="goid_upgrade_map">
             <column name="prefix" valueNumeric="0"/>
             <column name="table_name" value="keystore_file"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-21" dbms="mysql">
+    <changeSet author="gateway" id="1408665436018-21" dbms="mysql">
         <insert tableName="hibernate_unique_key">
             <column name="next_hi" valueNumeric="1"/>
         </insert>
     </changeSet>
-    <changeSet author="vkazakov" id="1408665436018-20">
+    <changeSet author="gateway" id="1408665436018-20">
         <insert tableName="ssg_version">
             <column name="current_version" value="8.3.pre"/>
         </insert>

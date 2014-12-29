@@ -2,7 +2,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
-    <changeSet author="vkazakov" id="update_ssg_version">
+    <changeSet author="gateway" id="update_ssg_version">
         <update tableName="ssg_version">
             <column name="current_version" value="8.3.00"/>
         </update>
@@ -12,7 +12,7 @@
             </update>
         </rollback>
     </changeSet>
-    <changeSet id="remove_next_hi_function" author="vkazakov">
+    <changeSet id="remove_next_hi_function" author="gateway">
         <sql dbms="mysql">DROP FUNCTION next_hi</sql>
         <rollback>
             <createProcedure dbms="mysql"
@@ -25,7 +25,7 @@
             </createProcedure>
         </rollback>
     </changeSet>
-    <changeSet id="remove_hibernate_unique_key_table" author="vkazakov" dbms="mysql">
+    <changeSet id="remove_hibernate_unique_key_table" author="gateway" dbms="mysql">
         <dropTable tableName="hibernate_unique_key"/>
         <rollback>
             <createTable tableName="hibernate_unique_key">
@@ -38,7 +38,7 @@
             </insert>
         </rollback>
     </changeSet>
-    <changeSet id="update_manage_siteminder_configuration_role" author="ymoiseyenko">
+    <changeSet id="update_manage_siteminder_configuration_role" author="gateway">
         <comment>Update SiteMinder Configuration</comment>
         <update tableName="rbac_role">
             <column name="name" value="Manage CA Single Sign-On Configuration"/>
@@ -53,7 +53,7 @@
             </update>
         </rollback>
     </changeSet>
-    <changeSet id="introduce_policy_backed_services" author="mlyons">
+    <changeSet id="introduce_policy_backed_services" author="gateway">
         <comment>Adds subtags to the policy table, and introduces the policy_backed_service and policy_backed_service_operation tables</comment>
         <addColumn tableName="policy">
             <column name="internal_sub_tag" type="VARCHAR(255)"/>
@@ -97,7 +97,7 @@
             <modifyDataType tableName="policy" columnName="internal_tag" newDataType="VARCHAR(64)"/>
         </rollback>
     </changeSet>
-    <changeSet id="add_cassandra_connection_table" author="acheuk">
+    <changeSet id="add_cassandra_connection_table" author="gateway">
         <createTable tableName="cassandra_connection">
             <column name="goid" type="${goid.type}">
                 <constraints primaryKey="true" nullable="false"/>
@@ -134,12 +134,12 @@
             <column name="security_zone_goid" type="${goid.type}"/>
         </createTable>
     </changeSet>
-	<changeSet id="create-index-cassandra-connection-name" author="acheuk">
+	<changeSet id="create-index-cassandra-connection-name" author="gateway">
         <createIndex indexName="index_cassandra_connection_name" tableName="cassandra_connection" unique="true">
             <column name="name"/>
         </createIndex>
     </changeSet>
-	<changeSet id="create-manage-cassandra-connection-role" author="acheuk">
+	<changeSet id="create-manage-cassandra-connection-role" author="gateway">
         <comment>Manage Cassandra Configuration</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1600)"/>
