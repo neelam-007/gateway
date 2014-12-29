@@ -188,7 +188,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             entity = cassandraEntityManager.findByPrimaryKey(goid);
             removeConnection(entity);
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{"Unable to find appropriate connection in the data source."}, ExceptionUtils.getDebugException(e) );
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CANNOT_REMOVE_CONNECTION, new String[]{"Unable to find appropriate connection in the data source."}, ExceptionUtils.getDebugException(e) );
         }
         //this should never happen
         if(entity == null) {
