@@ -64,20 +64,12 @@ public class JWKCreateDialog extends JDialog {
     }
 
     public JwkKeyInfo getJwkKeyInfo() {
-        if (jwkKeyInfo == null) {
-            jwkKeyInfo = new JwkKeyInfo();
-        }
-
-        jwkKeyInfo.setSourceKeyGoid(privateKeysComboBox.getSelectedKeystoreId());
-        jwkKeyInfo.setSourceKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
-
-        jwkKeyInfo.setKeyId(keyIdTextField.getText().trim());
-
-        jwkKeyInfo.setPublicKeyUse(publicUseComboBox.getSelectedItem().toString());
-
-
-
-        return jwkKeyInfo;
+        JwkKeyInfo jwi = new JwkKeyInfo();
+        jwi.setSourceKeyGoid(privateKeysComboBox.getSelectedKeystoreId());
+        jwi.setSourceKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
+        jwi.setKeyId(keyIdTextField.getText().trim());
+        jwi.setPublicKeyUse(publicUseComboBox.getSelectedItem().toString());
+        return jwi;
     }
 
     private boolean validateData() {
@@ -89,14 +81,17 @@ public class JWKCreateDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
-        for(int i = 0; i < tableModel.getRowCount(); i++){
-            JwkKeyInfo key = (JwkKeyInfo) tableModel.getRowObject(i);
-            if(key.getKeyId().equals(keyIdTextField.getText().trim())){
-                DialogDisplayer.showMessageDialog(this,
-                        "Existing key id of '" + keyIdTextField.getText().trim() + "' already exist.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE, null);
-                return false;
+
+        if(jwkKeyInfo == null || !jwkKeyInfo.getKeyId().equals(keyIdTextField.getText().trim())){
+            for(int i = 0; i < tableModel.getRowCount(); i++){
+                JwkKeyInfo key = (JwkKeyInfo) tableModel.getRowObject(i);
+                if(key.getKeyId().equals(keyIdTextField.getText().trim())){
+                    DialogDisplayer.showMessageDialog(this,
+                            "Existing key id of '" + keyIdTextField.getText().trim() + "' already exist.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE, null);
+                    return false;
+                }
             }
         }
         return true;
