@@ -102,7 +102,7 @@ public final class JsonWebTokenConstants {
 
     public static final List<String> VALIDATION_TYPE = ImmutableList.of(VALIDATION_NONE, VALIDATION_USING_SECRET, VALIDATION_USING_PK, VALIDATION_USING_CV);
 
-    public static final int SIGNATURE_SOURCE_SECRET = 0;
-    public static final int SIGNATURE_SOURCE_PK = 1;
-    public static final int SIGNATURE_SOURCE_CV = 2;
+    public static final int SOURCE_SECRET = 0;
+    public static final int SOURCE_PK = 1;
+    public static final int SOURCE_CV = 2;
 }

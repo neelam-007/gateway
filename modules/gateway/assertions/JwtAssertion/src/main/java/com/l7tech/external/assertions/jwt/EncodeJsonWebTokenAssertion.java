@@ -34,12 +34,15 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private String keyManagementAlgorithm;
     private String contentEncryptionAlgorithm;
     private String encryptionKey;
+    private String encryptionSecret;
     private String encryptionKeyType;
     private String encryptionKeyId;
 
     private String targetVariable;
 
     private int signatureSourceType;
+
+    private int encryptionSourceType;
 
     public int getSignatureSourceType() {
         return signatureSourceType;
@@ -169,6 +172,14 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         this.encryptionKey = encryptionKey;
     }
 
+    public String getEncryptionSecret() {
+        return encryptionSecret;
+    }
+
+    public void setEncryptionSecret(String encryptionSecret) {
+        this.encryptionSecret = encryptionSecret;
+    }
+
     public String getEncryptionKeyType() {
         return encryptionKeyType;
     }
@@ -191,6 +202,14 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setTargetVariable(String targetVariable) {
         this.targetVariable = targetVariable;
+    }
+
+    public int getEncryptionSourceType() {
+        return encryptionSourceType;
+    }
+
+    public void setEncryptionSourceType(int encryptionSourceType) {
+        this.encryptionSourceType = encryptionSourceType;
     }
 
     //
@@ -236,9 +255,6 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EncodeJsonWebTokenAssertion.Validator.class.getName());
-
-
-
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -290,6 +306,10 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setSignPayload(signPayload);
         clone.setEncryptPayload(encryptPayload);
         clone.setSignatureSourceType(signatureSourceType);
+
+        clone.setEncryptionSourceType(encryptionSourceType);
+        clone.setEncryptionSecret(encryptionSecret);
+
         return clone;
     }
 

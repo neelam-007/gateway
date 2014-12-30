@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import junit.framework.Assert;
@@ -33,7 +32,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setSignPayload(true);
         ass.setSourceVariable("yabbadabbadoo");
         ass.setSignatureAlgorithm("HS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_SECRET);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_SECRET);
         ass.setSignatureSecretKey(Keys.MAC_SECRET);
         ass.setTargetVariable("result");
 
@@ -58,7 +57,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setSourceVariable("yabbadabbadoo");
         ass.setSignatureAlgorithm("HS256");
         ass.setSignatureSecretKey(Keys.MAC_SECRET);
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_SECRET);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_SECRET);
         ass.setTargetVariable("result");
         ass.setSignPayload(true);
         ass.setHeaderAction(JsonWebTokenConstants.HEADERS_MERGE);
@@ -160,7 +159,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("yabbadabbadoo");
         ass.setSignatureAlgorithm("ES512");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable(Keys.SAMPLE_JWKS);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("bilbo.baggins@hobbiton.example");
@@ -289,7 +288,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable(Keys.SAMPLE_JWK_RSA);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
@@ -308,7 +307,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable("${jwk}");
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
@@ -327,7 +326,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable("${jwk}");
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
@@ -345,7 +344,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable("${jwk}");
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
@@ -362,7 +361,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable(Keys.SAMPLE_JWKS);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("bilbo.baggins@hobbiton.example");
@@ -382,7 +381,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable("${jwks}");
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("bilbo.baggins@hobbiton.example");
@@ -401,7 +400,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable(Keys.SAMPLE_JWKS);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("i.dont.exist");
@@ -419,7 +418,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable(Keys.SAMPLE_JWKS);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("");
@@ -437,7 +436,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
-        ass.setSignatureSourceType(JsonWebTokenConstants.SIGNATURE_SOURCE_CV);
+        ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setSignatureSourceVariable("booohoohooo");
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setSignatureJwksKeyId("i.dont.exist");
@@ -463,6 +462,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_CERTIFICATE);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -484,6 +484,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_CERTIFICATE);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -503,6 +504,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_CERTIFICATE);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -523,6 +525,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -544,6 +547,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setEncryptionKeyId("bilbo.baggins@hobbiton.example");
         ass.setTargetVariable("result");
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setEncryptPayload(true);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
@@ -566,6 +570,27 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyId("18ec08e1-bfa9-4d95-b205-2b4dd1d4321d");
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
+        ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        final String result = (String) context.getVariable("result.compact");
+        Assert.assertNotNull(result);
+    }
+
+    @Test
+    public void testJWE_fromJWKSDirectFromSecret() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        context.setVariable("testpayload", "yabbadabbadoo");
+
+        EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
+        ass.setSourceVariable("${testpayload}");
+        ass.setKeyManagementAlgorithm(KeyManagementAlgorithmIdentifiers.DIRECT);
+        ass.setContentEncryptionAlgorithm(ContentEncryptionAlgorithmIdentifiers.AES_128_CBC_HMAC_SHA_256);
+        ass.setEncryptionSecret("lCieDVKud04B5feEA9Zd47DKTJCUSA_9AUg4LpkotE0");
+        ass.setTargetVariable("result");
+        ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_SECRET);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -586,6 +611,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_JWKS);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -606,6 +632,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setEncryptionKeyId("");
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -626,6 +653,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setTargetVariable("result");
 
         //jwe setup
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
         ass.setKeyManagementAlgorithm("RSA1_5");
         ass.setContentEncryptionAlgorithm("A128CBC-HS256");
         ass.setEncryptionKey(Keys.SAMPLE_JWKS);

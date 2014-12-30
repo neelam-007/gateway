@@ -19,10 +19,13 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.OctetSequenceJsonWebKey;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
+import org.jose4j.keys.AesKey;
 import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.InvalidAlgorithmException;
 import org.jose4j.lang.JoseException;
@@ -33,6 +36,7 @@ import java.security.Key;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -146,7 +150,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
 
     private Key getSigningKey(final JsonWebSignature jws, final PolicyEnforcementContext context) throws InvalidAlgorithmException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
-        if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_SECRET){
+        if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
             final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), false);
             if (secretKey == null || secretKey.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
@@ -154,7 +158,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             }
             return new HmacKey(secretKey.getBytes());
         }
-        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_PK){
+        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK){
             try {
                 final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
                 if(ssgKeyEntry != null){
@@ -164,7 +168,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
             }
         }
-        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SIGNATURE_SOURCE_CV){
+        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_CV){
             String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
             if (key == null || key.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
@@ -188,42 +192,57 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     private Key getEncryptionKey(final JsonWebEncryption jwe, final PolicyEnforcementContext context) {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
-        Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
-        if (key == null) {
-            logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
-            return null;
+        if(assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
+            String secret = ExpandVariables.process(assertion.getEncryptionSecret(), variables, getAudit(), false);
+            if(secret == null || secret.trim().isEmpty()){
+                logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
+                return null;
+            }
+            //there isn't a reliable way to create an octet key
+            //best approach for now is to put it as a jwk and then get the key out
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(OctetSequenceJsonWebKey.KEY_VALUE_MEMBER_NAME, secret);
+            JsonWebKey jwk = new OctetSequenceJsonWebKey(params);
+            return jwk.getKey();
         }
-        final String keyType = assertion.getEncryptionKeyType();
-        if (JsonWebTokenConstants.KEY_TYPE_CERTIFICATE.equals(keyType)) {
-            //cert was given via context var.
-            //grab it and check if it can be use to encrypt data
-            X509Certificate cert = null;
-            if (key instanceof X509Certificate) {
-                cert = (X509Certificate) key;
-            } else if (key instanceof String) {
-                cert = JwtUtils.getPublicKeyFromPem(getAudit(), key.toString());
+        else if(assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_CV){
+            Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
+            if (key == null) {
+                logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
+                return null;
             }
-            if (cert != null) {
-                try {
-                    KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, cert, cert.getPublicKey());
-                    return cert.getPublicKey();
-                } catch (CertificateException e) {
-                    logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
+            final String keyType = assertion.getEncryptionKeyType();
+            if (JsonWebTokenConstants.KEY_TYPE_CERTIFICATE.equals(keyType)) {
+                //cert was given via context var.
+                //grab it and check if it can be use to encrypt data
+                X509Certificate cert = null;
+                if (key instanceof X509Certificate) {
+                    cert = (X509Certificate) key;
+                } else if (key instanceof String) {
+                    cert = JwtUtils.getPublicKeyFromPem(getAudit(), key.toString());
                 }
+                if (cert != null) {
+                    try {
+                        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, cert, cert.getPublicKey());
+                        return cert.getPublicKey();
+                    } catch (CertificateException e) {
+                        logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
+                    }
+                }
+            } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
+                return JwtUtils.getKeyFromJWK(getAudit(), key.toString(), false);
+            } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
+                if(assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()){
+                    logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
+                    return null;
+                }
+                final String kid = ExpandVariables.process(assertion.getEncryptionKeyId(), variables, getAudit(), false);
+                if (kid == null || kid.trim().isEmpty()) {
+                    logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
+                    return null;
+                }
+                return JwtUtils.getKeyFromJWKS(getAudit(), jwe, key.toString(), kid, false);
             }
-        } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-            return JwtUtils.getKeyFromJWK(getAudit(), key.toString(), false);
-        } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
-            if(assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()){
-                logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
-                return null;
-            }
-            final String kid = ExpandVariables.process(assertion.getEncryptionKeyId(), variables, getAudit(), false);
-            if (kid == null || kid.trim().isEmpty()) {
-                logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
-                return null;
-            }
-            return JwtUtils.getKeyFromJWKS(getAudit(), jwe, key.toString(), kid, false);
         }
         return null;
     }
