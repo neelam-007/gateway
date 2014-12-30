@@ -521,6 +521,49 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         }
     }
 
+    /**
+     * Test migrating a full gateway with one assertion security zone.
+     */
+    @Test
+    public void testFullGatewayExportImportOneAssertionSecurityZone() throws Exception {
+        Item<SecurityZoneMO> securityZoneItem = null;
+        Item<AssertionSecurityZoneMO> assertionSecurityZoneItem = null;
+        try {
+            securityZoneItem = createSecurityZone(getSourceEnvironment());
+            assertionSecurityZoneItem = createAssertionSecurityZoneItem("com.l7tech.policy.assertion.FalseAssertion", securityZoneItem.getId(), getSourceEnvironment());
+
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            response = getTargetEnvironment().processRequest("assertionSecurityZones/com.l7tech.policy.assertion.FalseAssertion", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+            Item<AssertionSecurityZoneMO> targetAssertionSecurityZone = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Mapping securityZoneMapping = getMapping(mappings.getContent().getMappings(), securityZoneItem.getId());
+
+            Assert.assertEquals("Assertion security zone id is not expected", securityZoneMapping.getTargetId(), targetAssertionSecurityZone.getContent().getSecurityZoneId());
+
+        } finally {
+            if (assertionSecurityZoneItem != null) {
+                createAssertionSecurityZoneItem("com.l7tech.policy.assertion.FalseAssertion", null, getSourceEnvironment());
+            }
+            if (securityZoneItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+        }
+    }
+
     private Item<HttpConfigurationMO> createHttpConfiguration(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
         HttpConfigurationMO httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
         httpConfiguration.setUsername("userNew");
@@ -701,6 +744,22 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         Item<PolicyMO> policyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         response = environment.processRequest("policies/" + policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+
+        return MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+    }
+
+    private Item<AssertionSecurityZoneMO> createAssertionSecurityZoneItem(String assertionName, String securityZoneId, JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+        AssertionSecurityZoneMO assertionAccessMo = ManagedObjectFactory.createAssertionAccess();
+        assertionAccessMo.setName(assertionName);
+        assertionAccessMo.setSecurityZoneId(securityZoneId);
+        RestResponse response = environment.processRequest("assertionSecurityZones/"+assertionName, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(assertionAccessMo)));
+
+        assertOkResponse(response);
+
+        Item<AssertionSecurityZoneMO> assertionSecurityZoneItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        response = environment.processRequest("assertionSecurityZones/" + assertionSecurityZoneItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
 
         return MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
     }

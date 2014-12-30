@@ -70,7 +70,8 @@ public @interface Dependency {
         FIREWALL_RULE(EntityType.FIREWALL_RULE),
         SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE),
         CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION),
-        HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION);
+        HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION),
+        ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;
