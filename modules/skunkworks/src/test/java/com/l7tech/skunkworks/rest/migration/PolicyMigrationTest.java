@@ -155,6 +155,11 @@ public class PolicyMigrationTest extends MigrationTestBase {
         Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
 
         validate(mappings);
+
+        //validate that the policy GUID's are preserved
+        response = getTargetEnvironment().processRequest("policies/"+policyItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(),"");
+        Item<PolicyMO> policyTargetItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(policyItem.getContent().getGuid(), policyTargetItem.getContent().getGuid());
     }
 
     @Test

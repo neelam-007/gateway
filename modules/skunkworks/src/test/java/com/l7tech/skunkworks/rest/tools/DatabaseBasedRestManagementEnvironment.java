@@ -9,19 +9,28 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.whichmodule.GenericEntityManagerDemoAssertion;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.*;
+import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.event.system.LicenseChangeEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.transport.http.DefaultHttpConnectors;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -37,10 +46,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.io.IOException;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,7 +70,7 @@ public class DatabaseBasedRestManagementEnvironment {
     private ClassPathXmlApplicationContext applicationContext;
     private ServerRESTGatewayManagementAssertion restManagementAssertion;
 
-    public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException {
+    public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException, SaveException, IOException {
         SyspropUtil.setProperty("com.l7tech.server.logDirectory", this.getClass().getResource("/gateway/logs").getPath());
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
@@ -84,9 +91,21 @@ public class DatabaseBasedRestManagementEnvironment {
         assertionRegistry.registerAssertion(RESTGatewayManagementAssertion.class);
         assertionRegistry.registerAssertion(GenericEntityManagerDemoAssertion.class);
 
-        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
         applicationContext.start();
-        getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new Started(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, "127.0.0.1"));
+        applicationContext.publishEvent(new LicenseChangeEvent(this, Level.FINE, "LicenseEvent", "Event Message"));
+
+        //need to create the default http connectors
+        SsgConnectorManager ssgConnectorManager = applicationContext.getBean(SsgConnectorManager.class);
+        Collection<SsgConnector> defaultConnectors = DefaultHttpConnectors.getDefaultConnectors();
+        for (SsgConnector connector : defaultConnectors) {
+            ssgConnectorManager.save(connector);
+        }
+
+        //This will force the default ssl key to be created
+        DefaultKey defaultKey = applicationContext.getBean(DefaultKey.class);
+        defaultKey.getSslInfo();
     }
 
     /**

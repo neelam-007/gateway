@@ -3,6 +3,7 @@ package com.l7tech.server.bundling;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Identity;
@@ -214,6 +215,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         true,
                         false);
             }
+        } else if(entity instanceof SsgConnector && isDefaultListenPortName(((SsgConnector) entity).getName()) ) {
+            //make the default listen ports map by name
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    true,
+                    false);
         } else {
             //create the default mapping instructions
             mapping = mappingInstructionsBuilder.createDefaultMapping(dependentObject.getEntityHeader(),
@@ -230,5 +239,18 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }else{
             mappings.add(mapping);
         }
+    }
+
+    /**
+     * Returns true if the name given is a name for a default listen port.
+     * @param name The name to test
+     * @return True is this is a name for a default listen port, false otherwise.
+     */
+    private boolean isDefaultListenPortName(final String name) {
+        return name != null && (
+                "Default HTTP (8080)".equals(name) ||
+                        "Default HTTPS (8443)".equals(name) ||
+                        "Default HTTPS (9443)".equals(name) ||
+                        "Node HTTPS (2124)".equals(name));
     }
 }
