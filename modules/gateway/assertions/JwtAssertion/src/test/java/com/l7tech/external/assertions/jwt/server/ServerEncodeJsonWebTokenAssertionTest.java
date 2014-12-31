@@ -289,7 +289,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
         ass.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
-        ass.setSignatureSourceVariable(Keys.SAMPLE_JWK_RSA);
+        ass.setSignatureSourceVariable(Keys.SAMPLE_JWK_RSA_SIG);
         ass.setSignatureKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
         ass.setSignPayload(true);
@@ -303,7 +303,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
     @Test
     public void testJWS_usingJWKFromContextVariable() throws Exception {
         PolicyEnforcementContext context = getContext();
-        context.setVariable("jwk", Keys.SAMPLE_JWK_RSA);
+        context.setVariable("jwk", Keys.SAMPLE_JWK_RSA_SIG);
         EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
         ass.setSourceVariable("testpayload");
         ass.setSignatureAlgorithm("RS256");
@@ -467,7 +467,6 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
         final String result = (String) context.getVariable("result.compact");
-        System.out.println(result);
         Assert.assertNotNull(result);
     }
 
@@ -521,7 +520,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setSourceVariable("${testpayload}");
         ass.setKeyManagementAlgorithm("RSA1_5");
         ass.setContentEncryptionAlgorithm("A128CBC-HS256");
-        ass.setEncryptionKey(Keys.SAMPLE_JWK_RSA);
+        ass.setEncryptionKey(Keys.SAMPLE_JWK_RSA_ENC);
         ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
@@ -530,8 +529,27 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, status);
         final String result = (String) context.getVariable("result.compact");
-        System.out.println(result);
         Assert.assertNotNull(result);
+    }
+
+    @Test(expected = NoSuchVariableException.class)
+    public void testJWE_fromJWK_invalidKeyUsage() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        context.setVariable("testpayload", "yabbadabbadoo");
+
+        EncodeJsonWebTokenAssertion ass = new EncodeJsonWebTokenAssertion();
+        ass.setSourceVariable("${testpayload}");
+        ass.setKeyManagementAlgorithm("RSA1_5");
+        ass.setContentEncryptionAlgorithm("A128CBC-HS256");
+        ass.setEncryptionKey(Keys.SAMPLE_JWK_RSA_SIG);
+        ass.setEncryptionKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
+        ass.setTargetVariable("result");
+        ass.setEncryptPayload(true);
+        ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
+        ServerEncodeJsonWebTokenAssertion sass = new ServerEncodeJsonWebTokenAssertion(ass);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+        final String result = (String) context.getVariable("result.compact");
     }
 
     @Test

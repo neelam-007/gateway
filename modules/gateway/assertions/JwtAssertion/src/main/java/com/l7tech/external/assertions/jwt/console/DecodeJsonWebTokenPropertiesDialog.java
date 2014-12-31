@@ -44,7 +44,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         validationType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.VALIDATION_TYPE.toArray(new String[JsonWebTokenConstants.VALIDATION_TYPE.size()])));
         validationType.addActionListener(validationTypeActionListener);
 
-        keyType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.SIGNATURE_KEY_TYPES.toArray(new String[JsonWebTokenConstants.SIGNATURE_KEY_TYPES.size()])));
+        keyType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.toArray(new String[JsonWebTokenConstants.ENCRYPTION_KEY_TYPES.size()])));
         keyType.addActionListener(keyTypeActionListener);
 
         PasswordGuiUtils.configureOptionalSecurePasswordField(secretPasswordField, showPasswordCheckBox, secretWarningLabel);

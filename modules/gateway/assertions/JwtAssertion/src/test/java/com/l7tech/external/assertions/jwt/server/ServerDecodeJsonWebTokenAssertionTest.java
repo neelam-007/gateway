@@ -253,7 +253,7 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         assertion.setSourcePayload("eyJhbGciOiJSUzI1NiJ9.dGVzdHBheWxvYWQ.k2pjWhlBWGi8sc0a8UhIs7bl1Z8dUylrAVU3jKrzR0TPmOtlPOsRXjSX-iIe6fXo58KI3W_dx8aC9_4y5oYtL21drQXOTwjSssNELxU3OHe3QvWXXDGD_FNaOXlQswDpvuYrbvW_YppL6iDo6jrMlOvl-hkM6_EoImESNvzJhGeCIUBb53WjqXEer2PKNAiNLcvYi-uUOfg1i6jR-fNCrnyP-fWLgQq5TuazZBvA1PH-LkYzS31TmPQ4ratIM5iz1nN6bQYrAT_PbAgI87liJUF6FWgGDotz7oKDxV_f8RCWheFImeo5FqrErPw_HUXs6Mo3z_prslJ4J8sL5_TPQQ");
         assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_CV);
         assertion.setKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
-        assertion.setPrivateKeySource(Keys.SAMPLE_JWK_RSA);
+        assertion.setPrivateKeySource(Keys.SAMPLE_JWK_RSA_SIG);
         assertion.setTargetVariablePrefix("result");
 
         ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
@@ -276,7 +276,7 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         assertion.setSourcePayload("eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0.eB2jgoPG3hopqFWE2jy1qXjQEgMB5uMbSZr7wCo3u2yRLxHhWKEOSbHFdEB__lys3TOmBrl0edincgEf1AGjY4TqOCIoH7FbQeD37iG7F9bc5Gsdl9kdj1sgBO7oxd3ihTGYA8RELD03BZc96iGJZ4ajiAjTIhGCi9-k19Rv5x0EvhAb2ph66QVu_P5VGla04SY28YtEpP6g6k2jhby4Yy9Sduspnnsb8k37VuTZQUzvZTJHv8DOKbJ1UPOvpRywD7K4EQ5IenbyyHz3huqSXulTEL1h-4qaISbOwT8R9yHAsNu352j-3BEKrzaVBDtjdh-HeRTHCYOhz1auzufbiQ.Rjv8ZOQcMwv-_a4QSgUxnA.idXDoOekSkvdl4DzNATXEA.vdK5-ymmUCuaI73zakmt7w");
         assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_CV);
         assertion.setKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
-        assertion.setPrivateKeySource(Keys.SAMPLE_JWK_RSA);
+        assertion.setPrivateKeySource(Keys.SAMPLE_JWK_RSA_SIG);
         assertion.setTargetVariablePrefix("result");
 
         ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
@@ -334,5 +334,44 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         Assert.assertEquals(Lists.newArrayList("alg"), context.getVariable("result.header.names"));
         Assert.assertEquals("yabbadabbadoo", context.getVariable("result.payload"));
 
+    }
+
+    @Test
+    public void test_jws() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.Zm9vYmFy.T6knOzWwgtHuCzmSwq5KzWlzmUo_Enl0kyjEe-naPwyPftBlkM1LY08OVZvtAjt1QiywkYIYJUcXv4KQSBQ-tFlv7AyvYrjt1sPfI19Cv2A1f39dWgiEK8N-wsPajQ916JmY15ZOzXzlXhgqQuHoIoh-ok86Xc5qmxnJ6W4TZDl9Yr0vNS-Dxcho4icd-9K31FaUXgErtdgT937FZjKjjGo8rVbUHBtil8lurT6KA1NG6cinF27qtDOleTUxdK3r_qZgrc8Mdi-uxaKd7ZfwiEU1UNzmSZ7XcKChRgxRr8EROrIEIgfRhHL4fjKcvqd4UcuLpKqsJbKTaorC7YsDGQ");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_CV);
+        assertion.setKeyType(JsonWebTokenConstants.KEY_TYPE_CERTIFICATE);
+        assertion.setPrivateKeySource(Keys.SAMPLE_VERIFY_CERT);
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+
+        Assert.assertEquals("JWS", context.getVariable("result.type"));
+        Assert.assertEquals("{\"typ\":\"JWT\",\"alg\":\"RS256\"}", context.getVariable("result.header"));
+        Assert.assertEquals("RS256", context.getVariable("result.header.alg"));
+        Assert.assertEquals(Lists.newArrayList("typ", "alg"), context.getVariable("result.header.names"));
+        Assert.assertEquals("foobar", context.getVariable("result.payload"));
+        Assert.assertEquals("T6knOzWwgtHuCzmSwq5KzWlzmUo_Enl0kyjEe-naPwyPftBlkM1LY08OVZvtAjt1QiywkYIYJUcXv4KQSBQ-tFlv7AyvYrjt1sPfI19Cv2A1f39dWgiEK8N-wsPajQ916JmY15ZOzXzlXhgqQuHoIoh-ok86Xc5qmxnJ6W4TZDl9Yr0vNS-Dxcho4icd-9K31FaUXgErtdgT937FZjKjjGo8rVbUHBtil8lurT6KA1NG6cinF27qtDOleTUxdK3r_qZgrc8Mdi-uxaKd7ZfwiEU1UNzmSZ7XcKChRgxRr8EROrIEIgfRhHL4fjKcvqd4UcuLpKqsJbKTaorC7YsDGQ",
+                context.getVariable("result.signature"));
+
+    }
+
+    @Test
+    public void test_verifyValidJWE_invalidKeyUsage() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.Zm9vYmFy.T6knOzWwgtHuCzmSwq5KzWlzmUo_Enl0kyjEe-naPwyPftBlkM1LY08OVZvtAjt1QiywkYIYJUcXv4KQSBQ-tFlv7AyvYrjt1sPfI19Cv2A1f39dWgiEK8N-wsPajQ916JmY15ZOzXzlXhgqQuHoIoh-ok86Xc5qmxnJ6W4TZDl9Yr0vNS-Dxcho4icd-9K31FaUXgErtdgT937FZjKjjGo8rVbUHBtil8lurT6KA1NG6cinF27qtDOleTUxdK3r_qZgrc8Mdi-uxaKd7ZfwiEU1UNzmSZ7XcKChRgxRr8EROrIEIgfRhHL4fjKcvqd4UcuLpKqsJbKTaorC7YsDGQ");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_CV);
+        assertion.setKeyType(JsonWebTokenConstants.KEY_TYPE_JWK);
+        assertion.setPrivateKeySource(Keys.SAMPLE_JWK_RSA_ENC);
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 }

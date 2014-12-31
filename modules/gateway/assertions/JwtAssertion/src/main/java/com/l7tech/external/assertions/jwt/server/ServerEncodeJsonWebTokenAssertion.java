@@ -21,6 +21,7 @@ import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.OctetSequenceJsonWebKey;
+import org.jose4j.jwk.Use;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.HeaderParameterNames;
@@ -176,7 +177,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             }
             final String keyType = assertion.getSignatureKeyType();
             if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-                return JwtUtils.getKeyFromJWK(getAudit(), key, true);
+                return JwtUtils.getKeyFromJWK(getAudit(), key, true, null);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
                 final String kid = ExpandVariables.process(assertion.getSignatureJwksKeyId(), variables, getAudit(), false);
                 if (kid == null || kid.trim().isEmpty()) {
@@ -230,7 +231,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                     }
                 }
             } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-                return JwtUtils.getKeyFromJWK(getAudit(), key.toString(), false);
+                return JwtUtils.getKeyFromJWK(getAudit(), key.toString(), false, Use.ENCRYPTION);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
                 if(assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()){
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);

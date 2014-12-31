@@ -48,11 +48,16 @@ public final class JwtUtils {
         return null;
     }
 
-    public static Key getKeyFromJWK(final Audit audit, final String json, final boolean getPrivate) {
+    public static Key getKeyFromJWK(final Audit audit, final String json, final boolean getPrivate, final String usage) {
         try {
             final org.jose4j.jwk.JsonWebKey jwk = org.jose4j.jwk.JsonWebKey.Factory.newJwk(json);
             if (getPrivate) {
                 return getPrivateKey(audit, jwk);
+            }
+            //want public key --- what's our usage? enc or sig?
+            if(!usage.equalsIgnoreCase(jwk.getUse())){
+                audit.logAndAudit(AssertionMessages.JWT_INVALID_KEY, "from jwk", usage);
+                return null;
             }
             return jwk.getKey();
         } catch (JoseException e) {

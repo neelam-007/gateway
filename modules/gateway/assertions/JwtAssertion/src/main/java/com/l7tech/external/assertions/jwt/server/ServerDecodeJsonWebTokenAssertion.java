@@ -22,6 +22,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
+import org.jose4j.jwk.Use;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.CompactSerializer;
 import org.jose4j.jwx.HeaderParameterNames;
@@ -34,7 +35,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
@@ -126,7 +129,8 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
             }
             if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(assertion.getKeyType())) {
                 //when we decrypt and it's a JWE we want the private key, otherwise get the public key
-                key = JwtUtils.getKeyFromJWK(getAudit(), keySource, structure instanceof JsonWebEncryption);
+                String use = structure instanceof JsonWebEncryption ? null : Use.SIGNATURE;
+                key = JwtUtils.getKeyFromJWK(getAudit(), keySource, structure instanceof JsonWebEncryption, use);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(assertion.getKeyType())) {
                 final String kid = ExpandVariables.process(assertion.getKeyId(), variables, getAudit(), false);
                 if (kid == null || kid.trim().isEmpty()) {
@@ -134,6 +138,32 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                     return AssertionStatus.FAILED;
                 }
                 key = JwtUtils.getKeyFromJWKS(getAudit(), structure, keySource, kid, structure instanceof JsonWebEncryption);
+            } else if (JsonWebTokenConstants.KEY_TYPE_CERTIFICATE.equals(assertion.getKeyType())) {
+                //ok we used a cert but we got a jwe, can't do anything
+                if (parts.length == JsonWebEncryption.COMPACT_SERIALIZATION_PARTS){
+                    logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Invalid configuration - can not use a certificate (public key) to decrypt JWE.");
+                    return AssertionStatus.FAILED;
+                }
+                Object sourceKey = ExpandVariables.processSingleVariableAsObject(assertion.getPrivateKeySource(), variables, getAudit(), false);
+                if (sourceKey == null) {
+                    logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
+                }
+                //cert was given via context var.
+                //grab it and check if it can be use to encrypt data
+                X509Certificate cert = null;
+                if (sourceKey instanceof X509Certificate) {
+                    cert = (X509Certificate) sourceKey;
+                } else if (sourceKey instanceof String) {
+                    cert = JwtUtils.getPublicKeyFromPem(getAudit(), sourceKey.toString());
+                }
+                if (cert != null) {
+                    try {
+                        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, cert, cert.getPublicKey());
+                        key = cert.getPublicKey();
+                    } catch (CertificateException e) {
+                        logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, "Invalid key usage: " + e.getMessage());
+                    }
+                }
             }
         }
         if (key == null) {
