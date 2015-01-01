@@ -192,7 +192,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         break;
                                     }
                                     case Ignore:
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader());
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
+                                        break;
+                                    case Delete:
+                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity);
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
                                         break;
                                     default:
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, "Unknown mapping action " + mapping.getMappingAction()));
@@ -214,7 +218,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         break;
                                     }
                                     case Ignore:
-                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader());
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
+                                        break;
+                                    case Delete:
+                                        mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     default:
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, "Unknown mapping action " + mapping.getMappingAction()));
@@ -243,6 +250,32 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return mappingsRtn;
             }
         });
+    }
+
+    /**
+     * This will attempt to delete the given entity from the gateway.
+     *
+     * @param entity The entity to delete
+     * @return The entity header of the deleted entity
+     * @throws DeleteException This is thrown if there was an error attempting to delete the entity
+     */
+    private EntityHeader deleteEntity(@NotNull final Entity entity) throws DeleteException {
+        // Create the manage entity within a transaction so that it can be flushed after it is created.
+        // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
+        final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+        tt.setReadOnly(false);
+        final Either<DeleteException, EntityHeader> headerOrException = tt.execute(new TransactionCallback<Either<DeleteException, EntityHeader>>() {
+            @Override
+            public Either<DeleteException, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
+                try {
+                    entityCrud.delete(entity);
+                } catch (DeleteException e) {
+                    return Either.left(e);
+                }
+                return Either.right(EntityHeaderUtils.fromEntity(entity));
+            }
+        });
+        return Eithers.extract(headerOrException);
     }
 
     /**

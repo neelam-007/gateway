@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -1651,5 +1652,65 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
             response = getTargetEnvironment().processRequest("jdbcConnections/" + jdbcConnectionMO.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the JDBC on the target
+        JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+        jdbcConnectionMO.setName(jdbcConnectionItem.getContent().getName() + "Updated");
+        jdbcConnectionMO.setEnabled(false);
+        jdbcConnectionMO.setDriverClass(jdbcConnectionItem.getContent().getDriverClass());
+        jdbcConnectionMO.setJdbcUrl(jdbcConnectionItem.getContent().getJdbcUrl());
+        jdbcConnectionMO.setConnectionProperties(jdbcConnectionItem.getContent().getConnectionProperties());
+        RestResponse response = getTargetEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
+
+        assertOkCreatedResponse(response);
+        Item<JDBCConnectionMO> jdbcConnectionCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        jdbcConnectionMO.setId(jdbcConnectionCreated.getId());
+        jdbcConnectionCreated.setContent(jdbcConnectionMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(jdbcConnectionCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(jdbcConnectionCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(jdbcConnectionCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(jdbcConnectionCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(jdbcConnectionCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("jdbcConnections/"+jdbcConnectionCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

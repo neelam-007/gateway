@@ -116,7 +116,7 @@ public abstract class MigrationTestBase {
         List<Mapping> reverseMappingsList = mappings.getContent().getMappings();
         Collections.reverse(reverseMappingsList);
         for (Mapping mapping : reverseMappingsList) {
-            if(mapping.getErrorType() == null && !Mapping.ActionTaken.Ignored.equals(mapping.getActionTaken()) &&
+            if(mapping.getErrorType() == null && !Mapping.ActionTaken.Ignored.equals(mapping.getActionTaken()) && !Mapping.ActionTaken.Deleted.equals(mapping.getActionTaken()) &&
                     ( mapping.getTargetId().length()!=16 || !GoidRange.RESERVED_RANGE.isInRange(Goid.parseGoid(mapping.getTargetId())))
                     && mapping.getActionTaken()== Mapping.ActionTaken.CreatedNew){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());

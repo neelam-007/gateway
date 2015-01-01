@@ -1015,4 +1015,73 @@ public class JMSMigrationTest extends com.l7tech.skunkworks.rest.tools.Migration
             assertOkEmptyResponse(response);
         }
     }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the jms on the target
+        JMSDestinationDetail jmsDetail = ManagedObjectFactory.createJMSDestinationDetails();
+        jmsDetail.setName("Target JMS");
+        jmsDetail.setDestinationName("Target JMS Destination");
+        jmsDetail.setInbound(false);
+        jmsDetail.setEnabled(true);
+        jmsDetail.setTemplate(false);
+        JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
+        jmsConnection.setTemplate(false);
+        jmsConnection.setProperties(CollectionUtils.<String, Object>mapBuilder()
+                .put("jndi.initialContextFactoryClassname","om.context.Classname")
+                .put("jndi.providerUrl","ldap://jndi")
+                .put("queue.connectionFactoryName","qcf").map());
+        JMSDestinationMO jmsMO = ManagedObjectFactory.createJMSDestination();
+        jmsMO.setJmsDestinationDetail(jmsDetail);
+        jmsMO.setJmsConnection(jmsConnection);
+        RestResponse response = getTargetEnvironment().processRequest("jmsDestinations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(jmsMO)));
+
+        assertOkCreatedResponse(response);
+        Item<JMSDestinationMO> jmsCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        jmsMO.setId(jmsCreated.getId());
+        jmsCreated.setContent(jmsMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(jmsCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(jmsCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(jmsCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(jmsCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(jmsCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.JMS_ENDPOINT.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("jmsDestinations/"+jmsCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+    }
 }

@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -1227,5 +1228,66 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
             response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.DELETE, null,"");
             assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        //create the secure password on the target
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("TargetPassword");
+        storedPasswordMO.setPassword("targetpassword");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", false)
+                .put("type", "Password")
+                .map());
+        RestResponse response = getTargetEnvironment().processRequest("passwords", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+
+        assertOkCreatedResponse(response);
+        Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        storedPasswordMO.setId(passwordCreated.getId());
+        passwordCreated.setContent(storedPasswordMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(passwordCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(passwordCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(passwordCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(passwordCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(passwordCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

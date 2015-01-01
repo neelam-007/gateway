@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -1407,5 +1408,62 @@ public class GenericEntityMigrationTest extends com.l7tech.skunkworks.rest.tools
             response = getTargetEnvironment().processRequest("genericEntities/" + createdGenericEntity2.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
         }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        RestResponse response;
+        // create generic entity
+        GenericEntityMO genericEntityMO = ManagedObjectFactory.createGenericEntity();
+        genericEntityMO.setName("Target Entity");
+        genericEntityMO.setEntityClassName("com.l7tech.external.assertions.whichmodule.DemoGenericEntity");
+        genericEntityMO.setValueXml("<?xml version=\"1.0\" encoding=\"UTF-8\"?> <java version=\"1.7.0_60\" class=\"java.beans.XMLDecoder\"> <object class=\"com.l7tech.external.assertions.whichmodule.DemoGenericEntity\"> <void property=\"age\"> <int>24</int> </void> <void property=\"name\"> <string>Target Entity</string> </void> <void property=\"playsTrombone\"> <boolean>true</boolean> </void> <void property=\"valueXml\"> <string></string> </void> </object> </java>");
+        genericEntityMO.setEnabled(true);
+        response = getTargetEnvironment().processRequest("genericEntities", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(genericEntityMO)));
+        assertOkCreatedResponse(response);
+        Item<GenericEntityMO> createdGenericEntity = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        createdGenericEntity.setContent(genericEntityMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(createdGenericEntity.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(createdGenericEntity.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(createdGenericEntity.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(createdGenericEntity));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.GENERIC.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(createdGenericEntity.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.GENERIC.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("genericEntities/"+createdGenericEntity.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

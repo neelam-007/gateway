@@ -6,6 +6,7 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -23,6 +24,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -1205,5 +1207,60 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Assert.assertEquals("The bundle should have 6 mappings.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getMappings().size());
         Assert.assertEquals("The dependencies list should have 6 dependencies.  A policy, a policy alias, 4 folders", 5, bundleItem.getContent().getDependencyGraph().getDependencies().size());
 
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setFolderId(targetParentFolderItem.getId());
+        folderMO.setName("New Target Folder");
+        folderMO.setId(sourceChild2FolderItem.getId());
+        RestResponse response = getTargetEnvironment().processRequest("folders/"+sourceChild2FolderItem.getId(), HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        folderMO.setId(folderCreated.getId());
+        folderCreated.setContent(folderMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(folderCreated.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(folderCreated.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(folderCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(folderCreated));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), activeConnectorMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+        Assert.assertEquals(folderCreated.getId(), activeConnectorMapping.getTargetId());
+
+        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.FOLDER.toString(), activeConnectorMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
     }
 }

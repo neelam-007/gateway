@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -610,6 +611,88 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderItem.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
             mappingsToClean.getContent().getMappings().remove(1);
+            response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+    }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        RestResponse response;
+
+        // create passwrod on target
+        StoredPasswordMO storedPasswordMO = ManagedObjectFactory.createStoredPassword();
+        storedPasswordMO.setName("TargetPassword");
+        storedPasswordMO.setPassword("password");
+        storedPasswordMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("usageFromVariable", false)
+                .put("type", "Password")
+                .map());
+        response = getTargetEnvironment().processRequest("passwords/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(storedPasswordMO)));
+        assertOkCreatedResponse(response);
+        Item<StoredPasswordMO> passwordCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        try {
+            //create the cert on the target
+            SiteMinderConfigurationMO siteMinderConfigurationMO = ManagedObjectFactory.createSiteMinderConfiguration();
+            siteMinderConfigurationMO.setName("Target Siteminder Config");
+            siteMinderConfigurationMO.setAddress("0.0.0.0");
+            siteMinderConfigurationMO.setPasswordId(passwordCreated.getId());
+            siteMinderConfigurationMO.setHostname("targethost");
+            siteMinderConfigurationMO.setEnabled(false);
+            siteMinderConfigurationMO.setNonClusterFailover(false);
+            siteMinderConfigurationMO.setIpCheck(false);
+            siteMinderConfigurationMO.setUpdateSsoToken(false);
+            siteMinderConfigurationMO.setFipsMode(1);
+            siteMinderConfigurationMO.setSecret("targetSecret");
+            response = getTargetEnvironment().processRequest("siteMinderConfigurations/", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(siteMinderConfigurationMO)));
+            assertOkCreatedResponse(response);
+            Item<SiteMinderConfigurationMO> siteminderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            siteminderCreated.setContent(siteMinderConfigurationMO);
+
+            Bundle bundle = ManagedObjectFactory.createBundle();
+
+            Mapping mapping = ManagedObjectFactory.createMapping();
+            mapping.setAction(Mapping.Action.Delete);
+            mapping.setTargetId(siteminderCreated.getId());
+            mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+            mapping.setType(siteminderCreated.getType());
+
+            Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+            mappingNotExisting.setAction(Mapping.Action.Delete);
+            mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+            mappingNotExisting.setType(siteminderCreated.getType());
+
+            bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+            bundle.setReferences(Arrays.<Item>asList(siteminderCreated));
+
+            //import the bundle
+            logger.log(Level.INFO, objectToString(bundle));
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundle));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+            Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), activeConnectorMapping.getType());
+            Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
+            Assert.assertEquals(siteminderCreated.getId(), activeConnectorMapping.getTargetId());
+
+            Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), activeConnectorMappingNotExisting.getType());
+            Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
+            Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+
+            response = getTargetEnvironment().processRequest("siteMinderConfigurations/" + siteminderCreated.getId(), HttpMethod.GET, null, "");
+            assertNotFoundResponse(response);
+        } finally {
             response = getTargetEnvironment().processRequest("passwords/" + passwordCreated.getId(), HttpMethod.DELETE, null, "");
             assertOkEmptyResponse(response);
         }

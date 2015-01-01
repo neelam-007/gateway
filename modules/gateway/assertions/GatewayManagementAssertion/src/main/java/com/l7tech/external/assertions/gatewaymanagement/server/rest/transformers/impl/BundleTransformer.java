@@ -355,6 +355,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 return Mapping.ActionTaken.UpdatedExisting;
             case Ignored:
                 return Mapping.ActionTaken.Ignored;
+            case Deleted:
+                return Mapping.ActionTaken.Deleted;
             default:
                 throw new IllegalArgumentException("Unknown mapping action: " + mappingAction);
         }
@@ -377,6 +379,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 return EntityMappingInstructions.MappingAction.AlwaysCreateNew;
             case Ignore:
                 return EntityMappingInstructions.MappingAction.Ignore;
+            case Delete:
+                return EntityMappingInstructions.MappingAction.Delete;
             default:
                 throw new IllegalArgumentException("Unknown mapping action: " + action);
         }
@@ -399,6 +403,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 return Mapping.Action.AlwaysCreateNew;
             case Ignore:
                 return Mapping.Action.Ignore;
+            case Delete:
+                return Mapping.Action.Delete;
             default:
                 throw new IllegalArgumentException("Unknown mapping action: " + action);
         }

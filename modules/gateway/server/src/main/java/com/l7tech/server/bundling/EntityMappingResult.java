@@ -22,7 +22,7 @@ public class EntityMappingResult {
      * This is a mapping action that was taken on an entity during import
      */
     public enum MappingAction {
-        CreatedNew, UsedExisting, UpdatedExisting, Ignored
+        CreatedNew, UsedExisting, UpdatedExisting, Ignored, Deleted
     }
 
     /**
@@ -55,24 +55,25 @@ public class EntityMappingResult {
     }
 
     /**
-     * Creates a new EntityMappingResult. This represents an Ignored mapping result. The target entity header is null
-     * and the mapping action is {@link com.l7tech.server.bundling.EntityMappingResult.MappingAction#Ignored}
+     * Creates a new EntityMappingResult. This represents a mapping result where a target entity is not present. The
+     * target entity header is null. This is currently only applicable to ignored and deleted actions
      *
      * @param sourceEntityHeader The source entity header that was ignored in the import.
+     * @param mappingAction The mapping action that was taken.
      */
-    public EntityMappingResult(@NotNull final EntityHeader sourceEntityHeader) {
+    public EntityMappingResult(@NotNull final EntityHeader sourceEntityHeader, @SuppressWarnings("NullableProblems") @NotNull final MappingAction mappingAction) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.exception = null;
-        this.mappingAction = MappingAction.Ignored;
+        this.mappingAction = mappingAction;
         this.targetEntityHeader = null;
     }
 
     /**
      * Make this mapping result represent an unsuccessful mapping.
      *
-     * @param exception          The throwable exception that occurred attempting to import this source entity
+     * @param exception The throwable exception that occurred attempting to import this source entity
      */
-    public void makeExceptional(Throwable exception){
+    public void makeExceptional(Throwable exception) {
         this.exception = exception;
         this.mappingAction = null;
         this.targetEntityHeader = null;
