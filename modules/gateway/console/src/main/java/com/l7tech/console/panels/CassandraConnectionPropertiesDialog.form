@@ -30,7 +30,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="Enter a name for the connection."/>
+            </properties>
           </component>
         </children>
       </grid>
@@ -56,7 +58,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="Enter addresses of the nodes to connect to the Cassandra cluster. Comma separated; IP address or DNS name accepted."/>
+            </properties>
           </component>
           <component id="53aaa" class="javax.swing.JLabel">
             <constraints>
@@ -72,7 +76,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="Enter the TCP port monitored by the Cassandra servers. This port is listened to by all nodes in the Cassandra cluster."/>
+            </properties>
           </component>
           <component id="8d343" class="javax.swing.JLabel">
             <constraints>
@@ -88,7 +94,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="Enter the default keyspace the Gateway will connect to."/>
+            </properties>
           </component>
         </children>
       </grid>
@@ -121,7 +129,9 @@
             <constraints>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="If necessary, choose the password from the drop-down list."/>
+            </properties>
             <border type="none"/>
             <children>
               <component id="4bcd2" class="com.l7tech.console.panels.SecurePasswordComboBox" binding="securePasswordComboBox">
@@ -130,6 +140,9 @@
                     <minimum-size width="100" height="-1"/>
                   </grid>
                 </constraints>
+                <properties>
+		  <toolTipText value="If necessary, choose the password from the drop-down list."/>
+		</properties>
               </component>
               <component id="6dbd5" class="javax.swing.JButton" binding="manageStoredPasswordsButton" default-binding="true">
                 <constraints>
@@ -147,7 +160,9 @@
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <toolTipText value="If necessary, enter the username to connect to the Cassandra cluster."/>
+            </properties>
           </component>
         </children>
       </grid>
@@ -173,6 +188,7 @@
             </constraints>
             <properties>
               <model/>
+              <toolTipText value="Choose whether compression is used when querying the Cassandra cluster."/>
             </properties>
           </component>
           <component id="c831d" class="javax.swing.JCheckBox" binding="useSSLCheckBox" default-binding="true">
@@ -181,6 +197,7 @@
             </constraints>
             <properties>
               <text value="Use SSL"/>
+              <toolTipText value="Enable SSL communication with the Cassandra cluster. Note that cluster instance must be configured to support SSL."/>
             </properties>
           </component>
           <hspacer id="12beb">
@@ -308,6 +325,7 @@
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/panels/resources/CassandraConnectionPropertiesDialog" key="check.disable"/>
+          <toolTipText value="Disable the connection between the Gateway and the Cassandra cluster."/>
         </properties>
       </component>
       <grid id="b6c72" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

@@ -41,6 +41,7 @@
             <properties>
               <editable value="false"/>
               <model/>
+              <toolTipText value="Choose the connection to use from the drop-down list."/>
             </properties>
           </component>
         </children>
@@ -128,6 +129,7 @@
                           <preferredSize width="2816" height="9600"/>
                           <rows value="600"/>
                           <text value=""/>
+                          <toolTipText value="Enter the Cassandra query statements in CQL3; context variables accepted. Simple text substitution not supported."/>
                           <wrapStyleWord value="false"/>
                         </properties>
                       </component>
@@ -147,7 +149,9 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText value="Optionally specify a query timeout period. Value of '0' means query will never time out."/>
+                    </properties>
                   </component>
                   <component id="b9b34" class="javax.swing.JButton" binding="testQueryButton">
                     <constraints>
@@ -275,7 +279,9 @@
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Specify a prefix to be added to context variables returned from the query. Prefix also applies to the 'xmlResult' and 'queryresult.count' variables."/>
+                        </properties>
                       </component>
                     </children>
                   </grid>
@@ -303,6 +309,7 @@
                         </constraints>
                         <properties>
                           <text value="Fail assertion if there are no results returned by the query."/>
+                          <toolTipText value="Fail the assertion if no results are returned by 'select' queries. Queries such as INSERT, UPDATE, DELETE, and other DDL statements are unaffected."/>
                         </properties>
                       </component>
                       <component id="170d6" class="javax.swing.JCheckBox" binding="generateXMLResultCheckBox" default-binding="true">
@@ -311,6 +318,7 @@
                         </constraints>
                         <properties>
                           <text value="Generate XML Result"/>
+                          <toolTipText value="Convert the result set from the Cassandra server to XML and place in the '&lt;prefix&gt;.xmlResult' context variable."/>
                         </properties>
                       </component>
                       <vspacer id="50e0a">
@@ -333,7 +341,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Specify the maximum number of records returned from the Cassandra query. Default comes from 'maxRecords' setting in the Cassandra connection Additional Properties."/>
+                        </properties>
                       </component>
                       <component id="1b52b" class="javax.swing.JLabel">
                         <constraints>
@@ -350,7 +360,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Specify the maximum number of records in a page that can be returned in a query."/>
+                        </properties>
                       </component>
                     </children>
                   </grid>
