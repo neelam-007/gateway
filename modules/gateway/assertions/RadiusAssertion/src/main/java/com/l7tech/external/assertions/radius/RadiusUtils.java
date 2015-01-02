@@ -32,6 +32,30 @@ public class RadiusUtils {
         return radiusAttribute;
     }
 
+    /**
+     * Retrieve the radius attribute.
+     *
+     * @param name The name of the attribute.
+     * @param value The value of the attribute.
+     * @return The RadiusAttribute
+     * @throws net.jradius.exception.RadiusException Throw RadiusException when the provided attribute name is not a valid Radius attribute.
+     */
+    public static RadiusAttribute newAttribute(String name, byte[] value) throws RadiusException {
+        if (name == null || value == null) {
+            throw new RadiusException("Attribute name or value is null");
+        }
+
+        RadiusAttribute radiusAttribute = AttributeFactory.newAttribute(name);
+
+        try{
+            radiusAttribute.setValue(value);
+        } catch(NumberFormatException nfe) {
+            throw new RadiusException("Invalid numeric value", nfe);
+        }
+
+        return radiusAttribute;
+    }
+
     public static boolean isAttributeValid(String name) {
         if(name == null || name.trim().length() == 0) return false;
 
