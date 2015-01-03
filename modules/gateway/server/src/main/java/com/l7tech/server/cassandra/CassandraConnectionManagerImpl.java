@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -205,20 +204,20 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     @Override
-    public void updateConnection(CassandraConnection cassandraConnectionEntity) throws UpdateException {
+    public void updateConnection(CassandraConnection cassandraConnectionEntity)      {
         // Search through cached connections by goid because the name field could have been updated.
         CassandraConnectionHolder cachedConnection = getCachedConnection(cassandraConnectionEntity.getGoid());
 
         // If cache exists, remove it and add back an updated one.
         if (cachedConnection != null) {
+            //remove existing connection
+            removeConnection(cachedConnection.getCassandraConnectionEntity());
+            //create new connection
             CassandraConnectionHolder newConnectionHolder = createConnection(cassandraConnectionEntity);
             if (newConnectionHolder != null) {
-                removeConnection(cachedConnection.getCassandraConnectionEntity());
                 if (cassandraConnectionEntity.isEnabled()) {
                     cassandraConnections.put(cassandraConnectionEntity.getName(), newConnectionHolder);
                 }
-            } else {
-                throw new UpdateException("New cached connection cannot be created. Please check the settings.");
             }
         }
     }
@@ -267,6 +266,9 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             } else {
                 session = cluster.connect();
             }
+        }catch(Throwable t) {
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnectionEntity.getName(), t.getMessage()}, ExceptionUtils.getDebugException(t));
+            throw t;
         } finally {
             if (session != null) session.close();
             if (cluster != null) cluster.close();

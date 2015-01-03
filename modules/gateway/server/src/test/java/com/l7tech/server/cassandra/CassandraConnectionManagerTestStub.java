@@ -9,14 +9,22 @@ import java.security.SecureRandom;
 
 public class CassandraConnectionManagerTestStub extends CassandraConnectionManagerImpl implements CassandraConnectionManager{
 
+    private boolean isReturnNull;
+
+
     public CassandraConnectionManagerTestStub(CassandraConnectionEntityManager cassandraEntityManager, Config config,
                                               SecurePasswordManager securePasswordManager, TrustManager trustManager,
-                                              SecureRandom secureRandom) {
+                                              SecureRandom secureRandom, boolean isReturnNull) {
         super(cassandraEntityManager, config, securePasswordManager, trustManager, secureRandom);
+        this.isReturnNull = isReturnNull;
+    }
+
+    public void setReturnNull(boolean isReturnNull) {
+        this.isReturnNull = isReturnNull;
     }
 
     @Override
     protected CassandraConnectionHolder createConnection(final CassandraConnection cassandraConnectionEntity){
-        return new CassandraConnectionHolderImpl(cassandraConnectionEntity, null, null);
+        return !isReturnNull? new CassandraConnectionHolderImpl(cassandraConnectionEntity, null, null) : null;
     }
 }

@@ -87,7 +87,7 @@ public class CassandraConnectionManagerTest {
         Mockito.doReturn(cassandraConnection3).when(mockCassandraConnectionEntityManager).findByPrimaryKey(cassandraConnection3.getGoid());
 
         cassandraConnectionManager = new CassandraConnectionManagerTestStub(
-                mockCassandraConnectionEntityManager, config, securePasswordManager, trustManager, secureRandom);
+                mockCassandraConnectionEntityManager, config, securePasswordManager, trustManager, secureRandom, false);
 
     }
 
@@ -165,7 +165,7 @@ public class CassandraConnectionManagerTest {
     }
 
     @Test
-    public void testUpdateConnectionWithNewSettings() throws Exception {
+     public void testUpdateConnectionWithNewSettings() throws Exception {
         cassandraConnectionManager.addConnection(cassandraConnection1);
         cassandraConnectionManager.addConnection(cassandraConnection2);
         Assert.assertEquals("Cache size does not match.", 2, cassandraConnectionManager.getConnectionCacheSize());
@@ -191,6 +191,34 @@ public class CassandraConnectionManagerTest {
 
         // Connection2 has not changed
         cache = cassandraConnectionManager.getConnection(cassandraConnection2.getName());
+        Assert.assertSame("Connection not added with the same settings.", cassandraConnection2, cache.getCassandraConnectionEntity());
+    }
+
+    @Test
+    public void testUpdateConnectionInvalidServer() throws Exception {
+        cassandraConnectionManager.addConnection(cassandraConnection1);
+        cassandraConnectionManager.addConnection(cassandraConnection2);
+        Assert.assertEquals("Cache size does not match.", 2, cassandraConnectionManager.getConnectionCacheSize());
+
+        // Update connection1
+        CassandraConnection updatedConn = new CassandraConnection();
+        updatedConn.setId(cassandraConnection1.getId());
+        updatedConn.setName(cassandraConnection1.getName());
+        updatedConn.setKeyspaceName(cassandraConnection1.getKeyspaceName());
+        updatedConn.setContactPoints("invalidServer");
+        updatedConn.setPort("1234");
+        updatedConn.setUsername(cassandraConnection1.getUsername());
+        updatedConn.setCompression(cassandraConnection1.getCompression());
+        updatedConn.setSsl(cassandraConnection1.isSsl());
+        updatedConn.setEnabled(cassandraConnection1.isEnabled());
+
+        ((CassandraConnectionManagerTestStub)cassandraConnectionManager).setReturnNull(true);
+        cassandraConnectionManager.updateConnection(updatedConn);
+        Assert.assertEquals("Cache size does not match.", 1, cassandraConnectionManager.getConnectionCacheSize());
+        Assert.assertNull(cassandraConnectionManager.getConnection(cassandraConnection1.getName()));
+
+        // Connection2 has not changed
+        CassandraConnectionHolder cache = cassandraConnectionManager.getConnection(cassandraConnection2.getName());
         Assert.assertSame("Connection not added with the same settings.", cassandraConnection2, cache.getCassandraConnectionEntity());
     }
 
