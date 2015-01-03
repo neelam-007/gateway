@@ -1,10 +1,12 @@
 package com.l7tech.skunkworks.rest.resourcetests;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.*;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.*;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -13,7 +15,10 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.http.HttpClientCertToken;
@@ -26,19 +31,25 @@ import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.Charsets;
 import org.apache.http.entity.ContentType;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.jce.X509KeyUsage;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.security.auth.x500.X500Principal;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
@@ -46,31 +57,42 @@ import static org.junit.Assert.*;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
     private static final Logger logger = Logger.getLogger(GroupUserRestEntityResourceTest.class.getName());
-
+    private static final SecureRandom defaultRandom = new SecureRandom();
+    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
     private GroupManager internalGroupManager;
     private UserManager internalUserManager;
     private IdentityProvider internalIdentityProvider;
     private IdentityProviderFactory identityProviderFactory;
     private IdentityProviderConfigManager idConfigManager;
     private String otherIdentityProviderId;
-    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
-
     private List<String> usersToCleanup = new ArrayList<>();
+    private List<String> fipUsersToCleanup = new ArrayList<>();
     private List<String> groupsToCleanup = new ArrayList<>();
-
     private String shortHashedPassword = "$6$blahsalt$iAUOw3SVBmtcHXXnfvb8/NohNmNC3gzf1uuHG5Iz33/2g6kyLnmoip0nLEhpwbktZb/XG8jWHdS9zsLhhvoeM/";
     private String shortPassword = "12";
     private String strongPassword = "12!@qwQW";
     private String strongPassword2 = "34#$erER";
+    private TrustedCertManager trustedCertManager;
+    private CertGenParams c;
+    private KeyGenParams k;
+    private SecureRandom random;
+    private String signatureProviderName;
+    private List<TrustedCert> trustedCerts = new ArrayList<>();
+    private String federatedIPId;
+
 
     @Before
     public void before() throws Exception {
+        init();
+
         identityProviderFactory = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderFactory", IdentityProviderFactory.class);
         idConfigManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         internalIdentityProvider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID);
         internalGroupManager = internalIdentityProvider.getGroupManager();
         internalUserManager = internalIdentityProvider.getUserManager();
         PasswordHasher passwordHasher = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("passwordHasher", PasswordHasher.class);
+        trustedCertManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("trustedCertManager", TrustedCertManager.class);
+
 
         // add users
         InternalUser user1 = new InternalUser("user1");
@@ -100,6 +122,58 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         otherIdProviderConfig.setBindDN("bindDN");
         otherIdProviderConfig.setBindPasswd("password");
         otherIdentityProviderId = idConfigManager.save(otherIdProviderConfig).toString();
+
+        TrustedCert trustedCert = new TrustedCert();
+        trustedCert.setName("Cert 1");
+        trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
+        trustedCert.setTrustedFor(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS, false);
+        trustedCert.setTrustedFor(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS, false);
+        trustedCert.setTrustedFor(TrustedCert.TrustedFor.SAML_ATTESTING_ENTITY, false);
+        trustedCert.setTrustedFor(TrustedCert.TrustedFor.SAML_ISSUER, false);
+        trustedCert.setTrustedFor(TrustedCert.TrustedFor.SSL, false);
+        trustedCert.setTrustAnchor(true);
+        trustedCert.setVerifyHostname(true);
+        trustedCert.setCertificate(generateCert());
+
+        trustedCertManager.save(trustedCert);
+        trustedCerts.add(trustedCert);
+
+        FederatedIdentityProviderConfig fip = new FederatedIdentityProviderConfig();
+        fip.setName("FIP");
+        fip.setTrustedCertGoids(new Goid[]{trustedCert.getGoid()});
+        federatedIPId = idConfigManager.save(fip).toString();
+    }
+
+    public void init() {
+        random = defaultRandom;
+        signatureProviderName = null;
+
+        k = new KeyGenParams();
+        k.setAlgorithm("RSA");
+        k.setNamedParam("sect163k1");
+        k.setKeySize(1024);
+
+        c = new CertGenParams();
+        c.setSerialNumber(new BigInteger(64, random).abs());
+        c.setNotBefore(new Date(new Date().getTime() - (10 * 60 * 1000L))); // default: 10 min ago
+        c.setDaysUntilExpiry(20 * 365);
+        c.setNotAfter(null);
+        c.setSignatureAlgorithm(null);
+        c.setSubjectDn(new X500Principal("cn=test"));
+        c.setIncludeBasicConstraints(false);
+        c.setKeyUsageBits(X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation);
+        c.setIncludeKeyUsage(true);
+        c.setKeyUsageCritical(true);
+        c.setIncludeSki(true);
+        c.setIncludeAki(true);
+        c.setIncludeExtendedKeyUsage(true);
+        c.setExtendedKeyUsageCritical(true);
+        c.setExtendedKeyUsageKeyPurposeOids(Arrays.asList(KeyPurposeId.anyExtendedKeyUsage.getId()));
+        c.setIncludeSubjectDirectoryAttributes(false);
+        c.setSubjectDirectoryAttributesCritical(false);
+        c.setCountryOfCitizenshipCountryCodes(Collections.<String>emptyList());
+        c.setCertificatePolicies(Collections.<String>emptyList());
+        c.setSubjectAlternativeNames(Collections.<X509GeneralName>emptyList());
     }
 
     @After
@@ -112,7 +186,28 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
             internalUserManager.delete(internalUserManager.findByPrimaryKey(user));
         }
 
+        IdentityProvider fipIdProvider = identityProviderFactory.getProvider(Goid.parseGoid(federatedIPId));
+        for (String user : fipUsersToCleanup) {
+            fipIdProvider.getUserManager().delete(fipIdProvider.getUserManager().findByPrimaryKey(user));
+        }
+
         idConfigManager.delete(Goid.parseGoid(otherIdentityProviderId));
+        idConfigManager.delete(Goid.parseGoid(federatedIPId));
+
+        Collection<TrustedCert> all = trustedCertManager.findAll();
+        for (TrustedCert trustedCert : all) {
+            trustedCertManager.delete(trustedCert.getGoid());
+        }
+
+    }
+
+    private X509Certificate generateCert() throws CertificateGeneratorException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertificateException {
+        final KeyPair subjectKeyPair = new ParamsKeyGenerator(k, random).generateKeyPair();
+        final PublicKey subjectPublicKey = subjectKeyPair.getPublic();
+        final PrivateKey subjectPrivateKey = subjectKeyPair.getPrivate();
+
+        ParamsCertificateGenerator certgen = new ParamsCertificateGenerator(c, random, signatureProviderName);
+        return (X509Certificate) CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(certgen.generateCertificate(subjectPublicKey, subjectPrivateKey, null).getEncoded()));
     }
 
     protected String writeMOToString(Object  mo) throws IOException {
@@ -163,6 +258,56 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         assertNotNull(providerAuthResult);
         assertNotNull(providerAuthResult.getUser());
         assertEquals(userMO.getLogin(), providerAuthResult.getUser().getLogin());
+    }
+
+    @Test
+    public void FipUserCreateTest() throws Exception {
+
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(federatedIPId);
+        userMO.setLogin("login");
+        userMO.setFirstName("first name");
+        userMO.setLastName("last name");
+        userMO.setSubjectDn("cn=login");
+
+        String userMOString = writeMOToString(userMO);
+        RestResponse response = processRequest("identityProviders/" + federatedIPId + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), userMOString);
+        assertEquals(201, response.getStatus());
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<UserMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        assertEquals("User Name:", userMO.getLogin(), item.getName());
+        assertEquals(EntityType.USER.toString(), item.getType());
+        assertNull(item.getContent());
+
+        String userId = item.getId();
+        fipUsersToCleanup.add(userId);
+
+        User user = identityProviderFactory.getProvider(Goid.parseGoid(federatedIPId)).getUserManager().findByPrimaryKey(userId);
+
+        assertNotNull(user);
+        assertEquals("User Name:", userMO.getLogin(), user.getName());
+        assertEquals("User Login:", userMO.getLogin(), user.getLogin());
+        assertEquals("User First name:", userMO.getFirstName(), user.getFirstName());
+        assertEquals("User last name:", userMO.getLastName(), user.getLastName());
+        assertEquals("User subject DN:", userMO.getSubjectDn(), user.getSubjectDn());
+
+        // set certificate
+        X509Certificate certificate = new TestCertificateGenerator().subject("cn=login").generate();
+        CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
+        response = processRequest("identityProviders/" + federatedIPId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+        assertEquals(200, response.getStatus());
+
+        // set bad
+        certificate = new TestCertificateGenerator().subject("cn=other").generate();
+        certData = ManagedObjectFactory.createCertificateData(certificate);
+        response = processRequest("identityProviders/" + federatedIPId + "/users/" + userId + "/certificate", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData));
+        assertEquals(400, response.getStatus());
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
+        assertEquals("InvalidResource",error.getType());
+        assertTrue(error.getDetail().contains("Certificate subject name (other)does not match user login"));
     }
 
     @Test
@@ -499,7 +644,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         StreamSource source = new StreamSource(new StringReader(response.getBody()));
         ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
         assertEquals("InvalidResource",error.getType());
-        assertTrue(error.getDetail().contains("Unable to create user for non-internal identity provider"));
+        assertTrue(error.getDetail().contains("Only supported for internal or federated user."));
 
         // id provider not found
         userMO.setProviderId(usersToCleanup.get(1));
@@ -550,7 +695,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         StreamSource source = new StreamSource(new StringReader(response.getBody()));
         ErrorResponse error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
         assertEquals("InvalidResource",error.getType());
-        assertTrue(error.getDetail().contains("Not supported"));
+        assertTrue(error.getDetail().contains("Only supported for internal or federated identity provider."));
 
         // id provider not found
         userMO.setProviderId(groupsToCleanup.get(1));
@@ -599,7 +744,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         source = new StreamSource(new StringReader(response.getBody()));
         error = MarshallingUtils.unmarshal(ErrorResponse.class, source);
         assertEquals("InvalidResource",error.getType());
-        assertTrue(error.getDetail().contains("Cannot delete non-internal users"));
+        assertTrue(error.getDetail().contains("Only supported for internal or federated user."));
     }
 
 

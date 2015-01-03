@@ -12,11 +12,12 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.fed.FederatedUserManager;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.logon.LogonInfoManager;
@@ -53,9 +54,6 @@ public class UserRestResourceFactory {
 
     @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
-
-    @Inject
-    private TrustedCertManager trustedCertManager;
 
     @Inject
     private PasswordEnforcerManager passwordEnforcerManager;
@@ -123,18 +121,18 @@ public class UserRestResourceFactory {
         return userTransformer.convertToMO(user);
     }
 
-    private User getUser(String providerId, String id, boolean allowOnlyInternal) throws FindException, ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    private User getUser(String providerId, String id, boolean allowOnlyInternalOrFib) throws FindException, ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         UserManager userManager = retrieveUserManager(providerId);
-        if(allowOnlyInternal && !(userManager instanceof InternalUserManager)){
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal identity provider.");
+        if(allowOnlyInternalOrFib && !(userManager instanceof InternalUserManager || userManager instanceof FederatedUserManager)){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Only supported for internal or federated identity provider.");
         }
 
         User user = userManager.findByPrimaryKey(id);
         if(user== null){
             throw new ResourceFactory.ResourceNotFoundException( "Resource not found: " + id);
         }
-        if(allowOnlyInternal && !(user instanceof InternalUser)){
-            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal user.");
+        if(allowOnlyInternalOrFib && !(user instanceof InternalUser || user instanceof FederatedUser)){
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Only supported for internal or federated user.");
         }
 
         rbacAccessService.validatePermitted(user, OperationType.READ);
@@ -165,8 +163,20 @@ public class UserRestResourceFactory {
                 String id =  userManager.save(newUser,null);
                 resource.setId(id);
                 return id;
+            }else if (userManager instanceof FederatedUserManager){
+                User newUser = userTransformer.convertFromMO(resource).getEntity();
+                if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
+                rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
+
+                FederatedUser federatedUser = (FederatedUser) newUser;
+                federatedUser.setSubjectDn(CertUtils.formatDN(federatedUser.getSubjectDn()));
+
+                String id =  userManager.save(newUser,null);
+                resource.setId(id);
+                return id;
+
             }else{
-                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create user for non-internal identity provider.");
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Only supported for internal or federated user.");
             }
         }catch(InvalidPasswordException invalidPassword){
             throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Unable to create user, invalid password: " +  invalidPassword.getMessage());
@@ -269,8 +279,25 @@ public class UserRestResourceFactory {
                 originalInternalUser.setDepartment(newInternalUser.getDepartment());
 
                 userManager.update(originalInternalUser, null);
+            }else if (userManager instanceof FederatedUserManager){
+                final FederatedUser originalFederatedUser = (FederatedUser) originalUser;
+                rbacAccessService.validatePermitted(newUser, OperationType.UPDATE);
+
+                // update user
+                final FederatedUser newFederatedUser = (FederatedUser) newUser;
+                originalFederatedUser.setName(newFederatedUser.getName());
+                originalFederatedUser.setLogin(newFederatedUser.getLogin());
+                originalFederatedUser.setFirstName(newFederatedUser.getFirstName());
+                originalFederatedUser.setLastName(newFederatedUser.getLastName());
+                originalFederatedUser.setEmail(newFederatedUser.getEmail());
+                originalFederatedUser.setDepartment(newFederatedUser.getDepartment());
+                originalFederatedUser.setSubjectDn(CertUtils.formatDN(newFederatedUser.getSubjectDn()));
+
+                userManager.update(originalFederatedUser);
+                resource.setId(id);
+
             }else{
-                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Not supported for non-internal user.");
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Only supported for internal or federated user.");
             }
         } catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceAccessException("Unable to update user.", ome);
@@ -282,7 +309,7 @@ public class UserRestResourceFactory {
         try {
             UserManager userManager = retrieveUserManager(providerId);
 
-            if(userManager instanceof InternalUserManager) {
+            if(userManager instanceof InternalUserManager || userManager instanceof FederatedUserManager) {
                 User user = userManager.findByPrimaryKey(id);
                 if (user == null) {
                     throw new ResourceFactory.ResourceNotFoundException("Resource not found: " + id);
@@ -295,7 +322,7 @@ public class UserRestResourceFactory {
                 userManager.delete(user);
                 trustedEsmUserManager.deleteMappingsForUser(user);
             }else{
-                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Cannot delete non-internal users");
+                throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Only supported for internal or federated user.");
             }
         } catch (ObjectModelException ome) {
             throw new ResourceFactory.ResourceNotFoundException("Unable to delete user.", ome);
