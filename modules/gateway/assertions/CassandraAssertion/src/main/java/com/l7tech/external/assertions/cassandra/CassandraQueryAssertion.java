@@ -33,6 +33,7 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     public static final String VARIABLE_XML_RESULT = ".xmlResult";
     public static final int DEFAULT_MAX_RECORDS = 10;
     public static final int DEFAULT_FETCH_SIZE = 5000;
+    private static final int MAX_DISPLAY_LENGTH = 60;
 
     private String connectionName;
     private String queryDocument;
@@ -195,7 +196,15 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
                 if(!decorate) return baseName;
 
                 StringBuilder builder= new StringBuilder(baseName);
-                builder.append(": ").append(assertion.getQueryDocument());
+                builder.append(": ");
+                String query = assertion.getQueryDocument();
+                if(query.length() > MAX_DISPLAY_LENGTH) {
+                    builder.append(query.substring(0, MAX_DISPLAY_LENGTH - 1)).append("...");
+                }
+                else {
+                    builder.append(query);
+                }
+                builder.append(" via ").append(assertion.getConnectionName());
 
                 return builder.toString();
         }
