@@ -87,7 +87,7 @@ public class JWKCreateDialog extends JDialog {
                 JwkKeyInfo key = (JwkKeyInfo) tableModel.getRowObject(i);
                 if(key.getKeyId().equals(keyIdTextField.getText().trim())){
                     DialogDisplayer.showMessageDialog(this,
-                            "Existing key id of '" + keyIdTextField.getText().trim() + "' already exist.",
+                            "Key ID '" + keyIdTextField.getText().trim() + "' already exists.",
                             "Error",
                             JOptionPane.ERROR_MESSAGE, null);
                     return false;
