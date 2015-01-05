@@ -75,7 +75,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final SecurePasswordManager securePasswordManager;
     private final TrustManager trustManager;
     private final SecureRandom secureRandom;
-    private final Audit auditor = new LoggingAudit(logger);
+    private final static Audit auditor = new LoggingAudit(logger);
     private final Timer timer;
     private final AtomicReference<ConnectionCacheConfig> connectionCacheConfig = new AtomicReference<>(new ConnectionCacheConfig(0, 30, 20));
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
@@ -178,6 +178,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public void removeConnection(CassandraConnection cassandraConnectionEntity) {
         CassandraConnectionHolder connection = cassandraConnections.remove(cassandraConnectionEntity.getName());
         closeConnection(connection);
+        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed Cassandra connection " + cassandraConnectionEntity.getName());
     }
 
     @Override
@@ -207,7 +208,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public void updateConnection(CassandraConnection cassandraConnectionEntity)      {
         // Search through cached connections by goid because the name field could have been updated.
         CassandraConnectionHolder cachedConnection = getCachedConnection(cassandraConnectionEntity.getGoid());
-
         // If cache exists, remove it and add back an updated one.
         if (cachedConnection != null) {
             //remove existing connection
@@ -244,6 +244,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             } else {
                 session = cluster.connect();
             }
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Created Cassandra Connection " + cassandraConnectionEntity.getName());
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnectionEntity.getName(), e.getMessage()}, ExceptionUtils.getDebugException(e));
             return null;
@@ -599,6 +600,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
         @Override
         public void run() {
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "CacheCleanUp task starting...");
             final ConnectionCacheConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
             final int overSize = cassandraConnections.size() - cacheConfig.maximumSize;
@@ -615,8 +617,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             for (final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry : cassandraConnections.entrySet()) {
                 if (cacheConfig.maximumAge > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getCreatedTime()) > cacheConfig.maximumAge) {
                     cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
                 } else if (cacheConfig.maximumIdleTime > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getLastAccessTime().get()) > cacheConfig.maximumIdleTime) {
                     cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
                 } else if (overSize > 0) {
                     evictionCandidates.add(cassandraConnectionHolderEntry);
                 }
@@ -627,8 +631,11 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
 
                 final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry = evictionIterator.next();
-                cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                if(null != cassandraConnections.remove(cassandraConnectionHolderEntry.getKey())) {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
+                }
             }
+            auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "CacheCleanUp task finished.");
         }
     }
 }
