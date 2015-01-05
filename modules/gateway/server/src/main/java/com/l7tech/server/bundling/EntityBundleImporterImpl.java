@@ -35,6 +35,8 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.processors.DependencyProcessorUtils;
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.*;
@@ -53,6 +55,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
+import java.security.KeyStoreException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,6 +88,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private PolicyVersionManager policyVersionManager;
     @Inject
     private AuditContextFactory auditContextFactory;
+    @Inject
+    private SsgKeyStoreManager keyStoreManager;
 
 
     /**
@@ -267,10 +272,29 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         final Either<DeleteException, EntityHeader> headerOrException = tt.execute(new TransactionCallback<Either<DeleteException, EntityHeader>>() {
             @Override
             public Either<DeleteException, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
-                try {
-                    entityCrud.delete(entity);
-                } catch (DeleteException e) {
-                    return Either.left(e);
+                if (EntityType.SSG_KEY_ENTRY == EntityType.findTypeByEntity(entity.getClass())) {
+                    //need to specially handle deletion of ssg key entries
+                    final SsgKeyFinder keyStore;
+                    final int sepIndex = entity.getId().indexOf(":");
+                    if (sepIndex < 0) {
+                        return Either.left(new DeleteException("Cannot delete private key. Invalid key id: " + entity.getId() + ". Expected id with format: <keystoreId>:<alias>"));
+                    }
+                    final String keyStoreId = entity.getId().substring(0, sepIndex);
+                    final String keyAlias = entity.getId().substring(sepIndex + 1);
+                    try {
+                        keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
+                        keyStore.getKeyStore().deletePrivateKeyEntry(null, keyAlias);
+                    } catch (FindException e) {
+                        return Either.left(new DeleteException("Cannot find keystore with id: " + keyStoreId + ". Error message: " + ExceptionUtils.getMessage(e), e));
+                    } catch (KeyStoreException e) {
+                        return Either.left(new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + ". Error message: " + ExceptionUtils.getMessage(e), e));
+                    }
+                } else {
+                    try {
+                        entityCrud.delete(entity);
+                    } catch (DeleteException e) {
+                        return Either.left(e);
+                    }
                 }
                 return Either.right(EntityHeaderUtils.fromEntity(entity));
             }

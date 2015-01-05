@@ -9,7 +9,6 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.DesignTimeEntityProvider;
-import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.UsesEntitiesAtDesignTime;
@@ -254,6 +253,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             if (EntityType.SSG_KEY_ENTRY == type) {
                 String id = (String) pk;
                 int sepIndex = id.indexOf(":");
+                if (sepIndex < 0) {
+                    logger.fine("Primary key " + pk + " is not a valid SSG_KEY_ENTRY key. Needs to be in the format: <keystoreId>:<alias>");
+                    return null;
+                }
                 return (ET) keyStoreManager.lookupKeyByKeyAlias(id.substring(sepIndex+1), GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, id.substring(0, sepIndex)));
             } else if (EntityType.SSG_KEYSTORE == type) {
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));

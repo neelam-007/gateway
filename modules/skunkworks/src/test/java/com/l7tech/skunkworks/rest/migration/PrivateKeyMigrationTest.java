@@ -443,4 +443,78 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
         validate(mappings);
     }
+
+    @Test
+    public void deleteMappingTest() throws Exception {
+        // create target private key
+        PrivateKeyCreationContext targetPrivateKey = ManagedObjectFactory.createPrivateKeyCreationContext();
+        targetPrivateKey.setDn("CN=targetAlias2");
+        targetPrivateKey.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("ecName", "secp384r1")
+                .map());
+        RestResponse response = getTargetEnvironment().processRequest("privateKeys/" + new Goid(0, 2).toString() + ":targetAlias2", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(targetPrivateKey)));
+        assertOkCreatedResponse(response);
+        Item targetPrivateKeyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        // create target private key
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setName("temp");
+        folderMO.setId(Goid.DEFAULT_GOID.toString());
+        Item<FolderMO> folderItem = new ItemBuilder<FolderMO>("temp", EntityType.FOLDER.toString()).setContent(folderMO).build();
+        folderItem.setId(Goid.DEFAULT_GOID.toString());
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(targetPrivateKeyItem2.getId());
+        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
+        mapping.setType(targetPrivateKeyItem2.getType());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString()+":asd");
+        mappingNotExisting.setType(targetPrivateKeyItem2.getType());
+
+        Mapping mappingInvalidId = ManagedObjectFactory.createMapping();
+        mappingInvalidId.setAction(Mapping.Action.Delete);
+        mappingInvalidId.setSrcId("asdslkjdhfakd");
+        mappingInvalidId.setType(targetPrivateKeyItem2.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting, mappingInvalidId));
+        bundle.setReferences(Arrays.<Item>asList(folderItem));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mapping after the import", 3, mappings.getContent().getMappings().size());
+        Mapping privateKeyMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(targetPrivateKeyItem2.getId(), privateKeyMapping.getTargetId());
+
+        Mapping privateKeyMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, privateKeyMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, privateKeyMappingNotExisting.getTargetId());
+
+        Mapping privateKeyMappingInvalidId = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMappingInvalidId.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMappingInvalidId.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, privateKeyMappingInvalidId.getActionTaken());
+        Assert.assertEquals(null, privateKeyMappingInvalidId.getTargetId());
+
+        response = getTargetEnvironment().processRequest("privateKeys/"+targetPrivateKeyItem2.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+    }
 }

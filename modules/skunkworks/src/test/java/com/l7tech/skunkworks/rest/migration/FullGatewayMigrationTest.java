@@ -560,6 +560,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             if (securityZoneItem != null) {
                 RestResponse response = getSourceEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
                 assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("securityZones/" + securityZoneItem.getId(), HttpMethod.DELETE, null, "");
             }
         }
     }
