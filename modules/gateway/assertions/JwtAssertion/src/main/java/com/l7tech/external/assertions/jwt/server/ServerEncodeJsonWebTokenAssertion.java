@@ -62,7 +62,8 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         //determine what to do with header and possibly get header
         String sourceHeaders = null;
         if (!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(assertion.getHeaderAction())) {
-            sourceHeaders = ExpandVariables.process(assertion.getSourceHeaders(), variables, getAudit(), false);
+            final Object o = ExpandVariables.processSingleVariableAsObject(assertion.getSourceHeaders(), variables, getAudit(), false);
+            sourceHeaders = JwtUtils.getJson(getAudit(), o);
             if (sourceHeaders == null || sourceHeaders.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_HEADERS, assertion.getHeaderAction());
                 return AssertionStatus.FAILED;
@@ -170,8 +171,8 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             }
         }
         else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_CV){
-            String key = ExpandVariables.process(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
-            if (key == null || key.trim().isEmpty()) {
+            Object key = ExpandVariables.processSingleVariableAsObject(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
+            if (key == null) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
                 return null;
             }
@@ -231,7 +232,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                     }
                 }
             } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
-                return JwtUtils.getKeyFromJWK(getAudit(), key.toString(), false, Use.ENCRYPTION);
+                return JwtUtils.getKeyFromJWK(getAudit(), key, false, Use.ENCRYPTION);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
                 if(assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()){
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
@@ -242,7 +243,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                     return null;
                 }
-                return JwtUtils.getKeyFromJWKS(getAudit(), jwe, key.toString(), kid, false);
+                return JwtUtils.getKeyFromJWKS(getAudit(), jwe, key, kid, false);
             }
         }
         return null;

@@ -122,8 +122,8 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                 logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
             }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(validate)) {
-            final String keySource = ExpandVariables.process(assertion.getPrivateKeySource(), variables, getAudit(), false);
-            if (keySource == null || keySource.trim().isEmpty()) {
+            final Object keySource = ExpandVariables.processSingleVariableAsObject(assertion.getPrivateKeySource(), variables, getAudit(), false);
+            if (keySource == null) {
                 logAndAudit(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND);
                 return AssertionStatus.FAILED;
             }
