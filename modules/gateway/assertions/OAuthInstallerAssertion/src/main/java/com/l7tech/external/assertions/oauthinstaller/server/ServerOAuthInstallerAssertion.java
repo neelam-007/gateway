@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.oauthinstaller.server;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAdmin;
 import com.l7tech.external.assertions.oauthinstaller.OAuthInstallerAssertion;
 import com.l7tech.gateway.common.AsyncAdminMethods;
@@ -10,11 +9,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.PolicyBundleDryRunResult;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.policy.bundle.BundleUtils;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion;
-import com.l7tech.util.DomUtils;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,9 +42,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
         try {
             final String action = context.getVariable(CONTEXT_VARIABLE_PREFIX + "oauth_installer.action").toString();
             if ("get_db_schema".equals(action)) {
-                final Document document = XmlUtil.createEmptyDocument("OAuthDbSchema", L7, BundleUtils.NS_BUNDLE);
-                DomUtils.setTextContent(document.getDocumentElement(), oAuthInstallerAdmin.getOAuthDatabaseSchema());
-                writeResponse(document);
+                writeResponse(oAuthInstallerAdmin.getOAuthDatabaseSchema());
             }
         } catch (NoSuchVariableException e) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);

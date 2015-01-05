@@ -17,11 +17,9 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
@@ -108,12 +106,12 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final AssertionMetadata meta = assertion.meta();
         Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext> factory = meta.get(AssertionMetadata.EXTENSION_INTERFACES_FACTORY);
         if (factory == null) {
-            throw new PolicyAssertionException(assertion, "TODO");
+            throw new PolicyAssertionException(assertion, "Unexpected exception, Extension Interfaces Factory must not be null.");
         }
 
         Collection<ExtensionInterfaceBinding> bindings = factory.call(applicationContext);
         if (bindings == null || bindings.size() != 1) {
-            throw new PolicyAssertionException(assertion, "TODO");
+            throw new PolicyAssertionException(assertion, "Unexpected exception, must have exactly one Extension Interfaces Binding.");
         }
 
         ExtensionInterfaceBinding<?> binding = bindings.iterator().next();
@@ -194,8 +192,19 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      */
     protected void writeResponse(final Document document) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         try {
+            writeResponse(XmlUtil.nodeToFormattedString(document));
+        } catch (IOException e) {
+            throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
+        }
+    }
+
+    /**
+     * Write a string to the message response body.
+     */
+    protected void writeResponse(final String string) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+        try {
             final Message response = context.getResponse();
-            final ByteArrayInputStream inputStream = new ByteArrayInputStream(XmlUtil.nodeToFormattedString(document).getBytes());
+            final ByteArrayInputStream inputStream = new ByteArrayInputStream(string.getBytes());
             response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, inputStream);
             response.getMimeKnob().getContentLength();
             response.getHttpResponseKnob().setStatus(200);
@@ -213,10 +222,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
             componentIds.append(bundleInfo.getId());
             componentIds.append(";");
         }
-
-        final Document document = XmlUtil.createEmptyDocument("ComponentIds", L7, BundleUtils.NS_BUNDLE);
-        DomUtils.setTextContent(document.getDocumentElement(), componentIds.toString());
-        writeResponse(document);
+        writeResponse(componentIds.toString());
     }
 
     /**
@@ -235,16 +241,12 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                 PolicyBundleDryRunResult dryRunResult = (PolicyBundleDryRunResult) jobResultOut;
                 Map<String, String> componentIdToBundleXmlMap = dryRunResult.getComponentIdToBundleXmlMap();
                 if (componentIdToBundleXmlMap != null) {
-                    final Document document = XmlUtil.createEmptyDocument("RestmanGet", L7, BundleUtils.NS_BUNDLE);
-                    final Element rootElement = document.getDocumentElement();
-
+                    final StringBuilder sb = new StringBuilder();
                     for (String componentId : componentIdToBundleXmlMap.keySet()) {
-                        Element element = DomUtils.createAndAppendElement(rootElement, "MigrationBundle");
-                        element.setAttribute("componentId", componentId);
-                        DomUtils.setTextContent(element, componentIdToBundleXmlMap.get(componentId));
+                        sb.append(componentIdToBundleXmlMap.get(componentId));
                     }
 
-                    writeResponse(document);
+                    writeResponse(sb.toString());
                 }
             }
         });
@@ -287,24 +289,19 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
             public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
                 PolicyBundleDryRunResult dryRunResult = (PolicyBundleDryRunResult) jobResultOut;
                 try {
-                    final Document document = XmlUtil.createEmptyDocument("WsmanDryRun", L7, BundleUtils.NS_BUNDLE);
-                    final Element rootElement = document.getDocumentElement();
-
+                    final StringBuilder sb = new StringBuilder();
                     for (String componentId : componentIds) {
                         if (dryRunResult.anyConflictsForBundle(componentId)) {
-                            Element conflictsElement = DomUtils.createAndAppendElement(rootElement, "Conflicts");
-                            conflictsElement.setAttribute("componentId", componentId);
-
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "ServiceConflict"), join(dryRunResult.getConflictsForItem(componentId, SERVICES), ';'));
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "PolicyConflict"), join(dryRunResult.getConflictsForItem(componentId, POLICIES), ';'));
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "CertificateConflict"), join(dryRunResult.getConflictsForItem(componentId, CERTIFICATES), ';'));
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "JdbcConnectionsThatDontExist"), join(dryRunResult.getConflictsForItem(componentId, JDBC_CONNECTIONS), ';'));
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "MissingAssertions"), join(dryRunResult.getConflictsForItem(componentId, ASSERTIONS), ';'));
-                            DomUtils.setTextContent(DomUtils.createAndAppendElement(conflictsElement, "EncapsulatedAssertionConflict"), join(dryRunResult.getConflictsForItem(componentId, ENCAPSULATED_ASSERTION), ';'));
+                            sb.append("ComponentId: ").append(componentId).append(System.lineSeparator());
+                            sb.append("ServiceConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, SERVICES), ';')).append(System.lineSeparator());
+                            sb.append("PolicyConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, POLICIES), ';')).append(System.lineSeparator());
+                            sb.append("CertificateConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, CERTIFICATES), ';')).append(System.lineSeparator());
+                            sb.append("JdbcConnectionsThatDontExist: ").append(join(dryRunResult.getConflictsForItem(componentId, JDBC_CONNECTIONS), ';')).append(System.lineSeparator());
+                            sb.append("MissingAssertions: ").append(join(dryRunResult.getConflictsForItem(componentId, ASSERTIONS), ';')).append(System.lineSeparator());
+                            sb.append("EncapsulatedAssertionConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, ENCAPSULATED_ASSERTION), ';')).append(System.lineSeparator());
                         }
                     }
-
-                    writeResponse(document);
+                    writeResponse(sb.toString());
                 } catch (PolicyBundleDryRunResult.UnknownBundleIdException e) {
                     throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
                 }
@@ -325,10 +322,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
             @Override
             public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
-                ArrayList installedComponentIds = (ArrayList) jobResultOut;
-                final Document document = XmlUtil.createEmptyDocument("ComponentIds", L7, BundleUtils.NS_BUNDLE);
-                DomUtils.setTextContent(document.getDocumentElement(), join(installedComponentIds, ';'));
-                writeResponse(document);
+                final ArrayList installedComponentIds = (ArrayList) jobResultOut;
+                writeResponse(join(installedComponentIds, ';'));
             }
         });
     }
@@ -358,8 +353,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final HashMap<String, BundleMapping> mappings = new HashMap<>();
         for (String componentId : componentIds) {
             try {
-                final String oldName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection.map." + componentId + ".name").toString();
-                final String newName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection.map." + componentId + ".new_name").toString();
+                final String oldName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection." + componentId + ".name").toString();
+                final String newName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection." + componentId + ".new_name").toString();
 
                 final BundleMapping mapping = new BundleMapping();
                 mapping.addMapping(BundleMapping.Type.JDBC_CONNECTION_NAME, oldName, newName);
