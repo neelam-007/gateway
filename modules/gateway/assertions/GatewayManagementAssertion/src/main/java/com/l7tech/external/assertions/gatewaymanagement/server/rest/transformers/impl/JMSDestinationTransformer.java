@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.JmsContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ public class JMSDestinationTransformer extends APIResourceWsmanBaseTransformer<J
 
     @NotNull
     @Override
-    public JmsContainer convertFromMO(@NotNull JMSDestinationMO jmsDestinationMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public JmsContainer convertFromMO(@NotNull JMSDestinationMO jmsDestinationMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         Iterator<PersistentEntity> entities =  factory.fromResourceAsBag(jmsDestinationMO,strict).iterator();
         JmsEndpoint jmsEndpoint = (JmsEndpoint) entities.next();
         JmsConnection jmsConnection = (JmsConnection) entities.next();

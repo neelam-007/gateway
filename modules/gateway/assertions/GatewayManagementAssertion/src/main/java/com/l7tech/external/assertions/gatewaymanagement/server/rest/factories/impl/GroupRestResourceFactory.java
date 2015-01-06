@@ -71,7 +71,7 @@ public class GroupRestResourceFactory {
             return Functions.map(groups, new Functions.Unary<GroupMO, Group>() {
                 @Override
                 public GroupMO call(Group group) {
-                    return transformer.convertToMO(group);
+                    return transformer.convertToMO(group, null);
                 }
             });
         } catch (FindException e) {
@@ -93,7 +93,7 @@ public class GroupRestResourceFactory {
             throw e;
         }
         rbacAccessService.validatePermitted(group, OperationType.READ);
-        return transformer.convertToMO(group);
+        return transformer.convertToMO(group, null);
     }
 
     private GroupManager retrieveGroupManager(String providerId) throws ResourceFactory.ResourceNotFoundException, FindException {

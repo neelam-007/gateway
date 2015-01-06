@@ -9,6 +9,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.DependencySearchResultsUtils;
 import com.l7tech.server.search.objects.*;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -30,8 +31,14 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
         return "DEPENDENCY";
     }
 
+
     @NotNull
     @Override
+    public DependencyListMO convertToMO(@NotNull DependencySearchResults dependencySearchResults, MasterPasswordManager passwordManager) {
+        return convertToMO(dependencySearchResults);
+    }
+
+    @NotNull
     public DependencyListMO convertToMO(@NotNull DependencySearchResults dependencySearchResults) {
         DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
@@ -49,6 +56,7 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
         return dependencyAnalysisMO;
     }
+
 
     @NotNull
     public DependencyListMO convertToMO(@NotNull List<DependencySearchResults> dependencySearchResultsList) {
@@ -77,13 +85,13 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
     @NotNull
     @Override
-    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(dependencyListMO, true);
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(dependencyListMO, true, passwordManager);
     }
 
     @NotNull
     @Override
-    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public DependencySearchResults convertFromMO(@NotNull DependencyListMO dependencyListMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         throw new UnsupportedOperationException("Converting DependencyListMO to an internal DependencySearchResults is not supported.");
     }
 

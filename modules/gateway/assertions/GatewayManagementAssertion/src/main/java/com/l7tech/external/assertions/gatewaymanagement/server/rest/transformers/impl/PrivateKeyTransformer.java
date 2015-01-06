@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -36,27 +37,38 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
 
     @NotNull
     @Override
-    public PrivateKeyMO convertToMO(@NotNull EntityContainer<SsgKeyEntry> ssgKeyEntryEntityContainer) {
-        return convertToMO(ssgKeyEntryEntityContainer.getEntity());
+    public PrivateKeyMO convertToMO(@NotNull EntityContainer<SsgKeyEntry> ssgKeyEntryEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(ssgKeyEntryEntityContainer.getEntity(), passwordManager);
+    }
+
+    @NotNull
+    public PrivateKeyMO convertToMO(@NotNull SsgKeyEntry e) {
+        return convertToMO(e,null);
     }
 
     @NotNull
     @Override
-    public PrivateKeyMO convertToMO(@NotNull SsgKeyEntry e) {
+    public PrivateKeyMO convertToMO(@NotNull SsgKeyEntry e,  MasterPasswordManager passwordManager) {
         //need to 'identify' the MO because by default the wsman factories will no set the id and version in the
         // asResource method
-        return factory.identify(factory.asResource(e), e);
+        PrivateKeyMO mo =  factory.identify(factory.asResource(e), e);
+
+        if(passwordManager!=null){
+            // todo encrypt and attach key info
+        }
+
+        return mo;
     }
 
     @NotNull
     @Override
-    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(m,true);
+    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(m,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         return new EntityContainer<>(new SsgKeyEntry(Goid.parseGoid(m.getKeystoreId()),m.getAlias(),null,null));
     }
 }

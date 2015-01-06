@@ -6,10 +6,10 @@ import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,13 +25,18 @@ public class FirewallRuleTransformer implements EntityAPITransformer<FirewallRul
 
     @NotNull
     @Override
-    public FirewallRuleMO convertToMO(@NotNull EntityContainer<SsgFirewallRule> userEntityContainer) {
-        return convertToMO(userEntityContainer.getEntity());
+    public FirewallRuleMO convertToMO(@NotNull EntityContainer<SsgFirewallRule> userEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(userEntityContainer.getEntity(), passwordManager);
+    }
+
+    @NotNull
+    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule ssgFirewallRule) {
+        return convertToMO(ssgFirewallRule, null);
     }
 
     @NotNull
     @Override
-    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule firewallRule) {
+    public FirewallRuleMO convertToMO(@NotNull SsgFirewallRule firewallRule,  MasterPasswordManager passwordManager) {
         FirewallRuleMO firewallRuleMO = ManagedObjectFactory.createFirewallRuleMO();
         firewallRuleMO.setId(firewallRule.getId());
         firewallRuleMO.setVersion(firewallRule.getVersion());
@@ -50,13 +55,13 @@ public class FirewallRuleTransformer implements EntityAPITransformer<FirewallRul
 
     @NotNull
     @Override
-    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(firewallRuleMO,true);
+    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(firewallRuleMO,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<SsgFirewallRule> convertFromMO(@NotNull FirewallRuleMO firewallRuleMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         SsgFirewallRule firewallRule = new SsgFirewallRule();
         firewallRule.setId(firewallRuleMO.getId());
         if(firewallRuleMO.getVersion()!=null) {

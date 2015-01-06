@@ -36,7 +36,7 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
 
     @Override
     protected SsgFirewallRule convertFromMO(FirewallRuleMO resource) throws ResourceFactory.InvalidResourceException {
-        return transformer.convertFromMO(resource).getEntity();
+        return transformer.convertFromMO(resource, null).getEntity();
     }
 
     @Override

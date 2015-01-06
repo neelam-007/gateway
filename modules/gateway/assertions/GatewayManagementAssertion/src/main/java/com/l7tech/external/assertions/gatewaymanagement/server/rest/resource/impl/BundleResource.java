@@ -248,6 +248,8 @@ public class BundleResource {
             bundleOptionsBuilder.setProperty(BundleExporter.IgnoredEntityIdsOption, containerRequest.getProperty("ServiceId").toString());
         }
         //create the bundle export
-        return bundleExporter.exportBundle(bundleOptionsBuilder,includeDependencies, headers);
+        String passwordKey = null;
+        // todo get password key
+        return bundleExporter.exportBundle(bundleOptionsBuilder,includeDependencies,passwordKey, headers);
     }
 }

@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -33,8 +34,8 @@ public class PolicyTransformer extends APIResourceWsmanBaseTransformer<PolicyMO,
 
     @NotNull
     @Override
-    public EntityContainer<Policy> convertFromMO(@NotNull PolicyMO policyMO,boolean strict) throws ResourceFactory.InvalidResourceException {
-        EntityContainer<Policy> entityBag = super.convertFromMO(policyMO,strict);
+    public EntityContainer<Policy> convertFromMO(@NotNull PolicyMO policyMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        EntityContainer<Policy> entityBag = super.convertFromMO(policyMO,strict, passwordManager);
         //preserve the policy guid if it is set.
         if(policyMO.getGuid() != null) {
             entityBag.getEntity().setGuid(policyMO.getGuid());

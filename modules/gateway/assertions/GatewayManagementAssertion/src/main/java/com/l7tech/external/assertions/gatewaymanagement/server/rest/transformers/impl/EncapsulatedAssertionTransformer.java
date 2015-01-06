@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.ZoneableGuidEntityHeader;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -36,9 +37,9 @@ public class EncapsulatedAssertionTransformer extends APIResourceWsmanBaseTransf
 
     @NotNull
     @Override
-    public EntityContainer<EncapsulatedAssertionConfig> convertFromMO(@NotNull EncapsulatedAssertionMO m ,boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<EncapsulatedAssertionConfig> convertFromMO(@NotNull EncapsulatedAssertionMO m, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
 
-        EntityContainer<EncapsulatedAssertionConfig> container  =  super.convertFromMO(m, strict);
+        EntityContainer<EncapsulatedAssertionConfig> container  =  super.convertFromMO(m, strict, passwordManager);
 
             final Policy policy = container.getEntity().getPolicy();
 

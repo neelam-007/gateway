@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -37,7 +38,7 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @NotNull
     @Override
-    public M convertToMO(@NotNull E e) {
+    public M convertToMO(@NotNull E e, MasterPasswordManager passwordManager) {
         //need to 'identify' the MO because by default the wsman factories will no set the id and version in the
         // asResource method
         return factory.identify(factory.asResource(e), e);
@@ -45,19 +46,19 @@ public abstract class APIResourceWsmanBaseTransformer<M extends ManagedObject, E
 
     @NotNull
     @Override
-    public M convertToMO(@NotNull EntityContainer<E> entityContainer) {
-        return convertToMO(entityContainer.getEntity());
+    public M convertToMO(@NotNull EntityContainer<E> entityContainer, MasterPasswordManager passwordManager) {
+        return convertToMO(entityContainer.getEntity(), passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<E> convertFromMO(@NotNull M m) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(m,true);
+    public EntityContainer<E> convertFromMO(@NotNull M m, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(m,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<E> convertFromMO(@NotNull M m, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<E> convertFromMO(@NotNull M m, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
 
         E entity = factory.fromResourceAsBag(m,strict).getEntity();
         if(entity == null) {

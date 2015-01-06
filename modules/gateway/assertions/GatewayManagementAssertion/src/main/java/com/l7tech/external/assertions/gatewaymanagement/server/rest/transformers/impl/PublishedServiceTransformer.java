@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.PublishedServiceContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,7 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
 
     @NotNull
     @Override
-    public EntityContainer<PublishedService> convertFromMO(@NotNull ServiceMO serviceMO,boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<PublishedService> convertFromMO(@NotNull ServiceMO serviceMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         final EntityManagerResourceFactory.EntityBag<PublishedService> entityBag =  factory.fromResourceAsBag(serviceMO, strict);
         if(!(entityBag instanceof ServiceResourceFactory.ServiceEntityBag)) {
             throw new IllegalStateException("Expected a ServiceEntityBag but got: " + entityBag.getClass() + ". This should not have happened!");

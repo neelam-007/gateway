@@ -155,7 +155,7 @@ public class UserRestResourceFactory {
         try {
             UserManager userManager = retrieveUserManager(providerId);
             if(userManager instanceof InternalUserManager){
-                User newUser = userTransformer.convertFromMO(resource).getEntity();
+                User newUser = userTransformer.convertFromMO(resource, null).getEntity();
                 if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
                 rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
 
@@ -164,7 +164,7 @@ public class UserRestResourceFactory {
                 resource.setId(id);
                 return id;
             }else if (userManager instanceof FederatedUserManager){
-                User newUser = userTransformer.convertFromMO(resource).getEntity();
+                User newUser = userTransformer.convertFromMO(resource, null).getEntity();
                 if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
                 rbacAccessService.validatePermitted(newUser, OperationType.CREATE);
 
@@ -258,7 +258,7 @@ public class UserRestResourceFactory {
             rbacAccessService.validatePermitted(originalUser, OperationType.UPDATE);
 
             UserManager userManager = retrieveUserManager(providerId);
-            User newUser = userTransformer.convertFromMO(resource).getEntity();
+            User newUser = userTransformer.convertFromMO(resource, null).getEntity();
             if (newUser instanceof UserBean) newUser = userManager.reify((UserBean) newUser);
             if (newUser instanceof InternalUser){
 

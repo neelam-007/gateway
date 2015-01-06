@@ -31,7 +31,7 @@ public class SampleMessageAPIResourceFactory extends EntityManagerAPIResourceFac
 
     @Override
     protected SampleMessage convertFromMO(SampleMessageMO resource) throws ResourceFactory.InvalidResourceException {
-        return transformer.convertFromMO(resource).getEntity();
+        return transformer.convertFromMO(resource, null).getEntity();
     }
 
     @Override

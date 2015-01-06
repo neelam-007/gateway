@@ -20,6 +20,7 @@ import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,11 +59,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * Converts a Entity bundle into a Bundle
      *
      * @param entityBundle The entity bundle to convert to a Bundle
+     * @param passwordManager for encrypting and including the passwords in the bundle. Null for not encrypting and including.
      * @return The Bundle
      */
     @NotNull
-    @Override
-    public Bundle convertToMO(@NotNull final EntityBundle entityBundle) {
+    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, MasterPasswordManager passwordManager) {
         final ArrayList<Item> items = new ArrayList<>();
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
@@ -75,7 +76,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                     throw new IllegalStateException("Cannot locate a transformer for entity type: " + entityMappingInstruction.getSourceEntityHeader().getType());
                 }
                 //get the MO from the entity
-                final Object mo = transformer.convertToMO(entityResource.getEntity());
+                final Object mo = transformer.convertToMO(entityResource.getEntity(), passwordManager);
                 //remove the permissions from system created roles in the bundle (makes the bundle easier to read as these permissions are not required.)
                 if(mo instanceof RbacRoleMO && !((RbacRoleMO)mo).isUserCreated()){
                     ((RbacRoleMO)mo).setPermissions(null);
@@ -100,13 +101,14 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * This converts a bundle to an entity bundle.
      *
      * @param bundle The bundle to convert
+     * @param passwordManager
      * @return The entity bundle created from the given bundle
      * @throws ResourceFactory.InvalidResourceException
      */
     @Override
     @NotNull
-    public EntityBundle convertFromMO(@NotNull final Bundle bundle) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(bundle, true);
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(bundle, true, passwordManager);
     }
 
     /**
@@ -114,12 +116,13 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      *
      * @param bundle The bundle to convert
      * @param strict This have no effect for bundles
+     * @param passwordManager
      * @return The entity bundle created from the given bundle
      * @throws ResourceFactory.InvalidResourceException
      */
     @Override
     @NotNull
-    public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict, final MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         // Convert all the MO's in the bundle to entities
 
         final List<EntityContainer> entityContainers = Functions.map(bundle.getReferences(), new Functions.UnaryThrows<EntityContainer, Item, ResourceFactory.InvalidResourceException>() {
@@ -130,7 +133,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                     throw new IllegalStateException("Cannot locate a transformer for entity type: " + item.getType());
                 }
                 //cannot be strict here because there will be many cases where the reference entities in the mo's do not exist on the gateway
-                return (EntityContainer) transformer.convertFromMO(item.getContent(), false);
+                return (EntityContainer) transformer.convertFromMO(item.getContent(), false, passwordManager);
             }
         });
 

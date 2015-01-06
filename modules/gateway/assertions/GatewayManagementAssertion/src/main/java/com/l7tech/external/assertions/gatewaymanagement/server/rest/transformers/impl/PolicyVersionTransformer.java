@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -31,13 +32,18 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer) {
-        return convertToMO(policyVersionEntityContainer.getEntity());
+    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(policyVersionEntityContainer.getEntity(), passwordManager);
+    }
+
+    @NotNull
+    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion) {
+        return convertToMO(policyVersion, null);
     }
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion) {
+    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion,  MasterPasswordManager passwordManager) {
         PolicyVersionMO policyVersionMO = ManagedObjectFactory.createPolicyVersionMO();
         policyVersionMO.setActive(policyVersion.isActive());
         policyVersionMO.setComment(policyVersion.getName());
@@ -51,13 +57,13 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(policyVersionMO,true);
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(policyVersionMO,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
 
         PolicyVersion policyVersion = new PolicyVersion();
         policyVersion.setActive(policyVersionMO.isActive());

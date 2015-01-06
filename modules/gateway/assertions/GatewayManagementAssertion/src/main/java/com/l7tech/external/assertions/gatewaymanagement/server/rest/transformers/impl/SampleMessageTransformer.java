@@ -3,13 +3,13 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,13 +32,18 @@ public class SampleMessageTransformer implements EntityAPITransformer<SampleMess
 
     @NotNull
     @Override
-    public SampleMessageMO convertToMO(@NotNull EntityContainer<SampleMessage> userEntityContainer) {
-        return convertToMO(userEntityContainer.getEntity());
+    public SampleMessageMO convertToMO(@NotNull EntityContainer<SampleMessage> userEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(userEntityContainer.getEntity(), passwordManager);
+    }
+
+    @NotNull
+    public SampleMessageMO convertToMO(@NotNull SampleMessage sampleMessage) {
+        return convertToMO(sampleMessage,null);
     }
 
     @NotNull
     @Override
-    public SampleMessageMO convertToMO(@NotNull SampleMessage sampleMessage) {
+    public SampleMessageMO convertToMO(@NotNull SampleMessage sampleMessage,  MasterPasswordManager passwordManager) {
         SampleMessageMO sampleMessageMO = ManagedObjectFactory.createSampleMessageMO();
         sampleMessageMO.setId(sampleMessage.getId());
         sampleMessageMO.setVersion(sampleMessage.getVersion());
@@ -53,13 +58,13 @@ public class SampleMessageTransformer implements EntityAPITransformer<SampleMess
 
     @NotNull
     @Override
-    public EntityContainer<SampleMessage> convertFromMO(@NotNull SampleMessageMO sampleMessageMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(sampleMessageMO,true);
+    public EntityContainer<SampleMessage> convertFromMO(@NotNull SampleMessageMO sampleMessageMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(sampleMessageMO,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<SampleMessage> convertFromMO(@NotNull SampleMessageMO sampleMessageMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<SampleMessage> convertFromMO(@NotNull SampleMessageMO sampleMessageMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         SampleMessage sampleMessage = new SampleMessage();
         sampleMessage.setId(sampleMessageMO.getId());
         if(sampleMessageMO.getVersion()!=null) {

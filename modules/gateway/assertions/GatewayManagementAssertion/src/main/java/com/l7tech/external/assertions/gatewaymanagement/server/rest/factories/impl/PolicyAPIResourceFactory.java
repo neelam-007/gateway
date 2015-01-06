@@ -84,7 +84,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public String call() throws ResourceFactory.InvalidResourceException {
                 try {
-                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource, null);
                     final Policy newPolicy = newPolicyContainer.getEntity();
                     newPolicy.setVersion(0);
                     //generate a new Guid if none is set.
@@ -131,7 +131,7 @@ public class PolicyAPIResourceFactory extends WsmanBaseResourceFactory<PolicyMO,
             @Override
             public void call() throws ResourceFactory.ResourceFactoryException {
                 try {
-                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource);
+                    final EntityContainer<Policy> newPolicyContainer = policyTransformer.convertFromMO(resource, null);
                     final Policy newPolicy = newPolicyContainer.getEntity();
                     final Policy oldPolicy = policyManager.findByPrimaryKey(Goid.parseGoid(id));
                     if (oldPolicy == null) {

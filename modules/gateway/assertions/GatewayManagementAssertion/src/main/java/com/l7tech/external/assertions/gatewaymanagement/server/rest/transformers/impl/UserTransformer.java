@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,14 +33,19 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
     }
 
     @NotNull
-    @Override
-    public UserMO convertToMO(@NotNull EntityContainer<User> userEntityContainer) {
-        return convertToMO(userEntityContainer.getEntity());
+    public UserMO convertToMO(@NotNull User user) {
+        return convertToMO(user, null);
     }
 
     @NotNull
     @Override
-    public UserMO convertToMO(@NotNull User user) {
+    public UserMO convertToMO(@NotNull EntityContainer<User> userEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(userEntityContainer.getEntity(),passwordManager);
+    }
+
+    @NotNull
+    @Override
+    public UserMO convertToMO(@NotNull User user,  MasterPasswordManager passwordManager) {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setId(user.getId());
         userMO.setLogin(user.getLogin());
@@ -54,13 +60,13 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
 
     @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(userMO,true);
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(userMO,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());

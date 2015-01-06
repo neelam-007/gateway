@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -34,25 +35,30 @@ public class InterfaceTagTransformer implements EntityAPITransformer<InterfaceTa
 
     @NotNull
     @Override
-    public InterfaceTagMO convertToMO(@NotNull EntityContainer<InterfaceTag> interfaceTagContainer) {
-        return convertToMO(interfaceTagContainer.getEntity());
+    public InterfaceTagMO convertToMO(@NotNull EntityContainer<InterfaceTag> interfaceTagContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(interfaceTagContainer.getEntity(),passwordManager);
+    }
+
+    @NotNull
+    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e) {
+        return convertToMO(e,null);
     }
 
     @NotNull
     @Override
-    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e) {
+    public InterfaceTagMO convertToMO(@NotNull InterfaceTag e,  MasterPasswordManager passwordManager) {
         return factory.internalAsResource(e);
     }
 
     @NotNull
     @Override
-    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO interfaceTagMO) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(interfaceTagMO,true);
+    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO interfaceTagMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(interfaceTagMO,true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO m, boolean strict) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO m, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
         return new EntityContainer<>(factory.internalFromResource(m).left);
     }
 

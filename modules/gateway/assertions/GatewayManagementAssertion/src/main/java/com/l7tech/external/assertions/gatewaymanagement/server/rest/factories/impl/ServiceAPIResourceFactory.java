@@ -92,7 +92,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             @Override
             public String call() throws ResourceFactory.InvalidResourceException {
                 try {
-                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource);
+                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer)serviceTransformer.convertFromMO(resource, null);
                     final PublishedService newService = newServiceEntity.getEntity();
                     newService.setVersion(0);
 
@@ -156,7 +156,7 @@ public class ServiceAPIResourceFactory extends WsmanBaseResourceFactory<ServiceM
             @Override
             public void call() throws ResourceFactory.ResourceFactoryException {
                 try {
-                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer) serviceTransformer.convertFromMO(resource);
+                    final PublishedServiceContainer newServiceEntity = (PublishedServiceContainer) serviceTransformer.convertFromMO(resource, null);
                     final PublishedService newService = newServiceEntity.getEntity();
                     final PublishedService oldService = serviceManager.findByPrimaryKey(Goid.parseGoid(id));
 

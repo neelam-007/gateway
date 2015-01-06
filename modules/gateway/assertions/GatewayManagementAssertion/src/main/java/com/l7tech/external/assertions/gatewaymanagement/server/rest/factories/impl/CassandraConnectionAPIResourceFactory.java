@@ -29,7 +29,7 @@ public class CassandraConnectionAPIResourceFactory extends
 
     @Override
     protected CassandraConnection convertFromMO(CassandraConnectionMO resource) throws ResourceFactory.InvalidResourceException {
-        return transformer.convertFromMO(resource).getEntity();
+        return transformer.convertFromMO(resource, null).getEntity();
     }
 
     @Override

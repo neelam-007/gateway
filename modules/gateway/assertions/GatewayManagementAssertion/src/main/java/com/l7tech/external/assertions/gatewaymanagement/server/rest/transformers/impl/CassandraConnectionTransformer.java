@@ -9,6 +9,7 @@ import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -31,13 +32,19 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
 
     @NotNull
     @Override
-    public CassandraConnectionMO convertToMO(@NotNull EntityContainer<CassandraConnection> userEntityContainer) {
-        return convertToMO(userEntityContainer.getEntity());
+    public CassandraConnectionMO convertToMO(@NotNull EntityContainer<CassandraConnection> userEntityContainer,  MasterPasswordManager passwordManager) {
+        return convertToMO(userEntityContainer.getEntity(), passwordManager);
+    }
+
+
+    @NotNull
+    public CassandraConnectionMO convertToMO(@NotNull CassandraConnection cassandraConnection) {
+        return convertToMO(cassandraConnection, null);
     }
 
     @NotNull
     @Override
-    public CassandraConnectionMO convertToMO(@NotNull CassandraConnection cassandraConnection) {
+    public CassandraConnectionMO convertToMO(@NotNull CassandraConnection cassandraConnection,  MasterPasswordManager passwordManager) {
         CassandraConnectionMO cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
         cassandraConnectionMO.setId(cassandraConnection.getId());
         cassandraConnectionMO.setVersion(cassandraConnection.getVersion());
@@ -57,14 +64,14 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
 
     @NotNull
     @Override
-    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO)
+    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, MasterPasswordManager passwordManager)
             throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(cassandraConnectionMO, true);
+        return convertFromMO(cassandraConnectionMO, true, passwordManager);
     }
 
     @NotNull
     @Override
-    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, boolean strict)
+    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, boolean strict, MasterPasswordManager passwordManager)
             throws ResourceFactory.InvalidResourceException {
         CassandraConnection cassandraConnection = new CassandraConnection();
         cassandraConnection.setId(cassandraConnectionMO.getId());

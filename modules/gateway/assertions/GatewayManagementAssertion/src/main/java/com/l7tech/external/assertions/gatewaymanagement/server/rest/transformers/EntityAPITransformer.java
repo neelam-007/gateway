@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,8 +19,9 @@ public interface EntityAPITransformer<M, E extends Entity> extends APITransforme
      * containing this entity.
      *
      * @param e The entity to transform
+     * @param passwordManager To encrypt passwords. Null to not include password
      * @return The returned managed object
      */
     @NotNull
-    public M convertToMO(@NotNull E e);
+    public M convertToMO(@NotNull E e,  MasterPasswordManager passwordManager);
 }
