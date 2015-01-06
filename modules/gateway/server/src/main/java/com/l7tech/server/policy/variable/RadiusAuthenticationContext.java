@@ -13,6 +13,7 @@ import java.util.List;
 public class RadiusAuthenticationContext {
 
     private LinkedList<Pair<String, Object>> radiusAttributes = new LinkedList<>();
+    private int reasonCode;
 
     public LinkedList<Pair<String, Object>> getRadiusAttributes() {
         return radiusAttributes;
@@ -38,4 +39,11 @@ public class RadiusAuthenticationContext {
         return values.toArray();
     }
 
+    public int getReasonCode() {
+        return reasonCode;
+    }
+
+    public void setReasonCode(int reasonCode) {
+        this.reasonCode = reasonCode;
+    }
 }
