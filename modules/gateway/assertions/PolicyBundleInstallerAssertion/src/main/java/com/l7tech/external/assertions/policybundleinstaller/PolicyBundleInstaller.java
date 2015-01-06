@@ -85,12 +85,6 @@ public class PolicyBundleInstaller {
         migrationBundleInstaller.getManagementClient().setAuthenticatedUser(authenticatedUser);
     }
 
-    public void setNodeId(@Nullable final String nodeId) {
-        policyInstaller.setNodeId(nodeId);
-        encapsulatedAssertionInstaller.setNodeId(nodeId);
-        serviceInstaller.setNodeId(nodeId);
-    }
-
     /**
      * Dry run the installation looking for conflicts. Any conflicts found are updated in the dry run event.
      */

@@ -184,7 +184,7 @@ public class ServiceInstaller extends WsmanInstaller {
 
             // update any encapsulated assertions in this service
             final Document policyDocumentFromResource = getPolicyDocumentFromResource(policyResourceElmWritable, "Service", id);
-            EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocumentFromResource, context.getInstallationPrefix(), nodeId);
+            EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocumentFromResource, context.getInstallationPrefix());
 
             // if this service has any includes we need to update them
             final Element serviceDetailElmReadOnly = getServiceDetailElement(serviceElm);

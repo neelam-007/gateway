@@ -74,7 +74,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
                 if (isValidVersionModifier(prefix)) {
                     encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
-                    encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, nodeId, encapsulatedAssertionGuid);
+                    encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                 }
 
                 try {
@@ -134,15 +134,14 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
 
     protected static void updatePolicyDoc(@NotNull final Element policyResourceElmWritable,
                                    @NotNull final Document policyDocumentFromResource,
-                                   @Nullable final String prefix,
-                                   @Nullable final String nodeId)
+                                   @Nullable final String prefix)
             throws BundleResolver.InvalidBundleException, PolicyBundleInstallerCallback.CallbackException, PolicyBundleInstaller.InstallationException {
 
         // update encapsulated assertion name with prefix
         if (isValidVersionModifier(prefix)) {
             List<Element> encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigGuid", getNamespaceMap());
             for (Element encapsulatedAssertion : encapsulatedAssertions) {
-                encapsulatedAssertion.setAttribute("stringValue", getVersionModifiedEncapsulatedAssertionGuid(prefix, nodeId, encapsulatedAssertion.getAttribute("stringValue")));
+                encapsulatedAssertion.setAttribute("stringValue", getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertion.getAttribute("stringValue")));
             }
 
             encapsulatedAssertions = XpathUtil.findElements(policyDocumentFromResource.getDocumentElement(), "//L7p:Encapsulated/L7p:EncapsulatedAssertionConfigName", getNamespaceMap());
@@ -223,7 +222,7 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
                         encapsulatedAssertionName = getPrefixedEncapsulatedAssertionName(prefix, encapsulatedAssertionName);
                         DomUtils.setTextContent(nameElementWritable, encapsulatedAssertionName);
 
-                        encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, nodeId, encapsulatedAssertionGuid);
+                        encapsulatedAssertionGuid = getVersionModifiedEncapsulatedAssertionGuid(prefix, encapsulatedAssertionGuid);
                         DomUtils.setTextContent(guidElementWritable, encapsulatedAssertionGuid);
                     }
 
@@ -246,20 +245,19 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
     }
 
     /**
-     * Deterministically version modify the GUID by getting the first 128 bits (16 bytes) of SHA-256( cluster_identifier + SHA-256( prefix + original_guid ) ).
+     * Deterministically version modify the GUID by getting the first 128 bits (16 bytes) of SHA-256( version modifier + original_guid ).
      */
-    public static String getVersionModifiedEncapsulatedAssertionGuid(@Nullable final String versionModifier, @Nullable final String nodeId, @NotNull final String guid) throws PolicyBundleInstaller.InstallationException {
-        if (isEmpty(versionModifier) || isEmpty(nodeId)) {
-            logger.info("Call to version modify Encapsulated Assertion GUID contains empty version modifier or empty node id.");
+    public static String getVersionModifiedEncapsulatedAssertionGuid(@Nullable final String versionModifier, @NotNull final String guid) throws PolicyBundleInstaller.InstallationException {
+        if (isEmpty(versionModifier)) {
+            logger.info("Call to version modify Encapsulated Assertion GUID contains empty version modifier.");
             return guid;
         } else {
             try {
                 final MessageDigest md = MessageDigest.getInstance("SHA-256");
-                final String versionGuidHash = new String(md.digest((versionModifier + guid).getBytes(UTF8)), UTF8);
-                return HexUtils.hexDump(md.digest((nodeId + versionGuidHash).getBytes(UTF8)), 0, 16);
+                return HexUtils.hexDump(md.digest((versionModifier + guid).getBytes(UTF8)), 0, 16);
             }  catch (NoSuchAlgorithmException e) {
                 throw new PolicyBundleInstaller.InstallationException("Could not version modify Encapsulated Assertion GUID: " + guid +
-                        ", node ID: " + nodeId + ", version modifier: " + versionModifier, e);
+                        ", version modifier: " + versionModifier, e);
             }
         }
     }

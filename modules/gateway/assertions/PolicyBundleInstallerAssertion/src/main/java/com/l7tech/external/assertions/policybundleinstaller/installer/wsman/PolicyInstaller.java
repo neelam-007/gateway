@@ -303,7 +303,7 @@ public class PolicyInstaller extends WsmanInstaller {
         checkInterrupted();
 
         // update any encapsulated assertions in this policy
-        EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocWriteEl, context.getInstallationPrefix(), nodeId);
+        EncapsulatedAssertionInstaller.updatePolicyDoc(policyResourceElmWritable, policyDocWriteEl, context.getInstallationPrefix());
 
         final Element policyDetailElmReadOnly = getPolicyDetailElement(enumPolicyElmReadOnly);
         // get or create
