@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
@@ -45,7 +45,10 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
                 }
             }
         }
-        context.setVariable(assertion.getTargetVariable(), new JsonWebKeySet(jwks).toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY));
+        final String s = new JsonWebKeySet(jwks).toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
+        ObjectMapper mapper = new ObjectMapper();
+        Object ob = mapper.readValue(s, Object.class);
+        context.setVariable(assertion.getTargetVariable(), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ob));
         return AssertionStatus.NONE;
     }
 

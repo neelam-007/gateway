@@ -27,7 +27,9 @@ public class ServerCreateJsonWebKeyAssertionTest {
         ServerCreateJsonWebKeyAssertion sass = new ServerCreateJsonWebKeyAssertion(ass);
         sass.checkRequest(context);
         final String jwks = (String) context.getVariable(ass.getTargetVariable());
-        Assert.assertEquals("{\"keys\":[]}", jwks);
+        Assert.assertEquals("{" + System.lineSeparator() +
+                "  \"keys\" : [ ]" + System.lineSeparator() +
+                "}", jwks);
     }
 
 }
