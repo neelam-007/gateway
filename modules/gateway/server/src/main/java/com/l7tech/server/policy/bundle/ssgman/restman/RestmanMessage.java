@@ -11,6 +11,7 @@ import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.xpath.XpathUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
@@ -209,17 +210,26 @@ public class RestmanMessage {
         final List<Element> names = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Name", getNamespaceMap());
 
         if (names.size() > 0) {
-            return DomUtils.getTextValue(names.get(0)).trim();
+            String entityName = DomUtils.getTextValue(names.get(0));
+            if (StringUtils.isEmpty(entityName))
+                return "N/A";
+            else
+                return entityName.trim();
         } else {
-            return null;
+            return "N/A";
         }
     }
 
-    public String getEntityType(@NotNull final String id) {
-        final List<Element> types = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + id + "']/l7:Type", getNamespaceMap());
+    public String getEntityType(@NotNull final String srcId) {
+        final List<Element> srcIdMappings = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + srcId + "\"]", getNamespaceMap());
 
-        if (types.size() > 0) {
-            return DomUtils.getTextValue(types.get(0)).trim();
+        // There should only be one action mapping per scrId  in a restman message
+        if (srcIdMappings.size() > 0) {
+            String entityType = srcIdMappings.get(0).getAttribute("type");
+            if (StringUtils.isEmpty(entityType))
+                return null;
+            else
+                return entityType.trim();
         } else {
             return null;
         }
