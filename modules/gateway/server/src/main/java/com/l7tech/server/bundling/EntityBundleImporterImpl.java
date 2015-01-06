@@ -11,8 +11,10 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -288,6 +290,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         return Either.left(new DeleteException("Cannot find keystore with id: " + keyStoreId + ". Error message: " + ExceptionUtils.getMessage(e), e));
                     } catch (KeyStoreException e) {
                         return Either.left(new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + ". Error message: " + ExceptionUtils.getMessage(e), e));
+                    }
+                } else if (entity instanceof Identity) {
+                    //need to specially handle deletion of identity entities
+                    final Goid providerId = ((Identity) entity).getProviderId();
+                    final IdentityProvider identityProvider;
+                    try {
+                        identityProvider = identityProviderFactory.getProvider(providerId);
+                    } catch (FindException e) {
+                        return Either.left(new DeleteException("Cannot find identity provider with id: " + providerId + ". Error message: " + ExceptionUtils.getMessage(e), e));
+                    }
+                    try {
+                        if (entity instanceof Group) {
+                            identityProvider.getGroupManager().delete((Group) entity);
+                        } else if (entity instanceof User) {
+                            identityProvider.getUserManager().delete((User) entity);
+                        }
+                    } catch (DeleteException e) {
+                        return Either.left(e);
                     }
                 } else {
                     try {
@@ -973,6 +993,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         } else {
                             return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Unsupported Target Mapping for an Identity: " + mapping.getTargetMapping().getType() + ". Only id and name are supported"));
                         }
+                    } else if((EntityType.USER.equals(mapping.getSourceEntityHeader().getType()) || EntityType.GROUP.equals(mapping.getSourceEntityHeader().getType()))
+                            && entity == null && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
+                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Given a user or group mapping without the associated user or group item reference"));
                     } else if (EntityType.RBAC_ROLE.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(mapping.getTargetMapping().getType())) {
                         if(entity == null){
                             return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a role by it's entity but the role is not in the bundle"));

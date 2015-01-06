@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public interface GroupManager<UT extends User, GT extends Group> {
     GT findByPrimaryKey( String identifier ) throws FindException;
-    void delete(GT group) throws DeleteException, ObjectNotFoundException;
+    void delete(GT group) throws DeleteException;
     void delete(String identifier) throws DeleteException, ObjectNotFoundException;
     void deleteAll( Goid ipoid ) throws DeleteException, ObjectNotFoundException;
     void deleteAllVirtual( Goid ipoid ) throws DeleteException, ObjectNotFoundException;

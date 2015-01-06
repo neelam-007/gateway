@@ -21,7 +21,7 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
-    public void delete(LdapGroup group) throws DeleteException, ObjectNotFoundException {
+    public void delete(LdapGroup group) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 

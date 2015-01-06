@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+
 
 /**
 * This will test migration using the rest api from one gateway to another.
@@ -572,5 +574,70 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
 
         }
 
+    }
+
+    @Test
+    public void deleteTest() throws Exception {
+        //create user
+        UserMO userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(idProviderItem.getId());
+        userMO.setLogin("targetUser");
+        PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword("123#@!qwER");
+        userMO.setPassword(password);
+        RestResponse response = getTargetEnvironment().processRequest("identityProviders/" + idProviderItem.getId() + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
+        assertOkCreatedResponse(response);
+        Item<UserMO> createdUser = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        createdUser.setContent(userMO);
+        userMO.setId(createdUser.getId());
+
+        UserMO userMissingMO = ManagedObjectFactory.createUserMO();
+        userMissingMO.setLogin("MissingUser");
+        userMissingMO.setId(Goid.DEFAULT_GOID.toString());
+        userMissingMO.setProviderId(idProviderItem.getId());
+        Item<UserMO> userMissingItem = new ItemBuilder<UserMO>("temp", EntityType.USER.toString()).setContent(userMissingMO).build();
+        userMissingItem.setId(Goid.DEFAULT_GOID.toString());
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setSrcId(createdUser.getId());
+        mapping.setType(EntityType.USER.name());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(EntityType.USER.name());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(createdUser, userMissingItem));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertEquals(200, response.getStatus());
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping privateKeyMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.USER.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(createdUser.getId(), privateKeyMapping.getTargetId());
+
+        Mapping privateKeyMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.USER.toString(), privateKeyMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, privateKeyMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, privateKeyMappingNotExisting.getTargetId());
+
+        response = getTargetEnvironment().processRequest("identityProviders/" + idProviderItem.getId() + "/users/"+createdUser.getId(), HttpMethod.GET, null, "");
+        assertEquals(404, response.getStatus());
     }
 }

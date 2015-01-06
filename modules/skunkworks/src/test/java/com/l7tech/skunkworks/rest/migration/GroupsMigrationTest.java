@@ -20,6 +20,7 @@ import com.l7tech.skunkworks.rest.tools.RestEntityTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
@@ -31,9 +32,11 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
@@ -346,6 +349,70 @@ public class GroupsMigrationTest extends RestEntityTestBase {
         assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(),dependencies.get(0).getType());
         assertEquals(EntityType.GROUP.toString(),dependencies.get(1).getType());
         assertEquals(targetGroup.getId(),dependencies.get(1).getId());
+    }
+
+    @Test
+    public void deleteTest() throws Exception {
+        cleanDatabase();
+
+        // create new group
+        InternalGroup targetGroup =  new InternalGroup("Target Group");
+        internalGroupManager.saveGroup(targetGroup);
+        internalGroupManager.addUser(internalUserManager.findByLogin("admin"), targetGroup);
+
+        GroupMO groupMO = ManagedObjectFactory.createGroupMO();
+        groupMO.setName(targetGroup.getName());
+        groupMO.setId(targetGroup.getId());
+        groupMO.setProviderId(internalIdProvider.toString());
+        Item<GroupMO> groupItem = new ItemBuilder<GroupMO>("temp", EntityType.GROUP.toString()).setContent(groupMO).build();
+        groupItem.setId(targetGroup.getId());
+
+        GroupMO groupMissingMO = ManagedObjectFactory.createGroupMO();
+        groupMissingMO.setName("Missing");
+        groupMissingMO.setId(Goid.DEFAULT_GOID.toString());
+        groupMissingMO.setProviderId(internalIdProvider.toString());
+        Item<GroupMO> groupMissingItem = new ItemBuilder<GroupMO>("temp", EntityType.GROUP.toString()).setContent(groupMissingMO).build();
+        groupMissingItem.setId(Goid.DEFAULT_GOID.toString());
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setSrcId(targetGroup.getId());
+        mapping.setType(EntityType.GROUP.name());
+
+        Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
+        mappingNotExisting.setAction(Mapping.Action.Delete);
+        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setType(EntityType.GROUP.name());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
+        bundle.setReferences(Arrays.<Item>asList(groupItem, groupMissingItem));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertEquals(200, response.getStatus());
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
+        Mapping privateKeyMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.GROUP.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(targetGroup.getId(), privateKeyMapping.getTargetId());
+
+        Mapping privateKeyMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.GROUP.toString(), privateKeyMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, privateKeyMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, privateKeyMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, privateKeyMappingNotExisting.getTargetId());
+
+        response = getDatabaseBasedRestManagementEnvironment().processRequest("groups/"+targetGroup.getId(), HttpMethod.GET, null, "");
+        assertEquals(404, response.getStatus());
     }
 
     protected String objectToString(Object object) throws IOException {

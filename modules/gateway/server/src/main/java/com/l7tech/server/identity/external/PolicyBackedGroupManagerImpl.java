@@ -21,7 +21,7 @@ public class PolicyBackedGroupManagerImpl implements PolicyBackedGroupManager {
     }
 
     @Override
-    public void delete(VirtualPolicyGroup group) throws DeleteException, ObjectNotFoundException {
+    public void delete(VirtualPolicyGroup group) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 

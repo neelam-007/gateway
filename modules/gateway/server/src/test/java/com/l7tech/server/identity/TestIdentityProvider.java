@@ -243,7 +243,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public void delete(Group group) throws DeleteException, ObjectNotFoundException {
+        public void delete(Group group) throws DeleteException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
