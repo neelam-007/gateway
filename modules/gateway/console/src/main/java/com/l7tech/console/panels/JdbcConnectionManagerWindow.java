@@ -50,6 +50,8 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private AbstractTableModel connectionTableModel;
     private PermissionFlags flags;
 
+    private JdbcConnection defaultJdbcConnection;
+
     public JdbcConnectionManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title.manage.jdbc.connections"));
         initialize();
@@ -58,6 +60,15 @@ public class JdbcConnectionManagerWindow extends JDialog {
     public JdbcConnectionManagerWindow(Dialog owner) {
         super(owner, resources.getString("dialog.title.manage.jdbc.connections"));
         initialize();
+    }
+
+    /**
+     * Set the default JDBC connection to display on Add.
+     *
+     * @param defaultJdbcConnection the default JDBC connection
+     */
+    public void setDefaultJdbcConnection(JdbcConnection defaultJdbcConnection) {
+        this.defaultJdbcConnection = defaultJdbcConnection;
     }
 
     private void initialize() {
@@ -205,7 +216,13 @@ public class JdbcConnectionManagerWindow extends JDialog {
     }
 
     private void doAdd() {
-        JdbcConnection connection = new JdbcConnection();
+        JdbcConnection connection;
+        if (defaultJdbcConnection != null) {
+            connection = defaultJdbcConnection;
+            defaultJdbcConnection = null;
+        } else {
+            connection = new JdbcConnection();
+        }
 
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin != null) {
