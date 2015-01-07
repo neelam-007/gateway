@@ -184,6 +184,8 @@ public class CassandraConnectionResource extends RestEntityResource<CassandraCon
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setSsl(true);
+        cassandraConnectionMO.setTlsprotocol("TLSv1");
+        cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setProperties(
                 CollectionUtils.MapBuilder.<String, String>builder().put("ConnectionProperty", "PropertyValue").map());

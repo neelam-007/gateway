@@ -15,6 +15,7 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.ByteArrayInputStream;
 import java.util.TreeMap;
 import java.util.Map;
@@ -42,6 +43,9 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private String compression = "";
     private boolean ssl = false;
     private boolean enabled = true;
+
+    private String tlsEnabledProtocol;
+    private String tlsEnabledCiphers;
 
     private String propertiesXml;
     private Map<String, String> properties = new TreeMap<>();
@@ -164,6 +168,28 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     public void setProperties(Map<String, String> properties) {
         this.propertiesXml = null;
         this.properties = properties;
+    }
+
+    @RbacAttribute
+    @Size(min = 1, max = 128)
+    @Column(name = "tls_protocol")
+    public String getTlsEnabledProtocol() {
+        return this.tlsEnabledProtocol;
+    }
+
+    public void setTlsEnabledProtocol(String protocol) {
+        this.tlsEnabledProtocol = protocol;
+    }
+
+    @RbacAttribute
+    @Column(name = "tls_ciphers", length = Integer.MAX_VALUE)
+    @Lob
+    public String getTlsEnabledCipherSuites() {
+        return this.tlsEnabledCiphers;
+    }
+
+    public void setTlsEnabledCipherSuites(String ciphers) {
+        this.tlsEnabledCiphers = ciphers;
     }
 
     @Column(name = "properties", length = Integer.MAX_VALUE)

@@ -469,9 +469,15 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
             TrustManager[] trustManagers = new TrustManager[]{trustManager};
 
-            //create the SSLContext using "TLSv1" protocol
-            Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-            SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+            //create the SSLContext using TLSv1.2 if specified otherwise TLSv1
+            Provider provider;
+            if ( cassandraConnectionEntity.getTlsEnabledProtocol().equals("TLSv1.2") ) {
+                provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1.2");
+            }  else {
+                provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
+            }
+
+            SSLContext sslContext = SSLContext.getInstance(cassandraConnectionEntity.getTlsEnabledProtocol(), provider);
 
             //initialize the SSLContext with the an array of trustmanager, and random number generator
             sslContext.init(null, trustManagers, secureRandom);
@@ -479,8 +485,13 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             //Create the cassandra SSL option
             //initialize with our SSLContext and ciphers
             //(using default ciphers that come with cassandra java driver)
-            SSLOptions sslOptions = new SSLOptions(sslContext, SSLOptions.DEFAULT_SSL_CIPHER_SUITES);
-
+            String cipherSuiteList = cassandraConnectionEntity.getTlsEnabledCipherSuites();
+            SSLOptions sslOptions;
+            if ( !( cipherSuiteList == null || cipherSuiteList.equals("") ) ) {
+                sslOptions = new SSLOptions(sslContext, cipherSuiteList.split("\\s*,\\s*"));
+            } else {
+                sslOptions = new SSLOptions(sslContext, SSLOptions.DEFAULT_SSL_CIPHER_SUITES);
+            }
             //add the ssl options to our cluster
             clusterBuilder.withSSL(sslOptions);
         }

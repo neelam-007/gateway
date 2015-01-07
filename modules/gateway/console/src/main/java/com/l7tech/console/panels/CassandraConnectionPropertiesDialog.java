@@ -13,6 +13,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
@@ -59,6 +60,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     private JButton OKButton;
     private JTextField credentialsTextField;
     private SecurityZoneWidget zoneControl;
+    private JLabel tlsVersionLabel;
+    private JButton cipherSuitesButton;
+    private JComboBox tlsVersionComboBox;
 
     private final Map<String, String> additionalPropMap = new TreeMap<>();
     private AbstractTableModel additionalPropertyTableModel;
@@ -66,6 +70,7 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
     private final CassandraConnection connection;
     private PermissionFlags flags;
     private boolean confirmed;
+    private String tlsCipherSuites;
 
     public CassandraConnectionPropertiesDialog(Frame owner, CassandraConnection connection) {
         super(owner, resources.getString("dialog.title.manage.cassandra.connection.properties"), true);
@@ -155,6 +160,21 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             }
         });
 
+        useSSLCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if ( useSSLCheckBox.isSelected() ) {
+                    cipherSuitesButton.setEnabled(true);
+                    tlsVersionComboBox.setEnabled(true);
+                    tlsVersionLabel.setEnabled(true);
+                } else {
+                    cipherSuitesButton.setEnabled(false);
+                    tlsVersionComboBox.setEnabled(false);
+                    tlsVersionLabel.setEnabled(false);
+                }
+            }
+        });
+
         final RunOnChangeListener docListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
@@ -171,6 +191,27 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
                 CassandraConnection.COMPRESS_NONE,
                 CassandraConnection.COMPRESS_LZ4,
         }));
+
+        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[] {"SSLv3", "TLSv1,SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2" } ) );
+        tlsVersionComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
+            @Override
+            public String call( final Object protocol ) {
+                return protocol == null ? null : resources.getString("tls-protocol." + protocol) ;
+            }
+        }, null, true ) );
+
+        cipherSuitesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CipherSuiteDialog.show(CassandraConnectionPropertiesDialog.this, "Enabled Cipher Suites", null, false, tlsCipherSuites, new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        tlsCipherSuites = s;
+                    }
+                });
+
+            }
+        });
 
         zoneControl.configure(connection);
         modelToView();
@@ -242,7 +283,15 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
             securePasswordComboBox.setSelectedIndex(-1);
         }
         compressionComboBox.setSelectedItem(connection.getCompression());
-        useSSLCheckBox.setSelected(connection.isSsl());
+        tlsVersionComboBox.setEnabled(false);
+        cipherSuitesButton.setEnabled(false);
+        tlsCipherSuites = connection.getTlsEnabledCipherSuites();
+        if ( connection.isSsl() ) {
+            useSSLCheckBox.setSelected(true);
+            tlsVersionComboBox.setEnabled(true);
+            tlsVersionComboBox.setSelectedItem(connection.getTlsEnabledProtocol());
+            cipherSuitesButton.setEnabled(true);
+        }
         disableConfigurationCheckBox.setSelected(!connection.isEnabled());
         additionalPropMap.clear();
         additionalPropMap.putAll(connection.getProperties());
@@ -262,6 +311,9 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         }
         connection.setCompression(((String) compressionComboBox.getSelectedItem()));
         connection.setSsl(useSSLCheckBox.isSelected());
+        connection.setTlsEnabledCipherSuites((String) tlsVersionComboBox.getSelectedItem());
+        connection.setTlsEnabledCipherSuites(tlsCipherSuites);
+        connection.setTlsEnabledProtocol((String)tlsVersionComboBox.getSelectedItem());
         connection.setEnabled(!disableConfigurationCheckBox.isSelected());
         connection.setProperties(additionalPropMap);
         connection.setSecurityZone(zoneControl.getSelectedZone());

@@ -28,7 +28,7 @@ import java.util.Map;
  */
 @XmlRootElement(name = "CassandraConnection")
 @XmlType(name = "CassandraConnectionType",
-        propOrder = {"name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "enabled", "properties", "extension", "extensions"})
+        propOrder = {"name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "tlsprotocol", "tlsciphers", "enabled", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "cassandraConnections")
 public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
 
@@ -167,6 +167,15 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
         this.ssl = ssl;
     }
 
+    @XmlElement(name = "TlsProtocol", required = true)
+    public String getTlsprotocol() { return tlsprotocol;}
+
+    public void setTlsprotocol(String protocol) { this.tlsprotocol = protocol; }
+
+    @XmlElement(name = "TlsCiphers", required = true)
+    public String getTlsciphers() { return tlsciphers;}
+
+    public void setTlsciphers(String ciphers) { this.tlsciphers = ciphers; }
     /**
      * Is the Cassandra connection enabled? (required)
      *
@@ -220,6 +229,8 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
     private String username;
     private String compression;
     private Boolean ssl = false;
+    private String tlsprotocol;
+    private String tlsciphers;
     private Boolean enabled = false;
     private Map<String, String> properties;
 }
