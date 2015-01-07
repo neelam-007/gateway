@@ -113,18 +113,20 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
             @Override
             public String getValidationError() {
                 try {
-                    String policyName = serviceNameTextField.getText().trim() +
-                            PublishWsdlQueryHandlerWizard.REDIRECTION_FRAGMENT_NAME_SUFFIX;
+                    String serviceName = serviceNameTextField.getText().trim();
 
-                    if (!isPolicyNameUnique(policyName)) {
-                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), policyName);
+                    // redirection fragment name
+                    String fragmentName = serviceName + PublishWsdlQueryHandlerWizard.REDIRECTION_FRAGMENT_NAME_SUFFIX;
+
+                    if (!isPolicyNameUnique(fragmentName)) {
+                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), fragmentName);
                     }
 
-                    policyName = serviceNameTextField.getText().trim() +
-                            PublishWsdlQueryHandlerWizard.AUTHENTICATION_FRAGMENT_NAME_SUFFIX;
+                    // authentication fragment name
+                    fragmentName = serviceName + PublishWsdlQueryHandlerWizard.AUTHENTICATION_FRAGMENT_NAME_SUFFIX;
 
-                    if (!isPolicyNameUnique(policyName)) {
-                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), policyName);
+                    if (!isPolicyNameUnique(fragmentName)) {
+                        return MessageFormat.format(resources.getString("policyNameNotUniqueError"), fragmentName);
                     }
                 } catch (FindException e) {
                     logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
