@@ -18,12 +18,12 @@
             <L7p:ComparisonAssertion>
                 <L7p:CaseSensitive booleanValue="false"/>
                 <L7p:Expression1 stringValue="${request.url.query}"/>
-                <L7p:Expression2 stringValue="wsdl"/>
+                <L7p:Expression2 stringValue="?wsdl"/>
                 <L7p:MultivaluedComparison multivaluedComparison="FAIL"/>
                 <L7p:Predicates predicates="included">
                     <L7p:item binary="included">
                         <L7p:CaseSensitive booleanValue="false"/>
-                        <L7p:RightValue stringValue="wsdl"/>
+                        <L7p:RightValue stringValue="?wsdl"/>
                     </L7p:item>
                 </L7p:Predicates>
             </L7p:ComparisonAssertion>
