@@ -9,11 +9,16 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Properties;
 
 /**
@@ -32,25 +37,56 @@ public class BundleExporter {
     @Inject
     private DependencyTransformer dependencyTransformer;
 
+    public BundleExporter() {
+    }
+
+    BundleExporter(final EntityBundleExporter entityBundleExporter,
+                   final BundleTransformer bundleTransformer,
+                   final DependencyTransformer dependencyTransformer) {
+        this.entityBundleExporter = entityBundleExporter;
+        this.bundleTransformer = bundleTransformer;
+        this.dependencyTransformer = dependencyTransformer;
+    }
+
     /**
      * Creates a bundle export given the export options
      *
-     * @param bundleExportOptions A map of export options. Can be null to use the defaults
-     * @param includeDependencies Include dependency analysis results in the bundle.
-     * @param encryptionKey       key for encrypting and including the passwords in the bundle. Null for not encrypting and including.
-     * @param headers             The list of headers to create the export from. If the headers list is empty the full gateway will be exported.
+     * @param bundleExportOptions  A map of export options. Can be null to use the defaults
+     * @param includeDependencies  Include dependency analysis results in the bundle.
+     * @param encryptPasswords     true if encrypted passwords should be included in the bundle.
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
+     * @param headers              The list of headers to create the export from. If the headers list is empty the full gateway will be exported.
      * @return The bundle generated from the headers given
      * @throws FindException
      */
     @NotNull
-    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, String encryptionKey, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
+    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptPasswords, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException {
+        final MasterPasswordManager passwordManager = createPasswordManager(encryptPasswords, encodedKeyPassphrase);
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
-        MasterPasswordManager passwordManager = null;  // todo create password manager from the encryption key
         Bundle bundle = bundleTransformer.convertToMO(entityBundle, passwordManager);
-        if(includeDependencies){
+        if (includeDependencies) {
             final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults());
             bundle.setDependencyGraph(dependencyMOs);
         }
         return bundle;
+    }
+
+    @Nullable
+    private MasterPasswordManager createPasswordManager(final boolean encryptPasswords, @Nullable final String encodedKeyPassphrase) throws FileNotFoundException {
+        MasterPasswordManager passMgr = null;
+        if (encryptPasswords) {
+            if (encodedKeyPassphrase != null) {
+                passMgr = new MasterPasswordManager(HexUtils.decodeBase64(encodedKeyPassphrase));
+            } else {
+                final String confDir = SyspropUtil.getString("com.l7tech.config.path", "../node/default/etc/conf");
+                final File ompDat = new File(new File(confDir), "omp.dat");
+                if (ompDat.exists()) {
+                    passMgr = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompDat));
+                } else {
+                    throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
+                }
+            }
+        }
+        return passMgr;
     }
 }

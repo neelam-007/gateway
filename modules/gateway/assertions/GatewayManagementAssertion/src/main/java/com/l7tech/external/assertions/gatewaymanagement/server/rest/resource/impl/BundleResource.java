@@ -23,11 +23,13 @@ import com.l7tech.util.Functions;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,6 +75,19 @@ public class BundleResource {
     public BundleResource() {
     }
 
+    BundleResource(final BundleImporter bundleImporter, final BundleExporter bundleExporter,
+                   final BundleTransformer transformer, final URLAccessibleLocator urlAccessibleLocator,
+                   final RbacAccessService rbacAccessService, final UriInfo uriInfo,
+                   final ContainerRequest containerRequest) {
+        this.bundleImporter = bundleImporter;
+        this.bundleExporter = bundleExporter;
+        this.transformer = transformer;
+        this.urlAccessibleLocator = urlAccessibleLocator;
+        this.rbacAccessService = rbacAccessService;
+        this.uriInfo = uriInfo;
+        this.containerRequest = containerRequest;
+    }
+
     /**
      * Returns the bundle for the given resources. This API call is capable of returning a bundle created from multiple resources.
      *
@@ -84,7 +99,8 @@ public class BundleResource {
      * @param policyIds                          Policies to export
      * @param fullGateway                        True to export the full gateway. False by default
      * @param includeDependencies                True to export with dependencies. False by default
-     *
+     * @param encryptPasswords                   True to export with encrypted passwords. False by default.
+     * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
      * @return The bundle for the resources
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -97,7 +113,9 @@ public class BundleResource {
                                      @QueryParam("service") List<String> serviceIds,
                                      @QueryParam("policy") List<String> policyIds,
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
-                                     @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                     @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
+                                     @QueryParam("encryptPasswords") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptPasswords,
+                                     @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies"));
 
@@ -118,11 +136,14 @@ public class BundleResource {
             entityHeaders.add(new EntityHeader(policyId, EntityType.POLICY, null, null));
         }
 
-        if(fullGateway && !entityHeaders.isEmpty()) {
+        if (fullGateway && !entityHeaders.isEmpty()) {
             throw new InvalidArgumentException("If specifying full gateway export (all=true) do not give any other entity id's");
         }
 
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(true, Mapping.Action.valueOf(defaultAction), "id", exportGatewayRestManagementService, includeDependencies, entityHeaders.toArray(new EntityHeader[entityHeaders.size()]))))
+        final Bundle bundle = createBundle(true, Mapping.Action.valueOf(defaultAction), "id",
+                exportGatewayRestManagementService, includeDependencies, encryptPasswords, encodedKeyPassphrase,
+                entityHeaders.toArray(new EntityHeader[entityHeaders.size()]));
+        return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
@@ -139,6 +160,8 @@ public class BundleResource {
      * @param exportGatewayRestManagementService If true the gateway management service will be exported too. False by
      *                                           default.
      * @param includeDependencies                True to export with dependencies. False by default
+     * @param encryptPasswords                   True to export with encrypted passwords. False by default.
+     * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
      * @return The bundle for the resource
      * @throws IOException
      * @throws ResourceFactory.ResourceNotFoundException
@@ -153,7 +176,9 @@ public class BundleResource {
                                                           @QueryParam("defaultMapBy") @DefaultValue("id") @ChoiceParam({"id", "name", "guid"}) String defaultMapBy,
                                                           @QueryParam("includeRequestFolder") @DefaultValue("false") Boolean includeRequestFolder,
                                                           @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
-                                                          @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                                          @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
+                                                          @QueryParam("encryptPasswords") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptPasswords,
+                                                          @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
@@ -171,7 +196,9 @@ public class BundleResource {
         }
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
-        return new ItemBuilder<>(transformer.convertToItem(createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy, exportGatewayRestManagementService, includeDependencies, header)))
+        final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
+                exportGatewayRestManagementService, includeDependencies, encryptPasswords, encodedKeyPassphrase, header);
+        return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
     }
@@ -236,7 +263,9 @@ public class BundleResource {
                                 @NotNull final String defaultMapBy,
                                 boolean exportGatewayRestManagementService,
                                 boolean includeDependencies,
-                                @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException {
+                                boolean encryptPasswords,
+                                @Nullable final String encodedKeyPassphrase,
+                                @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeRequestFolderOption, String.valueOf(includeRequestFolder));
@@ -248,8 +277,6 @@ public class BundleResource {
             bundleOptionsBuilder.setProperty(BundleExporter.IgnoredEntityIdsOption, containerRequest.getProperty("ServiceId").toString());
         }
         //create the bundle export
-        String passwordKey = null;
-        // todo get password key
-        return bundleExporter.exportBundle(bundleOptionsBuilder,includeDependencies,passwordKey, headers);
+        return bundleExporter.exportBundle(bundleOptionsBuilder, includeDependencies, encryptPasswords, encryptPasswords ? encodedKeyPassphrase : null, headers);
     }
 }
