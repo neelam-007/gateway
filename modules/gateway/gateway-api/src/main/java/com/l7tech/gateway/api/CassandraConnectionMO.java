@@ -172,7 +172,7 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
 
     public void setTlsprotocol(String protocol) { this.tlsprotocol = protocol; }
 
-    @XmlElement(name = "TlsCiphers", required = true)
+    @XmlElement(name = "TlsCiphers")
     public String getTlsciphers() { return tlsciphers;}
 
     public void setTlsciphers(String ciphers) { this.tlsciphers = ciphers; }
