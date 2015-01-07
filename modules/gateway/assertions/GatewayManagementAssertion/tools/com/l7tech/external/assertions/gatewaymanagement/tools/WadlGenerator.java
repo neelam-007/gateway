@@ -10,6 +10,7 @@ import com.l7tech.gateway.rest.RequestProcessingException;
 import com.l7tech.gateway.rest.RestAgent;
 import com.l7tech.gateway.rest.RestAgentImpl;
 import com.l7tech.gateway.rest.RestResponse;
+import com.l7tech.message.Header;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
@@ -24,6 +25,7 @@ import java.net.URL;
 import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,7 +59,9 @@ public class WadlGenerator {
         RestAgent restAgent = buildRestAgent(classes);
 
         for(RestManVersion version : RestManVersion.values()) {
-            RestResponse response = restAgent.handleRequest(null, URI.create(WadlResource.GATEWAY_URL), URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null, CollectionUtils.MapBuilder.<String, Object>builder().put("RestManVersion", version).map());
+            RestResponse response = restAgent.handleRequest(null, URI.create(WadlResource.GATEWAY_URL),
+                    URI.create("generatewadl.wadl"), "GET", null, new EmptyInputStream(), null,
+                    CollectionUtils.MapBuilder.<String, Object>builder().put("RestManVersion", version).map(), Collections.<Header>emptyList());
 
             File wadlFile = new File(args[0] + "/restAPI_"+version.getStringRepresentation()+".wadl");
 
