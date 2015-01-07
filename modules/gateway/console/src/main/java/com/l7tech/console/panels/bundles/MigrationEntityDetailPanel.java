@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.bundles;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.ManageJdbcConnectionsAction;
 import com.l7tech.console.action.ManagePrivateKeysAction;
 import com.l7tech.console.action.ManageSecurePasswordsAction;
@@ -369,7 +370,7 @@ public class MigrationEntityDetailPanel {
             return false;
         }
 
-        if (policyResourceXml.equals(currentActiveEntityXml)) {
+        if (XmlUtil.reformatXml(policyResourceXml).equals(XmlUtil.reformatXml(currentActiveEntityXml))) {
             String message = "The existing entity is identical to the updated entity, so comparing entity is not necessary.";
             logger.fine(message);
             compareEntityButton.setToolTipText(message);
