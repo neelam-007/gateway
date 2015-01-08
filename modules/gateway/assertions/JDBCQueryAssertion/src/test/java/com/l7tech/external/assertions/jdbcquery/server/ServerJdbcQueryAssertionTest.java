@@ -387,7 +387,7 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals(AssertionStatus.FAILED, result);
 
         assertTrue(testAudit.isAuditPresent(JDBC_QUERYING_FAILURE_ASSERTION_FAILED));
-        assertTrue("Data source not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource."));
+        assertTrue("Data source not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource: Name TestConnection is not bound in this Context Name TestConnection is not bound in this Context"));
     }
 
     @BugNumber(12457)
@@ -429,7 +429,7 @@ public class ServerJdbcQueryAssertionTest {
         assertEquals(AssertionStatus.FAILED, result);
 
         assertTrue(testAudit.isAuditPresent(JDBC_QUERYING_FAILURE_ASSERTION_FAILED));
-        assertTrue("Datasource not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource."));
+        assertTrue("Datasource not found", testAudit.isAuditPresentContaining("Cannot retrieve a C3P0 DataSource: Name TestConnection is not bound in this Context Name TestConnection is not bound in this Context"));
     }
 
     @BugId("SSG-5763")
