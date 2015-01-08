@@ -78,7 +78,10 @@ public class RestHandler {
             request.header(HttpHeaders.CONTENT_TYPE, contentType);
         }
         for (final Header header : headers) {
-            request.header(header.getKey(), header.getValue());
+            // avoid duplicate content-type headers
+            if (!header.getKey().equalsIgnoreCase(HttpHeaders.CONTENT_TYPE) || contentType == null) {
+                request.header(header.getKey(), header.getValue());
+            }
         }
         //Set the request body
         request.setEntityStream(body);
