@@ -276,6 +276,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
                 signatureSecretKey,
                 signatureSourceVariable,
                 signatureJwksKeyId,
+                encryptionSecret,
                 encryptionKey,
                 encryptionKeyId
         );
@@ -322,16 +323,16 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         @Override
         public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
-            if("RSASSA-PKCS-v1_5 using SHA-256".equals(assertion.getSignatureAlgorithm())){
+            if("RS256".equals(assertion.getSignatureAlgorithm())){
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, "The use of 'RSASSA-PKCS-v1_5 using SHA-256' for encryption is not recommended, please use 'RSASSA-PSS using SHA-256 and MGF1 with SHA-256'.", null));
             }
-            if("RSASSA-PKCS-v1_5 using SHA-384".equals(assertion.getSignatureAlgorithm())){
+            if("RS384".equals(assertion.getSignatureAlgorithm())){
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, "The use of 'RSASSA-PKCS-v1_5 using SHA-384' for encryption is not recommended, please use 'RSASSA-PSS using SHA-384 and MGF1 with SHA-384'.", null));
             }
-            if("RSASSA-PKCS-v1_5 using SHA-512".equals(assertion.getSignatureAlgorithm())){
+            if("RS512".equals(assertion.getSignatureAlgorithm())){
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, "The use of 'RSASSA-PKCS-v1_5 using SHA-256' for encryption is not recommended, please use 'RSASSA-PSS using SHA-512 and MGF1 with SHA-512'.", null));
             }
-            if(assertion.getKeyManagementAlgorithm() != null && assertion.getKeyManagementAlgorithm().startsWith("RSAES-PKCS1-V1_5")){
+            if("RSA1_5".equals(assertion.getKeyManagementAlgorithm())){
                 result.addWarning(new PolicyValidatorResult.Warning(assertion,
                         "The use of 'RSAES-PKCS1-V1_5' for encryption is not recommended, please use 'RSAES OAEP using default parameters' or 'RSAES OAEP using SHA-256 and MGF1 with SHA-256'.", null));
             }

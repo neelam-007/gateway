@@ -33,8 +33,9 @@ public final class JsonWebTokenConstants {
             "PBES2-HS512+A256KW",
             //cek
             "A192CBC-HS384",
-            "A192GCM"
-
+            "A128GCM",
+            "A192GCM",
+            "A256GCM"
     );
 
     public static final BiMap<String, String> SIGNATURE_ALGORITHMS = ImmutableBiMap.<String, String>builder()

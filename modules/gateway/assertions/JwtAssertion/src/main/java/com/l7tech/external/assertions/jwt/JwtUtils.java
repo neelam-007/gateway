@@ -25,6 +25,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 
 public final class JwtUtils {
 
@@ -78,6 +79,12 @@ public final class JwtUtils {
         try {
             final String jsonStr = getJson(audit, json);
             if (jsonStr == null) {
+                return null;
+            }
+            //work around for JsonWebKeySet throwing NPE when receiving a JWK instead of a JWKS
+            final Map<String,Object> parsed = JsonUtil.parseJson(jsonStr);
+            if(parsed.get(JsonWebKeySet.JWK_SET_MEMBER_NAME) == null){
+                audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Invalid JWKS, json does not contain the 'keys' member.");
                 return null;
             }
             final JsonWebKeySet jwks = new JsonWebKeySet(jsonStr);
