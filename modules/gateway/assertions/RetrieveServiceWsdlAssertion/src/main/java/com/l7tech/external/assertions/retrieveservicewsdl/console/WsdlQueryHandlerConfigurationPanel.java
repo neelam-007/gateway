@@ -31,7 +31,7 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     private static final Logger logger = Logger.getLogger(WsdlQueryHandlerConfigurationPanel.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(WsdlQueryHandlerConfigurationPanel.class.getName());
 
-    private static final int SERVICE_NAME_MAX_LENGTH = 255;
+    private static final int SERVICE_NAME_MAX_LENGTH = 235;
     private static final int ROUTING_URI_MAX_LENGTH = 127;
 
     private JPanel contentPanel;
@@ -84,7 +84,7 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
 
                 if (StringUtils.isBlank(serviceName)) {
                     return resources.getString("serviceNameNotSpecifiedError");
-                } else if (serviceName.length() > 255) {
+                } else if (serviceName.length() > SERVICE_NAME_MAX_LENGTH) {
                     return MessageFormat.format(resources.getString("serviceNameTooLongError"), SERVICE_NAME_MAX_LENGTH);
                 }
 
