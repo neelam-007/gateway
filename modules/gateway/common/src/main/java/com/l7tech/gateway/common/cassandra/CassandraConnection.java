@@ -237,7 +237,9 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.setUsername(other.getUsername());
         this.setPasswordGoid(other.getPasswordGoid());
         this.setCompression(other.getCompression());
-        this.setSsl((other.isSsl()));
+        this.setSsl(other.isSsl());
+        this.setTlsEnabledProtocol(other.getTlsEnabledProtocol());
+        this.setTlsEnabledCipherSuites(other.getTlsEnabledCipherSuites());
         this.setEnabled(other.isEnabled());
         this.setProperties(other.getProperties());
         this.setSecurityZone(other.getSecurityZone());
