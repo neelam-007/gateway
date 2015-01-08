@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.URLAccessibleLocator;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URLAccessible;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
@@ -20,7 +21,6 @@ import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,11 +59,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * Converts a Entity bundle into a Bundle
      *
      * @param entityBundle The entity bundle to convert to a Bundle
-     * @param passwordManager for encrypting and including the passwords in the bundle. Null for not encrypting and including.
+     * @param secretsEncryptor for encrypting and including the passwords in the bundle. Null for not encrypting and including.
      * @return The Bundle
      */
     @NotNull
-    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, MasterPasswordManager passwordManager) {
+    public Bundle convertToMO(@NotNull final EntityBundle entityBundle, SecretsEncryptor secretsEncryptor) {
         final ArrayList<Item> items = new ArrayList<>();
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
@@ -76,7 +76,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                     throw new IllegalStateException("Cannot locate a transformer for entity type: " + entityMappingInstruction.getSourceEntityHeader().getType());
                 }
                 //get the MO from the entity
-                final Object mo = transformer.convertToMO(entityResource.getEntity(), passwordManager);
+                final Object mo = transformer.convertToMO(entityResource.getEntity(), secretsEncryptor);
                 //remove the permissions from system created roles in the bundle (makes the bundle easier to read as these permissions are not required.)
                 if(mo instanceof RbacRoleMO && !((RbacRoleMO)mo).isUserCreated()){
                     ((RbacRoleMO)mo).setPermissions(null);
@@ -101,14 +101,14 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * This converts a bundle to an entity bundle.
      *
      * @param bundle The bundle to convert
-     * @param passwordManager
+     * @param secretsEncryptor
      * @return The entity bundle created from the given bundle
      * @throws ResourceFactory.InvalidResourceException
      */
     @Override
     @NotNull
-    public EntityBundle convertFromMO(@NotNull final Bundle bundle, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(bundle, true, passwordManager);
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(bundle, true, secretsEncryptor);
     }
 
     /**
@@ -116,13 +116,13 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      *
      * @param bundle The bundle to convert
      * @param strict This have no effect for bundles
-     * @param passwordManager
+     * @param secretsEncryptor
      * @return The entity bundle created from the given bundle
      * @throws ResourceFactory.InvalidResourceException
      */
     @Override
     @NotNull
-    public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict, final MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+    public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict, final SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         // Convert all the MO's in the bundle to entities
 
         final List<EntityContainer> entityContainers = Functions.map(bundle.getReferences(), new Functions.UnaryThrows<EntityContainer, Item, ResourceFactory.InvalidResourceException>() {
@@ -133,7 +133,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                     throw new IllegalStateException("Cannot locate a transformer for entity type: " + item.getType());
                 }
                 //cannot be strict here because there will be many cases where the reference entities in the mo's do not exist on the gateway
-                return (EntityContainer) transformer.convertFromMO(item.getContent(), false, passwordManager);
+                return (EntityContainer) transformer.convertFromMO(item.getContent(), false, secretsEncryptor);
             }
         });
 

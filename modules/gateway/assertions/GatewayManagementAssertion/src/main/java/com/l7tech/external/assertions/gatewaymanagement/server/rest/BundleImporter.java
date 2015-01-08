@@ -34,8 +34,8 @@ public class BundleImporter {
      */
     @NotNull
     public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test, final boolean active, final String versionComment) throws ResourceFactory.InvalidResourceException {
-        MasterPasswordManager passwordManager = null; // todo configure password manager
-        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle, passwordManager);
+        SecretsEncryptor secretsEncryptor = null; // todo configure password manager
+        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle, secretsEncryptor);
         List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
         return bundleTransformer.updateMappings(bundle.getMappings(), mappingsPerformed);
     }

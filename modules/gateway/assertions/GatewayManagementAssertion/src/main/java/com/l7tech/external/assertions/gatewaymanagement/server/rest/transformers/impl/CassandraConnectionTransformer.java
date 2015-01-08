@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
@@ -9,7 +10,6 @@ import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +32,8 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
 
     @NotNull
     @Override
-    public CassandraConnectionMO convertToMO(@NotNull EntityContainer<CassandraConnection> userEntityContainer,  MasterPasswordManager passwordManager) {
-        return convertToMO(userEntityContainer.getEntity(), passwordManager);
+    public CassandraConnectionMO convertToMO(@NotNull EntityContainer<CassandraConnection> userEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(userEntityContainer.getEntity(), secretsEncryptor);
     }
 
 
@@ -44,7 +44,7 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
 
     @NotNull
     @Override
-    public CassandraConnectionMO convertToMO(@NotNull CassandraConnection cassandraConnection,  MasterPasswordManager passwordManager) {
+    public CassandraConnectionMO convertToMO(@NotNull CassandraConnection cassandraConnection,  SecretsEncryptor secretsEncryptor) {
         CassandraConnectionMO cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
         cassandraConnectionMO.setId(cassandraConnection.getId());
         cassandraConnectionMO.setVersion(cassandraConnection.getVersion());
@@ -66,14 +66,14 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
 
     @NotNull
     @Override
-    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, MasterPasswordManager passwordManager)
+    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, SecretsEncryptor secretsEncryptor)
             throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(cassandraConnectionMO, true, passwordManager);
+        return convertFromMO(cassandraConnectionMO, true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, boolean strict, MasterPasswordManager passwordManager)
+    public EntityContainer<CassandraConnection> convertFromMO(@NotNull CassandraConnectionMO cassandraConnectionMO, boolean strict, SecretsEncryptor secretsEncryptor)
             throws ResourceFactory.InvalidResourceException {
         CassandraConnection cassandraConnection = new CassandraConnection();
         cassandraConnection.setId(cassandraConnectionMO.getId());

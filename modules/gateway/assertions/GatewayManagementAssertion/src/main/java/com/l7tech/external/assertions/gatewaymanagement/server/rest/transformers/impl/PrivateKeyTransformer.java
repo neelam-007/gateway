@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 
 import com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -9,7 +10,6 @@ import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.bundling.EntityContainer;
-import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -37,8 +37,8 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
 
     @NotNull
     @Override
-    public PrivateKeyMO convertToMO(@NotNull EntityContainer<SsgKeyEntry> ssgKeyEntryEntityContainer,  MasterPasswordManager passwordManager) {
-        return convertToMO(ssgKeyEntryEntityContainer.getEntity(), passwordManager);
+    public PrivateKeyMO convertToMO(@NotNull EntityContainer<SsgKeyEntry> ssgKeyEntryEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(ssgKeyEntryEntityContainer.getEntity(), secretsEncryptor);
     }
 
     @NotNull
@@ -48,12 +48,12 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
 
     @NotNull
     @Override
-    public PrivateKeyMO convertToMO(@NotNull SsgKeyEntry e,  MasterPasswordManager passwordManager) {
+    public PrivateKeyMO convertToMO(@NotNull SsgKeyEntry e,  SecretsEncryptor secretsEncryptor) {
         //need to 'identify' the MO because by default the wsman factories will no set the id and version in the
         // asResource method
         PrivateKeyMO mo =  factory.identify(factory.asResource(e), e);
 
-        if(passwordManager!=null){
+        if(secretsEncryptor !=null){
             // todo encrypt and attach key info
         }
 
@@ -62,13 +62,13 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
 
     @NotNull
     @Override
-    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(m,true, passwordManager);
+    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(m,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<SsgKeyEntry> convertFromMO(@NotNull PrivateKeyMO m, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         return new EntityContainer<>(new SsgKeyEntry(Goid.parseGoid(m.getKeystoreId()),m.getAlias(),null,null));
     }
 }

@@ -66,10 +66,10 @@ public class BundleExporterTest {
     public void exportBundleEncryptPasswords() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(eq(entityBundle), any(MasterPasswordManager.class))).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, true, null));
-        verify(bundleTransformer).convertToMO(eq(entityBundle), any(MasterPasswordManager.class));
+        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class));
     }
 
     @Test(expected = FileNotFoundException.class)
@@ -82,10 +82,10 @@ public class BundleExporterTest {
     public void exportBundleEncryptPasswordsWithPassphrase() throws Exception {
         when(entityBundleExporter.exportBundle(properties)).thenReturn(
                 entityBundle);
-        when(bundleTransformer.convertToMO(eq(entityBundle), any(MasterPasswordManager.class))).thenReturn(bundle);
+        when(bundleTransformer.convertToMO(eq(entityBundle), any(SecretsEncryptor.class))).thenReturn(bundle);
 
         assertEquals(bundle, exporter.exportBundle(properties, false, true, ENCODED_PASSPHRASE));
-        verify(bundleTransformer).convertToMO(eq(entityBundle), any(MasterPasswordManager.class));
+        verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class));
     }
 
     @Test

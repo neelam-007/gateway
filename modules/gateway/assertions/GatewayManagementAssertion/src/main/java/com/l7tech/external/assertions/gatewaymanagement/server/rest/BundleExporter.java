@@ -61,9 +61,9 @@ public class BundleExporter {
      */
     @NotNull
     public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptPasswords, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException {
-        final MasterPasswordManager passwordManager = createPasswordManager(encryptPasswords, encodedKeyPassphrase);
+        final SecretsEncryptor secretsEncryptor = createPasswordManager(encryptPasswords, encodedKeyPassphrase);
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
-        Bundle bundle = bundleTransformer.convertToMO(entityBundle, passwordManager);
+        Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
         if (includeDependencies) {
             final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults());
             bundle.setDependencyGraph(dependencyMOs);
@@ -72,16 +72,16 @@ public class BundleExporter {
     }
 
     @Nullable
-    private MasterPasswordManager createPasswordManager(final boolean encryptPasswords, @Nullable final String encodedKeyPassphrase) throws FileNotFoundException {
-        MasterPasswordManager passMgr = null;
+    private SecretsEncryptor createPasswordManager(final boolean encryptPasswords, @Nullable final String encodedKeyPassphrase) throws FileNotFoundException {
+        SecretsEncryptor passMgr = null;
         if (encryptPasswords) {
             if (encodedKeyPassphrase != null) {
-                passMgr = new MasterPasswordManager(HexUtils.decodeBase64(encodedKeyPassphrase));
+                passMgr = new SecretsEncryptor(HexUtils.decodeBase64(encodedKeyPassphrase));
             } else {
                 final String confDir = SyspropUtil.getString("com.l7tech.config.path", "../node/default/etc/conf");
                 final File ompDat = new File(new File(confDir), "omp.dat");
                 if (ompDat.exists()) {
-                    passMgr = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompDat));
+                    passMgr = new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
                 } else {
                     throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
                 }

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -12,7 +13,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +32,8 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer,  MasterPasswordManager passwordManager) {
-        return convertToMO(policyVersionEntityContainer.getEntity(), passwordManager);
+    public PolicyVersionMO convertToMO(@NotNull EntityContainer<PolicyVersion> policyVersionEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(policyVersionEntityContainer.getEntity(), secretsEncryptor);
     }
 
     @NotNull
@@ -43,7 +43,7 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion,  MasterPasswordManager passwordManager) {
+    public PolicyVersionMO convertToMO(@NotNull PolicyVersion policyVersion,  SecretsEncryptor secretsEncryptor) {
         PolicyVersionMO policyVersionMO = ManagedObjectFactory.createPolicyVersionMO();
         policyVersionMO.setActive(policyVersion.isActive());
         policyVersionMO.setComment(policyVersion.getName());
@@ -57,13 +57,13 @@ public class PolicyVersionTransformer implements EntityAPITransformer<PolicyVers
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(policyVersionMO,true, passwordManager);
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(policyVersionMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<PolicyVersion> convertFromMO(@NotNull PolicyVersionMO policyVersionMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
 
         PolicyVersion policyVersion = new PolicyVersion();
         policyVersion.setActive(policyVersionMO.isActive());

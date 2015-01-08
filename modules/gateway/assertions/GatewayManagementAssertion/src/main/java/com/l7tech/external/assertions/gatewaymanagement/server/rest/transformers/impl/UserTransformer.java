@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
@@ -14,7 +15,6 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.util.MasterPasswordManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -39,13 +39,13 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
 
     @NotNull
     @Override
-    public UserMO convertToMO(@NotNull EntityContainer<User> userEntityContainer,  MasterPasswordManager passwordManager) {
-        return convertToMO(userEntityContainer.getEntity(),passwordManager);
+    public UserMO convertToMO(@NotNull EntityContainer<User> userEntityContainer,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(userEntityContainer.getEntity(), secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public UserMO convertToMO(@NotNull User user,  MasterPasswordManager passwordManager) {
+    public UserMO convertToMO(@NotNull User user,  SecretsEncryptor secretsEncryptor) {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setId(user.getId());
         userMO.setLogin(user.getLogin());
@@ -60,13 +60,13 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
 
     @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
-        return convertFromMO(userMO,true, passwordManager);
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        return convertFromMO(userMO,true, secretsEncryptor);
     }
 
     @NotNull
     @Override
-    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict, MasterPasswordManager passwordManager) throws ResourceFactory.InvalidResourceException {
+    public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());
