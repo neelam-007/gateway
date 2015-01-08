@@ -167,15 +167,36 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
         this.ssl = ssl;
     }
 
+    /**
+     * Get the TLS protocol configured.
+     *
+     * @return JSSE String name for protocol.
+     */
     @XmlElement(name = "TlsProtocol", required = true)
     public String getTlsprotocol() { return tlsprotocol;}
 
+    /**
+     * Set the TLS protocol.
+     *
+     * @param protocol JSSE Protocol Name
+     */
     public void setTlsprotocol(String protocol) { this.tlsprotocol = protocol; }
 
+    /**
+     * Get the TLS Acceptable Cipher List, comma separated
+     *
+     * @return JSSE cipher strings in a list.
+     */
     @XmlElement(name = "TlsCiphers")
     public String getTlsciphers() { return tlsciphers;}
 
+    /**
+     * Set TLS Acceptable Cipher List, comma separated.
+     *
+     * @param ciphers JSSE Cipher List (comma separated)
+     */
     public void setTlsciphers(String ciphers) { this.tlsciphers = ciphers; }
+
     /**
      * Is the Cassandra connection enabled? (required)
      *

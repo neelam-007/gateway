@@ -43,10 +43,8 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private String compression = "";
     private boolean ssl = false;
     private boolean enabled = true;
-
     private String tlsEnabledProtocol;
     private String tlsEnabledCiphers;
-
     private String propertiesXml;
     private Map<String, String> properties = new TreeMap<>();
 
