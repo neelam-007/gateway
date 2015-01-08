@@ -192,7 +192,7 @@
             <column name="entity_type" value="SECURE_PASSWORD"/>
         </insert>
     </changeSet>
-    <changeSet id="create-ssl-columns" author="rballantyne">
+    <changeSet id="create-ssl-columns" author="gateway">
         <addColumn tableName="cassandra_connection">
             <column name="tls_protocol" type="VARCHAR(128)" defaultValue="TLSv1"/>
             <column name="tls_ciphers" type="${mediumtext.type}"/>
