@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -118,8 +119,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
 
         fragment.setFolder(targetFolder);
         fragment.setGuid(UUID.randomUUID().toString());
-
-//        fragment.setSecurityZone(wizardInput.getSelectedSecurityZone());
+        fragment.setSecurityZone(wizardInput.getSecurityZone());
 
         return fragment;
     }
@@ -135,8 +135,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
 
         fragment.setFolder(targetFolder);
         fragment.setGuid(UUID.randomUUID().toString());
-
-//        fragment.setSecurityZone(wizardInput.getSelectedSecurityZone());
+        fragment.setSecurityZone(wizardInput.getSecurityZone());
 
         return fragment;
     }
@@ -155,9 +154,9 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
                 updatePolicyElementAttribute(policyXml, "PolicyGuid", "stringValue", authFragmentGuid);
 
         handlerService.getPolicy().setXml(updatedPolicyXml);
+        handlerService.getPolicy().setSecurityZone(wizardInput.getSecurityZone());
 
-//        handlerService.setSecurityZone(wizardInput.getSelectedSecurityZone());
-//        handlerService.getPolicy().setSecurityZone(wizardInput.getSelectedSecurityZone());
+        handlerService.setSecurityZone(wizardInput.getSecurityZone());
 
         return handlerService;
     }
@@ -201,6 +200,7 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
     public static class WsdlQueryHandlerConfig {
         private String serviceName = "WSDL Query Handler";
         private String routingUri = "/wsdlQueryHandler";
+        private SecurityZone securityZone = null;
 
         public String getServiceName() {
             return serviceName;
@@ -216,6 +216,14 @@ public class PublishWsdlQueryHandlerWizard extends AbstractPublishServiceWizard<
 
         public void setRoutingUri(String routingUri) {
             this.routingUri = routingUri;
+        }
+
+        public SecurityZone getSecurityZone() {
+            return securityZone;
+        }
+
+        public void setSecurityZone(SecurityZone securityZone) {
+            this.securityZone = securityZone;
         }
     }
 }

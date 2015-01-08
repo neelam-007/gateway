@@ -2,9 +2,12 @@ package com.l7tech.external.assertions.retrieveservicewsdl.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.ValidatorUtils;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.ExceptionUtils;
@@ -17,6 +20,7 @@ import javax.swing.event.DocumentListener;
 
 import java.awt.*;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +38,7 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     private JTextField serviceNameTextField;
     private JTextField routingUriTextField;
     private JLabel urlPreviewLabel;
+    private SecurityZoneWidget securityZoneWidget;
 
     private String urlPrefix;
 
@@ -44,6 +49,9 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     }
 
     private void initComponents() {
+        securityZoneWidget.configure(Arrays.asList(new EntityType[]{EntityType.SERVICE, EntityType.POLICY}),
+                OperationType.CREATE, null);
+
         setLayout(new BorderLayout());
 
         add(contentPanel);
@@ -148,12 +156,14 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     public void storeSettings(WsdlQueryHandlerConfig settings) throws IllegalArgumentException {
         settings.setServiceName(serviceNameTextField.getText().trim());
         settings.setRoutingUri(routingUriTextField.getText().trim());
+        settings.setSecurityZone(securityZoneWidget.getSelectedZone());
     }
 
     @Override
     public void readSettings(WsdlQueryHandlerConfig settings) throws IllegalArgumentException {
         serviceNameTextField.setText(settings.getServiceName());
         routingUriTextField.setText(settings.getRoutingUri());
+        securityZoneWidget.setSelectedZone(settings.getSecurityZone());
 
         updateUrlPreview();
     }
