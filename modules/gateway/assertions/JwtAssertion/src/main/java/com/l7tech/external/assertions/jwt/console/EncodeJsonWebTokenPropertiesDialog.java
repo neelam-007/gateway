@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jwt.console;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.panels.TargetVariablePanel;
@@ -19,6 +20,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCancelSupport<EncodeJsonWebTokenAssertion> {
@@ -426,15 +428,15 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
                 boolean showWarning = false;
                 if ("RSASSA-PKCS-v1_5 using SHA-256".equals(sa)) {
-                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-256 and MGF1 with SHA-256'.");
+                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSASSA-PKCS-v1_5 using SHA-256' is not recommended.");
                     showWarning = true;
                 }
                 if ("RSASSA-PKCS-v1_5 using SHA-384".equals(sa)) {
-                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-384 and MGF1 with SHA-384'.");
+                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSASSA-PKCS-v1_5 using SHA-384' is not recommended.");
                     showWarning = true;
                 }
                 if ("RSASSA-PKCS-v1_5 using SHA-512".equals(sa)) {
-                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSASSA-PSS using SHA-512 and MGF1 with SHA-512'.");
+                    signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSASSA-PKCS-v1_5 using SHA-512' is not recommended.");
                     showWarning = true;
                 }
                 signatureAlgorithmWarningLabel.setVisible(showWarning);
@@ -461,9 +463,15 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
             jweUseVariable.setSelected(!km.toString().startsWith("Direct use"));
 
+            final java.util.List<String> values = Lists.newArrayList(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES);
+            if(km.toString().startsWith("Direct use")){
+                values.remove("Certificate");
+            }
+            encryptionKeyType.setModel(new DefaultComboBoxModel(values.toArray(new String[values.size()])));
+
             encryptionKeyWarningLabel.setVisible("RSAES-PKCS1-V1_5".equals(km));
             if ("RSAES-PKCS1-V1_5".equals(km)) {
-                encryptionKeyWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: Please use 'RSAES OAEP using SHA-256 and MGF1 with SHA-256'.");
+                encryptionKeyWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSAES-PKCS1-V1_5' is not recommended.");
             }
             EncodeJsonWebTokenPropertiesDialog.this.pack();
         }

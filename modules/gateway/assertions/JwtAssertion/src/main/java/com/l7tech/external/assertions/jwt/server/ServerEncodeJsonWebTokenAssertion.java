@@ -26,9 +26,9 @@ import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
-import org.jose4j.keys.AesKey;
 import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.InvalidAlgorithmException;
+import org.jose4j.lang.InvalidKeyException;
 import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
@@ -71,7 +71,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
         }
 
         String jwsCompact = null;
-        if(assertion.isSignPayload()){
+        if (assertion.isSignPayload()) {
             try {
                 final JsonWebSignature jws = new JsonWebSignature();
                 jws.setHeader(HeaderParameterNames.TYPE, "JWT");
@@ -92,12 +92,15 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 }
                 jwsCompact = jws.getCompactSerialization();
                 context.setVariable(assertion.getTargetVariable() + ".compact", jwsCompact);
+            } catch (InvalidKeyException e) {
+                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, e.getMessage());
+                return AssertionStatus.FAILED;
             } catch (JoseException e) {
                 logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
                 return AssertionStatus.FAILED;
             }
         }
-        if(assertion.isEncryptPayload()){
+        if (assertion.isEncryptPayload()) {
             final JsonWebEncryption jwe = new JsonWebEncryption();
             //type is different from CTY
             jwe.setHeader(HeaderParameterNames.TYPE, "JWT");
@@ -122,13 +125,16 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 }
                 final String jweCompact = jwe.getCompactSerialization();
                 context.setVariable(assertion.getTargetVariable() + ".compact", jweCompact);
+            } catch (InvalidKeyException e) {
+                logAndAudit(AssertionMessages.JWT_INVALID_KEY_USAGE, e.getMessage());
+                return AssertionStatus.FAILED;
             } catch (JoseException e) {
                 logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
                 return AssertionStatus.FAILED;
             }
         }
         //create unsecure
-        if(!assertion.isSignPayload() && !assertion.isEncryptPayload()){
+        if (!assertion.isSignPayload() && !assertion.isEncryptPayload()) {
             try {
                 final JsonWebSignature str = new JsonWebSignature();
                 str.setHeader(HeaderParameterNames.TYPE, "JWT");
@@ -152,25 +158,23 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
 
     private Key getSigningKey(final JsonWebSignature jws, final PolicyEnforcementContext context) throws InvalidAlgorithmException {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
-        if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
+        if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET) {
             final String secretKey = ExpandVariables.process(assertion.getSignatureSecretKey(), variables, getAudit(), false);
             if (secretKey == null || secretKey.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_HMAC_SECRET);
                 return null;
             }
             return new HmacKey(secretKey.getBytes());
-        }
-        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK){
+        } else if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK) {
             try {
                 final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
-                if(ssgKeyEntry != null){
+                if (ssgKeyEntry != null) {
                     return ssgKeyEntry.getPrivateKey();
                 }
             } catch (UnrecoverableKeyException e) {
                 logAndAudit(AssertionMessages.JWT_KEY_RECOVERY_ERROR);
             }
-        }
-        else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_CV){
+        } else if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_CV) {
             Object key = ExpandVariables.processSingleVariableAsObject(assertion.getSignatureSourceVariable(), variables, getAudit(), false);
             if (key == null) {
                 logAndAudit(AssertionMessages.JWT_MISSING_JWS_PRIVATE_KEY);
@@ -194,9 +198,9 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
     private Key getEncryptionKey(final JsonWebEncryption jwe, final PolicyEnforcementContext context) {
         final Map<String, Object> variables = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
-        if(assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
+        if (assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_SECRET) {
             String secret = ExpandVariables.process(assertion.getEncryptionSecret(), variables, getAudit(), false);
-            if(secret == null || secret.trim().isEmpty()){
+            if (secret == null || secret.trim().isEmpty()) {
                 logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
                 return null;
             }
@@ -206,8 +210,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             params.put(OctetSequenceJsonWebKey.KEY_VALUE_MEMBER_NAME, secret);
             JsonWebKey jwk = new OctetSequenceJsonWebKey(params);
             return jwk.getKey();
-        }
-        else if(assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_CV){
+        } else if (assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_CV) {
             Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
             if (key == null) {
                 logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
@@ -234,7 +237,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             } else if (JsonWebTokenConstants.KEY_TYPE_JWK.equals(keyType)) {
                 return JwtUtils.getKeyFromJWK(getAudit(), key, false, Use.ENCRYPTION);
             } else if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType)) {
-                if(assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()){
+                if (assertion.getEncryptionKeyId() == null || assertion.getEncryptionKeyId().trim().isEmpty()) {
                     logAndAudit(AssertionMessages.JWT_MISSING_JWS_KID);
                     return null;
                 }
