@@ -293,7 +293,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     private void addQueryOptions(Cluster.Builder clusterBuilder, CassandraConnection cassandraConnectionEntity) {
-        int defaultFetchSize = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_RECORDS, DEFAULT_FETCH_SIZE);
+        int defaultFetchSize = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_FETCH_SIZE, DEFAULT_FETCH_SIZE);
         Map<String, String> connectionProperties = cassandraConnectionEntity.getProperties();
         int fetchSize = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(QUERY_FETCH_SIZE), defaultFetchSize) : defaultFetchSize;
         QueryOptions options = new QueryOptions();
