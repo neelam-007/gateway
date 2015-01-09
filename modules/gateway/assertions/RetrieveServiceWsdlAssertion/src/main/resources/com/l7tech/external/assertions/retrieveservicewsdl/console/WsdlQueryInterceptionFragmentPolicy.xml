@@ -13,7 +13,7 @@
     <wsp:OneOrMore wsp:Usage="Required">
         <wsp:All wsp:Usage="Required">
             <L7p:CommentAssertion>
-                <L7p:Comment stringValue="Recognize a wsdl request as URL path followed by '?wsdl'"/>
+                <L7p:Comment stringValue="Recognize a WSDL request as URL path followed by '?wsdl'"/>
             </L7p:CommentAssertion>
             <L7p:ComparisonAssertion>
                 <L7p:CaseSensitive booleanValue="false"/>
