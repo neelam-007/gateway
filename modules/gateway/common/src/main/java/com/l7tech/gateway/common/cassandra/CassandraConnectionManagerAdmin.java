@@ -22,7 +22,8 @@ public interface CassandraConnectionManagerAdmin extends AsyncAdminMethods {
 
     // The original maximum length of a query statement
     static final int MAX_QUERY_LENGTH = ConfigFactory.getIntProperty("com.l7tech.cassandraquery.maxquerylength", 4 * 1024);
-
+    // The original upper bound of the maximum number of records returned by the query
+    static final int UPPER_BOUND_MAX_RECORDS = ConfigFactory.getIntProperty("com.l7tech.cassandraquery.maxrecords.upperbound", 10000);
     /**
      * Retrieve a Cassandra Connection entity from the database by using a connection name.
      *

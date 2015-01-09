@@ -24,8 +24,7 @@ public class CassandraPropertiesDialog extends JDialog {
     public static final String HOST_DISTANCE = "hostDistance";
     private static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
     private static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
-    private static final String MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "maxSimultaneousRequestsPerConnectionThreshold";
-    private static final String MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "minSimultaneousRequestsPerConnectionThreshold";
+    private static final String MAX_SIMUL_REQ_PER_HOST_THRESHOLD = "maxSimultaneousRequestsPerHostThreshold";
     // Socket options
     private static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
     private static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
@@ -84,8 +83,8 @@ public class CassandraPropertiesDialog extends JDialog {
                         return getNumberValidationErrorString(propName, 1, 10000);
                     case MAX_CONNECTION_PER_HOST:
                         return getNumberValidationErrorString(propName, 2, Integer.MAX_VALUE);
-                    case MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD:
-                    case MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD:
+                    case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
+                        return getNumberValidationErrorString(propName, 1, 32768);
                     case CONNECTION_TIMEOUT_MILLIS:
                     case READ_TIMEOUT_MILLIS:
                     case RECEIVE_BUFFER_SIZE:
@@ -159,10 +158,8 @@ public class CassandraPropertiesDialog extends JDialog {
                 return "1";
             case MAX_CONNECTION_PER_HOST:
                 return "2";
-            case MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD:
-                return "128";
-            case MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD:
-                return "25";
+            case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
+                return "256";
             case CONNECTION_TIMEOUT_MILLIS:
                 return "5000";
             case READ_TIMEOUT_MILLIS:
@@ -208,7 +205,7 @@ public class CassandraPropertiesDialog extends JDialog {
     private void populatePropNameComboBox() {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
-                MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD, CONNECTION_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS,
+                MAX_SIMUL_REQ_PER_HOST_THRESHOLD, CONNECTION_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS,
                 KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,MAX_RECORDS, QUERY_FETCH_SIZE
         }));
     }

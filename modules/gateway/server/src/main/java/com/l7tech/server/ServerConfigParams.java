@@ -210,8 +210,7 @@ public interface ServerConfigParams {
 
     String PARAM_CASSANDRA_CORE_CONNECTIONS_PER_HOST = "cassandra.coreConnectionsPerHost";
     String PARAM_CASSANDRA_MAX_CONNECTIONS_PER_HOST = "cassandra.maxConnectionPerHost";
-    String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQUESTS = "cassandra.maxSimultaneousRequestsPerConnectionThreshold";
-    String PARAM_CASSANDRA_MIN_SIMULTANEOUS_REQUESTS = "cassandra.minSimultaneousRequestsPerConnectionThreshold";
+    String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST = "cassandra.maxSimultaneousRequestsPerHostThreshold";
     String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";
     String PARAM_CASSANDRA_KEEP_ALIVE = "cassandra.keepAlive";
     String PARAM_CASSANDRA_MAX_RECORDS = "cassandra.maxRecords.defaultValue";

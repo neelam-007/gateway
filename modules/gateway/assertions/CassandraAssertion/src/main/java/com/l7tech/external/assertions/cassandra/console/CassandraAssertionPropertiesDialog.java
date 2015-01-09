@@ -48,7 +48,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
     private static final Logger logger = Logger.getLogger(CassandraAssertionPropertiesDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.cassandra.console.CassandraQueryAssertionPropertiesDialog");
     private static final int LOWER_BOUND_MAX_RECORDS = 1;
-    private static final int UPPER_BOUND_MAX_RECORDS = 10000;
+
     private static final String MAX_RECORDS_SIZE = "maxRecords";
     private static final String FETCH_SIZE = "fetchSize";
 
@@ -153,7 +153,7 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
                 enableDisableComponents();
             }
         };
-        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, UPPER_BOUND_MAX_RECORDS, 1));
+        maxRecordsSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, CassandraConnectionManagerAdmin.UPPER_BOUND_MAX_RECORDS, 1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRecordsSpinner, resources.getString("validator.max.records")));
 
         fetchSizeSpinner.setModel(new SpinnerNumberModel(1, LOWER_BOUND_MAX_RECORDS, Integer.MAX_VALUE, 1));

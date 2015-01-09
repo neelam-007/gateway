@@ -44,15 +44,14 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     public static final String HOST_DISTANCE = "hostDistance";
     public static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
     public static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
-    public static final String MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "maxSimultaneousRequestsPerConnectionThreshold";
-    public static final String MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD = "minSimultaneousRequestsPerConnectionThreshold";
+    public static final String MAX_SIMUL_REQ_PER_HOST = "maxSimultaneousRequestsPerHostThreshold";
 
     public static final int CORE_CONNECTION_PER_HOST_DEF = 1;
     public static final int CORE_CONNECTION_PER_HOST_LOCAL_DEF = 2;
     public static final int MAX_CONNECTION_PER_HOST_DEF = 2;
     public static final int MAX_CONNECTION_PER_HOST_LOCAL_DEF = 8;
-    public static final int MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF = 128;
-    public static final int MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF = 25;
+    public static final int MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF = 8192;
+    public static final int MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF = 256;
 
     public static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
     public static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
@@ -332,24 +331,21 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             hd = defaultHD;
         }
 
+
+
         int defaultCoreConnectionPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_CORE_CONNECTIONS_PER_HOST, (hd == HostDistance.LOCAL? CORE_CONNECTION_PER_HOST_LOCAL_DEF: CORE_CONNECTION_PER_HOST_DEF));
         int coreConnectionPerHost = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(CORE_CONNECTION_PER_HOST), defaultCoreConnectionPerHost) : defaultCoreConnectionPerHost ;
 
         int defaultMaxConnectionPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTIONS_PER_HOST, (hd == HostDistance.LOCAL? MAX_CONNECTION_PER_HOST_LOCAL_DEF: MAX_CONNECTION_PER_HOST_DEF));
         int maxConnectionPerHost = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_CONNECTION_PER_HOST), defaultMaxConnectionPerHost) : defaultMaxConnectionPerHost;
 
-        int defaultMaxSimultaneousRequests = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQUESTS, MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF);
-        int maxSimultaneousRequestsPerConnectionThreshold = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_SIMUL_REQ_PER_CONNECTION_THRESHOLD), defaultMaxSimultaneousRequests) : defaultMaxSimultaneousRequests;
-
-        int defaultMinSimultaneousRequests = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MIN_SIMULTANEOUS_REQUESTS, MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD_DEF);
-        int minSimultaneousRequestsPerConnectionThreshold = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(MIN_SIMUL_REQ_PER_CONNECTION_THRESHOLD), defaultMinSimultaneousRequests) : defaultMinSimultaneousRequests;
-
-        //TODO: check the policy type so we can determine host distance setting or default
-
         poolingOptions.setMaxConnectionsPerHost(hd, maxConnectionPerHost);
         poolingOptions.setCoreConnectionsPerHost(hd, coreConnectionPerHost);
-        poolingOptions.setMaxSimultaneousRequestsPerConnectionThreshold(hd, maxSimultaneousRequestsPerConnectionThreshold);
-        poolingOptions.setMinSimultaneousRequestsPerConnectionThreshold(hd, minSimultaneousRequestsPerConnectionThreshold);
+
+        int defaultMaxSimultaneousReqPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST, (hd == HostDistance.LOCAL? MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF: MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF));
+        int maxSimultaneousReqPerHost = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_SIMUL_REQ_PER_HOST), defaultMaxSimultaneousReqPerHost) : defaultMaxSimultaneousReqPerHost;
+
+        poolingOptions.setMaxSimultaneousRequestsPerHostThreshold(hd, maxSimultaneousReqPerHost);
 
         clusterBuilder.withPoolingOptions(poolingOptions);
     }
