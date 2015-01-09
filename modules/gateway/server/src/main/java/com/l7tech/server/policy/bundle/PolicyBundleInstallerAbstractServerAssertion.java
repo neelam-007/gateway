@@ -18,6 +18,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
@@ -60,12 +61,13 @@ import static org.apache.commons.lang.StringUtils.join;
  *                  Set pbi.jdbc_connection.(component_id).name with existing name in bundle (e.g. OAuth)
  *                  Set pbi.jdbc_connection.(component_id).new_name with a new desired name (e.g. OAuth Dev)
  *          Output: the conflicts for each component.
- *              Associated component id service conflict
- *              Associated component id policy conflict
- *              Associated component id certificate conflict
- *              Associated component id JDBC connections that don't exist
- *              Associated component id missing assertions
- *              Associated component id encapsulated assertion conflict
+ *              Associated component id
+ *              Associated service conflict
+ *              Associated policy conflict
+ *              Associated certificate conflict
+ *              Associated JDBC connections that don't exist
+ *              Associated missing assertions
+ *              Associated encapsulated assertion conflict
  *
  *      Wsman install: execute wsman install for given component(s).
  *          Input:
@@ -81,8 +83,8 @@ import static org.apache.commons.lang.StringUtils.join;
  *      Custom: handle custom action in an implementation class.  E.g. ServerOAuthInstallerAssertion can implement customActionCallback() to get the OAuth DB schema.
  */
 public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>  {
-    protected static final String CONTEXT_VARIABLE_PREFIX = "request.http.parameter.";
-    public static final String REQUEST_HTTP_PARAMETER_PBI = CONTEXT_VARIABLE_PREFIX + "pbi.";
+    public static final String CONTEXT_VARIABLE_PREFIX = "pbi.";
+    public static final String REQUEST_HTTP_PARAMETER = "request.http.parameter.";
     protected static final String L7 = "l7";
 
     protected static enum Action {
@@ -96,6 +98,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     protected PolicyEnforcementContext context;
     protected List<BundleInfo> availableComponents;
+
+    private boolean usesRequestHttpParams;
 
     /**
      * Get PolicyBundleInstallerAdmin from assertion metadata via Extension Interface binding
@@ -136,7 +140,12 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                 availableComponents = policyBundleInstallerAdmin.getAllComponents();
             }
 
-            final Action action = Action.valueOf(context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "action").toString());
+            final Action action;
+            try {
+                action = Action.valueOf(getContextVariable(CONTEXT_VARIABLE_PREFIX + "action"));
+            } catch (NoSuchVariableException e) {
+                throw new PolicyAssertionException(assertion, "Installer action must be specified.", e);
+            }
             switch (action) {
                 case list:
                     list();
@@ -159,6 +168,18 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         }
 
         return AssertionStatus.NONE;
+    }
+
+    public void setUsesRequestHttpParams(boolean usesRequestHttpParams) {
+        this.usesRequestHttpParams = usesRequestHttpParams;
+    }
+
+    protected String getContextVariable(@NotNull final String name) throws NoSuchVariableException {
+        if (usesRequestHttpParams) {
+            return context.getVariable(REQUEST_HTTP_PARAMETER + name).toString();
+        } else {
+            return context.getVariable(name).toString();
+        }
     }
 
     /**
@@ -329,13 +350,24 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     }
 
     private List<String> getComponentIds() throws NoSuchVariableException {
-        final String componentIdsStr = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "component_ids").toString();
-        return Arrays.asList(componentIdsStr.split(";"));
+        final String componentIdsStr = getContextVariable(CONTEXT_VARIABLE_PREFIX + "component_ids");
+        List<String> componentIds;
+
+        if ("all".equalsIgnoreCase(componentIdsStr)) {
+            componentIds = new ArrayList<>(availableComponents.size());
+            for (BundleInfo bundleInfo : availableComponents) {
+                componentIds.add(bundleInfo.getId());
+            }
+        } else {
+            componentIds = Arrays.asList(componentIdsStr.split(";"));
+        }
+
+        return componentIds;
     }
 
     private String getVersionModifier() {
         try {
-            return context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "version_modifier").toString();
+            return getContextVariable(CONTEXT_VARIABLE_PREFIX + "version_modifier");
         } catch (NoSuchVariableException e) {
             return null;
         }
@@ -343,7 +375,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     private Goid getFolderGoid() {
         try {
-            return new Goid(context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "folder_goid").toString());
+            return new Goid(getContextVariable(CONTEXT_VARIABLE_PREFIX + "folder_goid"));
         } catch (NoSuchVariableException e) {
             return Folder.ROOT_FOLDER_ID;
         }
@@ -353,8 +385,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final HashMap<String, BundleMapping> mappings = new HashMap<>();
         for (String componentId : componentIds) {
             try {
-                final String oldName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection." + componentId + ".name").toString();
-                final String newName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "jdbc_connection." + componentId + ".new_name").toString();
+                final String oldName = getContextVariable(CONTEXT_VARIABLE_PREFIX + "jdbc_connection." + componentId + ".name");
+                final String newName = getContextVariable(CONTEXT_VARIABLE_PREFIX + "jdbc_connection." + componentId + ".new_name");
 
                 final BundleMapping mapping = new BundleMapping();
                 mapping.addMapping(BundleMapping.Type.JDBC_CONNECTION_NAME, oldName, newName);

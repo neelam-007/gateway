@@ -40,7 +40,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
     @Override
     protected void customActionCallback() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         try {
-            final String action = context.getVariable(CONTEXT_VARIABLE_PREFIX + "oauth_installer.action").toString();
+            final String action = getContextVariable("oauth_installer.action");
             if ("get_db_schema".equals(action)) {
                 writeResponse(oAuthInstallerAdmin.getOAuthDatabaseSchema());
             }
@@ -55,7 +55,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
                                                                                 final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         boolean integrateApiPortal = false;
         try {
-            integrateApiPortal = Boolean.parseBoolean(context.getVariable(CONTEXT_VARIABLE_PREFIX + "oauth_installer.integrate_api_portal").toString());
+            integrateApiPortal = Boolean.parseBoolean(getContextVariable("oauth_installer.integrate_api_portal"));
         } catch (NoSuchVariableException e) {
             // leave integrateApiPortal false
         }
@@ -69,7 +69,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
                                                                   final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         boolean integrateApiPortal = false;
         try {
-            integrateApiPortal = Boolean.parseBoolean(context.getVariable(CONTEXT_VARIABLE_PREFIX + "oauth_installer.integrate_api_portal").toString());
+            integrateApiPortal = Boolean.parseBoolean(getContextVariable("oauth_installer.integrate_api_portal"));
         } catch (NoSuchVariableException e) {
             // leave integrateApiPortal false
         }

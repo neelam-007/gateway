@@ -8,15 +8,19 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.text.MessageFormat;
 
-import static com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion.REQUEST_HTTP_PARAMETER_PBI;
+import static com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion.CONTEXT_VARIABLE_PREFIX;
+import static com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion.REQUEST_HTTP_PARAMETER;
 
 /**
  * Server side implementation of the PolicyBundleInstallerAssertion.
@@ -41,13 +45,28 @@ public class ServerPolicyBundleInstallerAssertion extends AbstractServerAssertio
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         ServerAssertion installerServerAssertion;
-        try {
-            final String installerAssertionName = context.getVariable(REQUEST_HTTP_PARAMETER_PBI + "installer_name").toString();
-            Assertion installerAssertion = wspReader.parseStrictly(MessageFormat.format(POLICY_BUNDLE_INSTALLER_POLICY_XML_TEMPLATE, installerAssertionName), WspReader.Visibility.omitDisabled);
+        final String installerAssertionName;
 
+        try {
+            installerAssertionName = context.getVariable(REQUEST_HTTP_PARAMETER + CONTEXT_VARIABLE_PREFIX + "installer_name").toString();
+        } catch (NoSuchVariableException e) {
+            throw new PolicyAssertionException(assertion, "Installer name must be specified.", e);
+        }
+
+        try {
+            Assertion installerAssertion = wspReader.parseStrictly(MessageFormat.format(POLICY_BUNDLE_INSTALLER_POLICY_XML_TEMPLATE, installerAssertionName), WspReader.Visibility.omitDisabled);
             installerServerAssertion = serverPolicyFactory.compilePolicy(installerAssertion, false);
-        } catch (LicenseException | NoSuchVariableException e) {
-            throw new PolicyAssertionException(assertion, e);
+        } catch (IOException | ServerPolicyException | LicenseException e) {
+            throw new PolicyAssertionException(assertion, "Unable to create installer: " + installerAssertionName, e);
+        }
+
+        if (installerServerAssertion instanceof ServerCompositeAssertion) {
+            for (Object serverAssertion : ((ServerCompositeAssertion) installerServerAssertion).getChildren()) {
+                if (serverAssertion instanceof PolicyBundleInstallerAbstractServerAssertion) {
+                    // must access inputs via request http parameter context variables (e.g. request.http.parameter.pbi.installer_name)
+                    ((PolicyBundleInstallerAbstractServerAssertion) serverAssertion).setUsesRequestHttpParams(true);
+                }
+            }
         }
 
         return installerServerAssertion.checkRequest(context);
