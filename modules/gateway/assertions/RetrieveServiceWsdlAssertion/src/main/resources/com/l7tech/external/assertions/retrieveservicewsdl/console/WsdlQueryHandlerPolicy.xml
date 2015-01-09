@@ -10,6 +10,7 @@
         <L7p:CommentAssertion>
             <L7p:Comment stringValue="This policy should not be modified"/>
         </L7p:CommentAssertion>
+        <L7p:AuditAssertion/>
         <L7p:CustomizeErrorResponse>
             <L7p:Content stringValue="Page not found."/>
             <L7p:ExtraHeaders nameValuePairArray="included"/>
