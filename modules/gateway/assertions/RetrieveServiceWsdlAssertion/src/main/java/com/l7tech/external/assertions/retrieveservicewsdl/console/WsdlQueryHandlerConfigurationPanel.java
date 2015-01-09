@@ -37,8 +37,8 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     private JPanel contentPanel;
     private JTextField serviceNameTextField;
     private JTextField routingUriTextField;
-    private JLabel urlPreviewLabel;
     private SecurityZoneWidget securityZoneWidget;
+    private JTextField urlPreviewTextField;
 
     private String urlPrefix;
 
@@ -171,12 +171,12 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     private void updateUrlPreview() {
         String routingUri = routingUriTextField.getText().trim();
 
-        urlPreviewLabel.setText(urlPrefix + routingUri);
+        urlPreviewTextField.setText(urlPrefix + routingUri);
 
         if (!routingUri.isEmpty() && ValidationUtils.isValidUri(routingUri) && routingUri.startsWith("/")) {
-            urlPreviewLabel.setForeground(Color.BLACK);
+            urlPreviewTextField.setForeground(Color.BLACK);
         } else {
-            urlPreviewLabel.setForeground(Color.RED);
+            urlPreviewTextField.setForeground(Color.RED);
         }
     }
 
