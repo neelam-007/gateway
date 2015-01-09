@@ -40,8 +40,6 @@ import java.io.OutputStream;
 import java.text.MessageFormat;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion.CONTEXT_VARIABLE_PREFIX;
-
 /* NOTE: The java docs in this class get converted to API documentation seen by customers! */
 
 /**
@@ -236,7 +234,9 @@ public class PolicyBundleInstallerResource {
      */
     @GET
     @Produces(MediaType.TEXT_XML)
-    public StreamingOutput execute(@QueryParam(CONTEXT_VARIABLE_PREFIX + "installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+    public StreamingOutput execute(@QueryParam("pbi.installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+        // @QueryParam(PolicyBundleInstallerAbstractServerAssertion.CONTEXT_VARIABLE_PREFIX + "installer_name") causes "attribute value must be constant" error
+
         if (StringUtils.isEmpty(installerName)) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer name can't be empty.");
         }
