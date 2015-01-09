@@ -184,4 +184,9 @@ public class WsdlQueryHandlerConfigurationPanel extends WizardStepPanel<WsdlQuer
     public String getStepLabel() {
         return resources.getString("stepLabel");
     }
+
+    @Override
+    public String getDescription() {
+        return resources.getString("stepDescription");
+    }
 }
