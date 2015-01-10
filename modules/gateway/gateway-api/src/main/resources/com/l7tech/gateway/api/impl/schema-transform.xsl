@@ -2,11 +2,11 @@
 <!--
   XSL-T for modification to JAX-B generated XML Schema
 -->
-<xsl:stylesheet version="1.0" 
-                exclude-result-prefixes="xsl xalan"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
-                xmlns:xalan="http://xml.apache.org/xalan">
+                xmlns:xalan="http://xml.apache.org/xalan"
+                version="1.0"
+                exclude-result-prefixes="xsl xalan">
 
     <xsl:output method="xml" encoding="utf-8" indent="yes" xalan:indent-amount="2"/>
     <xsl:strip-space elements="*"/>
@@ -50,7 +50,7 @@
         <xs:complexType name="{@name}">
             <xs:simpleContent>
                 <xs:extension base="{xs:restriction/@base}">
-                    <xs:anyAttribute namespace="##other" processContents="skip"/>
+                    <xs:anyAttribute namespace="##any" processContents="skip"/>
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>

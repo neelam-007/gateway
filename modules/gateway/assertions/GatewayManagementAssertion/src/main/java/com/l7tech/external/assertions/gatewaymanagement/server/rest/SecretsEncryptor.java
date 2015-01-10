@@ -1,40 +1,54 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.EncryptionUtil;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.security.GeneralSecurityException;
+import java.text.ParseException;
 
 /**
  * Utility to encrypt secrets in a resource
  */
 public class SecretsEncryptor {
 
-    private byte[] key ;
-    private byte[] passphrase;
+    MasterPasswordManager secretsEncryptor;
+    private byte[] bundlePassphraseKeyBytes;
+    private boolean encryptingInitialized = false;
+    private String wrappedBundleKey;
 
-    public SecretsEncryptor(byte[] passphrase) {
-        this.passphrase = passphrase;  // todo use cluster passphrase if no passphrase supplied
-        init();
+    public SecretsEncryptor(byte[] passphrase) throws GeneralSecurityException {
+
+        // Convert bundle passphrase to bundle passphrase key bytes
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
+        SecretKey secretKey = skf.generateSecret( new PBEKeySpec( new String(passphrase, Charsets.UTF8).toCharArray()));
+        bundlePassphraseKeyBytes = secretKey.getEncoded();
     }
 
-    protected void init(){
-        SecretKeyFactory skf = null;
-        try {
-            skf = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
-            SecretKey secretKey = skf.generateSecret( new PBEKeySpec( new String(passphrase).toCharArray() ) );
-            key = secretKey.getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+    /**
+     *
+     * @param base64encodedKeyPassphrase The base-64 encoded passphrase to use for the encryption key when encrypting passwords, if null uses cluster passphrase by default.
+     * @return
+     * @throws FileNotFoundException
+     * @throws GeneralSecurityException
+     */
+    @Nullable
+    public static SecretsEncryptor createSecretsEncryptor(@Nullable final String base64encodedKeyPassphrase) throws FileNotFoundException, GeneralSecurityException {
+        if (base64encodedKeyPassphrase != null) {
+            return new SecretsEncryptor(HexUtils.decodeBase64(base64encodedKeyPassphrase));
+        } else {
+            final String confDir = SyspropUtil.getString("com.l7tech.config.path", "../node/default/etc/conf");
+            final File ompDat = new File(new File(confDir), "omp.dat");
+            if (ompDat.exists()) {
+                return new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
+            } else {
+                throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
+            }
         }
-
-
     }
 
     /**
@@ -42,18 +56,40 @@ public class SecretsEncryptor {
      * @param secret
      * @return encrypts secret with generated key
      */
-    public byte[] encryptSecret(byte[] secret){
-        String encrypted = new String(secret) + passphrase;
-        return encrypted.getBytes(); // todo stub
+    public String encryptSecret(String secret){
+        if(!encryptingInitialized){
+            setupEncrypting();
+        }
+        return secretsEncryptor.encryptPassword(secret.toCharArray());
     }
 
     /**
      * Stored in the resource
      * @return key encrypted by passphrase
      */
-    public byte[] getEncryptedKey(){
-        String encrypted = new String(key) + passphrase;
-        return encrypted.getBytes(); // todo stub
+    public String getWrappedBundleKey(){
+        if(!encryptingInitialized){
+            setupEncrypting();
+        }
+        return wrappedBundleKey;
+    }
+
+    private void setupEncrypting(){
+        // lazily create encrypting objects, no needed for decrypting
+
+        // Create a new random bundle key
+        byte[] bundleKeyBytes = new byte[32];
+        RandomUtil.nextBytes(bundleKeyBytes);
+
+        // setup secrets encryptor
+        secretsEncryptor = new MasterPasswordManager(bundleKeyBytes);
+
+        // save wrapped key
+        String bundleKeyBase64 = HexUtils.encodeBase64(bundleKeyBytes);
+        MasterPasswordManager encryptor = new MasterPasswordManager( bundlePassphraseKeyBytes );
+        wrappedBundleKey = encryptor.encryptPassword( bundleKeyBase64.toCharArray() );
+
+        encryptingInitialized = true;
     }
 
     /**
@@ -62,13 +98,13 @@ public class SecretsEncryptor {
      * @param encryptedKey
      * @return
      */
-    public byte[] decryptSecret(byte[] secret, byte[] encryptedKey){
+    public String decryptSecret(@Nullable final String secret,@Nullable final String encryptedKey) throws ParseException {
         // decrypt key
         // decrypt secret
-        String encryptedKeyStr = new String(encryptedKey);
-        String decryptedKey = encryptedKeyStr.substring(0,encryptedKeyStr.length()- new String(passphrase).length());
-        String secretStr = new String(secret);
-        return  secretStr.substring(0,secretStr.length()-decryptedKey.length()).getBytes(); // todo stub
+        MasterPasswordManager keyDecryptor = new MasterPasswordManager( bundlePassphraseKeyBytes );
+        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(keyDecryptor.decryptPassword(encryptedKey))));
+
+        return  new String(secretsDecryptor.decryptPassword(secret));
     }
 
 }

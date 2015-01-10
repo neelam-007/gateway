@@ -20,6 +20,10 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
 
     //- PUBLIC
 
+    private final SecurePasswordManager securePasswordManager;
+
+    //- PROTECTED
+
     public SecurePasswordResourceFactory( final RbacServices services,
                                           final SecurityFilter securityFilter,
                                           final PlatformTransactionManager transactionManager,
@@ -28,8 +32,6 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
         super( false, true, services, securityFilter, transactionManager, securePasswordManager, securityZoneManager );
         this.securePasswordManager = securePasswordManager;
     }
-
-    //- PROTECTED
 
     @Override
     public StoredPasswordMO asResource( final SecurePassword entity ) {
@@ -56,7 +58,7 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
         setProperties( securePasswordEntity, storedPassword.getProperties(), SecurePassword.class );
 
         // After setProperties as this will set the last updated time
-        if ( storedPassword.getPassword() != null ) {
+        if ( storedPassword.getPassword() != null) {
             encodeAndSetPassword( securePasswordEntity, storedPassword.getPassword().toCharArray() );
         }
 
@@ -65,6 +67,8 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
 
         return securePasswordEntity;
     }
+
+    //- PRIVATE
 
     @Override
     protected void updateEntity( final SecurePassword oldEntity,
@@ -79,10 +83,6 @@ public class SecurePasswordResourceFactory extends SecurityZoneableEntityManager
             oldEntity.setLastUpdate( newEntity.getLastUpdate() );
         }
     }
-
-    //- PRIVATE
-
-    private final SecurePasswordManager securePasswordManager;
 
     /**
      * Set the password and updated time.

@@ -37,11 +37,11 @@ import static org.junit.Assert.*;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
 
+    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
+    private final String adminUserId = new Goid(0,3).toString();
     private UserManager internalUserManager;
     private IdentityProvider internalIdentityProvider;
     private IdentityProviderFactory identityProviderFactory;
-    private final String internalProviderId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.toString();
-    private final String adminUserId = new Goid(0,3).toString();
     private List<User> users = new ArrayList<>();
 
     private String strongPassword = "12!@qwQW";
@@ -346,7 +346,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
             // create certificate
             X509Certificate certificate = new TestCertificateGenerator().subject("cn=user1").generate();
             CertificateData certData = ManagedObjectFactory.createCertificateData(certificate);
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData), user);
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate", null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), writeMOToString(certData),null, user);
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
             Assert.assertEquals(401, response.getStatus());
 
@@ -369,7 +369,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
             assertEquals(200, response.getStatus());
 
             // revoke certificate
-            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "",user);
+            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.DELETE, ContentType.APPLICATION_XML.toString(), "", null, user);
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
             Assert.assertEquals(401, response.getStatus());
 
@@ -395,7 +395,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
             assertEquals(200, response.getStatus());
 
             // get certificate
-            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "",user);
+            response = getDatabaseBasedRestManagementEnvironment().processRequest("identityProviders/" + internalProviderId + "/users/" + userId + "/certificate",null, HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "", null, user);
             Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
             Assert.assertEquals(401, response.getStatus());
 

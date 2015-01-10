@@ -35,9 +35,11 @@ import java.util.logging.Logger;
 
 public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEntityTestBase implements RestEntityResourceUtil<E, M> {
     private static final Logger logger = Logger.getLogger(RestEntityTests.class.getName());
-    private static IdentityProviderFactory identityProviderFactory;
     protected static IdentityProvider provider;
     protected static UserManager userManager;
+    private static IdentityProviderFactory identityProviderFactory;
+    private static ConfiguredSessionFactoryBean.ConfiguredGOIDGenerator configuredGOIDGenerator = new ConfiguredSessionFactoryBean.ConfiguredGOIDGenerator();
+    private final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -114,8 +116,6 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         }
     }
 
-    private final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
-
     @Test
     public void testGetUnprivileged() throws Exception {
         InternalUser user = createUnprivilegedUser();
@@ -123,7 +123,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             List<String> entitiesExpected = getRetrievableEntityIDs();
 
             for (String id : entitiesExpected) {
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.GET, null, "", user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.GET, null, "", null, user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -222,7 +222,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
 
             for (M mo : entitiesToCreate) {
                 mo.setId(null);
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), null, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), null, HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), null, user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -272,7 +272,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             List<M> entitiesToCreate = getCreatableManagedObjects();
 
             for (M mo : entitiesToCreate) {
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + mo.getId(), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), null, user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -355,7 +355,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             List<M> entitiesToCreate = getUpdateableManagedObjects();
 
             for (M mo : entitiesToCreate) {
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + getId(mo), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + getId(mo), null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(mo)), null, user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -389,7 +389,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
             List<String> entitiesIDsToDelete = getDeleteableManagedObjectIDs();
 
             for (String id : entitiesIDsToDelete) {
-                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.DELETE, null, "", user);
+                RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri() + "/" + id, null, HttpMethod.DELETE, null, "", null, user);
                 logger.log(Level.FINE, response.toString());
 
                 Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
@@ -475,7 +475,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         //test unprivileged
         InternalUser user = createUnprivilegedUser();
         try {
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", null, user);
             testList("", response, Collections.<String>emptyList(), true);
         } finally {
             userManager.delete(user);
@@ -573,8 +573,6 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
         }
         return null;
     }
-
-    private static ConfiguredSessionFactoryBean.ConfiguredGOIDGenerator configuredGOIDGenerator = new ConfiguredSessionFactoryBean.ConfiguredGOIDGenerator();
 
     protected Goid getGoid() {
         return (Goid) configuredGOIDGenerator.generate(null, null);

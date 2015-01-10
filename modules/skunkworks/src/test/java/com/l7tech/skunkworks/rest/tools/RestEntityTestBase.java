@@ -7,12 +7,13 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
+import java.util.Map;
+
 public abstract class RestEntityTestBase {
 
+    private static DatabaseBasedRestManagementEnvironment databaseBasedRestManagementEnvironment;
     @Rule
     public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
-
-    private static DatabaseBasedRestManagementEnvironment databaseBasedRestManagementEnvironment;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -27,6 +28,10 @@ public abstract class RestEntityTestBase {
     }
 
     protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body) throws Exception {
-        return databaseBasedRestManagementEnvironment.processRequest(uri, null, method, contentType, body);
+        return processRequest(uri, method, contentType, body, null);
+
+    }
+    protected RestResponse processRequest(String uri, HttpMethod method, @Nullable String contentType, String body, Map<String,String> headers) throws Exception {
+        return databaseBasedRestManagementEnvironment.processRequest(uri, null, method, contentType, body, headers);
     }
 }

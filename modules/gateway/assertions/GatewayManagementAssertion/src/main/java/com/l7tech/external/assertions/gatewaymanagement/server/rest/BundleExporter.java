@@ -9,16 +9,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.FileNotFoundException;
+import java.security.GeneralSecurityException;
 import java.util.Properties;
 
 /**
@@ -60,8 +56,8 @@ public class BundleExporter {
      * @throws FindException
      */
     @NotNull
-    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptPasswords, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException {
-        final SecretsEncryptor secretsEncryptor = createPasswordManager(encryptPasswords, encodedKeyPassphrase);
+    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptPasswords, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
+        final SecretsEncryptor secretsEncryptor = encryptPasswords ? SecretsEncryptor.createSecretsEncryptor( encodedKeyPassphrase): null;
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
         if (includeDependencies) {
@@ -69,24 +65,5 @@ public class BundleExporter {
             bundle.setDependencyGraph(dependencyMOs);
         }
         return bundle;
-    }
-
-    @Nullable
-    private SecretsEncryptor createPasswordManager(final boolean encryptPasswords, @Nullable final String encodedKeyPassphrase) throws FileNotFoundException {
-        SecretsEncryptor passMgr = null;
-        if (encryptPasswords) {
-            if (encodedKeyPassphrase != null) {
-                passMgr = new SecretsEncryptor(HexUtils.decodeBase64(encodedKeyPassphrase));
-            } else {
-                final String confDir = SyspropUtil.getString("com.l7tech.config.path", "../node/default/etc/conf");
-                final File ompDat = new File(new File(confDir), "omp.dat");
-                if (ompDat.exists()) {
-                    passMgr = new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
-                } else {
-                    throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
-                }
-            }
-        }
-        return passMgr;
     }
 }

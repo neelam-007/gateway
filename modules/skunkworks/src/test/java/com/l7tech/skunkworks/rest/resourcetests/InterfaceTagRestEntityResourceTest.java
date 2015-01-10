@@ -320,7 +320,7 @@ public class InterfaceTagRestEntityResourceTest extends RestEntityTests<Interfac
         //test unprivileged for interface tags trying to list with an unprivileged user returns a privileged error exception.
         InternalUser user = createUnprivilegedUser();
         try {
-            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", user);
+            RestResponse response = getDatabaseBasedRestManagementEnvironment().processRequest(getResourceUri(), "", HttpMethod.GET, null, "", null, user);
             Assert.assertEquals(401, response.getStatus());
         } finally {
             userManager.delete(user);

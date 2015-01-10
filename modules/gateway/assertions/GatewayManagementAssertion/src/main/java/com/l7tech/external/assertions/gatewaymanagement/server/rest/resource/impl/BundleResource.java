@@ -31,6 +31,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -115,9 +116,9 @@ public class BundleResource {
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
                                      @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
                                      @QueryParam("encryptPasswords") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptPasswords,
-                                     @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                     @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies","encryptPasswords"));
 
         //validate that something is being exported
         if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty() && !fullGateway) {
@@ -178,7 +179,7 @@ public class BundleResource {
                                                           @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
                                                           @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
                                                           @QueryParam("encryptPasswords") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptPasswords,
-                                                          @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException {
+                                                          @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
         final EntityType entityType;
         switch (resourceType) {
@@ -210,6 +211,7 @@ public class BundleResource {
      * @param bundle         The bundle to import
      * @param activate       False to not activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
+     * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
@@ -217,11 +219,12 @@ public class BundleResource {
     public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
                                  @QueryParam("activate") @DefaultValue("true") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
+                                 @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
                                  final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
 
         List<Mapping> mappings =
-                bundleImporter.importBundle(bundle, test, activate, versionComment);
+                bundleImporter.importBundle(bundle, test, activate, versionComment, encodedKeyPassphrase);
 
         Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
@@ -265,7 +268,7 @@ public class BundleResource {
                                 boolean includeDependencies,
                                 boolean encryptPasswords,
                                 @Nullable final String encodedKeyPassphrase,
-                                @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException {
+                                @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeRequestFolderOption, String.valueOf(includeRequestFolder));

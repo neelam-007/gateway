@@ -11,7 +11,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.HexUtils;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -23,10 +25,12 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -1289,5 +1293,66 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
 
         response = getTargetEnvironment().processRequest("passwords/"+passwordCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
+    }
+
+    @Test
+    public void testImportSecretsNew() throws Exception {
+        Map<String,String> passphraseHeader = CollectionUtils.<String,String>mapBuilder().put("L7-key-passphrase", HexUtils.encodeBase64("password".getBytes(Charsets.UTF8))).map();
+
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptPasswords=true",HttpMethod.GET, null, "", passphraseHeader);
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 2 items. A policy, and secure password", 2, bundleItem.getContent().getReferences().size());
+
+        //verify the secure password MO to contains a password.
+        StoredPasswordMO passwordMO = ((StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent());
+        assertNotNull(passwordMO.getPassword());
+        assertNotNull(passwordMO.getPasswordBundleKey());
+        getMapping(bundleItem.getContent().getMappings(), securePasswordItem.getId()).setProperties(Collections.<String,Object>emptyMap());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", null, HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()), passphraseHeader);
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+        Assert.assertEquals(securePasswordItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        // verify dependencies
+        response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+        Assert.assertNotNull(policyDependencies);
+        Assert.assertEquals(1, policyDependencies.size());
+
+        DependencyMO passwordDependency = getDependency(policyDependencies,securePasswordItem.getId());
+        Assert.assertNotNull(passwordDependency);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordDependency.getType());
+        Assert.assertEquals(securePasswordItem.getName(), passwordDependency.getName());
+        Assert.assertEquals(securePasswordItem.getId(), passwordDependency.getId());
+
+        validate(mappings);
     }
 }
