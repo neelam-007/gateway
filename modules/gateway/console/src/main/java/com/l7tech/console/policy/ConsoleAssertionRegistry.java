@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,8 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,6 +53,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     /** Prototype instances of assertions loaded from the server. */
     private final Set<Assertion> modulePrototypes = new HashSet<>();
     private final Map<String, CustomAssertionHolder> customAssertions =  new ConcurrentHashMap<>();
+    private final ConcurrentMap<Category, Collection<CustomAssertionHolder>> customAssertionsByCategory = new ConcurrentHashMap<>();
 
     /** Base packages of every modular assertion, for recognizing NoClassDefFoundErrors due to module unload. */
     private final Map<String, String> moduleNameByBasePackage = new ConcurrentHashMap<>();
@@ -162,10 +166,22 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
             throw new RuntimeException("Unable to load custom assertions -- not connected to Gateway");
         }
         this.customAssertions.clear();
+        this.customAssertionsByCategory.clear();
         for (CustomAssertionHolder customAssertionHolder : registry.getCustomAssertionsRegistrar().getAssertions()) {
             this.customAssertions.put(customAssertionHolder.getCustomAssertion().getClass().getName(), customAssertionHolder);
+
+            Set<Category> cats = customAssertionHolder.getCategories();
+            for ( Category category : cats ) {
+                Collection<CustomAssertionHolder> set = new ConcurrentSkipListSet<>();
+                Collection<CustomAssertionHolder> prev = customAssertionsByCategory.putIfAbsent( category, set );
+                if ( prev != null )
+                    set = prev;
+                set.add( customAssertionHolder );
+            }
         }
     }
+
+
 
     private void registerAssertionsFromModule(final ClusterStatusAdmin.ModuleInfo module) {
         final Collection<String> assertionClassnames = module.assertionClasses;
@@ -404,6 +420,12 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
     public Collection<CustomAssertionHolder> getCustomAssertions() {
         return Collections.unmodifiableCollection(customAssertions.values());
+    }
+
+    @NotNull
+    public Collection<CustomAssertionHolder> getCustomAssertionsByCategory( @NotNull Category category ) {
+        Collection<CustomAssertionHolder> got = customAssertionsByCategory.get( category );
+        return got == null ? Collections.<CustomAssertionHolder>emptyList() : Collections.unmodifiableCollection( got );
     }
 
     private static class PaletteNodeFactoryMetadataFinder<AT extends Assertion> implements MetadataFinder {

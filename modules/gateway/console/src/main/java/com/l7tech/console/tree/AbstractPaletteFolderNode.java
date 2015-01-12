@@ -1,5 +1,6 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -167,10 +168,9 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
     }
 
     protected void insertMatchingCustomAssertions(Category category) {
-        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+        ConsoleAssertionRegistry car = TopComponents.getInstance().getAssertionRegistry();
         try {
-            for (Object o : cr.getAssertions(category)) {
-                CustomAssertionHolder a = (CustomAssertionHolder) o;
+            for ( CustomAssertionHolder a : car.getCustomAssertionsByCategory(category) ) {
                 final CustomAccessControlNode customNode =  new CustomAccessControlNode(a);
                 if (TopComponents.getInstance().getAssertionRegistry().isAssertionAccessPermitted(a)) {
                     insert(customNode, getInsertPosition(customNode));
