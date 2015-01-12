@@ -112,7 +112,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
                 } catch (NoHostAvailableException e) {
                     return "Cannot connect to any Cassandra Server.";
                 } catch (Throwable e) {
-                    return "Failed due to unexpected error";
+                    return "Unable to connect to Cassandra cluster using specified connection settings";
                 }
                 return "";
             }
