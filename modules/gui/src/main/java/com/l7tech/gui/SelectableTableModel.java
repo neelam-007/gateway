@@ -128,4 +128,10 @@ public class SelectableTableModel<T> extends SimpleTableModel<T> {
             fireTableRowsUpdated(index, index);
         }
     }
+
+    @Override
+    public void setRows(List<T> rows) {
+        deselectAll();
+        super.setRows(rows);
+    }
 }
