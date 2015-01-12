@@ -40,6 +40,8 @@ public class PatchMain {
             }
         } catch (Exception e) {
             System.out.println("Error installing patch: " + ExceptionUtils.getMessage(e));
+            System.out.println("Full stack trace:");
+            e.printStackTrace();
             System.exit(PATCH_TASK_ERROR);
         }
 

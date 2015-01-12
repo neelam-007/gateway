@@ -1,13 +1,12 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
+import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.server.processcontroller.patching.PatchException;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 
 /**
  * Copies
@@ -15,15 +14,40 @@ import java.io.FileOutputStream;
  */
 public class ResourcesPatchTask implements PatchTask {
     @Override
-    public void runPatch(String resourceDirEntry) throws Exception {
+    public void runPatch(String resourceDirEntry)
+            throws IOException, PatchException {
+        System.out.println("Executing resource extraction patch task");
+
         String fileNames = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
         String[] files = fileNames.split("\n");
 
         File tempDir = new File( ConfigFactory.getProperty( PatchMain.RESOURCE_TEMP_PROPERTY ) );
         InputStream fileIn = null;
         OutputStream fileOut = null;
+        OutputStream nullOutputSteam = new NullOutputStream();
+
+        // first make sure we have enough free space to extract the resources from the patch
+        System.out.println("Getting file sizes");
+        long totalResourceSize = 0;
         for (String file : files) {
             try {
+                fileIn = PatchMain.getResourceStream(this.getClass(), resourceDirEntry + file);
+                totalResourceSize += IOUtils.copyStream(fileIn, nullOutputSteam);
+            } finally {
+                ResourceUtils.closeQuietly(fileIn);
+                ResourceUtils.closeQuietly(nullOutputSteam);
+            }
+        }
+        if(tempDir.getUsableSpace() < totalResourceSize) {
+            throw new PatchException("Insufficient free space to extract resources in patch. There are " +
+                tempDir.getUsableSpace() + " bytes available but " + totalResourceSize + " bytes are required.");
+        }
+
+        // now actually extract the resource files to disk
+        System.out.println("Extracting resources to " + tempDir.getAbsolutePath());
+        for (String file : files) {
+            try {
+                System.out.println("Extracting " + file);
                 fileIn = PatchMain.getResourceStream(this.getClass(), resourceDirEntry + file);
                 File outFile = new File(tempDir, file);
                 outFile.deleteOnExit();
@@ -34,11 +58,14 @@ public class ResourcesPatchTask implements PatchTask {
                 ResourceUtils.closeQuietly(fileOut);
             }
         }
+
+        System.out.println("Done executing resource extraction patch task");
     }
 
     @Override
     public String[] getClassDependencies() {
         return new String[] {
+            "com.l7tech.common.io.NullOutputStream",
             "com.l7tech.common.io.ProcResult",
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.server.processcontroller.patching.PatchException",

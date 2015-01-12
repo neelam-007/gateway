@@ -8,6 +8,8 @@
 #
 SRC_ROOT=`pwd`
 
+JAVA_OPTS="-Xmx2560m -XX:MaxPermSize=512m -XX:+UseCompressedOops"
+
 reportenv()
 {
     echo "SRC_ROOT=$SRC_ROOT"

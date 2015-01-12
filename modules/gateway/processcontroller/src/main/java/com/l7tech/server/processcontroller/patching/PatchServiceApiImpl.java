@@ -1,7 +1,5 @@
 package com.l7tech.server.processcontroller.patching;
 
-import com.l7tech.common.io.ProcResult;
-import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.processcontroller.ApiWebEndpoint;
 import com.l7tech.server.processcontroller.ConfigService;
 import com.l7tech.server.processcontroller.PCUtils;
@@ -10,9 +8,7 @@ import com.l7tech.util.IOUtils;
 
 import javax.activation.DataHandler;
 import javax.inject.Inject;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -65,7 +61,9 @@ public class PatchServiceApiImpl implements PatchServiceApi {
         verifyNodes( nodes );
 
         PatchPackage patch = packageManager.getPackage(patchId);
-        ProcResult result;
+
+        int processExitCode;
+
         String rollback = patch.getProperty(PatchPackage.Property.ROLLBACK_FOR_ID);
         if (rollback != null) {
             if (! PatchStatus.State.INSTALLED.name().equals(packageManager.getPackageStatus(rollback).getField(PatchStatus.Field.STATE)))
@@ -79,21 +77,38 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
         try {
             // todo: exec with timeout?
-            List<String> commandLine = new ArrayList<String>();
+            List<String> commandLine = new ArrayList<>();
             getPatchLauncher(commandLine, patch);
             getInstallParams(commandLine, patch, nodes);
             logger.log(Level.INFO, "Executing " + commandLine);
-            result = ProcUtils.exec(commandLine.toArray(new String[commandLine.size()]));
+
+            ProcessBuilder processBuilder = new ProcessBuilder(commandLine);
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
+            InputStream processStdOut = process.getInputStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(processStdOut);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            String line;
+            while((line = bufferedReader.readLine()) != null) {
+                System.out.println(line);
+                System.out.flush();
+                logger.log(Level.INFO, "Output from patch install: " + line);
+            }
+            processExitCode = process.waitFor();
+            System.out.println("Patch exit code: " + processExitCode);
+            logger.log(Level.INFO, "Patch exit code: " + processExitCode);
+
             recordManager.save(new PatchRecord(System.currentTimeMillis(), patchId, Action.INSTALL, nodes));
             if (rollback != null)
                 recordManager.save(new PatchRecord(System.currentTimeMillis(), rollback, Action.ROLLBACK, nodes));
-        } catch (IOException e) {
+        }
+        catch (IOException | InterruptedException e) {
             throw new PatchException("Error installing patch: " + patchId + " : " + ExceptionUtils.getMessage(e), e);
         }
 
         // check exec result and update status
         PatchStatus status2;
-        if (result.getExitStatus() == 0) {
+        if(processExitCode == 0) {
             // revert any rollback's statuses from INSTALLED to ROLLED_BACK
             if (PatchStatus.State.ROLLED_BACK.name().equals(status1.getField(PatchStatus.Field.STATE))) {
                 for(String maybeInstalledRolledback : packageManager.getRollbacksFor(patchId)) {
@@ -106,19 +121,17 @@ public class PatchServiceApiImpl implements PatchServiceApi {
             }
 
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.INSTALLED.name());
-            byte[] output = result.getOutput();
-            status1.setField(PatchStatus.Field.STATUS_MSG, output != null ? new String(output) : "");
+            status1.setField(PatchStatus.Field.STATUS_MSG, "");
             status2 = packageManager.setPackageStatus(status1);
             if (rollback != null)
                 packageManager.updatePackageStatus(rollback, PatchStatus.Field.STATE, PatchStatus.State.ROLLED_BACK.name());
             logger.log(Level.INFO, "Patch " + patchId + " is installed.");
         } else {
-            byte[] errOut = result.getOutput();
-            String errMsg = errOut == null ? "" : new String(errOut);
+            String errMsg = "";
             status1.setField(PatchStatus.Field.STATE, PatchStatus.State.ERROR.name());
             status1.setField(PatchStatus.Field.STATUS_MSG, errMsg);
             status2 = packageManager.setPackageStatus(status1);
-            logger.log(Level.WARNING, "Error installing " + patchId + " : " + errMsg);
+            logger.log(Level.WARNING, "Error installing " + patchId);
         }
 
         return status2;
