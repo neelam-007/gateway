@@ -207,11 +207,11 @@ public class BundleResource {
     /**
      * This will import a bundle.
      *
-     * @param test           If true the bundle import will be tested no changes will be made to the gateway
-     * @param bundle         The bundle to import
-     * @param activate       False to not activate the updated services and policies.
-     * @param versionComment The comment to set for updated/created services and policies
-     * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
+     * @param test                 If true the bundle import will be tested no changes will be made to the gateway
+     * @param activate             False to not activate the updated services and policies.
+     * @param versionComment       The comment to set for updated/created services and policies
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
+     * @param bundle               The bundle to import
      * @return The mappings performed during the bundle import
      * @throws ResourceFactory.InvalidResourceException
      */
