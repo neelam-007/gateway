@@ -6,12 +6,15 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
-import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCancelSupport<DecodeJsonWebTokenAssertion> {
@@ -29,7 +32,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JLabel secretWarningLabel;
 
     private JComboBox validationType;
-    private InputValidator validators;
+
 
 
     public DecodeJsonWebTokenPropertiesDialog(final Frame parent, final DecodeJsonWebTokenAssertion assertion) {
@@ -41,6 +44,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     @Override
     protected void initComponents() {
         super.initComponents();
+        getOkButton().setEnabled(false);
         validationType.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.VALIDATION_TYPE.toArray(new String[JsonWebTokenConstants.VALIDATION_TYPE.size()])));
         validationType.addActionListener(validationTypeActionListener);
 
@@ -49,43 +53,17 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
         PasswordGuiUtils.configureOptionalSecurePasswordField(secretPasswordField, showPasswordCheckBox, secretWarningLabel);
 
-        validators = new InputValidator(this, getTitle());
-        validators.addRule(new InputValidator.ValidationRule() {
+        sourcePayloadTextField.getDocument().addDocumentListener(documentListener);
+        secretPasswordField.getDocument().addDocumentListener(documentListener);
+        sourceVariableTextField.getDocument().addDocumentListener(documentListener);
+        keyIdTextField.getDocument().addDocumentListener(documentListener);
+        targetVariable.addChangeListener(new ChangeListener() {
             @Override
-            public String getValidationError() {
-                if (sourcePayloadTextField.getText().trim().isEmpty()) {
-                    return "Source Payload is required.";
-                }
-                return null;
+            public void stateChanged(ChangeEvent e) {
+                updateOkButtonState();
             }
         });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (secretPasswordField.isEnabled() && (secretPasswordField.getPassword() == null || secretPasswordField.getPassword().length == 0)) {
-                    return "Secret is required.";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (sourceVariableTextField.isEnabled() && sourceVariableTextField.getText().trim().isEmpty()) {
-                    return "Recipient Key Context Variable is required.";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (keyIdTextField.isEnabled() && keyIdTextField.getText().trim().isEmpty()) {
-                    return "Key ID is required.";
-                }
-                return null;
-            }
-        });
+
     }
 
     @Override
@@ -126,11 +104,6 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
     @Override
     public DecodeJsonWebTokenAssertion getData(final DecodeJsonWebTokenAssertion assertion) throws ValidationException {
-        final String error = validators.validate();
-        if (error != null) {
-            throw new ValidationException(error);
-        }
-
         assertion.setSourcePayload(sourcePayloadTextField.getText().trim());
 
         final String vt = validationType.getSelectedItem().toString();
@@ -171,6 +144,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             keyIdTextField.setEnabled(!JsonWebTokenConstants.VALIDATION_NONE.equals(sel) && (JsonWebTokenConstants.VALIDATION_USING_CV.equals(sel)) && JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem()));
 
             secretWarningLabel.setVisible(JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(sel));
+            updateOkButtonState();
         }
     });
 
@@ -180,4 +154,49 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             keyIdTextField.setEnabled(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem()));
         }
     });
+
+    private DocumentListener documentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+    };
+
+    private void updateOkButtonState(){
+        if(!targetVariable.isEntryValid()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(sourcePayloadTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(secretPasswordField.isEnabled() && secretPasswordField.getPassword().length == 0){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(sourceVariableTextField.isEnabled() && sourceVariableTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(keyIdTextField.isEnabled() && keyIdTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        getOkButton().setEnabled(true);
+    }
+
+    protected void updateOkButtonEnableState() {
+        //do nothing - so i can disable the ok button initially
+    }
 }

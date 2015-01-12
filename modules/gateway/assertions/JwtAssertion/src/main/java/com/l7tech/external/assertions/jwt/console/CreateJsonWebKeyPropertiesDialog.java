@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -38,7 +40,7 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
     @Override
     protected void initComponents() {
         super.initComponents();
-
+        getOkButton().setEnabled(false);
         tableModel = TableUtil.configureTable(
                 keysTable,
                 TableUtil.column("Key ID", 80, 130, 999999, stringProperty("keyId")),
@@ -97,6 +99,12 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
                     final int index = keysTable.getRowSorter().convertRowIndexToModel(sel);
                     tableModel.removeRowAt(index);
                 }
+            }
+        });
+        outputVariable.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(outputVariable.isEntryValid());
             }
         });
         Utilities.setDoubleClickAction(keysTable, editButton);

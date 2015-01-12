@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.jwt.console;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.panels.TargetVariablePanel;
@@ -10,17 +9,18 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.jwt.EncodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
-
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCancelSupport<EncodeJsonWebTokenAssertion> {
@@ -64,8 +64,6 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JRadioButton jweUseSecret;
     private JRadioButton jweUseVariable;
 
-    private InputValidator validators;
-
     public EncodeJsonWebTokenPropertiesDialog(final Frame parent, final EncodeJsonWebTokenAssertion assertion) {
         super(EncodeJsonWebTokenAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
         initComponents();
@@ -76,6 +74,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     @Override
     protected void initComponents() {
         super.initComponents();
+        getOkButton().setEnabled(false);
         boolean showAll = false;
         if(Registry.getDefault().isAdminContextPresent()){
             try {
@@ -136,71 +135,18 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         PasswordGuiUtils.configureOptionalSecurePasswordField(jweSharedSecret, jweShowSecret, jweSecretWarningLabel);
         jweSecretWarningLabel.setVisible(false);
 
-        //validators
-        validators = new InputValidator(this, getTitle());
-
-        //source payload
-        validators.addRule(new InputValidator.ValidationRule() {
+        sourceVariableTextField.getDocument().addDocumentListener(documentListener);
+        headersTextField.getDocument().addDocumentListener(documentListener);
+        signaturePasswordField.getDocument().addDocumentListener(documentListener);
+        signatureSourceVariable.getDocument().addDocumentListener(documentListener);
+        signatureAlgorithmKeyIdTextField.getDocument().addDocumentListener(documentListener);
+        encryptionKeyTextField.getDocument().addDocumentListener(documentListener);
+        jweSharedSecret.getDocument().addDocumentListener(documentListener);
+        encryptionKeyId.getDocument().addDocumentListener(documentListener);
+        targetVariable.addChangeListener(new ChangeListener() {
             @Override
-            public String getValidationError() {
-                if (sourceVariableTextField.getText().trim().isEmpty()) {
-                    return "Source Payload is required and can not be empty.";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (headersTextField.isEnabled() && headersTextField.getText().trim().isEmpty()) {
-                    return "Please specify where to obtain the headers value.";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (signaturePasswordField.isEnabled() && signaturePasswordField.getPassword().length < 1) {
-                    return "Key is required";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (signatureSourceVariable.isEnabled() && signatureSourceVariable.getText().trim().isEmpty()) {
-                    return "Key is required";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (signatureAlgorithmKeyIdTextField.isEnabled() && signatureAlgorithmKeyIdTextField.getText().trim().isEmpty()) {
-                    return "Key ID is required";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (encryptionKeyTextField.isEnabled() && encryptionKeyTextField.getText().trim().isEmpty()) {
-                    return "Certificate is required";
-                }
-                return null;
-            }
-        });
-        validators.addRule(new InputValidator.ValidationRule() {
-            @Override
-            public String getValidationError() {
-                if (!targetVariable.getVariableStatus().isOk()) {
-                    return "Invalid Destination Variable Prefix value";
-                }
-                return null;
+            public void stateChanged(ChangeEvent e) {
+                updateOkButtonState();
             }
         });
     }
@@ -290,10 +236,6 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
     @Override
     public EncodeJsonWebTokenAssertion getData(final EncodeJsonWebTokenAssertion assertion) throws ValidationException {
-        final String error = validators.validate();
-        if (error != null) {
-            throw new ValidationException(error);
-        }
         //ui to assertion
         //general tab
         assertion.setSourceVariable(sourceVariableTextField.getText());
@@ -380,7 +322,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         public void run() {
             final Object sa = signatureAlgorithmComboBox.getSelectedItem();
             if(sa == null) return;
-
+            boolean showWarning = false;
             //disable all fields and do nothing else
             if(sa.equals("None")){
                 secretRadioButton.setEnabled(false);
@@ -426,7 +368,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 final Object kty = keyTypeComboBox.getSelectedItem();
                 signatureAlgorithmKeyIdTextField.setEnabled(fromVariableRadioButton.isSelected() && !sa.toString().startsWith("None") && !sa.toString().startsWith("HMAC") && JsonWebTokenConstants.KEY_TYPE_JWKS.equals(kty));
 
-                boolean showWarning = false;
+
                 if ("RSASSA-PKCS-v1_5 using SHA-256".equals(sa)) {
                     signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSASSA-PKCS-v1_5 using SHA-256' is not recommended.");
                     showWarning = true;
@@ -439,7 +381,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                     signatureAlgorithmWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSASSA-PKCS-v1_5 using SHA-512' is not recommended.");
                     showWarning = true;
                 }
-                signatureAlgorithmWarningLabel.setVisible(showWarning);
+
 
                 //disable secret fields
                 signaturePasswordField.setEnabled(false);
@@ -448,6 +390,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
                 EncodeJsonWebTokenPropertiesDialog.this.pack();
             }
+            signatureAlgorithmWarningLabel.setVisible(showWarning);
+            updateOkButtonState();
         }
     });
 
@@ -472,8 +416,10 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             encryptionKeyWarningLabel.setVisible("RSAES-PKCS1-V1_5".equals(km));
             if ("RSAES-PKCS1-V1_5".equals(km)) {
                 encryptionKeyWarningLabel.setText("<HTML><FONT COLOR=\"RED\">WARNING: The use of 'RSAES-PKCS1-V1_5' is not recommended.");
+                encryptionKeyWarningLabel.setVisible(true);
             }
             EncodeJsonWebTokenPropertiesDialog.this.pack();
+            updateOkButtonState();
         }
     });
 
@@ -501,6 +447,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             encryptionKeyId.setEnabled(encryptPayloadCheckBox.isSelected()  && jweUseVariable.isSelected() && encryptionKeyType.getSelectedItem().equals(JsonWebTokenConstants.KEY_TYPE_JWKS));
 
             contentEncryptionAlgorithmComboBox.setEnabled(encryptPayloadCheckBox.isSelected());
+
+            updateOkButtonState();
         }
     });
 
@@ -509,6 +457,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         public void run() {
             final Object s = keyTypeComboBox.getSelectedItem();
             signatureAlgorithmKeyIdTextField.setEnabled(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(s));
+            updateOkButtonState();
         }
     });
 
@@ -517,6 +466,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         public void run() {
             final Object s = encryptionKeyType.getSelectedItem();
             encryptionKeyId.setEnabled(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(s));
+            updateOkButtonState();
         }
     });
 
@@ -532,6 +482,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             signatureSourceVariable.setEnabled(fromVariableRadioButton.isSelected());
             keyTypeComboBox.setEnabled(fromVariableRadioButton.isSelected());
             signatureAlgorithmKeyIdTextField.setEnabled(fromVariableRadioButton.isSelected() && JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyTypeComboBox.getSelectedItem()));
+            updateOkButtonState();
         }
     });
 
@@ -559,6 +510,69 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             signatureSourceVariable.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected());
             keyTypeComboBox.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected());
             signatureAlgorithmKeyIdTextField.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected() && keyTypeComboBox.getSelectedItem().equals(JsonWebTokenConstants.KEY_TYPE_JWKS));
+
+            updateOkButtonState();
         }
     });
+
+    protected void updateOkButtonEnableState() {
+        //do nothing - to disable OK button initially
+    }
+
+    private void updateOkButtonState(){
+        if(sourceVariableTextField.isEnabled() && sourceVariableTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(headersTextField.isEnabled() && headersTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(signaturePasswordField.isEnabled() && signaturePasswordField.getPassword().length == 0){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(signatureSourceVariable.isEnabled() && signatureSourceVariable.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(signatureAlgorithmKeyIdTextField.isEnabled() && signatureAlgorithmKeyIdTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(encryptionKeyTextField.isEnabled() && encryptionKeyTextField.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(jweSharedSecret.isEnabled() && jweSharedSecret.getPassword().length == 0){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(encryptionKeyId.isEnabled() && encryptionKeyId.getText().trim().isEmpty()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        if(!targetVariable.isEntryValid()){
+            getOkButton().setEnabled(false);
+            return;
+        }
+        getOkButton().setEnabled(true);
+    }
+
+    private final DocumentListener documentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            updateOkButtonState();
+        }
+    };
 }

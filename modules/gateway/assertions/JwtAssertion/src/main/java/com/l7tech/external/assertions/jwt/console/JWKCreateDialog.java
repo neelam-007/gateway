@@ -5,9 +5,12 @@ import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -73,15 +76,6 @@ public class JWKCreateDialog extends JDialog {
     }
 
     private boolean validateData() {
-        //ensure required fields are present
-        if (keyIdTextField.getText().trim().isEmpty()) {
-            DialogDisplayer.showMessageDialog(this,
-                    "Please specify the Key ID.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE, null);
-            return false;
-        }
-
         if(jwkKeyInfo == null || !jwkKeyInfo.getKeyId().equals(keyIdTextField.getText().trim())){
             for(int i = 0; i < tableModel.getRowCount(); i++){
                 JwkKeyInfo key = (JwkKeyInfo) tableModel.getRowObject(i);
@@ -108,6 +102,7 @@ public class JWKCreateDialog extends JDialog {
                 }
             }
         });
+        OKButton.setEnabled(false);
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -123,7 +118,22 @@ public class JWKCreateDialog extends JDialog {
             }
         });
 
+        keyIdTextField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+            }
 
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+            }
+        });
         publicUseComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.PUBLIC_KEY_USE.values().toArray(new String[JsonWebTokenConstants.PUBLIC_KEY_USE.size()])));
     }
 

@@ -69,6 +69,15 @@ public final class JwtUtils {
                 return null;
             }
             return jwk.getKey();
+
+        } catch (IllegalArgumentException e) {
+            //work around part 1 - underlying Factory to construct JWK does not have any domain checking on
+            //the json string, it assumes that it is correct
+            audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Given JSON is not a valid JWK");
+        } catch (NullPointerException e) {
+            //work around part 2 - underlying Factory to construct JWK does not have any domain checking on
+            //the json string, it assumes that it is correct
+            audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Given JSON is not a valid JWK");
         } catch (JoseException e) {
             audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Error parsing JSON: " + ExceptionUtils.getMessage(e.getCause()));
         }
@@ -82,8 +91,8 @@ public final class JwtUtils {
                 return null;
             }
             //work around for JsonWebKeySet throwing NPE when receiving a JWK instead of a JWKS
-            final Map<String,Object> parsed = JsonUtil.parseJson(jsonStr);
-            if(parsed.get(JsonWebKeySet.JWK_SET_MEMBER_NAME) == null){
+            final Map<String, Object> parsed = JsonUtil.parseJson(jsonStr);
+            if (parsed.get(JsonWebKeySet.JWK_SET_MEMBER_NAME) == null) {
                 audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Invalid JWKS, json does not contain the 'keys' member.");
                 return null;
             }
@@ -105,6 +114,14 @@ public final class JwtUtils {
                 return getPrivateKey(audit, found.get(0));
             }
             return found.get(0).getKey();
+        } catch (IllegalArgumentException e) {
+            //work around part 1 - underlying Factory to construct JWK does not have any domain checking on
+            //the json string, it assumes that it is correct
+            audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Given JSON is not a valid JWKS");
+        } catch (NullPointerException e) {
+            //work around part 2 - underlying Factory to construct JWK does not have any domain checking on
+            //the json string, it assumes that it is correct
+            audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Given JSON is not a valid JWKS");
         } catch (JoseException e) {
             audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, ExceptionUtils.getMessage(e.getCause()));
         }
@@ -114,12 +131,12 @@ public final class JwtUtils {
     public static String getJson(final Audit audit, final Object json) {
         try {
             //it's a string, attempt to parse it, if it passes, return the string
-            if(json instanceof String){
-                JsonUtil.parseJson((String)json);
+            if (json instanceof String) {
+                JsonUtil.parseJson((String) json);
                 return (String) json;
-            } else if(json instanceof Message){
+            } else if (json instanceof Message) {
                 Message msg = (Message) json;
-                if(msg.getMimeKnob().getOuterContentType().isJson()){
+                if (msg.getMimeKnob().getOuterContentType().isJson()) {
                     try {
                         final String j = msg.getJsonKnob().getJsonData().getJsonData();
                         JsonUtil.parseJson(j);
