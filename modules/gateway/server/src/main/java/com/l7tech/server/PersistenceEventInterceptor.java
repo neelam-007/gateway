@@ -8,6 +8,8 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.module.ServerModuleFileData;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
@@ -70,6 +72,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add("com.l7tech.server.ems.migration.MigrationMappingRecord");
         ignoredClassNames.add(UDDIRegistrySubscription.class.getName());
         ignoredClassNames.add(UDDIBusinessServiceStatus.class.getName());
+        ignoredClassNames.add(ServerModuleFileState.class.getName());
+        ignoredClassNames.add(ServerModuleFileData.class.getName());
 
         // System entities that should generate application events but should not be audited
         noAuditClassNames = new HashSet<String>();

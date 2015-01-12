@@ -5,7 +5,8 @@ import com.l7tech.util.Config;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -38,9 +39,7 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
 
     public CustomAssertionModulesConfig(@NotNull final Config config) {
         this.config = config;
-        extensions = new ArrayList<String>() {{
-            add(JAR_EXTENSION);
-        }};
+        extensions = Arrays.asList(JAR_EXTENSION);
     }
 
     @Override
@@ -70,7 +69,7 @@ public class CustomAssertionModulesConfig implements ModulesConfig {
 
     @Override
     public List<String> getModulesExt() {
-        return extensions;
+        return Collections.unmodifiableList(extensions);
     }
 
     @Override

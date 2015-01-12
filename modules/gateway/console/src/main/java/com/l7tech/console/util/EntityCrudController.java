@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,6 +30,7 @@ public class EntityCrudController<ET> {
     private EntityEditor<ET> entityEditor;
     private EntitySaver<ET> entitySaver;
     private EntityDeleter<ET> entityDeleter;
+    private EntityDeleteConfirmer<ET> entityDeleteConfirmer;
 
     public EntityCrudController() {
     }
@@ -79,6 +81,14 @@ public class EntityCrudController<ET> {
 
     public void setEntityDeleter(EntityDeleter<ET> entityDeleter) {
         this.entityDeleter = entityDeleter;
+    }
+
+    public EntityDeleteConfirmer<ET> getEntityDeleteConfirmer() {
+        return entityDeleteConfirmer;
+    }
+
+    public void setEntityDeleteConfirmer( EntityDeleteConfirmer<ET> entityDeleteConfirmer ) {
+        this.entityDeleteConfirmer = entityDeleteConfirmer;
     }
 
     //
@@ -186,7 +196,7 @@ public class EntityCrudController<ET> {
                 if (entityDeleter != null) {
                     final ET entity = getSelectedEntity();
                     if (entity != null) {
-                        entityDeleter.displayDeleteDialog(entity, new Functions.UnaryVoid<ET>() {
+                        deleteConfirmer().displayDeleteDialog(entity, new Functions.UnaryVoid<ET>() {
                             @Override
                             public void call(final ET entityToDelete) {
                                 if (entityToDelete != null) {
@@ -208,6 +218,51 @@ public class EntityCrudController<ET> {
     }
 
     //
+    // Public utility
+    //
+
+    /**
+     * Create a default delete confirmer.
+     * <p/>
+     * This will display a confirmation dialog asking the user to confirm item removal.
+     * <p/>
+     * There is currently no way to configure the confirmation message provided by this method, or to have
+     * the message vary depending on the entity being removed.  Currently this requires creating a custom
+     * delete confirmer.
+     *
+     * @param dialogParent parent component to use for displaying delete confirmation dialog.
+     * @return a new EntityDeleteConfirmer instance.  Never null.
+     */
+    @NotNull
+    public EntityDeleteConfirmer<ET> createDialogBasedEntityDeleteConfirmer( @NotNull final Component dialogParent ) {
+        return new EntityDeleteConfirmer<ET>() {
+            @Override
+            public void displayDeleteDialog( @NotNull final ET entity, @NotNull final Functions.UnaryVoid<ET> afterDeleteListener ) {
+                DialogDisplayer.showOptionDialog(
+                        dialogParent,
+                        "Are you sure you want to remove this item?",
+                        "Remove Item",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.WARNING_MESSAGE,
+                        null,
+                        new Object[]{"Remove Item", "Cancel"},
+                        null,
+                        new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if (option == 0) {
+                                    afterDeleteListener.call(entity);
+                                } else {
+                                    afterDeleteListener.call(null);
+                                }
+                            }
+                        });
+            }
+        };
+    }
+
+
+    //
     // Protected
     //
 
@@ -217,6 +272,22 @@ public class EntityCrudController<ET> {
             savedEntity = entitySaver.saveEntity(entity);
         }
         return savedEntity;
+    }
+
+    @NotNull
+    private EntityDeleteConfirmer<ET> deleteConfirmer() {
+        return entityDeleteConfirmer != null
+                ? entityDeleteConfirmer
+                : createNoOpDeleteConfirmer();
+    }
+
+    private EntityDeleteConfirmer<ET> createNoOpDeleteConfirmer() {
+        return new EntityDeleteConfirmer<ET>() {
+            @Override
+            public void displayDeleteDialog( @NotNull ET entity, @NotNull Functions.UnaryVoid<ET> afterDeleteListener ) {
+                afterDeleteListener.call( entity );
+            }
+        };
     }
 
     private ET getSelectedEntity() {

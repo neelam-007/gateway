@@ -1721,6 +1721,7 @@
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
+                <ref bean="serverModuleFileManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1782,6 +1783,7 @@
             </bean>
         </property>
         <property name="customKeyValueStoreManager" ref="customKeyValueStoreManager"/>
+        <property name="serverModuleFileManager" ref="serverModuleFileManager"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
@@ -2126,6 +2128,18 @@
     <bean id="trustedEsmUserManager" class="com.l7tech.server.TrustedEsmUserManagerImpl" parent="hibernateBean">
     </bean>
 
+    <bean id="serverModuleFileManager" class="com.l7tech.server.module.ServerModuleFileManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterNodeId"/>
+    </bean>
+
+    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListenerStageOneImpl">
+        <constructor-arg index="0" ref="applicationEventProxy"/>
+        <constructor-arg index="1" ref="serverModuleFileManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+        <constructor-arg index="3" ref="serverConfig"/>
+    </bean>
+
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
 
     <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
@@ -2298,6 +2312,7 @@
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="genericEntityManager"/>
                 <ref bean="cassandraEntityManager"/>
+                <ref bean="serverModuleFileManager"/>
             </list>
         </constructor-arg>
     </bean>

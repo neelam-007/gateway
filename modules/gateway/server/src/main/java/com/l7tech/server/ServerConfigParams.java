@@ -222,4 +222,9 @@ public interface ServerConfigParams {
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_ENABLE = "custom.assertions.rescan.enable";
     String PARAM_CUSTOM_ASSERTIONS_RESCAN_MILLIS = "custom.assertions.rescan.millis";
     String PARAM_CUSTOM_ASSERTIONS_SCAN_DISABLE = "custom.assertions.scan.disable";
+
+    // Server ModuleFile Manager
+    String PARAM_SERVER_MODULE_FILE_STAGING_FOLDER = "serverModuleFile.staging.folder";
+    String PARAM_SERVER_MODULE_FILE_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
+    String PARAM_SERVER_MODULE_FILE_UPLOAD_MAXSIZE = "serverModuleFile.upload.maxSize";
 }

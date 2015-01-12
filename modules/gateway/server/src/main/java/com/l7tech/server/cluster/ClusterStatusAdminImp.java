@@ -8,7 +8,13 @@ import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
-import com.l7tech.gateway.common.licensing.*;
+import com.l7tech.gateway.common.licensing.CompositeLicense;
+import com.l7tech.gateway.common.licensing.FeatureLicense;
+import com.l7tech.gateway.common.licensing.LicenseDocument;
+import com.l7tech.gateway.common.module.ModuleState;
+import com.l7tech.gateway.common.module.ServerModuleConfig;
+import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -16,10 +22,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.TrustedEsmManager;
-import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.AdminInfo;
@@ -28,8 +31,11 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.licensing.UpdatableCompositeLicenseManager;
-import com.l7tech.server.policy.module.ModularAssertionModule;
+import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.server.policy.module.CustomAssertionModulesConfig;
+import com.l7tech.server.policy.module.ModularAssertionModule;
+import com.l7tech.server.policy.module.ModularAssertionModulesConfig;
 import com.l7tech.server.security.keystore.luna.GatewayLunaPinFinder;
 import com.l7tech.server.security.keystore.luna.LunaProber;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -40,16 +46,18 @@ import com.l7tech.util.*;
 import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.File;
 import java.io.Serializable;
 import java.security.KeyStoreException;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -314,6 +322,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         return expiryWarnPeriod;
     }
 
+    @Override
     public FeatureLicense createLicense(LicenseDocument document) throws InvalidLicenseException {
         return licenseManager.createFeatureLicense(document);
     }
@@ -462,6 +471,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     public String getHardwareCapability(String capability) {
         if (!isKnownCapability(capability))
             return null;
+        //noinspection IfCanBeSwitch
         if (ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability)) {
             return LunaProber.isLunaClientLibraryAvailable() ? "true" : null;
         } else if (ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) {
@@ -566,6 +576,104 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         return ((FailoverStrategyFactory)context.getBean("failoverStrategyFactory")).getAllFailoverStrategy();
     }
 
+    @NotNull
+    @Override
+    public List<ServerModuleFile> findAllServerModuleFiles() throws FindException {
+        final List<ServerModuleFile> ret = new ArrayList<>();
+        final Collection<ServerModuleFile> found = serverModuleFileManager.findAll();
+        for (final ServerModuleFile fullMod : found) {
+            final ServerModuleFile mod = new ServerModuleFile();
+            mod.copyFrom(fullMod, false, true, true);
+            ret.add(mod);
+        }
+        return ret;
+    }
+
+    @Nullable
+    @Override
+    public ServerModuleFile findServerModuleFileById(@NotNull final Goid moduleGoid, final boolean includeDataBytes) throws FindException {
+        final ServerModuleFile fullMod = serverModuleFileManager.findByPrimaryKey(moduleGoid);
+        if (fullMod != null) {
+            final ServerModuleFile mod = new ServerModuleFile();
+            mod.copyFrom(fullMod, includeDataBytes, true, true);
+            return mod;
+        }
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public Goid saveServerModuleFile(@NotNull ServerModuleFile moduleFile) throws FindException, SaveException, UpdateException {
+        Goid id = moduleFile.getGoid();
+        final byte[] dataBytes = moduleFile.getData() != null ? moduleFile.getData().getDataBytes() : null;
+
+        if (Goid.isDefault(id)) {
+            if (dataBytes == null) {
+                throw new SaveException( "data-bytes must be provided when uploading a new module file" );
+            }
+
+            // Save new module
+            moduleFile.setModuleSha256(HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes)));
+            moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
+            moduleFile.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
+            id = serverModuleFileManager.save(moduleFile);
+        } else {
+            // Preserve existing data-bytes, leave sha-256 and size alone
+            final ServerModuleFile oldMod = serverModuleFileManager.findByPrimaryKey(id);
+            if (oldMod == null) {
+                throw new UpdateException( "No existing module with ID \"" + id + "\".  New module must use default ID and must include databytes" );
+            }
+            // Update existing module
+            if (dataBytes == null) {
+                // TODO should we be copying the version from the new version here?
+                oldMod.copyFrom(moduleFile, false, false, false);
+            } else {
+                // New data-bytes included, ensure size and hash are up to date
+                final String byteSha256 = HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes));
+                moduleFile.setModuleSha256(byteSha256);
+                moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
+
+                final boolean dataReallyChanged = !byteSha256.equals(oldMod.getModuleSha256());
+                // TODO should we be copying the version from the new version here?
+                oldMod.copyFrom(moduleFile, dataReallyChanged, true, false);
+                if (dataReallyChanged) {
+                    oldMod.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
+                }
+            }
+            serverModuleFileManager.update(oldMod);
+        }
+
+        return id;
+    }
+
+    @Override
+    public void deleteServerModuleFile( @NotNull Goid id ) throws DeleteException {
+        try {
+            serverModuleFileManager.delete( id );
+        } catch ( FindException e ) {
+            throw new DeleteException( e.getMessage(), e );
+        }
+    }
+
+    @Nullable
+    @Override
+    public ServerModuleFileState findServerModuleFileStateForCurrentNode(@NotNull final ServerModuleFile moduleFile) {
+        return serverModuleFileManager.findStateForCurrentNode(moduleFile);
+    }
+
+    @NotNull
+    @Override
+    public ServerModuleConfig getServerModuleConfig() {
+        final CustomAssertionModulesConfig customConfig = new CustomAssertionModulesConfig(serverConfig);
+        final ModularAssertionModulesConfig modConfig = new ModularAssertionModulesConfig(serverConfig, licenseManager);
+        final ServerModuleConfig config = new ServerModuleConfig();
+        config.setCustomAssertionPropertyFileName(customConfig.getCustomAssertionPropertyFileName());
+        config.setModularAssertionManifestAssertionListKey(modConfig.getManifestHdrAssertionList());
+        config.setCustomAssertionModulesExt(customConfig.getModulesExt());
+        config.setModularAssertionModulesExt(modConfig.getModulesExt());
+        return config;
+    }
+
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5 * 60 * 1000, 100, null) {
                 @Override
@@ -608,6 +716,10 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     private final ExtensionInterfaceManager extensionInterfaceManager;
     private final DateTimeConfigUtils dateTimeConfigUtils;
     private final Timer backgroundTimer = new Timer( "License Updater Task", false );
+
+    @Inject
+    @Named( "serverModuleFileManager" )
+    private ServerModuleFileManager serverModuleFileManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

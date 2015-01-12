@@ -78,9 +78,17 @@ public class HexUtils {
         return md.digest();
     }
 
+    public static byte[] getSha256Digest(byte[] stuffToDigest) {
+        return getMessageDigest( "SHA-256", stuffToDigest );
+    }
+
     public static byte[] getSha512Digest(byte[] stuffToDigest) {
+        return getMessageDigest( "SHA-512", stuffToDigest );
+    }
+
+    private static byte[] getMessageDigest( String algorithm, byte[] stuffToDigest ) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            MessageDigest md = MessageDigest.getInstance( algorithm );
             md.reset();
             return md.digest(stuffToDigest);
         } catch (NoSuchAlgorithmException e) {
@@ -88,9 +96,17 @@ public class HexUtils {
         }
     }
 
+    public static byte[] getSha256Digest(byte[][] stuffToDigest) {
+        return getMessageDigest( "SHA-256", stuffToDigest );
+    }
+
     public static byte[] getSha512Digest(byte[][] stuffToDigest) {
+        return getMessageDigest( "SHA-512", stuffToDigest );
+    }
+
+    private static byte[] getMessageDigest( String algorithm, byte[][] stuffToDigest ) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            MessageDigest md = MessageDigest.getInstance( algorithm );
             md.reset();
             for (byte[] bytes : stuffToDigest)
                 md.update(bytes);

@@ -10,6 +10,8 @@
     <property name="mediumtext.type" value="CLOB(2147483647)" dbms="derby"/>
     <property name="mediumblob.type" value="MEDIUMBLOB" dbms="mysql"/>
     <property name="mediumblob.type" value="BLOB(2147483647)" dbms="derby"/>
+    <property name="longblob.type" value="LONGBLOB" dbms="mysql"/>
+    <property name="longblob.type" value="BLOB(2147483647)" dbms="derby"/>
     <property name="tinyint.type" value="TINYINT(1)" dbms="mysql"/>
     <property name="tinyint.type" value="SMALLINT" dbms="derby"/>
     <property name="xml.column.name" value="xml" dbms="mysql"/>

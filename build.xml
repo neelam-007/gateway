@@ -3202,6 +3202,8 @@
                 <mkdir dir="@{dir}/${install.src.ssg.liquibase}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
+                <mkdir dir="@{dir}/${install.src.ssg.modstaging.modular}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.modstaging.custom}"/>
 
                 <!--copy the config wizard -->
                 <copy todir="@{dir}/${install.src.ssg.configwizard}">

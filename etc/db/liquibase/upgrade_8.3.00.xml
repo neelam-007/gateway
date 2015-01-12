@@ -198,4 +198,117 @@
             <column name="tls_ciphers" type="${mediumtext.type}"/>
         </addColumn>
     </changeSet>
+    <changeSet id="create_server_module_file_tables" author="gateway">
+        <comment>Introduces Server Module File tables (server_module_file, server_module_file_data and server_module_file_state)</comment>
+        <createTable tableName="server_module_file_data">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_bytes" type="${longblob.type}">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="server_module_file">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module_type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module_sha256" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="${properties.column.name}" type="${mediumtext.type}"/>
+            <column name="data_goid" type="${goid.type}">
+                <constraints nullable="false" references="server_module_file_data(goid)" foreignKeyName="fk_server_module_file_data" deleteCascade="true"/>
+            </column>
+        </createTable>
+        <createTable tableName="server_module_file_state">
+            <column name="goid" type="${goid.type}">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INT(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="node_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="state" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_message" type="${mediumtext.type}"/>
+            <column name="module_goid" type="${goid.type}">
+                <constraints nullable="false" references="server_module_file(goid)" foreignKeyName="fk_server_module_file_state" deleteCascade="true"/>
+            </column>
+        </createTable>
+        <rollback>
+            <delete tableName="server_module_file_data"/>
+            <delete tableName="server_module_file"/>
+            <dropTable tableName="server_module_file_state"/>
+            <dropTable tableName="server_module_file"/>
+            <dropTable tableName="server_module_file_data"/>
+        </rollback>
+    </changeSet>
+    <changeSet id="create_server_module_file_role" author="gateway">
+        <comment>Manage Server Module File Roles</comment>
+        <insert tableName="rbac_role">
+            <column name="goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="name" value="Manage Modules Installable via Policy Manager"/>
+            <column name="tag"/>
+            <column name="entity_type" value="SERVER_MODULE_FILE"/>
+            <column name="entity_goid"/>
+            <column name="description" value="Users assigned to the {0} role have the ability to read, create, update and delete Modules Installable via Policy Manager."/>
+            <column name="user_created" valueBoolean="false"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1651)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVER_MODULE_FILE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1652)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="operation_type" value="CREATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVER_MODULE_FILE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1653)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="operation_type" value="UPDATE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVER_MODULE_FILE"/>
+        </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1654)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="operation_type" value="DELETE"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="SERVER_MODULE_FILE"/>
+        </insert>
+        <rollback>
+            <delete tableName="rbac_permission">
+                <where>role_goid = toGoid(0, -1650)</where>
+            </delete>
+            <delete tableName="rbac_role">
+                <where>goid = toGoid(0, -1650)</where>
+            </delete>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

@@ -184,6 +184,11 @@
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
 
+                <!-- Gateway-installable-via-DB server module files (.AAR and .JAR) -->
+                <value>com.l7tech.gateway.common.module.ServerModuleFile</value>
+                <value>com.l7tech.gateway.common.module.ServerModuleFileState</value>
+                <value>com.l7tech.gateway.common.module.ServerModuleFileData</value>
+
                 <!-- Firewall Rules Entity -->
                 <value>com.l7tech.gateway.common.transport.firewall.SsgFirewallRule</value>
 

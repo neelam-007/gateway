@@ -7,6 +7,7 @@ import com.l7tech.server.ServerConfigParams;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -61,7 +62,7 @@ public class ModularAssertionModulesConfig implements ModulesConfig {
         if (extList == null || extList.length() < 1) {
             extList = DEFAULT_EXT_LIST;
         }
-        return Arrays.asList(PATTERN_WHITESPACE.split(extList.toLowerCase()));
+        return Collections.unmodifiableList(Arrays.asList(PATTERN_WHITESPACE.split(extList.toLowerCase())));
     }
 
     @Override

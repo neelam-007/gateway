@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.module;
 
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.module.CustomAssertionsScannerHelper;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
@@ -28,10 +29,8 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
     // modules scanner config
     private final CustomAssertionModulesConfig modulesConfig;
 
-    // for convenience there are two versions of the property file name
-    // one without the leading path separator, the other without
-    private String caPropFileNS;
-    private String caPropFileS;
+    // scanner helper object
+    private final CustomAssertionsScannerHelper scannerHelper;
 
     // flag indicating SSG shutdown, actually it's when the bean is destroyed.
     private boolean isShuttingDown = false;
@@ -66,22 +65,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      * @param callbacks        object containing all custom assertion callbacks.
      */
     public CustomAssertionsScanner(@NotNull final CustomAssertionModulesConfig modulesConfig, @NotNull final ScannerCallbacks.CustomAssertion callbacks) {
-
         this.modulesConfig = modulesConfig;
         this.callbacks = callbacks;
-
-        // for convenience create two versions of the property file name
-        // one without the leading path separator, the other without
-        final String caPropFileName = modulesConfig.getCustomAssertionPropertyFileName();
-        caPropFileNS = caPropFileName;
-        caPropFileS = caPropFileName;
-        if (caPropFileName != null) {
-            if (caPropFileName.startsWith("/")) {
-                caPropFileNS = caPropFileName.substring(1);
-            } else {
-                caPropFileS = "/" + caPropFileName;
-            }
-        }
+        this.scannerHelper = new CustomAssertionsScannerHelper(modulesConfig.getCustomAssertionPropertyFileName());
     }
 
     /**
@@ -121,7 +107,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             moduleLibDirectory.delete();
         }
 
-        boolean resourceFound = caPropFileNS == null || caPropFileS == null;
+        boolean resourceFound = !scannerHelper.hasCustomAssertionPropertyFileName();
 
         final List<File> moduleJarFiles = new ArrayList<>();
         moduleJarFiles.add(moduleJar);
@@ -131,16 +117,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             // may throw IOException if there is a problem reading the content of the file
             jarFile = new JarFile(moduleJar);
             if (!resourceFound) {
-                // check if we should use this module
-                final Enumeration<JarEntry> jarEntries = jarFile.entries();
-                // loop through all files inside the jar, and look for the custom assertion properties file
-                while (jarEntries.hasMoreElements()) {
-                    final JarEntry entry = jarEntries.nextElement();
-                    if (entry.getName().startsWith(caPropFileNS) || entry.getName().startsWith(caPropFileS)) {
-                        resourceFound = true;
-                        break;
-                    }
-                }
+                resourceFound = scannerHelper.isCustomAssertion(jarFile);
             }
 
             if (resourceFound) {

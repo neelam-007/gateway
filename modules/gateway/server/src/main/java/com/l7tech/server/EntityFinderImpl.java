@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.Group;
@@ -16,6 +17,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -59,6 +61,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private AuditRecordManager auditRecordManager;
     private CustomKeyValueStoreManager customKeyValueStoreManager;
+    private ServerModuleFileManager serverModuleFileManager;
 
     private static final int MAX_RESULTS = 100;
 
@@ -88,6 +91,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     public void setCustomKeyValueStoreManager(@NotNull final CustomKeyValueStoreManager customKeyValueStoreManager) {
         this.customKeyValueStoreManager = customKeyValueStoreManager;
+    }
+
+    public void setServerModuleFileManager(@NotNull final ServerModuleFileManager serverModuleFileManager) {
+        this.serverModuleFileManager = serverModuleFileManager;
     }
 
     /**
@@ -262,6 +269,15 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 return (ET) keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, (String)pk));
             } else if (EntityType.GENERIC == type) {
                 return (ET) genericEntityManager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.GENERIC, pk.toString()));
+            } else if (EntityType.SERVER_MODULE_FILE == type) {
+                final ServerModuleFile moduleFile = serverModuleFileManager.findByPrimaryKey((pk instanceof Goid) ? (Goid) pk : GoidUpgradeMapper.mapId(EntityType.SERVER_MODULE_FILE, pk.toString()));
+                if (moduleFile != null) {
+                    final ServerModuleFile moduleFileCopy = new ServerModuleFile();
+                    // exclude data bytes
+                    moduleFileCopy.copyFrom(moduleFile, false, true, true);
+                    return (ET) moduleFileCopy;
+                }
+                return null;
             } else if (PersistentEntity.class.isAssignableFrom(clazz)) {
                 try {
                     tempPk = (pk instanceof Goid)?(Goid)pk:Goid.parseGoid(pk.toString());

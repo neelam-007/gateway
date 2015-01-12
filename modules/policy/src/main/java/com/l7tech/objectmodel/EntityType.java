@@ -101,6 +101,7 @@ public enum EntityType implements Comparable<EntityType> {
     CUSTOM_KEY_VALUE_STORE("Custom Key Value Store", "Custom Key Value Stores", true, false),
     LICENSE_DOCUMENT("License Document", false, false),
     POLICY_BACKED_SERVICE("Policy Backed Service", true, true),
+    SERVER_MODULE_FILE("Server Module File", "Server Module Files", true, false),
     ;
 
     private final String name;
