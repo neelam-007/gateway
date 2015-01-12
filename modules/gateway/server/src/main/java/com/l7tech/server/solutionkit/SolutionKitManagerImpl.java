@@ -56,10 +56,14 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return super.save(entity);
     }
 
+    /**
+     * This method's transactional propagation is set to NOT_SUPPORTED because the RESTMAN bundle importer code will import within
+     * its own transaction and rollback if necessary.
+     */
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String installBundle(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException {
+    public String installBundle(@NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException {
         final RestmanInvoker restmanInvoker = createRestmanInvoker();
         final PolicyEnforcementContext pec = restmanInvoker.getContext(bundle);
 
@@ -68,6 +72,8 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         }
 
         try {
+            // Import bundle using RESTMAN.
+            //
             Pair<AssertionStatus, RestmanMessage> result = restmanInvoker.callManagementCheckInterrupted(pec, bundle);
             if (AssertionStatus.NONE != result.left) {
                 String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
@@ -91,10 +97,14 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         return "";
     }
 
+    /**
+     * This method's transactional propagation is set to NOT_SUPPORTED because the RESTMAN bundle importer code will import within
+     * its own transaction and rollback if necessary.
+     */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void uninstallBundle(@NotNull Goid goid) throws DeleteException, FindException, SolutionKitException {
-        // todo (kpak) - uninstall bundle.
+        // todo (kpak) - Delete bundle using RESTMAN.
         //
     }
 

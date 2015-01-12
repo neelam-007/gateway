@@ -12,21 +12,23 @@ import org.jetbrains.annotations.NotNull;
 public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionKitHeader> {
 
     /**
-     * Installs specified bundle. Does not save solution kit entity.
+     * Install the given bundle. This method will persist entities that are installed, but will not
+     * persist solution kit entity to the database.
      *
-     * @param solutionKit
-     * @param bundle
-     * @param isTest
-     * @return
+     * @param bundle the bundle XML to install
+     * @param isTest true if this is a test installation, no changes will be persisted; false otherwise
+     * @return the resulting mappings XML
      * @throws SaveException
      * @throws SolutionKitException
      */
     @NotNull
-    String installBundle(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException;
+    String installBundle(@NotNull String bundle, boolean isTest) throws SaveException, SolutionKitException;
 
     /**
-     * Uninstalled bundle associated with the specified solution kit GOID. Does delete solution kit entity.
-     * @param goid
+     * Uninstall the given bundle. This method will delete entities that are uninstalled, but will not
+     * delete solution kit entity from the database.
+     *
+     * @param goid the ID of solution kit entity
      * @throws FindException
      * @throws DeleteException
      * @throws SolutionKitException

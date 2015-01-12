@@ -30,16 +30,21 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         return solutionKitManager.findAllHeaders();
     }
 
+    @Override
+    public SolutionKit get(@NotNull Goid goid) throws FindException {
+        return solutionKitManager.findByPrimaryKey(goid);
+    }
+
     @NotNull
     @Override
-    public JobId<String> testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle) {
+    public JobId<String> testInstall(@NotNull final String bundle) {
         final FutureTask<String> task =
             new FutureTask<>(find(false).wrapCallable(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     boolean isTest = true;
                     //noinspection ConstantConditions
-                    return solutionKitManager.installBundle(solutionKit, bundle, isTest);
+                    return solutionKitManager.installBundle(bundle, isTest);
                 }
             }));
 
@@ -61,8 +66,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
                 @Override
                 public Goid call() throws Exception {
                     boolean isTest = false;
+                    // Install bundle.
+                    //
                     //noinspection ConstantConditions
-                    String mappings = solutionKitManager.installBundle(solutionKit, bundle, isTest);
+                    String mappings = solutionKitManager.installBundle(bundle, isTest);
+
+                    // Save solution kit entity.
                     solutionKit.setMappings(mappings);
                     return solutionKitManager.save(solutionKit);
                 }
@@ -99,10 +108,5 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         }, 0L);
 
         return registerJob(task, String.class);
-    }
-
-    @Override
-    public SolutionKit get(@NotNull Goid goid) throws FindException {
-        return solutionKitManager.findByPrimaryKey(goid);
     }
 }
