@@ -271,18 +271,16 @@ public class CassandraConnectionPropertiesDialog extends JDialog {
         nameTextField.setText(connection.getName());
         keyspaceTextField.setText(connection.getKeyspaceName());
         contactPointsTextField.setText(connection.getContactPoints());
-        if (connection.getPort().isEmpty()) {
-            portTextField.setText(DEFAULT_NATIVE_TRANSPORT_PORT);
-        } else {
-            portTextField.setText(connection.getPort());
-        }
+        portTextField.setText(connection.getPort() == null || connection.getPort().isEmpty() ?
+                DEFAULT_NATIVE_TRANSPORT_PORT : connection.getPort());
         credentialsTextField.setText(connection.getUsername());
         if (connection.getPasswordGoid() != null) {
             securePasswordComboBox.setSelectedSecurePassword(connection.getPasswordGoid());
         } else {
             securePasswordComboBox.setSelectedIndex(-1);
         }
-        compressionComboBox.setSelectedItem(connection.getCompression());
+        compressionComboBox.setSelectedItem(connection.getCompression() == null || connection.getCompression().isEmpty() ?
+                CassandraConnection.COMPRESS_NONE : connection.getCompression());
         tlsVersionComboBox.setEnabled(false);
         cipherSuitesButton.setEnabled(false);
         tlsCipherSuites = connection.getTlsEnabledCipherSuites();
