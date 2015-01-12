@@ -152,7 +152,7 @@
                 <properties>
                   <enabled value="false"/>
                   <selected value="true"/>
-                  <text value="From List"/>
+                  <text value="Private Key"/>
                 </properties>
               </component>
               <component id="8c88" class="javax.swing.JRadioButton" binding="fromVariableRadioButton" default-binding="true">
@@ -161,7 +161,7 @@
                 </constraints>
                 <properties>
                   <enabled value="false"/>
-                  <text value="From Variable"/>
+                  <text value="Key From Context Variable"/>
                 </properties>
               </component>
               <component id="fc536" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="privateKeysComboBox">
@@ -373,7 +373,7 @@
                     <properties>
                       <enabled value="false"/>
                       <selected value="true"/>
-                      <text value="Recipient Public Key"/>
+                      <text value="Key From Context Variable"/>
                     </properties>
                   </component>
                   <component id="6872f" class="javax.swing.JLabel" binding="encryptionKeyWarningLabel">
