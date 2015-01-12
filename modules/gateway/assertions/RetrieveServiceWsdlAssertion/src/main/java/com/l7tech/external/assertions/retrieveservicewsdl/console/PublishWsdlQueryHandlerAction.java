@@ -26,7 +26,7 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
     private static final String ICON = "com/l7tech/console/resources/services16.png";
 
     public PublishWsdlQueryHandlerAction() {
-        super(new AttemptedCreate(EntityType.FOLDER),
+        super(new AttemptedCreate(EntityType.SERVICE),
                 Option.<Folder>none(), Option.<AbstractTreeNode>none(),
                 UI_PUBLISH_WSDL_QUERY_HANDLER_WIZARD);
 
