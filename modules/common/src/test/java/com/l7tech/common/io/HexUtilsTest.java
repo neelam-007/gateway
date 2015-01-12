@@ -56,6 +56,8 @@ public class HexUtilsTest {
             }
         }
         String certB64 = HexUtils.encodeBase64(data, true);
+        assertTrue( "chunking disabled, so no line breaks should be present", !certB64.contains( "\015" ) );
+        assertTrue( "chunking disabled, so no line breaks should be present", !certB64.contains( "\012" ) );
         System.out.println(certB64);
         byte[] decoded = HexUtils.decodeBase64(certB64);
         assertTrue(Arrays.equals( decoded, data ));

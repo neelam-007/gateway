@@ -1,10 +1,10 @@
 package com.l7tech.test;
 
+import java.math.BigInteger;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +29,7 @@ public class BenchmarkRunner {
     /** an arbitray number of requests per thread that the test uses */
     public static final int REQUESTS_PER_THREAD = 15;
 
-    private final Set runnerResults = new HashSet();
+    private final Set<ThreadRunner.Result> runnerResults = new HashSet<>();
 
     private CyclicBarrier rendezvous;
     private int threadCount;
@@ -78,7 +78,7 @@ public class BenchmarkRunner {
 
     /**
      * Set the number of threads the test will use
-     * @param threadCount
+     * @param threadCount number of threads to use
      */
     public void setThreadCount(int threadCount) {
         if (threadCount <=0 || threadCount > MAX_THREAD_COUNT) {
@@ -112,9 +112,10 @@ public class BenchmarkRunner {
      * crete the test, and invoke the rendezvous (Barrier) that will
      * release waiting threads.
      *
+     * @return the total number of nanoseconds taken for the test
      * @throws InterruptedException
      */
-    public final void run() throws InterruptedException {
+    public final long run() throws InterruptedException {
         // Make sure any old threads get killed
         killAllThreads();
         allThreadsCompletedNormally = false;
@@ -146,7 +147,7 @@ public class BenchmarkRunner {
         } else {
             log.severe( name = ": WARNING: at least one thread died before finishing: results are incomplete");
         }
-        printResults(allThreadsCompletedNormally);
+        return printResults(allThreadsCompletedNormally);
 
     }
 
@@ -231,25 +232,31 @@ public class BenchmarkRunner {
         }
     }
 
-    private void printResults(boolean allResultsReady) {
+    private long printResults(boolean allResultsReady) {
         if (allResultsReady)
             log.info( name + ": all results collected.");
         else
             log.severe( name + ": SEVERE: at least one thread died before finishing: results are probably incomplete");
 
+        BigInteger totalNanos = BigInteger.ZERO;
+        int numThreads = 0;
         long start = Long.MAX_VALUE - 1;
         long end = 0;
 
-        Iterator it = runnerResults.iterator();
-        while (it.hasNext()) {
-            ThreadRunner.Result res = (ThreadRunner.Result)it.next();
+        for ( Object runnerResult : runnerResults ) {
+            ThreadRunner.Result res = (ThreadRunner.Result) runnerResult;
             //log.info("thread = " + res.thread + " time " + (res.end - res.start));
-            if (end < res.end) end = res.end;
-            if (start > res.start) start = res.start;
+            if ( end < res.end ) end = res.end;
+            if ( start > res.start ) start = res.start;
+            long threadNanos = res.endNanos - res.startNanos;
+            totalNanos = totalNanos.add( BigInteger.valueOf( threadNanos ) );
+            numThreads++;
         }
+        long tn = totalNanos.divide( BigInteger.valueOf( numThreads ) ).longValue();
         long t = (end - start);
         if (t == 0) t = 1;
-        log.info( name + ": total time = " + t + "ms (" + runCount / (t / 1000f) + "/s)" );
+        log.info( name + ": total time = " + t + "ms (" + runCount / (t / 1000f) + "/s)   " + tn + " ns (" + runCount / (tn / 1000000000f ) + "/s");
+        return tn;
     }
 
 
@@ -262,11 +269,15 @@ public class BenchmarkRunner {
          */
         class Result {
             long start;
+            long startNanos;
             long end;
+            long endNanos;
 
-            public Result(long start, long end) {
+            public Result(long start, long startNanos, long end, long endNanos) {
                 this.start = start;
+                this.startNanos = startNanos;
                 this.end = end;
+                this.endNanos = endNanos;
             }
         }
 
@@ -296,11 +307,13 @@ public class BenchmarkRunner {
                 rzvs.await(); // join barrier
 
                 final long start = System.currentTimeMillis();
+                final long startNanos = System.nanoTime();
                 for (int i = 0; i < iterations; ++i)
                     runnable.run();
                 final long end = System.currentTimeMillis();
+                final long endNanos = System.nanoTime();
 
-                collectResults(new Result(start, end));
+                collectResults(new Result(start, startNanos, end, endNanos));
 
             } catch (InterruptedException e) {
                 log.severe( name + ": thread interrupted");

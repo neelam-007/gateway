@@ -76,7 +76,7 @@ public class MasterPassphraseChangerTest {
         // Check that properties got re-encrypted successfully
         Properties props = props(propFile);
         String passval = props.getProperty("node.cluster.pass");
-        assertTrue("Password property shall have been reencrypted", passval.startsWith("$L7C$"));
+        assertTrue("Password property shall have been reencrypted", passval.startsWith("$L7C"));
 
         // Check that encrypted password can be decrypted
         final MasterPasswordManager mpm = new MasterPasswordManager(new KeyStorePrivateKeyMasterPasswordFinder(ompFile));
@@ -106,7 +106,7 @@ public class MasterPassphraseChangerTest {
         // Check that properties got re-encrypted
         Properties props = props(propFile);
         String passval = props.getProperty("node.cluster.pass");
-        assertTrue("Password property shall have been encrypted", passval.startsWith("$L7C$"));
+        assertTrue("Password property shall have been encrypted", passval.startsWith("$L7C"));
 
         // Check that encrypted password can be decrypted
         final MasterPasswordManager mpm = new MasterPasswordManager(new KeyStorePrivateKeyMasterPasswordFinder(ompFile));
@@ -133,7 +133,7 @@ public class MasterPassphraseChangerTest {
         // Check that properties got re-encrypted
         Properties props = props(propFile);
         String passval = props.getProperty("node.cluster.pass");
-        assertTrue("Password property shall have been reencrypted", passval.startsWith("$L7C$"));
+        assertTrue("Password property shall have been reencrypted", passval.startsWith("$L7C"));
 
         // Check that encrypted password can still be decrypted with obfuscated master passphrase
         final MasterPasswordManager mpm = new MasterPasswordManager(new ObfuscatedFileMasterPasswordFinder(ompFile));

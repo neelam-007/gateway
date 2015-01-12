@@ -46,7 +46,7 @@ public class SecurePasswordManagerImpl extends HibernateEntityManager<SecurePass
             synchronized (encryptor) {
                 ret = encryptor.get();
                 if (ret == null) {
-                    ret = new MasterPasswordManager(sharedKeyManager.getSharedKey());
+                    ret = new MasterPasswordManager( sharedKeyManager.getSharedKey(), true );
                     encryptor.set(ret);
                 }
             }

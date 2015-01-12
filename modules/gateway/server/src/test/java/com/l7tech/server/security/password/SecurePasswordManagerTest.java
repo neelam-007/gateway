@@ -16,7 +16,7 @@ public class SecurePasswordManagerTest {
         SecurePasswordManagerImpl spm = new SecurePasswordManagerImpl(skm);
         String encrypted = spm.encryptPassword("foobarbazblat".toCharArray());
         assertNotNull(encrypted);
-        assertTrue(encrypted.startsWith("$L7C$"));
+        assertTrue(encrypted.startsWith("$L7C"));
 
         assertEquals("foobarbazblat", new String(spm.decryptPassword(encrypted)));
     }

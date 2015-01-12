@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 /**
@@ -114,5 +115,38 @@ public class IOUtilsTest {
         //System.out.println( new String(encoded) );
 
         assertArrayEquals( "Long data", encoded, read );
+    }
+
+    @Test
+    public void testEncodeCharacters() throws Exception {
+        Random r = new Random( 48472 );
+        for ( int i = 0; i < 1000; ++i ) {
+            int len = r.nextInt( 512 );
+
+            char[] c = new char[ len ];
+            for ( int j = 0; j < c.length; j++ ) {
+                c[j] = (char)r.nextInt( Character.MAX_VALUE );
+            }
+            byte[] b1 = new String( c ).getBytes( Charsets.UTF8 );
+            byte[] bytes = IOUtils.encodeCharacters( Charsets.UTF8, c );
+
+            assertArrayEquals( b1, bytes );
+        }
+    }
+
+    @Test
+    public void testDecodeCharacters() throws Exception {
+        Random r = new Random( 48473 );
+        for ( int i = 0; i < 1000; ++i ) {
+            int len = r.nextInt( 512 );
+
+            byte[] b = new byte[ len ];
+            r.nextBytes( b );
+
+            char[] c1 = new String( b, Charsets.UTF8 ).toCharArray();
+            char[] chars = IOUtils.decodeCharacters( Charsets.UTF8, b );
+
+            assertArrayEquals( c1, chars );
+        }
     }
 }

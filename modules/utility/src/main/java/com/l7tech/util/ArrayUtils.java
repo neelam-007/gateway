@@ -3,6 +3,7 @@ package com.l7tech.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 
 import static java.lang.reflect.Array.*;
@@ -301,6 +302,33 @@ public class ArrayUtils {
         return left.length < right.length ? -1 : 1;
     }
 
+    /**
+     * Perform a constant-time compare of two byte arrays.
+     * <p/>
+     * A constant time compare always runs through the entire array length so that its
+     * timing does not reveal the position of the first difference.
+     * <p/>
+     * As one application, when comparing a message authentication code with the expected value,
+     * failing to do a constant time compare can destroy the security of the MAC by allowing an attacker
+     * to gradually guess a "correct" forged MAC value by guessing bytes one at a time from left to right,
+     * using the comparison timing changes to see when they have guessed the next byte correctly.
+     *
+     * @param a one array to compare.  Required.
+     * @param b other array to compare.  Required.
+     * @return true if both arrays are identical; otherwise, false
+     */
+    public static boolean compareArraysConstantTime( @NotNull final byte[] a, @NotNull final byte[] b ) {
+        if ( a.length != b.length )
+            return false;
+
+        int c = 0;
+        for ( int i = 0; i < a.length; i++ ) {
+            c |= a[i] ^ b[i];
+        }
+
+        return 0 == c;
+    }
+
     public static byte[] copy(final byte[] data) {
         return (byte[])copyInternal(data);
     }
@@ -424,6 +452,33 @@ public class ArrayUtils {
         return (byte[])copyInternal( a, b );
     }
 
+    /**
+     * Concatenate byte arrays.
+     * <p/>
+     * This method may leave contents of concatenated arrays behind in the buffer pool and so the passed-in arrays
+     * should not contain any secret information.
+     *
+     * @param arrays arrays to concatenate.  Required.
+     * @return a new array consisting of the concatenation of the input arrays.
+     */
+    @NotNull
+    public static byte[] concatMulti( @NotNull byte[]... arrays ) {
+        int len = 0;
+        for ( byte[] array : arrays ) {
+            len += array.length;
+        }
+        try ( PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream( len ) ) {
+            for ( byte[] array : arrays ) {
+                baos.write( array );
+            }
+            return baos.toByteArray();
+
+        } catch ( IOException e ) {
+            // Can't happen
+            throw new RuntimeException( e );
+        }
+    }
+
     /** Same as {@link Arrays#fill} except it returns the array (e.g. so you can use it in a super constructor call) */
     public static char[] fill(char[] chars, char c) {
         Arrays.fill(chars, c);
@@ -514,5 +569,29 @@ public class ArrayUtils {
         Set<String> ret = new LinkedHashSet<String>(Arrays.asList(left));
         ret.retainAll(Arrays.asList(right));
         return ret.toArray(new String[ret.size()]);
+    }
+
+    /**
+     * Unpack a byte string into one or more smaller byte strings of possibly-differing sizes.
+     * <p/>
+     * For example, given an input byte array "foo_bar_baz" and a sizes array of { 2, 3, 1 },
+     * this method would return the three byte arrays "fo", "_ba", "r" (discarding the leftover "_baz").
+     *
+     * @param bytes large byte array to unpack.  Must contain at least as many bytes as the sum of the sizes params.  Required.
+     * @param sizes size of each sub chunk to extract.  Must be nonempty.  Sum of sizes may not exceed size of input byte array.
+     * @return as many smaller byte arrays as there are size arguments.  Each one contains as many bytes from the input array as its corresponding size argument.
+     * @throws ArrayIndexOutOfBoundsException if the sum of the sizes exceeds the length of the input byte array
+     */
+    public static byte[][] unpack( @NotNull byte[] bytes, int... sizes ) {
+        byte[][] ret = new byte[ sizes.length ][];
+        int idx = 0;
+        int pos = 0;
+        for ( int size : sizes ) {
+            byte[] chunk = new byte[ size ];
+            System.arraycopy( bytes, pos, chunk, 0, size );
+            pos += size;
+            ret[ idx++ ] = chunk;
+        }
+        return ret;
     }
 }

@@ -571,6 +571,7 @@
     <!-- Database password encryption, for reading passwords from cluster-wide sources ie cluster properties -->
     <bean id="dbPasswordEncryption" class="com.l7tech.util.MasterPasswordManager">
         <constructor-arg ref="clusterSharedKey"/>
+        <constructor-arg value="true"/>
     </bean>
 
     <!-- Current cluster shared key, as raw byte array -->

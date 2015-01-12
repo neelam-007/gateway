@@ -1,10 +1,13 @@
 package com.l7tech.util;
 
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.nio.ByteBuffer;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,11 +16,15 @@ import java.util.logging.Logger;
  */
 public class MasterPasswordManager {
     private static final Logger logger = Logger.getLogger(MasterPasswordManager.class.getName());
-    private static final String ENCRYPTION_TAG = "L7C";
-    private static final String ENCRYPTION_PREFIX = "$" + ENCRYPTION_TAG + "$";
+    private static final String PROP_EMIT_LEGACY_ENCRYPTION = "com.l7tech.util.MasterPasswordManager.emitLegacyEncryption";
 
-    private final MasterPasswordFinder finder;
-    private static final SecureRandom rand = new SecureRandom();
+    @NotNull
+    private final SecretEncryptorKeyFinder finder;
+
+    @NotNull
+    private final List<SecretEncryptor> secretEncryptors;
+
+    private final boolean bypassKdf;
 
     /**
      * @return the master password converted to key bytes, or null if the master password is unavailable.
@@ -26,7 +33,7 @@ public class MasterPasswordManager {
         byte[] ret = null;
         Throwable t = null;
         try {
-            ret = getFinder().findMasterPasswordBytes();
+            ret = finder.findMasterPasswordBytes();
         } catch (Exception e) {
             /* FALLTHROUGH and log it */
             t = e;
@@ -39,92 +46,102 @@ public class MasterPasswordManager {
     }
 
     /**
-     * Create a MasterPasswordManager that will use the specified master password finder.
+     * Create a MasterPasswordManager that will use the specified master password finder
+     * using the default secret encryptor preference ordering.
      *
-     * @param finder the MasterPasswordFinder to use.
+     * @param finder the SecretEncryptorKeyFinder to invoke whever key material is required for a decryption operation.
      */
-    public MasterPasswordManager(final MasterPasswordFinder finder) {
-        this.finder = finder;
+    public MasterPasswordManager( @NotNull final SecretEncryptorKeyFinder finder ) {
+        this( finder, false, getDefaultSecretEncryptorsList() );
     }
 
     /**
      * Create a MasterPasswordManager that will use the specified bytes to produce the key for encrypting
      * and decrypting passwords.
      * <p/>
-     * <strong>Important note:</strong> This constructor causes the key bytes to be kept in memory for the entire
+     * <strong>note:</strong> This constructor causes the key bytes to be kept in memory for the entire
      * lifetime of the MasterPasswordManager instance and should only be used by unit tests or short-lived processes.
      *
      * @param fixedKeyBytes a byte string that will be used to produce a key.  Will not be treated as characters.
-     *                      No defensive copy will be made, so caller may revoke access to the key at a later time by zeroing the array, causing decryption to fail.
+     *                      Caller may revoke access to the key at a later time by zeroing the array, causing decryption to fail.
      */
-    public MasterPasswordManager(final byte[] fixedKeyBytes) {
-        this.finder = new MasterPasswordFinder() {
+    public MasterPasswordManager(@NotNull final byte[] fixedKeyBytes) {
+        this(  new MasterPasswordFinder() {
             @Override
             public byte[] findMasterPasswordBytes() {
-                return fixedKeyBytes;
+                return Arrays.copyOf( fixedKeyBytes, fixedKeyBytes.length );
             }
-        };
+        }, false, null );
     }
 
     /**
-     * Get the symmetric key that will be used to encrypt and decrypt the encrypted passwords.
-     * This key will be built out of the master password.
-     * Uncached -- this will always look up the master password.
-     * <P/>
-     * The salt and the master password are encoded as UTF-8 byte streams and then key is produced as follows:
-     * <pre>  sha512(masterPass, salt, sha512(masterPass, salt, masterPass)) </pre>
+     * Create a MasterPasswordManager that will use the specified bytes to produce the key for encrypting
+     * and decrypting passwords.
+     * <p/>
+     * <strong>note:</strong> This constructor causes the key bytes to be kept in memory for the entire
+     * lifetime of the MasterPasswordManager instance and should only be used by unit tests or short-lived processes.
      *
-     * @param salt the salt string from the encrypted password, or the salt string to use for encrypting a new password
-     * @return the symmetric key to use for encryption/decryption, or null if no key is available
+     * @param fixedKeyBytes a byte string that will be used to produce a key.  Will not be treated as characters.
+     *                      Caller may revoke access to the key at a later time by zeroing the array, causing decryption to fail.
+     * @param bypassKeyDerivation Set to true to skip the expensive KDF for each encryption/decryption operation <b>ONLY IF</b>
+     *                            the key finder will always return a secret at least 32 bytes (256 bits) long
+     *                            that is <b>HIGH ENTROPY</b> (that is, the output of a secure random number generator, or the
+     *                            output of a key derivation function of some kind, and not something like a user-chosen
+     *                            password or passphrase).
+     *                            <p/>
+     *                            When in any doubt, pass <b>false</b> for this parameter.
      */
-    private SecretKey getKey(String salt) {
-        try {
-            MessageDigest sha = MessageDigest.getInstance("SHA-512");
-            byte[] mpBytes = getMasterPasswordBytes();
-            if (mpBytes == null)
-                return null;
-            byte[] saltBytes = salt.getBytes(Charsets.UTF8);
-
-            sha.reset();
-            sha.update(mpBytes);
-            sha.update(saltBytes);
-            sha.update(mpBytes);
-            byte[] stage1 = sha.digest();
-
-            sha.reset();
-            sha.update(mpBytes);
-            sha.update(saltBytes);
-            sha.update(stage1);
-            byte[] keybytes = sha.digest();
-
-            if ( keybytes.length > 32 ) {
-                byte[] trimmedBytes = new byte[32];
-                System.arraycopy( keybytes, 0, trimmedBytes, 0, 32 );
-                keybytes = trimmedBytes;
+    public MasterPasswordManager( @NotNull final byte[] fixedKeyBytes, boolean bypassKeyDerivation ) {
+        this(  new MasterPasswordFinder() {
+            @Override
+            public byte[] findMasterPasswordBytes() {
+                return Arrays.copyOf( fixedKeyBytes, fixedKeyBytes.length );
             }
-
-            return new SecretKeySpec( keybytes, "AES" );
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("No SHA-512 implementation configured", e); // shouldn't happen
-        }
+        }, bypassKeyDerivation, null );
     }
 
-    /** @return a base64-ed random Salt string. */
-    private String generateSalt() {
-        Cipher aes = getAes();
-        int blocksize = aes.getBlockSize();
-        byte[] saltBytes = new byte[blocksize];
-        rand.nextBytes(saltBytes);
-        return HexUtils.encodeBase64(saltBytes, true);
+
+    /**
+     * Create a MasterPasswordManager that will use the specified master password finder
+     * using the specified secret encryptors and preference ordering.
+     * <p/>
+     * <strong>Important note:</strong> This constructor causes the key bytes to be kept in memory for the entire
+     * lifetime of the MasterPasswordManager instance and should only be used by unit tests or short-lived processes.
+     *
+     * @param finder the SecretEncryptorKeyFinder to invoke whever key material is required for a decryption operation.
+     * @param bypassKeyDerivation Set to true to skip the expensive KDF for each encryption/decryption operation <b>ONLY IF</b>
+     *                            the key finder will always return a secret at least 32 bytes (256 bits) long
+     *                            that is <b>HIGH ENTROPY</b> (that is, the output of a secure random number generator, or the
+     *                            output of a key derivation function of some kind, and not something like a user-chosen
+     *                            password or passphrase).
+     *                            <p/>
+     *                            When in any doubt, pass <b>false</b> for this parameter.
+     * @param secretEncryptors encryptors to use when decrypting a password.  The first encryptor in the list
+     *                         will always be used for encrypting passwords, or null to use the default list.
+     *                         If provided, must be nonempty.
+     */
+    public MasterPasswordManager( @NotNull final SecretEncryptorKeyFinder finder, boolean bypassKeyDerivation, @Nullable final List<SecretEncryptor> secretEncryptors ) {
+        this.finder = finder;
+        this.bypassKdf = bypassKeyDerivation;
+        this.secretEncryptors = secretEncryptors == null ? getDefaultSecretEncryptorsList() : new ArrayList<>( secretEncryptors );
+        if ( this.secretEncryptors.isEmpty() )
+            throw new IllegalArgumentException( "secretEncryptors may not be empty" );
     }
 
-    private Cipher getAes() {
-        try {
-            return Cipher.getInstance("AES/CBC/PKCS5Padding");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("No AES implementation available", e); // can't happen
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException("No AES implementation available with PKCS5Padding", e); // can't happen
+    private static List<SecretEncryptor> getDefaultSecretEncryptorsList() {
+        boolean legacyMode = ConfigFactory.getBooleanProperty( PROP_EMIT_LEGACY_ENCRYPTION, false );
+        if ( legacyMode ) {
+            // Emit legacy L7C, parse either
+            return Arrays.asList(
+                    new L7CSecretEncryptor(),
+                    new L7C2SecretEncryptor()
+            );
+        } else {
+            // Normal mode: emit new L7C2, parse either
+            return Arrays.asList(
+                    new L7C2SecretEncryptor(),
+                    new L7CSecretEncryptor()
+            );
         }
     }
 
@@ -132,48 +149,29 @@ public class MasterPasswordManager {
      * Encrypt a plaintext password using a key derived from the master password and a random salt.
      *
      * @param plaintextPassword the password to encrypt.  Required.
-     * @return the encrypted form of this password, in the form "$L7C$jasdjhfasdkj$asdkajsdhfaskdjfhasdkjfh".  Never null.
+     * @return the encrypted form of this password, in the form "$L7C2$jasdjhfasdkj$asdkajsdhfaskdjfhasdkjfh".  Never null.
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
-    public String encryptPassword(char[] plaintextPassword) {
-        String salt = generateSalt();
-        SecretKey key = getKey(salt);
-        if (key == null)
-            return new String(plaintextPassword);
-
-        try {
-            byte[] saltBytes = HexUtils.decodeBase64(salt);
-            byte[] plaintextBytes = new String(plaintextPassword).getBytes(Charsets.UTF8);
-
-            Cipher aes = getAes();
-            aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(saltBytes));
-            byte[] ciphertextBytes = aes.doFinal(plaintextBytes);
-
-            return ENCRYPTION_PREFIX + salt + "$" + HexUtils.encodeBase64(ciphertextBytes, true);
-
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // can't happen
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
-        } catch (BadPaddingException e) {
-            throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException("Unable to encrypt password: " + ExceptionUtils.getMessage(e), e); // shouldn't happen
-        }
+    public String encryptPassword( char[] plaintextPassword ) {
+        SecretEncryptor encryptor = secretEncryptors.get( 0 );
+        return encryptor.encryptPassword( finder, bypassKdf, IOUtils.encodeCharacters( Charsets.UTF8, plaintextPassword ) );
     }
 
     /**
      * Test if the specified string looks like it might be an encrypted password.
      * <p/>
-     * This method considers a string to look like an encrypted password if it starts with the {@link #ENCRYPTION_PREFIX},
-     * "$L7C$".
+     * This method considers a string to look like an encrypted password if it starts with one of the
+     * recognized encryption prefixes ("$L7C$" or "$L7C2$").
      *
      * @param possiblyEncryptedPassword a password that might be encrypted.  Required.
      * @return true if this password looks like an encrypted password.
      */
     public boolean looksLikeEncryptedPassword(String possiblyEncryptedPassword) {
-        return !(possiblyEncryptedPassword == null || possiblyEncryptedPassword.length() < 1) &&
-               possiblyEncryptedPassword.startsWith(ENCRYPTION_PREFIX);
+        for ( SecretEncryptor secretEncryptor : secretEncryptors ) {
+            if ( secretEncryptor.looksLikeEncryptedSecret( possiblyEncryptedPassword ) )
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -187,25 +185,19 @@ public class MasterPasswordManager {
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
     public char[] decryptPasswordIfEncrypted(String possiblyEncryptedPassword) {
-        if (!looksLikeEncryptedPassword(possiblyEncryptedPassword))
-            return possiblyEncryptedPassword == null ? null : possiblyEncryptedPassword.toCharArray();
-
-        try {
-            return decryptPassword(possiblyEncryptedPassword);
-        } catch (ParseException e) {
-            logger.log(Level.WARNING, "Unable to decrypt encrypted password: " + ExceptionUtils.getMessage(e), e);
-            return possiblyEncryptedPassword.toCharArray();
+        for ( SecretEncryptor secretEncryptor : secretEncryptors ) {
+            if ( secretEncryptor.looksLikeEncryptedSecret( possiblyEncryptedPassword ) ) {
+                try {
+                    byte[] bytes = secretEncryptor.decryptPassword( finder, possiblyEncryptedPassword );
+                    return IOUtils.decodeCharacters( Charsets.UTF8, bytes );
+                } catch ( ParseException e ) {
+                    logger.log( Level.WARNING, "Unable to decrypt encrypted password: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                    return possiblyEncryptedPassword.toCharArray();
+                }
+            }
         }
-    }
 
-    /**
-     * Check if a key is currently available for encryption/decryption.
-     * If no key is available, the encrypt and decrypt methods will return their input unchanged.
-     *
-     * @return true if a master key is currently available; false if no crypto will be done.
-     */
-    public boolean isKeyAvailable() {
-        return getMasterPasswordBytes() != null;
+        return possiblyEncryptedPassword == null ? null : possiblyEncryptedPassword.toCharArray();
     }
 
     /**
@@ -217,63 +209,19 @@ public class MasterPasswordManager {
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
     public char[] decryptPassword(String encryptedPassword) throws ParseException {
-        if (!looksLikeEncryptedPassword(encryptedPassword))
-            throw new ParseException("Not an encrypted password", 0);
-
-        String[] components = encryptedPassword.split("\\$", 10);
-        if (components.length != 4)
-            throw new ParseException("Encrypted password does not have correct format: expected 4 components, found " + components.length, 0);
-        if (components[0].length() > 0)
-            throw new ParseException("Encrypted password does not have correct format: first component not empty", 0); // can't happen
-        if (!ENCRYPTION_TAG.equals(components[1]))
-            throw new ParseException("Encrypted password does not have correct format: second component not " + ENCRYPTION_TAG, 0);
-        String salt = components[2];
-        String ciphertextBase64 = components[3];
-        if (salt.length() < 1)
-            throw new ParseException("Encrypted password does not have correct format: no salt", 0);
-        if (ciphertextBase64.length() < 1)
-            throw new ParseException("Encrypted password does not have correct format: no ciphertext", 0);
-        SecretKey ourkey = getKey(salt);
-        if (ourkey == null)
-            return encryptedPassword.toCharArray();
-
-        try {
-            byte[] saltBytes = HexUtils.decodeBase64(salt);
-            byte[] ciphertextBytes = HexUtils.decodeBase64(ciphertextBase64);
-
-            Cipher aes = getAes();
-            aes.init(Cipher.DECRYPT_MODE, ourkey, new IvParameterSpec(saltBytes));
-            byte[] plaintextBytes = aes.doFinal(ciphertextBytes);
-
-            return new String(plaintextBytes, Charsets.UTF8).toCharArray();
-
-        } catch (IllegalBlockSizeException e) {
-            throw new ParseException("Encrypted password does not have correct format: " + ExceptionUtils.getMessage(e), 0); // shouldn't be possible
-        } catch (BadPaddingException e) {
-            throw new ParseException("Encrypted password does not have correct format: " + ExceptionUtils.getMessage(e), 0);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("Unable to decrypt password: " + ExceptionUtils.getMessage(e), e); // can't happen
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new ParseException("Encrypted password does not have correct salt format: " + ExceptionUtils.getMessage(e), 0);
+        for ( SecretEncryptor secretEncryptor : secretEncryptors ) {
+            if ( secretEncryptor.looksLikeEncryptedSecret( encryptedPassword ) ) {
+                byte[] bytes = secretEncryptor.decryptPassword( finder, encryptedPassword );
+                return Charsets.UTF8.decode( ByteBuffer.wrap( bytes ) ).array();
+            }
         }
-    }
-
-    private synchronized MasterPasswordFinder getFinder() {
-       return finder;
+        throw new ParseException("Not an encrypted password", 0);
     }
 
     /**
      * Interface implemented by strategies for obtaining the master password.
      */
-    public static interface MasterPasswordFinder {
-        /**
-         * Get the Master Password from wherever this MasterPasswordFinder gets it.
-         *
-         * @return the master password as a newly-allocated.  Never empty or null.  May contain arbitrary binary data (not necessarily a valid UTF-8 string).
-         *         Caller should zero the array when finished with it.
-         * @throws IllegalStateException if no master password can be found.
-         */
-        byte[] findMasterPasswordBytes();
+    public static interface MasterPasswordFinder extends SecretEncryptorKeyFinder {
     }
 }
 
