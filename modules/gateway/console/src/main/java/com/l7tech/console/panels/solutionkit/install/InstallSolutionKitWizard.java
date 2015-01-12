@@ -33,7 +33,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Wizard for installing solution kits.
  */
 public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(InstallSolutionKitWizard.class.getName());

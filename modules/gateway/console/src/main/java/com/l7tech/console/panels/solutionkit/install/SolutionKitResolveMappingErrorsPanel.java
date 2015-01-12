@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- *
+ * Wizard panel which allows the user resolve entity mapping errors in a solution kit.
  */
 public class SolutionKitResolveMappingErrorsPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(SolutionKitResolveMappingErrorsPanel.class.getName());

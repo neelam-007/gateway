@@ -17,7 +17,7 @@ import java.util.List;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- *
+ * This panel contains a table that contains solution kits.
  */
 public class SolutionKitTablePanel extends JPanel {
     private JPanel mainPanel;
@@ -25,24 +25,45 @@ public class SolutionKitTablePanel extends JPanel {
 
     private SimpleTableModel<SolutionKitHeader> solutionKitsModel;
 
+    /**
+     * Create panel.
+     */
     public SolutionKitTablePanel() {
         super();
         initialize();
     }
 
+    /**
+     * Set solution kits to display in the table.
+     *
+     * @param solutionKits list of solution kit headers
+     */
     public void setData(@NotNull List<SolutionKitHeader> solutionKits) {
         solutionKitsModel.setRows(solutionKits);
     }
 
+    /**
+     * Refresh table.
+     */
     public void reload() {
         solutionKitsModel.fireTableDataChanged();
     }
 
+    /**
+     * Check if a solution kit in the table is selected.
+     *
+     * @return true if a solution kit selected. false otherwise.
+     */
     public boolean isSolutionKitSelected() {
         int rowIndex = solutionKitsTable.getSelectedRow();
         return (rowIndex != -1);
     }
 
+    /**
+     * Get the selected solution kit header in the table.
+     *
+     * @return the selected solution kit header. Null if none is selected.
+     */
     public SolutionKitHeader getSelectedSolutionKit() {
         int rowIndex = solutionKitsTable.getSelectedRow();
         if (rowIndex == -1) {
@@ -53,10 +74,20 @@ public class SolutionKitTablePanel extends JPanel {
         return solutionKitsModel.getRowObject(modelIndex);
     }
 
+    /**
+     * Set the button to click when a double-click is performed on the table.
+     *
+     * @param button the button
+     */
     public void setDoubleClickAction(@NotNull JButton button) {
         Utilities.setDoubleClickAction(solutionKitsTable, button);
     }
 
+    /**
+     * Add a given list selection listener to the table.
+     *
+     * @param listener the listener
+     */
     public void addListSelectionListener(@NotNull ListSelectionListener listener) {
         solutionKitsTable.getSelectionModel().addListSelectionListener(listener);
     }

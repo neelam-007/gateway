@@ -31,7 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- *
+ * Wizard panel which allows the user to select a solution kit file to install.
  */
 public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(SolutionKitLoadPanel.class.getName());

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * This panel contains a table that contains the mappings.
  */
 public class SolutionKitMappingsPanel extends JPanel {
     private JPanel mainPanel;
@@ -35,11 +35,21 @@ public class SolutionKitMappingsPanel extends JPanel {
     private Map<String, Item> bundleItems = new HashMap<>();    // key = bundle reference item id. value = bundle reference item.
     private Map<String, String> resolvedEntityIds;              // key = from id. value  = to id.
 
+    /**
+     * Create panel.
+     */
     public SolutionKitMappingsPanel() {
         super();
         initialize();
     }
 
+    /**
+     * Set mappings to display in the table.
+     *
+     * @param mappings the mappings
+     * @param bundle the bundle
+     * @param resolvedEntityIds map of resolved entity IDs. Key is source ID, value is the resolved ID.
+     */
     public void setData(@NotNull Mappings mappings, @NotNull Bundle bundle, @NotNull Map<String, String> resolvedEntityIds) {
         bundleItems.clear();
         for (Item aItem : bundle.getReferences()) {
@@ -50,16 +60,29 @@ public class SolutionKitMappingsPanel extends JPanel {
         mappingsModel.setRows(mappings.getMappings());
     }
 
+    /**
+     * Set mappings to display in the table.
+     *
+     * @param mappings the mappings
+     */
     public void setData(@NotNull Mappings mappings) {
         this.bundleItems = null;
         this.resolvedEntityIds = null;
         mappingsModel.setRows(mappings.getMappings());
     }
 
+    /**
+     * Refresh the table.
+     */
     public void reload() {
         mappingsModel.fireTableDataChanged();
     }
 
+    /**
+     * Get the selected mapping in the table.
+     *
+     * @return the selected mapping. Null if none is selected.
+     */
     public Mapping getSelectedMapping() {
         int rowIndex = mappingsTable.getSelectedRow();
         if (rowIndex == -1) {
@@ -70,26 +93,48 @@ public class SolutionKitMappingsPanel extends JPanel {
         return mappingsModel.getRowObject(modelIndex);
     }
 
+    /**
+     * Set the button to click when a double-click is performed on the table.
+     *
+     * @param button the button
+     */
     public void setDoubleClickAction(@NotNull JButton button) {
         Utilities.setDoubleClickAction(mappingsTable, button);
     }
 
+    /**
+     * Add a given list selection listener to the table.
+     *
+     * @param listener the listener
+     */
     public void addListSelectionListener(@NotNull ListSelectionListener listener) {
         mappingsTable.getSelectionModel().addListSelectionListener(listener);
     }
 
+    /**
+     * Hide the "Name" column from the table.
+     */
     public void hideNameColumn() {
         mappingsTable.removeColumn(nameColumn);
     }
 
+    /**
+     * Hide the "Error Type" column from the table.
+     */
     public void hideErrorTypeColumn() {
         mappingsTable.removeColumn(errorTypeColumn);
     }
 
+    /**
+     * Hide the "Resolved" column from the table.
+     */
     public void hideResolvedColumn() {
         mappingsTable.removeColumn(resolvedColumn);
     }
 
+    /**
+     * Hide the "Target ID" column from the table.
+     */
     public void hideTargetIdColumn() {
         mappingsTable.removeColumn(targetIdColumn);
     }

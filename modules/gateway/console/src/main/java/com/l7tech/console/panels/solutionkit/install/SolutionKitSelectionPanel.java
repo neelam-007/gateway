@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import static com.l7tech.gui.util.TableUtil.column;
 
 /**
- *
+ * Wizard panel which allows the user to select component(s) within a solution kit to install.
  */
 public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());

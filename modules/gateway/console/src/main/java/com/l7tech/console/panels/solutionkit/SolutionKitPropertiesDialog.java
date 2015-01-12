@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Dialog used to view the properties of installed solution kit.
  */
 public class SolutionKitPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SolutionKitPropertiesDialog.class.getName());
@@ -34,6 +34,12 @@ public class SolutionKitPropertiesDialog extends JDialog {
     private SolutionKitMappingsPanel solutionKitMappingsPanel;
     private JButton closeButton;
 
+    /**
+     * Create dialog.
+     *
+     * @param owner the owner of the dialog
+     * @param solutionKit the solution kit
+     */
     public SolutionKitPropertiesDialog(Dialog owner, SolutionKit solutionKit) {
         super(owner, "Solution Kit Properties", true);
 

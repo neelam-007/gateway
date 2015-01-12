@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Dialog used to resolve entity mapping errors.
  */
 public class SolutionKitResolveMappingDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SolutionKitResolveMappingDialog.class.getName());
@@ -47,6 +47,13 @@ public class SolutionKitResolveMappingDialog extends JDialog {
     private PrivateKeysComboBox privateKeysComboBox;
     private JdbcConnectionComboBox jdbcConnectionComboBox;
 
+    /**
+     * Create dialog. Currently store passwords, private keys, and JDBC connections are supported.
+     *
+     * @param owner owner of the dialog
+     * @param mapping mapping the entity mapping
+     * @param item the entity item. Can be null.
+     */
     public SolutionKitResolveMappingDialog(@NotNull Dialog owner, @NotNull Mapping mapping, Item item) {
         super(owner, "Resolve Entity Conflict", true);
         this.mapping = mapping;

@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Dialog used to manage solution kits.
  */
 public class ManageSolutionKitsDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(ManageSolutionKitsDialog.class.getName());
@@ -41,6 +41,11 @@ public class ManageSolutionKitsDialog extends JDialog {
 
     private final SolutionKitAdmin solutionKitAdmin;
 
+    /**
+     * Create dialog.
+     *
+     * @param owner the owner of the dialog
+     */
     public ManageSolutionKitsDialog(Frame owner) {
         super(owner, "Manage Solution Kits", true);
 
