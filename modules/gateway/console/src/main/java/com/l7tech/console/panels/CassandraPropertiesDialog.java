@@ -34,9 +34,6 @@ public class CassandraPropertiesDialog extends JDialog {
     private static final String SEND_BUFFER_SIZE = "sendBufferSize";
     private static final String SO_LINGER = "soLinger";
     private static final String TCP_NO_DELAY = "tcpNoDelay";
-    // Query options
-    private static final String QUERY_FETCH_SIZE = "fetchSize";
-    private static final String MAX_RECORDS = "maxRecords";
 
     private JPanel mainPanel;
     private JTextField propValueTextField;
@@ -75,21 +72,26 @@ public class CassandraPropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 String propName = (String) propNameComboBox.getSelectedItem();
+                String propValue = propValueTextField.getText();
                 switch(propName) {
                     case CORE_CONNECTION_PER_HOST:
-                        return getNumberValidationErrorString(propName, 1, Integer.MAX_VALUE);
+                        return getNumberValidationErrorString(propName, propValue, 1, Integer.MAX_VALUE);
                     case MAX_CONNECTION_PER_HOST:
-                        return getNumberValidationErrorString(propName, 2, Integer.MAX_VALUE);
+                        return getNumberValidationErrorString(propName, propValue, 2, Integer.MAX_VALUE);
                     case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
-                        return getNumberValidationErrorString(propName, 1, 32768);
+                        return getNumberValidationErrorString(propName, propValue, 1, 32768);
                     case CONNECTION_TIMEOUT_MILLIS:
                     case READ_TIMEOUT_MILLIS:
                     case RECEIVE_BUFFER_SIZE:
                     case SEND_BUFFER_SIZE:
                     case SO_LINGER:
-                        return getNumberValidationErrorString(propName, 0, Integer.MAX_VALUE);
+                        return getNumberValidationErrorString(propName, propValue, 0, Integer.MAX_VALUE);
                     case HOST_DISTANCE:
-                        return ArrayUtils.contains(hostDistance, propValueTextField.getText()) ? null : propName + " value must be one of " + ArrayUtils.toString(hostDistance);
+                        return ArrayUtils.contains(hostDistance, propValue) ? null : propName + " value must be one of " + ArrayUtils.toString(hostDistance);
+                    case KEEP_ALIVE:
+                    case REUSE_ADDRESS:
+                    case TCP_NO_DELAY:
+                        return getBooleanValidationErrorString(propName, propValueTextField.getText());
                 }
 
                 return null;
@@ -163,17 +165,31 @@ public class CassandraPropertiesDialog extends JDialog {
                 return "12000";
             case KEEP_ALIVE:
                 return "true";
-            case TCP_NO_DELAY:
-                return "false";
             default:
                 return null;
 
         }
     }
 
-    private String getNumberValidationErrorString(String propName, int minValue, int maxVal) {
-        if(!NumberUtils.isNumber(propValueTextField.getText()) || (NumberUtils.toInt(propValueTextField.getText()) < minValue || NumberUtils.toInt(propValueTextField.getText()) > maxVal)) {
-            return propName + " value must be the number between "+ Integer.toString(minValue) + " and " + Integer.toString(maxVal);
+    private String getNumberValidationErrorString(String propName, String propValue, int minValue, int maxVal) {
+        if(NumberUtils.isNumber(propValueTextField.getText())) {
+            try {
+                int value = Integer.parseInt(propValue);
+                if (value >= minValue && value <= maxVal)
+                    return null;
+            } catch (NumberFormatException ne) {
+              //swallow exception
+            }
+        }
+        return propName + " value must be the number between "+ Integer.toString(minValue) + " and " + Integer.toString(maxVal);
+    }
+
+    private static final Pattern BOOLEAN_PATTERN = Pattern.compile("^(?:(?i)true|false)$");
+
+    private String getBooleanValidationErrorString(String propName, String propValue) {
+        Matcher m = BOOLEAN_PATTERN.matcher(propValue.trim());
+        if(!m.find()) {
+            return propName + " value must be either \"true\" or \"false\"";
         }
         return null;
     }
