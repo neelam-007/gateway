@@ -88,6 +88,17 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
     JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
                                                   @NotNull Map<String, BundleMapping> bundleMappings,
                                                   @Nullable String installationPrefix);
+
+    /**
+     * This method is the same as the above method, except a target folder with a goid folderGoid" used during dry run.
+     * @param folderGoid: the goid of the target folder
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull Collection<String> componentIds,
+                                                  @NotNull Map<String, BundleMapping> bundleMappings,
+                                                  @NotNull Goid folderGoid,
+                                                  @Nullable String installationPrefix);
     /**
      * Install the bundle identified by the supplied name
      *

@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
@@ -77,6 +78,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
             try {
                 final RestmanMessage requestMessage = new RestmanMessage(bundle);
+                setTargetIdInRootFolderMapping(requestMessage);
 
                 // handle version modifier
                 final String versionModifier = context.getInstallationPrefix();
@@ -138,8 +140,8 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
                         if (convertedResult.getEntityTypeStr().equals(EntityType.FOLDER.toString()) && convertedResult.getErrorTypeStr().equals("TargetExists")) {
                             idListOfExistingTargetFolders.add(convertedResult.getSrcId());
+                        }
                     }
-                }
                 }
 
                 // Find entities deleted from the bundle, while they are still in the target gateway.
@@ -149,6 +151,24 @@ public class MigrationBundleInstaller extends BaseInstaller {
             } catch (UnexpectedManagementResponse e) {
                 throw new RuntimeException("Unexpected exception", e);
             }
+        }
+    }
+
+    /**
+     * If a target folder is selected, then set an attribute "targetId" as the target folder goid in a root folder mapping.
+     * Note: if such root folder mapping does not exist, then create a new one first.
+     *
+     * @param requestMessage: a Restman Request Message, which will be modified
+     */
+    private void setTargetIdInRootFolderMapping(final RestmanMessage requestMessage) {
+        final Goid targetFolderId = context.getFolderGoid();
+
+        if (requestMessage.hasRootFolderMapping()) {
+            // Add an attribute targetId into the root folder mapping
+            requestMessage.setRootFolderMappingTargetId(targetFolderId.toString());
+        } else {
+            // Create a new mapping with the root folder as srcId and the chosen folder as targetId
+            requestMessage.addFolderMapping(targetFolderId.toString());
         }
     }
 
@@ -321,6 +341,8 @@ public class MigrationBundleInstaller extends BaseInstaller {
             final Map<String, String> deletedEntities = new HashMap<>();
             String requestXml;
             final RestmanMessage requestMessage = new RestmanMessage(bundle);
+            setTargetIdInRootFolderMapping(requestMessage);
+
             try {
                 // handle version modifier
                 final String versionModifier = context.getInstallationPrefix();

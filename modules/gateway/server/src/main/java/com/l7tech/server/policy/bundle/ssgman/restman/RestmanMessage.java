@@ -21,6 +21,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
 
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.MGMT_VERSION_NAMESPACE;
@@ -46,6 +47,11 @@ public class RestmanMessage {
     private static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
     private static final String NODE_ATTRIBUTE_NAME_KEY = "key";
     private static final String ROOT_FOLDER_ID = Folder.ROOT_FOLDER_ID.toHexString();
+
+    private static final String ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE =
+        "<l7:Mapping xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" action=\"NewOrExisting\" srcId=\"0000000000000000ffffffffffffec76\" srcUri=\"/1.0/folders/0000000000000000ffffffffffffec76\" targetId=\"{0}\" type=\"FOLDER\">\n" +
+        "     <l7:Properties><l7:Property key=\"FailOnNew\"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>\n" +
+        "</l7:Mapping>\n";
 
     private List<Element> mappingErrors;
     private List<Element> bundles;
@@ -163,6 +169,11 @@ public class RestmanMessage {
     public boolean hasRootFolderItem() {
         final List<Element> rootNodeIds = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + ROOT_FOLDER_ID + "']//l7:Id", getNamespaceMap());
         return rootNodeIds.size() == 1;
+    }
+
+    public boolean hasRootFolderMapping() {
+        final List<Element> rootNodeMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@srcId='" + ROOT_FOLDER_ID + "']", getNamespaceMap());
+        return rootNodeMappings.size() == 1;
     }
 
     public static Element setL7XmlNs(@NotNull final Element element) {
@@ -352,6 +363,36 @@ public class RestmanMessage {
                 }
             }
         }
+    }
+
+    public void setRootFolderMappingTargetId(String targetId) {
+        final List<Element> rootFolderMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + ROOT_FOLDER_ID + "\"]", getNamespaceMap());
+
+        // there should only be one action mapping per id in a restman message
+        if (rootFolderMappings.size() > 0) {
+            Element rootFolderMapping = rootFolderMappings.get(0);
+            rootFolderMapping.setAttribute(MAPPING_TARGET_ID_ATTRIBUTE, targetId);
+        }
+    }
+
+    public void addFolderMapping(String targetFolderId) {
+        final String mappingStr = MessageFormat.format(ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE, targetFolderId);
+
+        Element newMappingElement;
+        try {
+            newMappingElement = XmlUtil.stringToDocument(mappingStr).getDocumentElement();
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+        newMappingElement = (Element) document.importNode(newMappingElement,  true);
+
+        final List<Element> mappingsElements = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings", getNamespaceMap());
+        if (mappingsElements.size() != 1) return;
+
+        final Element mappingsElement = mappingsElements.get(0);
+        final Element firstMappingElement = DomUtils.findFirstChildElement(mappingsElement);
+
+        mappingsElement.insertBefore(newMappingElement, firstMappingElement);
     }
 
     /**

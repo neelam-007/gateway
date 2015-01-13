@@ -249,8 +249,9 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     protected JobId<PolicyBundleDryRunResult> adminDryRunInstall(@NotNull Collection<String> componentIds,
                                                                  @NotNull Map<String, BundleMapping> bundleMappings,
+                                                                 @NotNull Goid folderGoid,
                                                                  @Nullable String installationPrefix) {
-        return getExtensionInterface(extensionInterfaceInstanceIdentifier).dryRunInstall(componentIds, bundleMappings, installationPrefix);
+        return getExtensionInterface(extensionInterfaceInstanceIdentifier).dryRunInstall(componentIds, bundleMappings, folderGoid, installationPrefix);
     }
 
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
@@ -359,7 +360,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                     BundleInstallerDialog.this,
                     "Pre Installation Check",
                     "The gateway is being checked for conflicts for the selected components",
-                    adminDryRunInstall(bundlesToInstall, bundleMappings, prefix));
+                    adminDryRunInstall(bundlesToInstall, bundleMappings, selectedFolderGoid, prefix));
 
             if (dryRunEither.isRight()) {
                 boolean areConflicts = false;

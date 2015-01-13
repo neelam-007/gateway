@@ -213,6 +213,14 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
                                                          @NotNull final Map<String, BundleMapping> bundleMappings,
                                                          @Nullable final String installationPrefix) {
+        return dryRunInstall(componentIds, bundleMappings, null, installationPrefix);
+    }
+
+    @NotNull
+    public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
+                                                         @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                         @Nullable final Goid folderGoid,
+                                                         @Nullable final String installationPrefix) {
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
         taskToJobContext.put(taskIdentifier, jobContext);
@@ -221,7 +229,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             @Override
             public PolicyBundleDryRunResult call() throws Exception {
                 try {
-                    return doDryRunInstall(taskIdentifier, componentIds, bundleMappings, installationPrefix);
+                    return doDryRunInstall(taskIdentifier, componentIds, bundleMappings, folderGoid, installationPrefix);
                 } catch (PolicyBundleInstallerException e) {
                     final DetailedAdminEvent problemEvent = new DetailedAdminEvent(this, "Problem during pre installation check of the " + getInstallerName(), Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(newAuditDetailInstallError(e)));
@@ -282,6 +290,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     protected PolicyBundleDryRunResult doDryRunInstall(@NotNull final String taskIdentifier,
                                                        @NotNull final Collection<String> componentIds,
                                                        @NotNull final Map<String, BundleMapping> bundleMappings,
+                                                       @Nullable final Goid folderGoid,
                                                        @Nullable final String installationPrefix) throws PolicyBundleInstallerException {
         final DetailedAdminEvent startedEvent = new DetailedAdminEvent(this, MessageFormat.format(PRE_INSTALLATION_MESSAGE, getInstallerName(), "started"), Level.INFO);
         appEventPublisher.publishEvent(startedEvent);
@@ -303,7 +312,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
                     final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired);
+                            bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, null);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(bundleMappings, context);
                     dryRunEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));

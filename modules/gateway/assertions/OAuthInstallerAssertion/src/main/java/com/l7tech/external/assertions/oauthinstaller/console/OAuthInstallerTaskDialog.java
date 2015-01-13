@@ -64,13 +64,6 @@ public class OAuthInstallerTaskDialog extends BundleInstallerDialog {
     }
 
     @Override
-    protected AsyncAdminMethods.JobId<PolicyBundleDryRunResult> adminDryRunInstall(@NotNull Collection<String> componentIds,
-                                                                                   @NotNull Map<String, BundleMapping> bundleMappings,
-                                                                                   @Nullable String installationPrefix) {
-        return ((OAuthInstallerAdmin) getExtensionInterface(null)).dryRunInstall(componentIds, bundleMappings, installationPrefix, integrateApiPortal);
-    }
-
-    @Override
     protected AsyncAdminMethods.JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                                               @NotNull Goid folderGoid,
                                                               @NotNull Map<String, BundleMapping> bundleMappings,
