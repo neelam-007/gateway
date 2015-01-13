@@ -17,18 +17,17 @@ import java.text.ParseException;
 public class SecretsEncryptor {
 
     private MasterPasswordManager secretsEncryptor;
-    private byte[] bundlePassphraseKeyBytes;
     private boolean encryptingInitialized = false;
     private String wrappedBundleKey;
-    private MasterPasswordManager passphraseEncryptor;
+    private MasterPasswordManager bundleKeyEncryptor;
 
     public SecretsEncryptor(byte[] passphrase) throws GeneralSecurityException {
 
         // Convert bundle passphrase to bundle passphrase key bytes
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
         SecretKey secretKey = skf.generateSecret(new PBEKeySpec(new String(passphrase, Charsets.UTF8).toCharArray()));
-        bundlePassphraseKeyBytes = secretKey.getEncoded();
-        passphraseEncryptor = new MasterPasswordManager(bundlePassphraseKeyBytes, false);
+        byte[] bundlePassphraseKeyBytes = secretKey.getEncoded();
+        bundleKeyEncryptor = MasterPasswordManager.createMasterPasswordManager( bundlePassphraseKeyBytes, false, false );
     }
 
     /**
@@ -87,11 +86,11 @@ public class SecretsEncryptor {
         RandomUtil.nextBytes(bundleKeyBytes);
 
         // setup secrets encryptor
-        secretsEncryptor = new MasterPasswordManager(bundleKeyBytes, true);
+        secretsEncryptor = MasterPasswordManager.createMasterPasswordManager( bundleKeyBytes, true, false );
 
         // save wrapped key
         String bundleKeyBase64 = HexUtils.encodeBase64(bundleKeyBytes);
-        wrappedBundleKey = passphraseEncryptor.encryptPassword(bundleKeyBase64.toCharArray());
+        wrappedBundleKey = bundleKeyEncryptor.encryptPassword(bundleKeyBase64.toCharArray());
 
         encryptingInitialized = true;
     }
@@ -105,7 +104,7 @@ public class SecretsEncryptor {
      */
     public String decryptSecret(@Nullable final String secret, @Nullable final String encryptedKey) throws ParseException {
 
-        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(passphraseEncryptor.decryptPassword(encryptedKey))),true);
+        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(bundleKeyEncryptor.decryptPassword(encryptedKey))),true);
         return new String(secretsDecryptor.decryptPassword(secret));
     }
 
