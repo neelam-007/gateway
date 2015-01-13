@@ -311,4 +311,7 @@
             </delete>
         </rollback>
     </changeSet>
+    <changeSet id="delete-ssl-protocol-column" author="rballantyne">
+        <dropColumn tableName="cassandra_connection" columnName="tls_protocol"/>
+    </changeSet>
 </databaseChangeLog>

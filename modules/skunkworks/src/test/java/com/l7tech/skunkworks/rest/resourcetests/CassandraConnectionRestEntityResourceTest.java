@@ -42,7 +42,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc1.setUsername("gateway");
         cc1.setCompression("ProtocolOptions.Compression.NONE");
         cc1.setSsl(true);
-        cc1.setTlsEnabledProtocol("TLSv1");
         cc1.setTlsEnabledCipherSuites(null);
         cc1.setEnabled(true);
         cassandraConnections.add(cc1);
@@ -57,7 +56,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc2.setUsername("gateway2");
         cc2.setCompression("ProtocolOptions.Compression.LZ4");
         cc2.setSsl(true);
-        cc2.setTlsEnabledProtocol("TLSv1");
         cc2.setTlsEnabledCipherSuites(null);
         cc2.setEnabled(true);
         cassandraConnections.add(cc2);

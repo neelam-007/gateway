@@ -465,15 +465,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
             TrustManager[] trustManagers = new TrustManager[]{trustManager};
 
-            //create the SSLContext using TLSv1.2 if specified otherwise TLSv1
-            Provider provider;
-            if ( cassandraConnectionEntity.getTlsEnabledProtocol().equals("TLSv1.2") ) {
-                provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1.2");
-            }  else {
-                provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-            }
-
-            SSLContext sslContext = SSLContext.getInstance(cassandraConnectionEntity.getTlsEnabledProtocol(), provider);
+            SSLContext sslContext = SSLContext.getInstance("TLS");
 
             //initialize the SSLContext with the an array of trustmanager, and random number generator
             sslContext.init(null, trustManagers, secureRandom);

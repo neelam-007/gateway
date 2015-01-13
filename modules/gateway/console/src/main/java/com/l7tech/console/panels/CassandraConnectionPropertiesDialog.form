@@ -163,7 +163,7 @@
           </component>
         </children>
       </grid>
-      <grid id="59417" layout-manager="GridLayoutManager" row-count="3" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="59417" layout-manager="GridLayoutManager" row-count="3" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -182,7 +182,7 @@
           <grid id="6e84" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="5" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none" title="Additional Properties"/>
@@ -255,14 +255,6 @@
               <toolTipText value="Enable SSL communication with the Cassandra cluster. Note that cluster instance must be configured to support SSL."/>
             </properties>
           </component>
-          <component id="f431b" class="javax.swing.JButton" binding="cipherSuitesButton">
-            <constraints>
-              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Cipher Suites"/>
-            </properties>
-          </component>
           <component id="17e5c" class="javax.swing.JComboBox" binding="compressionComboBox">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
@@ -272,20 +264,20 @@
               <toolTipText value="Choose whether compression is used when querying the Cassandra cluster."/>
             </properties>
           </component>
-          <component id="2e03e" class="javax.swing.JLabel" binding="tlsVersionLabel">
+          <component id="f431b" class="javax.swing.JButton" binding="cipherSuitesButton">
             <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="1" use-parent-layout="false"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="TLS Protocol:"/>
+              <text value="Cipher Suites"/>
+              <toolTipText value="Alter the list of acceptable Cipher Suites"/>
             </properties>
           </component>
-          <component id="54dad" class="javax.swing.JComboBox" binding="tlsVersionComboBox">
+          <hspacer id="8c2ee">
             <constraints>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties/>
-          </component>
+          </hspacer>
         </children>
       </grid>
       <grid id="aaf2e" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

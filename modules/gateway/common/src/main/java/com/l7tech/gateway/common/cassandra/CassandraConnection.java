@@ -43,7 +43,6 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     private String compression = "";
     private boolean ssl = false;
     private boolean enabled = true;
-    private String tlsEnabledProtocol;
     private String tlsEnabledCiphers;
     private String propertiesXml;
     private Map<String, String> properties = new TreeMap<>();
@@ -169,17 +168,6 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
-    @Size(min = 1, max = 128)
-    @Column(name = "tls_protocol")
-    public String getTlsEnabledProtocol() {
-        return this.tlsEnabledProtocol;
-    }
-
-    public void setTlsEnabledProtocol(String protocol) {
-        this.tlsEnabledProtocol = protocol;
-    }
-
-    @RbacAttribute
     @Column(name = "tls_ciphers", length = Integer.MAX_VALUE)
     @Lob
     public String getTlsEnabledCipherSuites() {
@@ -238,7 +226,6 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
         this.setPasswordGoid(other.getPasswordGoid());
         this.setCompression(other.getCompression());
         this.setSsl(other.isSsl());
-        this.setTlsEnabledProtocol(other.getTlsEnabledProtocol());
         this.setTlsEnabledCipherSuites(other.getTlsEnabledCipherSuites());
         this.setEnabled(other.isEnabled());
         this.setProperties(other.getProperties());
