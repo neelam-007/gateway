@@ -77,10 +77,7 @@ public class CassandraPropertiesDialog extends JDialog {
                 String propName = (String) propNameComboBox.getSelectedItem();
                 switch(propName) {
                     case CORE_CONNECTION_PER_HOST:
-                    case QUERY_FETCH_SIZE:
                         return getNumberValidationErrorString(propName, 1, Integer.MAX_VALUE);
-                    case MAX_RECORDS:
-                        return getNumberValidationErrorString(propName, 1, 10000);
                     case MAX_CONNECTION_PER_HOST:
                         return getNumberValidationErrorString(propName, 2, Integer.MAX_VALUE);
                     case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
@@ -159,19 +156,15 @@ public class CassandraPropertiesDialog extends JDialog {
             case MAX_CONNECTION_PER_HOST:
                 return "2";
             case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
-                return "256";
+                return "8192";
             case CONNECTION_TIMEOUT_MILLIS:
                 return "5000";
             case READ_TIMEOUT_MILLIS:
                 return "12000";
             case KEEP_ALIVE:
-                return "false";
+                return "true";
             case TCP_NO_DELAY:
                 return "false";
-            case MAX_RECORDS:
-                return "10";
-            case QUERY_FETCH_SIZE:
-                return "5000";
             default:
                 return null;
 
@@ -206,7 +199,7 @@ public class CassandraPropertiesDialog extends JDialog {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
                 HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
                 MAX_SIMUL_REQ_PER_HOST_THRESHOLD, CONNECTION_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS,
-                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY,MAX_RECORDS, QUERY_FETCH_SIZE
+                KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY
         }));
     }
 

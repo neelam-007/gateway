@@ -39,8 +39,8 @@ public class CassandraQueryAssertion extends Assertion implements CassandraConne
     private String queryDocument;
     private boolean failIfNoResults = false;
     private boolean isGenerateXmlResult = false;
-    private int fetchSize = DEFAULT_FETCH_SIZE;
-    private int maxRecords = DEFAULT_MAX_RECORDS;
+    private int fetchSize;
+    private int maxRecords;
     private Map<String, String> namingMap = new HashMap<>();
     private String queryTimeout = "0";
 
