@@ -16,28 +16,31 @@ import java.text.ParseException;
  */
 public class SecretsEncryptor {
 
-    MasterPasswordManager secretsEncryptor;
+    private MasterPasswordManager secretsEncryptor;
     private byte[] bundlePassphraseKeyBytes;
     private boolean encryptingInitialized = false;
     private String wrappedBundleKey;
+    private MasterPasswordManager passphraseEncryptor;
 
     public SecretsEncryptor(byte[] passphrase) throws GeneralSecurityException {
 
         // Convert bundle passphrase to bundle passphrase key bytes
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
-        SecretKey secretKey = skf.generateSecret( new PBEKeySpec( new String(passphrase, Charsets.UTF8).toCharArray()));
+        SecretKey secretKey = skf.generateSecret(new PBEKeySpec(new String(passphrase, Charsets.UTF8).toCharArray()));
         bundlePassphraseKeyBytes = secretKey.getEncoded();
+        passphraseEncryptor = new MasterPasswordManager(bundlePassphraseKeyBytes, false);
     }
 
     /**
+     * Creates an instance of the SecretsEncryptor to use with the passphrase.
      *
-     * @param base64encodedKeyPassphrase The base-64 encoded passphrase to use for the encryption key when encrypting passwords, if null uses cluster passphrase by default.
-     * @return
+     * @param base64encodedKeyPassphrase The base-64 UTF-8 encoded passphrase to use for the encryption key when encrypting passwords, if null uses cluster passphrase.
+     * @return an instance of the SecretsEncryptor
      * @throws FileNotFoundException
      * @throws GeneralSecurityException
      */
     @Nullable
-    public static SecretsEncryptor createSecretsEncryptor(@Nullable final String base64encodedKeyPassphrase) throws FileNotFoundException, GeneralSecurityException {
+    public static SecretsEncryptor createSecretsEncryptor(final String base64encodedKeyPassphrase) throws FileNotFoundException, GeneralSecurityException {
         if (base64encodedKeyPassphrase != null) {
             return new SecretsEncryptor(HexUtils.decodeBase64(base64encodedKeyPassphrase));
         } else {
@@ -52,59 +55,58 @@ public class SecretsEncryptor {
     }
 
     /**
+     * Encrypts the secret
      *
-     * @param secret
-     * @return encrypts secret with generated key
+     * @param secret the secret to encrypt
+     * @return the encrypted secret
      */
-    public String encryptSecret(String secret){
-        if(!encryptingInitialized){
+    public String encryptSecret(String secret) {
+        if (!encryptingInitialized) {
             setupEncrypting();
         }
         return secretsEncryptor.encryptPassword(secret.toCharArray());
     }
 
     /**
-     * Stored in the resource
-     * @return key encrypted by passphrase
+     * The key to store in the resource.
+     *
+     * @return the bundle key to store
      */
-    public String getWrappedBundleKey(){
-        if(!encryptingInitialized){
+    public String getWrappedBundleKey() {
+        if (!encryptingInitialized) {
             setupEncrypting();
         }
         return wrappedBundleKey;
     }
 
-    private void setupEncrypting(){
-        // lazily create encrypting objects, no needed for decrypting
+    private void setupEncrypting() {
+        // lazily create encrypting objects, not needed for decrypting
 
         // Create a new random bundle key
-        byte[] bundleKeyBytes = new byte[32];
+        final byte[] bundleKeyBytes = new byte[32];
         RandomUtil.nextBytes(bundleKeyBytes);
 
         // setup secrets encryptor
-        secretsEncryptor = new MasterPasswordManager(bundleKeyBytes);
+        secretsEncryptor = new MasterPasswordManager(bundleKeyBytes, true);
 
         // save wrapped key
         String bundleKeyBase64 = HexUtils.encodeBase64(bundleKeyBytes);
-        MasterPasswordManager encryptor = new MasterPasswordManager( bundlePassphraseKeyBytes );
-        wrappedBundleKey = encryptor.encryptPassword( bundleKeyBase64.toCharArray() );
+        wrappedBundleKey = passphraseEncryptor.encryptPassword(bundleKeyBase64.toCharArray());
 
         encryptingInitialized = true;
     }
 
     /**
-     * Decrypts secret with key
-     * @param secret
-     * @param encryptedKey
-     * @return
+     * Decrypts the secret
+     *
+     * @param secret        the encrypted secret
+     * @param encryptedKey  the key in the resource
+     * @return  the decrypted secret
      */
-    public String decryptSecret(@Nullable final String secret,@Nullable final String encryptedKey) throws ParseException {
-        // decrypt key
-        // decrypt secret
-        MasterPasswordManager keyDecryptor = new MasterPasswordManager( bundlePassphraseKeyBytes );
-        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(keyDecryptor.decryptPassword(encryptedKey))));
+    public String decryptSecret(@Nullable final String secret, @Nullable final String encryptedKey) throws ParseException {
 
-        return  new String(secretsDecryptor.decryptPassword(secret));
+        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(passphraseEncryptor.decryptPassword(encryptedKey))),true);
+        return new String(secretsDecryptor.decryptPassword(secret));
     }
 
 }
