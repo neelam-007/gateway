@@ -82,6 +82,8 @@ public abstract class DependencyTestBaseClass {
     IdentityProviderProcessor identityProviderProcessor = new IdentityProviderProcessor();
     @InjectMocks
     SsgConnectorDependencyProcessor ssgConnectorDependencyProcessor = new SsgConnectorDependencyProcessor();
+    @InjectMocks
+    CassandraConnectionDependencyProcessor cassandraConnectionDependencyProcessor = new CassandraConnectionDependencyProcessor();
 
     @Spy
     DependencyProcessorStore processorStore = new DependencyProcessorStore(CollectionUtils.MapBuilder.<Dependency.DependencyType, InternalDependencyProcessor>builder()
@@ -95,6 +97,7 @@ public abstract class DependencyTestBaseClass {
             .put(Dependency.DependencyType.ID_PROVIDER_CONFIG, identityProviderProcessor)
             .put(Dependency.DependencyType.SSG_CONNECTOR, ssgConnectorDependencyProcessor)
             .put(Dependency.DependencyType.JMS_ENDPOINT, jdbcDependencyProcessor)
+            .put(Dependency.DependencyType.CASSANDRA_CONNECTION, cassandraConnectionDependencyProcessor)
             .map());
 
     @InjectMocks
