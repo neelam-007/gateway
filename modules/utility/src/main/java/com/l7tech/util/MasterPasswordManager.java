@@ -128,6 +128,47 @@ public class MasterPasswordManager {
             throw new IllegalArgumentException( "secretEncryptors may not be empty" );
     }
 
+    /**
+     * Create a MasterPassword instance that encrypts and decrypts based on a fixed key (which may or may not
+     * be claimed to be high-entropy), that always emits encrypted keys in the new L7C2 format, and that may or may
+     * not even be able to accept keys encrypted in the old L7C format.
+     *
+     * @param fixedKeyBytes  static key bytes.  Required.  If this is at least 32 bytes of high-quality high-entropy key material
+     *                        (that is, securely random, or from a KDF, etc. rather than a user-chosen password or passphrase)
+     *                        then bypassKeyDerivation may be set to true to improve performance substantially.
+     * @param bypassKeyDerivation Set to true to skip the expensive KDF for each encryption/decryption operation <b>ONLY IF</b>
+     *                            the key finder will always return a secret at least 32 bytes (256 bits) long
+     *                            that is <b>HIGH ENTROPY</b> (that is, the output of a secure random number generator, or the
+     *                            output of a key derivation function of some kind, and not something like a user-chosen
+     *                            password or passphrase).
+     *                            <p/>
+     *                            When in any doubt, pass <b>false</b> for this parameter.
+     * @param recognizeLegacyPasswords if true, old style L7C passwords will be accepted for decryption (but will not be emitted).
+     *                                 if false, old style L7C passowords will not be accepted for decryption.
+     *                                 <p/>
+     *                                 When in any doubt, pass <b>false</b> for this parameter.
+     * @return a new MasterPasswordManager instance, ready to encrypt and decrypt using the provided key material.  Never null.
+     * @throws IllegalArgumentException if bypassKeyDerivation=true and staticKeyBytes does not contain at least 32 bytes.
+     */
+    @NotNull
+    public static MasterPasswordManager createMasterPasswordManager( @NotNull final byte[] fixedKeyBytes, boolean bypassKeyDerivation, boolean recognizeLegacyPasswords ) {
+        if ( bypassKeyDerivation && fixedKeyBytes.length < 32 ) {
+            throw new IllegalArgumentException( "At least 32 bytes of high-entropy key material must be provided in order to bypass key derivation" );
+        }
+        SecretEncryptorKeyFinder keyFinder = new SecretEncryptorKeyFinder() {
+            @Override
+            public byte[] findMasterPasswordBytes() {
+                return Arrays.copyOf( fixedKeyBytes, fixedKeyBytes.length );
+            }
+        };
+        List<SecretEncryptor> secretEncryptors = new ArrayList<>();
+        secretEncryptors.add( new L7C2SecretEncryptor() );
+        if ( recognizeLegacyPasswords ) {
+            secretEncryptors.add( new L7CSecretEncryptor() );
+        }
+        return new MasterPasswordManager( keyFinder, bypassKeyDerivation, secretEncryptors );
+    }
+
     private static List<SecretEncryptor> getDefaultSecretEncryptorsList() {
         boolean legacyMode = ConfigFactory.getBooleanProperty( PROP_EMIT_LEGACY_ENCRYPTION, false );
         if ( legacyMode ) {

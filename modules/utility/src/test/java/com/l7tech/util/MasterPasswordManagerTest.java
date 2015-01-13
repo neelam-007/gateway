@@ -225,6 +225,8 @@ public class MasterPasswordManagerTest {
         String ciphertext = mpm.encryptPassword(cleartext.toCharArray());
         assertTrue( ciphertext.startsWith( "$L7C2$" ) );
         assertTrue( "should have iteration count of 1 in high-entropy mode", ciphertext.startsWith( "$L7C2$1," ) );
+        show( mpm, "HE_mode" );
+
         mpm = new MasterPasswordManager( keyBytes ); // Doesn't matter what mode the receiving MPM is in
         String decrypted = new String(mpm.decryptPassword(ciphertext));
         assertEquals(cleartext, decrypted);
@@ -475,6 +477,39 @@ public class MasterPasswordManagerTest {
                 assertEquals( "Unable to decrypt password: bad mac value", e.getMessage() );
             }
         }
+    }
+
+    @Test
+    public void testCreateMasterPasswordManager_legacy_withkdf() throws Exception {
+        MasterPasswordManager mpm = MasterPasswordManager.createMasterPasswordManager( "7layer".getBytes(), false, true );
+        assertEquals( "password", new String( mpm.decryptPassword( CIPHERTEXT_PASSWORD ) ) );
+        assertEquals( "password", new String( mpm.decryptPassword( CIPHERTEXT_LEGACY_PASSWORD ) ) );
+    }
+
+    @Test
+    public void testCreateMasterPasswordManager_nolegacy_withkdf() throws Exception {
+        MasterPasswordManager mpm = MasterPasswordManager.createMasterPasswordManager( "7layer".getBytes(), false, false );
+        assertEquals( "password", new String( mpm.decryptPassword( CIPHERTEXT_PASSWORD ) ) );
+        try {
+            assertEquals( "password", new String( mpm.decryptPassword( CIPHERTEXT_LEGACY_PASSWORD ) ) );
+            fail( "expected ParseException when legacy acceptance disabled" );
+        } catch ( ParseException e ) {
+            // Ok
+        }
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void testCreateMasterPasswordManager_nokdf_insufficientKeyMaterial() throws Exception {
+        MasterPasswordManager.createMasterPasswordManager( "7layer".getBytes(), true, false );
+    }
+
+    @Test
+    public void testCreateMasterPasswordManager_legacy_nokdf() throws Exception {
+        byte[] keyBytes = HexUtils.decodeBase64( "knRIb7vS1O+vRzy5qn3xlv9wDh9Eb87K4+Lu/OuYLas=" );
+
+        MasterPasswordManager mpm = MasterPasswordManager.createMasterPasswordManager( keyBytes, true, false );
+        assertEquals( "HE_mode", new String( mpm.decryptPassword( "$L7C2$1,Lm3DjCPoNgFAnMOpLraW6YM7+WlmDEIuM5H30q5HtnU=$NLbAbsh0j+SYm573NjKAk2kEOTfTpS74B3OVfHrcGhEXgsNuBROyS1y7awsAWWli+6e1P4RLSNssrSOoRGZIlA==" ) ) );
+        assertTrue( "New password should have been encrypted with iteration count of 1", mpm.encryptPassword( "blah".toCharArray() ).startsWith( "$L7C2$1," ) );
     }
 
     @Test
