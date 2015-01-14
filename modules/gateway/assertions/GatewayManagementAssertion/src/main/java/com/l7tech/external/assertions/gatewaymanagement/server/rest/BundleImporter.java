@@ -37,7 +37,7 @@ public class BundleImporter {
      */
     @NotNull
     public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test, final boolean active, final String versionComment, @Nullable String encodedKeyPassphrase) throws ResourceFactory.InvalidResourceException, FileNotFoundException, GeneralSecurityException {
-        SecretsEncryptor secretsEncryptor = encodedKeyPassphrase!=null? SecretsEncryptor.createSecretsEncryptor(encodedKeyPassphrase): null;
+        SecretsEncryptor secretsEncryptor = SecretsEncryptor.createSecretsEncryptor(encodedKeyPassphrase != null ? encodedKeyPassphrase : null);
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle, secretsEncryptor);
         List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
         return bundleTransformer.updateMappings(bundle.getMappings(), mappingsPerformed);

@@ -1299,7 +1299,7 @@ public class SecurePasswordMigrationTest extends com.l7tech.skunkworks.rest.tool
     public void testImportSecretsNew() throws Exception {
         Map<String,String> passphraseHeader = CollectionUtils.<String,String>mapBuilder().put("L7-key-passphrase", HexUtils.encodeBase64("password".getBytes(Charsets.UTF8))).map();
 
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptPasswords=true",HttpMethod.GET, null, "", passphraseHeader);
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true",HttpMethod.GET, null, "", passphraseHeader);
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 

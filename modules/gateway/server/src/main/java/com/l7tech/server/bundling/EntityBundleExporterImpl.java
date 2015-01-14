@@ -130,7 +130,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                 }
 
                 addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity);
-                addEntities(entity, entityContainers);
+                addEntities(bundleExportProperties, entity, entityContainers);
             }
         }
 
@@ -141,19 +141,20 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
      * This will add an entity to the entity containers list, properly creating the entity container containing the
      * entity
      *
-     * @param entity           The entity to add to the list
-     * @param entityContainers The entity containers list
+     * @param bundleExportProperties The bundling properties
+     * @param entity                 The entity to add to the list
+     * @param entityContainers       The entity containers list
      * @throws FindException
      */
-    private void addEntities(@NotNull final Entity entity, @NotNull final List<EntityContainer> entityContainers) throws FindException {
+    private void addEntities(@NotNull final Properties bundleExportProperties, @NotNull final Entity entity, @NotNull final List<EntityContainer> entityContainers) throws FindException {
         if (entity instanceof JmsEndpoint) {
             final JmsEndpoint endpoint = (JmsEndpoint) entity;
             final Entity connection = entityCrud.find(new EntityHeader(endpoint.getConnectionGoid(), EntityType.JMS_CONNECTION, null, null));
             if (connection == null)
                 throw new FindException("Cannot find associated jms connection for jms endpoint: " + endpoint.getName());
             entityContainers.add(new JmsContainer(endpoint, (JmsConnection) connection));
-        } else if (entity instanceof SsgKeyEntry) {
-            // not include private key entity info in bundle
+        } else if (entity instanceof SsgKeyEntry && (!bundleExportProperties.containsKey("EncryptSecrets") || !Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets")))) {
+            // not include private key entity info in bundle unless EncryptSecrets is true
         } else {
             entityContainers.add(new EntityContainer<>(entity));
         }
@@ -185,11 +186,11 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         }
 
         final EntityMappingInstructions mapping;
-        if (entity instanceof SsgKeyEntry ||
-                entity instanceof IdentityProviderConfig ||
+        if (entity instanceof IdentityProviderConfig ||
                 entity instanceof Identity ||
-                entity instanceof SecurePassword ||
-                (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID))) {
+                (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
+                //private keys and secure passwords should only be map only if EncryptSecrets is not specified.
+                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && (!bundleExportProperties.containsKey("EncryptSecrets") || !Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets"))))) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),

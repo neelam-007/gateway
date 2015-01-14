@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -38,6 +39,7 @@ import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.processors.DependencyProcessorUtils;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
@@ -59,6 +61,7 @@ import javax.validation.Validator;
 import javax.validation.groups.Default;
 import java.security.KeyStoreException;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -92,6 +95,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private AuditContextFactory auditContextFactory;
     @Inject
     private SsgKeyStoreManager keyStoreManager;
+    @Inject
+    private SsgKeyStoreManager ssgKeyStoreManager;
 
 
     /**
@@ -139,6 +144,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return Functions.exists(results, new Functions.Unary<Boolean, EntityMappingResult>() {
             @Override
             public Boolean call(EntityMappingResult mapping) {
+                //noinspection ThrowableResultOfMethodCallIgnored
                 return mapping.getException() != null;
             }
         });
@@ -187,7 +193,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, Goid.parseGoid(existingEntity.getId()), mapping, resourceMapping, existingEntity, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
@@ -220,7 +226,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity based on the one in the bundle
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getGoid(), mapping, resourceMapping, null, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getStrId(), mapping, resourceMapping, null, activate, versionComment, false);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -333,7 +339,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             //only process the mapping if the action taken was updated or created and the entity is a generic entity.
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.GENERIC))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
@@ -382,7 +388,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             //only process the mapping if the action taken was updated or created and the entity is a generic entity.
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.REVOCATION_CHECK_POLICY))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
@@ -432,7 +438,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         for (final EntityMappingResult results : mappingsRtn) {
             if (results.getTargetEntityHeader() != null &&
                     results.isSuccessful() &&
-                    (results.getMappingAction().equals(EntityMappingResult.MappingAction.UpdatedExisting) || results.getMappingAction().equals(EntityMappingResult.MappingAction.CreatedNew)) &&
+                    (EntityMappingResult.MappingAction.UpdatedExisting.equals(results.getMappingAction()) || EntityMappingResult.MappingAction.CreatedNew.equals(results.getMappingAction())) &&
                     (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
@@ -546,7 +552,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      */
     @NotNull
     private EntityHeader createOrUpdateResource(@Nullable final EntityContainer entityContainer,
-                                                @Nullable final Goid id,
+                                                @Nullable final String id,
                                                 @NotNull final EntityMappingInstructions mapping,
                                                 @NotNull final Map<EntityHeader, EntityHeader> resourceMapping,
                                                 @Nullable final Entity existingEntity,
@@ -558,7 +564,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         }
 
         //validate that the id is the same as the existing entity id if the existing entity is specified.
-        if (existingEntity != null && (id == null || !existingEntity.getId().equals(id.toString()))) {
+        if (existingEntity != null && (id == null || !existingEntity.getId().equals(id))) {
             throw new IllegalStateException("The specified id must match the id of the existing entity if an existing entity is given");
         }
 
@@ -606,15 +612,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
-        final Either<ObjectModelException, Goid> idOrException = tt.execute(new TransactionCallback<Either<ObjectModelException, Goid>>() {
+        final Option<ObjectModelException> possibleException = tt.execute(new TransactionCallback<Option<ObjectModelException>>() {
             @Override
-            public Either<ObjectModelException, Goid> doInTransaction(final TransactionStatus transactionStatus) {
-                @NotNull
-                final Goid importedID;
+            public Option<ObjectModelException> doInTransaction(final TransactionStatus transactionStatus) {
                 try {
                     try {
                         //need to process policies and published services specially in order to handle versioning and activation.
                         if (entityContainer.getEntity() instanceof Policy || entityContainer.getEntity() instanceof PublishedService) {
+                            @Nullable final Goid goid = id == null ? null : Goid.parseGoid(id);
                             //get the policy for versioning.
                             final Policy policy;
                             if (entityContainer.getEntity() instanceof Policy) {
@@ -626,13 +631,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             if (!activate && existingEntity != null) {
                                 //if activate is false and we are updating an existing entity. We need to update the policy or service with its existing xml and then create a new policy version with the new xml
                                 final String existingXML = (entityContainer.getEntity() instanceof Policy) ? ((Policy) existingEntity).getXml() : ((PublishedService) existingEntity).getPolicy().getXml();
-                                policyOrService.setGoid(id);
+                                policyOrService.setGoid(goid);
                                 policyOrService.setVersion(((PersistentEntity) existingEntity).getVersion());
                                 final String newXML = policy.getXml();
                                 policy.setXml(existingXML);
                                 //update the policy or service but leave the old xml. Note this should not create a new policy version since the xml will not have changed.
                                 entityCrud.update(policyOrService);
-                                importedID = policyOrService.getGoid();
                                 policy.setXml(newXML);
                                 //create a policy checkpoint with the new xml
                                 policyVersionManager.checkpointPolicy(policy, false, versionComment, false);
@@ -640,55 +644,73 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 if(policyOrService instanceof PublishedService){
                                     if(existingEntity == null){
                                         if(id == null) {
-                                            importedID = serviceManager.save((PublishedService) policyOrService);
+                                            serviceManager.save((PublishedService) policyOrService);
                                         }else{
-                                            serviceManager.save(id,(PublishedService) policyOrService);
-                                            importedID = id;
+                                            serviceManager.save(goid,(PublishedService) policyOrService);
                                         }
                                         //create the roles for the service
                                         serviceManager.createRoles((PublishedService) policyOrService);
                                     }else {
-                                        policyOrService.setGoid(id);
+                                        policyOrService.setGoid(goid);
                                         policyOrService.setVersion(((PublishedService) existingEntity).getVersion());
                                         serviceManager.update((PublishedService) policyOrService);
-                                        importedID = policyOrService.getGoid();
                                     }
                                 }else{
                                     if(existingEntity == null){
                                         if(id == null) {
-                                            importedID = policyManager.save((Policy) policyOrService);
+                                            policyManager.save((Policy) policyOrService);
                                         }else{
-                                            policyManager.save(id,(Policy) policyOrService);
-                                            importedID = id;
+                                            policyManager.save(goid,(Policy) policyOrService);
                                         }
                                         //create the roles for the policy
                                         policyManager.createRoles((Policy) policyOrService);
                                     }else {
-                                        policyOrService.setGoid(id);
+                                        policyOrService.setGoid(goid);
                                         policyOrService.setVersion(((Policy) existingEntity).getVersion());
                                         policyManager.update((Policy) policyOrService);
-                                        importedID = policyOrService.getGoid();
                                     }
                                 }
                                 policyVersionManager.checkpointPolicy(policy, true, versionComment, existingEntity == null);
                             }
+                        } else if (entityContainer.getEntity() instanceof SsgKeyEntry) {
+                            final SsgKeyEntry ssgKeyEntry = (SsgKeyEntry) entityContainer.getEntity();
+                            if(existingEntity == null) {
+                                final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeyEntry.getKeystoreId());
+                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(null, ssgKeyEntry, false);
+                                if (!futureSuccess.get()){
+                                    throw new ObjectModelException("Error attempting to save a private key: " + ssgKeyEntry.getId());
+                                }
+                            } else {
+                                final SsgKeyEntry existingSsgKeyEntry = (SsgKeyEntry) existingEntity;
+                                final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(existingSsgKeyEntry.getKeystoreId());
+                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+                                //should use the alias of the existing mapped key
+                                ssgKeyEntry.setAlias(existingSsgKeyEntry.getAlias());
+                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(null, ssgKeyEntry, true);
+                                if (!futureSuccess.get()){
+                                    throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
+                                }
+                            }
                         } else {
-                            importedID = saveOrUpdateEntity(entityContainer.getEntity(), id, existingEntity);
+                            saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
                         }
                     } catch (ObjectModelException e) {
-                        return Either.left(e);
+                        return Option.some(e);
                     }
                     //flush the newly created object so that it can be found by the entity managers later.
                     transactionStatus.flush();
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-                    return Either.left(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass(), e));
+                    return Option.some(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + ". Message: " + ExceptionUtils.getMessage(e), e));
                 }
-                return Either.right(importedID);
+                return Option.none();
             }
         });
         //throw the exception if there was one attempting to save the entity.
-        Eithers.extract(idOrException);
+        if(possibleException.isSome()){
+            throw possibleException.some();
+        }
 
         afterCreateOrUpdateEntities(entityContainer, existingEntity == null);
 

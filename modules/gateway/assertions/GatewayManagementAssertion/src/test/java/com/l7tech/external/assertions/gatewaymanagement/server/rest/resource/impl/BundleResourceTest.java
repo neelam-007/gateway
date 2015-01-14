@@ -75,6 +75,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
     }
 
@@ -90,6 +91,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, encodedPassphrase, new EntityHeader[]{});
     }
 
@@ -104,6 +106,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, new EntityHeader[]{});
     }
 
@@ -118,6 +121,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, new EntityHeader[]{});
     }
 
@@ -134,6 +138,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, header);
     }
 
@@ -151,6 +156,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, encodedPassphrase, header);
     }
 
@@ -167,6 +173,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, header);
     }
 
@@ -183,6 +190,7 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
         expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, header);
     }
 }

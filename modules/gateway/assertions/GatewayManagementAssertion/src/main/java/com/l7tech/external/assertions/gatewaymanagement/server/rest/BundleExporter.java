@@ -26,6 +26,7 @@ public class BundleExporter {
     public static final String DefaultMappingActionOption = "DefaultMappingAction";
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    public static final String EncryptSecrets = "EncryptSecrets";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject
@@ -49,15 +50,15 @@ public class BundleExporter {
      *
      * @param bundleExportOptions  A map of export options. Can be null to use the defaults
      * @param includeDependencies  Include dependency analysis results in the bundle.
-     * @param encryptPasswords     true if encrypted passwords should be included in the bundle.
-     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when encrypting passwords.
+     * @param encryptSecrets       True if encrypted secrets should be included in the bundle.
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when encrypting secrets.
      * @param headers              The list of headers to create the export from. If the headers list is empty the full gateway will be exported.
      * @return The bundle generated from the headers given
      * @throws FindException
      */
     @NotNull
-    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptPasswords, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
-        final SecretsEncryptor secretsEncryptor = encryptPasswords ? SecretsEncryptor.createSecretsEncryptor( encodedKeyPassphrase): null;
+    public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptSecrets, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
+        final SecretsEncryptor secretsEncryptor = encryptSecrets ? SecretsEncryptor.createSecretsEncryptor( encodedKeyPassphrase): null;
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
         if (includeDependencies) {
