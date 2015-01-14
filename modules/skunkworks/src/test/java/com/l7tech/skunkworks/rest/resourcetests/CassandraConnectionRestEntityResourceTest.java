@@ -93,7 +93,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsprotocol("TLSv1");
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
@@ -119,7 +118,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsprotocol("TLSv1");
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
@@ -136,7 +134,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test2", "test2").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsprotocol("TLSv1");
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
@@ -157,7 +154,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsprotocol("TLSv1");
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setSecurityZoneId("12345");
@@ -187,7 +183,6 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsprotocol("TLSv1");
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setSecurityZoneId("12345");
