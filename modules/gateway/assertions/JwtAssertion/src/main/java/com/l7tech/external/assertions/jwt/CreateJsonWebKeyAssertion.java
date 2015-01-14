@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 
-public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariables, SetsVariables, UsesPrivateKeys {
+public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
 
     private String targetVariable;
 
@@ -122,8 +122,8 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
     }
 
     @Override
-    public SsgKeyHeader[] getPrivateKeysUsed() {
-        List<SsgKeyHeader> headers = Lists.newArrayList();
+    public EntityHeader[] getEntitiesUsed() {
+        List<EntityHeader> headers = Lists.newArrayList();
         for (JwkKeyInfo k : keys) {
             headers.add(new SsgKeyHeader(k.getSourceKeyGoid() + ":" + k.getSourceKeyAlias(), k.getSourceKeyGoid(), k.getSourceKeyAlias(), k.getSourceKeyAlias()));
         }
@@ -131,20 +131,21 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
     }
 
     @Override
-    public void replacePrivateKeyUsed(@NotNull SsgKeyHeader oldEntityHeader, @NotNull SsgKeyHeader newEntityHeader) {
-        for (JwkKeyInfo k : keys) {
-            if (Goid.equals(oldEntityHeader.getKeystoreId(), k.getSourceKeyGoid()) && k.getSourceKeyAlias().equals(oldEntityHeader.getAlias())) {
-                if (newEntityHeader instanceof SsgKeyHeader) {
-                    k.setSourceKeyAlias(newEntityHeader.getAlias());
-                    k.setSourceKeyGoid(newEntityHeader.getKeystoreId());
-                } else {
-                    SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
-                    k.setSourceKeyAlias(keyId.getAlias());
-                    k.setSourceKeyGoid(keyId.getKeystoreId());
+    public void replaceEntity(@NotNull EntityHeader oldEntityHeader, @NotNull EntityHeader newEntityHeader) {
+        if(oldEntityHeader instanceof SsgKeyHeader){
+            for (JwkKeyInfo k : keys) {
+                if (Goid.equals(((SsgKeyHeader)oldEntityHeader).getKeystoreId(), k.getSourceKeyGoid()) && k.getSourceKeyAlias().equals(((SsgKeyHeader)oldEntityHeader).getAlias())) {
+                    if (newEntityHeader instanceof SsgKeyHeader) {
+                        k.setSourceKeyAlias(((SsgKeyHeader)newEntityHeader).getAlias());
+                        k.setSourceKeyGoid(((SsgKeyHeader)newEntityHeader).getKeystoreId());
+                    } else {
+                        SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
+                        k.setSourceKeyAlias(keyId.getAlias());
+                        k.setSourceKeyGoid(keyId.getKeystoreId());
+                    }
                 }
             }
         }
-
     }
 }
 
