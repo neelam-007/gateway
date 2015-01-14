@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
+import static com.l7tech.policy.variable.Syntax.getReferencedNames;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 
 
 /**
@@ -183,7 +185,17 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         queryTimeoutTextField.setText((queryTimeout != null) ? queryTimeout : "0");
 
         inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), cqlQueryTextArea, null);
-        inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), queryTimeoutTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(queryPanel.getName(), queryTimeoutTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                final String timeout = queryTimeoutTextField.getText().trim();
+                if (!isValidInteger(timeout, true, 0, Integer.MAX_VALUE) && getReferencedNames(timeout).length == 0) {
+                    errMsg = "The value for the timeout must be a valid positive number.";
+                }
+                return errMsg;
+            }
+        });
 
         addMappingButton.addActionListener(new ActionListener() {
             @Override
