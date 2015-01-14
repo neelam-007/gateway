@@ -64,7 +64,7 @@ public class DatabaseBasedRestManagementEnvironment {
 
     public DatabaseBasedRestManagementEnvironment() throws PolicyAssertionException, SaveException, IOException {
         SyspropUtil.setProperty("com.l7tech.server.logDirectory", this.getClass().getResource("/gateway/logs").getPath());
-        SyspropUtil.setProperty("com.l7tech.config.path", this.getClass().getResource("/gateway/config").getPath());
+        SyspropUtil.setProperty("com.l7tech.server.configDirectory", this.getClass().getResource("/gateway/config").getPath());
         SyspropUtil.setProperty("com.l7tech.server.varDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.attachmentDirectory", this.getClass().getResource("/gateway/var").getPath());
         SyspropUtil.setProperty("com.l7tech.server.modularAssertionsDirectory", "modules/skunkworks/build/modules");
