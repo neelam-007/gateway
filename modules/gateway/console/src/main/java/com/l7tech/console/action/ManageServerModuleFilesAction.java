@@ -31,8 +31,7 @@ public class ManageServerModuleFilesAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        //TODO: Consider new icon
-        return "com/l7tech/console/resources/Bean16.gif";
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override

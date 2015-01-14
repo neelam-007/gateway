@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
@@ -196,7 +195,8 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                                 } catch (final ModuleStagingException e) {
                                     updateModuleState(goid, e.getMessage());
                                     // audit installation failure
-                                    logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, moduleFile, e);
+                                    logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, moduleFile);
+                                    logger.log(Level.WARNING, "Error while Installing Module \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
                                 }
                             }
                         });
@@ -220,7 +220,8 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                             }
                         } catch (ModuleStagingException e) {
                             // audit un-installation failure
-                            logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, moduleFile, e);
+                            logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, moduleFile);
+                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\".", e);
                         }
                     } else {
                         logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\"");
@@ -506,30 +507,13 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
         this.applicationContext = context;
     }
 
-    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event, final Throwable e) {
+    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event) {
         if (applicationContext != null) {
             applicationContext.publishEvent(event);
         }
-
-        if (logger.isLoggable(event.getLevel())) {
-            final LogRecord record = new LogRecord(event.getLevel(), event.getMessage());
-            record.setThrown(e);
-            record.setSourceClassName("");
-            record.setSourceMethodName("");
-            record.setLoggerName(logger.getName());
-            logger.log(record);
-        }
-    }
-
-    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event) {
-        logAndAudit(event, null);
-    }
-
-    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent.Action action, @NotNull final ServerModuleFile moduleFile, final Throwable e) {
-        logAndAudit(ServerModuleFileSystemEvent.createSystemEvent(this, action, moduleFile), e);
     }
 
     protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent.Action action, @NotNull final ServerModuleFile moduleFile) {
-        logAndAudit(action, moduleFile, null);
+        logAndAudit(ServerModuleFileSystemEvent.createSystemEvent(this, action, moduleFile));
     }
 }
