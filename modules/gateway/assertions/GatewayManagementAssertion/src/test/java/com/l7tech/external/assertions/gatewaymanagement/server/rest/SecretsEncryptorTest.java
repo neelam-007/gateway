@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.L7C2SecretEncryptor;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
 import org.junit.After;
@@ -17,7 +19,7 @@ import static org.junit.Assert.*;
 public class SecretsEncryptorTest {
 
     private static final String CONF_SYS_PROP = "com.l7tech.server.configDirectory";
-    private String passphrase = "Password";
+    private String passphraseBase64encoded = HexUtils.encodeBase64("Password".getBytes(Charsets.UTF8));
 
     @Before
     public void setup() {
@@ -33,64 +35,60 @@ public class SecretsEncryptorTest {
     @Test
     public void roundtripClusterPassphrase() throws Exception {
         final SecretsEncryptor secretsEncryptor = SecretsEncryptor.createSecretsEncryptor(null);
-        final String toEncrypt = "foo";
+        final byte[] toEncrypt = "foo".getBytes(Charsets.UTF8);
         final String encrypted = secretsEncryptor.encryptSecret(toEncrypt);
         final String wrappedBundleKey = secretsEncryptor.getWrappedBundleKey();
-        final String decrypted = secretsEncryptor.decryptSecret(encrypted, wrappedBundleKey);
-        assertEquals(toEncrypt, decrypted);
+        final byte[] decrypted = secretsEncryptor.decryptSecret(encrypted, wrappedBundleKey);
+        assertArrayEquals(toEncrypt, decrypted);
     }
 
     @Test
     public void testRoundtrip() throws Exception {
-        String secret = "Super Secret";
+        byte[] secret = "Super Secret".getBytes(Charsets.UTF8);
 
-        SecretsEncryptor encryptor = new SecretsEncryptor(passphrase.getBytes(Charsets.UTF8));
+        SecretsEncryptor encryptor = SecretsEncryptor.createSecretsEncryptor(passphraseBase64encoded);
         String encrypted = encryptor.encryptSecret(secret);
         String wrappedBundleKey = encryptor.getWrappedBundleKey();
+        encryptor.close();
 
-        MasterPasswordManager mpm = new MasterPasswordManager(new byte[]{2, 3, 4});
+        MasterPasswordManager mpm = new MasterPasswordManager(new byte[] { 2, 3, 4});
         assertTrue(encrypted.startsWith("$L7"));
         assertTrue(mpm.looksLikeEncryptedPassword(encrypted));
         assertTrue(mpm.looksLikeEncryptedPassword(wrappedBundleKey));
 
-        SecretsEncryptor decryptor = new SecretsEncryptor(passphrase.getBytes(Charsets.UTF8));
-        String decrypted = decryptor.decryptSecret(encrypted, wrappedBundleKey);
-
-        assertEquals(secret, decrypted);
-
+        byte[] decrypted;
+        try(SecretsEncryptor decryptor = SecretsEncryptor.createSecretsEncryptor(passphraseBase64encoded)) {
+            decrypted = decryptor.decryptSecret(encrypted, wrappedBundleKey);
+        }
+        assertArrayEquals(secret, decrypted);
     }
 
-    @Test
-    public void testBadDecryptingPassphrase() throws Exception {
-        String secret = "Super Secret";
+    @Test(expected = ParseException.class)
+    public void testBadDecryptingPassphrase() throws Exception{
+        byte[] secret = "Super Secret".getBytes(Charsets.UTF8);
 
-        SecretsEncryptor encryptor = new SecretsEncryptor(passphrase.getBytes(Charsets.UTF8));
+        SecretsEncryptor encryptor = SecretsEncryptor.createSecretsEncryptor(passphraseBase64encoded);
         String encrypted = encryptor.encryptSecret(secret);
         String wrappedBundleKey = encryptor.getWrappedBundleKey();
+        encryptor.close();
 
-        MasterPasswordManager mpm = new MasterPasswordManager(new byte[]{2, 3, 4});
-        assertTrue(encrypted.startsWith("$L7"));
-        assertTrue(mpm.looksLikeEncryptedPassword(encrypted));
-        assertTrue(mpm.looksLikeEncryptedPassword(wrappedBundleKey));
+        assertTrue(new L7C2SecretEncryptor().looksLikeEncryptedSecret(encrypted));
+        assertTrue(new L7C2SecretEncryptor().looksLikeEncryptedSecret(wrappedBundleKey));
 
-        SecretsEncryptor decryptor = new SecretsEncryptor("bad".getBytes(Charsets.UTF8));
-        try {
+        try(SecretsEncryptor decryptor = SecretsEncryptor.createSecretsEncryptor(HexUtils.encodeBase64("bad".getBytes(Charsets.UTF8)))) {
             decryptor.decryptSecret(encrypted, wrappedBundleKey);
-        } catch (ParseException e) {
-            return;
         }
-        fail("Should throw error");
     }
 
-    @Test
-    public void testDecrypting() throws Exception {
-        SecretsEncryptor decryptor = new SecretsEncryptor("bad".getBytes(Charsets.UTF8));
-        try {
-            decryptor.decryptSecret(null, null);
-        } catch (ParseException e) {
-            return;
-        }
-        fail("Should throw error");
-    }
+    @Test(expected = ParseException.class)
+    public void testPassphraseRevoked() throws Exception{
+        byte[] secret = "Super Secret".getBytes(Charsets.UTF8);
 
+        SecretsEncryptor encryptor = SecretsEncryptor.createSecretsEncryptor(passphraseBase64encoded);
+        String encrypted = encryptor.encryptSecret(secret);
+        String wrappedBundleKey = encryptor.getWrappedBundleKey();
+        encryptor.close();
+
+        encryptor.decryptSecret(encrypted,wrappedBundleKey);
+    }
 }

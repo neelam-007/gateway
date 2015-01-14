@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleImporter;
 import com.l7tech.server.bundling.EntityMappingResult;
+import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +41,7 @@ public class BundleImporter {
         SecretsEncryptor secretsEncryptor = SecretsEncryptor.createSecretsEncryptor(encodedKeyPassphrase != null ? encodedKeyPassphrase : null);
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle, secretsEncryptor);
         List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
+        ResourceUtils.closeQuietly(secretsEncryptor);
         return bundleTransformer.updateMappings(bundle.getMappings(), mappingsPerformed);
     }
 }

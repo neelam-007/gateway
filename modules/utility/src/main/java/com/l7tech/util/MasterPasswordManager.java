@@ -27,25 +27,6 @@ public class MasterPasswordManager {
     private final boolean bypassKdf;
 
     /**
-     * @return the master password converted to key bytes, or null if the master password is unavailable.
-     */
-    byte[] getMasterPasswordBytes() {
-        byte[] ret = null;
-        Throwable t = null;
-        try {
-            ret = finder.findMasterPasswordBytes();
-        } catch (Exception e) {
-            /* FALLTHROUGH and log it */
-            t = e;
-        }
-        if (ret == null) {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
-        }
-        return ret;
-    }
-
-    /**
      * Create a MasterPasswordManager that will use the specified master password finder
      * using the default secret encryptor preference ordering.
      *
@@ -100,7 +81,6 @@ public class MasterPasswordManager {
         }, bypassKeyDerivation, null );
     }
 
-
     /**
      * Create a MasterPasswordManager that will use the specified master password finder
      * using the specified secret encryptors and preference ordering.
@@ -136,15 +116,16 @@ public class MasterPasswordManager {
      * @param fixedKeyBytes  static key bytes.  Required.  If this is at least 32 bytes of high-quality high-entropy key material
      *                        (that is, securely random, or from a KDF, etc. rather than a user-chosen password or passphrase)
      *                        then bypassKeyDerivation may be set to true to improve performance substantially.
+     *                       <p/>Caller may zeroize the passed in fixedKeyBytes array to revoke this master password manager's access to it
      * @param bypassKeyDerivation Set to true to skip the expensive KDF for each encryption/decryption operation <b>ONLY IF</b>
      *                            the key finder will always return a secret at least 32 bytes (256 bits) long
      *                            that is <b>HIGH ENTROPY</b> (that is, the output of a secure random number generator, or the
      *                            output of a key derivation function of some kind, and not something like a user-chosen
      *                            password or passphrase).
-     *                            <p/>
+     *
      *                            When in any doubt, pass <b>false</b> for this parameter.
      * @param recognizeLegacyPasswords if true, old style L7C passwords will be accepted for decryption (but will not be emitted).
-     *                                 if false, old style L7C passowords will not be accepted for decryption.
+     *                                 if false, old style L7C passwords will not be accepted for decryption.
      *                                 <p/>
      *                                 When in any doubt, pass <b>false</b> for this parameter.
      * @return a new MasterPasswordManager instance, ready to encrypt and decrypt using the provided key material.  Never null.
@@ -187,15 +168,49 @@ public class MasterPasswordManager {
     }
 
     /**
+     * @return the master password converted to key bytes, or null if the master password is unavailable.
+     */
+    byte[] getMasterPasswordBytes() {
+        byte[] ret = null;
+        Throwable t = null;
+        try {
+            ret = finder.findMasterPasswordBytes();
+        } catch (Exception e) {
+            /* FALLTHROUGH and log it */
+            t = e;
+        }
+        if (ret == null) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+        }
+        return ret;
+    }
+
+    /**
      * Encrypt a plaintext password using a key derived from the master password and a random salt.
+     * <p/>This method is the same as {@link #encryptSecret(byte[])} after converting the characters
+     * to bytes using UTF-8.
      *
      * @param plaintextPassword the password to encrypt.  Required.
      * @return the encrypted form of this password, in the form "$L7C2$jasdjhfasdkj$asdkajsdhfaskdjfhasdkjfh".  Never null.
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
-    public String encryptPassword( char[] plaintextPassword ) {
+    @NotNull
+    public String encryptPassword( @NotNull char[] plaintextPassword ) {
+        return encryptSecret( IOUtils.encodeCharacters( Charsets.UTF8, plaintextPassword ) );
+    }
+
+    /**
+     * Encrypt a plaintext secret that can be any raw byte array.
+     *
+     * @param plaintextSecret the secret to encrypt.  Required.
+     * @return the encrypted password.  Never null
+     * @throws RuntimeException if a needed algorithm or padding mode is unavailable
+     */
+    @NotNull
+    public String encryptSecret( @NotNull byte[] plaintextSecret ) {
         SecretEncryptor encryptor = secretEncryptors.get( 0 );
-        return encryptor.encryptPassword( finder, bypassKdf, IOUtils.encodeCharacters( Charsets.UTF8, plaintextPassword ) );
+        return encryptor.encryptPassword( finder, bypassKdf, plaintextSecret );
     }
 
     /**
@@ -249,11 +264,25 @@ public class MasterPasswordManager {
      * @throws ParseException if the encrypted password was invalid and could not be decrypted
      * @throws RuntimeException if a needed algorithm or padding mode is unavailable
      */
-    public char[] decryptPassword(String encryptedPassword) throws ParseException {
+    @NotNull
+    public char[] decryptPassword( @NotNull String encryptedPassword) throws ParseException {
+        byte[] bytes = decryptSecret(encryptedPassword);
+        return Charsets.UTF8.decode( ByteBuffer.wrap( bytes ) ).array();
+    }
+
+    /**
+     * Decrypt an encrypted secret.
+     *
+     * @param encryptedSecret an encrypted secret (or password), similar to "$L7C$jasdjhfasdkj$asdkajsdhfaskdjfhasdkjfh".  Required.
+     * @return the decrypted plaintext of the secret.  Never null, but may be empty.
+     * @throws ParseException if the encrypted secret was invalid and could not be decrypted
+     * @throws RuntimeException if a needed algorithm or padding mode is unavailable
+     */
+    @NotNull
+    public byte[] decryptSecret( @NotNull String encryptedSecret ) throws ParseException {
         for ( SecretEncryptor secretEncryptor : secretEncryptors ) {
-            if ( secretEncryptor.looksLikeEncryptedSecret( encryptedPassword ) ) {
-                byte[] bytes = secretEncryptor.decryptPassword( finder, encryptedPassword );
-                return Charsets.UTF8.decode( ByteBuffer.wrap( bytes ) ).array();
+            if ( secretEncryptor.looksLikeEncryptedSecret( encryptedSecret ) ) {
+                return secretEncryptor.decryptPassword(finder, encryptedSecret);
             }
         }
         throw new ParseException("Not an encrypted password", 0);

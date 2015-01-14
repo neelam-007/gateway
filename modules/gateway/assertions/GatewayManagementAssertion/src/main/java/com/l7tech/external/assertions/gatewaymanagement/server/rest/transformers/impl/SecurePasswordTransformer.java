@@ -10,10 +10,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.util.Charsets;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 
 @Component
@@ -41,7 +44,7 @@ public class SecurePasswordTransformer extends APIResourceWsmanBaseTransformer<S
     public EntityContainer<SecurePassword> convertFromMO(@NotNull StoredPasswordMO storedPasswordMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         if(storedPasswordMO.getPassword()!=null && storedPasswordMO.getPasswordBundleKey() != null){
             try {
-                storedPasswordMO.setPassword(secretsEncryptor.decryptSecret(storedPasswordMO.getPassword(),storedPasswordMO.getPasswordBundleKey()));
+                storedPasswordMO.setPassword(new String(secretsEncryptor.decryptSecret(storedPasswordMO.getPassword(), storedPasswordMO.getPasswordBundleKey()), Charsets.UTF8));
             } catch (ParseException e) {
                 throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES,"Failed to decrypt password");
             }
@@ -57,8 +60,8 @@ public class SecurePasswordTransformer extends APIResourceWsmanBaseTransformer<S
             // decrypt and encrypt password.
             try {
                 String decryptedPassword = new String(passwordManager.decryptPassword(securePassword.getEncodedPassword()));
-                mo.setPassword(secretsEncryptor.encryptSecret(decryptedPassword),secretsEncryptor.getWrappedBundleKey());
-            } catch (FindException | ParseException e) {
+                mo.setPassword(secretsEncryptor.encryptSecret(decryptedPassword.getBytes(Charsets.UTF8)),secretsEncryptor.getWrappedBundleKey());
+            } catch ( FindException | ParseException e) {
                 throw new ResourceFactory.ResourceAccessException("Error retrieving password: " +e.getMessage(),e);
             }
 

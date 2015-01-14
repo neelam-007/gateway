@@ -75,7 +75,7 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
             }
             final String keyFormat = pk.getFormat().toUpperCase();
             if ("PKCS8".equals(keyFormat) || "PKCS#8".equals(keyFormat)) {
-                final String encryptedKeyBytes = secretsEncryptor.encryptSecret(new Base64().encodeAsString(pk.getEncoded()));
+                final String encryptedKeyBytes = secretsEncryptor.encryptSecret(pk.getEncoded());
                 final AttributeExtensibleType.AttributeExtensibleString keyData = new AttributeExtensibleType.AttributeExtensibleString();
                 keyData.setValue(encryptedKeyBytes);
                 keyData.setAttributeExtensions(CollectionUtils.<QName, Object>mapBuilder()
@@ -107,16 +107,16 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
             final String algorithm = (String) keyData.getAttributeExtensions().get(new QName("algorithm"));
             final String bundleKey = (String) keyData.getAttributeExtensions().get(new QName("bundleKey"));
 
-            final String decryptedKeyString;
+            final byte[] decryptedKey;
             try {
-                decryptedKeyString = secretsEncryptor.decryptSecret(keyData.getValue(), bundleKey);
+                decryptedKey = secretsEncryptor.decryptSecret(keyData.getValue(), bundleKey);
             } catch (ParseException e) {
                 throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid private key data");
             }
 
             // Convert PKCS#8 bytes back into RSA, EC or DSA private key instance
             try {
-                final PrivateKey privateKey = KeyFactory.getInstance(algorithm).generatePrivate(new PKCS8EncodedKeySpec(new Base64().decode(decryptedKeyString)));
+                final PrivateKey privateKey = KeyFactory.getInstance(algorithm).generatePrivate(new PKCS8EncodedKeySpec(decryptedKey));
                 ssgKeyEntry.setPrivateKey(privateKey);
             } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
                 throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid private key data: " + ExceptionUtils.getMessage(e));

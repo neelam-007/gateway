@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +67,7 @@ public class BundleExporter {
             final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults());
             bundle.setDependencyGraph(dependencyMOs);
         }
+        ResourceUtils.closeQuietly(secretsEncryptor);
         return bundle;
     }
 }
