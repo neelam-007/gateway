@@ -21,6 +21,31 @@ import java.util.regex.Pattern;
 
 /**
  * A cleaner password encryption scheme that includes an HMAC.
+ * <p/>
+ * The format is dollar sign delimited:
+ * <pre>
+ *     $L7C2$ITC,SALT$CRYPT
+ * </pre>
+ * where:
+ * <pre>
+ *     L7C2 is the literal string "L7C2"
+ *     ITC is the PBKDF2 iteration count, expressed in hexidecimal (eg, "1bead")
+ *     SALT is at least 32 bytes of Base-64 encoded random salt
+ *     CRYPT is a Base-64 encoded binary value consisting of 16 bytes of IV,
+ *        followed immediately by zero or more 16-byte AES/CBC ciphertext blocks,
+ *        followed immediately by 32 bytes of Hmac256 MAC value.
+ * </pre>
+ * The encryption (and MAC) key is produced by running PBKDF2WithHmacSHA1 on the raw input key using the salt and iteration count.
+ *
+ * Possible issues:
+ *  - Currently the same key is used for AES/CBC as for Hmac256.  This is probably OK, but it
+ *    would be better to derive two subkeys rather than using the same key for both.
+ *  - Colin Percival argues that AES/CTR is strictly preferable to AES/CBC, even when using encrypt-then-MAC,
+ *    because CBC exposes more cipher internal state to an attacker who can choose ciphertext.
+ *    The L7C2 format nevertheless uses CBC,
+ *    in part because naive use of CTR mode would expose the exact length of the ciphertext, which is particularly
+ *    problematic for very short passwords.
+ *
  */
 public class L7C2SecretEncryptor implements SecretEncryptor {
     private static final Logger logger = Logger.getLogger( L7C2SecretEncryptor.class.getName() );
