@@ -68,7 +68,9 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 //        dependencyAnalysisMO.setSearchObjectItem(toDependencyManagedObject(dependencySearchResultsList.get(0).getDependent(), dependencySearchResultsList.get(0).getDependencies()));
         List<Dependency> dependencyList = new ArrayList<>();
         for (DependencySearchResults results : dependencySearchResultsList){
-            dependencyList.addAll(DependencySearchResultsUtils.flattenDependencySearchResults(results, false));
+            if(results != null) {
+                dependencyList.addAll(DependencySearchResultsUtils.flattenDependencySearchResults(results, false));
+            }
         }
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
