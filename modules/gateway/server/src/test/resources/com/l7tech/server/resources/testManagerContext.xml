@@ -32,13 +32,6 @@
         <constructor-arg index="1" ref="clusterNodeId"/>
     </bean>
 
-    <bean id="serverModuleFileListener" class="com.l7tech.server.module.ServerModuleFileListenerStageOneImpl">
-        <constructor-arg index="0" ref="applicationEventProxy"/>
-        <constructor-arg index="1" ref="serverModuleFileManager"/>
-        <constructor-arg index="2" ref="transactionManager"/>
-        <constructor-arg index="3" ref="serverConfig"/>
-    </bean>
-
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
         <property name="rbacServices">
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">

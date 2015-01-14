@@ -1,5 +1,6 @@
 package com.l7tech.server.module;
 
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
@@ -9,12 +10,18 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
+import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -26,13 +33,14 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
  * Server Module File event listener.<br/>
  * Listens for {@link ServerModuleFile} {@link EntityInvalidationEvent}'s.
  */
-public abstract class ServerModuleFileListener {
+public abstract class ServerModuleFileListener implements ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(ServerModuleFileListener.class.getName());
 
     protected static final String MODULAR_MODULES_DIR = "modular";
@@ -46,6 +54,10 @@ public abstract class ServerModuleFileListener {
     @NotNull protected final ServerModuleFileManager serverModuleFileManager;
     protected final PlatformTransactionManager transactionManager;
     @NotNull protected final Config config;
+    @NotNull protected final ServerAssertionRegistry modularAssertionRegistrar;
+    @NotNull protected final CustomAssertionsRegistrar customAssertionRegistrar;
+    private ApplicationContext applicationContext;
+
     private volatile boolean gatewayStarted = false;
 
     /**
@@ -65,11 +77,15 @@ public abstract class ServerModuleFileListener {
             @NotNull final ApplicationEventProxy eventProxy,
             @NotNull final ServerModuleFileManager serverModuleFileManager,
             final PlatformTransactionManager transactionManager,
-            @NotNull final Config config
+            @NotNull final Config config,
+            @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
+            @NotNull final CustomAssertionsRegistrar customAssertionRegistrar
     ) {
         this.serverModuleFileManager = serverModuleFileManager;
         this.transactionManager = transactionManager;
         this.config = config;
+        this.modularAssertionRegistrar = modularAssertionRegistrar;
+        this.customAssertionRegistrar = customAssertionRegistrar;
 
         eventProxy.addApplicationListener(new ApplicationListener() {
             @Override
@@ -156,8 +172,16 @@ public abstract class ServerModuleFileListener {
                         transactionIfAvailable(new Runnable() {
                             @Override
                             public void run() {
+                                // extract server module file
+                                final ServerModuleFile moduleFile;
                                 try {
-                                    final ServerModuleFile moduleFile = serverModuleFileManager.findByPrimaryKey(goid);
+                                    moduleFile = serverModuleFileManager.findByPrimaryKey(goid);
+                                } catch (final FindException e) {
+                                    logger.log(Level.WARNING, "Unable to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
+                                    return;
+                                }
+
+                                try {
                                     if (moduleFile != null) {
                                         // add it to the known modules cache
                                         addToKnownModules(moduleFile);
@@ -171,26 +195,32 @@ public abstract class ServerModuleFileListener {
                                     }
                                 } catch (final ModuleStagingException e) {
                                     updateModuleState(goid, e.getMessage());
-                                    logger.log(Level.WARNING, "Error while Staging/Deploying Module \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
-                                } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Unable to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
+                                    // audit installation failure
+                                    logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, moduleFile, e);
                                 }
                             }
                         });
                     } else if (op == EntityInvalidationEvent.DELETE) {
+                        // extract server module file
+                        final ServerModuleFile moduleFile;
                         try {
-                            final ServerModuleFile moduleFile = removeFromKnownModules(goid);
-                            // process removed module only if upload is enabled
-                            if (serverModuleFileManager.isModuleUploadEnabled()) {
-                                onModuleDeleted(moduleFile);
-                            }
-                        } catch (ModuleStagingException e) {
-                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\".", e);
+                            moduleFile = removeFromKnownModules(goid);
                         } catch (FindException e) {
                             // for debug purposes should be ignored otherwise
                             if (logger.isLoggable(Level.FINE)) {
                                 logger.log(Level.FINE, "Unable to find Server Module File with \"" + goid + "\", from known modules cache. Ignoring Module Delete Event.", e);
                             }
+                            return;
+                        }
+
+                        try {
+                            // process removed module only if upload is enabled
+                            if (serverModuleFileManager.isModuleUploadEnabled()) {
+                                onModuleDeleted(moduleFile);
+                            }
+                        } catch (ModuleStagingException e) {
+                            // audit un-installation failure
+                            logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, moduleFile, e);
                         }
                     } else {
                         logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\"");
@@ -247,6 +277,10 @@ public abstract class ServerModuleFileListener {
 
         if (moduleGoid != null) {
             updateModuleState(moduleGoid, ModuleState.LOADED);
+
+            // audit module loaded
+            logAndAudit(ServerModuleFileSystemEvent.createLoadedSystemEvent(this, moduleType, moduleName));
+
         }
     }
 
@@ -343,7 +377,12 @@ public abstract class ServerModuleFileListener {
                         addToKnownModules(moduleFile);
                         try {
                             if (serverModuleFileManager.isModuleUploadEnabled()) {
-                                onModuleChanged(moduleFile);
+                                // if already loaded do not process, set the state directly to LOADED.
+                                if (isModuleLoaded(moduleFile)) {
+                                    updateModuleState(moduleFile.getGoid(), ModuleState.LOADED);
+                                } else {
+                                    onModuleChanged(moduleFile);
+                                }
                             }
                         } catch (final ModuleStagingException e) {
                             updateModuleState(moduleFile.getGoid(), e.getMessage());
@@ -416,6 +455,34 @@ public abstract class ServerModuleFileListener {
     }
 
     /**
+     * Determine whether the specified module is already loaded or not.<br/>
+     *
+     * @param moduleFile    module to check.
+     */
+    protected boolean isModuleLoaded(@NotNull final ServerModuleFile moduleFile) {
+        if (ModuleType.MODULAR_ASSERTION == moduleFile.getModuleType()) {
+            final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
+            if (StringUtils.isNotBlank(moduleFileName)) {
+                for (final ModularAssertionModule loadedModule : modularAssertionRegistrar.getLoadedModules()) {
+                    if (moduleFileName.equals(loadedModule.getName())) {
+                        return true;
+                    }
+                }
+            }
+        } else if (ModuleType.CUSTOM_ASSERTION == moduleFile.getModuleType()) {
+            final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
+            if (StringUtils.isNotBlank(moduleFileName)) {
+//                for (final CustomAssertionModule loadedModule : customAssertionRegistrar.getLoadedModules()) {
+//                    if (moduleFileName.equals(loadedModule.getName())) {
+//                        return true;
+//                    }
+//                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Utility method for returning a string representation of the specified Database Operation.
      *
      * @param op    Database Operation ({@link EntityInvalidationEvent#CREATE CREATE}, {@link EntityInvalidationEvent#UPDATE UPDATE}
@@ -432,5 +499,37 @@ public abstract class ServerModuleFileListener {
             return EVENT_OPERATION_DELETE_UFN;
         }
         return String.valueOf(op);
+    }
+
+    @Override
+    public void setApplicationContext(final ApplicationContext context) throws BeansException {
+        this.applicationContext = context;
+    }
+
+    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event, final Throwable e) {
+        if (applicationContext != null) {
+            applicationContext.publishEvent(event);
+        }
+
+        if (logger.isLoggable(event.getLevel())) {
+            final LogRecord record = new LogRecord(event.getLevel(), event.getMessage());
+            record.setThrown(e);
+            record.setSourceClassName("");
+            record.setSourceMethodName("");
+            record.setLoggerName(logger.getName());
+            logger.log(record);
+        }
+    }
+
+    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event) {
+        logAndAudit(event, null);
+    }
+
+    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent.Action action, @NotNull final ServerModuleFile moduleFile, final Throwable e) {
+        logAndAudit(ServerModuleFileSystemEvent.createSystemEvent(this, action, moduleFile), e);
+    }
+
+    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent.Action action, @NotNull final ServerModuleFile moduleFile) {
+        logAndAudit(action, moduleFile, null);
     }
 }

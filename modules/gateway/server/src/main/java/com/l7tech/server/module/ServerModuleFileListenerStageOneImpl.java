@@ -1,10 +1,13 @@
 package com.l7tech.server.module;
 
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
+import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Config;
 import com.l7tech.util.FileUtils;
@@ -38,15 +41,17 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
     @Nullable private File stagingCustomDir = null;
 
     /**
-     * @see ServerModuleFileListener#ServerModuleFileListener(com.l7tech.server.util.ApplicationEventProxy, ServerModuleFileManager, org.springframework.transaction.PlatformTransactionManager, com.l7tech.util.Config)
+     * @see ServerModuleFileListener#ServerModuleFileListener(com.l7tech.server.util.ApplicationEventProxy, ServerModuleFileManager, org.springframework.transaction.PlatformTransactionManager, com.l7tech.util.Config, com.l7tech.server.policy.ServerAssertionRegistry, com.l7tech.gateway.common.custom.CustomAssertionsRegistrar)
      */
     public ServerModuleFileListenerStageOneImpl(
             @NotNull final ApplicationEventProxy eventProxy,
             @NotNull final ServerModuleFileManager serverModuleFileManager,
             final PlatformTransactionManager transactionManager,
-            @NotNull final Config config
+            @NotNull final Config config,
+            @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
+            @NotNull final CustomAssertionsRegistrar customAssertionRegistrar
     ) {
-        super(eventProxy, serverModuleFileManager, transactionManager, config);
+        super(eventProxy, serverModuleFileManager, transactionManager, config, modularAssertionRegistrar, customAssertionRegistrar);
     }
 
     @Override
@@ -95,9 +100,9 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
 
         final ModuleType moduleType = moduleFile.getModuleType();
         if (ModuleType.MODULAR_ASSERTION == moduleType) {
-            uninstallModule(getModuleFileName(moduleFile), getModularAssertionDeployPath(), getModularAssertionStagingPath());
+            uninstallModule(moduleFile, getModularAssertionDeployPath(), getModularAssertionStagingPath());
         } else if (ModuleType.CUSTOM_ASSERTION == moduleType) {
-            uninstallModule(getModuleFileName(moduleFile), getCustomAssertionDeployPath(), getCustomAssertionStagingPath());
+            uninstallModule(moduleFile, getCustomAssertionDeployPath(), getCustomAssertionStagingPath());
         } else {
             throw new UnsupportedModuleTypeException(moduleType);
         }
@@ -126,6 +131,9 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
             logger.log(Level.FINE, "Install module goid \"" + moduleFile.getGoid() + "\", deployPath \"" + deployPath + "\", stagingPath \"" + stagingPath + "\"");
         }
 
+        // audit installation start
+        logAndAudit(ServerModuleFileSystemEvent.Action.INSTALLING, moduleFile);
+
         // get module file name
         final String moduleFileName = getModuleFileName(moduleFile);
 
@@ -142,6 +150,8 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
                     deleteModule(new File(stagingPath + File.separator + moduleFileName));
                 } catch (final IOException ignore) { /* ignore */ }
             } else {
+                // audit no modules deploy folder permissions
+                logAndAudit(ServerModuleFileSystemEvent.Action.DEPLOY_PERMISSION, moduleFile);
                 moveModule(tmpModuleFile, new File(stagingPath + File.separator + moduleFileName));
                 updateModuleState(moduleFile.getGoid(), ModuleState.STAGED);
             }
@@ -152,6 +162,10 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
                 logger.log(Level.WARNING, "Failed to remove temporary module file: " + tmpModuleFile, e);
             }
         }
+
+        // if it goes this far its a success
+        // audit installation success
+        logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_SUCCESS, moduleFile);
     }
 
     /**
@@ -254,7 +268,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
     }
 
     /**
-     * Will try to uninstall the module with the specified file-name.
+     * Will try to uninstall the specified module module.
      * <p/>
      * If the Gateway process has write permission into the deploy folder then the module will be removed from the
      * modules deploy folder. In any case the file will also be attempted to be deleted from the staging folder,
@@ -262,20 +276,26 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
      * Note that, due to JVM mandatory jar locking, this will always fail under Window platform,
      * in case when the module is loaded by the Gateway.
      *
-     * @param moduleFileName    upload module file name.  Required and cannot be {@code null}
-     * @param deployPath         the module deploy folder, depending on its type (modular or custom assertion).  Required and cannot be {@link null}
-     * @param stagingPath        the module staging folder, depending on its type (modular or custom assertion).  Required and cannot be {@link null}
+     * @param moduleFile        server module file.  Required and cannot be {@code null}
+     * @param deployPath        the module deploy folder, depending on its type (modular or custom assertion).  Required and cannot be {@link null}
+     * @param stagingPath       the module staging folder, depending on its type (modular or custom assertion).  Required and cannot be {@link null}
      * @throws ModuleUninstallException if an IO error occurs while deleting the module.
      */
     private void uninstallModule(
-            @NotNull final String moduleFileName,
+            @NotNull final ServerModuleFile moduleFile,
             @NotNull final String deployPath,
             @NotNull final String stagingPath
-    ) throws ModuleUninstallException {
+    ) throws ModuleStagingException {
+        // extract module file-name
+        final String moduleFileName = getModuleFileName(moduleFile);
+
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Uninstalling module; file-name \"" + moduleFileName + "\", deployPath \"" + deployPath + "\", stagingPath \"" + stagingPath + "\"");
         }
+
+        // audit un-installation start
+        logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALLING, moduleFile);
 
         try {
             // check whether the deploy directory is writable
@@ -286,6 +306,10 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
         } catch (final IOException e) {
             throw new ModuleUninstallException(moduleFileName, e);
         }
+
+        // if it goes this far its a success
+        // audit un-installation success
+        logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_SUCCESS, moduleFile);
     }
 
     /**

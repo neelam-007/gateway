@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileData;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.SimpleTableModel;
@@ -38,7 +37,6 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private static final long serialVersionUID = 385196421868644404L;
     private static final Logger logger = Logger.getLogger(ServerModuleFileManagerWindow.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFileManagerWindow.class.getName());
-    private static final String EMPTY = "";
     private static final String CLUSTER_PROP_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
 
     private JPanel contentPane;
@@ -91,21 +89,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 column( resources.getString("modules.column.file-name"), 30, 140, 99999, propFinder( ServerModuleFile.PROP_FILE_NAME ) ),
                 column( resources.getString("modules.column.type"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "moduleType") ),
                 column( resources.getString("modules.column.hash"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "moduleSha256") ),
-                column( resources.getString("modules.column.size"), 30, 140, 99999,
-                        new Functions.Unary<String, ServerModuleFile>() {
-                            @Override
-                            public String call(final ServerModuleFile serverModuleFile) {
-                                try {
-                                    return ServerModuleFileData.humanReadableBytes(
-                                            Long.parseLong(String.valueOf(propFinder(ServerModuleFile.PROP_SIZE).call(serverModuleFile)))
-                                    );
-                                } catch (final NumberFormatException e) {
-                                    logger.warning("Invalid number format for Size property of module  \"" + serverModuleFile.getGoid() + "\"");
-                                }
-                                return EMPTY;
-                            }
-                        }
-                ),
+                column( resources.getString("modules.column.size"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "humanReadableFileSize") ),
                 column( resources.getString("modules.column.status"), 30, 140, 99999,
                         new Functions.Unary<String, ServerModuleFile>() {
                             @Override
@@ -169,7 +153,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
         });
         crud.setEntityEditor(new EntityEditor<ServerModuleFile>() {
             @Override
-            public void displayEditDialog(ServerModuleFile entity, Functions.UnaryVoidThrows<ServerModuleFile, SaveException> afterEditListener) {
+            public void displayEditDialog(final ServerModuleFile entity, @NotNull final Functions.UnaryVoidThrows<ServerModuleFile, SaveException> afterEditListener) {
                 final ServerModuleFile newMod = new ServerModuleFile();
                 newMod.copyFrom(entity, true, true, true);
 
@@ -187,17 +171,19 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 );
                 dlg.pack();
                 Utilities.centerOnParentWindow(dlg);
-                DialogDisplayer.display(dlg);
-
-                if (!dlg.isConfirmed())
-                    return;
-
-                try {
-                    newMod.setName(dlg.getModuleName());
-                    afterEditListener.call(newMod);
-                } catch (SaveException e) {
-                    showError(resources.getString("error.save"), e);
-                }
+                DialogDisplayer.display(dlg, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!dlg.isConfirmed())
+                            return;
+                        try {
+                            newMod.setName(dlg.getModuleName());
+                            afterEditListener.call(newMod);
+                        } catch (final SaveException e) {
+                            showError(resources.getString("error.save"), e);
+                        }
+                    }
+                });
             }
         });
 
@@ -280,7 +266,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
      *
      * @param moduleFile    The {@link ServerModuleFile module}.
      * @return if state error message is not blank, then the error message itself, otherwise the actual state.
-     * {@link #EMPTY Empty string} if {@code moduleFile} is {@code null} or the admin context is not present.
+     * {@link StringUtils#EMPTY Empty string} if {@code moduleFile} is {@code null} or the admin context is not present.
      */
     static String getStateMessageForCurrentNode(@Nullable final ServerModuleFile moduleFile) {
         if (moduleFile != null && Registry.getDefault().isAdminContextPresent()) {
@@ -293,7 +279,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 }
             }
         }
-        return EMPTY;
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -301,7 +287,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
      *
      * @param moduleFile    The {@link ServerModuleFile module}.
      * @return if state error message is not blank, then the error message itself, otherwise the actual state.
-     * {@link #EMPTY Empty string} if {@code moduleFile} is {@code null} or the admin context is not present.
+     * {@link StringUtils#EMPTY Empty string} if {@code moduleFile} is {@code null} or the admin context is not present.
      */
     static String getStateForCurrentNode(@Nullable final ServerModuleFile moduleFile) {
         if (moduleFile != null && Registry.getDefault().isAdminContextPresent()) {
@@ -310,7 +296,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 return moduleState.getState().toString();
             }
         }
-        return EMPTY;
+        return StringUtils.EMPTY;
     }
 
     /**

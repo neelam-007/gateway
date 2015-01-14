@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.module;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.annotations.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -300,6 +301,36 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
             }
             setStates(newStates);
         }
+    }
+
+    /**
+     * Convenient method for representing a {@link #PROP_SIZE file size} property into human readable format.
+     *
+     * @return a {@code String} containing a human readable format of the bytes. Never {@code null}.
+     */
+    @Transient
+    public String getHumanReadableFileSize() {
+        try {
+            return humanReadableBytes(Long.parseLong(getProperty(PROP_SIZE)));
+        } catch (final NumberFormatException e) {
+            return StringUtils.EMPTY;
+        }
+
+    }
+
+    /**
+     * Utility function for representing a file size into human readable format.
+     *
+     * @param bytes    file size in bytes.
+     * @return a {@code String} containing a human readable format of the bytes. Never {@code null}.
+     */
+    @NotNull
+    public static String humanReadableBytes(final long bytes) {
+        final int unit = 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        //noinspection SpellCheckingInspection
+        return String.format("%.1f %cB", bytes / Math.pow(unit, exp), "KMGTPE".charAt(exp - 1));
     }
 
     @SuppressWarnings("RedundantIfStatement")

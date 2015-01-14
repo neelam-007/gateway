@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -142,7 +143,7 @@ public class ServerModuleFileChooser {
         }
         final long maxModuleFileSize = getModulesUploadMaxSize();
         if (maxModuleFileSize != 0 && fileLength > maxModuleFileSize) {
-            throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFileData.humanReadableBytes(maxModuleFileSize)));
+            throw new IOException(MessageFormat.format(resources.getString("error.file.size"), ServerModuleFile.humanReadableBytes(maxModuleFileSize)));
         }
 
         final ServerModuleFile serverModuleFile = new ServerModuleFile();
@@ -212,9 +213,46 @@ public class ServerModuleFileChooser {
                 }
             }
 
+            private String desc;
             @Override
             public String getDescription() {
-                return MessageFormat.format(description, StringUtils.join(extensions, ";"));
+                if (this.desc == null) {
+                    this.desc = MessageFormat.format(description, joinAndPrependIfMissing(extensions.iterator(), ";", "*"));
+                }
+                return this.desc;
+            }
+
+            private String joinAndPrependIfMissing(final Iterator<String> iterator, final String separator, final String prefix) {
+                if (iterator == null) {
+                    return null;
+                }
+                if (!iterator.hasNext()) {
+                    return StringUtils.EMPTY;
+                }
+                final String first = iterator.next();
+                if (!iterator.hasNext()) {
+                    return prependIfMissing(first, prefix);
+                }
+
+                final StringBuilder buf = new StringBuilder(256).append(prependIfMissing(first, prefix));
+                while (iterator.hasNext()) {
+                    if (StringUtils.isNotBlank(separator)) {
+                        buf.append(separator);
+                    }
+                    buf.append(prependIfMissing(iterator.next(), prefix));
+                }
+                return buf.toString();
+            }
+
+            private String prependIfMissing(final String str, final String prefix) {
+                if (StringUtils.isNotBlank(str)) {
+                    if (StringUtils.isNotBlank(prefix)) {
+                        return (StringUtils.startsWithIgnoreCase(str, prefix)) ? str : prefix + str;
+                    } else {
+                        return str;
+                    }
+                }
+                return StringUtils.EMPTY;
             }
         };
     }

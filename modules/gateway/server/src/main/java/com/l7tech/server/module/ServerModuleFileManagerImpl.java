@@ -6,9 +6,12 @@ import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.event.admin.ServerModuleFileAdminEvent;
 import com.l7tech.util.Config;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +23,7 @@ import java.util.Map;
 /**
  * Implementation of hibernate entity manager for {@link ServerModuleFile} entities.
  */
-public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerModuleFile, EntityHeader> implements ServerModuleFileManager  {
+public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerModuleFile, EntityHeader> implements ApplicationEventPublisherAware, ServerModuleFileManager  {
 
     /**
      * module data {@link com.l7tech.gateway.common.module.ServerModuleFile#moduleSha256 sha256} field.
@@ -38,6 +41,11 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     @NotNull protected String clusterNodeId;
 
     /**
+     * Application event publisher
+     */
+    private ApplicationEventPublisher applicationEventPublisher;
+
+    /**
      * Default constructor.
      *
      * @param config           Application config object.
@@ -52,6 +60,32 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
         this.clusterNodeId = clusterNodeId;
         if (StringUtils.isBlank(clusterNodeId)) {
             throw new IllegalStateException("Current cluster node-id cannot be blank!");
+        }
+    }
+
+    @Override
+    public Goid save(final ServerModuleFile entity) throws SaveException {
+        final Goid goid = super.save(entity);
+        if (applicationEventPublisher != null) {
+            applicationEventPublisher.publishEvent(new ServerModuleFileAdminEvent(this, ServerModuleFileAdminEvent.Action.UPLOADED, entity));
+        }
+        return goid;
+    }
+
+    @Override
+    public void delete(final ServerModuleFile moduleFile) throws DeleteException {
+        super.delete(moduleFile);
+        if (applicationEventPublisher != null) {
+            applicationEventPublisher.publishEvent(new ServerModuleFileAdminEvent(this, ServerModuleFileAdminEvent.Action.DELETED, moduleFile));
+        }
+    }
+
+    @Override
+    public void delete(final Goid goid) throws DeleteException, FindException {
+        final ServerModuleFile moduleFile = findByPrimaryKey(goid);
+        super.delete(goid);
+        if (applicationEventPublisher != null && moduleFile != null) {
+            applicationEventPublisher.publishEvent(new ServerModuleFileAdminEvent(this, ServerModuleFileAdminEvent.Action.DELETED, moduleFile));
         }
     }
 
@@ -114,5 +148,10 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
                 Collections.singletonMap(F_NAME, (Object) entity.getName()),
                 Collections.singletonMap(F_MODULE_SHA256, (Object) entity.getModuleSha256())
         );
+    }
+
+    @Override
+    public void setApplicationEventPublisher(final ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 }

@@ -2139,6 +2139,8 @@
         <constructor-arg index="1" ref="serverModuleFileManager"/>
         <constructor-arg index="2" ref="transactionManager"/>
         <constructor-arg index="3" ref="serverConfig"/>
+        <constructor-arg index="4" ref="assertionRegistry"/>
+        <constructor-arg index="5" ref="customAssertionRegistrar"/>
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>

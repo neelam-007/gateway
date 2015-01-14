@@ -130,19 +130,4 @@ public class ServerModuleFileData extends PersistentEntityImp implements Seriali
         result = 31 * result + (moduleSha256 != null ? moduleSha256.hashCode() : 0);
         return result;
     }
-
-    /**
-     * Utility function for representing a file size into human readable format.
-     *
-     * @param bytes    file size in bytes.
-     * @return a {@code String} containing a human readable format of the bytes. Never {@code null}.
-     */
-    @NotNull
-    public static String humanReadableBytes(final long bytes) {
-        final int unit = 1024;
-        if (bytes < unit) return bytes + " B";
-        int exp = (int) (Math.log(bytes) / Math.log(unit));
-        //noinspection SpellCheckingInspection
-        return String.format("%.1f %cB", bytes / Math.pow(unit, exp), "KMGTPE".charAt(exp - 1));
-    }
 }

@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileData;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.InputValidator;
@@ -27,7 +26,6 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
     private static final long serialVersionUID = 3134981092231010304L;
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFilePropertiesDialog.class.getName());
 
-    private static final String EMPTY = "";
     private static final String SPLIT_ASSERTIONS_REGEX = "\\s*,\\s*";
     private static final int NAME_FIELD_MAX_LENGTH = 128;
 
@@ -132,9 +130,9 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
      */
     private void setData( final ServerModuleFile module, final String state ) {
 
-        moduleNameText.setText(module != null ? module.getName() : EMPTY);
-        sha256TextField.setText(module != null ? module.getModuleSha256() : EMPTY);
-        filenameLabel.setText(module != null ? module.getProperty(ServerModuleFile.PROP_FILE_NAME) : EMPTY);
+        moduleNameText.setText(module != null ? module.getName() : StringUtils.EMPTY);
+        sha256TextField.setText(module != null ? module.getModuleSha256() : StringUtils.EMPTY);
+        filenameLabel.setText(module != null ? module.getProperty(ServerModuleFile.PROP_FILE_NAME) : StringUtils.EMPTY);
 
         stateLabel.setText(module != null && StringUtils.isNotBlank(state) ? state : resources.getString("text.state.empty"));
         if (stateLabel.getLineCount() > 8) {
@@ -145,10 +143,9 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
         stateLabel.setCaretPosition(0);
 
         final ModuleType moduleType = module != null ? module.getModuleType() : null;
-        typeLabel.setText(moduleType != null ? moduleType.toString() : EMPTY);
+        typeLabel.setText(moduleType != null ? moduleType.toString() : StringUtils.EMPTY);
 
-        final String propValue = module != null ? module.getProperty(ServerModuleFile.PROP_SIZE) : EMPTY;
-        sizeLabel.setText(StringUtils.isNotEmpty(propValue) ? ServerModuleFileData.humanReadableBytes(Long.parseLong(propValue)) : EMPTY);
+        sizeLabel.setText(module != null ? module.getHumanReadableFileSize() : StringUtils.EMPTY);
 
         final String assertions = module != null ? module.getProperty(ServerModuleFile.PROP_ASSERTIONS) : null;
         if (assertions != null) {
@@ -175,7 +172,7 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
     @NotNull
     public String getModuleName() {
         final String text = moduleNameText.getText();
-        return text != null ? text.trim() : EMPTY;
+        return text != null ? text.trim() : StringUtils.EMPTY;
     }
 
     /**
