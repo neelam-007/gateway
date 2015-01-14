@@ -2,6 +2,12 @@ package com.l7tech.external.assertions.jwt;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
+import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -9,13 +15,12 @@ import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.CollectionTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-/**
- * Created by dieke02 on 11/25/14.
- */
-public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariables, SetsVariables {
+
+public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariables, SetsVariables, UsesPrivateKeys {
 
     private String targetVariable;
 
@@ -98,11 +103,11 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
 
     @Override
     public String[] getVariablesUsed() {
-        if(keys == null || keys.isEmpty()){
+        if (keys == null || keys.isEmpty()) {
             return new String[0];
         }
         final List<String> names = Lists.newArrayList();
-        for(JwkKeyInfo i : keys){
+        for (JwkKeyInfo i : keys) {
             names.add(i.getKeyId());
         }
         return Syntax.getReferencedNames(names.toArray(new String[names.size()]));
@@ -114,6 +119,32 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
         clone.setTargetVariable(targetVariable);
         clone.setKeys(keys);
         return clone;
+    }
+
+    @Override
+    public SsgKeyHeader[] getPrivateKeysUsed() {
+        List<SsgKeyHeader> headers = Lists.newArrayList();
+        for (JwkKeyInfo k : keys) {
+            headers.add(new SsgKeyHeader(k.getSourceKeyGoid() + ":" + k.getSourceKeyAlias(), k.getSourceKeyGoid(), k.getSourceKeyAlias(), k.getSourceKeyAlias()));
+        }
+        return headers.toArray(new SsgKeyHeader[headers.size()]);
+    }
+
+    @Override
+    public void replacePrivateKeyUsed(@NotNull SsgKeyHeader oldEntityHeader, @NotNull SsgKeyHeader newEntityHeader) {
+        for (JwkKeyInfo k : keys) {
+            if (Goid.equals(oldEntityHeader.getKeystoreId(), k.getSourceKeyGoid()) && k.getSourceKeyAlias().equals(oldEntityHeader.getAlias())) {
+                if (newEntityHeader instanceof SsgKeyHeader) {
+                    k.setSourceKeyAlias(newEntityHeader.getAlias());
+                    k.setSourceKeyGoid(newEntityHeader.getKeystoreId());
+                } else {
+                    SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
+                    k.setSourceKeyAlias(keyId.getAlias());
+                    k.setSourceKeyGoid(keyId.getKeystoreId());
+                }
+            }
+        }
+
     }
 }
 

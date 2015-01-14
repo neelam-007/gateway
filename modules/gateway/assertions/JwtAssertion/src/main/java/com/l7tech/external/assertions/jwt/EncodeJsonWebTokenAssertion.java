@@ -1,7 +1,14 @@
 package com.l7tech.external.assertions.jwt;
 
+import com.google.common.base.Strings;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
@@ -9,11 +16,14 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
+import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
-public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable {
 
     public static final String CLUSTER_PROPERTY_SHOW_ALL = "jwt.showAllAlgorithms";
     private String sourceVariable;
@@ -25,8 +35,6 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private String signatureSecretKey;
 
     private String signatureSourceVariable;
-    private String privateKeyGoid;
-    private String privateKeyAlias;
     private String signatureKeyType;
     private String signatureJwksKeyId;
 
@@ -43,6 +51,9 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private int signatureSourceType;
 
     private int encryptionSourceType;
+
+    private Goid keyGoid;
+    private String keyAlias;
 
     public int getSignatureSourceType() {
         return signatureSourceType;
@@ -114,22 +125,6 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setSignatureSourceVariable(String signatureSourceVariable) {
         this.signatureSourceVariable = signatureSourceVariable;
-    }
-
-    public String getPrivateKeyGoid() {
-        return privateKeyGoid;
-    }
-
-    public void setPrivateKeyGoid(String privateKeyGoid) {
-        this.privateKeyGoid = privateKeyGoid;
-    }
-
-    public String getPrivateKeyAlias() {
-        return privateKeyAlias;
-    }
-
-    public void setPrivateKeyAlias(String privateKeyAlias) {
-        this.privateKeyAlias = privateKeyAlias;
     }
 
     public String getSignatureKeyType() {
@@ -282,6 +277,54 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         );
     }
 
+    private boolean usesNoKey;
+    private boolean usesDefaultKeystore;
+
+    @Override
+    public boolean isUsesNoKeyAllowed() {
+        return true;
+    }
+
+    @Override
+    public boolean isUsesNoKey() {
+        return usesNoKey;
+    }
+
+    @Override
+    public void setUsesNoKey(boolean usesNoKey) {
+        this.usesNoKey = usesNoKey;
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return usesDefaultKeystore;
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore(boolean usesDefault) {
+        this.usesDefaultKeystore = usesDefault;
+    }
+
+    @Override
+    public Goid getNonDefaultKeystoreId() {
+        return keyGoid;
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
+        this.keyGoid = nonDefaultId;
+    }
+
+    @Override
+    public String getKeyAlias() {
+        return keyAlias;
+    }
+
+    @Override
+    public void setKeyAlias(String keyid) {
+        this.keyAlias = keyid;
+    }
+
     @Override
     public EncodeJsonWebTokenAssertion clone() {
         final EncodeJsonWebTokenAssertion clone = (EncodeJsonWebTokenAssertion) super.clone();
@@ -291,8 +334,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setSignatureAlgorithm(signatureAlgorithm);
         clone.setSignatureSecretKey(signatureSecretKey);
         clone.setSignatureSourceVariable(signatureSourceVariable);
-        clone.setPrivateKeyGoid(privateKeyGoid);
-        clone.setPrivateKeyAlias(privateKeyAlias);
+
         clone.setSignatureKeyType(signatureKeyType);
         clone.setSignatureJwksKeyId(signatureJwksKeyId);
 
@@ -311,6 +353,10 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setEncryptionSourceType(encryptionSourceType);
         clone.setEncryptionSecret(encryptionSecret);
 
+        clone.setUsesNoKey(usesNoKey);
+        clone.setUsesDefaultKeyStore(usesDefaultKeystore);
+        clone.setKeyAlias(keyAlias);
+        clone.setNonDefaultKeystoreId(keyGoid);
         return clone;
     }
 

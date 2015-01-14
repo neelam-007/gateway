@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.jwt;
 
 
 import com.google.common.collect.Lists;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable {
 
     private String sourcePayload;
     private String validationType;
@@ -19,7 +20,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     private String signatureSecret;
 
-    private String privateKeyGoid;
+    private Goid privateKeyGoid;
     private String privateKeyAlias;
 
     private String privateKeySource;
@@ -57,22 +58,6 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     public void setPrivateKeyFromList(boolean privateKeyFromList) {
         this.privateKeyFromList = privateKeyFromList;
-    }
-
-    public String getPrivateKeyGoid() {
-        return privateKeyGoid;
-    }
-
-    public void setPrivateKeyGoid(String privateKeyGoid) {
-        this.privateKeyGoid = privateKeyGoid;
-    }
-
-    public String getPrivateKeyAlias() {
-        return privateKeyAlias;
-    }
-
-    public void setPrivateKeyAlias(String privateKeyAlias) {
-        this.privateKeyAlias = privateKeyAlias;
     }
 
     public String getPrivateKeySource() {
@@ -190,12 +175,65 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         c.setValidationType(validationType);
         c.setSignatureSecret(signatureSecret);
         c.setPrivateKeyFromList(privateKeyFromList);
-        c.setPrivateKeyGoid(privateKeyGoid);
-        c.setPrivateKeyAlias(privateKeyAlias);
+
         c.setPrivateKeySource(privateKeySource);
         c.setKeyType(keyType);
         c.setKeyId(keyId);
         c.setTargetVariablePrefix(targetVariablePrefix);
+
+        c.setUsesNoKey(usesNoKey);
+        c.setUsesDefaultKeyStore(usesDefaultKeystore);
+        c.setKeyAlias(privateKeyAlias);
+        c.setNonDefaultKeystoreId(privateKeyGoid);
+
         return c;
+    }
+
+    private boolean usesNoKey;
+    private boolean usesDefaultKeystore;
+
+    @Override
+    public boolean isUsesNoKeyAllowed() {
+        return true;
+    }
+
+    @Override
+    public boolean isUsesNoKey() {
+        return usesNoKey;
+    }
+
+    @Override
+    public void setUsesNoKey(boolean usesNoKey) {
+        this.usesNoKey = usesNoKey;
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return usesDefaultKeystore;
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore(boolean usesDefault) {
+        this.usesDefaultKeystore = usesDefault;
+    }
+
+    @Override
+    public Goid getNonDefaultKeystoreId() {
+        return privateKeyGoid;
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
+        this.privateKeyGoid = nonDefaultId;
+    }
+
+    @Override
+    public String getKeyAlias() {
+        return privateKeyAlias;
+    }
+
+    @Override
+    public void setKeyAlias(String privateKeyAlias) {
+        this.privateKeyAlias = privateKeyAlias;
     }
 }

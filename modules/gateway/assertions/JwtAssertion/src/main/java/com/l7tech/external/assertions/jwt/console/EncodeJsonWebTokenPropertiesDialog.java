@@ -11,7 +11,6 @@ import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
@@ -186,8 +185,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             }
             else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK){
                 fromListRadioButton.setSelected(true);
-                if (assertion.getPrivateKeyGoid() != null && !assertion.getPrivateKeyGoid().trim().isEmpty()) {
-                    int sel = privateKeysComboBox.select(Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                if (assertion.getNonDefaultKeystoreId() != null) {
+                    int sel = privateKeysComboBox.select(assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
                     privateKeysComboBox.setSelectedIndex(sel < 0 ? 0 : sel);
                 }
             }
@@ -230,6 +229,9 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             } else if(assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
                 jweUseSecret.setSelected(true);
                 jweSharedSecret.setText(assertion.getEncryptionSecret());
+                if (assertion.getContentEncryptionAlgorithm() != null) {
+                    contentEncryptionAlgorithmComboBox.setSelectedItem(JsonWebTokenConstants.CONTENT_ENCRYPTION_ALGORITHMS.get(assertion.getContentEncryptionAlgorithm()));
+                }
             }
         }
     }
@@ -245,6 +247,9 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         }
         assertion.setTargetVariable(targetVariable.getVariable());
 
+        assertion.setUsesNoKey(true);
+        assertion.setUsesDefaultKeyStore(true);
+
         //signing
         if(signPayloadCheckBox.isSelected()){
             assertion.setSignatureAlgorithm(JsonWebTokenConstants.SIGNATURE_ALGORITHMS.inverse().get(signatureAlgorithmComboBox.getSelectedItem().toString()));
@@ -254,11 +259,15 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 assertion.setSignatureSourceVariable(null);
                 assertion.setSignatureKeyType(null);
                 assertion.setSignatureJwksKeyId(null);
+                assertion.setKeyAlias(null);
+                assertion.setNonDefaultKeystoreId(null);
             }
             else if (fromListRadioButton.isSelected()) {
                 assertion.setSignatureSourceType(JsonWebTokenConstants.SOURCE_PK);
-                assertion.setPrivateKeyGoid(privateKeysComboBox.getSelectedKeystoreId().toHexString());
-                assertion.setPrivateKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
+                assertion.setNonDefaultKeystoreId(privateKeysComboBox.getSelectedKeystoreId());
+                assertion.setKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
+                assertion.setUsesNoKey(false);
+                assertion.setUsesDefaultKeyStore(false);
             } else if(fromVariableRadioButton.isSelected()) {
                 assertion.setSignatureSourceType(JsonWebTokenConstants.SOURCE_CV);
                 assertion.setSignatureKeyType(keyTypeComboBox.getSelectedItem().toString());
@@ -268,6 +277,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 assertion.setSignatureSourceVariable(signatureSourceVariable.getText().trim());
                 //clear the other fields
                 assertion.setSignatureSecretKey(null);
+                assertion.setKeyAlias(null);
+                assertion.setNonDefaultKeystoreId(null);
             }
         } else {
             assertion.setSignPayload(false);
@@ -276,8 +287,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             assertion.setSignatureSourceVariable(null);
             assertion.setSignatureKeyType(null);
             assertion.setSignatureJwksKeyId(null);
-            assertion.setPrivateKeyAlias(null);
-            assertion.setPrivateKeyGoid(null);
+            assertion.setKeyAlias(null);
+            assertion.setNonDefaultKeystoreId(null);
         }
         //encrypting
         if (encryptPayloadCheckBox.isSelected()) {

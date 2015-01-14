@@ -80,10 +80,10 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(assertion.getValidationType())) {
             secretPasswordField.setText(assertion.getSignatureSecret());
         } else if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(assertion.getValidationType())) {
-            if (assertion.getPrivateKeyGoid() == null || assertion.getPrivateKeyGoid().trim().isEmpty()) {
+            if (assertion.getNonDefaultKeystoreId() == null) {
                 privateKeysComboBox.setSelectedIndex(0);
             } else {
-                final int sel = privateKeysComboBox.select(Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                final int sel = privateKeysComboBox.select(assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
                 privateKeysComboBox.setSelectedIndex(sel < 0 ? 0 : sel);
             }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(assertion.getValidationType())) {
@@ -108,11 +108,17 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
         final String vt = validationType.getSelectedItem().toString();
         assertion.setValidationType(vt);
+
+        assertion.setUsesNoKey(true);
+        assertion.setUsesDefaultKeyStore(true);
+
         if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(vt)) {
             assertion.setSignatureSecret(String.valueOf(secretPasswordField.getPassword()));
         } else if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(vt)) {
-            assertion.setPrivateKeyGoid(privateKeysComboBox.getSelectedKeystoreId().toHexString());
-            assertion.setPrivateKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
+            assertion.setNonDefaultKeystoreId(privateKeysComboBox.getSelectedKeystoreId());
+            assertion.setKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
+            assertion.setUsesNoKey(false);
+            assertion.setUsesDefaultKeyStore(false);
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(vt)) {
             assertion.setPrivateKeySource(sourceVariableTextField.getText().trim());
             assertion.setKeyType(keyType.getSelectedItem().toString());

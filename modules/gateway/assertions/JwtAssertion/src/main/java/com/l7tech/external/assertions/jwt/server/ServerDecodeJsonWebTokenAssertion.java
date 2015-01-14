@@ -102,7 +102,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         Key key = null;
         if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(validate)) {
             try {
-                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), Goid.parseGoid(assertion.getPrivateKeyGoid()), assertion.getPrivateKeyAlias());
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
                 //jws
                 if(parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS){
                     try {
