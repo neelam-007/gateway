@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwtUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.cert.KeyUsageActivity;
@@ -19,25 +18,24 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.OctetSequenceJsonWebKey;
 import org.jose4j.jwk.Use;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
+import org.jose4j.keys.AesKey;
 import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.InvalidAlgorithmException;
 import org.jose4j.lang.InvalidKeyException;
 import org.jose4j.lang.JoseException;
 
+import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.security.Key;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -204,12 +202,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 logAndAudit(AssertionMessages.JWT_JWE_KEY_ERROR);
                 return null;
             }
-            //there isn't a reliable way to create an octet key
-            //best approach for now is to put it as a jwk and then get the key out
-            Map<String, Object> params = new HashMap<String, Object>();
-            params.put(OctetSequenceJsonWebKey.KEY_VALUE_MEMBER_NAME, secret);
-            JsonWebKey jwk = new OctetSequenceJsonWebKey(params);
-            return jwk.getKey();
+            return new SecretKeySpec(secret.getBytes(), AesKey.ALGORITHM);
         } else if (assertion.getEncryptionSourceType() == JsonWebTokenConstants.SOURCE_CV) {
             Object key = ExpandVariables.processSingleVariableAsObject(assertion.getEncryptionKey(), variables, getAudit(), false);
             if (key == null) {

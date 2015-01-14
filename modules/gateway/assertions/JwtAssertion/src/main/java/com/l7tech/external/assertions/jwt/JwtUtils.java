@@ -101,15 +101,17 @@ public final class JwtUtils {
             String usage = null;
             String keyType = null;
             if (jwt instanceof JsonWebSignature) {
-                //no need to set 'usage' here as 'use' is use to convey public key usage
-                //since we sign, we need private key
+                usage = Use.SIGNATURE;
                 keyType = ((JsonWebSignature) jwt).getKeyType();
             } else if (jwt instanceof JsonWebEncryption) {
                 usage = Use.ENCRYPTION;
                 keyType = ((JsonWebEncryption) jwt).getKeyManagementModeAlgorithm().getKeyType();
             }
             List<org.jose4j.jwk.JsonWebKey> found = jwks.findJsonWebKeys(keyId, keyType, usage, null);
-            if (found.isEmpty()) return null;
+            if(found.size() != 1){
+                audit.logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Could not find key from JWKS.  Possible reasons: 1) could not find a key based kid, kty, and use or 2) the combination of kid, kty and use fields produce more than one key.");
+                return null;
+            }
             if (getPrivateKey) {
                 return getPrivateKey(audit, found.get(0));
             }

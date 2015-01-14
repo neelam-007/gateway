@@ -374,4 +374,25 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         AssertionStatus status = sass.checkRequest(context);
         Assert.assertEquals(AssertionStatus.FAILED, status);
     }
+
+
+    @Test
+    public void test_jwe_using_secre() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..nV7SMT_V7lu523oW3UJziA.3lJHdp8_rCO2-ljwzeynlg.jR5jkGJClA8gOkPi7F2z6A");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+        assertion.setSignatureSecret("ffffffffffffffffffffffffffffffff");
+        assertion.setTargetVariablePrefix("result");
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+
+        Assert.assertEquals("JWE", context.getVariable("result.type"));
+        Assert.assertEquals("{\"typ\":\"JWT\",\"alg\":\"dir\",\"enc\":\"A128CBC-HS256\"}", context.getVariable("result.header"));
+        Assert.assertEquals("dir", context.getVariable("result.header.alg"));
+        Assert.assertEquals(Lists.newArrayList("typ", "alg", "enc"), context.getVariable("result.header.names"));
+        Assert.assertEquals("tegasdf", context.getVariable("result.plaintext"));
+    }
 }

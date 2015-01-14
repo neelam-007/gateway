@@ -27,9 +27,11 @@ import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.CompactSerializer;
 import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.jwx.JsonWebStructure;
+import org.jose4j.keys.AesKey;
 import org.jose4j.keys.HmacKey;
 import org.jose4j.lang.JoseException;
 
+import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -218,15 +220,9 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
     }
 
     private AssertionStatus jwsValidateUsingSecret(final PolicyEnforcementContext context, final JsonWebStructure structure, final Map<String, Object> variables) {
-        //not JWS but configure to use a secret...fail
-        if (!(structure instanceof JsonWebSignature)) {
-            logAndAudit(AssertionMessages.JWT_DECODE_INVALID_TYPE);
-            return AssertionStatus.FAILED;
-        }
-        //JWS but did not configure a secret...fail
-        final JsonWebSignature jws = (JsonWebSignature) structure;
-        if (!jws.getHeader(HeaderParameterNames.ALGORITHM).startsWith("HS")) {
-            logAndAudit(AssertionMessages.JWT_INVALID_ALGORITHM, "A secret must be used to validate JWT with 'alg' of type " + jws.getHeader(HeaderParameterNames.ALGORITHM));
+
+        if (!structure.getHeader(HeaderParameterNames.ALGORITHM).startsWith("HS") && !structure.getHeader(HeaderParameterNames.ALGORITHM).startsWith("dir")) {
+            logAndAudit(AssertionMessages.JWT_INVALID_ALGORITHM, "A secret cannot be used validate/decrypt JWT with 'alg' of type " + structure.getHeader(HeaderParameterNames.ALGORITHM));
             return AssertionStatus.FAILED;
         }
         //we good?
@@ -236,8 +232,15 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
             return AssertionStatus.FAILED;
         }
         try {
-            jws.setKey(new HmacKey(secret.getBytes("UTF-8")));
-            context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(jws.verifySignature()));
+            if(structure instanceof JsonWebSignature){
+                structure.setKey(new HmacKey(secret.getBytes("UTF-8")));
+                context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(((JsonWebSignature) structure).verifySignature()));
+            }
+            if(structure instanceof JsonWebEncryption){
+                structure.setKey(new SecretKeySpec(secret.getBytes(), AesKey.ALGORITHM));
+                context.setVariable(assertion.getTargetVariablePrefix() + ".plaintext", String.valueOf(((JsonWebEncryption)structure).getPlaintextString()));
+                context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(true));
+            }
         } catch (JoseException e) {
             logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Could not validate JWS: " + e.getMessage());
             return AssertionStatus.FAILED;

@@ -605,7 +605,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         ass.setSourceVariable("${testpayload}");
         ass.setKeyManagementAlgorithm(KeyManagementAlgorithmIdentifiers.DIRECT);
         ass.setContentEncryptionAlgorithm(ContentEncryptionAlgorithmIdentifiers.AES_128_CBC_HMAC_SHA_256);
-        ass.setEncryptionSecret("lCieDVKud04B5feEA9Zd47DKTJCUSA_9AUg4LpkotE0");
+        ass.setEncryptionSecret("lCieDVKud04B5feEA9Zd47DKTJCUSA_9");
         ass.setTargetVariable("result");
         ass.setEncryptPayload(true);
         ass.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_SECRET);
