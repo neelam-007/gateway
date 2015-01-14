@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class BundleExporterTest {
     private static final String ENCODED_PASSPHRASE = HexUtils.encodeBase64("customPassphrase".getBytes());
-    private static final String CONFIG_PATH = "com.l7tech.config.path";
+    private static final String CONFIG_PATH = "com.l7tech.server.configDirectory";
     @Mock
     private EntityBundleExporter entityBundleExporter;
     @Mock

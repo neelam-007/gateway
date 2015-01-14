@@ -27,7 +27,7 @@ public class SecretsEncryptor {
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
         SecretKey secretKey = skf.generateSecret(new PBEKeySpec(new String(passphrase, Charsets.UTF8).toCharArray()));
         byte[] bundlePassphraseKeyBytes = secretKey.getEncoded();
-        bundleKeyEncryptor = MasterPasswordManager.createMasterPasswordManager( bundlePassphraseKeyBytes, false, false );
+        bundleKeyEncryptor = MasterPasswordManager.createMasterPasswordManager(bundlePassphraseKeyBytes, false, false);
     }
 
     /**
@@ -43,12 +43,16 @@ public class SecretsEncryptor {
         if (base64encodedKeyPassphrase != null) {
             return new SecretsEncryptor(HexUtils.decodeBase64(base64encodedKeyPassphrase));
         } else {
-            final String confDir = SyspropUtil.getString("com.l7tech.config.path", "../node/default/etc/conf");
-            final File ompDat = new File(new File(confDir), "omp.dat");
-            if (ompDat.exists()) {
-                return new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
+            final String confDir = ConfigFactory.getProperty("com.l7tech.server.configDirectory");
+            if (confDir != null) {
+                final File ompDat = new File(new File(confDir), "omp.dat");
+                if (ompDat.exists()) {
+                    return new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
+                } else {
+                    throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
+                }
             } else {
-                throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
+                throw new FileNotFoundException("Cannot encrypt because unable to locate conf directory");
             }
         }
     }
@@ -86,7 +90,7 @@ public class SecretsEncryptor {
         RandomUtil.nextBytes(bundleKeyBytes);
 
         // setup secrets encryptor
-        secretsEncryptor = MasterPasswordManager.createMasterPasswordManager( bundleKeyBytes, true, false );
+        secretsEncryptor = MasterPasswordManager.createMasterPasswordManager(bundleKeyBytes, true, false);
 
         // save wrapped key
         String bundleKeyBase64 = HexUtils.encodeBase64(bundleKeyBytes);
@@ -98,13 +102,13 @@ public class SecretsEncryptor {
     /**
      * Decrypts the secret
      *
-     * @param secret        the encrypted secret
-     * @param encryptedKey  the key in the resource
-     * @return  the decrypted secret
+     * @param secret       the encrypted secret
+     * @param encryptedKey the key in the resource
+     * @return the decrypted secret
      */
     public String decryptSecret(@Nullable final String secret, @Nullable final String encryptedKey) throws ParseException {
 
-        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(bundleKeyEncryptor.decryptPassword(encryptedKey))),true);
+        MasterPasswordManager secretsDecryptor = new MasterPasswordManager(HexUtils.decodeBase64(new String(bundleKeyEncryptor.decryptPassword(encryptedKey))), true);
         return new String(secretsDecryptor.decryptPassword(secret));
     }
 
