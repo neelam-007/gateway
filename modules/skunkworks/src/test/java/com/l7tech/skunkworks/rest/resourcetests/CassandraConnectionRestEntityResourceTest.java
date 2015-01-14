@@ -42,7 +42,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc1.setUsername("gateway");
         cc1.setCompression("ProtocolOptions.Compression.NONE");
         cc1.setSsl(true);
-        cc1.setTlsEnabledCipherSuites(null);
+        cc1.setTlsEnabledCipherSuites("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cc1.setEnabled(true);
         cassandraConnections.add(cc1);
         cassandraConnectionEntityManager.save(cc1);
@@ -56,7 +56,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc2.setUsername("gateway2");
         cc2.setCompression("ProtocolOptions.Compression.LZ4");
         cc2.setSsl(true);
-        cc2.setTlsEnabledCipherSuites(null);
+        cc2.setTlsEnabledCipherSuites("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cc2.setEnabled(true);
         cassandraConnections.add(cc2);
         cassandraConnectionEntityManager.save(cc2);
@@ -93,7 +93,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setUsername("gateway");
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsciphers(null);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
 
@@ -118,7 +118,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsciphers(null);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
 
@@ -134,7 +134,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test2", "test2").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsciphers(null);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMOs.add(cassandraConnectionMO);
 
@@ -154,7 +154,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsciphers(null);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setSecurityZoneId("12345");
 
@@ -183,7 +183,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
-        cassandraConnectionMO.setTlsciphers(null);
+        cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cassandraConnectionMO.setEnabled(true);
         cassandraConnectionMO.setSecurityZoneId("12345");
 
@@ -269,6 +269,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
             Assert.assertEquals(entity.getCompression(), managedObject.getCompression());
             Assert.assertEquals(entity.isSsl(), managedObject.isSsl());
             Assert.assertEquals(entity.isEnabled(), managedObject.isEnabled());
+            Assert.assertEquals(entity.getTlsEnabledCipherSuites(),managedObject.getTlsciphers());
         }
     }
 
