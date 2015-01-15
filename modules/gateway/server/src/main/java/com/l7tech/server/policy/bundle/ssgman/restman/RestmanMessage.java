@@ -375,7 +375,7 @@ public class RestmanMessage {
         }
     }
 
-    public void addFolderMapping(String targetFolderId) {
+    public void addRootFolderMapping(String targetFolderId) {
         final String mappingStr = MessageFormat.format(ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE, targetFolderId);
 
         Element newMappingElement;

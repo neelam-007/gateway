@@ -160,7 +160,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
      *
      * @param requestMessage: a Restman Request Message, which will be modified
      */
-    private void setTargetIdInRootFolderMapping(final RestmanMessage requestMessage) {
+    void setTargetIdInRootFolderMapping(final RestmanMessage requestMessage) {
         final Goid targetFolderId = context.getFolderGoid();
 
         if (requestMessage.hasRootFolderMapping()) {
@@ -168,14 +168,14 @@ public class MigrationBundleInstaller extends BaseInstaller {
             requestMessage.setRootFolderMappingTargetId(targetFolderId.toString());
         } else {
             // Create a new mapping with the root folder as srcId and the chosen folder as targetId
-            requestMessage.addFolderMapping(targetFolderId.toString());
+            requestMessage.addRootFolderMapping(targetFolderId.toString());
         }
     }
 
     /**
      * Parse error mapping for error type, entity type, source id.  And get resource policy xml.
      */
-    private MigrationDryRunResult convertToDryRunResult(final Element mappingError, RestmanMessage restmanMessage) throws IOException, UnexpectedManagementResponse {
+    MigrationDryRunResult convertToDryRunResult(final Element mappingError, RestmanMessage restmanMessage) throws IOException, UnexpectedManagementResponse {
         final String errorTypeStr = mappingError.getAttribute(MAPPING_ERROR_TYPE_ATTRIBUTE);
         if (StringUtils.isEmpty(errorTypeStr)) {
             throw new UnexpectedManagementResponse("Unexpected mapping format: errorType attribute missing.");
@@ -220,7 +220,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
      * @param idListOfExistingTargetFolders: ids of the folders, which exist in the target gateway
      * @param isRootNodeTargetFold: a flag indicates if the installed folder is a root folder or not.
      */
-    private void findDeletedEntities(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent,
+    void findDeletedEntities(@NotNull final DryRunInstallPolicyBundleEvent dryRunEvent,
                                      @NotNull final List<String> entityIdsFromBundleRequestMessageMappings,
                                      @NotNull final List<String> idListOfExistingTargetFolders,
                                      final boolean isRootNodeTargetFold) throws InterruptedException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
@@ -288,7 +288,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
      *  Get policy xml if errorType is "TargetExists" and entity type is either Service or Policy.
      *  This is can be used for comparing bundle policy with existing target policy.
      */
-    private String getPolicyXmlForErrorMapping(final String errorTypeStr, final EntityType entityType,
+    String getPolicyXmlForErrorMapping(final String errorTypeStr, final EntityType entityType,
                                                final String srcId, RestmanMessage restmanMessage) throws IOException {
         // com.l7tech.gateway.api.Mapping.ErrorType.TargetExists not accessible from this class
         if (!"TargetExists".equals(errorTypeStr) || (entityType != SERVICE && entityType != POLICY)) {
