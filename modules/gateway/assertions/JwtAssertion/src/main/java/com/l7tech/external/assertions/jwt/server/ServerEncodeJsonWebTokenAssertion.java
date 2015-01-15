@@ -165,7 +165,7 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             return new HmacKey(secretKey.getBytes());
         } else if (assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK) {
             try {
-                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getKeyGoid(), assertion.getKeyAlias());
                 if (ssgKeyEntry != null) {
                     return ssgKeyEntry.getPrivateKey();
                 }

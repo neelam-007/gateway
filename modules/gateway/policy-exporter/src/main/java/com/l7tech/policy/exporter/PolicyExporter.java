@@ -214,7 +214,7 @@ public class PolicyExporter {
                 addReference( new StoredPasswordReference( finder, (SecurePasswordEntityHeader)entityHeader), refs);
             } else if( EntityType.SSG_KEY_ENTRY.equals(entityHeader.getType()) ) {
                 SsgKeyHeader ssgKeyHeader = (SsgKeyHeader) entityHeader;
-                if (!SignerServices.KEY_ID_SSL.equals(ssgKeyHeader.getStrId())) {
+                if (!(PersistentEntity.DEFAULT_GOID.equals(ssgKeyHeader.getKeystoreId()) && ssgKeyHeader.getAlias() == null) && !SignerServices.KEY_ID_SSL.equals(ssgKeyHeader.getStrId())) {
                     // Add none default keys only.
                     //
                     addReference(new PrivateKeyReference(finder, false, ssgKeyHeader.getKeystoreId(), ssgKeyHeader.getAlias()), refs);
@@ -232,7 +232,7 @@ public class PolicyExporter {
 
     private boolean addReference( final ExternalReference reference,
                                   final Collection<ExternalReference> references ) {
-        boolean added = false;
+            boolean added = false;
 
         // Add reference only if not already present
         if ( !references.contains( reference ) ) {

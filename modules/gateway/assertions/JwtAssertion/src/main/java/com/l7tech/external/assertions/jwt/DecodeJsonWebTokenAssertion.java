@@ -2,17 +2,21 @@ package com.l7tech.external.assertions.jwt;
 
 
 import com.google.common.collect.Lists;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
-public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable {
+public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
 
     private String sourcePayload;
     private String validationType;
@@ -125,7 +129,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         // Set nice, informative policy node name for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/jsonwebtoken/console/resources/openidConnect.gif");
-
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -181,59 +185,69 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         c.setKeyId(keyId);
         c.setTargetVariablePrefix(targetVariablePrefix);
 
-        c.setUsesNoKey(usesNoKey);
-        c.setUsesDefaultKeyStore(usesDefaultKeystore);
         c.setKeyAlias(privateKeyAlias);
-        c.setNonDefaultKeystoreId(privateKeyGoid);
+        c.setKeyGoid(privateKeyGoid);
 
         return c;
     }
 
-    private boolean usesNoKey;
-    private boolean usesDefaultKeystore;
 
-    @Override
-    public boolean isUsesNoKeyAllowed() {
-        return true;
-    }
 
-    @Override
-    public boolean isUsesNoKey() {
-        return usesNoKey;
-    }
 
-    @Override
-    public void setUsesNoKey(boolean usesNoKey) {
-        this.usesNoKey = usesNoKey;
-    }
-
-    @Override
-    public boolean isUsesDefaultKeyStore() {
-        return usesDefaultKeystore;
-    }
-
-    @Override
-    public void setUsesDefaultKeyStore(boolean usesDefault) {
-        this.usesDefaultKeystore = usesDefault;
-    }
-
-    @Override
-    public Goid getNonDefaultKeystoreId() {
+    public Goid getKeyGoid() {
         return privateKeyGoid;
     }
 
-    @Override
-    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
+    public void setKeyGoid(Goid nonDefaultId) {
         this.privateKeyGoid = nonDefaultId;
     }
 
-    @Override
     public String getKeyAlias() {
         return privateKeyAlias;
     }
 
-    @Override
     public void setKeyAlias(String privateKeyAlias) {
         this.privateKeyAlias = privateKeyAlias;
+    }
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<DecodeJsonWebTokenAssertion>(){
+        @Override
+        public String getAssertionName( final DecodeJsonWebTokenAssertion assertion, final boolean decorate) {
+            final StringBuilder sb = new StringBuilder("Decode Json Web Token");
+            if(decorate){
+                if(assertion.getValidationType().equals(JsonWebTokenConstants.VALIDATION_USING_PK)){
+                    if(assertion.getKeyGoid() != null && assertion.getKeyAlias() == null){
+                        sb.append(": validate using recipient key (Key: <Default SSL Key>)");
+                    }
+                    else {
+                        sb.append(": validate using recipient key (Key: " + assertion.getKeyAlias() + ")");
+                    }
+                }
+            }
+            return sb.toString();
+        }
+    };
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[]{
+                new SsgKeyHeader(getKeyGoid() + ":" + getKeyAlias(), getKeyGoid(), getKeyAlias(), getKeyAlias())
+        };
+    }
+
+    @Override
+    public void replaceEntity(@NotNull EntityHeader oldEntityHeader, @NotNull EntityHeader newEntityHeader) {
+        if(oldEntityHeader instanceof SsgKeyHeader){
+            if (Goid.equals(((SsgKeyHeader)oldEntityHeader).getKeystoreId(), getKeyGoid()) && getKeyAlias().equals(((SsgKeyHeader)oldEntityHeader).getAlias())) {
+                if (newEntityHeader instanceof SsgKeyHeader) {
+                    setKeyAlias(((SsgKeyHeader)newEntityHeader).getAlias());
+                    setKeyGoid(((SsgKeyHeader)newEntityHeader).getKeystoreId());
+                } else {
+                    SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
+                    setKeyAlias(keyId.getAlias());
+                    setKeyGoid(keyId.getKeystoreId());
+                }
+            }
+        }
     }
 }

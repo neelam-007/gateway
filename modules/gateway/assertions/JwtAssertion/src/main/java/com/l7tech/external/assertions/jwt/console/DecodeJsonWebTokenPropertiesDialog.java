@@ -7,7 +7,6 @@ import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
@@ -80,10 +79,10 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(assertion.getValidationType())) {
             secretPasswordField.setText(assertion.getSignatureSecret());
         } else if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(assertion.getValidationType())) {
-            if (assertion.getNonDefaultKeystoreId() == null) {
+            if (assertion.getKeyGoid() == null) {
                 privateKeysComboBox.setSelectedIndex(0);
             } else {
-                final int sel = privateKeysComboBox.select(assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
+                final int sel = privateKeysComboBox.select(assertion.getKeyGoid(), assertion.getKeyAlias());
                 privateKeysComboBox.setSelectedIndex(sel < 0 ? 0 : sel);
             }
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(assertion.getValidationType())) {
@@ -109,16 +108,11 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         final String vt = validationType.getSelectedItem().toString();
         assertion.setValidationType(vt);
 
-        assertion.setUsesNoKey(true);
-        assertion.setUsesDefaultKeyStore(true);
-
         if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(vt)) {
             assertion.setSignatureSecret(String.valueOf(secretPasswordField.getPassword()));
         } else if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(vt)) {
-            assertion.setNonDefaultKeystoreId(privateKeysComboBox.getSelectedKeystoreId());
+            assertion.setKeyGoid(privateKeysComboBox.getSelectedKeystoreId());
             assertion.setKeyAlias(privateKeysComboBox.getSelectedKeyAlias());
-            assertion.setUsesNoKey(false);
-            assertion.setUsesDefaultKeyStore(false);
         } else if (JsonWebTokenConstants.VALIDATION_USING_CV.equals(vt)) {
             assertion.setPrivateKeySource(sourceVariableTextField.getText().trim());
             assertion.setKeyType(keyType.getSelectedItem().toString());

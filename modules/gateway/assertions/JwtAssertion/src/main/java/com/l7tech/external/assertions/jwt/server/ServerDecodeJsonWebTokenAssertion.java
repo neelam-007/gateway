@@ -8,7 +8,6 @@ import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwtUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.cert.KeyUsageActivity;
@@ -104,7 +103,7 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         Key key = null;
         if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(validate)) {
             try {
-                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias());
+                final SsgKeyEntry ssgKeyEntry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), assertion.getKeyGoid(), assertion.getKeyAlias());
                 //jws
                 if(parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS){
                     try {

@@ -1,14 +1,12 @@
 package com.l7tech.external.assertions.jwt;
 
-import com.google.common.base.Strings;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.google.common.collect.Lists;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
@@ -16,14 +14,12 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
-import java.security.KeyStore;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
-public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable {
+public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
 
     public static final String CLUSTER_PROPERTY_SHOW_ALL = "jwt.showAllAlgorithms";
     private String sourceVariable;
@@ -277,50 +273,19 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         );
     }
 
-    private boolean usesNoKey;
-    private boolean usesDefaultKeystore;
 
-    @Override
-    public boolean isUsesNoKeyAllowed() {
-        return true;
-    }
-
-    @Override
-    public boolean isUsesNoKey() {
-        return usesNoKey;
-    }
-
-    @Override
-    public void setUsesNoKey(boolean usesNoKey) {
-        this.usesNoKey = usesNoKey;
-    }
-
-    @Override
-    public boolean isUsesDefaultKeyStore() {
-        return usesDefaultKeystore;
-    }
-
-    @Override
-    public void setUsesDefaultKeyStore(boolean usesDefault) {
-        this.usesDefaultKeystore = usesDefault;
-    }
-
-    @Override
-    public Goid getNonDefaultKeystoreId() {
+    public Goid getKeyGoid() {
         return keyGoid;
     }
 
-    @Override
-    public void setNonDefaultKeystoreId(Goid nonDefaultId) {
+    public void setKeyGoid(Goid nonDefaultId) {
         this.keyGoid = nonDefaultId;
     }
 
-    @Override
     public String getKeyAlias() {
         return keyAlias;
     }
 
-    @Override
     public void setKeyAlias(String keyid) {
         this.keyAlias = keyid;
     }
@@ -353,10 +318,8 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         clone.setEncryptionSourceType(encryptionSourceType);
         clone.setEncryptionSecret(encryptionSecret);
 
-        clone.setUsesNoKey(usesNoKey);
-        clone.setUsesDefaultKeyStore(usesDefaultKeystore);
         clone.setKeyAlias(keyAlias);
-        clone.setNonDefaultKeystoreId(keyGoid);
+        clone.setKeyGoid(keyGoid);
         return clone;
     }
 
@@ -409,4 +372,27 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
             return sb.toString();
         }
     };
+
+    @Override
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[]{
+            new SsgKeyHeader(getKeyGoid() + ":" + getKeyAlias(), getKeyGoid(), getKeyAlias(), getKeyAlias())
+        };
+    }
+
+    @Override
+    public void replaceEntity(@NotNull EntityHeader oldEntityHeader, @NotNull EntityHeader newEntityHeader) {
+        if(oldEntityHeader instanceof SsgKeyHeader){
+            if (Goid.equals(((SsgKeyHeader)oldEntityHeader).getKeystoreId(), getKeyGoid()) && getKeyAlias().equals(((SsgKeyHeader) oldEntityHeader).getAlias())) {
+                if (newEntityHeader instanceof SsgKeyHeader) {
+                    setKeyAlias(((SsgKeyHeader) newEntityHeader).getAlias());
+                    setKeyGoid(((SsgKeyHeader) newEntityHeader).getKeystoreId());
+                } else {
+                    SsgKeyEntryId keyId = new SsgKeyEntryId(newEntityHeader.getStrId());
+                    setKeyAlias(keyId.getAlias());
+                    setKeyGoid(keyId.getKeystoreId());
+                }
+            }
+        }
+    }
 }
