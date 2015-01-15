@@ -45,7 +45,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private JButton deleteButton;
     private JButton propertiesButton;
     private JButton closeButton;
-    private JLabel uploadDisabledWarningLabel;
+    private JPanel uploadDisabledWarningPanel;
 
     final private SimpleTableModel<ServerModuleFile> moduleTableModel;
     final private SecurityProvider securityProvider;
@@ -62,7 +62,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
         canCreate = securityProvider.hasPermission(new AttemptedCreate(EntityType.SERVER_MODULE_FILE));
 
         canUpload = isModulesUploadEnabled();
-        uploadDisabledWarningLabel.setVisible(!canUpload);
+        uploadDisabledWarningPanel.setVisible(!canUpload);
 
         closeButton.addActionListener(Utilities.createDisposeAction(this));
         Utilities.setEscAction(this, closeButton);
@@ -86,11 +86,11 @@ public class ServerModuleFileManagerWindow extends JDialog {
 
         moduleTableModel = TableUtil.configureTable(moduleTable,
                 column( resources.getString("modules.column.name"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "name" ) ),
-                column( resources.getString("modules.column.file-name"), 30, 140, 99999, propFinder( ServerModuleFile.PROP_FILE_NAME ) ),
-                column( resources.getString("modules.column.type"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "moduleType") ),
-                column( resources.getString("modules.column.hash"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "moduleSha256") ),
-                column( resources.getString("modules.column.size"), 30, 140, 99999, propertyTransform( ServerModuleFile.class, "humanReadableFileSize") ),
-                column( resources.getString("modules.column.status"), 30, 140, 99999,
+                column( resources.getString("modules.column.file-name"), 30, 250, 99999, propFinder( ServerModuleFile.PROP_FILE_NAME ) ),
+                column( resources.getString("modules.column.type"), 30, 150, 150, propertyTransform( ServerModuleFile.class, "moduleType") ),
+                column( resources.getString("modules.column.hash"), 50, 400, 99999, propertyTransform( ServerModuleFile.class, "moduleSha256") ),
+                column( resources.getString("modules.column.size"), 20, 80, 150, propertyTransform( ServerModuleFile.class, "humanReadableFileSize") ),
+                column( resources.getString("modules.column.status"), 20, 80, 150,
                         new Functions.Unary<String, ServerModuleFile>() {
                             @Override
                             public String call(final ServerModuleFile serverModuleFile) {
