@@ -665,6 +665,9 @@ public class ServerVariables {
 
             new Variable(BuiltinVariables.SSGNODE_BUILD,
                     SelectingGetter.selectingGetter( BuiltinVariables.SSGNODE_BUILD, BUILD_VERSION_CONTEXT )),
+
+            new Variable(BuiltinVariables.PREFIX_GATEWAY_RANDOM, new GatewayRandomGetter( BuiltinVariables.PREFIX_GATEWAY_RANDOM ) ),
+
             new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new SelectingGetter(BuiltinVariables.PREFIX_GATEWAY_TIME) {
                 @Override
                 protected Object getBaseObject(PolicyEnforcementContext context) {
@@ -1233,6 +1236,17 @@ public class ServerVariables {
         }
 
         protected abstract Object get( final PolicyHeader policyHeader );
+    }
+
+    private static class GatewayRandomGetter extends SelectingGetter {
+        private GatewayRandomGetter( String baseName ) {
+            super( baseName );
+        }
+
+        @Override
+        protected Object getBaseObject( PolicyEnforcementContext context ) {
+            return new RandomByteGen();
+        }
     }
 
     private static abstract class SelectingGetter extends Getter {

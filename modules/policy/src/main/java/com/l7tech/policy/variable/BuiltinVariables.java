@@ -34,6 +34,7 @@ public class BuiltinVariables {
     public static final String SSGNODE_IP = "ssgnode.ip";
     public static final String SSGNODE_BUILD = "ssgnode.build";
 
+    public static final String PREFIX_GATEWAY_RANDOM = "gateway.random";
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE = "service";
@@ -166,6 +167,7 @@ public class BuiltinVariables {
             new VariableMetadata("request.authorized", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata("request.completed", false, false, null, false, DataType.BOOLEAN),
             new VariableMetadata("request.identityMappings", true, true, null, false),
+            new VariableMetadata(PREFIX_GATEWAY_RANDOM, true, false, null, false),
             new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
             new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_URL, true, false, null, false),

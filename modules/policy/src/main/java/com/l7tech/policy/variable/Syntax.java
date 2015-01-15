@@ -1,7 +1,9 @@
 package com.l7tech.policy.variable;
 
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.ByteGen;
 import com.l7tech.util.DateUtils;
+import com.l7tech.util.HexUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.jetbrains.annotations.NotNull;
@@ -400,9 +402,26 @@ public abstract class Syntax {
             return ELEMENT_FORMATTER;
         } else if (object instanceof Date) {
             return DATE_FORMATTER;
+        } else if ( object instanceof ByteGen ) {
+            return BYTEGEN_FORMATTER;
         }
         return DEFAULT_FORMATTER;
     }
+
+    private static final Formatter BYTEGEN_FORMATTER = new Formatter() {
+        @Override
+        public String format( Syntax syntax, Object o, SyntaxErrorHandler handler, boolean strict ) {
+            // This is really pretty pointless, but seemed like the least-risky way to allow a ByteGen to be used without a suffix
+            // as you could already do with a Date
+            if ( o instanceof ByteGen ) {
+                ByteGen byteGen = (ByteGen) o;
+                byte[] b = new byte[ 32 ];
+                byteGen.generateBytes( b, 0, 32 );
+                return HexUtils.hexDump( b );
+            }
+            return null;
+        }
+    };
 
     private static final Formatter DATE_FORMATTER = new Formatter() {
         @Override

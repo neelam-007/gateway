@@ -34,6 +34,8 @@ import java.util.regex.Pattern;
 
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
+import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_RANDOM;
+
 
 /**
  * The assertion dependencyProcessor finds the dependencies that an assertions has.
@@ -103,6 +105,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
             for (final String variable : ((UsesVariables) assertion).getVariablesUsed()) {
                 if (variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
                         variable.length() > PREFIX_CLUSTER_PROPERTY.length() &&
+                        !variable.startsWith(PREFIX_GATEWAY_RANDOM) &&
                         !variable.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
                     final String cpName = variable.substring(PREFIX_CLUSTER_PROPERTY.length() + 1);
 
