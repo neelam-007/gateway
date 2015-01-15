@@ -141,7 +141,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
         final File tmpModuleFile = downloadModule(moduleFile, getStagingTemporaryDir());
         try {
             // check whether the deploy directory is writable
-            if (false && isDirectoryWritable(new File(deployPath))) {
+            if (isDirectoryWritable(new File(deployPath))) {
                 // move downloaded module into the modules deploy folder
                 moveModule(tmpModuleFile, new File(deployPath + File.separator + moduleFileName));
                 updateModuleState(moduleFile.getGoid(), ModuleState.DEPLOYED);
