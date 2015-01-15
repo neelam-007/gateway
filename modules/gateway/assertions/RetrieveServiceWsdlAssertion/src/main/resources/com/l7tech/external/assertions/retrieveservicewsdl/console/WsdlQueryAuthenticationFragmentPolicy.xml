@@ -8,7 +8,7 @@
             <L7p:Comment stringValue="Configure the required security policy for the WSDL Query Handler in this policy"/>
         </L7p:CommentAssertion>
         <L7p:CommentAssertion>
-            <L7p:Comment stringValue="Per-service authentication can be performed by referring to the ${serviceId} context variable"/>
+            <L7p:Comment stringValue="Per-service authentication can be performed by referring to the ${serviceId} context variable which is set in the WSDL Query Handler service policy"/>
         </L7p:CommentAssertion>
         <L7p:CommentAssertion>
             <L7p:Comment stringValue="Default policy is HTTP Basic Authentication over SSL"/>
