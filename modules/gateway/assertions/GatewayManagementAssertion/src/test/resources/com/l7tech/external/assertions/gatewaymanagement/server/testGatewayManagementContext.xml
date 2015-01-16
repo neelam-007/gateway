@@ -2,11 +2,11 @@
 <!--
     Test application context for the Gateway Management assertion
 -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:tx="http://www.springframework.org/schema/tx"
+<beans xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util" xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
@@ -323,5 +323,8 @@
                 <ref bean="genericEntityManager"/>
             </list>
         </constructor-arg>
+    </bean>
+    <bean id="secretsEncryptorFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptorFactory">
+        <constructor-arg index="0" value="password"/>
     </bean>
 </beans>

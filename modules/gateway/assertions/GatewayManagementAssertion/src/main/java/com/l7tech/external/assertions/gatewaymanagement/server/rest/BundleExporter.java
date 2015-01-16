@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityBundleExporter;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,16 +34,20 @@ public class BundleExporter {
     private BundleTransformer bundleTransformer;
     @Inject
     private DependencyTransformer dependencyTransformer;
+    @Inject
+    private SecretsEncryptorFactory secretsEncryptorFactory;
 
     public BundleExporter() {
     }
 
     BundleExporter(final EntityBundleExporter entityBundleExporter,
                    final BundleTransformer bundleTransformer,
-                   final DependencyTransformer dependencyTransformer) {
+                   final DependencyTransformer dependencyTransformer,
+                   final SecretsEncryptorFactory secretsEncryptorFactory) {
         this.entityBundleExporter = entityBundleExporter;
         this.bundleTransformer = bundleTransformer;
         this.dependencyTransformer = dependencyTransformer;
+        this.secretsEncryptorFactory = secretsEncryptorFactory;
     }
 
     /**
@@ -60,7 +63,7 @@ public class BundleExporter {
      */
     @NotNull
     public Bundle exportBundle(@Nullable Properties bundleExportOptions, Boolean includeDependencies, boolean encryptSecrets, @Nullable String encodedKeyPassphrase, @NotNull EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
-        final SecretsEncryptor secretsEncryptor = encryptSecrets ? SecretsEncryptor.createSecretsEncryptor( encodedKeyPassphrase): null;
+        final SecretsEncryptor secretsEncryptor = encryptSecrets ? secretsEncryptorFactory.createSecretsEncryptor( encodedKeyPassphrase): null;
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
         if (includeDependencies) {

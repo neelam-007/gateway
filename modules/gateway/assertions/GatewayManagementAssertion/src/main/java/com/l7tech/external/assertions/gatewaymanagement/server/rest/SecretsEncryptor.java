@@ -1,14 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest;
 
 import com.l7tech.util.*;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
 import java.io.Closeable;
 
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
@@ -26,36 +24,10 @@ public class SecretsEncryptor implements Closeable {
     private byte[] passphrase;
     private byte[] bundleKeyBytes;
 
-    private SecretsEncryptor(@NotNull byte[] passphrase) throws GeneralSecurityException {
+
+    protected SecretsEncryptor(@NotNull byte[] passphrase) throws GeneralSecurityException {
         this.passphrase = passphrase;
         bundleKeyEncryptor = MasterPasswordManager.createMasterPasswordManager( passphrase, false, false );
-    }
-
-    /**
-     * Creates an instance of the SecretsEncryptor to use with the passphrase.
-     *
-     * @param base64encodedKeyPassphrase The base-64 UTF-8 encoded passphrase to use for the encryption key when encrypting passwords, if null uses cluster passphrase.
-     * @return an instance of the SecretsEncryptor
-     * @throws FileNotFoundException
-     * @throws GeneralSecurityException
-     */
-    @NotNull
-    public static SecretsEncryptor createSecretsEncryptor(@Nullable final String base64encodedKeyPassphrase) throws FileNotFoundException, GeneralSecurityException {
-        if (base64encodedKeyPassphrase != null) {
-            return new SecretsEncryptor(HexUtils.decodeBase64(base64encodedKeyPassphrase));
-        } else {
-            final String confDir = ConfigFactory.getProperty("com.l7tech.server.configDirectory");
-            if (confDir != null) {
-                final File ompDat = new File(new File(confDir), "omp.dat");
-                if (ompDat.exists()) {
-                    return new SecretsEncryptor(new DefaultMasterPasswordFinder(ompDat).findMasterPasswordBytes());
-                } else {
-                    throw new FileNotFoundException("Cannot encrypt because " + ompDat.getAbsolutePath() + " does not exist");
-                }
-            } else {
-                throw new FileNotFoundException("Cannot encrypt because unable to locate conf directory");
-            }
-        }
     }
 
     /**
@@ -125,7 +97,7 @@ public class SecretsEncryptor implements Closeable {
         byte[] bundleKeyBytes = bundleKeyEncryptor.decryptSecret(encryptedKey);
         MasterPasswordManager secretsDecryptor = MasterPasswordManager.createMasterPasswordManager(bundleKeyBytes , true, false );
         byte[] decrypted =  secretsDecryptor.decryptSecret(secret);
-        Arrays.fill( passphrase, (byte)0 );
+        Arrays.fill( bundleKeyBytes, (byte)0 );
         return decrypted;
     }
 

@@ -40,16 +40,15 @@ public class BundleExporterTest {
     private BundleTransformer bundleTransformer;
     @Mock
     private DependencyTransformer dependencyTransformer;
+    private SecretsEncryptorFactory secretsEncryptorFactory = new SecretsEncryptorFactory("clusterPass".toCharArray());
     private BundleExporter exporter;
     private Properties properties;
     private EntityBundle entityBundle;
     private Bundle bundle;
-    private URL conf = BundleExporterTest.class.getResource("conf");
 
     @Before
     public void setup() {
-        SyspropUtil.setProperty(CONFIG_PATH, conf.getPath());
-        exporter = new BundleExporter(entityBundleExporter, bundleTransformer, dependencyTransformer);
+        exporter = new BundleExporter(entityBundleExporter, bundleTransformer, dependencyTransformer,secretsEncryptorFactory);
         properties = new Properties();
         entityBundle = new EntityBundle(new ArrayList<EntityContainer>(),
                 new ArrayList<EntityMappingInstructions>(),
@@ -70,12 +69,6 @@ public class BundleExporterTest {
 
         assertEquals(bundle, exporter.exportBundle(properties, false, true, null));
         verify(bundleTransformer).convertToMO(eq(entityBundle), any(SecretsEncryptor.class));
-    }
-
-    @Test(expected = FileNotFoundException.class)
-    public void exportBundleEncryptPasswordsOmpDatNotFound() throws Exception {
-        SyspropUtil.setProperty(CONFIG_PATH, "doesnotexist");
-        exporter.exportBundle(properties, false, true, null);
     }
 
     @Test

@@ -25,6 +25,8 @@ public class BundleImporter {
     private EntityBundleImporter entityBundleImporter;
     @Inject
     private BundleTransformer bundleTransformer;
+    @Inject
+    private SecretsEncryptorFactory secretsEncryptorFactory;
 
     /**
      * Imports the bundle
@@ -38,7 +40,7 @@ public class BundleImporter {
      */
     @NotNull
     public List<Mapping> importBundle(@NotNull final Bundle bundle, final boolean test, final boolean active, final String versionComment, @Nullable String encodedKeyPassphrase) throws ResourceFactory.InvalidResourceException, FileNotFoundException, GeneralSecurityException {
-        SecretsEncryptor secretsEncryptor = SecretsEncryptor.createSecretsEncryptor(encodedKeyPassphrase != null ? encodedKeyPassphrase : null);
+        SecretsEncryptor secretsEncryptor = secretsEncryptorFactory.createSecretsEncryptor(encodedKeyPassphrase != null ? encodedKeyPassphrase : null);
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundle, secretsEncryptor);
         List<EntityMappingResult> mappingsPerformed = entityBundleImporter.importBundle(entityBundle, test, active, versionComment);
         ResourceUtils.closeQuietly(secretsEncryptor);
