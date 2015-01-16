@@ -108,6 +108,13 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         final String vt = validationType.getSelectedItem().toString();
         assertion.setValidationType(vt);
 
+        //initially clear all fields first
+        assertion.setSignatureSecret(null);
+        assertion.setKeyGoid(null);
+        assertion.setKeyAlias(null);
+        assertion.setPrivateKeySource(null);
+        assertion.setKeyType(null);
+        assertion.setKeyId(null);
         if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(vt)) {
             assertion.setSignatureSecret(String.valueOf(secretPasswordField.getPassword()));
         } else if (JsonWebTokenConstants.VALIDATION_USING_PK.equals(vt)) {
