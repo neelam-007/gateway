@@ -5,12 +5,12 @@
 build.version.major=8
 build.version.minor=3
 build.version.subminor=00
-build.version.revision=0
+build.version.revision=1
 
 build.em.version.major=1
 build.em.version.minor=13
 build.em.version.subminor=00
-build.em.version.revision=0
+build.em.version.revision=1
 
 # "layer7-api module" version is decoupled from the Gateway version.
 # This module produces the layer7-api-<major.minor.subminor>.jar file. This module/jar is also known as the Custom Assertion API.
@@ -24,4 +24,4 @@ build.em.version.revision=0
 build.api.version.major=8
 build.api.version.minor=3
 build.api.version.subminor=00
-build.api.version.revision=0
+build.api.version.revision=1
