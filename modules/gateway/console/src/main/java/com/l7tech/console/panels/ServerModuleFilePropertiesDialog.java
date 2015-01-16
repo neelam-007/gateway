@@ -22,6 +22,9 @@ import java.awt.event.WindowEvent;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+/**
+ * Represents {@link ServerModuleFile} properties dialog.
+ */
 public class ServerModuleFilePropertiesDialog extends JDialog {
     private static final long serialVersionUID = 3134981092231010304L;
     private static final ResourceBundle resources = ResourceBundle.getBundle(ServerModuleFilePropertiesDialog.class.getName());
@@ -38,7 +41,6 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
     private JTextField moduleNameText;
     private JLabel typeLabel;
     private JTextField sha256TextField;
-    private JPanel statePanel;
     private JScrollPane stateScrollPane;
     private WrappingLabel stateLabel;
 
@@ -119,10 +121,8 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
         stateScrollPane.getHorizontalScrollBar().setUnitIncrement(8);
         stateScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 
-        stateLabel = new WrappingLabel();
         stateLabel.setContextMenuAutoSelectAll(false);
         stateLabel.setContextMenuEnabled(true);
-        statePanel.add(stateLabel, BorderLayout.CENTER);
     }
 
     /**
@@ -135,11 +135,6 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
         filenameLabel.setText(module != null ? module.getProperty(ServerModuleFile.PROP_FILE_NAME) : StringUtils.EMPTY);
 
         stateLabel.setText(module != null && StringUtils.isNotBlank(state) ? state : resources.getString("text.state.empty"));
-        if (stateLabel.getLineCount() > 8) {
-            stateScrollPane.setPreferredSize(new Dimension(-1, 100));
-        } else {
-            stateScrollPane.setPreferredSize(new Dimension(-1, -1));
-        }
         stateLabel.setCaretPosition(0);
 
         final ModuleType moduleType = module != null ? module.getModuleType() : null;
