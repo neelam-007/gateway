@@ -268,6 +268,10 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     private EntityManager getEntityManager(Class<? extends Entity> clazz) {
+        //If this is a subclass of identity provider config us the IdentityProviderConfig
+        if(IdentityProviderConfig.class.isAssignableFrom(clazz)) {
+            clazz = IdentityProviderConfig.class;
+        }
         final ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader> manager = managersByClass.get(clazz);
         if (manager != null && !(PersistentEntity.class.isAssignableFrom(clazz)))
             return null;

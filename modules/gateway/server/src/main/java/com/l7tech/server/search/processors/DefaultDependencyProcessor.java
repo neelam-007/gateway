@@ -1,6 +1,7 @@
 package com.l7tech.server.search.processors;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
@@ -11,6 +12,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.CustomKeyValueStoreManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
@@ -55,6 +57,9 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
 
     @Inject
     private CustomKeyValueStoreManager customKeyValueStoreManager;
+
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
 
     @Inject
     private TrustedCertManager trustedCertManager;
@@ -690,6 +695,26 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
                 return trustedCertManager.findByUniqueName(entityHeader.getName());
             } else {
                 return trustedCertManager.findByPrimaryKey(entityHeader.getGoid());
+            }
+        } else if(entityHeader instanceof IdentityHeader) {
+            //The entity is an identity find the identity provider where the existing identity should reside.
+            final Goid idProvider = ((IdentityHeader) entityHeader).getProviderGoid();
+            IdentityProvider provider;
+            try {
+                provider = identityProviderFactory.getProvider(idProvider);
+            } catch (FindException e) {
+                provider = null;
+            }
+            if (provider == null) {
+                throw new FindException("Error looking up identity. Cannot find Identity provider with id: " + idProvider);
+            }
+
+            if (EntityType.USER.equals(entityHeader.getType())) {
+                return provider.getUserManager().findByPrimaryKey(entityHeader.getStrId());
+            } else if (EntityType.GROUP.equals(entityHeader.getType())) {
+                return provider.getGroupManager().findByPrimaryKey(entityHeader.getStrId());
+            } else {
+                throw new FindException("Unknown identity type, expected either user or group. Found: " + entityHeader.getType());
             }
         } else {
             return entityCrud.find(entityHeader);

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -1058,8 +1059,9 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
         }
     }
 
+    @BugId("SSG-10399")
     @Test
-    public void testBrokenEncapsulatedPolicyReferenceExport() throws Exception {
+    public void testBrokenEncapsulatedPolicyReferenceExportImport() throws Exception {
 
         //create encass policy
         PolicyMO policyMO = ManagedObjectFactory.createPolicy();
@@ -1177,6 +1179,50 @@ public class EncapsulatedAssertionMigrationTest extends com.l7tech.skunkworks.re
             Assert.assertEquals(EntityType.POLICY.toString(), encassPolicyMapping.getType());
             Assert.assertEquals(Mapping.Action.NewOrExisting, encassPolicyMapping.getAction());
             Assert.assertEquals(createdPolicy.getId(), encassPolicyMapping.getSrcId());
+
+            //Import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> targetMappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = targetMappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, targetMappings.getContent().getMappings().size());
+
+            Mapping targetEncassMapping = targetMappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.ENCAPSULATED_ASSERTION.toString(), targetEncassMapping.getType());
+            Assert.assertEquals(Mapping.Action.Ignore, targetEncassMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.Ignored, targetEncassMapping.getActionTaken());
+            Assert.assertNull( targetEncassMapping.getSrcId());
+            Assert.assertNull( targetEncassMapping.getSrcUri());
+            Assert.assertEquals("guid", targetEncassMapping.getProperty("MapBy"));
+            Assert.assertEquals(encassMO.getGuid(), targetEncassMapping.getProperty("MapTo"));
+
+            Mapping targetRootFolderMapping = targetMappings.getContent().getMappings().get(1);
+            Assert.assertEquals(EntityType.FOLDER.toString(), targetRootFolderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, targetRootFolderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, targetRootFolderMapping.getActionTaken());
+            Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), targetRootFolderMapping.getSrcId());
+            Assert.assertEquals(targetRootFolderMapping.getSrcId(), targetRootFolderMapping.getTargetId());
+
+            Mapping targetPolicyMapping = targetMappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), targetPolicyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, targetPolicyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, targetPolicyMapping.getActionTaken());
+            Assert.assertEquals(createdPolicy.getId(), targetPolicyMapping.getSrcId());
+            Assert.assertEquals(targetPolicyMapping.getSrcId(), targetPolicyMapping.getTargetId());
+
+            validate(targetMappings);
+
+            response = getTargetEnvironment().processRequest("policies/"+targetPolicyMapping.getTargetId() + "/dependencies", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> dependencies = policyCreatedDependencies.getContent().getDependencies();
+            Assert.assertNotNull(dependencies);
+            Assert.assertEquals(0, dependencies.size());
 
         }finally{
 

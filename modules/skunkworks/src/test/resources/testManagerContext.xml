@@ -233,6 +233,23 @@
         <property name="configManager" ref="identityProviderConfigManager"/>
     </bean>
 
+    <!-- Simplified bind-only non-listable LDAP identity provider  -->
+    <bean id="bindOnlyLdapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl"/>
+        <constructor-arg value="bindOnlyLdapIdentityProvider"/>
+    </bean>
+    <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl" scope="prototype">
+        <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManagerImpl" scope="prototype">
+                <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
+            </bean>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapGroupManagerImpl" scope="prototype"/>
+        </property>
+    </bean>
+
     <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="certValidationProcessor"/>

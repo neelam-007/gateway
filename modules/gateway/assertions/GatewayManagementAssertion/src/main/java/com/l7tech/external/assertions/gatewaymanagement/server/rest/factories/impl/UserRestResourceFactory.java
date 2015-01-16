@@ -193,11 +193,14 @@ public class UserRestResourceFactory {
             passwordEnforcerManager.isPasswordPolicyCompliant(password.getPassword());
             // Reset password expiration and force password change
             passwordEnforcerManager.setUserPasswordPolicyAttributes(newUser, true);
-            InternalUserManager internalManager = userManager;
-            final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
-            // update user password
-            if (!passwordManager.configureUserPasswordHashes(newUser, password.getPassword())) {
-                throw new SaveException("Unable to save user password");
+            //only update the hashed password if it is not yet set. The UserTransformer will set the hashed password
+            if(newUser.getHashedPassword() == null) {
+                InternalUserManager internalManager = userManager;
+                final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
+                // update user password
+                if (!passwordManager.configureUserPasswordHashes(newUser, password.getPassword())) {
+                    throw new SaveException("Unable to save user password");
+                }
             }
         }else if(isSHA512cryptHashedPassword(password.getFormat())){
             // check password smells like
@@ -206,8 +209,11 @@ public class UserRestResourceFactory {
             }
             // Reset password expiration and force password change
             passwordEnforcerManager.setUserPasswordPolicyAttributes(newUser, true);
-            // update user password
-            newUser.setHashedPassword(password.getPassword());
+            //only update the hashed password if it is not yet set. The UserTransformer will set the hashed password
+            if(newUser.getHashedPassword() == null) {
+                // update user password
+                newUser.setHashedPassword(password.getPassword());
+            }
         }else{
             throw new SaveException("Invalid password format:"+ password.getFormat());
         }

@@ -24,6 +24,7 @@ import org.junit.Test;
 import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -200,7 +201,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         Item<UserMO> userItem = null;
         try {
             policyItem = createPolicy(getSourceEnvironment());
-            userItem = createUser();
+            userItem = createUser(getSourceEnvironment(), "srcUser", internalIDProviderItem.getId());
 
             final Item<PolicyMO> finalPolicyItem = policyItem;
             //get the bundle to find the auto generated role for the policy
@@ -295,8 +296,8 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         Item<IdentityProviderMO> idProviderItemSrc = null;
         Item<IdentityProviderMO> idProviderItemTrgt = null;
         try {
-            idProviderItemSrc = createIdProvider(getSourceEnvironment());
-            idProviderItemTrgt = createIdProvider(getTargetEnvironment());
+            idProviderItemSrc = createIdProviderLdap(getSourceEnvironment());
+            idProviderItemTrgt = createIdProviderLdap(getTargetEnvironment());
 
             //get the bundle on the target ssg. This will create the default ssl key (when search for dependencies on the id provider)
             getTargetEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
@@ -522,6 +523,94 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
     }
 
     /**
+     * Test migrating a full gateway with one created service. Test that auto generated roles get created correctly.
+     */
+    @Test
+    public void testFullGatewayExportImportInternalUser() throws Exception {
+        Item<UserMO> userItem = null;
+        try {
+            userItem = createUser(getSourceEnvironment(), "srcUser", internalIDProviderItem.getId());
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true&encryptSecrets=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), userItem.getId());
+            userMappingIn.getProperties().remove("FailOnNew");
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            Mapping userMapping = getMapping(mappings.getContent().getMappings(), userItem.getId());
+            Assert.assertEquals(EntityType.USER.toString(), userMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, userMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, userMapping.getActionTaken());
+            Assert.assertEquals(userItem.getId(), userMapping.getSrcId());
+
+        } finally {
+            if (userItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("identityProviders/" + internalIDProviderItem.getId() + "/users/" + userItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("identityProviders/" + internalIDProviderItem.getId() + "/users/" + userItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    /**
+     * Test migrating a full gateway with one created service. Test that auto generated roles get created correctly.
+     */
+    @Test
+    public void testFullGatewayExportImportFederatedUser() throws Exception {
+        Item<UserMO> userItem = null;
+        Item<IdentityProviderMO> federatedIdentityProviderItem = null;
+        try {
+            federatedIdentityProviderItem = createIdProviderFederated(getSourceEnvironment());
+            userItem = createUser(getSourceEnvironment(), "srcUser", federatedIdentityProviderItem.getId());
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), userItem.getId());
+            userMappingIn.getProperties().remove("FailOnNew");
+            Mapping fipMappingIn = getMapping(bundleItem.getContent().getMappings(), federatedIdentityProviderItem.getId());
+            fipMappingIn.getProperties().remove("FailOnNew");
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", "encryptPassword=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            //verify the mappings
+            Mapping userMapping = getMapping(mappings.getContent().getMappings(), userItem.getId());
+            Assert.assertEquals(EntityType.USER.toString(), userMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, userMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, userMapping.getActionTaken());
+            Assert.assertEquals(userItem.getId(), userMapping.getSrcId());
+
+        } finally {
+            if (userItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("identityProviders/" + federatedIdentityProviderItem.getId() + "/users/" + userItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("identityProviders/" + federatedIdentityProviderItem.getId() + "/users/" + userItem.getId(), HttpMethod.DELETE, null, "");
+            }
+            if (federatedIdentityProviderItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("identityProviders/" + federatedIdentityProviderItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("identityProviders/" + federatedIdentityProviderItem.getId(), HttpMethod.DELETE, null, "");
+
+            }
+        }
+    }
+
+    /**
      * Test migrating a full gateway with one assertion security zone.
      */
     @Test
@@ -669,7 +758,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         return targetRole.getContent();
     }
 
-    private Item<IdentityProviderMO> createIdProvider(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+    private Item<IdentityProviderMO> createIdProviderLdap(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
         IdentityProviderMO identityProviderMO = ManagedObjectFactory.createIdentityProvider();
         identityProviderMO.setName("My New ID Provider");
         identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP);
@@ -691,16 +780,37 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         return idProviderItem;
     }
 
-    private Item<UserMO> createUser() throws Exception {
+    private Item<IdentityProviderMO> createIdProviderFederated(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+        IdentityProviderMO identityProviderMO = ManagedObjectFactory.createIdentityProvider();
+        identityProviderMO.setName("My Federated IDP");
+        identityProviderMO.setIdentityProviderType(IdentityProviderMO.IdentityProviderType.FEDERATED);
+        identityProviderMO.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("certificateValidation", "Validate Certificate Path")
+                .put("enableCredentialType.x509", true)
+                .put("enableCredentialType.saml", true)
+                .map());
+        IdentityProviderMO.FederatedIdentityProviderDetail federatedDetails = identityProviderMO.getFederatedIdentityProviderDetail();
+        federatedDetails.setCertificateReferences(Collections.<String>emptyList());
+
+        RestResponse response = environment.processRequest("identityProviders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(identityProviderMO)));
+        assertOkCreatedResponse(response);
+        Item<IdentityProviderMO> idProviderItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        identityProviderMO.setId(idProviderItem.getId());
+        idProviderItem.setContent(identityProviderMO);
+        return idProviderItem;
+    }
+
+    private Item<UserMO> createUser(JVMDatabaseBasedRestManagementEnvironment environment, String login, String identityProviderId) throws Exception {
         //create user
         UserMO userMO = ManagedObjectFactory.createUserMO();
-        userMO.setProviderId(internalIDProviderItem.getId());
-        userMO.setLogin("SrcUser");
+        userMO.setProviderId(identityProviderId);
+        userMO.setLogin(login);
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
         password.setPassword("123#@!qwER");
         userMO.setPassword(password);
-        RestResponse response = getSourceEnvironment().processRequest("identityProviders/" + internalIDProviderItem.getId() + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+        RestResponse response = environment.processRequest("identityProviders/" + identityProviderId + "/users", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
                 XmlUtil.nodeToString(ManagedObjectFactory.write(userMO)));
         assertOkCreatedResponse(response);
         Item<UserMO> userItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));

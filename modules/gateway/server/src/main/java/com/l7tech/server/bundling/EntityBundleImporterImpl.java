@@ -12,10 +12,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -165,7 +162,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //loop through each mapping instruction to perform the action.
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     //Get the entity that this mapping is for from the bundle
-                    final EntityContainer entity = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
+                    final EntityContainer entity = mapping.getSourceEntityHeader().getStrId() == null ? null : bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
                     try {
                         //Find an existing entity to map it to.
                         @Nullable
@@ -691,6 +688,39 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 if (!futureSuccess.get()){
                                     throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
                                 }
+                            }
+                        } else if (entityContainer.getEntity() instanceof Identity) {
+                            //need to specially handle deletion of identity entities
+                            final Goid providerId = ((Identity) entityContainer.getEntity()).getProviderId();
+                            IdentityProvider identityProvider;
+                            try {
+                                identityProvider = identityProviderFactory.getProvider(providerId);
+                            } catch (FindException e) {
+                                identityProvider = null;
+                            }
+                            if(identityProvider == null){
+                                throw new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + " with id: " + entityContainer.getEntity().getId() + ". Message: Could not find identity provider with id: " + providerId);
+                            }
+                            if (entityContainer.getEntity() instanceof GroupBean) {
+                                final GroupManager groupManager = identityProvider.getGroupManager();
+                                final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
+                                if(existingEntity == null) {
+                                    final String id = groupManager.save(group, null);
+                                    ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(id);
+                                } else {
+                                    groupManager.update(group);
+                                }
+                            } else if (entityContainer.getEntity() instanceof UserBean) {
+                                final UserManager userManager = identityProvider.getUserManager();
+                                final User user = userManager.reify((UserBean) entityContainer.getEntity());
+                                if(existingEntity == null) {
+                                    final String id = userManager.save(user, null);
+                                    ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(id);
+                                } else {
+                                    userManager.update(user);
+                                }
+                            } else {
+                                throw new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + " with id: " + entityContainer.getEntity().getId() + ". Message: Unexpected Identity type, should be either a UserBean or GroupBean");
                             }
                         } else {
                             saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);

@@ -17,7 +17,10 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
@@ -28,6 +31,8 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.fed.FederatedIdentityProvider;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -52,6 +57,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
     @Inject
     private EntityCrud entityCrud;
+
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
 
     @Inject
     private FolderManager folderManager;
@@ -86,6 +94,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             PublishedService.class,
             InternalUser.class,
             InternalGroup.class,
+            FederatedUser.class,
+            FederatedGroup.class,
             //Users and groups need to come before roles! This is so that role assignments can be properly mapped on import
             Role.class,
             SiteMinderConfiguration.class,
@@ -233,6 +243,29 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                         return entityHeaders;
                     }
                 });
+            } else if (FederatedUser.class.equals(entityClass)){
+                //find all federated identity providers
+                final List<IdentityProvider> federatedIdentityProviders = Functions.grep(identityProviderFactory.findAllIdentityProviders(), new Functions.Unary<Boolean, IdentityProvider>() {
+                    @Override
+                    public Boolean call(final IdentityProvider identityProvider) {
+                        return identityProvider instanceof FederatedIdentityProvider;
+                    }
+                });
+                entityHeaders = new EntityHeaderSet<>();
+                for(final IdentityProvider identityProvider : federatedIdentityProviders){
+                    entityHeaders.addAll(identityProvider.getUserManager().findAllHeaders());
+                }
+            } else if (FederatedGroup.class.equals(entityClass)){
+                final List<IdentityProvider> federatedIdentityProviders = Functions.grep(identityProviderFactory.findAllIdentityProviders(), new Functions.Unary<Boolean, IdentityProvider>() {
+                    @Override
+                    public Boolean call(final IdentityProvider identityProvider) {
+                        return identityProvider instanceof FederatedIdentityProvider;
+                    }
+                });
+                entityHeaders = new EntityHeaderSet<>();
+                for(final IdentityProvider identityProvider : federatedIdentityProviders){
+                    entityHeaders.addAll(identityProvider.getGroupManager().findAllHeaders());
+                }
             } else {
                 entityHeaders = entityCrud.findAll(entityClass);
             }
