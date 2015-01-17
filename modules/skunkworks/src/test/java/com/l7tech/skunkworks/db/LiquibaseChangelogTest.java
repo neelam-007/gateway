@@ -37,7 +37,7 @@ public class LiquibaseChangelogTest {
     @Test
     @BugId("SSG-9885")
     public void authorIsGateway() throws LiquibaseException, SQLException {
-        Liquibase liquibase = new Liquibase("ssg-8.2.00.xml", new FileSystemResourceAccessor("etc/db/liquibase"), mockConnection);
+        Liquibase liquibase = new Liquibase("ssg.xml", new FileSystemResourceAccessor("etc/db/liquibase"), mockConnection);
 
         for (ChangeSet changeSet : liquibase.getDatabaseChangeLog().getChangeSets()) {
             Assert.assertEquals("The changeset author must be 'gateway', we do not put user names as changeset authors because they are visible to customers. Changeset: " + changeSet.toString(), "gateway", changeSet.getAuthor());

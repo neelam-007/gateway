@@ -436,7 +436,7 @@ public class DBActions {
         Connection targetConnection = null;
         TimerTask spammer = null;
         try {
-            sourceConnection = getConnection(sourceConfig, false);
+            sourceConnection = getConnection(sourceConfig, true, false);
             sourceConnection.setAutoCommit(false);
             if (ui != null) {
                 spammer = new ProgressTimerTask(ui);
@@ -446,7 +446,7 @@ public class DBActions {
             //create the test database
             createDatabase(targetConfig);
 
-            targetConnection = getConnection(targetConfig, true, false);
+            targetConnection = getConnection(targetConfig, false, false);
             targetConnection.setAutoCommit(false);
 
             //copy the database
@@ -535,7 +535,7 @@ public class DBActions {
 
         logger.info("creating database \"" + newDbName + "\"");
 
-        createDatabase(connection, newDbName);
+        createDatabase(connection, newDbName, null);
 
         final String[] grantSql = getGrantStatements(databaseConfig, hosts);
         logger.info("Creating user \"" + databaseConfig.getNodeUsername() + "\" and performing grants on " + newDbName + " database");
@@ -549,17 +549,28 @@ public class DBActions {
         Connection connection = null;
         try {
             connection = getConnection(databaseConfig, true);
-            createDatabase(connection, databaseConfig.getName());
+            createDatabase(connection, databaseConfig.getName(), databaseConfig.getNodeUsername());
         } finally {
             ResourceUtils.closeQuietly(connection);
         }
     }
 
-    private void createDatabase(@NotNull final Connection dbConnection, @NotNull final String dbname) throws SQLException {
+    /**
+     * This will create the given database. It will also grant permissions to the gien user if it is not null
+     *
+     * @param dbConnection The connection to use to create the database
+     * @param dbname       The name of the database to create
+     * @param username     The username to grant localhost privileges to. Or null to not grant privileges
+     * @throws SQLException
+     */
+    private void createDatabase(@NotNull final Connection dbConnection, @NotNull final String dbname, @Nullable final String username) throws SQLException {
         Statement stmt = null;
         try {
             stmt = dbConnection.createStatement();
             stmt.executeUpdate(SQL_CREATE_DB + dbname);
+            if (username != null) {
+                stmt.executeUpdate(SQL_GRANT_ALL + dbname + ".* to " + username + "@'localhost'");
+            }
         } finally {
             ResourceUtils.closeQuietly(stmt);
         }
