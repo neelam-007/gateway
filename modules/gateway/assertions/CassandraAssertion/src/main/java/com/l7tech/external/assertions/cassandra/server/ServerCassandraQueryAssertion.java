@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.cassandra.server;
 
 import com.ca.datasources.cassandra.CassandraQueryManager;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
+import com.l7tech.message.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
@@ -27,6 +28,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.logging.Logger;
 
 import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutContextVariables;
 
@@ -38,6 +40,7 @@ import static com.l7tech.server.jdbc.JdbcQueryUtils.getQueryStatementWithoutCont
  *
  */
 public class ServerCassandraQueryAssertion extends AbstractServerAssertion<CassandraQueryAssertion> {
+    private final static Logger logger = Logger.getLogger(ServerCassandraQueryAssertion.class.getName());
     private final static String XML_RESULT_TAG_OPEN = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><L7j:cassandraQueryResult xmlns:L7j=\"http://ns.l7tech.com/2012/08/cassandra-query-result\">";
     private final static String XML_RESULT_TAG_CLOSE = "</L7j:cassandraQueryResult>";
     public static final long DEFAULT_BLOB_MAX_SIZE = 10485760L;
@@ -103,6 +106,11 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
                 stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
             }
 
+
+            if ( ! validateParameters(preparedStmtParams) ) {
+                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED,"Context Variable Type is not convertible to a Cassandra Data Type");
+                return AssertionStatus.FALSIFIED;
+            }
             BoundStatement boundStatement = cassandraQueryManager.buildBoundStatement(preparedStatement, preparedStmtParams);
             boundStatement.setFetchSize(assertion.getFetchSize());
             Map<String, List<Object>> resultMap =  new TreeMap<>();
@@ -148,6 +156,24 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private boolean validateParameters(List<Object> preparedStmtParams) {
+
+        for (Object o : preparedStmtParams) {
+            Class clazz = o.getClass();
+            if (   clazz.isAssignableFrom(String.class)
+                || clazz.isAssignableFrom(Integer.class)
+                || clazz.isAssignableFrom(Long.class)
+                || clazz.isAssignableFrom(Date.class) )
+            {
+                continue;
+            } else {
+                logger.fine("Cannot convert Gateway object (" + o.toString() + ") to Cassandra datatype.");
+                return false;
+            }
+        }
+        return true;
     }
 
     /*
