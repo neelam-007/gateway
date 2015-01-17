@@ -37,7 +37,6 @@ import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -172,7 +171,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
             Set<Category> cats = customAssertionHolder.getCategories();
             for ( Category category : cats ) {
-                Collection<CustomAssertionHolder> set = new ConcurrentSkipListSet<>();
+                Collection<CustomAssertionHolder> set = Collections.newSetFromMap(new ConcurrentHashMap<CustomAssertionHolder, Boolean>());
                 Collection<CustomAssertionHolder> prev = customAssertionsByCategory.putIfAbsent( category, set );
                 if ( prev != null )
                     set = prev;
