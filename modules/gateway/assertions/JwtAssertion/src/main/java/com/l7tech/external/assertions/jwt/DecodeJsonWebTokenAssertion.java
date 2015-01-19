@@ -230,6 +230,10 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
+        //no key selected or being used
+        if(getKeyGoid() == null){
+            return new EntityHeader[0];
+        }
         return new EntityHeader[]{
                 new SsgKeyHeader(getKeyGoid() + ":" + getKeyAlias(), getKeyGoid(), getKeyAlias(), getKeyAlias())
         };

@@ -181,6 +181,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             }
             if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_SECRET){
                 secretRadioButton.setSelected(true);
+                fromVariableRadioButton.setEnabled(true);
                 signaturePasswordField.setText(assertion.getSignatureSecretKey());
             }
             else if(assertion.getSignatureSourceType() == JsonWebTokenConstants.SOURCE_PK){
