@@ -133,8 +133,8 @@ public class ServerRESTGatewayManagementAssertion extends AbstractMessageTargeta
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
 
-            // audit errors if any
-            if(!CollectionUtils.list(200, 201, 204).contains(managementResponse.getStatus())){
+            // audit errors if any only when not testing
+            if(!CollectionUtils.list(200, 201, 204).contains(managementResponse.getStatus()) && !uri.toString().matches(".*bundle\\?.*test=true.*")){
                 ByteArrayOutputStream bout = new ByteArrayOutputStream();
                 IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), bout);
                 String responseBody = bout.toString("UTF-8");
