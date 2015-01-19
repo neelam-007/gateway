@@ -239,20 +239,23 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         }
                         mappingsRtn.add(mappingResult);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
                         transactionStatus.setRollbackOnly();
                     }
                 }
 
-                //need to process generic entities at the end so that cyclical dependencies can be properly replaced
-                replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
+                // Do not attempt these post bundle import tasks if the bundle import fail. It will create misleading error messages in the bundle results.
+                if(!containsErrors(mappingsRtn)) {
+                    //need to process generic entities at the end so that cyclical dependencies can be properly replaced
+                    replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
 
-                //need to process revocation check policies again at the end so that cyclical dependencies can be properly replaced
-                replaceRevocationCheckingPolicyDependencies(mappingsRtn, resourceMapping);
+                    //need to process revocation check policies again at the end so that cyclical dependencies can be properly replaced
+                    replaceRevocationCheckingPolicyDependencies(mappingsRtn, resourceMapping);
 
-                // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
-                replacePolicyDependencies(mappingsRtn, resourceMapping);
+                    // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
+                    replacePolicyDependencies(mappingsRtn, resourceMapping);
+                }
 
                 if (test || containsErrors(mappingsRtn)) {
                     transactionStatus.setRollbackOnly();
@@ -340,9 +343,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     (results.getTargetEntityHeader().getType().equals(EntityType.GENERIC))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             //get the existing generic entity.
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
@@ -357,14 +360,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             dependencyAnalyzer.replaceDependencies(existingEntity, resourceMapping, false);
                             //update the generic entity.
                             entityCrud.update(existingEntity);
-                        } catch (Exception e) {
+
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {
@@ -389,9 +392,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     (results.getTargetEntityHeader().getType().equals(EntityType.REVOCATION_CHECK_POLICY))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             //get the existing generic entity.
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
@@ -412,14 +415,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             existingPolicy.setRevocationCheckItems(tempPolicy.getRevocationCheckItems());
                             entityCrud.update(existingPolicy);
 
-                        } catch (Exception e) {
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {
@@ -439,9 +441,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     (results.getTargetEntityHeader().getType().equals(EntityType.POLICY) || results.getTargetEntityHeader().getType().equals(EntityType.SERVICE))) {
                 final TransactionTemplate tt = new TransactionTemplate(transactionManager);
                 tt.setReadOnly(false);
-                final Exception exception = tt.execute(new TransactionCallback<Exception>() {
+                final Throwable exception = tt.execute(new TransactionCallback<Throwable>() {
                     @Override
-                    public Exception doInTransaction(final TransactionStatus transactionStatus) {
+                    public Throwable doInTransaction(final TransactionStatus transactionStatus) {
                         try {
                             final Entity existingEntity = entityCrud.find(results.getTargetEntityHeader());
                             if(existingEntity == null) {
@@ -482,15 +484,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 policy.setXml(oldPolicyXml);
                             }
 
-
-                        } catch (Exception e) {
+                            //flush the newly created object so that it can be found by the entity managers later.
+                            transactionStatus.flush();
+                            return null;
+                        } catch (Throwable e) {
                             transactionStatus.setRollbackOnly();
                             return e;
                         }
-
-                        //flush the newly created object so that it can be found by the entity managers later.
-                        transactionStatus.flush();
-                        return null;
                     }
                 });
                 if (exception != null) {

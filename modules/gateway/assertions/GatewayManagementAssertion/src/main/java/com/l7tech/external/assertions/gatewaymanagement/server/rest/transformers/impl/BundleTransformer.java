@@ -24,6 +24,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -274,12 +275,31 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         } else {
             if (entityMappingResult.getException() != null) {
                 mapping.setErrorType(getErrorTypeFromException(entityMappingResult.getException()));
-                mapping.addProperty("ErrorMessage", ExceptionUtils.getMessage(entityMappingResult.getException()));
+                mapping.addProperty("ErrorMessage", getExceptionMessage(entityMappingResult.getException()));
             } else {
                 throw new IllegalStateException("This should never happen. If a EntityMappingResult is not successful an exception must exist.");
             }
         }
         return mapping;
+    }
+
+    /**
+     * Return an exception message from a throwable exception.
+     *
+     * @param exception The exception to get the message from
+     * @return The message for the given exception
+     */
+    @NotNull
+    private String getExceptionMessage(@NotNull final Throwable exception) {
+        if (exception instanceof ObjectModelException && exception.getCause() != null
+                && exception.getCause() instanceof DataIntegrityViolationException && exception.getCause().getCause() != null
+                && exception.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+            //Handle database exceptions with a nicer message
+            org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause().getCause();
+            return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
+        } else {
+            return ExceptionUtils.getMessageWithCause(exception);
+        }
     }
 
     /**
