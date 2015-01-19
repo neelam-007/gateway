@@ -52,6 +52,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
     @Override
     protected AsyncAdminMethods.JobId<PolicyBundleDryRunResult> callAdminDryRun(final List<String> componentIds,
                                                                                 final HashMap<String, BundleMapping> mappings,
+                                                                                final Goid folder,
                                                                                 final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         boolean integrateApiPortal = false;
         try {
@@ -59,7 +60,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
         } catch (NoSuchVariableException e) {
             // leave integrateApiPortal false
         }
-        return oAuthInstallerAdmin.dryRunInstall(componentIds, mappings, versionModifier, integrateApiPortal);
+        return oAuthInstallerAdmin.dryRunInstall(componentIds, folder, mappings, versionModifier, integrateApiPortal);
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.BundleMapping;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
@@ -213,13 +214,13 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
                                                          @NotNull final Map<String, BundleMapping> bundleMappings,
                                                          @Nullable final String installationPrefix) {
-        return dryRunInstall(componentIds, bundleMappings, null, installationPrefix);
+        return dryRunInstall(componentIds, bundleMappings, Folder.ROOT_FOLDER_ID, installationPrefix);
     }
 
     @NotNull
     public JobId<PolicyBundleDryRunResult> dryRunInstall(@NotNull final Collection<String> componentIds,
                                                          @NotNull final Map<String, BundleMapping> bundleMappings,
-                                                         @Nullable final Goid folderGoid,
+                                                         @NotNull final Goid folderGoid,
                                                          @Nullable final String installationPrefix) {
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -290,7 +291,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     protected PolicyBundleDryRunResult doDryRunInstall(@NotNull final String taskIdentifier,
                                                        @NotNull final Collection<String> componentIds,
                                                        @NotNull final Map<String, BundleMapping> bundleMappings,
-                                                       @Nullable final Goid folderGoid,
+                                                       @NotNull final Goid folderGoid,
                                                        @Nullable final String installationPrefix) throws PolicyBundleInstallerException {
         final DetailedAdminEvent startedEvent = new DetailedAdminEvent(this, MessageFormat.format(PRE_INSTALLATION_MESSAGE, getInstallerName(), "started"), Level.INFO);
         appEventPublisher.publishEvent(startedEvent);

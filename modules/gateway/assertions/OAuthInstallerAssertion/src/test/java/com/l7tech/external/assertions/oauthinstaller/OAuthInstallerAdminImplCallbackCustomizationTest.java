@@ -397,7 +397,7 @@ public class OAuthInstallerAdminImplCallbackCustomizationTest {
 
     private void executeAsDryRunJob(final OAuthInstallerAdminImpl admin, final String component, final String versionModifier)
             throws InterruptedException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
-        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(Arrays.asList(component), new HashMap<String, BundleMapping>(), versionModifier, false);
+        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(Arrays.asList(component), new Goid(0, -5002), new HashMap<String, BundleMapping>(), versionModifier, false);
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
         }

@@ -43,7 +43,7 @@ public class PolicyBundleInstallerContext {
      * @param migrationBundleOverrides migration bundle overrides
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
-                                        @Nullable Goid folderGoid,
+                                        @NotNull Goid folderGoid,
                                         @Nullable BundleMapping bundleMapping,
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
@@ -70,6 +70,7 @@ public class PolicyBundleInstallerContext {
         return bundleInfo;
     }
 
+    @NotNull
     public Goid getFolderGoid() {
         return folderGoid;
     }
@@ -107,6 +108,7 @@ public class PolicyBundleInstallerContext {
 
     @NotNull
     private final BundleInfo bundleInfo;
+    @NotNull
     private final Goid folderGoid;
     @NotNull
     private final BundleMapping bundleMapping;

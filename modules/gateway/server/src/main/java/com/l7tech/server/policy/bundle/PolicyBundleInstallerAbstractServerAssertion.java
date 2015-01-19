@@ -17,6 +17,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -164,7 +165,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                     break;
             }
         } catch (Exception e) {
-            throw new PolicyAssertionException(assertion, e);
+            throw new PolicyAssertionException(assertion, ExceptionUtils.getMessage(e));
         }
 
         return AssertionStatus.NONE;
@@ -194,8 +195,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      */
     protected AsyncAdminMethods.JobId<PolicyBundleDryRunResult> callAdminDryRun(final List<String> componentIds,
                                                                                 final HashMap<String, BundleMapping> mappings,
+                                                                                final Goid folder,
                                                                                 final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
-        return policyBundleInstallerAdmin.dryRunInstall(componentIds, mappings, versionModifier);
+        return policyBundleInstallerAdmin.dryRunInstall(componentIds, mappings, folder, versionModifier);
     }
 
     /**
@@ -254,7 +256,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final List<String> componentIds = getComponentIds();
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
-        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getVersionModifier());
+        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getFolderGoid(), getVersionModifier());
 
         processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
             @Override
@@ -303,7 +305,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final List<String> componentIds = getComponentIds();
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
-        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getVersionModifier());
+        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getFolderGoid(), getVersionModifier());
 
         processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
             @Override

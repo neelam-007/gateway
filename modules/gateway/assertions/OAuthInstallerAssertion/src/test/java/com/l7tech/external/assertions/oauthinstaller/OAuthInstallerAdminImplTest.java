@@ -70,7 +70,7 @@ public class OAuthInstallerAdminImplTest {
         });
 
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = admin.dryRunInstall(Arrays.asList("1c2a2874-df8d-4e1d-b8b0-099b576407e1",
-                "ba525763-6e55-4748-9376-76055247c8b1"), new HashMap<String, BundleMapping>(), null, false);
+                "ba525763-6e55-4748-9376-76055247c8b1"), new Goid(0, -5002), new HashMap<String, BundleMapping>(), null, false);
 
         while (!admin.getJobStatus(jobId).startsWith("inactive")) {
             Thread.sleep(10L);
