@@ -84,9 +84,6 @@ public class MasterPasswordManager {
     /**
      * Create a MasterPasswordManager that will use the specified master password finder
      * using the specified secret encryptors and preference ordering.
-     * <p/>
-     * <strong>Important note:</strong> This constructor causes the key bytes to be kept in memory for the entire
-     * lifetime of the MasterPasswordManager instance and should only be used by unit tests or short-lived processes.
      *
      * @param finder the SecretEncryptorKeyFinder to invoke whever key material is required for a decryption operation.
      * @param bypassKeyDerivation Set to true to skip the expensive KDF for each encryption/decryption operation <b>ONLY IF</b>
@@ -165,25 +162,6 @@ public class MasterPasswordManager {
                     new L7CSecretEncryptor()
             );
         }
-    }
-
-    /**
-     * @return the master password converted to key bytes, or null if the master password is unavailable.
-     */
-    byte[] getMasterPasswordBytes() {
-        byte[] ret = null;
-        Throwable t = null;
-        try {
-            ret = finder.findMasterPasswordBytes();
-        } catch (Exception e) {
-            /* FALLTHROUGH and log it */
-            t = e;
-        }
-        if (ret == null) {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
-        }
-        return ret;
     }
 
     /**

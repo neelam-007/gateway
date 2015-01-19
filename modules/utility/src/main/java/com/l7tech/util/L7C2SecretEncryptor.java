@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  *     ITC is the PBKDF2 iteration count, expressed in hexidecimal (eg, "1bead")
  *     SALT is at least 32 bytes of Base-64 encoded random salt
  *     CRYPT is a Base-64 encoded binary value consisting of 16 bytes of IV,
- *        followed immediately by zero or more 16-byte AES/CBC ciphertext blocks,
+ *        followed immediately by one or more 16-byte AES/CBC ciphertext blocks,
  *        followed immediately by 32 bytes of Hmac256 MAC value.
  * </pre>
  * The encryption (and MAC) key is produced by running PBKDF2WithHmacSHA1 on the raw input key using the salt and iteration count.
@@ -152,7 +152,7 @@ public class L7C2SecretEncryptor implements SecretEncryptor {
             int macLen = MAC_LEN;
             byte[] encryptedBytes = HexUtils.decodeBase64( encryptedBytesStr );
             int ciphertextLen = encryptedBytes.length - ivLen - macLen;
-            if ( ciphertextLen < 0 )
+            if ( ciphertextLen < 1 )
                 throw new ParseException( "Invalid encrypted password -- not enough encrypted data", 0 );
             byte[][] unpacked = ArrayUtils.unpack( encryptedBytes, ivLen, ciphertextLen, macLen );
             byte[] iv = unpacked[0];

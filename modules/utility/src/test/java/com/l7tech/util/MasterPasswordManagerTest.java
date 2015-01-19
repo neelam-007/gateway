@@ -26,6 +26,8 @@ public class MasterPasswordManagerTest {
             "$L7C2$1bead,eSdd8IGrHlK12rHpSaBQ/y9zbLP6bRi0YZUmUFSAIRk=$JRTH2ocD9trjuQgQLn9K6zSLTVxXWTuNU+qxhaHfhIH3V4Fn6REQKM66PVO1ZvhJ65AZaGH7c7nAVsH/rD4UbQ==";
     private static final String CIPHERTEXT_LONG =
             "$L7C2$1bead,GbqMGWaG8tTmqX9ajSKfKeernvkGbJtlZ3DGOQnZmHA=$/vGwGKUeF77DCY2EUr4tOUD7TV0hI2Uz4MT4mvNluoI6MfCgvnIvnp1wcoSdzzIhz54FBlOMzojGvt5ixRd01SXa+VyJDGFKxwjOLqqzvw/+GDtDEPBGduqAsM9MJpBdb5ZElEybzh5oklVf+E+1LsKcWKcLhnVMK4fVpwga7kigIwb2DK1Wh0C8c5NFVJ3iG2h/TMUyPfODm9gSscaeMQ==";
+    private static final String CIPHERTEXT_EMPTY =
+            "$L7C2$1bead,Ak3+DKF9uAxiu9H7PzguFhZou4Oqx/R5Uy72BESF1rs=$AWzML/nqK2HiKd6+/d459oQBI8zvF5vd8FM7QMmmZo2910PsxERLO4MlrdKecZ4YUQN3gWK+JxSz6evAuCy+zQ==";
 
     private static final String CIPHERTEXT_LEGACY_TRALALA =
             "$L7C$eYr/xG/Ssax3iq/IRDweEQ==$h4717RLYSe6llHScVnGPOA==";
@@ -35,18 +37,25 @@ public class MasterPasswordManagerTest {
             "$L7C$34ezo1MKwnDXzBV1lUzYMg==$hBMdLrIrJJXYJu+xdVfawA==";
     private static final String CIPHERTEXT_LEGACY_LONG =
             "$L7C$P+/FD73LFh+6ISrDdVxzug==$xVSBiG9iyKWzLf9g3TU3V9yYBL8QY/hhfMIfgny0gmY8LFUE3WWI++lheyU4+ajZONgxnqwGWmdCdDqaWPtzMn4JSagMfrIyXtKB9zBPOGwuFDXo8VEJJI8uAfaLwSJvpNeSlpLrHtCJ/hyr2DRCCA==";
+    private static final String CIPHERTEXT_LEGACY_EMPTY =
+            "$L7C$Olc7Q+YufXZyqyTMdk5MZg==$Vd44AboooDXgc/yDzR6iXw==";
 
     private static Collection<Pair<String, String>> TEST_VECTORS = new ArrayList<>( Arrays.asList(
             new Pair<>( "tralala", CIPHERTEXT_TRALALA ),
             new Pair<>( "7layer", CIPHERTEXT_7LAYER ),
             new Pair<>( "password", CIPHERTEXT_PASSWORD ),
             new Pair<>( "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf", CIPHERTEXT_LONG ),
+            new Pair<>( "", CIPHERTEXT_EMPTY ),
             new Pair<>( "tralala", CIPHERTEXT_LEGACY_TRALALA ),
             new Pair<>( "7layer", CIPHERTEXT_LEGACY_7LAYER ),
             new Pair<>( "password", CIPHERTEXT_LEGACY_PASSWORD ),
-            new Pair<>( "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf", CIPHERTEXT_LEGACY_LONG )
-    ) );
+            new Pair<>( "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf", CIPHERTEXT_LEGACY_LONG ),
+            new Pair<>( "", CIPHERTEXT_LEGACY_EMPTY )
+            ) );
 
+    private static final String CIPHERTEXT_PASSWORD_NO_CIPHERTEXT =
+            "$L7C2$2710,0rZxxPrW0pnF/KCVahM90enkT77Z70Q/vXpilySIYWk=$" +
+                    HexUtils.encodeBase64( ArrayUtils.concatMulti( HexUtils.decodeBase64( "ekpxZfE8AxB/pvKvNzWuSQ==" ), HexUtils.decodeBase64( "SeMXdh21YulDmJmTh9y0yFtGzYewzrTnRscnYzVUwR4=" ) ), true );
     private static final String CIPHERTEXT_PASSWORD_NOT_ENOUGH_CIPHERTEXT =
             "$L7C2$2710,0rZxxPrW0pnF/KCVahM90enkT77Z70Q/vXpilySIYWk=$" +
                     HexUtils.encodeBase64( ArrayUtils.concat( HexUtils.decodeBase64( "ekpxZfE8AxB/pvKvNzWuSQ==" ), HexUtils.decodeBase64( "SeMXdh21YulDmJmTh9y0yFtGzYewzrTnRscnYzVU" ) ), true );
@@ -67,9 +76,6 @@ public class MasterPasswordManagerTest {
             "$L7C2$2710,MlJa9oq1dd9SmRrI9rYc03segImJvW48VuC9E71Xn8Y=$MLfUyj31TTTqTE97QP39VmBerYV+5YV5Cr0pdBSNiILJzXvlH3l31hz/mp4EL6FRDHpTMQlxgns9psFxdh6UsYaw4m9WOeZlfciCvngLdVfKC92smSJNBRShsvy1/qr5zAD6vS9iycb4ZBWbOCEy1OJsXu7tbD/rbPsU0novKFo8pBXWZppsdwfJL8WSsw/JFsT01+HoIrIjD2gnvruD";
     private static final String CIPHERTEXT_7LAYER_WRONG_PASSPHRASE =
             "$L7C2$1bead,8oSahx2F2myXH06W9piLm99hcUwqpXH+lQLrCEqo5Jo=$0PjTGAk8qwW1ZXdmlxeum9LhsCfMfnEp+qUpf761kbyI8vc7qphN8CvJqr1ZA+cZMzlItnIMH+aKGlxtsMbYTg==";
-    private static final String CIPHERTEXT_PASSWORD_NO_CIPHERTEXT =
-            "$L7C2$2710,0rZxxPrW0pnF/KCVahM90enkT77Z70Q/vXpilySIYWk=$" +
-                    HexUtils.encodeBase64( ArrayUtils.concatMulti( HexUtils.decodeBase64( "ekpxZfE8AxB/pvKvNzWuSQ==" ), HexUtils.decodeBase64( "SeMXdh21YulDmJmTh9y0yFtGzYewzrTnRscnYzVUwR4=" ) ), true );
 
     private static final String[] TEST_VECTORS_INVALID_L7C2_BAD_MAC_VALUE = {
             CIPHERTEXT_LONG_BAD_ITERATION_COUNT,
@@ -79,8 +85,7 @@ public class MasterPasswordManagerTest {
             CIPHERTEXT_LONG_BAD_CIPHERTEXT,
             CIPHERTEXT_LONG_SHORT_SALT,
             CIPHERTEXT_LONG_SHORT_MAC,
-            CIPHERTEXT_7LAYER_WRONG_PASSPHRASE,
-            CIPHERTEXT_PASSWORD_NO_CIPHERTEXT,
+            CIPHERTEXT_7LAYER_WRONG_PASSPHRASE
     };
 
     @After
@@ -297,6 +302,7 @@ public class MasterPasswordManagerTest {
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder(master));
         show(mpm, "tralala");
         show(mpm, "7layer");
+        show(mpm, "");
         show(mpm, "password");
         show( mpm, "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf" );
     }
@@ -312,20 +318,9 @@ public class MasterPasswordManagerTest {
         MasterPasswordManager mpm = new MasterPasswordManager(staticFinder(master));
         show(mpm, "tralala");
         show(mpm, "7layer");
+        show(mpm, "");
         show(mpm, "password");
         show( mpm, "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf" );
-    }
-
-    @Test
-    public void testFixedKeyBytes() {
-        MasterPasswordManager mpm = new MasterPasswordManager(new byte[] { 2, 3, 4});
-        assertTrue(Arrays.equals(new byte[] { 2, 3, 4 }, mpm.getMasterPasswordBytes()));
-    }
-
-    @Test
-    public void testFixedPassword() {
-        MasterPasswordManager mpm = new MasterPasswordManager("foo234".getBytes(Charsets.UTF8));
-        assertEquals("foo234", new String(mpm.getMasterPasswordBytes(), Charsets.UTF8));
     }
 
     @Test
@@ -458,6 +453,14 @@ public class MasterPasswordManagerTest {
         MasterPasswordManager mpm = new MasterPasswordManager( staticFinder( "7layer" ) );
         try {
             mpm.decryptPassword( CIPHERTEXT_PASSWORD_NOT_ENOUGH_CIPHERTEXT );
+            fail( "expected exception not thrown " );
+        } catch ( ParseException e ) {
+            // This error means there wasn't enough data to even try running the MAC
+            assertEquals( "Invalid encrypted password -- not enough encrypted data", e.getMessage() );
+        }
+
+        try {
+            mpm.decryptPassword( CIPHERTEXT_PASSWORD_NO_CIPHERTEXT );
             fail( "expected exception not thrown " );
         } catch ( ParseException e ) {
             // This error means there wasn't enough data to even try running the MAC
