@@ -101,6 +101,7 @@ public class BundleResource {
      * @param fullGateway                        True to export the full gateway. False by default
      * @param includeDependencies                True to export with dependencies. False by default
      * @param encryptSecrets                     True to export with encrypted secrets. False by default.
+     * @param encryptUsingClusterPassphrase      True to use the cluster passphrase if encrypting secrets. False by default.
      * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting secrets.
      * @return The bundle for the resources
      * @throws IOException
@@ -116,10 +117,11 @@ public class BundleResource {
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
                                      @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
                                      @QueryParam("encryptSecrets") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptSecrets,
+                                     @QueryParam("encryptUsingClusterPassphrase") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptUsingClusterPassphrase,
                                      @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies","encryptSecrets"));
-
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService", "folder", "service", "policy", "all", "includeDependencies", "encryptSecrets", "encryptUsingClusterPassphrase"));
+        final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
         if (folderIds.isEmpty() && serviceIds.isEmpty() && policyIds.isEmpty() && !fullGateway) {
             throw new InvalidArgumentException("Must specify at least one folder, service or policy to export");
@@ -142,7 +144,7 @@ public class BundleResource {
         }
 
         final Bundle bundle = createBundle(true, Mapping.Action.valueOf(defaultAction), "id",
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedKeyPassphrase,
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase,
                 entityHeaders.toArray(new EntityHeader[entityHeaders.size()]));
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
@@ -162,6 +164,7 @@ public class BundleResource {
      *                                           default.
      * @param includeDependencies                True to export with dependencies. False by default
      * @param encryptSecrets                     True to export with encrypted secrets. False by default.
+     * @param encryptUsingClusterPassphrase      True to use the cluster passphrase if encrypting secrets. False by default
      * @param encodedKeyPassphrase               The optional base-64 encoded passphrase to use for the encryption key when encrypting secrets.
      * @return The bundle for the resource
      * @throws IOException
@@ -179,9 +182,11 @@ public class BundleResource {
                                                           @QueryParam("exportGatewayRestManagementService") @DefaultValue("false") Boolean exportGatewayRestManagementService,
                                                           @QueryParam("includeDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean includeDependencies,
                                                           @QueryParam("encryptSecrets") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptSecrets,
+                                                          @QueryParam("encryptUsingClusterPassphrase") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean encryptUsingClusterPassphrase,
                                                           @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
-        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "defaultMapBy", "includeRequestFolder", "exportGatewayRestManagementService", "includeDependencies","encryptSecrets"));
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "defaultMapBy", "includeRequestFolder", "exportGatewayRestManagementService", "includeDependencies", "encryptSecrets", "encryptUsingClusterPassphrase"));
+        final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         final EntityType entityType;
         switch (resourceType) {
             case "folder":
@@ -199,7 +204,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedKeyPassphrase, header);
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, header);
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
@@ -283,5 +288,17 @@ public class BundleResource {
         }
         //create the bundle export
         return bundleExporter.exportBundle(bundleOptionsBuilder, includeDependencies, encryptSecrets, encryptSecrets ? encodedKeyPassphrase : null, headers);
+    }
+
+    private String getEncryptionPassphrase(final Boolean encrypt, final Boolean useClusterPassphrase, final String customPassphrase) {
+        String passphrase = null;
+        if (encrypt) {
+            if (!useClusterPassphrase && customPassphrase != null) {
+                passphrase = customPassphrase;
+            } else if (!useClusterPassphrase && customPassphrase == null) {
+                throw new InvalidArgumentException("Passphrase is required for encryption");
+            }
+        }
+        return passphrase;
     }
 }

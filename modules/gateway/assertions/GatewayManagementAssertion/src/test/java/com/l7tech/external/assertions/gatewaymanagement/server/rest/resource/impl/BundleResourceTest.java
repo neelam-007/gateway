@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
 import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.api.Item;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -68,7 +70,7 @@ public class BundleResourceTest {
     public void exportEncryptPasswords() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, null);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, true, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -84,7 +86,7 @@ public class BundleResourceTest {
         final String encodedPassphrase = HexUtils.encodeBase64("customPassphrase".getBytes());
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, encodedPassphrase);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, false, encodedPassphrase);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -99,7 +101,7 @@ public class BundleResourceTest {
     public void exportDoNotEncryptPasswords() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, null);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, false, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -114,7 +116,7 @@ public class BundleResourceTest {
     public void exportDoNotEncryptPasswordsIgnoresPassphrase() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, "should be ignored");
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, false, false, "should be ignored");
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -126,12 +128,39 @@ public class BundleResourceTest {
     }
 
     @Test
+    public void exportEncryptPasswordsWithClusterPassphraseIgnoresCustomPassphrase() throws Exception {
+        when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
+        when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, true, "should be ignored");
+        assertEquals(itemBundle, resultBundle);
+
+        final Properties expectedProperties = new Properties();
+        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
+        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
+        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
+        verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void exportEncryptPasswordsWithoutClusterOrCustomPassphrase() throws Exception {
+        try {
+            resource.exportBundle(NEW_OR_EXISTING, false, folderIds, serviceIds, policyIds, true, false, true, false, null);
+            fail("Expected InvalidArgumentException");
+        } catch (final InvalidArgumentException e) {
+            verify(bundleExporter, never()).exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString());
+            assertEquals("Passphrase is required for encryption", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
     public void exportFolderServiceOrPolicyEncryptPasswords() throws Exception {
         final Goid id = new Goid(0, 1);
         final EntityHeader header = new EntityHeader(id, EntityType.POLICY, null, null);
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), eq(header))).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, null);
+        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, true, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -149,7 +178,7 @@ public class BundleResourceTest {
         final EntityHeader header = new EntityHeader(id, EntityType.POLICY, null, null);
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), eq(header))).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, encodedPassphrase);
+        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, false, encodedPassphrase);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -166,7 +195,7 @@ public class BundleResourceTest {
         final EntityHeader header = new EntityHeader(id, EntityType.POLICY, null, null);
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), eq(header))).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, null);
+        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, false, null);
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -183,7 +212,7 @@ public class BundleResourceTest {
         final EntityHeader header = new EntityHeader(id, EntityType.POLICY, null, null);
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), eq(header))).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
-        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, "should be ignored");
+        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, false, "should be ignored");
         assertEquals(itemBundle, resultBundle);
 
         final Properties expectedProperties = new Properties();
@@ -192,5 +221,34 @@ public class BundleResourceTest {
         expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, header);
+    }
+
+    @Test
+    public void exportFolderServiceOrPolicyEncryptPasswordsWithClusterPassphraseIgnoresCustomPassphrase() throws Exception {
+        final Goid id = new Goid(0, 1);
+        final EntityHeader header = new EntityHeader(id, EntityType.POLICY, null, null);
+        when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), eq(header))).thenReturn(bundle);
+        when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
+        final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, true, "should be ignored");
+        assertEquals(itemBundle, resultBundle);
+
+        final Properties expectedProperties = new Properties();
+        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
+        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
+        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
+        verify(bundleExporter).exportBundle(expectedProperties, false, true, null, header);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void exportFolderServiceOrPolicyEncryptPasswordsWithoutClusterOrCustomPassphrase() throws Exception {
+        try {
+            resource.exportFolderServiceOrPolicyBundle("policy", new Goid(0, 1), NEW_OR_EXISTING, "id", false, false, false, true, false, null);
+            fail("Expected InvalidArgumentException");
+        } catch (final InvalidArgumentException e) {
+            verify(bundleExporter, never()).exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString(), any(EntityHeader.class));
+            assertEquals("Passphrase is required for encryption", e.getMessage());
+            throw e;
+        }
     }
 }
