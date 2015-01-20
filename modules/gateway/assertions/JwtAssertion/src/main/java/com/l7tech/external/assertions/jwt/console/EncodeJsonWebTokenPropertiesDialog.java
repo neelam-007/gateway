@@ -245,6 +245,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setHeaderAction(headerActionComboBox.getSelectedItem().toString());
         if (!JsonWebTokenConstants.HEADERS_USE_DEFAULT.equals(headerActionComboBox.getSelectedItem())) {
             assertion.setSourceHeaders(headersTextField.getText().trim());
+        } else {
+            assertion.setSourceHeaders(null);
         }
         assertion.setTargetVariable(targetVariable.getVariable());
 
@@ -317,6 +319,8 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 }
                 if (JsonWebTokenConstants.KEY_TYPE_JWKS.equals(encryptionKeyType.getSelectedItem())) {
                     assertion.setEncryptionKeyId(encryptionKeyId.getText().trim());
+                } else {
+                    assertion.setEncryptionKeyId(null);
                 }
                 assertion.setEncryptionKeyType(encryptionKeyType.getSelectedItem().toString());
             }
@@ -366,7 +370,6 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 signaturePasswordField.setEnabled(secretRadioButton.isSelected());
                 showSignatureCheckbox.setEnabled(secretRadioButton.isSelected());
                 signatureWarningLabel.setVisible(true);
-                keyTypeComboBox.setEnabled(true);
                 //disable the private key fields
                 fromListRadioButton.setEnabled(false);
                 privateKeysComboBox.setEnabled(false);
@@ -503,7 +506,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             privateKeysComboBox.setEnabled(fromListRadioButton.isSelected());
             //from context var
             signatureSourceVariable.setEnabled(fromVariableRadioButton.isSelected());
-            keyTypeComboBox.setEnabled(secretRadioButton.isSelected() || fromVariableRadioButton.isSelected());
+            keyTypeComboBox.setEnabled(fromVariableRadioButton.isSelected());
             signatureAlgorithmKeyIdTextField.setEnabled(fromVariableRadioButton.isSelected() && JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyTypeComboBox.getSelectedItem()));
             updateOkButtonState();
         }
@@ -531,7 +534,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             //jwk/jwks fields
             fromVariableRadioButton.setEnabled(signPayloadCheckBox.isSelected());
             signatureSourceVariable.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected());
-            keyTypeComboBox.setEnabled(signPayloadCheckBox.isSelected() && (fromVariableRadioButton.isSelected() || secretRadioButton.isSelected()));
+            keyTypeComboBox.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected());
             signatureAlgorithmKeyIdTextField.setEnabled(signPayloadCheckBox.isSelected() && fromVariableRadioButton.isSelected() && keyTypeComboBox.getSelectedItem().equals(JsonWebTokenConstants.KEY_TYPE_JWKS));
 
             updateOkButtonState();
