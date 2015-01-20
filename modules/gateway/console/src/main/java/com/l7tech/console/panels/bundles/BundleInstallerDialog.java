@@ -256,22 +256,16 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                             @NotNull Goid folderGoid,
-                                            @NotNull Map<String, BundleMapping> bundleMappings) throws PolicyBundleInstallerException {
-        return adminInstall(componentIds, folderGoid, bundleMappings, null, null);
-    }
-
-    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
-                                            @NotNull Goid folderGoid,
                                             @NotNull Map<String, BundleMapping> bundleMappings,
                                             @Nullable String installationPrefix) throws PolicyBundleInstallerException {
         return adminInstall(componentIds, folderGoid, bundleMappings, installationPrefix, null);
     }
 
-    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
-                                            @NotNull Goid folderGoid,
-                                            @NotNull Map<String, BundleMapping> bundleMappings,
-                                            @Nullable String installationPrefix,
-                                            @Nullable Map<String, Pair<String, Properties>> migrationActionOverrides) throws PolicyBundleInstallerException {
+    private JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
+                                          @NotNull Goid folderGoid,
+                                          @NotNull Map<String, BundleMapping> bundleMappings,
+                                          @Nullable String installationPrefix,
+                                          @Nullable Map<String, Pair<String, Properties>> migrationActionOverrides) throws PolicyBundleInstallerException {
         return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationActionOverrides);
     }
 
@@ -433,23 +427,19 @@ public abstract class BundleInstallerDialog extends JDialog {
 
     private void doInstall(final List<String> bundlesToInstall,
                            final Map<String, BundleMapping> bundleMappings,
-                           final PolicyBundleInstallerAdmin admin)
-            throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
-        doInstall(bundlesToInstall, bundleMappings, admin, null, null);
-    }
-
-    private void doInstall(final List<String> bundlesToInstall,
-                           final Map<String, BundleMapping> bundleMappings,
                            final PolicyBundleInstallerAdmin admin,
                            @Nullable final String prefixToUse,
                            @Nullable final Map<String, Pair<String, Properties>> selectedMigrationActions)
             throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
-                admin,
-                BundleInstallerDialog.this,
-                installFolder + " Installation",
-                "The selected components of the " + installFolder + " are being installed.",
-                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, selectedMigrationActions));
+            admin,
+            BundleInstallerDialog.this,
+            installFolder + " Installation",
+            "The selected components of the " + installFolder + " are being installed.",
+            (selectedMigrationActions == null || selectedMigrationActions.isEmpty())?
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse) :
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, selectedMigrationActions)
+        );
 
         if (resultEither.isRight()) {
             final ArrayList right = resultEither.right();
