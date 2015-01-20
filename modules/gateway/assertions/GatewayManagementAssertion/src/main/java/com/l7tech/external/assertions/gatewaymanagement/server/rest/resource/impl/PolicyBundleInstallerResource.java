@@ -235,9 +235,9 @@ public class PolicyBundleInstallerResource {
      */
     @GET
     @Produces(MediaType.TEXT_XML)
-    public StreamingOutput execute(@QueryParam("installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+    public Response execute(@QueryParam("installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         if (StringUtils.isEmpty(installerName)) {
-            throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer name can't be empty.");
+            return Response.status(Response.Status.BAD_REQUEST).entity("Mandatory parameter missing: installer_name.  Installer name can't be empty.").build();
         }
 
         rbacAccessService.validateFullAdministrator();
@@ -246,7 +246,11 @@ public class PolicyBundleInstallerResource {
         try {
             Assertion installerAssertion = wspReader.parseStrictly(MessageFormat.format(POLICY_BUNDLE_INSTALLER_POLICY_XML_TEMPLATE, installerName), WspReader.Visibility.omitDisabled);
             installerServerAssertion = serverPolicyFactory.compilePolicy(installerAssertion, false);
-        } catch (IOException | LicenseException | PolicyAssertionException e) {
+        } catch (IOException e) {
+            final String msg = "Installer name not found: " + installerName + ". ";
+            logger.fine(msg + ExceptionUtils.getMessage(e));
+            return Response.status(Response.Status.NOT_FOUND).entity(msg).build();
+        } catch (LicenseException | PolicyAssertionException e) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Unable to create installer",  ExceptionUtils.getDebugException(e));
         }
 
@@ -258,7 +262,7 @@ public class PolicyBundleInstallerResource {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer error", ExceptionUtils.getDebugException(e));
         }
 
-        return new StreamingOutput() {
+        return Response.ok(new StreamingOutput() {
             public void write(OutputStream output) throws IOException {
                 try {
                     IOUtils.copyStream(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream(), output);
@@ -266,7 +270,7 @@ public class PolicyBundleInstallerResource {
                     throw new IOException(e);
                 }
             }
-        };
+        }).build();
     }
 
     /**
