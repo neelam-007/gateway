@@ -40,7 +40,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
     @Override
     protected void customActionCallback() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         try {
-            final String action = getContextVariable("oauth_installer.action");
+            final String action = getContextVariable("oauth_installer_action");
             if ("get_db_schema".equals(action)) {
                 writeResponse(oAuthInstallerAdmin.getOAuthDatabaseSchema());
             }
@@ -51,12 +51,12 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
 
     @Override
     protected AsyncAdminMethods.JobId<PolicyBundleDryRunResult> callAdminDryRun(final List<String> componentIds,
-                                                                                final HashMap<String, BundleMapping> mappings,
                                                                                 final Goid folder,
+                                                                                final HashMap<String, BundleMapping> mappings,
                                                                                 final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         boolean integrateApiPortal = false;
         try {
-            integrateApiPortal = Boolean.parseBoolean(getContextVariable("oauth_installer.integrate_api_portal"));
+            integrateApiPortal = Boolean.parseBoolean(getContextVariable("integrate_api_portal"));
         } catch (NoSuchVariableException e) {
             // leave integrateApiPortal false
         }
@@ -70,7 +70,7 @@ public class ServerOAuthInstallerAssertion extends PolicyBundleInstallerAbstract
                                                                   final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         boolean integrateApiPortal = false;
         try {
-            integrateApiPortal = Boolean.parseBoolean(getContextVariable("oauth_installer.integrate_api_portal"));
+            integrateApiPortal = Boolean.parseBoolean(getContextVariable("integrate_api_portal"));
         } catch (NoSuchVariableException e) {
             // leave integrateApiPortal false
         }

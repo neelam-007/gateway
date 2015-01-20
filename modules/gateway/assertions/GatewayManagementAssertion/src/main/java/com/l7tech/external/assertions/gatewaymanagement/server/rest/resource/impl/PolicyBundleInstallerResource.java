@@ -25,6 +25,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -46,7 +47,7 @@ import java.util.logging.Logger;
  * This resource exposes the Policy Bundle Installer for no-GUI use cases (e.g. support auto provisioning scripting to install OAuth).
  */
 @Provider
-@Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + "pbi")
+@Path(ServerRESTGatewayManagementAssertion.Version1_0_URI + "policyBundleInstallers")
 @Singleton
 @Since(RestManVersion.VERSION_1_0_1)
 public class PolicyBundleInstallerResource {
@@ -72,7 +73,7 @@ public class PolicyBundleInstallerResource {
     public PolicyBundleInstallerResource() {}
 
     /**
-     * <p>Executes a Policy Bundle Installer action.  Choose the installer instance by setting HTTP parameter <code>pbi.installer_name</code> (e.g. set to <code>OAuthInstaller</code>).</p>
+     * <p>Executes a Policy Bundle Installer action.  Choose the installer instance by setting HTTP parameter <code>installer_name</code> (e.g. set to <code>OAuthInstaller</code>).</p>
      *
      * <p>The following actions are supported: list components, restman get migration bundle XML, wsman dry run install, wsman install and custom.
      * For restman bundle, get migration bundle.  For wsman bundle, execute dry run and install.</p>
@@ -82,10 +83,10 @@ public class PolicyBundleInstallerResource {
      * 	List components
      * </h5>
      * <p>
-     * 	List component id(s) available for this installer bundle.
+     * 	List component id(s) available for this installer bundle.  This is the default if no action parameter is provided.
      * </p>
      * <p>
-     * 	Input HTTP parameter: set <code>pbi.action</code> to <code>list</code>
+     * 	Input HTTP parameter: set <code>action</code> to <code>list</code>
      * </p>
      * <p>
      * 	Output: List of component id(s), ";" separated. For example:
@@ -103,17 +104,17 @@ public class PolicyBundleInstallerResource {
      * </p>
      * <ul>
      * 	<li>
-     * 		Set <code>pbi.action</code> to <code>restman_get</code>
+     * 		Set <code>action</code> to <code>restman_get</code>
      * 	</li>
      * 	<li>
-     * 		Set <code>pbi.component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
+     * 		Set <code>component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
      * 		This is equivalent to all component id(s) from the <code>list</code> action.
      * 	</li>
      * 	<li>
-     * 		Optionally set <code>pbi.version_modifier</code> - optional version modifier
+     * 		Optionally set <code>version_modifier</code> - optional version modifier
      * 	</li>
      * 	<li>
-     * 		Optionally set <code>pbi.folder_goid</code> - optional install folder (if not set, defaults to root folder)
+     * 		Optionally set <code>folder_goid</code> - optional install folder (if not set, defaults to root folder)
      * 	</li>
      * </ul>
      * <p>
@@ -138,23 +139,23 @@ public class PolicyBundleInstallerResource {
      * </p>
      * <ul>
      * 	<li>
-     * 		Set <code>pbi.action</code> to <code>wsman_dry_run</code>
+     * 		Set <code>action</code> to <code>wsman_dry_run</code>
      * 	</li>
      * 	<li>
-     * 		Set <code>pbi.component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
+     * 		Set <code>component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
      * 		This is equivalent to all component id(s) from the <code>list</code> action.
      * 	</li>
      * 	<li>
-     * 		Optionally set <code>pbi.version_modifier</code> - optional version modifier
+     * 		Optionally set <code>version_modifier</code> - optional version modifier
      * 	</li>
      * 	<li>
      * 		Optionally map JDBC connection name to new name
      * 		<ul>
      * 			<li>
-     * 				Set <code>pbi.jdbc_connection.&lt;component_id&gt;.name</code> with existing name in bundle (e.g. OAuth)
+     * 				Set <code>jdbc_connection.&lt;component_id&gt;.name</code> with existing name in bundle (e.g. OAuth)
      * 			</li>
      * 			<li>
-     * 				Set <code>pbi.jdbc_connection.&lt;component_id&gt;.new_name</code> with a new desired name (e.g. OAuth Dev)
+     * 				Set <code>jdbc_connection.&lt;component_id&gt;.new_name</code> with a new desired name (e.g. OAuth Dev)
      * 			</li>
      * 		</ul>
      * 	</li>
@@ -187,26 +188,26 @@ public class PolicyBundleInstallerResource {
      * </p>
      * <ul>
      * 	<li>
-     * 		Set <code>pbi.action</code> to <code>wsman_install</code>
+     * 		Set <code>action</code> to <code>wsman_install</code>
      * 	</li>
      * 	<li>
-     * 		Set <code>pbi.component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
+     * 		Set <code>component_ids</code> to a ";" separated list of component ids. Or set to <code>all</code> to specify all available installer components.
      * 		This is equivalent to all component id(s) from the <code>list</code> action.
      * 	</li>
      * 	<li>
-     * 		Optionally set <code>pbi.version_modifier</code> - optional version modifier
+     * 		Optionally set <code>version_modifier</code> - optional version modifier
      * 	</li>
      * 	<li>
-     * 		Optionally set <code>pbi.folder_goid</code> - optional install folder (if not set, defaults to root folder)
+     * 		Optionally set <code>folder_goid</code> - optional install folder (if not set, defaults to root folder)
      * 	</li>
      * 	<li>
      * 		Optionally map JDBC connection name to new name
      * 		<ul>
      * 			<li>
-     * 				Set <code>pbi.jdbc_connection.&lt;component_id&gt;.name</code> with existing name in bundle (e.g. OAuth)
+     * 				Set <code>jdbc_connection.&lt;component_id&gt;.name</code> with existing name in bundle (e.g. OAuth)
      * 			</li>
      * 			<li>
-     * 				Set <code>pbi.jdbc_connection.&lt;component_id&gt;.new_name</code> with a new desired name (e.g. OAuth Dev)
+     * 				Set <code>jdbc_connection.&lt;component_id&gt;.new_name</code> with a new desired name (e.g. OAuth Dev)
      * 			</li>
      * 		</ul>
      * 	</li>
@@ -224,7 +225,7 @@ public class PolicyBundleInstallerResource {
      * 	database schema. It also executes custom logic to integrate API Portal for wsman dry run and install.
      * </p>
      * <p>
-     * 	Input: Set HTTP parameter <code>pbi.action</code> to <code>custom</code> in order to choose a custom action. <strong>And</strong> set HTTP parameter(s)
+     * 	Input: Set HTTP parameter <code>action</code> to <code>custom</code> in order to choose a custom action. <strong>And</strong> set HTTP parameter(s)
      * 	required for the custom installer.
      * </p>
      *
@@ -234,23 +235,27 @@ public class PolicyBundleInstallerResource {
      */
     @GET
     @Produces(MediaType.TEXT_XML)
-    public StreamingOutput execute(@QueryParam("pbi.installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
-        // @QueryParam(PolicyBundleInstallerAbstractServerAssertion.CONTEXT_VARIABLE_PREFIX + "installer_name") causes "attribute value must be constant" error
-
+    public StreamingOutput execute(@QueryParam("installer_name") final String installerName) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         if (StringUtils.isEmpty(installerName)) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer name can't be empty.");
         }
 
         rbacAccessService.validateFullAdministrator();
 
-        final PolicyEnforcementContext context;
+        final ServerAssertion installerServerAssertion;
         try {
             Assertion installerAssertion = wspReader.parseStrictly(MessageFormat.format(POLICY_BUNDLE_INSTALLER_POLICY_XML_TEMPLATE, installerName), WspReader.Visibility.omitDisabled);
-            ServerAssertion installerServerAssertion = serverPolicyFactory.compilePolicy(installerAssertion, false);
+            installerServerAssertion = serverPolicyFactory.compilePolicy(installerAssertion, false);
+        } catch (IOException | LicenseException | PolicyAssertionException e) {
+            throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Unable to create installer",  ExceptionUtils.getDebugException(e));
+        }
+
+        final PolicyEnforcementContext context;
+        try {
             context = getContext();
             installerServerAssertion.checkRequest(context);
-        } catch (IOException | LicenseException | PolicyAssertionException e) {
-            throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Unable to create installer: " + installerName);
+        } catch (IOException | PolicyAssertionException e) {
+            throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer error", ExceptionUtils.getDebugException(e));
         }
 
         return new StreamingOutput() {

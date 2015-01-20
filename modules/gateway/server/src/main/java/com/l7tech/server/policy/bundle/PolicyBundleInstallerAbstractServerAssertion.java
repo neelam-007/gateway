@@ -84,7 +84,7 @@ import static org.apache.commons.lang.StringUtils.join;
  *      Custom: handle custom action in an implementation class.  E.g. ServerOAuthInstallerAssertion can implement customActionCallback() to get the OAuth DB schema.
  */
 public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends Assertion> extends AbstractServerAssertion<AT>  {
-    public static final String CONTEXT_VARIABLE_PREFIX = "pbi.";
+    public static final String CONTEXT_VARIABLE_PREFIX = "";
     public static final String REQUEST_HTTP_PARAMETER = "request.http.parameter.";
     protected static final String L7 = "l7";
 
@@ -141,12 +141,15 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                 availableComponents = policyBundleInstallerAdmin.getAllComponents();
             }
 
-            final Action action;
+            Action action;
             try {
                 action = Action.valueOf(getContextVariable(CONTEXT_VARIABLE_PREFIX + "action"));
             } catch (NoSuchVariableException e) {
-                throw new PolicyAssertionException(assertion, "Installer action must be specified.", e);
+                action = Action.list;   // default when action not specified
+            } catch (IllegalArgumentException e) {
+                throw new PolicyAssertionException(assertion, "A valid installer action must be specified.", e);
             }
+
             switch (action) {
                 case list:
                     list();
@@ -194,8 +197,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      * Override in subclass for opportunity to customize admin dry run.
      */
     protected AsyncAdminMethods.JobId<PolicyBundleDryRunResult> callAdminDryRun(final List<String> componentIds,
-                                                                                final HashMap<String, BundleMapping> mappings,
                                                                                 final Goid folder,
+                                                                                final HashMap<String, BundleMapping> mappings,
                                                                                 final String versionModifier) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         return policyBundleInstallerAdmin.dryRunInstall(componentIds, mappings, folder, versionModifier);
     }
@@ -256,7 +259,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final List<String> componentIds = getComponentIds();
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
-        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getFolderGoid(), getVersionModifier());
+        final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
 
         processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
             @Override
@@ -305,7 +308,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         final List<String> componentIds = getComponentIds();
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
-        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getMappings(componentIds), getFolderGoid(), getVersionModifier());
+        AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
 
         processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
             @Override
