@@ -219,7 +219,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
     @Test
     public void testImportNewEncryptPasswords() throws Exception {
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true", HttpMethod.GET, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
@@ -348,7 +348,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
     @Test
     public void testImportUpdateEncryptPasswords() throws Exception {
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true", HttpMethod.GET, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
@@ -422,7 +422,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
     @Test
     public void testImportExistingEncryptPasswords() throws Exception {
-        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true", HttpMethod.GET, null, "");
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 

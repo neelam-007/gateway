@@ -530,7 +530,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         Item<UserMO> userItem = null;
         try {
             userItem = createUser(getSourceEnvironment(), "srcUser", internalIDProviderItem.getId());
-            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true&encryptSecrets=true", HttpMethod.GET, null, "");
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true&encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
             logger.log(Level.INFO, response.toString());
             assertOkResponse(response);
 

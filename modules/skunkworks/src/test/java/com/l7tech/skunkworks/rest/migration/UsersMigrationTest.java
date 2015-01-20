@@ -681,7 +681,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         Item<PolicyMO> newPolicyItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         newPolicyItem.setContent(policyMO);
 
-        response = getSourceEnvironment().processRequest("bundle/policy/" + newPolicyItem.getId(), "encryptSecrets=true", HttpMethod.GET, null, "");
+        response = getSourceEnvironment().processRequest("bundle/policy/" + newPolicyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
         logger.log(Level.INFO, response.toString());
         assertOkResponse(response);
 
