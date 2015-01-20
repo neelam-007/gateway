@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="org.scala-lang"
+		module="scala-library"
+		revision="2.11.5"
+		status="release"
+		publication="20150116170330"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="scala-library" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

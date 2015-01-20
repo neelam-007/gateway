@@ -123,6 +123,7 @@
         <taskdef resource="scala/tools/ant/antlib.xml">
             <classpath>
                 <pathelement location="${src.root}/lib/tools/scala-compiler.jar"/>
+                <pathelement location="${src.root}/lib/tools/scala-reflect.jar"/>
                 <fileset dir="${src.root}/lib/repository/org.scala-lang">
                     <include name="scala-library-*.jar"/>
                 </fileset>
