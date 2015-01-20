@@ -9,6 +9,8 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions.UnaryVoidThrows;
+import com.l7tech.util.Option;
 import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -17,11 +19,14 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 
 /**
  * Manages all outbound MQ routing connections to QueueManagers.
@@ -41,8 +46,8 @@ class MqNativeResourceManager implements ApplicationListener {
 
     private final ApplicationEventProxy applicationEventProxy;
     private final Config config;
-    private final ConcurrentHashMap<MqNativeEndpointKey, MqNativeCachedConnectionPool> connectionHolder = new ConcurrentHashMap<>();
-    private final AtomicReference<MqResourceManagerConfig> cacheConfigReference = new AtomicReference<>(new MqResourceManagerConfig(0, 0, 100));
+    private final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder = new ConcurrentHashMap<MqNativeEndpointKey, CachedConnection>();
+    private final AtomicReference<MqResourceManagerConfig> cacheConfigReference = new AtomicReference<MqResourceManagerConfig>( new MqResourceManagerConfig(0,0,100) );
     private final AtomicBoolean active = new AtomicBoolean(true);
     private Timer timer;
 
@@ -89,32 +94,28 @@ class MqNativeResourceManager implements ApplicationListener {
 
         final MqNativeEndpointKey key = endpoint.getMqEndpointKey();
 
-        MqNativeCachedConnectionPool cachedConnectionPool = null;
+        CachedConnection cachedConnection = null;
         try {
-            cachedConnectionPool = connectionHolder.get(key);
-            if (cachedConnectionPool == null || !cachedConnectionPool.ref()) {
-                cachedConnectionPool = null;
+            cachedConnection = connectionHolder.get(key);
+            if ( cachedConnection == null || !cachedConnection.ref() ) {
+                cachedConnection = null;
 
-                synchronized (key.toString().intern()) { // prevent concurrent creation for a key
-                    cachedConnectionPool = connectionHolder.get(key); // see if someone else created it
-                    if (cachedConnectionPool == null || !cachedConnectionPool.ref()) {
-                        cachedConnectionPool = null;
-                        cachedConnectionPool = newConnectionPool(endpoint);
+                synchronized( key.toString().intern() ){ // prevent concurrent creation for a key
+                    cachedConnection = connectionHolder.get(key); // see if someone else created it
+                    if ( cachedConnection == null || !cachedConnection.ref() ) {
+                        cachedConnection = null;
+                        cachedConnection = newConnection(endpoint);
                     }
                 }
             }
 
-            MqNativeCachedConnectionPool.CachedConnection borrowedConnection = cachedConnectionPool.getCachedConnections().borrowObject();
-            callback.doWork(borrowedConnection.getQueueManager());
-            cachedConnectionPool.getCachedConnections().returnObject(borrowedConnection);
-        } catch (MQException e) {
-            evict(connectionHolder, key, cachedConnectionPool);
+            callback.doWork( cachedConnection.queueManager );
+
+        } catch ( MQException e ) {
+            evict( connectionHolder, key, cachedConnection );
             throw e;
-        } catch (Exception e) {
-            evict(connectionHolder, key, cachedConnectionPool);
-            throw new MqNativeRuntimeException(e);
         } finally {
-            if (cachedConnectionPool != null) cachedConnectionPool.unRef();
+            if ( cachedConnection != null ) cachedConnection.unRef();
         }
     }
 
@@ -128,15 +129,15 @@ class MqNativeResourceManager implements ApplicationListener {
      *
      * @param endpoint The configuration for the connection.
      */
-    void invalidate(final MqNativeEndpointConfig endpoint) {
+    void invalidate( final MqNativeEndpointConfig endpoint ) {
         this.invalidate(endpoint.getMqEndpointKey());
     }
 
-    void invalidate(final MqNativeEndpointKey key) {
-        if (active.get()) {
-            final MqNativeCachedConnectionPool cachedConnection = connectionHolder.get(key);
-            if (cachedConnection != null) {
-                evict(connectionHolder, key, cachedConnection);
+    void invalidate( final MqNativeEndpointKey key ) {
+        if ( active.get() ) {
+            final CachedConnection cachedConnection = connectionHolder.get(key);
+            if ( cachedConnection != null ) {
+                evict( connectionHolder, key, cachedConnection );
             }
         }
     }
@@ -180,20 +181,24 @@ class MqNativeResourceManager implements ApplicationListener {
         applicationEventProxy.removeApplicationListener( this );
 
         timer.cancel();
-        Collection<MqNativeCachedConnectionPool> connList = connectionHolder.values();
+        Collection<CachedConnection> connList = connectionHolder.values();
 
-        for (final MqNativeCachedConnectionPool c : connList) {
+        for ( final CachedConnection c : connList ) {
             c.unRef();
         }
 
         connectionHolder.clear();
     }
 
-    protected MqNativeCachedConnectionPool newConnectionPool(final MqNativeEndpointConfig mqCfg) throws MqNativeRuntimeException {
+    protected CachedConnection newConnection( final MqNativeEndpointConfig mqCfg ) throws MqNativeRuntimeException {
         final MqNativeEndpointKey key = mqCfg.getMqEndpointKey();
 
         try {
-            final MqNativeCachedConnectionPool newConn = new MqNativeCachedConnectionPool(mqCfg);
+            // create the new manager for the endpoint
+            final MQQueueManager queueManager =
+                    new MQQueueManager(mqCfg.getQueueManagerName(), mqCfg.getQueueManagerProperties());
+
+            final CachedConnection newConn = new CachedConnection(mqCfg, queueManager);
             newConn.ref(); // referenced by caller
 
             // server config controlled connection pool props -- may not need this
@@ -201,23 +206,28 @@ class MqNativeResourceManager implements ApplicationListener {
                 newConn.ref(); // referenced from cache
 
                 // replace connection if the endpoint already exists
-                final MqNativeCachedConnectionPool existingConn = connectionHolder.put(key, newConn);
+                final CachedConnection existingConn = connectionHolder.put(key, newConn);
                 if ( existingConn != null ) {
                     existingConn.unRef(); // clear cache reference
                 }
             }
 
+            logger.log(Level.INFO, "New MQ QueueManager connection created ({0}), version {1}",
+                       new Object[] {newConn.name, mqCfg.getMqEndpointKey().getVersion()});
+
             return newConn;
-        } catch (Throwable me) {
+        } catch ( MQException me ) {
             throw new MqNativeRuntimeException(me);
+        } catch ( Throwable t ) {
+            throw new MqNativeRuntimeException(t);
         }
     }
 
-    private static void evict(final ConcurrentHashMap<MqNativeEndpointKey, MqNativeCachedConnectionPool> connectionHolder,
-                              final MqNativeEndpointKey key,
-                              final MqNativeCachedConnectionPool connections) {
-        if (connectionHolder.remove(key, connections)) {
-            connections.unRef(); // clear cache reference
+    private static void evict( final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder,
+                               final MqNativeEndpointKey key,
+                               final CachedConnection connection ) {
+        if ( connectionHolder.remove( key, connection ) ) {
+            connection.unRef(); // clear cache reference
         }
     }
 
@@ -259,10 +269,48 @@ class MqNativeResourceManager implements ApplicationListener {
         return validatedValue;
     }
 
+    protected static class CachedConnection {
+        private final AtomicInteger referenceCount = new AtomicInteger(0);
+        private final long createdTime = System.currentTimeMillis();
+        private final AtomicLong lastAccessTime = new AtomicLong(createdTime);
+
+        private final MQQueueManager queueManager;
+        private final String name;
+        private final int resourceVersion;
+
+        CachedConnection( final MqNativeEndpointConfig cfg, final MQQueueManager queueManager ) {
+            this.queueManager = queueManager;
+            this.name = cfg.getMqEndpointKey().toString();
+            this.resourceVersion = cfg.getMqEndpointKey().getVersion();
+        }
+
+        /**
+         * Once a connection is in the cache a return of false from this
+         * method indicates that the connection is invalid and should not
+         * be used.
+         */
+        public boolean ref() {
+            return referenceCount.getAndIncrement() > 0;
+        }
+
+        public void unRef() {
+            int references = referenceCount.decrementAndGet();
+            if ( references <= 0 ) {
+                logger.log(Level.INFO, "Closing MQ queue manager ({0}), version {1}", new Object[] {name, resourceVersion});
+                closeQuietly( queueManager, Option.<UnaryVoidThrows<MQQueueManager, MQException>>some( new UnaryVoidThrows<MQQueueManager, MQException>() {
+                    @Override
+                    public void call( final MQQueueManager mqQueueManager ) throws MQException {
+                        mqQueueManager.disconnect();
+                    }
+                } ) );
+            }
+        }
+    }
+
     /**
      * Bean for cache configuration.
      */
-    static final class MqResourceManagerConfig {
+    private static final class MqResourceManagerConfig {
         private final long maximumAge;
         private final long maximumIdleTime;
         private final int maximumSize;
@@ -273,10 +321,6 @@ class MqNativeResourceManager implements ApplicationListener {
             this.maximumAge = maximumAge;
             this.maximumIdleTime = maximumIdleTime;
             this.maximumSize = maximumSize;
-        }
-
-        int getMaximumSize() {
-            return maximumSize;
         }
     }
 
@@ -289,11 +333,11 @@ class MqNativeResourceManager implements ApplicationListener {
     private static final class CacheCleanupTask extends TimerTask {
         private static final Logger taskLogger = Logger.getLogger(CacheCleanupTask.class.getName());
 
-        private final ConcurrentHashMap<MqNativeEndpointKey, MqNativeCachedConnectionPool> connectionHolder;
+        private final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder;
         private final AtomicReference<MqResourceManagerConfig> cacheConfigReference;
 
-        private CacheCleanupTask(final ConcurrentHashMap<MqNativeEndpointKey, MqNativeCachedConnectionPool> connectionHolder,
-                                 final AtomicReference<MqResourceManagerConfig> cacheConfigReference) {
+        private CacheCleanupTask( final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder,
+                                  final AtomicReference<MqResourceManagerConfig> cacheConfigReference ) {
             this.connectionHolder = connectionHolder;
             this.cacheConfigReference = cacheConfigReference;
         }
@@ -303,29 +347,29 @@ class MqNativeResourceManager implements ApplicationListener {
             final MqResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
             final int overSize = connectionHolder.size() - cacheConfig.maximumSize;
-            final Set<Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool>> evictionCandidates =
-                    new TreeSet<>(
-                            new Comparator<Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool>>() {
-                                @Override
-                                public int compare(final Map.Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool> e1,
-                                                   final Map.Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool> e2) {
-                                    return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
-                                }
-                            }
-                    );
+            final Set<Entry<MqNativeEndpointKey,CachedConnection>> evictionCandidates =
+                new TreeSet<Entry<MqNativeEndpointKey,CachedConnection>>(
+                    new Comparator<Entry<MqNativeEndpointKey,CachedConnection>>(){
+                        @Override
+                        public int compare( final Map.Entry<MqNativeEndpointKey, CachedConnection> e1,
+                                            final Map.Entry<MqNativeEndpointKey, CachedConnection> e2 ) {
+                            return Long.valueOf( e1.getValue().createdTime ).compareTo( e2.getValue().createdTime );
+                        }
+                    }
+                );
 
-            for (final Map.Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool> cachedConnectionEntry : connectionHolder.entrySet()) {
-                if ((timeNow - cachedConnectionEntry.getValue().getCreatedTime()) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0) {
-                    evict(connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
+            for ( final Map.Entry<MqNativeEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
+                if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0) {
+                    evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
                     // debug only - to be removed
-                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1} due to max age exceeded",
-                            new Object[]{cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
+                    taskLogger.log(Level.INFO, "Evicting MQ connection {0}:{1} due to max age exceeded",
+                            new Object[] {cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
 
-                } else if ((timeNow - cachedConnectionEntry.getValue().getLastAccessTime().get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
-                    evict(connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
+                } else if ( (timeNow-cachedConnectionEntry.getValue().lastAccessTime.get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
+                    evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
                     // debug only - to be removed
-                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1} due to max idleTime exceeded",
-                            new Object[]{cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
+                    taskLogger.log(Level.INFO, "Evicting MQ connection {0}:{1} due to max idleTime exceeded",
+                            new Object[] {cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
 
                 } else if ( overSize > 0 ) {
                     evictionCandidates.add( cachedConnectionEntry );
@@ -333,20 +377,12 @@ class MqNativeResourceManager implements ApplicationListener {
             }
 
             // evict oldest first to reduce cache size
-            final Iterator<Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool>> evictionIterator = evictionCandidates.iterator();
-            for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
-                final Map.Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool> cachedConnectionEntry =
+            final Iterator<Entry<MqNativeEndpointKey,CachedConnection>> evictionIterator = evictionCandidates.iterator();
+            for ( int i=0; i<overSize && evictionIterator.hasNext(); i++ ) {
+                final Map.Entry<MqNativeEndpointKey,CachedConnection> cachedConnectionEntry =
                         evictionIterator.next();
                 evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
             }
         }
-    }
-
-    ConcurrentHashMap<MqNativeEndpointKey, MqNativeCachedConnectionPool> getConnectionHolder() {
-        return connectionHolder;
-    }
-
-    AtomicReference<MqResourceManagerConfig> getCacheConfigReference() {
-        return cacheConfigReference;
     }
 }
