@@ -1723,6 +1723,7 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="serverModuleFileManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

@@ -30,7 +30,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
 
     @Before
     public void before() throws Exception {
-        cassandraConnectionEntityManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("cassandraConnectionEntityManager", CassandraConnectionEntityManager.class);
+        cassandraConnectionEntityManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("cassandraEntityManager", CassandraConnectionEntityManager.class);
 
         //Create new connections
         CassandraConnection cc1 = new CassandraConnection();
@@ -40,6 +40,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc1.setContactPoints("localhost");
         cc1.setPort("9042");
         cc1.setUsername("gateway");
+        cc1.setPasswordGoid(getGoid());
         cc1.setCompression("ProtocolOptions.Compression.NONE");
         cc1.setSsl(true);
         cc1.setTlsEnabledCipherSuites("SOME_RSA_CIPHER,SOME_EC_CIPHER");
@@ -54,6 +55,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc2.setContactPoints("127.0.0.1");
         cc2.setPort("9043");
         cc2.setUsername("gateway2");
+        cc2.setPasswordGoid(getGoid());
         cc2.setCompression("ProtocolOptions.Compression.LZ4");
         cc2.setSsl(true);
         cc2.setTlsEnabledCipherSuites("SOME_RSA_CIPHER,SOME_EC_CIPHER");
@@ -91,6 +93,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("9042");
         cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setTlsciphers("SOME_RSA_CIPHER,SOME_EC_CIPHER");
@@ -115,6 +118,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("1234");
         cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
@@ -131,6 +135,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("4321");
         cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test2", "test2").map());
         cassandraConnectionMO.setSsl(true);
@@ -151,6 +156,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("9042");
         cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
@@ -180,6 +186,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("1234");
         cassandraConnectionMO.setUsername("gateway");
+        cassandraConnectionMO.setPasswordId(getGoid().toString());
         cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
         cassandraConnectionMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("test", "test").map());
         cassandraConnectionMO.setSsl(true);
@@ -266,6 +273,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
             Assert.assertEquals(entity.getContactPoints(), managedObject.getContactPoint());
             Assert.assertEquals(entity.getPort(), managedObject.getPort());
             Assert.assertEquals(entity.getUsername(), managedObject.getUsername());
+            Assert.assertEquals(entity.getPasswordGoid().toString(), managedObject.getPasswordId());
             Assert.assertEquals(entity.getCompression(), managedObject.getCompression());
             Assert.assertEquals(entity.isSsl(), managedObject.isSsl());
             Assert.assertEquals(entity.isEnabled(), managedObject.isEnabled());

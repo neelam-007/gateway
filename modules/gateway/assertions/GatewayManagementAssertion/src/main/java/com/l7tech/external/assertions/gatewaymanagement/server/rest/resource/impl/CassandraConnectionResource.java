@@ -182,7 +182,8 @@ public class CassandraConnectionResource extends RestEntityResource<CassandraCon
         cassandraConnectionMO.setContactPoint("localhost");
         cassandraConnectionMO.setPort("9042");
         cassandraConnectionMO.setUsername("gateway");
-        cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setPasswordId("");
+        cassandraConnectionMO.setCompression("NONE");
         cassandraConnectionMO.setSsl(true);
         cassandraConnectionMO.setTlsciphers(null);
         cassandraConnectionMO.setEnabled(true);

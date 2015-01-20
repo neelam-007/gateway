@@ -5612,7 +5612,7 @@ public class ServerGatewayManagementAssertionTest {
         applicationContext.getBeanFactory().registerSingleton("ssgFirewallRuleManager", new SsgFirewallRulesManagerStub());
         applicationContext.getBeanFactory().registerSingleton("sampleMessageManager", new SampleMessageManagerStub());
         applicationContext.getBeanFactory().registerSingleton("clusterStatusAdmin", new ClusterStatusAdminStub());
-        applicationContext.getBeanFactory().registerSingleton("cassandraConnectionEntityManager", new CassandraConnectionEntityManagerStub());
+        applicationContext.getBeanFactory().registerSingleton("cassandraEntityManager", new CassandraConnectionEntityManagerStub());
 
         applicationContext.refresh();
 

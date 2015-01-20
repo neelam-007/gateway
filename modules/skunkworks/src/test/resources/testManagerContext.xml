@@ -161,6 +161,7 @@
                 <ref bean="licenseDocumentManager"/>
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
+                <ref bean="cassandraEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -711,6 +712,7 @@
         <property name="config" ref="serverConfig"/>
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
+        <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -1653,7 +1655,5 @@
     </bean>
 
     <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" />
-
-    <bean id="cassandraConnectionEntityManager" class="com.l7tech.server.cassandra.CassandraConnectionEntityManagerImpl" parent="hibernateBean"/>
 
 </beans>

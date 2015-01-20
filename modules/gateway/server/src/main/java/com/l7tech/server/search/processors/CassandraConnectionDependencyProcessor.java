@@ -18,14 +18,14 @@ import java.util.List;
 public class CassandraConnectionDependencyProcessor extends DefaultDependencyProcessor<CassandraConnection> implements DependencyProcessor<CassandraConnection> {
 
     @Inject
-    private CassandraConnectionEntityManager cassandraConnectionEntityManager;
+    private CassandraConnectionEntityManager cassandraEntityManager;
 
     @NotNull
     public List<DependencyFinder.FindResults<CassandraConnection>> find(@NotNull final Object searchValue, @NotNull final Dependency.DependencyType dependencyType, @NotNull final Dependency.MethodReturnType searchValueType) throws FindException {
         //handles finding cassandra connections by name
         switch (searchValueType) {
             case NAME:
-                CassandraConnection connection = cassandraConnectionEntityManager.getCassandraConnectionEntity((String) searchValue);
+                CassandraConnection connection = cassandraEntityManager.getCassandraConnectionEntity((String) searchValue);
                 return Arrays.<DependencyFinder.FindResults<CassandraConnection>>asList(DependencyFinder.FindResults.<CassandraConnection>create(connection, new EntityHeader(Goid.DEFAULT_GOID, EntityType.CASSANDRA_CONFIGURATION, (String) searchValue, null)));
             default:
                 //if a different search method is specified then search for the Cassandra connection using the GenericDependency processor

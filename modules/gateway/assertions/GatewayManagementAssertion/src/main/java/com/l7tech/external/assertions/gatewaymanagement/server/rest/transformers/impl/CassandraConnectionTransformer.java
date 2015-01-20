@@ -53,6 +53,7 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
         cassandraConnectionMO.setContactPoint(cassandraConnection.getContactPoints());
         cassandraConnectionMO.setPort(cassandraConnection.getPort());
         cassandraConnectionMO.setUsername(cassandraConnection.getUsername());
+        cassandraConnectionMO.setPasswordId(cassandraConnection.getPasswordGoid() == null ? null : cassandraConnection.getPasswordGoid().toString());
         cassandraConnectionMO.setCompression(cassandraConnection.getCompression());
         cassandraConnectionMO.setSsl(cassandraConnection.isSsl());
         cassandraConnectionMO.setTlsciphers(cassandraConnection.getTlsEnabledCipherSuites());
@@ -84,6 +85,7 @@ public class CassandraConnectionTransformer implements EntityAPITransformer<Cass
         cassandraConnection.setContactPoints(cassandraConnectionMO.getContactPoint());
         cassandraConnection.setPort(cassandraConnectionMO.getPort());
         cassandraConnection.setUsername(cassandraConnectionMO.getUsername());
+        cassandraConnection.setPasswordGoid(cassandraConnectionMO.getPasswordId() == null ? null : new Goid(cassandraConnectionMO.getPasswordId()));
         cassandraConnection.setCompression(cassandraConnectionMO.getCompression());
         cassandraConnection.setSsl(cassandraConnectionMO.isSsl());
         cassandraConnection.setTlsEnabledCipherSuites(cassandraConnectionMO.getTlsciphers());

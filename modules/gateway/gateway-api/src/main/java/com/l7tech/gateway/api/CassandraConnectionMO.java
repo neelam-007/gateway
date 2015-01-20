@@ -16,19 +16,13 @@ import java.util.Map;
  * <p>The Accessor for Cassandra connections supports read and write. Cassandra
  * connections can be accessed by name or identifier.</p>
  *
- * <p>Connection properties are passed to Cassandra. Commonly used connection
- * properties are:
- * <ul>
- *   <li><code>user</code>: The username to use for the connection</li>
- *   <li><code>password</code>: The password to use for the connection</li>
- * </ul>
- * </p>
+ * <p>Connection properties are passed to Cassandra.</p>
 
  * @see ManagedObjectFactory#createCassandraConnectionMO()
  */
 @XmlRootElement(name = "CassandraConnection")
 @XmlType(name = "CassandraConnectionType",
-        propOrder = {"name", "keyspace", "contactPoint", "port", "username", "compression", "ssl", "tlsciphers", "enabled", "properties", "extension", "extensions"})
+        propOrder = {"name", "keyspace", "contactPoint", "port", "username", "passwordId", "compression", "ssl", "tlsciphers", "enabled", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name = "cassandraConnections")
 public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
 
@@ -127,6 +121,25 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
      */
     public void setUsername(final String username) {
         this.username = username;
+    }
+
+    /**
+     * Get the password ID for the Cassandra connection
+     *
+     * @return The password ID
+     */
+    @XmlElement(name="PasswordId")
+    public String getPasswordId() {
+        return passwordId;
+    }
+
+    /**
+     * Set the password ID for the Cassandra connection.
+     *
+     * @param passwordId The password ID to use
+     */
+    public void setPasswordId(String passwordId) {
+        this.passwordId = passwordId;
     }
 
     /**
@@ -233,6 +246,7 @@ public class CassandraConnectionMO extends ElementExtendableAccessibleObject {
     private String contactPoint;
     private String port;
     private String username;
+    private String passwordId;
     private String compression;
     private Boolean ssl = false;
     private String tlsciphers;
