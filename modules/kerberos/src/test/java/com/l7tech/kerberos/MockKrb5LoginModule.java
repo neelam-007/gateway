@@ -59,8 +59,10 @@ public class MockKrb5LoginModule implements LoginModule {
             subject.getPrincipals().add(kerberosPrincipal);
             subject.getPrivateCredentials().add(KerberosClientTest.decode(KERBEROS_TICKET));
             KerberosKey key = new KerberosKey((KerberosPrincipal) KerberosClientTest.decode(KERBEROS_PRINCIPAL), Base64.decodeBase64(KEY_BYTES), KEY_TYPE, VERSION_NUMBER);
-            Krb5Util.KeysFromKeyTab keysFromKeyTab = new Krb5Util.KeysFromKeyTab(key);
-            subject.getPrivateCredentials().add(keysFromKeyTab);
+            // TODO JDK8: KeysFromKeyTab class no longer exists.  Will try using keys directly
+//            Krb5Util.KeysFromKeyTab keysFromKeyTab = new Krb5Util.KeysFromKeyTab(key);
+//            subject.getPrivateCredentials().add(keysFromKeyTab);
+            subject.getPrivateCredentials().add( key );
             return true;
         } catch (Exception e) {
             throw new LoginException(e.getMessage());

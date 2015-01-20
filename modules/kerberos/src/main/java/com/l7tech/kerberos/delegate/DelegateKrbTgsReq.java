@@ -5,6 +5,7 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * Implementation of TGS_REQ for S4U2Self and S4U2Proxy,
@@ -76,7 +77,7 @@ public class DelegateKrbTgsReq {
                 options,
                 tgtCreds.getTicket(),
                 tgtCreds.getSessionKey(),
-                new KerberosTime(KerberosTime.NOW),
+                new KerberosTime( new Date() ),
                 princName,
                 princName.getRealm(),
                 servName,
@@ -109,8 +110,7 @@ public class DelegateKrbTgsReq {
             PrincipalName sname,
             PrincipalName uname,
             Ticket[] additionalTickets)
-            throws Asn1Exception, IOException, KdcErrException, KrbApErrException,
-            KrbCryptoException {
+            throws KrbException, IOException {
 
         int[] eTypes = null;
         eTypes = EType.getDefaults("default_tgs_enctypes");
@@ -121,7 +121,6 @@ public class DelegateKrbTgsReq {
         KDCReqBody reqBody = new KDCReqBody(
                 kdc_options,
                 cname,
-                sname.getRealm(),
                 sname,
                 null,
                 new KerberosTime(0),

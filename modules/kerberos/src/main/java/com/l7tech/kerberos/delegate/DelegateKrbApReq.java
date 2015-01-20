@@ -23,7 +23,7 @@ public class DelegateKrbApReq {
             throws Asn1Exception, IOException,
             KdcErrException, KrbCryptoException {
 
-        Authenticator authenticator = new Authenticator(crealm,
+        Authenticator authenticator = new Authenticator(
                 cname,
                 cksum,
                 ctime.getMicroSeconds(),
