@@ -31,13 +31,16 @@ public class JWKCreateDialog extends JDialog {
 
     private SimpleTableModel tableModel;
 
+    private boolean readOnly;
+
     public JWKCreateDialog(Window owner, SimpleTableModel<JwkKeyInfo> tableModel) {
-        this(owner, null, tableModel);
+        this(owner, null, tableModel, false);
     }
 
-    public JWKCreateDialog(Window owner, JwkKeyInfo jwkKeyInfo, SimpleTableModel<JwkKeyInfo> tableModel) {
+    public JWKCreateDialog(Window owner, JwkKeyInfo jwkKeyInfo, SimpleTableModel<JwkKeyInfo> tableModel, boolean readOnly) {
         super(owner, "Key Information Dialog");
         this.tableModel = tableModel;
+        this.readOnly = readOnly;
         initComponents();
         setContentPane(contentPane);
         setModal(true);
@@ -121,17 +124,17 @@ public class JWKCreateDialog extends JDialog {
         keyIdTextField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+                OKButton.setEnabled(!readOnly && !keyIdTextField.getText().trim().isEmpty());
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+                OKButton.setEnabled(!readOnly && !keyIdTextField.getText().trim().isEmpty());
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                OKButton.setEnabled(!keyIdTextField.getText().trim().isEmpty());
+                OKButton.setEnabled(!readOnly && !keyIdTextField.getText().trim().isEmpty());
             }
         });
         publicUseComboBox.setModel(new DefaultComboBoxModel(JsonWebTokenConstants.PUBLIC_KEY_USE.values().toArray(new String[JsonWebTokenConstants.PUBLIC_KEY_USE.size()])));

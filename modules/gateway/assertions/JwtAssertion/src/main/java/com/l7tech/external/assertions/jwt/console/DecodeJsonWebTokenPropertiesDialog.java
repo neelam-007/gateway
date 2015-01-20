@@ -200,7 +200,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             getOkButton().setEnabled(false);
             return;
         }
-        getOkButton().setEnabled(true);
+        getOkButton().setEnabled(!isReadOnly() && true);
     }
 
     protected void updateOkButtonEnableState() {

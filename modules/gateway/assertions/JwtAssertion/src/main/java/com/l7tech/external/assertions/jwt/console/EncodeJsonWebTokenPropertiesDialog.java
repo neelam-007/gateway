@@ -582,7 +582,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             getOkButton().setEnabled(false);
             return;
         }
-        getOkButton().setEnabled(true);
+        getOkButton().setEnabled(!isReadOnly() && true);
     }
 
     private final DocumentListener documentListener = new DocumentListener() {

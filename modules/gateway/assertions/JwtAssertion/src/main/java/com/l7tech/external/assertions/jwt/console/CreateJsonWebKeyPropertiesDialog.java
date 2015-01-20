@@ -80,7 +80,7 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
                 if(sel >= 0){
                     final int index = keysTable.getRowSorter().convertRowIndexToModel(sel);
                     final JwkKeyInfo keyInfo = tableModel.getRowObject(index);
-                    final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner(), keyInfo, tableModel);
+                    final JWKCreateDialog jwkCreateDialog = new JWKCreateDialog(getOwner(), keyInfo, tableModel, isReadOnly());
                     jwkCreateDialog.pack();
                     Utilities.centerOnScreen(jwkCreateDialog);
                     jwkCreateDialog.setVisible(true);
@@ -104,7 +104,7 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
         outputVariable.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(outputVariable.isEntryValid());
+                getOkButton().setEnabled(!isReadOnly() && outputVariable.isEntryValid());
             }
         });
         Utilities.setDoubleClickAction(keysTable, editButton);
