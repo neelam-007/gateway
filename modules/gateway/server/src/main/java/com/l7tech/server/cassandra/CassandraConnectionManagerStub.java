@@ -48,11 +48,6 @@ public class CassandraConnectionManagerStub implements CassandraConnectionManage
 
     }
 
-    @Override
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
-
-    }
-
     public void setMockConnection(CassandraConnectionHolder mockConnectionHolder) {
         this.connectionHolder = mockConnectionHolder;
     }

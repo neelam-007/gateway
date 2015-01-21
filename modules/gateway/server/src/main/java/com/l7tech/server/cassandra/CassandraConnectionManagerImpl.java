@@ -9,13 +9,11 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.context.ApplicationEvent;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -24,7 +22,6 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.Field;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
@@ -509,11 +506,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             Cluster cluster = connection.getCluster();
             if(cluster != null) cluster.close();
         }
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        // Do nothing
     }
 
     @Override

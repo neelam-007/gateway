@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationListener;
  * User: ymoiseyenko
  * Date: 10/30/14
  */
-public interface CassandraConnectionManager extends ApplicationListener {
+public interface CassandraConnectionManager {
     CassandraConnectionHolder getConnection(String name);
 
     void testConnection(CassandraConnection cassandraConnectionEntity) throws Exception;

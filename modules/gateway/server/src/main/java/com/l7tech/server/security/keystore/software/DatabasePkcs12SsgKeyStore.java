@@ -85,16 +85,49 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
                 KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
+                if ( keystoreFile == null ) {
+                    // Our backing row has vanished.  Keystore will not be functional
+                    throw new KeyStoreException( "No row present in database for software database keystore id " + id + " (named " + name + ")" );
+                }
                 int dbVersion = keystoreFile.getVersion();
                 if (cachedKeystore != null && keystoreVersion == dbVersion) {
                     // No changes since last time we checked.  Just use the one we've got.
                     return cachedKeystore;
                 }
-                cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
+                final KeyStore ks;
+                if ( null == keystoreFile.getDatabytes() ) {
+                    // No databytes in DB -- creating a new keystore from scratch.  Make sure it gets persisted
+                    // as soon as it is created, rather than waiting until the first key to be created
+                    // (which will cause lots of empty keystores to be created and thrown away until that happens)
+                    final KeyStore[] newKs = { null };
+                    kem.mutateKeystoreFile( getGoid(), new Functions.UnaryVoid<KeystoreFile>() {
+                        @Override
+                        public void call( KeystoreFile keystoreFile ) {
+                            byte[] dataBytes = keystoreFile.getDatabytes();
+                            try {
+                                KeyStore ks = bytesToKeyStore( dataBytes );
+                                if ( null == dataBytes ) {
+                                    // We just created a new keystore
+                                    dataBytes = keyStoreToBytes( ks );
+                                    keystoreFile.setDatabytes( dataBytes );
+                                } // else we are using an existing keystore, and no additional mutation is required.
+                                newKs[0] = ks;
+                            } catch ( KeyStoreException e ) {
+                                throw new RuntimeException( e.getMessage(), e );
+                            }
+                        }
+                    } );
+                    ks = newKs[0];
+                } else {
+                    ks = bytesToKeyStore(keystoreFile.getDatabytes());
+                }
+                cachedKeystore = ks;
                 keystoreVersion = keystoreFile.getVersion();
                 lastLoaded = System.currentTimeMillis();
             } catch (FindException e) {
                 throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
+            } catch ( UpdateException e ) {
+                throw new KeyStoreException("Unable to create initial software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
             }
         }
         return cachedKeystore;
@@ -115,6 +148,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         return password;
     }
 
+    @NotNull
     private KeyStore bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         try {
             ByteArrayInputStream inputStream = null;
@@ -128,17 +162,13 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
             KeyStore keystore = JceProvider.getInstance().getKeyStore("PKCS12");
             keystore.load(inputStream, password); // If no existing data, null inputStream causes new keystore to be created
             return keystore;
-        } catch (KeyStoreException e) {
-            throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (IOException e) {
-            throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (CertificateException e) {
+
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new KeyStoreException("Unable to load software database keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
+    @NotNull
     private byte[] keyStoreToBytes(KeyStore keystore) throws KeyStoreException {
         PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         try {
