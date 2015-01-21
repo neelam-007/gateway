@@ -396,8 +396,10 @@ public class PreferencesDialog extends JDialog {
                     }
 
                     // Set the last displayed tab as selected.
-                    tabbedPane.setSelectedIndex(-1);
-                    tabbedPane.setSelectedComponent(selectedComponent);
+                    if (selectedComponent != null) {
+                        tabbedPane.setSelectedIndex(-1);
+                        tabbedPane.setSelectedComponent(selectedComponent);
+                    }
                 }
             });
         }
