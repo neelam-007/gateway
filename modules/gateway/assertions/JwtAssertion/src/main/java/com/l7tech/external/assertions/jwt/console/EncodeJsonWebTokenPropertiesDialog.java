@@ -305,10 +305,9 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
                 assertion.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_SECRET);
                 assertion.setEncryptionSecret(String.valueOf(jweSharedSecret.getPassword()));
                 //clear other fields
-                assertion.setKeyManagementAlgorithm(null);
-                assertion.setContentEncryptionAlgorithm(null);
                 assertion.setEncryptionKey(null);
                 assertion.setEncryptionKeyType(null);
+                assertion.setEncryptionKeyId(null);
             } else if(jweUseVariable.isSelected()){
                 assertion.setEncryptionSourceType(JsonWebTokenConstants.SOURCE_CV);
                 //clear secret field
