@@ -697,4 +697,72 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
             assertOkEmptyResponse(response);
         }
     }
+
+    @Test
+    public void testImportNewWithSecrets() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId() + "?encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 items. A policy, a siteminder configuration and a secure password", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. Root folder, a policy, a siteminder configuration and a secure password", 4, bundleItem.getContent().getMappings().size());
+
+        //should have encrypted password
+        final StoredPasswordMO storedPassMO = (StoredPasswordMO) bundleItem.getContent().getReferences().get(0).getContent();
+        assertTrue(storedPassMO.getPassword().startsWith("$L7C2"));
+        assertTrue(storedPassMO.getPasswordBundleKey().startsWith("$L7C2"));
+
+        //should have encrypted secret
+        final SiteMinderConfigurationMO siteminderConfigMO = (SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(1).getContent();
+        assertTrue(siteminderConfigMO.getSecret().startsWith("$L7C2"));
+        assertTrue(siteminderConfigMO.getSecretBundleKey().startsWith("$L7C2"));
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappingsToClean = mappings;
+
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping passwordMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SECURE_PASSWORD.toString(), passwordMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, passwordMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, passwordMapping.getActionTaken());
+        Assert.assertEquals(passwordItem.getId(), passwordMapping.getSrcId());
+        Assert.assertEquals(passwordMapping.getSrcId(), passwordMapping.getTargetId());
+
+        Mapping siteminderMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), siteminderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, siteminderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, siteminderMapping.getActionTaken());
+        Assert.assertEquals(siteminderItem.getId(), siteminderMapping.getSrcId());
+        Assert.assertEquals(siteminderMapping.getSrcId(), siteminderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        // verify dependencies
+        response = getTargetEnvironment().processRequest("policies/" + policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+        assertOkResponse(response);
+
+        Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+        Assert.assertNotNull(policyDependencies);
+        Assert.assertEquals(2, policyDependencies.size());
+
+        assertNotNull(getDependency(policyDependencies, siteminderItem.getId()));
+        assertNotNull(getDependency(policyDependencies, passwordItem.getId()));
+
+        validate(mappings);
+    }
 }
