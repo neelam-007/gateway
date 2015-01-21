@@ -64,7 +64,7 @@ public class PublishWsdlQueryHandlerAction extends AbstractPublishServiceAction 
     public String getName() {
         String selectedFolderPath = getSelectedFolderPath();
 
-        return null == selectedFolderPath ? NAME : NAME + " in " + selectedFolderPath;
+        return (null == selectedFolderPath || selectedFolderPath.isEmpty()) ? NAME : NAME + " in " + selectedFolderPath;
     }
 
     @Override
