@@ -145,6 +145,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
+    public ClusterNodeInfo getSelfNode() {
+        return null;
+    }
+
+    @Override
     public Collection<ClusterProperty> getAllProperties() throws FindException {
         throw new UnsupportedOperationException();
     }
@@ -329,6 +334,11 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Override
     public List<ServerModuleFile> findAllServerModuleFiles() throws FindException {
         return Collections.emptyList();
+    }
+
+    @Override
+    public CollectionUpdate<ServerModuleFile> getServerModuleFileUpdate(int oldVersionID) throws FindException {
+        return null;
     }
 
     @Nullable

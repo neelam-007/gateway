@@ -11,10 +11,7 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.licensing.CompositeLicense;
 import com.l7tech.gateway.common.licensing.FeatureLicense;
 import com.l7tech.gateway.common.licensing.LicenseDocument;
-import com.l7tech.gateway.common.module.ModuleState;
-import com.l7tech.gateway.common.module.ServerModuleConfig;
-import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gateway.common.module.ServerModuleFileState;
+import com.l7tech.gateway.common.module.*;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -234,6 +231,11 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     @Override
     public String getSelfNodeName() {
         return clusterInfoManager.getSelfNodeInf().getName();
+    }
+
+    @Override
+    public ClusterNodeInfo getSelfNode() {
+        return clusterInfoManager.getSelfNodeInf();
     }
 
     @Override
@@ -587,6 +589,29 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             ret.add(mod);
         }
         return ret;
+    }
+
+
+    private final CollectionUpdateProducer<ServerModuleFile, FindException> serverModuleFileUpdateProducer =
+            new CollectionUpdateProducer<ServerModuleFile, FindException>(5 * 60 * 1000, 100, new ServerModuleFileStateDifferentiator()) {
+                @Override
+                protected Collection<ServerModuleFile> getCollection() throws FindException {
+                    logger.finest("Gathering ServerModuleFile(s) for collection-update...");
+                    final List<ServerModuleFile> ret = new ArrayList<>();
+                    final Collection<ServerModuleFile> found = serverModuleFileManager.findAll();
+                    for (final ServerModuleFile fullMod : found) {
+                        final ServerModuleFile mod = new ServerModuleFile();
+                        // very important: skip module data bytes
+                        mod.copyFrom(fullMod, false, true, true);
+                        ret.add(mod);
+                    }
+                    return ret;
+                }
+            };
+
+    @Override
+    public CollectionUpdate<ServerModuleFile> getServerModuleFileUpdate(final int oldVersionID) throws FindException {
+        return serverModuleFileUpdateProducer.createUpdate(oldVersionID);
     }
 
     @Nullable

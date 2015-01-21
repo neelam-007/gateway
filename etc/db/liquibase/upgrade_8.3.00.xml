@@ -302,20 +302,6 @@
             <column name="other_operation"/>
             <column name="entity_type" value="SERVER_MODULE_FILE"/>
         </insert>
-        <rollback>
-            <delete tableName="rbac_permission">
-                <where>role_goid = toGoid(0, -1650)</where>
-            </delete>
-            <delete tableName="rbac_role">
-                <where>goid = toGoid(0, -1650)</where>
-            </delete>
-        </rollback>
-    </changeSet>
-    <changeSet id="delete-ssl-protocol-column" author="gateway">
-        <dropColumn tableName="cassandra_connection" columnName="tls_protocol"/>
-    </changeSet>
-    <changeSet id="update_server_module_file_role_add_cluster_property_read" author="gateway">
-        <comment>Make sure Server Module File Role can read serverModuleFile.upload.enable and serverModuleFile.upload.maxSize cluster wide properties</comment>
         <insert tableName="rbac_permission">
             <column name="goid" valueComputed="toGoid(0, -1655)"/>
             <column name="version" valueNumeric="0"/>
@@ -354,5 +340,21 @@
             <column name="value" value="serverModuleFile.upload.maxSize"/>
             <column name="mode" value="eq"/>
         </insert>
+        <insert tableName="rbac_permission">
+            <column name="goid" valueComputed="toGoid(0, -1657)"/>
+            <column name="version" valueNumeric="0"/>
+            <column name="role_goid" valueComputed="toGoid(0, -1650)"/>
+            <column name="operation_type" value="READ"/>
+            <column name="other_operation"/>
+            <column name="entity_type" value="CLUSTER_INFO"/>
+        </insert>
+        <rollback>
+            <delete tableName="rbac_role">
+                <where>goid = toGoid(0, -1650)</where>
+            </delete>
+        </rollback>
+    </changeSet>
+    <changeSet id="delete-ssl-protocol-column" author="gateway">
+        <dropColumn tableName="cassandra_connection" columnName="tls_protocol"/>
     </changeSet>
 </databaseChangeLog>

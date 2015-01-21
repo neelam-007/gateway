@@ -138,6 +138,16 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     String getSelfNodeName();
 
     /**
+     * Convince method for getting the node that handles the admin request.
+     *
+     * @return {@link ClusterNodeInfo}  The node that handles the admin request.
+     */
+    @Transactional(readOnly=true)
+    @Secured(types = EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITY)
+    @Administrative(licensed=false)
+    ClusterNodeInfo getSelfNode();
+
+    /**
      * get cluster wide properties
      * @return a list containing ClusterProperty objects (never null)
      */
@@ -637,6 +647,23 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured( types = EntityType.SERVER_MODULE_FILE, stereotype = FIND_ENTITIES )
     List<ServerModuleFile> findAllServerModuleFiles() throws FindException;
+
+
+    /**
+     * Retrieves changes in list of {@link ServerModuleFile}'s, with databytes omitted.
+     * <p/>
+     * To download the databytes for a module, use {@link #findServerModuleFileById} passing true for
+     * the second parameter.
+     *
+     * @param oldVersionID  version ID from previous retrieval
+     * @return collection changes; never {@code null}
+     * @throws FindException if there was a problem accessing the requested information
+     * @see CollectionUpdate
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Administrative(licensed=false, background = true)
+    CollectionUpdate<ServerModuleFile> getServerModuleFileUpdate(int oldVersionID) throws FindException;
 
     /**
      * Find a server module file, optionally downloading its data bytes.
