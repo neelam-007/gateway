@@ -538,13 +538,6 @@
                                 <value>ssh.session.pool.numTestsPerEvictionRun</value>
                             </list>
                         </entry>
-                        <entry key="cassandraConnectionManager">
-                            <list>
-                                <value>cassandra.maxConnectionCacheAge</value>
-                                <value>cassandra.maxConnectionCacheIdleTime</value>
-                                <value>cassandra.maxConnectionCacheSize</value>
-                            </list>
-                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
