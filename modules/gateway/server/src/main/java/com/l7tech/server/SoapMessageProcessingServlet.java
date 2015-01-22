@@ -330,7 +330,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
                 OutputStream responseos = hresponse.getOutputStream();
-                if (gzipResponse) {
+                if ( gzipResponse && !hresponse.containsHeader( HEADER_CONTENT_ENCODING ) ) {
                     logger.fine("zipping response back to requester");
                     hresponse.setHeader( HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
