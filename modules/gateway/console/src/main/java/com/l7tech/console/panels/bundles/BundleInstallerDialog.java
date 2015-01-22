@@ -265,8 +265,8 @@ public abstract class BundleInstallerDialog extends JDialog {
                                           @NotNull Goid folderGoid,
                                           @NotNull Map<String, BundleMapping> bundleMappings,
                                           @Nullable String installationPrefix,
-                                          @Nullable Map<String, Pair<String, Properties>> migrationActionOverrides) throws PolicyBundleInstallerException {
-        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationActionOverrides);
+                                          @Nullable Map<String, Map<String, Pair<String, Properties>>> migrationBundlesActionOverrides) throws PolicyBundleInstallerException {
+        return getExtensionInterface(extensionInterfaceInstanceIdentifier).install(componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundlesActionOverrides);
     }
 
     protected Dimension getSizingPanelPreferredSize() {
@@ -375,7 +375,7 @@ public abstract class BundleInstallerDialog extends JDialog {
                         public void run() {
                             if (conflictDialog.wasOKed()) {
                                 try {
-                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, conflictDialog.getSelectedMigrationResolutions());
+                                    doInstall(bundlesToInstall, bundleMappings, admin, prefix, conflictDialog.getMigrationBundlesActionOverrides());
                                 } catch (Exception e) {
                                     // this may execute after the code below completes as it's a callback
                                     handleException(e);
@@ -429,16 +429,16 @@ public abstract class BundleInstallerDialog extends JDialog {
                            final Map<String, BundleMapping> bundleMappings,
                            final PolicyBundleInstallerAdmin admin,
                            @Nullable final String prefixToUse,
-                           @Nullable final Map<String, Pair<String, Properties>> selectedMigrationActions)
-            throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
+                           @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesActionOverrides)
+        throws FindException, InterruptedException, InvocationTargetException, PolicyBundleInstallerException {
         final Either<String, ArrayList> resultEither = doAsyncAdmin(
             admin,
             BundleInstallerDialog.this,
             installFolder + " Installation",
             "The selected components of the " + installFolder + " are being installed.",
-            (selectedMigrationActions == null || selectedMigrationActions.isEmpty())?
+            (migrationBundlesActionOverrides == null || migrationBundlesActionOverrides.isEmpty())?
                 adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse) :
-                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, selectedMigrationActions)
+                adminInstall(bundlesToInstall, selectedFolderGoid, bundleMappings, prefixToUse, migrationBundlesActionOverrides)
         );
 
         if (resultEither.isRight()) {

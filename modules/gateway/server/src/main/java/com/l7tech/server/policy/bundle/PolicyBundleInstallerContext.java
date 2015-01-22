@@ -30,7 +30,7 @@ public class PolicyBundleInstallerContext {
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired) {
-        this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired, null);
+        this(bundleInfo, Folder.ROOT_FOLDER_ID, bundleMapping, installationPrefix, bundleResolver, checkingAssertionExistenceRequired, null, null);
     }
 
     /**
@@ -40,7 +40,9 @@ public class PolicyBundleInstallerContext {
      * @param installationPrefix If not null, the value will be used to prefix the installation.
      * @param bundleResolver used to resolve items from bundleInfo
      * @param checkingAssertionExistenceRequired a flag to indicate if checking assertions have been installed on gateway
-     * @param migrationBundleOverrides migration bundle overrides
+     * @param migrationBundleOverrides migration bundle overrides for a particular bundle component.
+     * @param migrationSourceAndTargetIdsMapping a map to hold entity id mappings for one entity mapping to other entity.
+     *                                           Each map entry is (sourceId, targetId), which implies that one entity with sourceId wil be mapping to a new entity with targetId.
      */
     public PolicyBundleInstallerContext(@NotNull BundleInfo bundleInfo,
                                         @NotNull Goid folderGoid,
@@ -48,7 +50,8 @@ public class PolicyBundleInstallerContext {
                                         @Nullable String installationPrefix,
                                         @NotNull BundleResolver bundleResolver,
                                         boolean checkingAssertionExistenceRequired,
-                                        @Nullable Map<String, Pair<String, Properties>> migrationBundleOverrides) {
+                                        @Nullable Map<String, Pair<String, Properties>> migrationBundleOverrides,
+                                        @Nullable Map<String, String> migrationSourceAndTargetIdsMapping) {
         this.bundleInfo = bundleInfo;
         this.folderGoid = folderGoid;
         if (bundleMapping != null) {
@@ -59,6 +62,7 @@ public class PolicyBundleInstallerContext {
         this.bundleResolver = bundleResolver;
         this.checkingAssertionExistenceRequired = checkingAssertionExistenceRequired;
         this.migrationBundleOverrides = migrationBundleOverrides;
+        this.migrationSourceAndTargetIdsMapping = migrationSourceAndTargetIdsMapping;
 
         this.installationPrefix = (installationPrefix == null || installationPrefix.trim().isEmpty())?
                 null:
@@ -104,6 +108,10 @@ public class PolicyBundleInstallerContext {
         return checkingAssertionExistenceRequired;
     }
 
+    public Map<String, String> getMigrationSourceAndTargetIdsMapping() {
+        return migrationSourceAndTargetIdsMapping;
+    }
+
     // - PRIVATE
 
     @NotNull
@@ -118,4 +126,5 @@ public class PolicyBundleInstallerContext {
     private final BundleResolver bundleResolver;
     private final boolean checkingAssertionExistenceRequired;
     private final Map<String, Pair<String,Properties>> migrationBundleOverrides;
+    private final Map<String, String> migrationSourceAndTargetIdsMapping;
 }

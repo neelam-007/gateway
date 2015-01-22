@@ -123,7 +123,8 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
      * @param bundleMappings Mapping of bundleId to mappings for that bundle. Required.
      * @param installationPrefix installation prefix. If not null and not empty this value will be prepended to the names
      *                           of all installed policies and the routing URIs of all installed services.
-     * @param migrationBundleOverrides override value to resolve migration conflicts
+     * @param migrationBundlesOverrides override value to resolve migration conflicts for all bundle components.
+     *                                  Key is the bundle component id, and Value is an overrides map for a particular bundle component.
      * @return the name of each bundle installed. If successful this will be each bundle requested.
      */
     @NotNull
@@ -132,5 +133,5 @@ public interface PolicyBundleInstallerAdmin extends AsyncAdminMethods {
                              @NotNull Goid folderGoid,
                              @NotNull Map<String, BundleMapping> bundleMappings,
                              @Nullable String installationPrefix,
-                             @Nullable Map<String,Pair<String,Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException;
+                             @Nullable Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException;
 }

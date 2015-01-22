@@ -260,7 +260,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                     @NotNull final Goid folderGoid,
                                     @NotNull final Map<String, BundleMapping> bundleMappings,
                                     @Nullable final String installationPrefix,
-                                    @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                    @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException {
 
         final String taskIdentifier = UUID.randomUUID().toString();
         final JobContext jobContext = new JobContext(taskIdentifier);
@@ -270,7 +270,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
             @Override
             public ArrayList call() throws Exception {
                 try {
-                    return new ArrayList<>(doInstall(taskIdentifier, componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundleOverrides));
+                    return new ArrayList<>(doInstall(taskIdentifier, componentIds, folderGoid, bundleMappings, installationPrefix, migrationBundlesOverrides));
                 } catch(PolicyBundleInstallerException e) {
                     final DetailedAdminEvent problemEvent = new DetailedAdminEvent(this, "Problem during installation of the " + getInstallerName(), Level.WARNING);
                     problemEvent.setAuditDetails(Arrays.asList(newAuditDetailInstallError(e)));
@@ -313,7 +313,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
                     final String prefixToUse = (installationPrefix != null && !installationPrefix.isEmpty()) ? installationPrefix : null;
                     final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                            bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, null);
+                            bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, null, null);
 
                     final DryRunInstallPolicyBundleEvent dryRunEvent = new DryRunInstallPolicyBundleEvent(bundleMappings, context);
                     dryRunEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));
@@ -477,7 +477,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                                      @NotNull final Goid folderGoid,
                                      @NotNull Map<String, BundleMapping> bundleMappings,
                                      @Nullable final String installationPrefix,
-                                     @Nullable final Map<String, Pair<String, Properties>> migrationBundleOverrides) throws PolicyBundleInstallerException {
+                                     @Nullable final Map<String, Map<String, Pair<String, Properties>>> migrationBundlesOverrides) throws PolicyBundleInstallerException {
 
         // When installing more than one bundle, allow for optimization of not trying to recreate items already created.
         // final Map<String, Object> contextMap = new HashMap<>();
@@ -494,6 +494,12 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
             try {
                 final Set<String> processedComponents = new HashSet<>();
+
+                // Define a map to hold entity id mappings for one entity mapping to other entity.
+                // Each map entry is (sourceId, targetId), which implies that one entity with sourceId wil be mapping to a new entity with targetId.
+                // This map will be used by MigrationBundleInstaller to search if an entity has been replaced by other entity in some installed bundle components.
+                // This is related for fixing bug SSM-5035, https://jira.l7tech.com:8443/browse/SSM-5035
+                final Map<String, String> migrationSourceAndTargetIdsMapping = new Hashtable<>();
                 //iterate through all the bundle names to install
                 outer:
                 for (String bundleId : componentIds) {
@@ -507,7 +513,8 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                         if (bundleInfo.getId().equals(bundleId)) {
 
                             final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                                    bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired, migrationBundleOverrides);
+                                bundleInfo, folderGoid, bundleMappings.get(bundleId), prefixToUse, bundleResolver, checkingAssertionExistenceRequired,
+                                migrationBundlesOverrides == null? null : migrationBundlesOverrides.get(bundleId), migrationSourceAndTargetIdsMapping);
                             final InstallPolicyBundleEvent installEvent =
                                     new InstallPolicyBundleEvent(this, context);
                             installEvent.setPolicyBundleInstallerCallback(getPolicyBundleInstallerCallback(prefixToUse));

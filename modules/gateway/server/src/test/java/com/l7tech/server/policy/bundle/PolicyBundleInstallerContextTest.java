@@ -38,15 +38,15 @@ public class PolicyBundleInstallerContextTest {
         //OAuth_1_0
         final BundleInfo bundleInfo = resultList.get(0);
         final String prefix = "    ";
-        PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), prefix, bundleResolver, true, null);
+        PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), prefix, bundleResolver, true, null, null);
         assertNull("Empty prefix should be ignored", context.getInstallationPrefix());
         assertTrue(context.isCheckingAssertionExistenceRequired());
 
-        context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), null, bundleResolver, false, null);
+        context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), null, bundleResolver, false, null, null);
         assertNull("Null value should remain null", context.getInstallationPrefix());
         assertFalse(context.isCheckingAssertionExistenceRequired());
 
-        context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), " value with spaces  ", bundleResolver, true, null);
+        context = new PolicyBundleInstallerContext(bundleInfo, new Goid(0,-5002), new BundleMapping(), " value with spaces  ", bundleResolver, true, null, null);
         assertEquals("Leading and trailing spaces should have been removed.", "value with spaces", context.getInstallationPrefix());
     }
 }

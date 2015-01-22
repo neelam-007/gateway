@@ -34,9 +34,11 @@ public class RestmanMessage {
     public static final String MAPPING_ACTION_PROP_KEY_FAIL_ON_EXISTING = "FailOnExisting";
     public static final String MAPPING_ACTION_PROP_KEY_FAIL_ON_NEW = "FailOnNew";
     public static final String MAPPING_ACTION_ATTRIBUTE = "action";
+    public static final String MAPPING_ACTION_TAKEN_ATTRIBUTE = "actionTaken";
     public static final String MAPPING_ERROR_TYPE_ATTRIBUTE = "errorType";
     public static final String MAPPING_TYPE_ATTRIBUTE = "type";
     public static final String MAPPING_SRC_ID_ATTRIBUTE = "srcId";
+    public static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
 
     private static final String NS_L7 = "l7";
     private static final String NODE_NAME_L7_ERROR = NS_L7 + ":Error";
@@ -44,7 +46,6 @@ public class RestmanMessage {
     private static final String NODE_NAME_PROPERTY = "Property";
     private static final String NODE_NAME_BOOLEAN_VALUE = "BooleanValue";
     private static final String XMLNS_L7 = "xmlns:" + NS_L7;
-    private static final String MAPPING_TARGET_ID_ATTRIBUTE = "targetId";
     private static final String NODE_ATTRIBUTE_NAME_KEY = "key";
     private static final String ROOT_FOLDER_ID = Folder.ROOT_FOLDER_ID.toHexString();
 
@@ -131,7 +132,7 @@ public class RestmanMessage {
      * Get Restman mapping(s) as list of Elements.
      */
     public List<Element> getMappings() throws IOException {
-        if (mappings == null) {
+        if (mappings == null || mappings.isEmpty()) {
             loadMappings();
         }
 
@@ -365,17 +366,21 @@ public class RestmanMessage {
         }
     }
 
-    public void setRootFolderMappingTargetId(String targetId) {
+    public void setRootFolderMappingTargetId(String targetFolderId) {
+        if (ROOT_FOLDER_ID.equals(targetFolderId)) return;
+
         final List<Element> rootFolderMappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + ROOT_FOLDER_ID + "\"]", getNamespaceMap());
 
         // there should only be one action mapping per id in a restman message
         if (rootFolderMappings.size() > 0) {
             Element rootFolderMapping = rootFolderMappings.get(0);
-            rootFolderMapping.setAttribute(MAPPING_TARGET_ID_ATTRIBUTE, targetId);
+            rootFolderMapping.setAttribute(MAPPING_TARGET_ID_ATTRIBUTE, targetFolderId);
         }
     }
 
     public void addRootFolderMapping(String targetFolderId) {
+        if (ROOT_FOLDER_ID.equals(targetFolderId)) return;
+
         final String mappingStr = MessageFormat.format(ROOT_FOLDER_REPLACEMENT_MAPPING_TEMPLATE, targetFolderId);
 
         Element newMappingElement;
@@ -427,6 +432,13 @@ public class RestmanMessage {
 
     protected void loadMappings() {
         mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Item/l7:Resource/l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());
+
+        // Try this case, where the message is a restman result message.
+        if (mappings.isEmpty()) {
+            mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Item/l7:Resource/l7:Mappings/l7:Mapping", getNamespaceMap());
+        }
+
+        // Try one more time
         if (mappings.isEmpty()) {
             // l7:Bundle is root node for Restman request
             mappings = XpathUtil.findElements(document.getDocumentElement(), "/l7:Bundle/l7:Mappings/l7:Mapping", getNamespaceMap());

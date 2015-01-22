@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.policy.bundle.MigrationDryRunResult;
 import com.l7tech.server.bundling.EntityMappingInstructions;
+import com.l7tech.server.bundling.EntityMappingResult;
 import com.l7tech.server.event.bundle.DryRunInstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerCallback;
@@ -298,7 +299,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
         return restmanMessage.getResourceSetPolicy(srcId);
     }
 
-    public void install() throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
+    public void install() throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
         final BundleInfo bundleInfo = context.getBundleInfo();
         final BundleItem migrationBundle = MIGRATION_BUNDLE;
         migrationBundle.setVersion(bundleInfo.getVersion());
@@ -306,7 +307,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
         install(policyBundle);
     }
 
-    public void install(@NotNull final String subFolder) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
+    public void install(@NotNull final String subFolder) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
         final BundleInfo bundleInfo = context.getBundleInfo();
         final BundleItem migrationBundle = MIGRATION_BUNDLE;
         migrationBundle.setVersion(bundleInfo.getVersion());
@@ -320,7 +321,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
         return restmanInvoker;
     }
 
-    private void install(@Nullable final Document bundle) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse {
+    private void install(@Nullable final Document bundle) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, UnexpectedManagementResponse, AccessDeniedManagementResponse, IOException {
         checkInterrupted();
         final BundleInfo bundleInfo = context.getBundleInfo();
 
@@ -343,6 +344,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
             final RestmanMessage requestMessage = new RestmanMessage(bundle);
             setTargetIdInRootFolderMapping(requestMessage);
 
+            final Map<String, String> migrationSourceAndTargetIdsMapping = context.getMigrationSourceAndTargetIdsMapping();
             try {
                 // handle version modifier
                 final String versionModifier = context.getInstallationPrefix();
@@ -351,13 +353,27 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 }
 
                 // handle migration action override, resolve the target issues based on the user's options
-                final Map<String, Pair<String, Properties>> migrationOverrides = context.getMigrationBundleOverrides();
-                if (migrationOverrides != null && !migrationOverrides.isEmpty()) {
-                    for (String id : migrationOverrides.keySet()) {
-                        Pair<String, Properties> mapping = migrationOverrides.get(id);
+                final Map<String, Pair<String, Properties>> migrationBundleOverrides = context.getMigrationBundleOverrides();
+
+                if (migrationBundleOverrides != null && !migrationBundleOverrides.isEmpty()) {
+                    for (String id : migrationBundleOverrides.keySet()) {
+                        Pair<String, Properties> mapping = migrationBundleOverrides.get(id);
 
                         if (mapping.left.equals("Delete")) {
                             deletedEntities.put(id, (String) mapping.right.get(id));
+                        }
+                        // The entity's MappingAction is "NewOrExisting" and there is a targetId matching to the source id of the entity.
+                        // For example, in bundle component 1, an entity sets a "Create New" resolution option, so it has been replaced a new entity (a new targetId is created).
+                        //              In bundle component 2, the entity sets a "NewOrExisting" resolution option, so its original source id will be mapped into the target id.
+                        else if (mapping.left.equals(EntityMappingInstructions.MappingAction.NewOrExisting.toString()) && migrationSourceAndTargetIdsMapping.containsKey(id)) {
+                            // Use the map to find targetId by the given srcId
+                            String targetId = migrationSourceAndTargetIdsMapping.get(id);
+
+                            // Create a new properties with targetId, so the request message will add an attribute "targetId" in some mapping.
+                            Properties newProps = new Properties();
+                            newProps.put(MAPPING_TARGET_ID_ATTRIBUTE, targetId);
+
+                            requestMessage.setMappingAction(id, EntityMappingInstructions.MappingAction.valueOf(mapping.left), newProps);
                         } else {
                             requestMessage.setMappingAction(id, EntityMappingInstructions.MappingAction.valueOf(mapping.left), mapping.right);
                         }
@@ -390,6 +406,9 @@ public class MigrationBundleInstaller extends BaseInstaller {
                 }
             }
 
+            // After the Restman request is successfully done, use the result to update the map, migrationSourceAndTargetIdsMapping
+            updateMigrationSourceAndTargetIdsMapping(installMessage, migrationSourceAndTargetIdsMapping);
+
             // Delete entities selected by users from the migration conflicts window
             requestXml = "";
             pec = restmanInvoker.getContext(requestXml);
@@ -414,6 +433,28 @@ public class MigrationBundleInstaller extends BaseInstaller {
                     if (throwException) {
                         throw e;
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get source id and target id from each mapping with action = "AlwaysCreateNew" and actionTaken = "CreatedNew", then
+     * save the source id and target id into the map, migrationSourceAndTargetIdsMapping.
+     *
+     * @param restmanResultMessage: the restman result message
+     * @param migrationSourceAndTargetIdsMapping: the map holds (sourceId, targetId).
+     */
+    private void updateMigrationSourceAndTargetIdsMapping(@NotNull final RestmanMessage restmanResultMessage,
+                                                          @NotNull final Map<String, String> migrationSourceAndTargetIdsMapping) throws IOException {
+        for (Element mapping: restmanResultMessage.getMappings()) {
+            if (EntityMappingInstructions.MappingAction.AlwaysCreateNew == EntityMappingInstructions.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_ATTRIBUTE)) &&
+                EntityMappingResult.MappingAction.CreatedNew == EntityMappingResult.MappingAction.valueOf(mapping.getAttribute(MAPPING_ACTION_TAKEN_ATTRIBUTE))) {
+
+                String srcId = mapping.getAttribute(MAPPING_SRC_ID_ATTRIBUTE);
+                String targetId = mapping.getAttribute(MAPPING_TARGET_ID_ATTRIBUTE);
+                if (!StringUtils.isEmpty(srcId) && !StringUtils.isEmpty(targetId)) {
+                    migrationSourceAndTargetIdsMapping.put(srcId, targetId);
                 }
             }
         }

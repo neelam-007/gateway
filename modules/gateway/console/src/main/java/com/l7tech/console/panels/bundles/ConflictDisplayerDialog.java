@@ -8,10 +8,8 @@ import com.l7tech.util.Pair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 public class ConflictDisplayerDialog extends JDialog {
     public static enum MappingAction {
@@ -32,9 +30,10 @@ public class ConflictDisplayerDialog extends JDialog {
     private JTabbedPane tabbedPane;
     private boolean wasoked;
     private boolean hasInfoOnlyConflict;
+    private List<String> bundleIds = new ArrayList<>();
 
     // holds the aggregate of selected resolutions across all bundles
-    private Map<String, Pair<MappingAction, Properties>> selectedMigrationResolutions = new Hashtable<>();
+    private Map<String, Map<String, Pair<MappingAction, Properties>>> migrationBundlesActionOverrides = new Hashtable<>();
 
     public ConflictDisplayerDialog(final Window owner,
                                    final List<BundleInfo> bundleInfos,
@@ -76,8 +75,19 @@ public class ConflictDisplayerDialog extends JDialog {
 
         tabbedPane.removeAll();
         for (BundleInfo bundleInfo : bundleInfos) {
-            if (dryRunResult.anyConflictsForBundle(bundleInfo.getId())) {
-                BundleConflictComponent bundleConflictComponent = new BundleConflictComponent(this, bundleInfo.getId(), dryRunResult, versionModified, selectedMigrationResolutions);
+            final String bundleId = bundleInfo.getId();
+
+            // Store each bundle id (i.e., component id), which will be used in the method getMigrationBundlesActionOverrides()
+            bundleIds.add(bundleId);
+
+            if (dryRunResult.anyConflictsForBundle(bundleId)) {
+                Map<String, Pair<MappingAction, Properties>> selectedMigrationResolutions = migrationBundlesActionOverrides.get(bundleId);
+                if (selectedMigrationResolutions == null) {
+                    selectedMigrationResolutions = new Hashtable<>();
+                    migrationBundlesActionOverrides.put(bundleId, selectedMigrationResolutions);
+                }
+
+                BundleConflictComponent bundleConflictComponent = new BundleConflictComponent(this, bundleId, dryRunResult, versionModified, selectedMigrationResolutions);
                 JPanel mainPanel = bundleConflictComponent.getMainPanel();
 
                 if (bundleConflictComponent.hasInfoOnlyConflict()) {
@@ -101,13 +111,25 @@ public class ConflictDisplayerDialog extends JDialog {
      * Due to limited visibility of com.l7tech.server.bundling.EntityMappingInstructions.MappingAction, we transport the enum as String
      * @return map of selected migration resolutions
      */
-    public Map<String, Pair<String, Properties>> getSelectedMigrationResolutions() {
-        Map<String, Pair<String, Properties>> map = new Hashtable<>(selectedMigrationResolutions.size());
-        for (String  id : selectedMigrationResolutions.keySet()) {
-            Pair<MappingAction, Properties> actionAndProperties = selectedMigrationResolutions.get(id);
-            map.put(id, new Pair<>(actionAndProperties.left.toString(), actionAndProperties.right));
+    public Map<String, Map<String, Pair<String, Properties>>> getMigrationBundlesActionOverrides() {
+        Map<String, Map<String, Pair<String, Properties>>> returnedMap = new Hashtable<>(migrationBundlesActionOverrides.size());
+
+        for (String bundleId: bundleIds) {
+            Map<String, Pair<MappingAction, Properties>> selectedMigrationResolutions = migrationBundlesActionOverrides.get(bundleId);
+            // If the element map does not exist or empty, then ignore the bundle-override map.
+            if (selectedMigrationResolutions == null || selectedMigrationResolutions.isEmpty()) continue;
+
+            Map<String, Pair<String, Properties>> convertedSelectedMigrationResolutions = new Hashtable<>(selectedMigrationResolutions.size());
+            for (String srcId: selectedMigrationResolutions.keySet()) {
+                Pair<MappingAction, Properties> actionAndProperties = selectedMigrationResolutions.get(srcId);
+                convertedSelectedMigrationResolutions.put(srcId, new Pair<>(actionAndProperties.left.toString(), actionAndProperties.right));
+            }
+
+            // Each bundle component has its own override action map.
+            returnedMap.put(bundleId, convertedSelectedMigrationResolutions);
         }
-        return map;
+
+        return returnedMap;
     }
 
     private void onOK() {
