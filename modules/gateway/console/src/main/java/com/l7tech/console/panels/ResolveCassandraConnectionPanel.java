@@ -142,6 +142,9 @@ public class ResolveCassandraConnectionPanel extends WizardStepPanel {
         newConnection.setPort(connectionReference.getPort());
         newConnection.setUsername(connectionReference.getUsername());
         newConnection.setCompression(connectionReference.getCompression());
+        newConnection.setSsl(connectionReference.isSsl());
+        newConnection.setTlsEnabledCipherSuites(connectionReference.getTlsCipherSuites());
+        newConnection.setEnabled(connectionReference.isEnabled());
         newConnection.setProperties(connectionReference.getProperties());
 
         EntityUtils.resetIdentity(newConnection);

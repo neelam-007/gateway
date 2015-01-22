@@ -2,11 +2,13 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CassandraConnectionable;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
@@ -19,26 +21,32 @@ public class CassandraConnectionReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(CassandraConnectionReference.class.getName());
 
     private static final String REFERENCE = "CassandraConnectionReference";
+    private static final String GOID = "GOID";
     private static final String CONNECTION_NAME = "ConnectionName";
     private static final String KEYSPACE = "Keyspace";
     private static final String CONTACT_POINTS = "ContactPoints";
     private static final String PORT = "Port";
     private static final String USERNAME = "Username";
+    private static final String PASSWORD_GOID = "PasswordGoid";
     private static final String COMPRESSION = "Compression";
     private static final String USE_SSL = "Ssl";
+    private static final String TLS_CIPHER_SUITES = "TlsCipherSuites";
     private static final String ENABLED = "Enabled";
     private static final String PROPERTIES = "Properties";
     private static final String PROPERTY = "Property";
     private static final String PROPERTY_NAME = "Name";
     private static final String PROPERTY_VALUE = "Value";
 
+    private Goid goid;
     private String connectionName;
     private String keyspace;
     private String contactPoints;
     private String port;
     private String username;
+    private Goid passwordGoid;
     private String compression;
     private boolean ssl;
+    private String tlsCipherSuites;
     private boolean enabled;
     private Map<String, String> properties = new TreeMap<>();
 
@@ -57,12 +65,15 @@ public class CassandraConnectionReference extends ExternalReference {
         try {
             CassandraConnection connection = getFinder().getCassandraConnection(connectionName);
             if (connection != null) {
+                goid = connection.getGoid();
                 keyspace = connection.getKeyspaceName();
                 contactPoints = connection.getContactPoints();
                 port = connection.getPort();
                 username = connection.getUsername();
+                passwordGoid = connection.getPasswordGoid();
                 compression = connection.getCompression();
                 ssl = connection.isSsl();
+                tlsCipherSuites = connection.getTlsEnabledCipherSuites();
                 enabled = connection.isEnabled();
                 properties = connection.getProperties();
             }
@@ -70,6 +81,26 @@ public class CassandraConnectionReference extends ExternalReference {
             logger.warning("Cannot find the Cassandra connection entity (ConnectionName = " + connable.getConnectionName() + ").");
         }
         localizeType = LocalizeAction.IGNORE;
+    }
+
+
+    @Override
+    public String getRefId() {
+        String id = null;
+
+        if (!goid.equals(CassandraConnection.DEFAULT_GOID)) {
+            id = goid.toString();
+        }
+
+        return id;
+    }
+
+    public Goid getGoid() {
+        return goid;
+    }
+
+    public void setGoid(Goid goid) {
+        this.goid = goid;
     }
 
     public String getConnectionName() {
@@ -112,6 +143,14 @@ public class CassandraConnectionReference extends ExternalReference {
         this.username = username;
     }
 
+    public Goid getPasswordGoid() {
+        return passwordGoid;
+    }
+
+    public void setPasswordGoid(Goid passwordGoid) {
+        this.passwordGoid = passwordGoid;
+    }
+
     public String getCompression() {
         return compression;
     }
@@ -126,6 +165,14 @@ public class CassandraConnectionReference extends ExternalReference {
 
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
+    }
+
+    public String getTlsCipherSuites() {
+        return tlsCipherSuites;
+    }
+
+    public void setTlsCipherSuites(String tlsCipherSuites) {
+        this.tlsCipherSuites = tlsCipherSuites;
     }
 
     public boolean isEnabled() {
@@ -167,13 +214,30 @@ public class CassandraConnectionReference extends ExternalReference {
         }
 
         CassandraConnectionReference output = new CassandraConnectionReference(context);
+        String val = getParamFromEl(elmt, GOID);
+        try {
+            output.goid = val != null ? new Goid(val) : CassandraConnection.DEFAULT_GOID;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidDocumentFormatException("Invalid Cassandra connection GOID: " + ExceptionUtils.getMessage(e), e);
+        }
+
         output.connectionName = getParamFromEl(elmt, CONNECTION_NAME);
         output.keyspace = getParamFromEl(elmt, KEYSPACE);
         output.contactPoints = getParamFromEl(elmt, CONTACT_POINTS);
         output.port = getParamFromEl(elmt, PORT);
         output.username = getParamFromEl(elmt, USERNAME);
+
+        val = getParamFromEl(elmt, PASSWORD_GOID);
+        try {
+            output.passwordGoid = val != null ? new Goid(val) : null;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidDocumentFormatException("Invalid password GOID: " + ExceptionUtils.getMessage(e), e);
+        }
+
         output.compression = getParamFromEl(elmt, COMPRESSION);
         output.ssl = Boolean.parseBoolean(getParamFromEl(elmt, USE_SSL));
+        val = getParamFromEl(elmt, TLS_CIPHER_SUITES);
+        output.tlsCipherSuites = val != null ? val : null;
         output.enabled = Boolean.parseBoolean(getParamFromEl(elmt, ENABLED));
 
         final NodeList additionalPropertyNodes = elmt.getElementsByTagName(PROPERTY);
@@ -196,13 +260,16 @@ public class CassandraConnectionReference extends ExternalReference {
         setTypeAttribute(referenceElement);
         referencesParentElement.appendChild(referenceElement);
 
+        addParameterElement(GOID, goid == null ? CassandraConnection.DEFAULT_GOID.toString() : goid.toString(), referenceElement);
         addParameterElement(CONNECTION_NAME, connectionName, referenceElement);
         addParameterElement(KEYSPACE, keyspace, referenceElement);
         addParameterElement(CONTACT_POINTS, contactPoints, referenceElement);
         addParameterElement(PORT, port, referenceElement);
         addParameterElement(USERNAME, username, referenceElement);
+        addParameterElement(PASSWORD_GOID, passwordGoid == null ? null : passwordGoid.toString(), referenceElement);
         addParameterElement(COMPRESSION, compression, referenceElement);
         addParameterElement(USE_SSL, Boolean.toString(ssl), referenceElement);
+        addParameterElement(TLS_CIPHER_SUITES, tlsCipherSuites, referenceElement);
         addParameterElement(ENABLED, Boolean.toString(enabled), referenceElement);
 
         if (properties != null) {
@@ -235,12 +302,13 @@ public class CassandraConnectionReference extends ExternalReference {
             CassandraConnection connection = getFinder().getCassandraConnection(connectionName);
             return connection != null &&
                     connection.getName().equalsIgnoreCase(connectionName) &&
-                    (keyspace == null || connection.getKeyspaceName().equals(keyspace)) &&
-                    (contactPoints == null || connection.getContactPoints().equals(contactPoints)) &&
-                    (port == null || connection.getPort().equals(port)) &&
+                    connection.getKeyspaceName().equals(keyspace) &&
+                    connection.getContactPoints().equals(contactPoints) &&
+                    connection.getPort().equals(port) &&
                     (username == null || connection.getUsername().equals(username)) &&
-                    (compression == null || connection.getCompression().equals(compression)) &&
+                    connection.getCompression().equals(compression) &&
                     (connection.isSsl() == ssl) &&
+                    ((tlsCipherSuites == null && connection.getTlsEnabledCipherSuites() == null) || (tlsCipherSuites != null && tlsCipherSuites.equals(connection.getTlsEnabledCipherSuites()))) &&
                     (connection.isEnabled() == enabled) &&
                     (properties == null || connection.getProperties().equals(properties));
         } catch (FindException e) {
