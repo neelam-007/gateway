@@ -20,7 +20,12 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwa.AlgorithmConstraints;
+import org.jose4j.jwa.AlgorithmFactory;
+import org.jose4j.jwa.AlgorithmFactoryFactory;
 import org.jose4j.jwe.JsonWebEncryption;
+import org.jose4j.jwe.KeyManagementAlgorithm;
+import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
+import org.jose4j.jwe.RsaKeyManagementAlgorithm;
 import org.jose4j.jwk.Use;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwx.CompactSerializer;
@@ -180,6 +185,13 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
                 context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(jws.verifySignature()));
             }
             if (structure instanceof JsonWebEncryption) {
+                final AlgorithmFactory<KeyManagementAlgorithm> algorithmFactory = AlgorithmFactoryFactory.getInstance().getJweKeyManagementAlgorithmFactory();
+                if(!algorithmFactory.isAvailable("RSA/ECB/OAEPWithSHA1AndMGF1Padding")){
+                    algorithmFactory.registerAlgorithm(new RsaKeyManagementAlgorithm("RSA/ECB/OAEPWithSHA1AndMGF1Padding", KeyManagementAlgorithmIdentifiers.RSA_OAEP));
+                }
+                if(!algorithmFactory.isAvailable("RSA/ECB/OAEPWithSHA256AndMGF1Padding")){
+                    algorithmFactory.registerAlgorithm(new RsaKeyManagementAlgorithm("RSA/ECB/OAEPWithSHA256AndMGF1Padding", KeyManagementAlgorithmIdentifiers.RSA_OAEP_256));
+                }
                 final JsonWebEncryption jwe = (JsonWebEncryption) structure;
                 context.setVariable(assertion.getTargetVariablePrefix() + ".plaintext", String.valueOf(jwe.getPlaintextString()));
                 context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(true));
