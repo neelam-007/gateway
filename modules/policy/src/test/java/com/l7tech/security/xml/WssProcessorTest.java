@@ -20,6 +20,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
@@ -1236,6 +1237,23 @@ public class WssProcessorTest {
             System.clearProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS);
             ConfigFactory.clearCachedConfig();
         }
+    }
+
+    @Test
+    @BugId( "SSG-9994" )
+    public void testMsOaep() throws Exception {
+        // Make sure an old OAEP test document can still be decrypted after the SSG-9994 fix.
+        Document d = TestDocuments.getTestDocument( "com/l7tech/common/resources/wssInterop/msRequest_nosig.xml" );
+        TestDocument td = new TestDocument("testMsOaep", d,
+                TestDocuments.getWssInteropBobKey(),
+                TestDocuments.getWssInteropBobCert(),
+                null, null, null );
+        doTest( td, new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+            @Override
+            public void call( ProcessorResult pr ) {
+                assertTrue( pr.getElementsThatWereEncrypted().length > 0 );
+            }
+        } );
     }
 
     @Test
