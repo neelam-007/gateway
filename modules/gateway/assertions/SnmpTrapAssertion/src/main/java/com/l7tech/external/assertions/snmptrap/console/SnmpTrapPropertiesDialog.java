@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.snmptrap.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -26,10 +27,12 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
     private JRadioButton rbCustomPort;
     private JTextField oidField;
     private JTextField messageField;
-    private JTextField communityField;
+    private JPasswordField communityField;
     private JTextField hostnameField;
     private JButton okButton;
     private JButton cancelButton;
+    private JLabel communityWarningLabel;
+    private JCheckBox showCommunityCheckBox;
     private IntegerOrContextVariableValidationRule integerOrContextVariableRule;
 
     private Window owner;
@@ -87,6 +90,9 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
         validator.constrainTextFieldToBeNonEmpty("OID", oidField, null);
         validator.addRule(integerOrContextVariableRule);
+
+        messageField.setPreferredSize( communityWarningLabel.getSize() );
+        PasswordGuiUtils.configureOptionalSecurePasswordField( communityField, showCommunityCheckBox, communityWarningLabel );
 
         pack();
         Utilities.centerOnScreen(this);
