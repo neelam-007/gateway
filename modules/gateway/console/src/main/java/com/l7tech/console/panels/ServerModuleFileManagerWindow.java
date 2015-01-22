@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.event.TableModelEvent;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -50,6 +51,8 @@ public class ServerModuleFileManagerWindow extends JDialog {
     private static final String CLUSTER_PROP_UPLOAD_ENABLE = "serverModuleFile.upload.enable";
     private static final int REFRESH_INTERVAL_MILLIS = 5000;
     private static final long WAIT_BEFORE_DISPLAY_ASYNC_OPERATION_DIALOG = 500L;
+    private static final int SIZE_COLUMN_INDEX = 4;
+    private static final int SIZE_COLUMN_ALIGNMENT = DefaultTableCellRenderer.TRAILING;
 
     private JPanel contentPane;
     private JTable moduleTable;
@@ -79,6 +82,28 @@ public class ServerModuleFileManagerWindow extends JDialog {
 
     private final boolean canCreate;
     private final boolean canUpload;
+
+    /**
+     * Convenience CellRenderer to display server module bytes into human-readable {@code String}.<br/>
+     * Also the alignment is set to {@link #SIZE_COLUMN_ALIGNMENT}.
+     */
+    private static class SizeCellRenderer extends DefaultTableCellRenderer {
+        /**
+         * Sets the alignment to right.
+         */
+        public SizeCellRenderer() {
+            super();
+            setHorizontalAlignment(SIZE_COLUMN_ALIGNMENT);
+        }
+
+        @Override
+        protected void setValue(Object value) {
+            if (value instanceof Long) {
+                value = ServerModuleFile.humanReadableBytes((Long)value);
+            }
+            super.setValue(value);
+        }
+    }
 
     /**
      * Constructor
@@ -170,7 +195,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 column( resources.getString("modules.column.file-name"), 30, 250, 99999, propFinder( ServerModuleFile.PROP_FILE_NAME ) ),
                 column( resources.getString("modules.column.type"), 30, 150, 150, propertyTransform( ServerModuleFile.class, "moduleType") ),
                 column( resources.getString("modules.column.hash"), 50, 400, 99999, propertyTransform( ServerModuleFile.class, "moduleSha256") ),
-                column( resources.getString("modules.column.size"), 20, 80, 150, propertyTransform( ServerModuleFile.class, "humanReadableFileSize") ),
+                column( resources.getString("modules.column.size"), 20, 80, 150, dataBytesPropToLong(), Long.class ),
                 column( resources.getString("modules.column.status"), 20, 80, 150,
                         new Functions.Unary<String, ServerModuleFile>() {
                             @Override
@@ -183,6 +208,9 @@ public class ServerModuleFileManagerWindow extends JDialog {
         serverModuleFilesTableModel.addTableModelListener(enableOrDisableListener);
         Utilities.setRowSorter(moduleTable, serverModuleFilesTableModel, new int[]{0}, new boolean[]{true}, new Comparator[]{String.CASE_INSENSITIVE_ORDER});
         moduleTable.getSelectionModel().addListSelectionListener(enableOrDisableListener);
+        // Override the Size cell renderer in order to display human-readable bytes
+        //
+        moduleTable.getColumnModel().getColumn(SIZE_COLUMN_INDEX).setCellRenderer(new SizeCellRenderer());
 
         // create entity crud
         //
@@ -761,6 +789,26 @@ public class ServerModuleFileManagerWindow extends JDialog {
             @Override
             public Object call( ServerModuleFile mod ) {
                 return mod.getProperty( propertyName );
+            }
+        };
+    }
+
+    /**
+     * Utility method for extracting {@link ServerModuleFile#PROP_SIZE} and converting it to {@link Long} for proper sorting.
+     *
+     * @return a {@link Long} representing the module databytes, or {@code null} if {@link ServerModuleFile#PROP_SIZE}
+     * cannot be converted to {@link Long}.
+     */
+    @Nullable
+    private static Functions.Unary<Long, ServerModuleFile> dataBytesPropToLong() {
+        return new Functions.Unary<Long, ServerModuleFile>() {
+            @Override
+            public Long call(final ServerModuleFile mod) {
+                try {
+                    return Long.parseLong(mod.getProperty(ServerModuleFile.PROP_SIZE));
+                } catch (final NumberFormatException e) {
+                    return null;
+                }
             }
         };
     }
