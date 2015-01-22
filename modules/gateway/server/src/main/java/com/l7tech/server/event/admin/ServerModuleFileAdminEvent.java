@@ -24,13 +24,14 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
         UPLOADED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\", size \"{4}\" uploaded."),
 
         /**
-         * This is a Admin message indicating that the module has been successfully deleted from the Database.
+         * This is a Admin message indicating that the module has been successfully deleted from the Database.<br/>
+         * This audit will follow corresponding {@link PersistenceEvent} audit, so here we are providing additional details.
          * <p/>
          * Sample message: <br/>
-         * {@code Module #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector), type = "Custom Assertion", file-name = "SalesForceConnector.jar" deleted.}
+         * {@code Details for #2d10078e12e0099191b41f672fd97af4 (SalesForce Connector). Type: Custom Assertion, file-name: SalesForceConnector.jar}
          *
          */
-        DELETED("Module #{0} ({1}), type \"{2}\", file-name \"{3}\" deleted.")
+        DELETED("Details for #{0} ({1}). Type: {2}, file-name: {3}")
         ;
 
         private final String messageFormat;
@@ -87,14 +88,14 @@ public class ServerModuleFileAdminEvent extends AdminEvent {
                         moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME),
                         moduleFile.getHumanReadableFileSize()
                 );
-                case DELETED:
-                    return MessageFormat.format(
-                            action.getMessageFormat(),
-                            moduleFile.getGoid().toHexString(),
-                            moduleFile.getName(),
-                            moduleFile.getModuleType().toString(),
-                            moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)
-                    );
+            case DELETED:
+                return MessageFormat.format(
+                        action.getMessageFormat(),
+                        moduleFile.getGoid().toHexString(),
+                        moduleFile.getName(),
+                        moduleFile.getModuleType().toString(),
+                        moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME)
+                );
             default:
                 throw new IllegalStateException("Unsupported action: " + action);
         }
