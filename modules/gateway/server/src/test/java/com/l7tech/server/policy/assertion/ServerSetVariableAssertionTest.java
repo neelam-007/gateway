@@ -1,14 +1,18 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.ServerConfigStub;
+import com.l7tech.server.*;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,6 +22,8 @@ import org.mockito.Mock;
 import org.mockito.internal.stubbing.answers.Returns;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -489,6 +495,174 @@ public class ServerSetVariableAssertionTest {
         verify(mockContext).setVariable(eq("mydate"), eq(date));
     }
 
+    @Test
+    @BugId( "SSG-9719" )
+    public void testCopyMessageVariable_allParts() throws Exception {
+        Message sourceMess = new Message();
+        byte[] sourceBytes = MimeBodyTest.MESS.getBytes( Charsets.UTF8 );
+        sourceMess.initialize( ContentTypeHeader.parseValue( MimeBodyTest.MESS_CONTENT_TYPE ), sourceBytes );
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        context.setVariable( "var", sourceMess );
+
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", "${var}");
+        assertion.setDataType( DataType.MESSAGE );
+        assertion.setContentType( sourceMess.getMimeKnob().getOuterContentType().getFullValue() );
+        ServerSetVariableAssertion sass = createServerAssertion( assertion );
+        assertEquals( AssertionStatus.NONE, sass.checkRequest( context ) );
+
+        Message copied = (Message) context.getVariable( "foo" );
+
+        assertNotNull( copied.getMimeKnob().getPart( 0 ) );
+        assertNotNull( copied.getMimeKnob().getPart( 1 ) );
+        try {
+            copied.getMimeKnob().getPart( 2 );
+            fail( "expected NoSuchPartException" );
+        } catch ( NoSuchPartException e ) {
+            // Ok
+        }
+
+        // Can't just compare sourceBytes because it contains a MIME preamble that we will have stripped out
+        byte[] wantBytes = IOUtils.slurpStream( sourceMess.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        byte[] bytes = IOUtils.slurpStream( copied.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        assertArrayEquals( wantBytes, bytes );
+    }
+
+    @Test
+    @BugId( "SSG-9719" )
+    public void testCopyMessageVariable_secondPart() throws Exception {
+        Message sourceMess = new Message();
+        byte[] sourceBytes = MimeBodyTest.MESS.getBytes( Charsets.UTF8 );
+        sourceMess.initialize( ContentTypeHeader.parseValue( MimeBodyTest.MESS_CONTENT_TYPE ), sourceBytes );
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        context.setVariable( "var", sourceMess );
+
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", "${var.parts[1]}");
+        assertion.setDataType( DataType.MESSAGE );
+        assertion.setContentType( sourceMess.getMimeKnob().getPart( 1 ).getContentType().getFullValue() );
+        ServerSetVariableAssertion sass = createServerAssertion( assertion );
+        assertEquals( AssertionStatus.NONE, sass.checkRequest( context ) );
+
+        Message copied = (Message) context.getVariable( "foo" );
+
+        assertNotNull( copied.getMimeKnob().getPart( 0 ) );
+        try {
+            copied.getMimeKnob().getPart( 1 );
+            fail( "expected NoSuchPartException" );
+        } catch ( NoSuchPartException e ) {
+            // Ok
+        }
+
+        byte[] wantBytes = IOUtils.slurpStream( sourceMess.getMimeKnob().getPart( 1 ).getInputStream( false ) );
+        byte[] bytes = IOUtils.slurpStream( copied.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        assertArrayEquals( wantBytes, bytes );
+    }
+
+    @Test
+    @BugId( "SSG-9719" )
+    public void testCopyMessageVariable_secondPart_tryToInitializeAsMultipart() throws Exception {
+        Message sourceMess = new Message();
+        byte[] sourceBytes = MimeBodyTest.MESS.getBytes( Charsets.UTF8 );
+        sourceMess.initialize( ContentTypeHeader.parseValue( MimeBodyTest.MESS_CONTENT_TYPE ), sourceBytes );
+        String multpartRelated = sourceMess.getMimeKnob().getOuterContentType().getFullValue();
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        context.setVariable( "var", sourceMess );
+
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", "${var.parts[1]}");
+        assertion.setDataType( DataType.MESSAGE );
+        assertion.setContentType( multpartRelated );
+        ServerSetVariableAssertion sass = createServerAssertion( assertion );
+
+        try {
+            sass.checkRequest( context );
+            fail( "Expected IOException due to attempt to initialize target message as multipart/related with a message body that isn't a valid multipart body" );
+        } catch ( IOException e ) {
+            // Ok
+        }
+
+        Message copied = (Message) context.getVariable( "foo" );
+
+        assertNotNull( copied.getMimeKnob().getPart( 0 ) );
+        try {
+            copied.getMimeKnob().getPart( 1 );
+            fail( "expected NoSuchPartException" );
+        } catch ( NoSuchPartException e ) {
+            // Ok
+        }
+
+        assertFalse( copied.isInitialized() );
+        byte[] bytes = IOUtils.slurpStream( copied.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        assertEquals( "Target message expected to be uninitialized", 0, bytes.length );
+    }
+
+    @Test
+    @BugId( "SSG-9719" )
+    public void testCopyMessageVariable_badVariable() throws Exception {
+        Message sourceMess = new Message();
+        byte[] sourceBytes = MimeBodyTest.MESS.getBytes( Charsets.UTF8 );
+        sourceMess.initialize( ContentTypeHeader.parseValue( MimeBodyTest.MESS_CONTENT_TYPE ), sourceBytes );
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        context.setVariable( "var", sourceMess );
+
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", "${var.parts[2]}");
+        assertion.setDataType( DataType.MESSAGE );
+        assertion.setContentType( sourceMess.getMimeKnob().getPart( 1 ).getContentType().getFullValue() );
+        ServerSetVariableAssertion sass = createServerAssertion( assertion );
+        assertEquals( AssertionStatus.NONE, sass.checkRequest( context ) );
+
+        Message copied = (Message) context.getVariable( "foo" );
+
+        assertNotNull( copied.getMimeKnob().getPart( 0 ) );
+        try {
+            copied.getMimeKnob().getPart( 1 );
+            fail( "expected NoSuchPartException" );
+        } catch ( NoSuchPartException e ) {
+            // Ok
+        }
+
+        assertTrue( copied.isInitialized() );
+        byte[] bytes = IOUtils.slurpStream( copied.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        assertEquals( "Target message expected to be initialized from zero-length string", 0, bytes.length );
+    }
+
+    @Test
+    @BugId( "SSG-9719" )
+    public void testCopyMessageVariable_missingPart() throws Exception {
+        Message sourceMess = new Message();
+        byte[] sourceBytes = MimeBodyTest.MESS.getBytes( Charsets.UTF8 );
+        sourceMess.initialize( new ByteArrayStashManager(), ContentTypeHeader.parseValue( MimeBodyTest.MESS_CONTENT_TYPE ),
+                new ByteArrayInputStream( sourceBytes ) );
+
+        // Ensure second part body gets streamed away
+        IOUtils.copyStream( sourceMess.getMimeKnob().getPart( 1 ).getInputStream( true ), new NullOutputStream() );
+
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        context.setVariable( "var", sourceMess );
+
+        SetVariableAssertion assertion = new SetVariableAssertion("foo", "${var.parts[1]}");
+        assertion.setDataType( DataType.MESSAGE );
+        assertion.setContentType( sourceMess.getMimeKnob().getPart( 1 ).getContentType().getFullValue() );
+        ServerSetVariableAssertion sass = createServerAssertion( assertion );
+        assertEquals( AssertionStatus.FALSIFIED, sass.checkRequest( context ) );
+
+        Message copied = (Message) context.getVariable( "foo" );
+
+        assertNotNull( copied.getMimeKnob().getPart( 0 ) );
+        try {
+            copied.getMimeKnob().getPart( 1 );
+            fail( "expected NoSuchPartException" );
+        } catch ( NoSuchPartException e ) {
+            // Ok
+        }
+
+        assertFalse( copied.isInitialized() );
+        byte[] bytes = IOUtils.slurpStream( copied.getMimeKnob().getEntireMessageBodyAsInputStream() );
+        assertEquals( "Target message expected to be uninitialized", 0, bytes.length );
+    }
+
     // - PRIVATE
 
     @Mock
@@ -499,17 +673,20 @@ public class ServerSetVariableAssertionTest {
     private TestAudit testAudit;
     private TimeSource timeSource;
     private ServerConfigStub configStub = new ServerConfigStub();
+    private StashManagerFactory stashManagerFactory = TestStashManagerFactory.getInstance();
 
-    private void createServerAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
+    private ServerSetVariableAssertion createServerAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
         fixture = new ServerSetVariableAssertion(assertion);
 
-        ApplicationContexts.inject(fixture, CollectionUtils.<String, Object>mapBuilder()
-                .put("dateParser", dateParser)
-                .put("auditFactory", testAudit.factory())
-                .put("timeSource", timeSource)
-                .put("config", configStub)
-                .unmodifiableMap()
+        ApplicationContexts.inject( fixture, CollectionUtils.<String, Object>mapBuilder()
+                        .put( "dateParser", dateParser )
+                        .put( "auditFactory", testAudit.factory() )
+                        .put( "timeSource", timeSource )
+                        .put( "config", configStub )
+                        .put( "stashManagerFactory", stashManagerFactory )
+                        .unmodifiableMap()
         );
-    }
 
+        return fixture;
+    }
 }

@@ -1,6 +1,9 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.message.Message;
@@ -11,12 +14,14 @@ import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ExpandVariablesTemplate;
 import com.l7tech.util.*;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,12 +42,18 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     @Inject
     private Config config;
 
+    @Inject
+    @Named( "stashManagerFactory" )
+    private StashManagerFactory stashManagerFactory;
+
     private final ExpandVariablesTemplate compiledTemplate;
+    private final String singleVariableName;
 
     public ServerSetVariableAssertion(SetVariableAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         varsUsed = assertion.getVariablesUsed();
         compiledTemplate = new ExpandVariablesTemplate(assertion.expression());
+        singleVariableName = Syntax.getSingleVariableReferenced( assertion.expression() );
         final String dateFormat = assertion.getDateFormat();
         if (dateFormat != null && !Syntax.isAnyVariableReferenced(dateFormat) && !DateTimeConfigUtils.isTimestampFormat(dateFormat)) {
             try {
@@ -57,21 +68,37 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Map<String,Object> vars = context.getVariableMap(varsUsed, getAudit());
-        final String strValue = compiledTemplate.process(vars, getAudit());
 
         final DataType dataType = assertion.getDataType();
         if (dataType == DataType.STRING) {
+            final String strValue = compiledTemplate.process(vars, getAudit());
             context.setVariable(assertion.getVariableToSet(), strValue);
         } else if (dataType == DataType.MESSAGE) {
             final ContentTypeHeader contentType = ContentTypeHeader.parseValue(assertion.getContentType());
             try {
-                final Message message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getVariableToSet()), false );
-                message.initialize(contentType, strValue.getBytes(contentType.getEncoding()));
+                final Message message = context.getOrCreateTargetMessage( new MessageTargetableSupport( assertion.getVariableToSet() ), false );
+
+                boolean initialized = false;
+                if ( singleVariableName != null ) {
+                    // If the expression is just one context variable reference,
+                    // we may be able to copy over a binary object without trying to convert it to a string first
+                    initialized = maybeInitializeFromBinaryObject( message, contentType, assertion.expression(), vars );
+                }
+
+                if ( !initialized ) {
+                    final String strValue = compiledTemplate.process( vars, getAudit() );
+                    message.initialize( contentType, strValue.getBytes( contentType.getEncoding() ) );
+                }
+
             } catch (NoSuchVariableException e) {
                 logAndAudit( CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, assertion.getVariableToSet() );
                 return AssertionStatus.FALSIFIED;
+            } catch ( NoSuchPartException e ) {
+                logAndAudit( AssertionMessages.NO_SUCH_PART, singleVariableName, e.getWhatWasMissing() );
+                return AssertionStatus.FALSIFIED;
             }
         } else if(dataType == DataType.DATE_TIME) {
+            final String strValue = compiledTemplate.process(vars, getAudit());
             try {
 
                 // Is the assertion configured to use <auto> e.g. gateway's current time?
@@ -147,6 +174,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
                 return AssertionStatus.FALSIFIED;
             }
         } else if (dataType == DataType.INTEGER){
+            final String strValue = compiledTemplate.process(vars, getAudit());
             try{
                 context.setVariable(assertion.getVariableToSet(), Integer.parseInt(strValue));
             } catch (NumberFormatException e){
@@ -158,5 +186,32 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private boolean maybeInitializeFromBinaryObject( Message message, ContentTypeHeader contentType, String expression, Map<String, Object> vars ) throws IOException, NoSuchPartException {
+        boolean initialized = false;
+        Object value = ExpandVariables.processSingleVariableAsObject( expression, vars, getAudit() );
+
+        // Some binary values can be copied over if they are the only thing in the expression and if the output
+        // format is of type Message.
+
+        // For now we will support copying of Message and PartInfo
+
+        if ( value instanceof Message ) {
+            Message messValue = (Message) value;
+            message.initialize( stashManagerFactory.createStashManager(), contentType, messValue.getMimeKnob().getEntireMessageBodyAsInputStream( false ) );
+            initialized = true;
+        } else if ( value instanceof PartInfo ) {
+            PartInfo partInfo = (PartInfo) value;
+            message.initialize( stashManagerFactory.createStashManager(), contentType, partInfo.getInputStream( false ) );
+            initialized = true;
+        }
+
+        if ( initialized ) {
+            // Force early copy, in case source message is closed
+            IOUtils.copyStream( message.getMimeKnob().getEntireMessageBodyAsInputStream(), new NullOutputStream() );
+        }
+
+        return initialized;
     }
 }
