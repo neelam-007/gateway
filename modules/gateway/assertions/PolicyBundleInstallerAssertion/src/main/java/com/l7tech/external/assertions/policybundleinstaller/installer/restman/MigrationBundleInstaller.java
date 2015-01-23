@@ -311,8 +311,11 @@ public class MigrationBundleInstaller extends BaseInstaller {
         final BundleInfo bundleInfo = context.getBundleInfo();
         final BundleItem migrationBundle = MIGRATION_BUNDLE;
         migrationBundle.setVersion(bundleInfo.getVersion());
-        final Document policyBundle = context.getBundleResolver().getBundleItem(bundleInfo.getId(), subFolder, migrationBundle, true);
-        install(policyBundle);
+        final Document migrationBundleDocument = context.getBundleResolver().getBundleItem(bundleInfo.getId(), subFolder, migrationBundle, true);
+        if (migrationBundleDocument == null) {
+            logger.info("No migration bundle found in folder: " + subFolder);
+        }
+        install(migrationBundleDocument);
     }
 
     @NotNull
@@ -326,7 +329,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
         final BundleInfo bundleInfo = context.getBundleInfo();
 
         if (bundle == null) {
-            logger.info("No policies to install for bundle " + bundleInfo);
+            logger.info("No entities to install for bundle " + bundleInfo);
         } else {
             logger.finest("Installing bundle.");
 

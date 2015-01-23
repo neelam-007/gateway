@@ -72,6 +72,22 @@ public class BundleInfo implements Serializable {
         return prerequisiteFolders;
     }
 
+    public Boolean hasActiveVersionMigrationBundleFile() {
+        return hasActiveVersionMigrationBundleFile;
+    }
+
+    public void setHasActiveVersionMigrationBundleFile(Boolean hasActiveVersionMigrationBundleFile) {
+        this.hasActiveVersionMigrationBundleFile = hasActiveVersionMigrationBundleFile;
+    }
+
+    public Boolean hasWsmanFile() {
+        return hasWsmanFile;
+    }
+
+    public void setHasWsmanFile(Boolean hasWsmanFile) {
+        this.hasWsmanFile = hasWsmanFile;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -85,6 +101,8 @@ public class BundleInfo implements Serializable {
         if (!Arrays.equals(prerequisiteFolders, that.prerequisiteFolders)) return false;
         if (!name.equals(that.name)) return false;
         if (!version.equals(that.version)) return false;
+        if (hasActiveVersionMigrationBundleFile != that.hasActiveVersionMigrationBundleFile) return false;
+        if (hasWsmanFile != that.hasWsmanFile) return false;
 
         return true;
     }
@@ -97,6 +115,8 @@ public class BundleInfo implements Serializable {
         result = 31 * result + description.hashCode();
         result = 31 * result + jdbcConnectionReferences.hashCode();
         result = 31 * result + Arrays.hashCode(prerequisiteFolders);
+        result = 31 * result + hasActiveVersionMigrationBundleFile.hashCode();
+        result = 31 * result + hasWsmanFile.hashCode();
         return result;
     }
 
@@ -109,6 +129,8 @@ public class BundleInfo implements Serializable {
                 ", description='" + description + '\'' +
                 ", jdbcConnectionReferences=" + jdbcConnectionReferences +
                 ", prerequisiteFolders=" + Arrays.toString(prerequisiteFolders) +
+                ", hasActiveVersionMigrationBundleFile=" + hasActiveVersionMigrationBundleFile +
+                ", hasWsmanFile=" + hasWsmanFile +
                 '}';
     }
 
@@ -146,4 +168,6 @@ public class BundleInfo implements Serializable {
     private final String description;
     private final Set<String> jdbcConnectionReferences = new HashSet<>();
     private final String[] prerequisiteFolders;
+    private Boolean hasActiveVersionMigrationBundleFile = false;   // see BundleUtils.hasActiveVersionMigrationBundleFile(...)
+    private Boolean hasWsmanFile = false;   // see BundleUtils.hasWsmanFile(...)
 }

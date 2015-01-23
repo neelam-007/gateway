@@ -20,9 +20,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.POLICY;
-import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.SERVICE;
 import static com.l7tech.server.policy.bundle.BundleResolver.*;
+import static com.l7tech.server.policy.bundle.BundleResolver.BundleItem.*;
 import static com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities.*;
 import static com.l7tech.server.policy.bundle.PolicyUtils.findJdbcReferences;
 
@@ -262,6 +261,42 @@ public class BundleUtils {
         }
 
         return returnList;
+    }
+
+    /**
+     * Check if the bundle has a MigrationBundle<version>.xml file matching it's version.  This includes prerequisite folder(s).
+     */
+    public static Boolean hasActiveVersionMigrationBundleFile(final BundleInfo bundleInfo, final BundleResolver bundleResolver) throws BundleResolverException, UnknownBundleException, InvalidBundleException {
+        bundleInfo.getPrerequisiteFolders();
+        final BundleItem migrationBundle = MIGRATION_BUNDLE;
+        migrationBundle.setVersion(bundleInfo.getVersion());
+
+        for (String prerequisiteFolder : bundleInfo.getPrerequisiteFolders()) {
+            if (bundleResolver.getBundleItem(bundleInfo.getId(), prerequisiteFolder, migrationBundle, true) != null) {
+                return true;
+            }
+        }
+
+        return bundleResolver.getBundleItem(bundleInfo.getId(), migrationBundle, true) != null;
+    }
+
+    /**
+     * Check if the bundle has any wsman file (i.e. any of Folder.xml or Policy.xml or EncapsulatedAssertion.xml or Service.xml or Assertion.xml).
+     * This includes Policy.xml or EncapsulatedAssertion.xml in prerequisite folder(s).
+     */
+    public static Boolean hasWsmanFile(final BundleInfo bundleInfo, final BundleResolver bundleResolver) throws BundleResolverException, UnknownBundleException, InvalidBundleException {
+        for (String prerequisiteFolder : bundleInfo.getPrerequisiteFolders()) {
+            if (bundleResolver.getBundleItem(bundleInfo.getId(), prerequisiteFolder, POLICY, true) != null ||
+                    bundleResolver.getBundleItem(bundleInfo.getId(), prerequisiteFolder, ENCAPSULATED_ASSERTION, true) != null) {
+                        return true;
+            }
+        }
+
+        return bundleResolver.getBundleItem(bundleInfo.getId(), FOLDER, true) != null ||
+                bundleResolver.getBundleItem(bundleInfo.getId(), POLICY, true) != null ||
+                bundleResolver.getBundleItem(bundleInfo.getId(), ENCAPSULATED_ASSERTION, true) != null ||
+                bundleResolver.getBundleItem(bundleInfo.getId(), SERVICE, true) != null ||
+                bundleResolver.getBundleItem(bundleInfo.getId(), ASSERTION, true) != null;
     }
 
     // - PRIVATE

@@ -19,6 +19,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -30,6 +31,7 @@ import java.io.Serializable;
 import java.util.*;
 
 import static com.l7tech.policy.bundle.PolicyBundleDryRunResult.DryRunItem.*;
+import static com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion.Action.*;
 import static org.apache.commons.lang.StringUtils.join;
 
 /**
@@ -98,7 +100,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     protected final PolicyBundleInstallerAdmin policyBundleInstallerAdmin;
 
     protected PolicyEnforcementContext context;
-    protected List<BundleInfo> availableComponents;
+    protected Map<String, BundleInfo> availableComponents;
 
     private boolean usesRequestHttpParams;
 
@@ -138,7 +140,11 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
         try {
             if (availableComponents == null) {
-                availableComponents = policyBundleInstallerAdmin.getAllComponents();
+                List<BundleInfo> allComponents = policyBundleInstallerAdmin.getAllComponents();
+                availableComponents = new HashMap<>(allComponents.size());
+                for (BundleInfo bundleInfo : policyBundleInstallerAdmin.getAllComponents()) {
+                    availableComponents.put(bundleInfo.getId(), bundleInfo);
+                }
             }
 
             Action action;
@@ -167,6 +173,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                     customActionCallback();
                     break;
             }
+        } catch (PolicyBundleInstallerServerAssertionException e) {
+            throw e;
         } catch (Exception e) {
             throw new PolicyAssertionException(assertion, ExceptionUtils.getMessage(e));
         }
@@ -244,8 +252,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      */
     private void list() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         StringBuilder componentIds = new StringBuilder();
-        for (BundleInfo bundleInfo : availableComponents) {
-            componentIds.append(bundleInfo.getId());
+        for (String bundleInfoId : availableComponents.keySet()) {
+            componentIds.append(bundleInfoId);
             componentIds.append(";");
         }
         writeResponse(componentIds.toString());
@@ -255,8 +263,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      * Get restman migration bundle xml by executing dry run install of given components.
      */
     private void restmanGet() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
-            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException {
-        final List<String> componentIds = getComponentIds();
+            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyAssertionException {
+        final List<String> componentIds = getComponentIds(restman_get);
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
@@ -269,7 +277,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                 if (componentIdToBundleXmlMap != null) {
                     final StringBuilder sb = new StringBuilder();
                     for (String componentId : componentIdToBundleXmlMap.keySet()) {
-                        sb.append(componentIdToBundleXmlMap.get(componentId));
+                        sb.append(componentIdToBundleXmlMap.get(componentId)).append(System.lineSeparator());
                     }
 
                     writeResponse(sb.toString());
@@ -304,8 +312,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      * Execute wsman dry run install for given components.
      */
     private void wsmanDryRun() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
-            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyBundleDryRunResult.UnknownBundleIdException {
-        final List<String> componentIds = getComponentIds();
+            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException,
+            PolicyBundleDryRunResult.UnknownBundleIdException, PolicyBundleInstallerServerAssertionException {
+        final List<String> componentIds = getComponentIds(wsman_dry_run);
 
         // call policyBundleInstallerAdmin.dryRunInstall(...)
         AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
@@ -339,8 +348,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      * Execute wsman install for given components.
      */
     private void wsmanInstall() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
-            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyBundleDryRunResult.UnknownBundleIdException {
-        final List<String> componentIds = getComponentIds();
+            NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException,
+            PolicyBundleDryRunResult.UnknownBundleIdException, PolicyBundleInstallerServerAssertionException {
+        final List<String> componentIds = getComponentIds(wsman_install);
 
         // call policyBundleInstallerAdmin.install(...)
         AsyncAdminMethods.JobId<ArrayList> jobId = callAdminInstall(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
@@ -354,20 +364,43 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         });
     }
 
-    private List<String> getComponentIds() throws NoSuchVariableException {
+    /**
+     * Return component IDs applicable for that action.  If action is null, return all component IDs for the installer.
+     */
+    private List<String> getComponentIds(@NotNull Action action) throws NoSuchVariableException, PolicyBundleInstallerServerAssertionException {
         final String componentIdsStr = getContextVariable(CONTEXT_VARIABLE_PREFIX + "component_ids");
         List<String> componentIds;
 
         if ("all".equalsIgnoreCase(componentIdsStr)) {
             componentIds = new ArrayList<>(availableComponents.size());
-            for (BundleInfo bundleInfo : availableComponents) {
-                componentIds.add(bundleInfo.getId());
+            for (BundleInfo bundleInfo : availableComponents.values()) {
+                addComponentId(componentIds, action, bundleInfo);
             }
         } else {
-            componentIds = Arrays.asList(componentIdsStr.split(";"));
+            List<String> inputIds = Arrays.asList(componentIdsStr.split(";"));
+            componentIds = new ArrayList<>(inputIds.size());
+            for (String inputId : inputIds) {
+                BundleInfo bundleInfo = availableComponents.get(inputId);
+                if (bundleInfo != null) {
+                    addComponentId(componentIds, action, bundleInfo);
+                }
+            }
+        }
+
+        if (componentIds.size() <= 0) {
+            throw new PolicyBundleInstallerServerAssertionException(assertion, "No matching component ID found for this installer.", HttpStatus.SC_NOT_FOUND);
         }
 
         return componentIds;
+    }
+
+    private void addComponentId(@NotNull List<String> componentIds, @NotNull Action action, @NotNull BundleInfo bundleInfo) throws PolicyBundleInstallerServerAssertionException {
+        if ((bundleInfo.hasActiveVersionMigrationBundleFile() && action == restman_get) ||
+                (bundleInfo.hasWsmanFile() && (action == wsman_dry_run || action == wsman_install))) {
+            componentIds.add(bundleInfo.getId());
+        } else {
+            throw new PolicyBundleInstallerServerAssertionException(assertion, "Component ID: " +  bundleInfo.getId() + " not compatible with action: " + action, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     private String getVersionModifier() {

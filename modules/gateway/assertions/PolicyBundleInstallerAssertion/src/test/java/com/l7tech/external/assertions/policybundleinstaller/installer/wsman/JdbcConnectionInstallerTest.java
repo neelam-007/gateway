@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstalle
 import com.l7tech.external.assertions.policybundleinstaller.PolicyBundleInstallerTestBase;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.bundle.BundleInfo;
 import com.l7tech.server.event.bundle.InstallPolicyBundleEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.bundle.BundleResolver;
@@ -47,9 +48,10 @@ public class JdbcConnectionInstallerTest extends PolicyBundleInstallerTestBase {
         final Map<String, Boolean> servicesFound = new HashMap<>();
         final Map<String, Set<String>> jdbcPerService = new HashMap<>();
 
+        final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
+        bundleInfo.setHasWsmanFile(true);
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
-                getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME),
-                null, null, bundleResolver, true);
+                bundleInfo, null, null, bundleResolver, true);
         final InstallPolicyBundleEvent installEvent = new InstallPolicyBundleEvent(this, context);
 
         final PolicyBundleInstaller bundleInstaller = new PolicyBundleInstaller(new GatewayManagementInvoker() {

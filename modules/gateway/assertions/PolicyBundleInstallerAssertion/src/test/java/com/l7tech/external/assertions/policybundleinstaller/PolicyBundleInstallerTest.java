@@ -147,6 +147,7 @@ public class PolicyBundleInstallerTest extends PolicyBundleInstallerTestBase {
     public void testDryInstallationWithConflicts() throws Exception {
         final BundleInfo bundleInfo = getBundleInfo(OAUTH_TEST_BUNDLE_BASE_NAME);
         bundleInfo.addJdbcReference("OAuth");
+        bundleInfo.setHasWsmanFile(true);
 
         final PolicyBundleInstallerContext context = new PolicyBundleInstallerContext(
                 bundleInfo, null, null, getBundleResolver(OAUTH_TEST_BUNDLE_BASE_NAME), true);

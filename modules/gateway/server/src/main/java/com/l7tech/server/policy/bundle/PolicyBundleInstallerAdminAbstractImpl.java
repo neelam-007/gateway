@@ -152,8 +152,10 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
     private BundleResolver newBundleResolver(@NotNull final List<Pair<BundleInfo, String>> bundleInfosFromJar, @NotNull final Class callingClass) throws BundleResolverException, UnknownBundleException, InvalidBundleException {
         BundleResolver bundleResolver = new BundleResolverImpl(bundleInfosFromJar, callingClass);
         final List<BundleInfo> bundleInfoResultList = bundleResolver.getResultList();
-        for (BundleInfo bundleInfoResult : bundleInfoResultList) {
-            BundleUtils.findReferences(bundleInfoResult, bundleResolver);
+        for (BundleInfo bundleInfo : bundleInfoResultList) {
+            BundleUtils.findReferences(bundleInfo, bundleResolver);
+            bundleInfo.setHasActiveVersionMigrationBundleFile(BundleUtils.hasActiveVersionMigrationBundleFile(bundleInfo, bundleResolver));
+            bundleInfo.setHasWsmanFile(BundleUtils.hasWsmanFile(bundleInfo, bundleResolver));
         }
         return bundleResolver;
     }
@@ -298,7 +300,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
 
         final HashMap<String, Map<PolicyBundleDryRunResult.DryRunItem, List<String>>> bundleToConflicts = new HashMap<>();
         Map<String, List<MigrationDryRunResult>> migrationResultsMap = new HashMap<>();
-        Map<String, String> componentIdToBundleXmlMap = null;
+        Map<String, String> componentIdToBundleXmlMap = new HashMap<>();
         final Set<String> processedComponents = new HashSet<>();
 
         outer:
@@ -419,7 +421,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                     }
                     processedComponents.add(bundleId);
 
-                    componentIdToBundleXmlMap = dryRunEvent.getComponentIdToBundleXmlMap();
+                    componentIdToBundleXmlMap.putAll(dryRunEvent.getComponentIdToBundleXmlMap());
                 }
             }
         }

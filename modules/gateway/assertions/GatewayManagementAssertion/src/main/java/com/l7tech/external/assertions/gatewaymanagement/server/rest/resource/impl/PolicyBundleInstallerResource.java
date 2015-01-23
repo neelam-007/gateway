@@ -24,10 +24,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerServerAssertionException;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
@@ -258,6 +260,23 @@ public class PolicyBundleInstallerResource {
         try {
             context = getContext();
             installerServerAssertion.checkRequest(context);
+        } catch (PolicyBundleInstallerServerAssertionException e) {
+            Response.Status responseStatus;
+            switch (e.getHttpStatusCode()) {
+                case HttpStatus.SC_BAD_REQUEST:
+                    responseStatus = Response.Status.BAD_REQUEST;
+                    break;
+                case HttpStatus.SC_NOT_FOUND:
+                    responseStatus = Response.Status.NOT_FOUND;
+                    break;
+                case HttpStatus.SC_CONFLICT:
+                    responseStatus = Response.Status.CONFLICT;
+                    break;
+                default:
+                    responseStatus = Response.Status.INTERNAL_SERVER_ERROR;
+                    break;
+            }
+            return Response.status(responseStatus).entity(e.getMessage()).build();
         } catch (IOException | PolicyAssertionException e) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException("Installer error", ExceptionUtils.getDebugException(e));
         }

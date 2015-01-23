@@ -11,11 +11,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
 import com.l7tech.server.policy.bundle.PolicyBundleInstallerAbstractServerAssertion;
+import com.l7tech.server.policy.bundle.PolicyBundleInstallerServerAssertionException;
+import org.apache.http.HttpStatus;
 import org.springframework.context.ApplicationContext;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.text.MessageFormat;
 
@@ -69,7 +73,17 @@ public class ServerPolicyBundleInstallerAssertion extends AbstractServerAssertio
             }
         }
 
-        return installerServerAssertion.checkRequest(context);
+        try {
+            return installerServerAssertion.checkRequest(context);
+        } catch (PolicyBundleInstallerServerAssertionException e) {
+            switch (e.getHttpStatusCode()) {
+                case HttpStatus.SC_BAD_REQUEST:
+                    throw new AssertionStatusException(AssertionStatus.BAD_REQUEST, e.getMessage());
+                case HttpStatus.SC_NOT_FOUND:
+                    throw new AssertionStatusException(AssertionStatus.SERVICE_NOT_FOUND, e.getMessage());
+                default:
+                    throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage());
+            }
+        }
     }
-
 }

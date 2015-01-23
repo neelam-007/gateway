@@ -119,6 +119,9 @@ public class EncapsulatedAssertionInstaller extends WsmanInstaller {
     public void install(@NotNull final String subFolder, @NotNull Map<String, String> oldToNewPolicyId)
             throws InterruptedException, BundleResolver.UnknownBundleException, BundleResolver.BundleResolverException, BundleResolver.InvalidBundleException, PolicyBundleInstaller.InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, GatewayManagementDocumentUtilities.AccessDeniedManagementResponse {
         final Document encapsulatedAssertionBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, ENCAPSULATED_ASSERTION, true);
+        if (encapsulatedAssertionBundle == null) {
+            logger.info("No encapsulated assertion item found in folder: " + subFolder);
+        }
         install(encapsulatedAssertionBundle, oldToNewPolicyId);
     }
 

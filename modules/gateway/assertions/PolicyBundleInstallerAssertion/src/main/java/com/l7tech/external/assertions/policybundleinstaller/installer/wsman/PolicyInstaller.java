@@ -127,6 +127,9 @@ public class PolicyInstaller extends WsmanInstaller {
                         @NotNull final Map<String, String> oldToNewPolicyIds,
                         @NotNull final Map<String, String> oldToNewPolicyGuids) throws InterruptedException, UnknownBundleException, BundleResolverException, InvalidBundleException, InstallationException, GatewayManagementDocumentUtilities.UnexpectedManagementResponse, AccessDeniedManagementResponse {
         final Document policyBundle = context.getBundleResolver().getBundleItem(context.getBundleInfo().getId(), subFolder, POLICY, true);
+        if (policyBundle == null) {
+            logger.info("No policy item found in folder: " + subFolder);
+        }
         install(policyBundle, oldToNewFolderIds, oldToNewPolicyIds, oldToNewPolicyGuids);
     }
 

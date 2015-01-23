@@ -261,7 +261,7 @@ public abstract class BundleInstallerDialog extends JDialog {
         return adminInstall(componentIds, folderGoid, bundleMappings, installationPrefix, null);
     }
 
-    private JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
+    protected JobId<ArrayList> adminInstall(@NotNull Collection<String> componentIds,
                                           @NotNull Goid folderGoid,
                                           @NotNull Map<String, BundleMapping> bundleMappings,
                                           @Nullable String installationPrefix,
