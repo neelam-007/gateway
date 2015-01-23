@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ManagedTimer;
@@ -24,6 +25,8 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,33 +38,6 @@ import java.util.logging.Logger;
 public class CassandraConnectionManagerImpl implements CassandraConnectionManager {
     private static final Logger logger = Logger.getLogger(CassandraConnectionManagerImpl.class.getName());
 
-    public static final String HOST_DISTANCE = "hostDistance";
-    public static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
-    public static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
-    public static final String MAX_SIMUL_REQ_PER_HOST = "maxSimultaneousRequestsPerHostThreshold";
-
-    public static final int CORE_CONNECTION_PER_HOST_DEF = 1;
-    public static final int CORE_CONNECTION_PER_HOST_LOCAL_DEF = 2;
-    public static final int MAX_CONNECTION_PER_HOST_DEF = 2;
-    public static final int MAX_CONNECTION_PER_HOST_LOCAL_DEF = 8;
-    public static final int MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF = 8192;
-    public static final int MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF = 256;
-
-    public static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
-    public static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
-    public static final String KEEP_ALIVE = "keepAlive";
-    public static final String RECEIVE_BUFFER_SIZE = "receiveBufferSize";
-    public static final String REUSE_ADDRESS = "reuseAddress";
-    public static final String SEND_BUFFER_SIZE = "sendBufferSize";
-    public static final String SO_LINGER = "soLinger";
-    public static final String TCP_NO_DELAY = "tcpNoDelay";
-
-    private static final long DEFAULT_CONNECTION_MAX_AGE = 0L;
-    private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis(30);
-    private static final int DEFAULT_CONNECTION_CACHE_SIZE = 20;
-    public static final int DEFAULT_FETCH_SIZE = 5000;
-    public static final String QUERY_FETCH_SIZE = "fetchSize";
-
     private final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections = new ConcurrentHashMap<>();
     private final CassandraConnectionEntityManager cassandraEntityManager;
     private final Config config;
@@ -72,6 +48,8 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final Timer timer;
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
     private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
+
+    protected final Lock lock = new ReentrantLock();
 
 
     static {
@@ -113,40 +91,43 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         this.trustManager = trustManager;
         this.secureRandom = secureRandom;
         this.timer = new ManagedTimer("CassandraConnectionManager-CacheCleanup");
-        timer.schedule(new CacheCleanupTask(cassandraConnections), 30797, CACHE_CLEAN_INTERVAL);
+        timer.schedule(new CacheCleanupTask(cassandraConnections, this), 30797, CACHE_CLEAN_INTERVAL);
     }
 
     @Override
     public CassandraConnectionHolder getConnection(String name) {
+        lock.lock();
+        try {
+            CassandraConnectionHolder connectionHolder = cassandraConnections.get(name);
+            if (connectionHolder == null) {
+                CassandraConnection entity = null;
+                //first find connection in the data source
+                try {
+                    entity = cassandraEntityManager.getCassandraConnectionEntity(name);
+                } catch (FindException e) {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Unable to find Cassandra connection name:" + name}, ExceptionUtils.getDebugException(e));
+                    return null;
+                }
 
-        CassandraConnectionHolder connectionHolder = cassandraConnections.get(name);
-        if(connectionHolder == null) {
-            CassandraConnection entity = null;
-            //first find connection in the data source
-            try {
-                entity = cassandraEntityManager.getCassandraConnectionEntity(name);
-            } catch (FindException e) {
-                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Unable to find Cassandra connection name:" + name}, ExceptionUtils.getDebugException(e) );
-                return null;
-            }
+                if (entity == null) {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Cassandra connection does not exist."});
+                    return null;
+                }
 
-            if (entity == null) {
-                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{name, "Cassandra connection does not exist."});
-                return null;
-            }
-
-            //create a holder and add it to the list of connections
-            if(entity.isEnabled()) {
-                connectionHolder = createConnection(entity);
-                if(connectionHolder != null) {
-                    cassandraConnections.put(name, connectionHolder);
+                //create a holder and add it to the list of connections
+                if (entity.isEnabled()) {
+                    connectionHolder = createConnection(entity);
+                    if (connectionHolder != null) {
+                        cassandraConnections.put(name, connectionHolder);
+                    }
+                } else {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
                 }
             }
-            else {
-                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
-            }
+            return connectionHolder;
+        }finally {
+            lock.unlock();
         }
-        return connectionHolder;
     }
 
     @Override
@@ -161,55 +142,90 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     }
 
     @Override
+    public void  removeConnection(CassandraConnection cassandraConnectionEntity) {
+        lock.lock();
+        try {
+            CassandraConnectionHolder connection = cassandraConnections.get(cassandraConnectionEntity.getName());
+            if (closeConnection(connection)) {
+                cassandraConnections.remove(cassandraConnectionEntity.getName());
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed Cassandra connection " + cassandraConnectionEntity.getName());
+            } else {
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to remove Cassandra connection " + cassandraConnectionEntity.getName());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
     public void addConnection(CassandraConnection cassandraConnectionEntity) {
         getConnection(cassandraConnectionEntity.getName());
     }
 
-    @Override
-    public void removeConnection(CassandraConnection cassandraConnectionEntity) {
-        CassandraConnectionHolder connection = cassandraConnections.remove(cassandraConnectionEntity.getName());
-        closeConnection(connection);
-        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed Cassandra connection " + cassandraConnectionEntity.getName());
-    }
 
     @Override
     public void removeConnection(Goid goid) {
-        CassandraConnection entity = null;
+        lock.lock();
         try {
-            entity = cassandraEntityManager.findByPrimaryKey(goid);
-            removeConnection(entity);
-        } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.CASSANDRA_CANNOT_REMOVE_CONNECTION, new String[]{"Unable to find appropriate connection in the data source."}, ExceptionUtils.getDebugException(e) );
-        }
-        //this should never happen
-        if(entity == null) {
-            Iterator<CassandraConnectionHolder> iter = cassandraConnections.values().iterator();
-            while(iter.hasNext()) {
-                CassandraConnectionHolder holder = iter.next();
-                if(holder.getCassandraConnectionEntity().getGoid().equals(goid)){
-                    closeConnection(holder);
-                    iter.remove();
+            CassandraConnection entity = null;
+            try {
+                entity = cassandraEntityManager.findByPrimaryKey(goid);
+                removeConnection(entity);
+            } catch (FindException e) {
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CANNOT_REMOVE_CONNECTION, new String[]{"Unable to find appropriate connection in the data source."}, ExceptionUtils.getDebugException(e));
+            }
+            //this should never happen
+            if (entity == null) {
+                Iterator<CassandraConnectionHolder> iter = cassandraConnections.values().iterator();
+                while (iter.hasNext()) {
+                    CassandraConnectionHolder holder = iter.next();
+                    if (holder.getCassandraConnectionEntity().getGoid().equals(goid)) {
+                        closeConnection(holder);
+                        iter.remove();
+                    }
                 }
             }
+        } finally {
+            lock.unlock();
         }
 
     }
 
     @Override
-    public void updateConnection(CassandraConnection cassandraConnectionEntity)      {
-        // Search through cached connections by goid because the name field could have been updated.
-        CassandraConnectionHolder cachedConnection = getCachedConnection(cassandraConnectionEntity.getGoid());
-        // If cache exists, remove it and add back an updated one.
-        if (cachedConnection != null) {
-            //remove existing connection
-            removeConnection(cachedConnection.getCassandraConnectionEntity());
-            //create new connection
-            CassandraConnectionHolder newConnectionHolder = createConnection(cassandraConnectionEntity);
-            if (newConnectionHolder != null) {
-                if (cassandraConnectionEntity.isEnabled()) {
-                    cassandraConnections.put(cassandraConnectionEntity.getName(), newConnectionHolder);
+    public void updateConnection(CassandraConnection cassandraConnectionEntity) throws UpdateException {
+        lock.lock();
+        try {
+            // Search through cached connections by goid because the name field could have been updated.
+            boolean createNewConnection = false;
+            CassandraConnectionHolder cachedConnection = null;
+            Iterator<Map.Entry<String,CassandraConnectionHolder>> iter = cassandraConnections.entrySet().iterator();
+            while(iter.hasNext()) {
+                Map.Entry<String, CassandraConnectionHolder> holder = iter.next();
+                if (holder.getValue().getCassandraConnectionEntity().getGoid().equals(cassandraConnectionEntity.getGoid())) {
+                    cachedConnection  = holder.getValue();
+                    // If cache exists, remove it and add back an updated one.
+                    if (closeConnection(cachedConnection)) {
+                        createNewConnection  =  true;
+                        iter.remove();
+                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed Cassandra connection " + cassandraConnectionEntity.getName());
+                        break;
+                    } else {
+                        throw new UpdateException("Unable to close Cassandra connection " + cassandraConnectionEntity.getName());
+                    }
                 }
             }
+            if(createNewConnection) {
+                //create new connection
+                CassandraConnectionHolder newConnectionHolder = createConnection(cassandraConnectionEntity);
+                if (newConnectionHolder != null) {
+                    if (cassandraConnectionEntity.isEnabled()) {
+                        cassandraConnections.put(cassandraConnectionEntity.getName(), newConnectionHolder);
+                    }
+                }
+            }
+
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -489,13 +505,22 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         }
     }
 
-    private void closeConnection(CassandraConnectionHolder connection) {
+    public synchronized boolean closeConnection(CassandraConnectionHolder connection) {
         if(connection != null) {
             Session session = connection.getSession();
-            if(session != null) session.close();
+            if(session != null )  {
+                boolean querying = false;
+                for(Host host : session.getState().getConnectedHosts()) {
+                    querying |= session.getState().getInFlightQueries(host) > 0;
+                }
+                if(querying) return false;
+
+                session.close();
+            }
             Cluster cluster = connection.getCluster();
             if(cluster != null) cluster.close();
         }
+        return true;
     }
 
     // For unit testing
@@ -511,53 +536,65 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
      */
     private static final class CacheCleanupTask extends TimerTask {
         private final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections;
+        private final CassandraConnectionManagerImpl connectionManager;
 
-        private CacheCleanupTask(final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections) {
+        private CacheCleanupTask(final ConcurrentHashMap<String, CassandraConnectionHolder> cassandraConnections, CassandraConnectionManagerImpl connectionManager) {
             this.cassandraConnections = cassandraConnections;
+            this.connectionManager = connectionManager;
         }
 
         @Override
         public void run() {
+
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "CacheCleanUp task starting...");
+            connectionManager.lock.lock();
+            try {
+                final long maximumAge = ConfigFactory.getTimeUnitProperty(MAX_CONNECTION_CACHE_AGE, DEFAULT_CONNECTION_MAX_AGE);
+                final long maximumIdleTime = ConfigFactory.getTimeUnitProperty(MAX_CONNECTION_CACHE_IDLE_TIME, DEFAULT_CONNECTION_MAX_IDLE);
+                final int maximumSize = ConfigFactory.getIntProperty(MAX_CONNECTION_CACHE_SIZE, DEFAULT_CONNECTION_CACHE_SIZE);
 
-            final long maximumAge = ConfigFactory.getTimeUnitProperty("cassandra.maxConnectionCacheAge", DEFAULT_CONNECTION_MAX_AGE);
-            final long maximumIdleTime = ConfigFactory.getTimeUnitProperty("cassandra.maxConnectionCacheIdleTime", DEFAULT_CONNECTION_MAX_IDLE);
-            final int maximumSize = ConfigFactory.getIntProperty("cassandra.maxConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE);
-
-            final long timeNow = System.currentTimeMillis();
-            final int overSize = cassandraConnections.size() - maximumSize;
-            final Set<Map.Entry<String, CassandraConnectionHolder>> evictionCandidates = new TreeSet<>(
-                    new Comparator<Map.Entry<String, CassandraConnectionHolder>>() {
-                        @Override
-                        public int compare(final Map.Entry<String, CassandraConnectionHolder> e1,
-                                           final Map.Entry<String, CassandraConnectionHolder> e2) {
-                            return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
+                final long timeNow = System.currentTimeMillis();
+                final int overSize = cassandraConnections.size() - maximumSize;
+                final Set<Map.Entry<String, CassandraConnectionHolder>> evictionCandidates = new TreeSet<>(
+                        new Comparator<Map.Entry<String, CassandraConnectionHolder>>() {
+                            @Override
+                            public int compare(final Map.Entry<String, CassandraConnectionHolder> e1,
+                                               final Map.Entry<String, CassandraConnectionHolder> e2) {
+                                return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
+                            }
                         }
+                );
+
+                for (final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry : cassandraConnections.entrySet()) {
+                    if (maximumAge > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getCreatedTime()) > maximumAge) {
+                        closeAndRemoveCachedConnection(cassandraConnectionHolderEntry);
+                    } else if (maximumIdleTime > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getLastAccessTime().get()) > maximumIdleTime) {
+                        closeAndRemoveCachedConnection(cassandraConnectionHolderEntry);
+                    } else if (overSize > 0) {
+                        evictionCandidates.add(cassandraConnectionHolderEntry);
                     }
-            );
-
-            for (final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry : cassandraConnections.entrySet()) {
-                if (maximumAge > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getCreatedTime()) > maximumAge) {
-                    cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
-                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
-                } else if (maximumIdleTime > 0 && (timeNow - cassandraConnectionHolderEntry.getValue().getLastAccessTime().get()) > maximumIdleTime) {
-                    cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
-                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
-                } else if (overSize > 0) {
-                    evictionCandidates.add(cassandraConnectionHolderEntry);
                 }
-            }
 
-            // evict oldest first to reduce cache size
-            final Iterator<Map.Entry<String, CassandraConnectionHolder>> evictionIterator = evictionCandidates.iterator();
-            for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
-
-                final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry = evictionIterator.next();
-                if(null != cassandraConnections.remove(cassandraConnectionHolderEntry.getKey())) {
-                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
+                // evict oldest first to reduce cache size
+                final Iterator<Map.Entry<String, CassandraConnectionHolder>> evictionIterator = evictionCandidates.iterator();
+                for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
+                    final Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry = evictionIterator.next();
+                    closeAndRemoveCachedConnection(cassandraConnectionHolderEntry);
                 }
+            }  finally {
+                connectionManager.lock.unlock();
             }
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "CacheCleanUp task finished.");
+        }
+
+        private void closeAndRemoveCachedConnection(Map.Entry<String, CassandraConnectionHolder> cassandraConnectionHolderEntry) {
+            if(connectionManager.closeConnection(cassandraConnectionHolderEntry.getValue())) {
+                 cassandraConnections.remove(cassandraConnectionHolderEntry.getKey());
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Removed connection " + cassandraConnectionHolderEntry.getKey());
+            }
+            else {
+                auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to remove connection " + cassandraConnectionHolderEntry.getKey());
+            }
         }
     }
 }

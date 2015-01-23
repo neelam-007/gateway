@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.cassandra.server;
 
 import com.ca.datasources.cassandra.CassandraQueryManager;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
-import com.l7tech.message.*;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
@@ -63,99 +62,107 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-        CassandraConnectionHolder cassandraConnection = connectionManager.getConnection(assertion.getConnectionName());
-
-        if ((cassandraConnection == null) || (cassandraConnection.getSession() == null)){
-            logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Error retrieving Cassandra Connection, Cassandra Session is null");
-            return AssertionStatus.FAILED;
-        }
-
-        //extract parameters from the query only the first time it should be used afterwords until someone changes the assertion
-        final Pair<String, List<Object>> pair;
-        if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
-            pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, Collections.EMPTY_LIST, getAudit());
-        } else {
-            pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(),context, variablesUsed, false, getAudit());
-        }
-
-        final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
-        final String queryTimeoutString = StringUtils.isNotBlank(assertion.getQueryTimeout()) ? assertion.getQueryTimeout() : "0";
-        final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
-        if (!ValidationUtils.isValidLong(resolvedQueryTimeout, false, 0, Long.MAX_VALUE)) {
-            logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
-            return AssertionStatus.FAILED;
-        }
-        final long queryTimeout = Long.parseLong(resolvedQueryTimeout);
-
-        final String plainQuery = pair.left;
-        final  List<Object> preparedStmtParams = pair.right;
-        boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
-        Map<String, PreparedStatement> stmtMap = cassandraConnection.getPreparedStatementMap();
-        PreparedStatement preparedStatement = stmtMap.get(plainQuery);
-
-        int resultSize = 0;
+        CassandraConnectionHolder cassandraConnection = null;
         try {
-            Session session = cassandraConnection.getSession(); //get the session
+            cassandraConnection = connectionManager.getConnection(assertion.getConnectionName());
 
-            if(preparedStatement == null ) {
-                preparedStatement = cassandraQueryManager.buildPreparedStatement(session, plainQuery);
-                if(preparedStatement == null) {
-                    logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "PreparedStatement is null.");
-                    return AssertionStatus.FAILED;
-                }
-                stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
+            if ((cassandraConnection == null) || (cassandraConnection.getSession() == null)) {
+                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Error retrieving Cassandra Connection, Cassandra Session is null");
+                return AssertionStatus.FAILED;
             }
 
+            //extract parameters from the query only the first time it should be used afterwords until someone changes the assertion
+            final Pair<String, List<Object>> pair;
+            if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
+                pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, Collections.EMPTY_LIST, getAudit());
+            } else {
+                pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, getAudit());
+            }
 
-            if ( ! validateParameters(preparedStmtParams) ) {
-                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED,"Context Variable Type is not convertible to a Cassandra Data Type");
+            final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
+            final String queryTimeoutString = StringUtils.isNotBlank(assertion.getQueryTimeout()) ? assertion.getQueryTimeout() : "0";
+            final String resolvedQueryTimeout = ExpandVariables.process(queryTimeoutString, variableMap, getAudit());
+            if (!ValidationUtils.isValidLong(resolvedQueryTimeout, false, 0, Long.MAX_VALUE)) {
+                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Invalid resolved value for query timeout: " + resolvedQueryTimeout);
+                return AssertionStatus.FAILED;
+            }
+            final long queryTimeout = Long.parseLong(resolvedQueryTimeout);
+
+            final String plainQuery = pair.left;
+            final List<Object> preparedStmtParams = pair.right;
+            boolean isSelectQuery = plainQuery.toLowerCase().startsWith("select");
+            Map<String, PreparedStatement> stmtMap = cassandraConnection.getPreparedStatementMap();
+            PreparedStatement preparedStatement = stmtMap.get(plainQuery);
+
+            int resultSize = 0;
+            try {
+                Session session = cassandraConnection.getSession(); //get the session
+
+                if (preparedStatement == null) {
+                    preparedStatement = cassandraQueryManager.buildPreparedStatement(session, plainQuery);
+                    if (preparedStatement == null) {
+                        logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "PreparedStatement is null.");
+                        return AssertionStatus.FAILED;
+                    }
+                    stmtMap.put(plainQuery, preparedStatement);//add prepared statement to the connection holder
+                }
+
+
+                if (!validateParameters(preparedStmtParams)) {
+                    logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, "Context Variable Type is not convertible to a Cassandra Data Type");
+                    return AssertionStatus.FALSIFIED;
+                }
+                BoundStatement boundStatement = cassandraQueryManager.buildBoundStatement(preparedStatement, preparedStmtParams);
+                boundStatement.setFetchSize(assertion.getFetchSize());
+                Map<String, List<Object>> resultMap = new TreeMap<>();
+
+                final long maxBlobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, DEFAULT_BLOB_MAX_SIZE);
+                resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), maxBlobSize, queryTimeout);
+
+                //Get results map into context variable
+                String prefix = assertion.getPrefix();
+                Map<String, String> namingMap = assertion.getNamingMap();
+                //map results to the appropriate context variables
+                for (String key : resultMap.keySet()) {
+                    String columnName = namingMap.containsKey(key.toLowerCase()) ? namingMap.get(key) : key;
+                    if (resultMap.get(key) != null) {
+                        context.setVariable(prefix + "." + columnName, resultMap.get(key).toArray());
+                    }
+
+                }
+                if (assertion.isGenerateXmlResult()) {
+                    final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
+                    JdbcUtil.buildXmlResultString(resultMap, xmlResult);
+                    xmlResult.append(XML_RESULT_TAG_CLOSE);
+                    context.setVariable(prefix + CassandraQueryAssertion.VARIABLE_XML_RESULT, xmlResult.toString());
+                }
+                //set query result count
+                context.setVariable(prefix + CassandraQueryAssertion.QUERYRESULT_COUNT, resultSize);
+
+            } catch (NoHostAvailableException nhe) {
+                for (Map.Entry<InetSocketAddress, Throwable> entry : nhe.getErrors().entrySet()) {
+                    InetSocketAddress inetAddress = entry.getKey();
+                    Throwable throwable = entry.getValue();
+                    logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[]{cassandraConnection.getCassandraConnectionEntity().getName(), "Host not available. Host Address: " + inetAddress.getAddress()}, ExceptionUtils.getDebugException(throwable));
+                }
+                return AssertionStatus.FAILED;
+            } catch (Exception e) {
+                logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
+                return AssertionStatus.FAILED;
+            }
+
+            if (isSelectQuery && resultSize < 1 && assertion.isFailIfNoResults()) {
+                logAndAudit(AssertionMessages.CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED, cassandraConnection.getCassandraConnectionEntity().getName());
                 return AssertionStatus.FALSIFIED;
             }
-            BoundStatement boundStatement = cassandraQueryManager.buildBoundStatement(preparedStatement, preparedStmtParams);
-            boundStatement.setFetchSize(assertion.getFetchSize());
-            Map<String, List<Object>> resultMap =  new TreeMap<>();
 
-            final long maxBlobSize = config.getLongProperty(ServerConfigParams.PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT, DEFAULT_BLOB_MAX_SIZE);
-            resultSize = cassandraQueryManager.executeStatement(session, boundStatement, resultMap, assertion.getMaxRecords(), maxBlobSize, queryTimeout);
-
-            //Get results map into context variable
-            String prefix = assertion.getPrefix();
-            Map<String, String> namingMap = assertion.getNamingMap();
-            //map results to the appropriate context variables
-            for(String key: resultMap.keySet()){
-                String columnName = namingMap.containsKey(key.toLowerCase()) ? namingMap.get(key) : key;
-                if (resultMap.get(key) != null) {
-                    context.setVariable(prefix + "." + columnName, resultMap.get(key).toArray());
-                }
-
-            }
-            if (assertion.isGenerateXmlResult()) {
-                final StringBuilder xmlResult = new StringBuilder(XML_RESULT_TAG_OPEN);
-                JdbcUtil.buildXmlResultString(resultMap, xmlResult);
-                xmlResult.append(XML_RESULT_TAG_CLOSE);
-                context.setVariable(prefix + CassandraQueryAssertion.VARIABLE_XML_RESULT, xmlResult.toString());
-            }
-            //set query result count
-            context.setVariable(prefix + CassandraQueryAssertion.QUERYRESULT_COUNT, resultSize);
-
-        }  catch (NoHostAvailableException nhe) {
-            for (Map.Entry<InetSocketAddress, Throwable> entry: nhe.getErrors().entrySet()) {
-                InetSocketAddress inetAddress = entry.getKey();
-                Throwable throwable = entry.getValue();
-                logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_CANNOT_CONNECT, new String[] {cassandraConnection.getCassandraConnectionEntity().getName(),  "Host not available. Host Address: " + inetAddress.getAddress()}, ExceptionUtils.getDebugException(throwable));
-            }
-            return AssertionStatus.FAILED;
-        } catch (Exception e) {
-            logAndAudit(AssertionMessages.CASSANDRA_QUERYING_FAILURE_ASSERTION_FAILED, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
-            return AssertionStatus.FAILED;
+            return AssertionStatus.NONE;
+        } finally {
+          int maxConnectionCacheSize = config.getIntProperty(CassandraConnectionManager.MAX_CONNECTION_CACHE_SIZE, CassandraConnectionManager.DEFAULT_CONNECTION_CACHE_SIZE);
+          if(cassandraConnection != null && maxConnectionCacheSize == 0) {
+              connectionManager.removeConnection(cassandraConnection.getCassandraConnectionEntity());
+          }
         }
-
-        if(isSelectQuery && resultSize < 1 && assertion.isFailIfNoResults()){
-            logAndAudit(AssertionMessages.CASSANDRA_NO_QUERY_RESULT_ASSERTION_FAILED, cassandraConnection.getCassandraConnectionEntity().getName());
-            return AssertionStatus.FALSIFIED;
-        }
-
-        return AssertionStatus.NONE;
     }
 
     private boolean validateParameters(List<Object> preparedStmtParams) {
