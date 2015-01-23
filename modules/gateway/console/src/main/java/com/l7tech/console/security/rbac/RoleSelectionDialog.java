@@ -191,7 +191,7 @@ public class RoleSelectionDialog extends JDialog {
 
     private void enableDisableOk() {
         if (!allowMultiSelect) {
-            okCancelPanel.getOkButton().setEnabled(rolesModel.getSelected().iterator().next() != null);
+            okCancelPanel.getOkButton().setEnabled(rolesModel.getSelected().iterator().hasNext());
         }
     }
 
