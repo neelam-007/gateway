@@ -3,11 +3,9 @@ package com.l7tech.external.assertions.jwt;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
-import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -65,7 +63,8 @@ public class CreateJsonWebKeyAssertion extends Assertion implements UsesVariable
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Create Json Web Key");
-        meta.put(AssertionMetadata.DESCRIPTION, "Creates a Json Web Key or Json Web Key Set.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Creates one or more cryptographic keys (represented as a JSON object) and stores them in a context variable.<br>" +
+                "The JSON Web Key contains only public information, and does not include private key or symmetric key information.  The resulting output is a JWKS structure.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,

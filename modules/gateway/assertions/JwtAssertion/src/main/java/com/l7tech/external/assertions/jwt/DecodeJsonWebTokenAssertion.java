@@ -112,7 +112,8 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Decode Json Web Token");
-        meta.put(AssertionMetadata.DESCRIPTION, "Decode a JSON Web Token.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Decodes a JSON Web Token by verifying the signature of a JWS, and/or decrypting a JWE message.<br>" +
+                "For a nested JWT, decrypt, and pass the resulting payload ${prefix.plaintext} to a new decode assertion.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,

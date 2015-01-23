@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.jwt;
 
-import com.google.common.collect.Lists;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
@@ -15,7 +14,6 @@ import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -223,7 +221,11 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Encode Json Web Token");
-        meta.put(AssertionMetadata.DESCRIPTION, "Creates a JSON Web Token.");
+        meta.put(AssertionMetadata.DESCRIPTION,
+                "Creates a compact, URL-safe message as a JWT token that:<br>" +
+                "• Takes any message as a payload from a context variable<br>" +
+                "• Signs and/or encrypts the content<br>" +
+                "• Stores the JWT in a context variable");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
