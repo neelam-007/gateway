@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.module.*;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -273,9 +274,9 @@ public class ServerModuleFileChooser {
                         return Long.valueOf(desc.getDefaultValue());
                     }
                 }
-                logger.log(Level.SEVERE, "Exception getting default value for cluster property :" + CLUSTER_PROP_UPLOAD_MAX_SIZE);
+                logger.log(Level.SEVERE, "Failed to get default value for cluster property :" + CLUSTER_PROP_UPLOAD_MAX_SIZE);
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_MAX_SIZE + "\".", e);
+                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_MAX_SIZE + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
         // todo: unlikely this will happen, still should we default to unlimited (0)?

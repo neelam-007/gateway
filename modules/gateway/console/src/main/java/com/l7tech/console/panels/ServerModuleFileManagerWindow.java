@@ -421,7 +421,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                             @Override
                             public Object construct() {
                                 if (refreshing.getAndSet(true)) {
-                                    logger.warning("Concurrent refresh requested, skipping update.");
+                                    logger.fine("Concurrent refresh requested, skipping update.");
                                     return null;
                                 }
                                 try {
@@ -640,9 +640,9 @@ public class ServerModuleFileManagerWindow extends JDialog {
                         return Boolean.valueOf(desc.getDefaultValue());
                     }
                 }
-                logger.log(Level.SEVERE, "Exception getting default value for cluster property :" + CLUSTER_PROP_UPLOAD_ENABLE);
+                logger.log(Level.SEVERE, "Failed to get default value for cluster property :" + CLUSTER_PROP_UPLOAD_ENABLE);
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_ENABLE + "\".", e);
+                logger.log(Level.SEVERE, "Exception getting cluster property \"" + CLUSTER_PROP_UPLOAD_ENABLE + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
         return false;

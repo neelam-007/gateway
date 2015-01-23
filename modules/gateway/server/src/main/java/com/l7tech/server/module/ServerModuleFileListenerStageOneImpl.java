@@ -10,6 +10,7 @@ import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -165,7 +166,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
             try {
                 FileUtils.delete(tmpModuleFile);
             } catch (final IOException e) {
-                logger.log(Level.WARNING, "Failed to remove temporary module file: " + tmpModuleFile, e);
+                logger.log(Level.WARNING, "Failed to remove temporary module file: " + tmpModuleFile, ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -211,7 +212,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
                 try {
                     FileUtils.delete(tmpModuleFile);
                 } catch (final IOException ex) {
-                    logger.log(Level.WARNING, "Failed to remove temporary module file: " + tmpModuleFile, ex);
+                    logger.log(Level.WARNING, "Failed to remove temporary module file: " + tmpModuleFile, ExceptionUtils.getDebugException(ex));
                 }
             }
             throw new ModuleDownloadException(e);
@@ -552,7 +553,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
         try {
             isWritable = dir.exists() && dir.isDirectory() && dir.canWrite();
         } catch (final Throwable ex) {
-            logger.log(Level.WARNING, "Error while determining whether directory \"" + dir + "\" is writable!");
+            logger.log(Level.WARNING, "Error while determining whether directory \"" + dir + "\" is writable: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
         }
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {

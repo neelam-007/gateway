@@ -17,6 +17,7 @@ import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
@@ -176,7 +177,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                                 try {
                                     moduleFile = serverModuleFileManager.findByPrimaryKey(goid);
                                 } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Unable to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
+                                    logger.log(Level.WARNING, "Failed to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                     return;
                                 }
 
@@ -196,7 +197,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                                     updateModuleState(goid, e.getMessage());
                                     // audit installation failure
                                     logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, moduleFile);
-                                    logger.log(Level.WARNING, "Error while Installing Module \"" + goid + "\", operation was \"" + operationToString(op) + "\"", e);
+                                    logger.log(Level.WARNING, "Error while Installing Module \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                                 }
                             }
                         });
@@ -221,10 +222,10 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                         } catch (ModuleStagingException e) {
                             // audit un-installation failure
                             logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, moduleFile);
-                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\".", e);
+                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                     } else {
-                        logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\"");
+                        logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\". Ignoring...");
                     }
                 }
             } else if (event instanceof AssertionModuleRegistrationEvent && serverModuleFileManager.isModuleUploadEnabled()) {
@@ -240,7 +241,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 }
             }
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "Unhandled exception while handling Server Module Files events!");
+            logger.log(Level.SEVERE, "Unhandled exception while handling Server Module Files events: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -387,11 +388,11 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                             }
                         } catch (final ModuleStagingException e) {
                             updateModuleState(moduleFile.getGoid(), e.getMessage());
-                            logger.log(Level.WARNING, "Failed to process initial module with goid \"" + moduleFile.getGoid() + "\"", e);
+                            logger.log(Level.WARNING, "Failed to process initial module with goid \"" + moduleFile.getGoid() + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                     }
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "Failed to find all Server Module Files.", e);
+                    logger.log(Level.WARNING, "Failed to find all Server Module Files: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });
@@ -419,7 +420,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 try {
                     serverModuleFileManager.updateState(moduleGoid, errorMessage);
                 } catch (final UpdateException e) {
-                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state error message!");
+                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state error message: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });
@@ -449,7 +450,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 try {
                     serverModuleFileManager.updateState(moduleGoid, state);
                 } catch (final UpdateException e) {
-                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state!");
+                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state!: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });

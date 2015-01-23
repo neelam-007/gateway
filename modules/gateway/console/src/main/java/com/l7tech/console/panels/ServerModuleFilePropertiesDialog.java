@@ -2,15 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.WrappingLabel;
-import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -168,28 +165,5 @@ public class ServerModuleFilePropertiesDialog extends JDialog {
     public String getModuleName() {
         final String text = moduleNameText.getText();
         return text != null ? text.trim() : StringUtils.EMPTY;
-    }
-
-    /**
-     * Convenient method without specifying the exception.
-     *
-     * @see #showError(String, Throwable)
-     */
-    @SuppressWarnings("UnusedDeclaration")
-    private void showError(@NotNull String message) {
-        showError(message, null);
-    }
-
-    /**
-     * Utility method for displaying an error that happen.
-     *
-     * @param message     The error message to display.
-     * @param e           The exception that occurred.
-     */
-    private void showError(@NotNull String message, @Nullable final Throwable e) {
-        if (e != null) {
-            message = message + ": " + ExceptionUtils.getMessage(e);
-        }
-        DialogDisplayer.showMessageDialog(this, message, resources.getString("error.title"), JOptionPane.ERROR_MESSAGE, null);
     }
 }
