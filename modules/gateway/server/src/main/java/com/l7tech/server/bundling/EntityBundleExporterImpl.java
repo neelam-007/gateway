@@ -3,11 +3,11 @@ package com.l7tech.server.bundling;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -36,6 +36,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     public static final String DefaultMappingActionOption = "DefaultMappingAction";
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
+    public static final String ServiceUsed = "ServiceUsed"; // service id used to access this exporter
     private static final String IncludeRequestFolder = "false";
     private static final EntityMappingInstructions.MappingAction DefaultMappingAction = EntityMappingInstructions.MappingAction.NewOrExisting;
     private static final String DefaultMapBy = "ID";
@@ -185,12 +186,37 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             }
         }
 
+        final boolean secretsEncrypted = bundleExportProperties.containsKey("EncryptSecrets") &&  Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets"));
         final EntityMappingInstructions mapping;
-        if (entity instanceof IdentityProviderConfig ||
-                entity instanceof Identity ||
-                (entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
+        if (entity instanceof InternalUser){
+            if(((InternalUser) entity).getGoid().equals(new Goid(0,3)))
+            {
+                // Only use existing for IIP and ADMIN user
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+            }else if(secretsEncrypted){
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                        false,
+                        false);
+            }else{
+                // users with no secrets are incomplete, should force to use existing
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
+            }
+        }else if((entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
                 //private keys and secure passwords should only be map only if EncryptSecrets is not specified.
-                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && (!bundleExportProperties.containsKey("EncryptSecrets") || !Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets"))))) {
+                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && !secretsEncrypted)) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
@@ -218,6 +244,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             }
         } else if(entity instanceof SsgConnector && isDefaultListenPortName(((SsgConnector) entity).getName()) ) {
             //make the default listen ports map by name
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    true,
+                    false);
+        } else if(entity instanceof PublishedService && entity.getId().equals(bundleExportProperties.getProperty(ServiceUsed)) ) {
+            //make the service used to access this exporter(restman) map by name, fail on new
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),

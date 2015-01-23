@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -703,20 +704,30 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                             if (entityContainer.getEntity() instanceof GroupBean) {
                                 final GroupManager groupManager = identityProvider.getGroupManager();
-                                final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
                                 if(existingEntity == null) {
+                                    final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
                                     final String id = groupManager.save(group, null);
                                     ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(id);
                                 } else {
+                                    final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
+                                    groupBean.setUniqueIdentifier(existingEntity.getId());
+                                    final Group group = groupManager.reify(groupBean);
                                     groupManager.update(group);
                                 }
                             } else if (entityContainer.getEntity() instanceof UserBean) {
                                 final UserManager userManager = identityProvider.getUserManager();
-                                final User user = userManager.reify((UserBean) entityContainer.getEntity());
                                 if(existingEntity == null) {
+                                    final User user = userManager.reify((UserBean) entityContainer.getEntity());
                                     final String id = userManager.save(user, null);
                                     ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(id);
                                 } else {
+                                    final UserBean userBean = (UserBean) entityContainer.getEntity();
+                                    userBean.setUniqueIdentifier(existingEntity.getId());
+
+                                    final User user = userManager.reify(userBean);
+                                    if(user instanceof InternalUser){
+                                        ((InternalUser)user).setPasswordChangesHistory(((InternalUser)existingEntity).getPasswordChangesHistory());
+                                    }
                                     userManager.update(user);
                                 }
                             } else {

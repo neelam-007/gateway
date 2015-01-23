@@ -28,6 +28,7 @@ public class BundleExporter {
     public static final String DefaultMapByOption = "DefaultMapBy";
     public static final String IgnoredEntityIdsOption = "IgnoredEntityIds";
     public static final String EncryptSecrets = "EncryptSecrets";
+    public static final String ServiceUsed = "ServiceUsed";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject

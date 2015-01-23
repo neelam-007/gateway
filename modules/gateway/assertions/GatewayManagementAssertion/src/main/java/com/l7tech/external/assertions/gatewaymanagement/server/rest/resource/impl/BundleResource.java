@@ -282,9 +282,12 @@ public class BundleResource {
         bundleOptionsBuilder.setProperty(BundleExporter.DefaultMapByOption, defaultMapBy);
         bundleOptionsBuilder.setProperty(BundleExporter.EncryptSecrets, Boolean.toString(encryptSecrets));
 
-        //ignore the rest man service so it is not exported
-        if (containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService) {
+        //ignore the rest man service so it is not exported, except for full gateway export
+        if ( headers.length>0 && containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService) {
             bundleOptionsBuilder.setProperty(BundleExporter.IgnoredEntityIdsOption, containerRequest.getProperty("ServiceId").toString());
+        }
+        if(containerRequest.getProperty("ServiceId")!=null) {
+            bundleOptionsBuilder.setProperty(BundleExporter.ServiceUsed, containerRequest.getProperty("ServiceId").toString());
         }
         //create the bundle export
         return bundleExporter.exportBundle(bundleOptionsBuilder, includeDependencies, encryptSecrets, encryptSecrets ? encodedKeyPassphrase : null, headers);

@@ -7,6 +7,7 @@ import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.JVMDatabaseBasedRestManagementEnvironment;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
@@ -238,6 +239,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             getMapping(bundleItem.getContent().getMappings(), userItem.getId()).setTargetId("00000000000000000000000000000003");
+            Assert.assertEquals(Mapping.Action.NewOrExisting,getMapping(bundleItem.getContent().getMappings(), userItem.getId()).getAction());
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
@@ -535,7 +537,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             assertOkResponse(response);
 
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), userItem.getId());
+            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), new Goid(0,3).toString());
             userMappingIn.getProperties().remove("FailOnNew");
 
             //import the bundle
@@ -576,10 +578,6 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             assertOkResponse(response);
 
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-            Mapping userMappingIn = getMapping(bundleItem.getContent().getMappings(), userItem.getId());
-            userMappingIn.getProperties().remove("FailOnNew");
-            Mapping fipMappingIn = getMapping(bundleItem.getContent().getMappings(), federatedIdentityProviderItem.getId());
-            fipMappingIn.getProperties().remove("FailOnNew");
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", "encryptPassword=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
