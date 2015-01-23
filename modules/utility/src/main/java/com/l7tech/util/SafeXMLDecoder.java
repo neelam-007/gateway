@@ -31,9 +31,11 @@ import java.beans.ExceptionListener;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.lang.reflect.*;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /* Based in part on sources from the Apache Harmony project.  The Apache source
@@ -949,6 +951,7 @@ public class SafeXMLDecoder implements Closeable {
 
 class SafeStatement {
     private static final Object[] EMPTY_ARRAY = new Object[0];
+    private static final Logger logger = Logger.getLogger(SafeStatement.class.getName());
 
     private final ClassFilter classFilter;
 
@@ -1129,27 +1132,15 @@ class SafeStatement {
                 if (!classFilter.permitMethod(method))
                     throw new SafeXMLDecoder.MethodNotPermittedException(method);
                 if (iterator.hasNext()) {
-                    PrivilegedAction<Object> action = new PrivilegedAction<Object>() {
-
-                        public Object run() {
-                            try {
-                                method.setAccessible(true);
-                                return (method.invoke(iterator));
-                            } catch (Exception e) {
-                                // ignore
-                            }
-                            return null;
-                        }
-
-                    };
-                    result = action.run();
+                    setMethodAccessible(method);
+                    result = method.invoke(iterator);
                 }
             } else {
                 Method method = findMethod(theTarget.getClass(), theMethodName,
                     theArguments, false);
                 if (!classFilter.permitMethod(method))
                     throw new SafeXMLDecoder.MethodNotPermittedException(method);
-                method.setAccessible(true);
+                setMethodAccessible(method);
                 result = method.invoke(theTarget, theArguments);
             }
         } catch (InvocationTargetException ite) {
@@ -1157,6 +1148,24 @@ class SafeStatement {
             throw (t != null) && (t instanceof Exception) ? (Exception) t : ite;
         }
         return result;
+    }
+
+    /**
+     * Utility function for setting the {@code accessible flag} to {@code true} with asserted privileges.
+     */
+    private static void setMethodAccessible(@NotNull final Method method) {
+        try {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    method.setAccessible(true);
+                    return null;
+                }
+            });
+        } catch (final Exception e) {
+            // if any unchecked exception is propagated through AccessController#doPrivileged log it.
+            logger.log(Level.WARNING, "Failed to set method \"" + method.getName() + "\" accessible flag to true!", ExceptionUtils.getDebugException(e));
+        }
     }
 
     @SuppressWarnings("MismatchedReadAndWriteOfArray")
