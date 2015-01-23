@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.cei.CustomExtensionInterfaceBinding;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
@@ -255,7 +256,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                                             moduleFile.getName()
                                     ));
                                 } catch (ModuleException e) {
-                                    logger.log(Level.WARNING, "Creating custom assertion descriptor failed:", e);
+                                    logger.log(Level.WARNING, "Creating custom assertion descriptor failed: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                                 }
                             }
                         }
@@ -269,9 +270,9 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                 logger.info("No custom assertions found.");
             }
         } catch (FileNotFoundException e) {
-            throw new ModuleException("Module \"" + moduleFile.getName() + "\", doesn't contain custom assertions config file \"" + modulesConfig.getCustomAssertionPropertyFileName() + "\". Custom assertion not loaded", e);
+            throw new ModuleException("Module \"" + moduleFile.getName() + "\", doesn't contain custom assertions config file \"" + modulesConfig.getCustomAssertionPropertyFileName() + "\". Custom assertion not loaded", ExceptionUtils.getDebugException(e));
         } catch (IOException e) {
-            throw new ModuleException("Module \"" + moduleFile.getName() + "\" I/O error reading config file \"" + modulesConfig.getCustomAssertionPropertyFileName() + "\". Custom assertion not loaded", e);
+            throw new ModuleException("Module \"" + moduleFile.getName() + "\" I/O error reading config file \"" + modulesConfig.getCustomAssertionPropertyFileName() + "\". Custom assertion not loaded", ExceptionUtils.getDebugException(e));
         } finally {
             ResourceUtils.closeQuietly(in);
         }

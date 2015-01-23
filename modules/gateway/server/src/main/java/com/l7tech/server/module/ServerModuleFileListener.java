@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.module.ModuleState;
 import com.l7tech.gateway.common.module.ModuleType;
 import com.l7tech.gateway.common.module.ServerModuleFile;
+import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -14,7 +15,6 @@ import com.l7tech.server.event.system.ServerModuleFileSystemEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
-import com.l7tech.server.policy.module.ModularAssertionModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -177,7 +177,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                                 try {
                                     moduleFile = serverModuleFileManager.findByPrimaryKey(goid);
                                 } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Failed to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    logger.log(Level.WARNING, "Failed to find Server Module File with \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                                     return;
                                 }
 
@@ -197,7 +197,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                                     updateModuleState(goid, e.getMessage());
                                     // audit installation failure
                                     logAndAudit(ServerModuleFileSystemEvent.Action.INSTALL_FAIL, moduleFile);
-                                    logger.log(Level.WARNING, "Error while Installing Module \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                    logger.log(Level.WARNING, "Error while Installing Module \"" + goid + "\", operation was \"" + operationToString(op) + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                                 }
                             }
                         });
@@ -222,7 +222,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                         } catch (ModuleStagingException e) {
                             // audit un-installation failure
                             logAndAudit(ServerModuleFileSystemEvent.Action.UNINSTALL_FAIL, moduleFile);
-                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            logger.log(Level.WARNING, "Error while Uninstalling Module \"" + goid + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                         }
                     } else {
                         logger.log(Level.WARNING, "Unexpected operation \"" + operationToString(op) + "\" for goid \"" + goid + "\". Ignoring...");
@@ -241,7 +241,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 }
             }
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "Unhandled exception while handling Server Module Files events: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.SEVERE, "Unhandled exception while handling Server Module Files events: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -377,25 +377,43 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 try {
                     for (final ServerModuleFile moduleFile : serverModuleFileManager.findAll()) {
                         addToKnownModules(moduleFile);
-                        try {
-                            if (serverModuleFileManager.isModuleUploadEnabled()) {
+                        if (serverModuleFileManager.isModuleUploadEnabled()) {
+                            final ModuleState moduleState = getModuleState(moduleFile);
+                            if (ModuleState.LOADED == moduleState) {
+                                continue;  // if already loaded skip processing
+                            }
+                            try {
                                 // if already loaded do not process, set the state directly to LOADED.
                                 if (isModuleLoaded(moduleFile)) {
                                     updateModuleState(moduleFile.getGoid(), ModuleState.LOADED);
                                 } else {
                                     onModuleChanged(moduleFile);
                                 }
+                            } catch (final ModuleStagingException e) {
+                                updateModuleState(moduleFile.getGoid(), e.getMessage());
+                                logger.log(Level.WARNING, "Failed to process initial module with goid \"" + moduleFile.getGoid() + "\": " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                             }
-                        } catch (final ModuleStagingException e) {
-                            updateModuleState(moduleFile.getGoid(), e.getMessage());
-                            logger.log(Level.WARNING, "Failed to process initial module with goid \"" + moduleFile.getGoid() + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                     }
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "Failed to find all Server Module Files: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Failed to find all Server Module Files: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });
+    }
+
+    /**
+     * Utility function for getting module state for the current cluster node.<br/>
+     * Never returns {@code null}, if the current cluster node doesn't contain any state record,
+     * then {@link ModuleState#UPLOADED} is returned.
+     *
+     * @param moduleFile    the {@link ServerModuleFile} which state to extract
+     * @return Specified {@code module} current cluster node {@link ModuleState state}, if any, or {@link ModuleState#UPLOADED} otherwise.
+     */
+    @NotNull
+    private ModuleState getModuleState(@NotNull final ServerModuleFile moduleFile) {
+        final ServerModuleFileState state = serverModuleFileManager.findStateForCurrentNode(moduleFile);
+        return (state != null) ? state.getState() : ModuleState.UPLOADED;
     }
 
     /**
@@ -420,7 +438,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 try {
                     serverModuleFileManager.updateState(moduleGoid, errorMessage);
                 } catch (final UpdateException e) {
-                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state error message: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state error message: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });
@@ -450,7 +468,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
                 try {
                     serverModuleFileManager.updateState(moduleGoid, state);
                 } catch (final UpdateException e) {
-                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state!: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Failed to update module \"" + moduleGoid + "\" state!: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
                 }
             }
         });
@@ -463,23 +481,9 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      */
     protected boolean isModuleLoaded(@NotNull final ServerModuleFile moduleFile) {
         if (ModuleType.MODULAR_ASSERTION == moduleFile.getModuleType()) {
-            final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
-            if (StringUtils.isNotBlank(moduleFileName)) {
-                for (final ModularAssertionModule loadedModule : modularAssertionRegistrar.getLoadedModules()) {
-                    if (moduleFileName.equals(loadedModule.getName())) {
-                        return true;
-                    }
-                }
-            }
+            return modularAssertionRegistrar.isServerModuleFileLoaded(moduleFile);
         } else if (ModuleType.CUSTOM_ASSERTION == moduleFile.getModuleType()) {
-            final String moduleFileName = moduleFile.getProperty(ServerModuleFile.PROP_FILE_NAME);
-            if (StringUtils.isNotBlank(moduleFileName)) {
-//                for (final CustomAssertionModule loadedModule : customAssertionRegistrar.getLoadedModules()) {
-//                    if (moduleFileName.equals(loadedModule.getName())) {
-//                        return true;
-//                    }
-//                }
-            }
+            return customAssertionRegistrar.isServerModuleFileLoaded(moduleFile);
         }
         return false;
     }

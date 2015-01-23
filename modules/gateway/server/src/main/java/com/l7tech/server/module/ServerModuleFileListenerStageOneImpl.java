@@ -68,9 +68,8 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
         }
 
         final ServerModuleFileState state = serverModuleFileManager.findStateForCurrentNode(moduleFile);
-        // process only modules not having any state for this node
-        // or modules with UPLOADED state for this node (having no errors)
-        if (state == null || (StringUtils.isBlank(state.getErrorMessage()) && ModuleState.UPLOADED == state.getState())) {
+        // process only modules not having any state for this node or modules with UPLOADED state for this node
+        if (state == null || ModuleState.UPLOADED == state.getState()) {
             // for debug purposes
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, state == null ? "Module goid \"" + moduleFile.getGoid() + "\", state \"null\"" : "Module goid \"" + moduleFile.getGoid() + "\", state \"" + state.getState() + "\", error-message \"" + state.getErrorMessage() + "\"");
@@ -553,7 +552,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
         try {
             isWritable = dir.exists() && dir.isDirectory() && dir.canWrite();
         } catch (final Throwable ex) {
-            logger.log(Level.WARNING, "Error while determining whether directory \"" + dir + "\" is writable: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+            logger.log(Level.WARNING, "Error while determining whether directory \"" + dir + "\" is writable: " + ExceptionUtils.getMessageWithCause(ex), ExceptionUtils.getDebugException(ex));
         }
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
