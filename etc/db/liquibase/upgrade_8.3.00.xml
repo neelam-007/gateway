@@ -357,7 +357,4 @@
     <changeSet id="delete-ssl-protocol-column" author="gateway">
         <dropColumn tableName="cassandra_connection" columnName="tls_protocol"/>
     </changeSet>
-    <changeSet id="policy-backed-service-drop-unique-constraint" author="gateway">
-        <dropUniqueConstraint tableName="policy_backed_service_operation" constraintName="name" uniqueColumns="name"/>
-    </changeSet>
 </databaseChangeLog>
