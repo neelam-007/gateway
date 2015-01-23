@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.rbac.SecurityZoneManager;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 /**
  *
@@ -70,6 +72,13 @@ public class EmailListenerResourceFactory extends SecurityZoneableEntityManagerR
             properties.put(propertyName, (String) emailListener.properties().get(propertyName));
         }
         emailResource.setProperties(properties);
+
+        if (emailListener.getPassword() != null) {
+            final Matcher matcher = ServerVariables.SINGLE_SECPASS_PATTERN.matcher(emailListener.getPassword());
+            if (matcher.matches()) {
+                emailResource.setPassword(emailListener.getPassword());
+            }
+        }
 
         // handle SecurityZone
         doSecurityZoneAsResource(emailResource, emailListener);
