@@ -19,6 +19,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -119,18 +120,6 @@ public class PolicyPropertiesPanel extends ValidatedPanel<Policy> {
     @Override
     protected void initComponents() {
         PolicyType selectedType = policy.getType();
-        java.util.List<PolicyType> types = new ArrayList<PolicyType>();
-        for ( PolicyType type : PolicyType.values()) {
-            if (type.isShownInGui() || selectedType==type) types.add(type);
-        }
-        Collections.sort( types, new ResolvingComparator<PolicyType,String>(new Resolver<PolicyType,String>(){
-            @Override
-            public String resolve( final PolicyType key ) {
-                return key.getName().toLowerCase();
-            }
-        }, false) );
-
-        typeCombo.setModel(new DefaultComboBoxModel<>(types.toArray(new PolicyType[types.size()])));
 
         final String policyInternalTag = policy.getInternalTag();
         for ( final PolicyType type : PolicyType.values() ) {
@@ -166,6 +155,36 @@ public class PolicyPropertiesPanel extends ValidatedPanel<Policy> {
 
             policyTagsByType.put( type, tagInfos );
         }
+
+        java.util.List<PolicyType> types = new ArrayList<>();
+        for ( PolicyType type : PolicyType.values()) {
+            if (type.isShownInGui() || selectedType==type) types.add(type);
+        }
+        Collections.sort( types, new ResolvingComparator<>( new Resolver<PolicyType, String>() {
+            @Override
+            public String resolve( final PolicyType key ) {
+                return key.getName().toLowerCase();
+            }
+        }, false ) );
+
+        // Don't offer subtag controls unless at least one subtag is known to exist,
+        // or the current policy is already using a subtag
+        boolean subtagsPolicy = policy.getInternalSubTag() != null && policy.getInternalSubTag().length() > 0;
+        boolean haveAtLeastOneSubTag = hasSubtags( null, policyTagsByType );
+        boolean showSubTagControls = subtagsPolicy || haveAtLeastOneSubTag;
+
+        // Don't offer POLICY_BACKED_OPERATION PolicyType unless an interface is registered (or this policy is already of that type)
+        boolean pbsPolicy = PolicyType.POLICY_BACKED_OPERATION.equals( policy.getType() );
+        boolean haveAtLeastOnePolicyBackedMethod = hasSubtags( PolicyType.POLICY_BACKED_OPERATION, policyTagsByType );
+        if ( !pbsPolicy && !haveAtLeastOnePolicyBackedMethod ) {
+            policyTagsByType.remove( PolicyType.POLICY_BACKED_OPERATION );
+            types.remove( PolicyType.POLICY_BACKED_OPERATION );
+        }
+
+        typeCombo.setModel(new DefaultComboBoxModel<>(types.toArray(new PolicyType[types.size()])));
+
+        policySubTagLabel.setVisible( showSubTagControls );
+        subTagCombo.setVisible( showSubTagControls );
 
         populateTagComboBox( selectedType );
         tagCombo.setSelectedItem( policyInternalTag );
@@ -232,6 +251,35 @@ public class PolicyPropertiesPanel extends ValidatedPanel<Policy> {
         checkSyntax();
 
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private boolean hasSubtags( @Nullable PolicyType requiredType, Map<PolicyType, Collection<PolicyAdmin.PolicyTagInfo>> policyTagsByType ) {
+        if ( requiredType != null ) {
+            Collection<PolicyAdmin.PolicyTagInfo> tagInfos = policyTagsByType.get( requiredType );
+            return tagInfos != null && hasSubtags( tagInfos );
+        }
+
+        for ( Collection<PolicyAdmin.PolicyTagInfo> tagInfos : policyTagsByType.values() ) {
+            boolean hasSubtag = hasSubtags( tagInfos );
+            if ( hasSubtag )
+                return true;
+        }
+
+        return false;
+    }
+
+    private static boolean hasSubtags( Collection<PolicyAdmin.PolicyTagInfo> tagInfos ) {
+        boolean ret = false;
+
+        for ( PolicyAdmin.PolicyTagInfo tagInfo : tagInfos ) {
+            Set<String> subTags = tagInfo.policySubTags;
+            if ( subTags.size() > 0 ) {
+                ret = true;
+                break;
+            }
+        }
+
+        return ret;
     }
 
     private Functions.Unary<String, PolicyAdmin.PolicyTagInfo> transformPolicyTagName() {

@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
-import com.l7tech.objectmodel.polback.KeyValueStore;
 import com.l7tech.objectmodel.polback.PolicyBackedInterfaceIntrospector;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
@@ -26,7 +25,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
@@ -45,7 +43,7 @@ import java.util.logging.Logger;
  * Keeps track of registered policy-backed services and policy-backed service instances,
  * and allows server code to get interface implementations backed by the policies.
  */
-public class PolicyBackedServiceRegistry implements InitializingBean, PostStartupApplicationListener {
+public class PolicyBackedServiceRegistry implements PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger( PolicyBackedServiceRegistry.class.getName() );
 
     @Inject
@@ -61,16 +59,28 @@ public class PolicyBackedServiceRegistry implements InitializingBean, PostStartu
     private final Map<String, Set<PolicyBackedService>> implementations = new HashMap<>(  );
 
 
-    public void registerPolicyBackedServiceTemplate( @NotNull Class<?> annotatedInterface ) {
+    /**
+     * Register a policy-backed service interface.
+     * <p/>
+     * It is safe to call this method on an interface that might already be registered.
+     *
+     * @param annotatedInterface interface class to register, annotated with @PolicyBacked.  Required.
+     * @return true if registration was successful, or false if the specified interface is already registered and ready to use.
+     * @throws IllegalArgumentException if the specified class lacks @PolicyBacked/@PolicyBackedMethod annotations, or if there is
+     *                                  some other problem with using it as a policy-backed service interface.
+     */
+    public boolean registerPolicyBackedServiceTemplate( @NotNull Class<?> annotatedInterface ) {
         rwlock.writeLock().lock();
         try {
             final String className = annotatedInterface.getName();
             if ( policyBackedInterfaces.keySet().contains( className ) )
-                throw new IllegalStateException( "Interface already registered with class name: " + className );
+                return false;
 
             EncapsulatedAssertionConfig[] operations = new PolicyBackedInterfaceIntrospector().getInterfaceDescription( annotatedInterface );
 
             policyBackedInterfaces.put( className, new Template( annotatedInterface,  operations ) );
+            return true;
+
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -392,12 +402,6 @@ public class PolicyBackedServiceRegistry implements InitializingBean, PostStartu
         } finally {
             rwlock.writeLock().unlock();
         }
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        // Register well-known core service interfaces (TODO move this somewhere that makes more sense)
-        registerPolicyBackedServiceTemplate( KeyValueStore.class );
     }
 
     static class Template {

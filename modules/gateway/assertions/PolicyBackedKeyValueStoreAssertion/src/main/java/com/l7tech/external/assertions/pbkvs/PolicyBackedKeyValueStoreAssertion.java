@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.pbkvs;
 
+import com.l7tech.external.assertions.pbkvs.server.ModuleLoadListener;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -109,6 +110,8 @@ public class PolicyBackedKeyValueStoreAssertion extends Assertion implements Set
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put( AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto" );
+
+        meta.put( AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.pbkvs.server.ModuleLoadListener" );
 
         meta.put( META_INITIALIZED, Boolean.TRUE );
         return meta;

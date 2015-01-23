@@ -25,6 +25,7 @@ public class ServerPolicyBackedKeyValueStoreAssertion extends AbstractServerAsse
     private final String[] variablesUsed;
 
     @Inject
+    @Named( "policyBackedServiceRegistry" )
     private PolicyBackedServiceRegistry pbsreg;
 
     public ServerPolicyBackedKeyValueStoreAssertion( final PolicyBackedKeyValueStoreAssertion assertion ) throws PolicyAssertionException {

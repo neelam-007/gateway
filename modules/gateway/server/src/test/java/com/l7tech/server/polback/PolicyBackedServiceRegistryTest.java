@@ -73,14 +73,8 @@ public class PolicyBackedServiceRegistryTest {
 
     @Test
     public void testRegisterPolicyBackedServiceTemplate_alreadyRegistered() throws Exception {
-        registry.registerPolicyBackedServiceTemplate( TestFace.class );
-
-        try {
-            registry.registerPolicyBackedServiceTemplate( TestFace.class );
-            fail( "Expected exception not thrown" );
-        } catch ( IllegalStateException e ) {
-            assertTrue( e.getMessage().contains( "Interface already registered with class name" ) );
-        }
+        assertTrue( registry.registerPolicyBackedServiceTemplate( TestFace.class ) );
+        assertFalse( registry.registerPolicyBackedServiceTemplate( TestFace.class ) );
 
         Set<String> templates = registry.getPolicyBackedServiceTemplates();
         assertEquals( 1, templates.size() );
