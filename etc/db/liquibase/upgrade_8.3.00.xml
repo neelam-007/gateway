@@ -83,7 +83,6 @@
                 <constraints nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(255)">
-                <constraints nullable="false" unique="true"/>
             </column>
             <column name="policy_backed_service_goid" type="${goid.type}">
                 <constraints nullable="false" references="policy_backed_service(goid)" foreignKeyName="fk_pbs_operation_pbs_service"/>
