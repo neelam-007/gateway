@@ -1164,7 +1164,7 @@ class SafeStatement {
             });
         } catch (final Exception e) {
             // if any unchecked exception is propagated through AccessController#doPrivileged log it.
-            logger.log(Level.WARNING, "Failed to set method \"" + method.getName() + "\" accessible flag to true!", ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Failed to set method \"" + method.getName() + "\" accessible flag to true: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
