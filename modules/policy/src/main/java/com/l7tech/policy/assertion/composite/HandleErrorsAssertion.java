@@ -65,7 +65,7 @@ public class HandleErrorsAssertion extends CompositeAssertion implements SetsVar
         meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpen.gif");
 
         meta.put(SHORT_NAME, "Handle Errors");
-        meta.put(DESCRIPTION, "Handle all child errors.");
+        meta.put(DESCRIPTION, "Handle errors raised by child assertions.");
 
         meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.HandleErrorsAssertionTreeNode");
 
