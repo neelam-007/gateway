@@ -253,10 +253,6 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
             Assert.assertEquals("The bundle should have 2 items. A policy and cluster property", 2 , bundleItem.getContent().getReferences().size());
             Assert.assertEquals("The bundle should have 3 mappings. A policy, root folder, and a cluster property", 3, bundleItem.getContent().getMappings().size());
 
-            // map
-            bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.<String,Object>mapBuilder().put("MapBy", "name")
-                                                                .put("MapTo", createdClusterPropertyItem.getName()).map());
-
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                     objectToString(bundleItem.getContent()));
@@ -334,6 +330,7 @@ public class ClusterPropertyMigrationTest extends com.l7tech.skunkworks.rest.too
 
             // map
             bundleItem.getContent().getMappings().get(0).setTargetId(createdClusterPropertyItem.getId());
+            bundleItem.getContent().getMappings().get(0).getProperties().remove("MapBy");
 
             //import the bundle
             response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),

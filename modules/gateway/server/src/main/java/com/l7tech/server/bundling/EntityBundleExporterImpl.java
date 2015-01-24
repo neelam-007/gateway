@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -7,6 +8,11 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.FederatedUser;
+import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
@@ -214,6 +220,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         true,
                         false);
             }
+        }else if (entity instanceof Identity && !(entity instanceof InternalGroup || entity instanceof FederatedUser || entity instanceof FederatedGroup || entity instanceof VirtualGroup)){
+            // only map only for non internal and non federated identity
+                mapping = new EntityMappingInstructions(
+                        dependentObject.getEntityHeader(),
+                        null,
+                        EntityMappingInstructions.MappingAction.NewOrExisting,
+                        true,
+                        false);
         }else if((entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
                 //private keys and secure passwords should only be map only if EncryptSecrets is not specified.
                 ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && !secretsEncrypted)) {
@@ -257,6 +271,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
                     EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
                     true,
+                    false);
+        } else if(entity instanceof ClusterProperty) {
+            //make cluster properties map by name by default
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
+                    EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
+                    false,
                     false);
         } else {
             //create the default mapping instructions
