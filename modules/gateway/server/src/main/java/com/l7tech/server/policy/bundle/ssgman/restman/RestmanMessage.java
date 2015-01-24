@@ -6,10 +6,7 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -110,6 +107,37 @@ public class RestmanMessage {
             sb.append(", ");
             for (Element mapping: XpathUtil.findElements(mappingError, "l7:Properties/l7:Property/l7:StringValue", getNamespaceMap())) {
                 sb.append(DomUtils.getTextValue(mapping));
+            }
+            sb.append(System.getProperty("line.separator"));
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Get more user-friendly Restman mapping error messages.
+     */
+    public String getMappingErrorDetails(Functions.Unary<String, String> getEntityName) throws IOException {
+        if (mappingErrors == null) {
+            loadMappingErrors();
+        }
+        final StringBuilder sb = new StringBuilder();
+
+        for (Element mappingError : mappingErrors) {
+            String errorType = mappingError.getAttribute("errorType");
+            sb.append(errorType);
+            sb.append(": type=");
+            sb.append(mappingError.getAttribute("type"));
+            sb.append(", name=");
+            sb.append(getEntityName.call(mappingError.getAttribute("srcId")));
+            sb.append(", ");
+            if ("UniqueKeyConflict".equals(errorType)) {
+                sb.append("already exists.");
+
+            } else {
+                for (Element mapping: XpathUtil.findElements(mappingError, "l7:Properties/l7:Property/l7:StringValue", getNamespaceMap())) {
+                    sb.append(DomUtils.getTextValue(mapping));
+                }
             }
             sb.append(System.getProperty("line.separator"));
         }

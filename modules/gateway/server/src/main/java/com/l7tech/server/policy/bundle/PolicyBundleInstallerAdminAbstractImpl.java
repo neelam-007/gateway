@@ -465,7 +465,7 @@ public abstract class PolicyBundleInstallerAdminAbstractImpl extends AsyncAdminM
                 // unexpected exception
                 logger.warning("Exception type: " + processingException.getClass().getName());
                 logger.warning("Unexpected error during installation: " + ExceptionUtils.getMessage(processingException));
-                throw new PolicyBundleInstallerException(processingException);
+                throw new PolicyBundleInstallerException(processingException.getMessage());
             } else {
                 throw new PolicyBundleInstallerException(processingException);
             }

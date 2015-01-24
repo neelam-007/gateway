@@ -403,7 +403,12 @@ public class MigrationBundleInstaller extends BaseInstaller {
             // check for errors
             if (installMessage.hasMappingError()) {
                 try {
-                    throw new RuntimeException(" installation failed. " + System.getProperty("line.separator") + installMessage.getMappingErrorsAsString());
+                    throw new RuntimeException("Installation failed. " + System.getProperty("line.separator") + installMessage.getMappingErrorDetails(new Functions.Unary<String, String>() {
+                        @Override
+                        public String call(String srcId) {
+                            return requestMessage.getEntityName(srcId);
+                        }
+                    }));
                 }  catch (IOException e) {
                     throw new RuntimeException(" installation failed. ", e);
                 }
