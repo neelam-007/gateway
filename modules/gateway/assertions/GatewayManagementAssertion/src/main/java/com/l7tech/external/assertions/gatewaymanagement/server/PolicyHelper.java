@@ -257,7 +257,9 @@ public class PolicyHelper {
         // Run the validator
         final PolicyValidatorResult result;
         try {
-            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, policyInternalSubTag, wsdl, soap, soapVersion), licenseManager );
+            com.l7tech.policy.validator.PolicyValidationContext pvc = new com.l7tech.policy.validator.PolicyValidationContext( policyType, policyInternalTag, policyInternalSubTag, wsdl, soap, soapVersion );
+            // TODO pvc.setInterfaceDescription( ...use interface desc passed-in or looked up in DB... );  // so Input vars don't show warnings for "used without being set" etc.
+            result = policyValidator.validate( assertion, pvc, licenseManager );
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new ResourceFactory.ResourceAccessException(e);

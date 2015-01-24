@@ -1,7 +1,9 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.SerializableWSDLLocator;
@@ -39,6 +41,7 @@ public class PolicyValidationContext implements Serializable {
     private transient Map<Assertion,AssertionValidator> validatorMap = new HashMap<Assertion,AssertionValidator>();
     private transient Either<WSDLException,Wsdl> wsdl;
     private Set<String> permittedAssertionClasses;
+    private @Nullable EncapsulatedAssertionConfig interfaceDescription;
 
     private Map<String, String> registeredCustomAssertionFeatureSets = new HashMap<>();
 
@@ -155,6 +158,30 @@ public class PolicyValidationContext implements Serializable {
     @Nullable
     public Set<String> getPermittedAssertionClasses() {
         return permittedAssertionClasses;
+    }
+
+    /**
+     * Get the description of the interface implemented by this policy, if any.
+     *
+     * @return a (possibly-ephemeral) EncapsulatedAssertion instance describing the interface
+     *         implemented by this policy, or null if the policy does not implement an interface.
+     */
+    @Nullable
+    public EncapsulatedAssertionConfig getInterfaceDescription() {
+        return interfaceDescription;
+    }
+
+    /**
+     * Set the interface description, if any, for the policy being validated.
+     * <p/>
+     * If an interface description is provided, its Input variables will show as already set before
+     * the policy starts, and its Output variables will show as being used once the policy finishes.
+     *
+     * @param interfaceDescription a (possibly-ephemeral) EncapsulatedAssertion instance describing the interface
+     *                             implemented by this policy, or null if the policy does not implement an interface.
+     */
+    public void setInterfaceDescription( @Nullable EncapsulatedAssertionConfig interfaceDescription ) {
+        this.interfaceDescription = interfaceDescription;
     }
 
     /**

@@ -52,7 +52,7 @@ public class InputAndOutputVariablesPanel extends JPanel {
             this.inputs = inputs;
             this.inputsTableModel = TableUtil.configureTable( inputsTable,
                     TableUtil.column( "Name", 50, 100, 99999, Functions.propertyTransform( EncapsulatedAssertionArgumentDescriptor.class, "argumentName" ) ),
-                    TableUtil.column( "Type", 50, 100, 99999, Functions.propertyTransform( EncapsulatedAssertionArgumentDescriptor.class, "argumentType" ) )
+                    TableUtil.column( "Type", 50, 100, 99999, INPUT_DATA_TYPE_FINDER )
             );
             if ( inputs != null ) {
                 inputsTableModel.setRows( new ArrayList<>( inputs ) );
@@ -71,7 +71,7 @@ public class InputAndOutputVariablesPanel extends JPanel {
             this.outputs = outputs;
             this.outputsTableModel = TableUtil.configureTable( outputsTable,
                     TableUtil.column( "Name", 50, 100, 99999, Functions.propertyTransform( EncapsulatedAssertionResultDescriptor.class, "resultName" ) ),
-                    TableUtil.column( "Type", 50, 100, 99999, Functions.propertyTransform( EncapsulatedAssertionResultDescriptor.class, "resultType" ) )
+                    TableUtil.column( "Type", 50, 100, 99999, RESULT_DATA_TYPE_FINDER )
             );
             if ( outputs != null ) {
                 outputsTableModel.setRows( new ArrayList<>( outputs ) );
@@ -97,4 +97,18 @@ public class InputAndOutputVariablesPanel extends JPanel {
     public String getInterfaceTitle() {
         return interfaceTitle;
     }
+
+    private static final Functions.Unary<Object, EncapsulatedAssertionResultDescriptor> RESULT_DATA_TYPE_FINDER = new Functions.Unary<Object, EncapsulatedAssertionResultDescriptor>() {
+        @Override
+        public Object call( EncapsulatedAssertionResultDescriptor result ) {
+            return result.dataType();
+        }
+    };
+
+    public static final Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor> INPUT_DATA_TYPE_FINDER = new Functions.Unary<Object, EncapsulatedAssertionArgumentDescriptor>() {
+        @Override
+        public Object call( EncapsulatedAssertionArgumentDescriptor input ) {
+            return input.dataType();
+        }
+    };
 }

@@ -3,10 +3,14 @@
  */
 package com.l7tech.policy.variable;
 
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -126,7 +130,7 @@ public final class PolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf( final Assertion assertion ) {
-        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), true);
+        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), CurrentInterfaceDescription.get(), true);
     }
 
     /**
@@ -140,7 +144,7 @@ public final class PolicyVariableUtils {
      * @see VariableMetadata
      */
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors( final Assertion assertion ) {
-        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), false);
+        return getVariablesSetByPredecessors(assertion, CurrentAssertionTranslator.get(), CurrentInterfaceDescription.get(), false);
     }
 
     /**
@@ -151,18 +155,29 @@ public final class PolicyVariableUtils {
      *
      * @param assertion           Assertion to collect predecessor variables for
      * @param assertionTranslator AssertionTranslator used to dereference include assertions to obtain the included assertions
+     * @param interfaceDescription interface description for current policy, or null
      * @param includeSelf         boolean if true, then the variables set by the current assertion will be included in the returned
      *                            variables
      * @return a map of all variables found in the policy up to and including the current assertion (if includedSelf is true)
      *         Never null.
      */
+    @NotNull
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors(
-            final Assertion assertion,
-            final AssertionTranslator assertionTranslator,
+            final @Nullable Assertion assertion,
+            final @Nullable AssertionTranslator assertionTranslator,
+            final @Nullable EncapsulatedAssertionConfig interfaceDescription,
             final boolean includeSelf)
     {
 
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
+
+        if ( null != interfaceDescription ) {
+            for ( EncapsulatedAssertionArgumentDescriptor input : interfaceDescription.getArgumentDescriptors() ) {
+                String name = input.getArgumentName().toLowerCase();
+                VariableMetadata vm = new VariableMetadata( name, false, true, name, true, input.dataType() );
+                vars.put( name, vm );
+            }
+        }
 
         if (assertion != null) {
             Assertion ancestor = assertion.getPath()[0];//get the root assertion, all paths have the same root

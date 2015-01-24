@@ -1,18 +1,26 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionResultDescriptor;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.CurrentInterfaceDescription;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.wsdl.WsdlUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -69,6 +77,25 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
                              final PolicyValidatorResult r)
             throws InterruptedException
     {
+        try {
+            CurrentInterfaceDescription.doWithInterfaceDescription( pvc.getInterfaceDescription(), new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    doValidatePath( ap, pvc, assertionLicense, r );
+                    return null;
+                }
+            } );
+        } catch ( Exception e ) {
+            throw new RuntimeException( e );
+        }
+    }
+
+    public void doValidatePath(final AssertionPath ap,
+                             final PolicyValidationContext pvc,
+                             final AssertionLicense assertionLicense,
+                             final PolicyValidatorResult r)
+            throws InterruptedException
+    {
         Assertion[] path = ap.getPath();
 
         // paths that have the pattern "OR, Comment" should be ignored completely (Bugzilla #2449)
@@ -106,11 +133,6 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
             if (Thread.interrupted()) throw new InterruptedException();
             dv.validate(pv, path);
         }
-        
-        if (pvc.getPolicyType() != null && !pvc.getPolicyType().isServicePolicy()) {
-            // All subsequent rules pertain only to Service policies (i.e. not fragments)
-            return;
-        }
 
         // last assertion should be last non-comment and enabled assertion
         Assertion lastAssertion = ap.lastAssertion();
@@ -120,6 +142,29 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
                 lastAssertion = ass;
                 break;
             }
+        }
+
+        // If there is an interface and it requires output variables, complain if they are not set or are explicitly the wrong type
+        EncapsulatedAssertionConfig idesc = pvc.getInterfaceDescription();
+        if ( null != idesc ) {
+            Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByDescendantsAndSelf( path[0] );
+            for ( EncapsulatedAssertionResultDescriptor result : idesc.getResultDescriptors() ) {
+                VariableMetadata vm = varsSet.get( result.getResultName() );
+                if ( null == vm ) {
+                    r.addWarning( new PolicyValidatorResult.Warning( lastAssertion, "Output variable is never given a value: " + result.getResultName(), null ) );
+                } else {
+                    DataType type = vm.getType();
+                    DataType wantType = result.dataType();
+                    if ( type != null && wantType != null && !DataType.UNKNOWN.equals( type ) && !DataType.UNKNOWN.equals( wantType ) && !wantType.equals( type ) ) {
+                        r.addWarning( new PolicyValidatorResult.Warning( lastAssertion, "Output variable '" + result.getResultName() + "' is expected to be of type " + wantType + " but was last set to type " + type, null ) );
+                    }
+                }
+            }
+        }
+
+        if ( !pvc.getPolicyType().isServicePolicy() ) {
+            // All subsequent rules pertain only to Service policies (i.e. not fragments)
+            return;
         }
 
         if (!pv.seenResponse) { // no routing report that

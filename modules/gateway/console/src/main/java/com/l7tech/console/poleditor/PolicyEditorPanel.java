@@ -340,6 +340,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	return r;
                 	}
                     final PolicyValidationContext pvc = new PolicyValidationContext(policy.getType(), policy.getInternalTag(), policy.getInternalSubTag(), wsdlLocator, soap, soapVersion);
+                    pvc.setInterfaceDescription( getPolicyNode().getInterfaceDescription() );
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     PolicyValidatorResult r = policyValidator.validate(assertion, pvc, licenseManager);
@@ -1111,6 +1112,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
                     final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, internalSubTag, wsdlLocator, soap, soapVersion);
+                    pvc.setInterfaceDescription( getPolicyNode().getInterfaceDescription() );
                     pvc.setPermittedAssertionClasses(new HashSet<>(TopComponents.getInstance().getAssertionRegistry().getPermittedAssertionClasses()));
                     pvc.getRegisteredCustomAssertionFeatureSets().putAll(registeredCustomAssertionFeatureSets);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);

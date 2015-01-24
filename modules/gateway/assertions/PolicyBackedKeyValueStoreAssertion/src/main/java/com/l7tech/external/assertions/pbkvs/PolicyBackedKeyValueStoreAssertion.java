@@ -126,6 +126,7 @@ public class PolicyBackedKeyValueStoreAssertion extends Assertion implements Set
         if ( policyBackedServiceName != null )
             header.setName( policyBackedServiceName );
         header.setGoid( policyBackedServiceGoid );
+        header.setType( EntityType.POLICY_BACKED_SERVICE );
         return new EntityHeader[] { header };
     }
 
