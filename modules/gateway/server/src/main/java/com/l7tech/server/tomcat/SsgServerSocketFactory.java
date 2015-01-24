@@ -170,6 +170,20 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
                 }
 
                 @Override
+                public void addHandshakeCompletedListener( final HandshakeCompletedListener handshakeCompletedListener ) {
+                    // Adding listeners after handshaking has started can trigger
+                    // the JDk bug :
+                    //
+                    //   http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7065972
+                    //
+                    // Tomcats JSSESupport adds an (unnecessary) listener that we
+                    // will ignore for now.
+                    //
+                    // TODO [jdk7] remove this method once the JDK bug is fixed (JDK 8 now, apparently)
+                    logger.fine("Ignoring SSL handshake listener");
+                }
+
+                @Override
                 public synchronized void close() throws IOException {
                     ds.onClose();
                     super.close();
