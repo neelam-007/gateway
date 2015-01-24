@@ -864,6 +864,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 if(Role.Tag.ADMIN.equals(((Role) existingEntity).getTag())){
                     ((Role) entityContainer.getEntity()).setTag(Role.Tag.ADMIN);
                 }
+            } else {
+                // TODO somehow reuse logic in RbacRoleResourceFactory
+                // this is a new role, must be 'userCreated'
+                ((Role) entityContainer.getEntity()).setUserCreated(true);
             }
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
