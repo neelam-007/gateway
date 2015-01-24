@@ -733,7 +733,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             } else {
                                 throw new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + " with id: " + entityContainer.getEntity().getId() + ". Message: Unexpected Identity type, should be either a UserBean or GroupBean");
                             }
-                        } else {
+                        } else if (entityContainer.getEntity() instanceof IdentityProviderConfig && ((IdentityProviderConfig)entityContainer.getEntity()).getTypeVal() == IdentityProviderType.INTERNAL.toVal()){
+                            // make sure internal identity provider is admin enabled
+                            ((IdentityProviderConfig)entityContainer.getEntity()).setAdminEnabled(true);
+                            saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
+                        }else {
                             saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
                         }
                     } catch (ObjectModelException e) {
