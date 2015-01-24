@@ -281,6 +281,35 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
                 return "<HTML><font color=gray>" + baseName + "   &nbsp;&nbsp;&nbsp;&nbsp;" + suffix;
             }
 
+            String customTemplate = config.getProperty( EncapsulatedAssertionConfig.PROP_POLICY_NODE_NAME_TEMPLATE );
+            if ( customTemplate != null && customTemplate.length() > 0 ) {
+                baseName = customTemplate.replace( "${meta.name}", baseName );
+                int num = 0;
+                for ( EncapsulatedAssertionArgumentDescriptor arg : config.sortedArguments() ) {
+                    String argName = arg.getArgumentName();
+                    if ( argName != null ) {
+                        String argType = arg.dataType().toString();
+                        String label = arg.getGuiLabel();
+                        String argValue = assertion.getParameter( argName );
+                        if ( null == argType )
+                            argType = "";
+                        if ( null == argValue )
+                            argValue = "";
+                        if ( null == label )
+                            label = argName;
+                        baseName = baseName.replace( "${in." + argName + ".label}", label );
+                        baseName = baseName.replace( "${in." + argName + ".value}", argValue );
+                        baseName = baseName.replace( "${in." + argName + ".type}", argType );
+                        baseName = baseName.replace( "${in." + num + ".name}", argName );
+                        baseName = baseName.replace( "${in." + num + ".label}", label );
+                        baseName = baseName.replace( "${in." + num + ".value}", argValue );
+                        baseName = baseName.replace( "${in." + num + ".type}", argType );
+                    }
+                    num++;
+                }
+                baseName = baseName.replaceAll( "\\$\\{[^}]*\\}", "" );
+            }
+
             return baseName;
         }
     };

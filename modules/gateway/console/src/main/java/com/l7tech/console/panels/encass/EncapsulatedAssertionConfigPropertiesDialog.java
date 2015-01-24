@@ -35,6 +35,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -241,6 +243,26 @@ public class EncapsulatedAssertionConfigPropertiesDialog extends JDialog {
         selectIconButton.setHorizontalTextPosition(SwingConstants.CENTER);
 
         zoneControl.configure(config.getGoid().equals(EncapsulatedAssertionConfig.DEFAULT_GOID) ? OperationType.CREATE : readOnly ? OperationType.READ : OperationType.UPDATE, config);
+
+        descriptionTextArea.addMouseListener( new MouseAdapter() {
+            @Override
+            public void mouseClicked( MouseEvent e ) {
+                if ( 2 == e.getClickCount() &&
+                        ( e.getButton() == MouseEvent.BUTTON1 ) &&
+                        ( 0 != ( e.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK ) ) )
+                {
+                    String t = config.getProperty( PROP_POLICY_NODE_NAME_TEMPLATE );
+                    Object r = JOptionPane.showInputDialog(
+                            descriptionTextArea,
+                            "Custom policy node name template.  Options:\n" +
+                            "${meta.name} ${in.0.name} ${in.FOO.value} ${in.1.type} ${in.BAR.label}",
+                            "Policy Node Name Template",
+                            0, null, null, t );
+                    if ( null != r )
+                        config.putProperty( PROP_POLICY_NODE_NAME_TEMPLATE, r.toString() );
+                }
+            }
+        } );
 
         Utilities.enableDefaultFocusTraversal(descriptionTextArea);
 
