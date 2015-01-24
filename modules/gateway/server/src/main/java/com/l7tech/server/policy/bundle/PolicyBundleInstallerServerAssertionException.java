@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
  * Exception thrown by implementation classes of PolicyBundleInstallerAbstractServerAssertion
  */
 public class PolicyBundleInstallerServerAssertionException extends PolicyAssertionException {
-    final int httpStatusCode;
+    private final int httpStatusCode;
 
     public PolicyBundleInstallerServerAssertionException(Assertion ass, String message, int httpStatusCode) {
         super(ass, message);

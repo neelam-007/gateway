@@ -89,6 +89,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     public static final String CONTEXT_VARIABLE_PREFIX = "";
     public static final String REQUEST_HTTP_PARAMETER = "request.http.parameter.";
     protected static final String L7 = "l7";
+    protected static final String COMPONENT_ID_SEPARATOR = ";";
 
     protected static enum Action {
         list, restman_get, wsman_dry_run, wsman_install, custom
@@ -100,7 +101,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     protected final PolicyBundleInstallerAdmin policyBundleInstallerAdmin;
 
     protected PolicyEnforcementContext context;
-    protected Map<String, BundleInfo> availableComponents;
+    private Map<String, BundleInfo> availableComponents;
 
     private boolean usesRequestHttpParams;
 
@@ -139,11 +140,11 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         policyBundleInstallerAdmin.setAuthenticatedUser(userBean);
 
         try {
-            if (availableComponents == null) {
+            if (getAvailableComponents() == null) {
                 List<BundleInfo> allComponents = policyBundleInstallerAdmin.getAllComponents();
-                availableComponents = new HashMap<>(allComponents.size());
-                for (BundleInfo bundleInfo : policyBundleInstallerAdmin.getAllComponents()) {
-                    availableComponents.put(bundleInfo.getId(), bundleInfo);
+                setAvailableComponents(new HashMap<String, BundleInfo>(allComponents.size()));
+                for (BundleInfo bundleInfo : allComponents) {
+                    getAvailableComponents().put(bundleInfo.getId(), bundleInfo);
                 }
             }
 
@@ -247,14 +248,22 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         }
     }
 
+    protected Map<String, BundleInfo> getAvailableComponents() {
+        return availableComponents;
+    }
+
+    protected void setAvailableComponents(Map<String, BundleInfo> availableComponents) {
+        this.availableComponents = availableComponents;
+    }
+
     /**
      * List the component ids in a bundle.
      */
     private void list() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         StringBuilder componentIds = new StringBuilder();
-        for (String bundleInfoId : availableComponents.keySet()) {
+        for (String bundleInfoId : getAvailableComponents().keySet()) {
             componentIds.append(bundleInfoId);
-            componentIds.append(";");
+            componentIds.append(COMPONENT_ID_SEPARATOR);
         }
         writeResponse(componentIds.toString());
     }
@@ -269,7 +278,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         // call policyBundleInstallerAdmin.dryRunInstall(...)
         final AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
 
-        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
+        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, Exception>() {
             @Override
             public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
                 PolicyBundleDryRunResult dryRunResult = (PolicyBundleDryRunResult) jobResultOut;
@@ -287,8 +296,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     }
 
     private void processJobResult(final AsyncAdminMethods.JobId<? extends Serializable> jobId,
-                                  final Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException> resultCallback) throws
-            InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException {
+                                  final Functions.UnaryVoidThrows<Object, Exception> resultCallback) throws
+            InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
+            AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyBundleInstallerServerAssertionException {
 
         while( true ) {
             final String status = policyBundleInstallerAdmin.getJobStatus( jobId );
@@ -297,8 +307,14 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
             } else if ( !status.startsWith( "a" ) ) {
                 final AsyncAdminMethods.JobResult<? extends Serializable> jobResult = policyBundleInstallerAdmin.getJobResult( jobId );
                 if ( jobResult.result != null ) {
-                    resultCallback.call(jobResult.result);
-                    break;
+                    try {
+                        resultCallback.call(jobResult.result);
+                        break;
+                    } catch (PolicyBundleInstallerServerAssertionException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
+                    }
                 } else {
                     throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(jobResult.throwableMessage);
                 }
@@ -310,8 +326,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     /**
      * Execute wsman dry run install for given components.
+     * Use no access modifier so method is accessible in test class, but not in subclass.
      */
-    private void wsmanDryRun() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
+    void wsmanDryRun() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
             NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException,
             PolicyBundleDryRunResult.UnknownBundleIdException, PolicyBundleInstallerServerAssertionException {
         final List<String> componentIds = getComponentIds(wsman_dry_run);
@@ -319,9 +336,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         // call policyBundleInstallerAdmin.dryRunInstall(...)
         AsyncAdminMethods.JobId<PolicyBundleDryRunResult> jobId = callAdminDryRun(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
 
-        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
+        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, Exception>() {
             @Override
-            public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+            public void call(Object jobResultOut) throws Exception {
                 PolicyBundleDryRunResult dryRunResult = (PolicyBundleDryRunResult) jobResultOut;
                 try {
                     final StringBuilder sb = new StringBuilder();
@@ -336,7 +353,12 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                             sb.append("EncapsulatedAssertionConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, ENCAPSULATED_ASSERTION), ';')).append(System.lineSeparator());
                         }
                     }
-                    writeResponse(sb.toString());
+
+                    if (sb.length() > 0) {
+                        throw new PolicyBundleInstallerServerAssertionException(assertion, sb.toString(), HttpStatus.SC_CONFLICT);
+                    } else {
+                        writeResponse(join(componentIds, ';'));
+                    }
                 } catch (PolicyBundleDryRunResult.UnknownBundleIdException e) {
                     throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
                 }
@@ -355,7 +377,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         // call policyBundleInstallerAdmin.install(...)
         AsyncAdminMethods.JobId<ArrayList> jobId = callAdminInstall(componentIds, getFolderGoid(), getMappings(componentIds), getVersionModifier());
 
-        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, PolicyBundleInstallerAdmin.PolicyBundleInstallerException>() {
+        processJobResult(jobId, new Functions.UnaryVoidThrows<Object, Exception>() {
             @Override
             public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
                 final ArrayList installedComponentIds = (ArrayList) jobResultOut;
@@ -367,20 +389,20 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     /**
      * Return component IDs applicable for that action.  If action is null, return all component IDs for the installer.
      */
-    private List<String> getComponentIds(@NotNull Action action) throws NoSuchVariableException, PolicyBundleInstallerServerAssertionException {
+    List<String> getComponentIds(@NotNull Action action) throws NoSuchVariableException, PolicyBundleInstallerServerAssertionException {
         final String componentIdsStr = getContextVariable(CONTEXT_VARIABLE_PREFIX + "component_ids");
         List<String> componentIds;
 
         if ("all".equalsIgnoreCase(componentIdsStr)) {
-            componentIds = new ArrayList<>(availableComponents.size());
-            for (BundleInfo bundleInfo : availableComponents.values()) {
+            componentIds = new ArrayList<>(getAvailableComponents().size());
+            for (BundleInfo bundleInfo : getAvailableComponents().values()) {
                 addComponentId(componentIds, action, bundleInfo);
             }
         } else {
-            List<String> inputIds = Arrays.asList(componentIdsStr.split(";"));
+            List<String> inputIds = Arrays.asList(componentIdsStr.split(COMPONENT_ID_SEPARATOR));
             componentIds = new ArrayList<>(inputIds.size());
             for (String inputId : inputIds) {
-                BundleInfo bundleInfo = availableComponents.get(inputId);
+                BundleInfo bundleInfo = getAvailableComponents().get(inputId);
                 if (bundleInfo != null) {
                     addComponentId(componentIds, action, bundleInfo);
                 }
