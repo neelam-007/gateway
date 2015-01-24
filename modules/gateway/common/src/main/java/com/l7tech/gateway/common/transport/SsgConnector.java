@@ -100,6 +100,9 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
     /** If specified, this is the size of the thread pool for the connector (Currently HTTP(S) only). */
     public static final String PROP_THREAD_POOL_SIZE = "threadPoolSize";
 
+    /** If specified, this is the concurrent request count at which a warning should be audited about high concurency on this connector's thread pool. */
+    public static final String PROP_CONCURRENCY_WARNING_THRESHOLD = "concurrencyWarningThreshold";
+
     /** If specified, service resolution should be bypassed for incoming requests, and they should be immediately routed to the specified service GOID. */
     public static final String PROP_HARDWIRED_SERVICE_ID = "hardwiredServiceId";
 

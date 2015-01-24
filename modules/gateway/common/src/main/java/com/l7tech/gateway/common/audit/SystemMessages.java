@@ -160,6 +160,7 @@ public class SystemMessages extends Messages {
     public static final M CONNECTOR_START = m(2400, Level.INFO, "Starting {0} listener: {1}");
     public static final M CONNECTOR_STOP  = m(2401, Level.INFO, "Stopping {0} listener: {1}");
     public static final M CONNECTOR_ERROR = m(2402, Level.WARNING, "{0} listener error: {1}");
+    public static final M CONNECTOR_CONCURRENCY_WARNING = m( 2403, Level.WARNING, "listener concurrency too high: {1} ({0})" );
 
     public static final M INVALID_CONTENT_TYPE = m(2420, Level.WARNING, "Cannot parse content-type value ''{0}'' from cluster property. Reason: {1}");
     public static final M INVALID_CUSTOM_DATE_FORMAT = m(2421, Level.WARNING, "Cannot parse custom date format ''{0}'' from cluster property. Reason: {1}");

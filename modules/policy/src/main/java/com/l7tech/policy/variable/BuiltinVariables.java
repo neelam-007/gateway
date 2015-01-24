@@ -215,6 +215,7 @@ public class BuiltinVariables {
             new VariableMetadata("request.wss.signingcertificate", true, false, null, false, DataType.CERTIFICATE, "request.wss.signingcertificates.value.1"),
 
             new VariableMetadata("request.http", true, false, null, false),
+            new VariableMetadata("request.listener", true, false, null, false),
             new VariableMetadata("request.mainpart", false, false, null, false),
             new VariableMetadata("request.parts", true, true, null, false),
             new VariableMetadata("request.wss", true, false, null, false),

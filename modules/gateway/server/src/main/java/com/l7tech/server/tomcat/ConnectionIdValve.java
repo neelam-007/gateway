@@ -26,6 +26,7 @@ public class ConnectionIdValve extends ValveBase {
     public static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
     public static final String ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID = "com.l7tech.server.httpTransportModuleInstanceId";
     public static final String ATTRIBUTE_CONNECTOR_OID = "com.l7tech.server.ssgConnectorOid";
+    public static final String ATTRIBUTE_CONNECTOR_POOL_CONCURRENCY = "com.l7tech.server.ssgConnectorPoolConcurrency";
 
     //- PUBLIC
 
@@ -76,8 +77,16 @@ public class ConnectionIdValve extends ValveBase {
         req.setAttribute(ATTRIBUTE_CONNECTOR_OID, connectorGoid);
         req.setAttribute(ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, httpTransportModule.getInstanceId());
 
-        // Let servlet do it's thing
-        getNext().invoke(req, res);
+        try {
+            int concurrency = httpTransportModule.incrementConcurrencyForConnector( connectorGoid );
+            req.setAttribute( ATTRIBUTE_CONNECTOR_POOL_CONCURRENCY, concurrency );
+
+            // Let servlet do it's thing
+            getNext().invoke( req, res );
+
+        } finally {
+            httpTransportModule.decrementConcurrencyForConnector( connectorGoid );
+        }
     }
 
     /**
