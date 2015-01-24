@@ -217,8 +217,20 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
     }
 
     @Override
+    public boolean isPolicyInputsAndOutputsVisible() {
+        // default set
+        String pmaprop = props.getProperty( POLICY_INPUTS_AND_OUTPUTS_VISIBLE );
+        return pmaprop == null || Boolean.valueOf( pmaprop );
+    }
+
+    @Override
     public void setPolicyMessageAreaVisible(boolean b) {
         putProperty(POLICY_MSG_AREA_VISIBLE, Boolean.toString(b));
+    }
+
+    @Override
+    public void setPolicyInputsAndOutputsVisible( boolean b ) {
+        putProperty( POLICY_INPUTS_AND_OUTPUTS_VISIBLE, Boolean.toString( b ) );
     }
 
     @Override

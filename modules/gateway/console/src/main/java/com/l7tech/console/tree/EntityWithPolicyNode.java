@@ -6,7 +6,9 @@ package com.l7tech.console.tree;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -62,7 +64,25 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
      * @throws FindException if the Entity cannot be loaded, or has been deleted
      */
     public abstract ET getEntity() throws FindException;
-    
+
+    /**
+     * If this policy is known to implement a particular interface with specified input and output variables
+     * (ie, if it is an encapsulated assertion backing policy
+     * or a policy backed service backing policy) then this method should return a (possibly-ephemeral)
+     * EncapsulatedAssertionConfig describing the input and output variables.
+     * <p/>
+     * Note that this method may contact the Gateway to look up information and hence may be expensive.
+     * It should not be called regularly (or during a repaint).
+     * <p/>
+     * This method just returns null.  Subclasses should override where interface descriptions are possible.
+     *
+     * @return an EncapsulatedAssertionConfig describing the interface implemented by this policy, or null.
+     */
+    @Nullable
+    public EncapsulatedAssertionConfig getInterfaceDescription() {
+        return null;
+    }
+
     protected abstract String getEntityName();
     public abstract void clearCachedEntities();
 

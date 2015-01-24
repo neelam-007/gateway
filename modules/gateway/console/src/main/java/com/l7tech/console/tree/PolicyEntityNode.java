@@ -11,10 +11,12 @@ import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -150,6 +152,63 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         Collection<EncapsulatedAssertionConfig> configs = getRelatedEncapsulatedAssertionConfigsFromLocalCache();
         return configs != null && configs.size() > 0;
     }
+
+    @Override
+    @Nullable
+    public EncapsulatedAssertionConfig getInterfaceDescription() {
+        Pair<EncapsulatedAssertionConfig, String> d = findInterfaceDescription();
+        if ( null == d ) {
+            return null;
+        }
+
+        EncapsulatedAssertionConfig ret = d.left.getCopy();
+        ret.setName( d.right );
+        return ret;
+    }
+
+    private Pair<EncapsulatedAssertionConfig, String> findInterfaceDescription() {
+        Collection<EncapsulatedAssertionConfig> configs = getRelatedEncapsulatedAssertionConfigsFromLocalCache();
+        if ( configs != null && !configs.isEmpty() ) {
+            EncapsulatedAssertionConfig config = configs.iterator().next();
+            return new Pair<>( config, "Encapsulated Assertion: " + config.getName() );
+        }
+
+        PolicyHeader header = getEntityHeader();
+        if ( null == header )
+            return null;
+
+        boolean pbs = header.getPolicyType() == PolicyType.POLICY_BACKED_OPERATION;
+        if ( !pbs )
+            return null;
+
+        try {
+            Policy policy = getEntity();
+            if ( policy == null )
+                return null;
+
+            String interfaceName = policy.getInternalTag();
+            if ( interfaceName == null )
+                return null;
+
+            String operationName = policy.getInternalSubTag();
+            if ( operationName == null )
+                return null;
+
+            Collection<EncapsulatedAssertionConfig> operations = Registry.getDefault().getPolicyBackedServiceAdmin().getInterfaceDescription( interfaceName );
+            for ( EncapsulatedAssertionConfig operation : operations ) {
+                if ( operationName.equals( operation.getName() ) )
+                    return new Pair<>( operation, "Policy Backed Operation: " + operation.getName() + " (" + interfaceName + ")" );
+            }
+
+            log.finest( "No matching operation found" );
+
+        } catch ( FindException e ) {
+            log.log( Level.WARNING, "Unable to load policy: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+
+        return null;
+    }
+
 
     private void addEncapsulatedAssertionActions( Collection<Action> actions ) {
         if ( !getEntityHeader().getPolicyType().equals(PolicyType.INCLUDE_FRAGMENT) )

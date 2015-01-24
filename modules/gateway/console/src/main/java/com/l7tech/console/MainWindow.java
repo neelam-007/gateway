@@ -51,7 +51,6 @@ import com.l7tech.policy.assertion.ext.action.CustomTaskActionUI;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
-import javax.imageio.ImageIO;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.Timer;
@@ -173,6 +172,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
+    private Action togglePolicyInputsAndOutputs = null;
     private MyAccountAction myAccountAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
@@ -1154,6 +1154,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         jcm.setSelected(policyMessageAreaVisible);
         menu.add(jcm);
 
+        jcm = new JCheckBoxMenuItem( getInputsAndOutputsToggleAction() );
+        boolean inputsAndOutputsVisisble = getPreferences().isPolicyInputsAndOutputsVisible();
+        jcm.setSelected( inputsAndOutputsVisisble );
+        menu.add( jcm );
+
         if (!isApplet()) {
             jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
             jcm.setSelected(getPreferences().isStatusBarBarVisible());
@@ -1670,6 +1675,39 @@ public class MainWindow extends JFrame implements SheetHolder {
                 };
         toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return toggleStatusBarAction;
+    }
+
+    private Action getInputsAndOutputsToggleAction() {
+        if ( togglePolicyInputsAndOutputs != null )
+            return togglePolicyInputsAndOutputs;
+
+        String atext = resapplication.getString("toggle.policy.inputsAndOutputs.action.name");
+        String aDesc = resapplication.getString("toggle.policy.inputsAndOutputs.action.desc");
+
+        // TODO this action should actually be disabled unless the policy open for editing in the current tab implements an interface
+        togglePolicyInputsAndOutputs =
+            new AbstractAction( atext ) {
+                @Override
+                public void actionPerformed(ActionEvent event) {
+                    JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                    final boolean selected = item.isSelected();
+                    final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                    final JComponent c = cw.getComponent();
+                    if (c != null && c instanceof PolicyEditorPanel) {
+                        PolicyEditorPanel pe = (PolicyEditorPanel) c;
+                        pe.setPolicyInputsAndOutputsVisible(selected);
+                    }
+                    try {
+                        SsmPreferences p = preferences;
+                        p.setPolicyInputsAndOutputsVisible(selected);
+                        p.store();
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
+            };
+        togglePolicyInputsAndOutputs.putValue( Action.SHORT_DESCRIPTION, aDesc );
+        return togglePolicyInputsAndOutputs;
     }
 
     /**

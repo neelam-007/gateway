@@ -23,6 +23,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -139,6 +140,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private Long overrideVersionNumber = null;
     private Boolean overrideVersionActive = null;
     private SearchForm searchForm;
+    private JSplitPane topSplitPane;
+    private InputAndOutputVariablesPanel inputsAndOutputsPanel = null;
     private SecureAction hideShowCommentsAction;
     private MigrateNamespacesAction migrateNamespacesAction;
     private Long latestPolicyVersionNumber = null;
@@ -407,6 +410,47 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setMessageAreaVisible(preferences.isPolicyMessageAreaVisible());
     }
 
+    private InputAndOutputVariablesPanel getInputsAndOutputsPanel() {
+        if ( inputsAndOutputsPanel != null )
+            return inputsAndOutputsPanel;
+
+        inputsAndOutputsPanel = new InputAndOutputVariablesPanel( );
+
+        if ( subject != null && subject.getPolicyNode() != null ) {
+            EntityWithPolicyNode ewpn = subject.getPolicyNode();
+            EncapsulatedAssertionConfig interfaceDesc = ewpn.getInterfaceDescription();
+            if ( interfaceDesc != null ) {
+                inputsAndOutputsPanel.setInputs( interfaceDesc.getArgumentDescriptors() );
+                inputsAndOutputsPanel.setOutputs( interfaceDesc.getResultDescriptors() );
+                inputsAndOutputsPanel.setInterfaceTitle( interfaceDesc.getName() );
+            }
+        }
+
+        return inputsAndOutputsPanel;
+    }
+
+    public void setPolicyInputsAndOutputsVisible( boolean b ) {
+        InputAndOutputVariablesPanel p = getInputsAndOutputsPanel();
+
+        p.setVisible( b );
+
+        final JComponent pane = getInputsAndOutputsPanel();
+        if ( b ) {
+            topSplitPane.add( pane, "top" );
+            topSplitPane.setDividerSize( 10 );
+        } else {
+            topSplitPane.remove( pane );
+            topSplitPane.setDividerSize( 0 );
+
+        }
+
+        SplitPaneUI sui = topSplitPane.getUI();
+        if ( sui instanceof BasicSplitPaneUI ) {
+            BasicSplitPaneUI bsui = (BasicSplitPaneUI) sui;
+            bsui.getDivider().setVisible( b );
+        }
+    }
+
     private JPanel getFindPanel(){
         if(searchForm != null) return searchForm.getSearchPanel();
 
@@ -432,11 +476,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (splitPane != null) return splitPane;
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setBorder(null);
+        topSplitPane = new JSplitPane( JSplitPane.VERTICAL_SPLIT );
+        Utilities.deuglifySplitPane( topSplitPane );
+
+        topSplitPane.setResizeWeight( 0.1 );
+        topSplitPane.add( getInputsAndOutputsPanel() );
+        topSplitPane.add( getPolicyTreePane() );
 
         JPanel containerPanel = new JPanel();
         containerPanel.setLayout(new BorderLayout());
         containerPanel.add(getFindPanel(), BorderLayout.NORTH);
-        containerPanel.add(getPolicyTreePane(), BorderLayout.CENTER);
+        containerPanel.add( topSplitPane, BorderLayout.CENTER);
+
+        setPolicyInputsAndOutputsVisible( !inputsAndOutputsPanel.isEmpty() && preferences.isPolicyInputsAndOutputsVisible() );
 
         final Action findAction = new AbstractAction() {
             @Override
