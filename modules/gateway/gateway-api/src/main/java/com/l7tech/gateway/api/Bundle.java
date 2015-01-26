@@ -13,7 +13,7 @@ public class Bundle {
     Bundle(){}
 
     @XmlElementWrapper(name = "References")
-    @XmlElement(name = "Item", required = true)
+    @XmlElement(name = "Item")
     public List<Item> getReferences() {
         return references;
     }

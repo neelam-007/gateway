@@ -29,6 +29,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -126,7 +127,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     public EntityBundle convertFromMO(@NotNull final Bundle bundle, final boolean strict, final SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         // Convert all the MO's in the bundle to entities
 
-        final List<EntityContainer> entityContainers = Functions.map(bundle.getReferences(), new Functions.UnaryThrows<EntityContainer, Item, ResourceFactory.InvalidResourceException>() {
+        final List<EntityContainer> entityContainers = bundle.getReferences() == null ? Collections.<EntityContainer>emptyList() : Functions.map(bundle.getReferences(), new Functions.UnaryThrows<EntityContainer, Item, ResourceFactory.InvalidResourceException>() {
             @Override
             public EntityContainer call(Item item) throws ResourceFactory.InvalidResourceException {
                 final EntityAPITransformer transformer = apiUtilityLocator.findTransformerByResourceType(item.getType());
