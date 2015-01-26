@@ -89,7 +89,8 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
     public static final String CONTEXT_VARIABLE_PREFIX = "";
     public static final String REQUEST_HTTP_PARAMETER = "request.http.parameter.";
     protected static final String L7 = "l7";
-    protected static final String COMPONENT_ID_SEPARATOR = ";";
+    protected static final char COMPONENT_ID_SEPARATOR_CHAR = ';';
+    protected static final String COMPONENT_ID_SEPARATOR = String.valueOf(COMPONENT_ID_SEPARATOR_CHAR);
 
     protected static enum Action {
         list, restman_get, wsman_dry_run, wsman_install, custom
@@ -100,7 +101,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     protected final PolicyBundleInstallerAdmin policyBundleInstallerAdmin;
 
-    protected PolicyEnforcementContext context;
+    private PolicyEnforcementContext context;
     private Map<String, BundleInfo> availableComponents;
 
     private boolean usesRequestHttpParams;
@@ -131,10 +132,10 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      */
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // save a handle to the context
-        this.context = context;
+        setContext(context);
 
         // set authenticated user credential
-        final User currentUser = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
+        final User currentUser = getContext().getDefaultAuthenticationContext().getLastAuthenticatedUser();
         final UserBean userBean = new UserBean(currentUser.getProviderId(), currentUser.getLogin());
         userBean.setUniqueIdentifier(currentUser.getId());
         policyBundleInstallerAdmin.setAuthenticatedUser(userBean);
@@ -189,9 +190,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     protected String getContextVariable(@NotNull final String name) throws NoSuchVariableException {
         if (usesRequestHttpParams) {
-            return context.getVariable(REQUEST_HTTP_PARAMETER + name).toString();
+            return getContext().getVariable(REQUEST_HTTP_PARAMETER + name).toString();
         } else {
-            return context.getVariable(name).toString();
+            return getContext().getVariable(name).toString();
         }
     }
 
@@ -238,11 +239,11 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
      */
     protected void writeResponse(final String string) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         try {
-            final Message response = context.getResponse();
+            final Message response = getContext().getResponse();
             final ByteArrayInputStream inputStream = new ByteArrayInputStream(string.getBytes());
-            response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, inputStream);
+            response.initialize(getStashManagerFactory().createStashManager(), ContentTypeHeader.XML_DEFAULT, inputStream);
             response.getMimeKnob().getContentLength();
-            response.getHttpResponseKnob().setStatus(200);
+            response.getHttpResponseKnob().setStatus(HttpStatus.SC_OK);
         } catch (IOException e) {
             throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
         }
@@ -256,10 +257,23 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
         this.availableComponents = availableComponents;
     }
 
+    protected PolicyEnforcementContext getContext() {
+        return context;
+    }
+
+    protected void setContext(PolicyEnforcementContext context) {
+        this.context = context;
+    }
+
+    protected StashManagerFactory getStashManagerFactory() {
+        return stashManagerFactory;
+    }
+
     /**
      * List the component ids in a bundle.
+     * Use no access modifier so method is accessible in test class, but not in subclass.
      */
-    private void list() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
+    void list() throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
         StringBuilder componentIds = new StringBuilder();
         for (String bundleInfoId : getAvailableComponents().keySet()) {
             componentIds.append(bundleInfoId);
@@ -270,8 +284,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     /**
      * Get restman migration bundle xml by executing dry run install of given components.
+     * Use no access modifier so method is accessible in test class, but not in subclass.
      */
-    private void restmanGet() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
+    void restmanGet() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
             NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException, PolicyAssertionException {
         final List<String> componentIds = getComponentIds(restman_get);
 
@@ -345,19 +360,19 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
                     for (String componentId : componentIds) {
                         if (dryRunResult.anyConflictsForBundle(componentId)) {
                             sb.append("ComponentId: ").append(componentId).append(System.lineSeparator());
-                            sb.append("ServiceConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, SERVICES), ';')).append(System.lineSeparator());
-                            sb.append("PolicyConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, POLICIES), ';')).append(System.lineSeparator());
-                            sb.append("CertificateConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, CERTIFICATES), ';')).append(System.lineSeparator());
-                            sb.append("JdbcConnectionsThatDontExist: ").append(join(dryRunResult.getConflictsForItem(componentId, JDBC_CONNECTIONS), ';')).append(System.lineSeparator());
-                            sb.append("MissingAssertions: ").append(join(dryRunResult.getConflictsForItem(componentId, ASSERTIONS), ';')).append(System.lineSeparator());
-                            sb.append("EncapsulatedAssertionConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, ENCAPSULATED_ASSERTION), ';')).append(System.lineSeparator());
+                            sb.append("ServiceConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, SERVICES), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
+                            sb.append("PolicyConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, POLICIES), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
+                            sb.append("CertificateConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, CERTIFICATES), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
+                            sb.append("JdbcConnectionsThatDontExist: ").append(join(dryRunResult.getConflictsForItem(componentId, JDBC_CONNECTIONS), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
+                            sb.append("MissingAssertions: ").append(join(dryRunResult.getConflictsForItem(componentId, ASSERTIONS), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
+                            sb.append("EncapsulatedAssertionConflict: ").append(join(dryRunResult.getConflictsForItem(componentId, ENCAPSULATED_ASSERTION), COMPONENT_ID_SEPARATOR_CHAR)).append(System.lineSeparator());
                         }
                     }
 
                     if (sb.length() > 0) {
                         throw new PolicyBundleInstallerServerAssertionException(assertion, sb.toString(), HttpStatus.SC_CONFLICT);
                     } else {
-                        writeResponse(join(componentIds, ';'));
+                        writeResponse(join(componentIds, COMPONENT_ID_SEPARATOR_CHAR));
                     }
                 } catch (PolicyBundleDryRunResult.UnknownBundleIdException e) {
                     throw new PolicyBundleInstallerAdmin.PolicyBundleInstallerException(e);
@@ -368,8 +383,9 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
 
     /**
      * Execute wsman install for given components.
+     * Use no access modifier so method is accessible in test class, but not in subclass.
      */
-    private void wsmanInstall() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
+    void wsmanInstall() throws InterruptedException, PolicyBundleInstallerAdmin.PolicyBundleInstallerException,
             NoSuchVariableException, AsyncAdminMethods.UnknownJobException, AsyncAdminMethods.JobStillActiveException,
             PolicyBundleDryRunResult.UnknownBundleIdException, PolicyBundleInstallerServerAssertionException {
         final List<String> componentIds = getComponentIds(wsman_install);
@@ -381,7 +397,7 @@ public abstract class PolicyBundleInstallerAbstractServerAssertion<AT extends As
             @Override
             public void call(Object jobResultOut) throws PolicyBundleInstallerAdmin.PolicyBundleInstallerException {
                 final ArrayList installedComponentIds = (ArrayList) jobResultOut;
-                writeResponse(join(installedComponentIds, ';'));
+                writeResponse(join(installedComponentIds, COMPONENT_ID_SEPARATOR_CHAR));
             }
         });
     }
