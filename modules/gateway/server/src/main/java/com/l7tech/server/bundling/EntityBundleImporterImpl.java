@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -31,6 +32,7 @@ import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsExcepti
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -40,6 +42,8 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.service.AliasManager;
+import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
@@ -95,6 +99,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private SsgKeyStoreManager keyStoreManager;
     @Inject
     private SsgKeyStoreManager ssgKeyStoreManager;
+    @Inject
+    private ServiceAliasManager serviceAliasManager;
+    @Inject
+    private PolicyAliasManager policyAliasManager;
 
 
     /**
@@ -224,7 +232,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     case NewOrUpdate:
                                     case AlwaysCreateNew: {
                                         //Create a new entity based on the one in the bundle
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, mapping.getSourceEntityHeader().getStrId(), mapping, resourceMapping, null, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
+                                                //use the target id if specified, otherwise use the source id
+                                                mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType()) && mapping.getTargetMapping().getTargetID() != null ? mapping.getTargetMapping().getTargetID() : mapping.getSourceEntityHeader().getStrId(),
+                                                mapping, resourceMapping, null, activate, versionComment, false);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -872,6 +883,28 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 // TODO somehow reuse logic in RbacRoleResourceFactory
                 // this is a new role, must be 'userCreated'
                 ((Role) entityContainer.getEntity()).setUserCreated(true);
+            }
+        } else if (entityContainer.getEntity() instanceof Alias) {
+            //need to check that the alias will not be created in the same folder as the policy or service it is aliasing. Or that is it is created in a folder that already has an alias for that policy or service.
+            //this checks if it is to be created in a folder with the aliased service or policy
+            final EntityHeader serviceOrPolicyHeader = entityCrud.findHeader(entityContainer.getEntity() instanceof PublishedServiceAlias ? EntityType.SERVICE : EntityType.POLICY, ((Alias) entityContainer.getEntity()).getEntityGoid());
+            if (serviceOrPolicyHeader instanceof OrganizationHeader) {
+                if (Goid.equals(((OrganizationHeader) serviceOrPolicyHeader).getFolderId(), ((Alias) entityContainer.getEntity()).getFolder().getGoid())) {
+                    throw new DuplicateObjectException("Cannot create alias in the same folder as the aliased policy or service");
+                }
+            } else if (serviceOrPolicyHeader == null) {
+                final String serviceOrPolicy = entityContainer.getEntity() instanceof PublishedServiceAlias ? "service" : "policy";
+                //note this needs to be a ConstraintViolationException and not a FindException so the the proper mapping is returned. If it is a FindException the mapping error type for the alias is TargetNotFound but we actually want InvalidResource
+                throw new ConstraintViolationException("Could not find the " + serviceOrPolicy + " for alias. " + serviceOrPolicy + " id: " + ((Alias) entityContainer.getEntity()).getEntityGoid());
+            } else {
+                throw new IllegalStateException("A policy or service header is expected to be an OrganizationHeader but it was not. Header: " + serviceOrPolicyHeader);
+            }
+
+            // This checks if it is to be created in a folder with another alias for the same service or policy
+            final AliasManager aliasManager = entityContainer.getEntity() instanceof PublishedServiceAlias ? serviceAliasManager : policyAliasManager;
+            final Alias checkAlias = aliasManager.findAliasByEntityAndFolder(((Alias) entityContainer.getEntity()).getEntityGoid(), ((Alias) entityContainer.getEntity()).getFolder().getGoid());
+            if (checkAlias != null) {
+                throw new DuplicateObjectException("Cannot create alias in the same folder as an alias for the same aliased policy or service");
             }
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.

@@ -85,7 +85,7 @@ public class PolicyAliasResourceFactory extends SecurityZoneableEntityManagerRes
         Policy policy;
         try {
             policy = policyResourceFactory.selectEntity(Collections.singletonMap(IDENTITY_SELECTOR, policyId));
-            if (isRootFolder(policy.getFolder()) ? isRootFolder(parentFolder.some()) : policy.getFolder().equals(parentFolder.some()))
+            if (isRootFolder(policy.getFolder()) ? isRootFolder(parentFolder.some()) : policy.getFolder().equals(parentFolder.some()) && strict)
                 throw new InvalidResourceException(ExceptionType.INVALID_VALUES, "Cannot create alias in the same folder as original policy");
         } catch (NullPointerException | ResourceNotFoundException e) {
             if(strict)

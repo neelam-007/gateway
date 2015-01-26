@@ -7,12 +7,14 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
@@ -62,6 +64,10 @@ public class EntityBundleImporterImplTest {
     private SsgKeyStoreManager keyStoreManager;
     @Mock
     private SsgKeyStoreManager ssgKeyStoreManager;
+    @Mock
+    private ServiceAliasManager serviceAliasManager;
+    @Mock
+    private PolicyAliasManager policyAliasManager;
 
     @Before
     public void steup() {
@@ -78,6 +84,8 @@ public class EntityBundleImporterImplTest {
                 .put("auditContextFactory", auditContextFactory)
                 .put("keyStoreManager", keyStoreManager)
                 .put("ssgKeyStoreManager", ssgKeyStoreManager)
+                .put("serviceAliasManager", serviceAliasManager)
+                .put("policyAliasManager", policyAliasManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }
