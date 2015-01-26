@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -764,5 +765,124 @@ public class SiteminderConfigurationMigrationTest extends com.l7tech.skunkworks.
         assertNotNull(getDependency(policyDependencies, passwordItem.getId()));
 
         validate(mappings);
+    }
+
+    @BugId("SSG-10514")
+    @Test
+    public void testMinimalConfigImportNew() throws Exception {
+        RestResponse response;
+        //create the cert on the target
+        SiteMinderConfigurationMO siteMinderConfigurationMO = ManagedObjectFactory.createSiteMinderConfiguration();
+        siteMinderConfigurationMO.setName("Source Siteminder Config Minimal");
+        siteMinderConfigurationMO.setAddress("");
+        siteMinderConfigurationMO.setHostname("srchost");
+        siteMinderConfigurationMO.setEnabled(false);
+        siteMinderConfigurationMO.setNonClusterFailover(false);
+        siteMinderConfigurationMO.setIpCheck(false);
+        siteMinderConfigurationMO.setUpdateSsoToken(false);
+        siteMinderConfigurationMO.setFipsMode(2);
+        siteMinderConfigurationMO.setSecret("srcSecret");
+        response = getSourceEnvironment().processRequest("siteMinderConfigurations", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(siteMinderConfigurationMO)));
+        assertOkCreatedResponse(response);
+        Item<SiteMinderConfigurationMO> siteminderMinimal = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        siteminderMinimal.setContent(siteMinderConfigurationMO);
+
+
+        //create policy;
+        PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+        PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+        policyMO.setPolicyDetail(policyDetail);
+        policyDetail.setName("MyPolicyMinimal");
+        policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+        policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                .put("soap", false)
+                .map());
+        ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        policyMO.setResourceSets(Arrays.asList(resourceSet));
+        resourceSet.setTag("policy");
+        Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Arrays.asList(resource));
+        resource.setType("policy");
+        resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:SiteMinderCheckProtected>\n" +
+                "            <L7p:AgentGoid goidValue=\""+siteminderMinimal.getId()+"\"/>\n" +
+                "            <L7p:AgentId stringValue=\""+siteminderMinimal.getName()+"\"/>\n" +
+                "            <L7p:ProtectedResource stringValue=\"protected resource\"/>\n" +
+                "            <L7p:Action stringValue=\"GET\"/>\n" +
+                "            <L7p:Prefix stringValue=\"prefix\"/>\n" +
+                "        </L7p:SiteMinderCheckProtected>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>\n");
+
+        response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+        assertOkCreatedResponse(response);
+
+        Item<PolicyMO> policyItemMinimal = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        policyItemMinimal.setContent(policyMO);
+
+        try{
+            //get the bundle
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItemMinimal.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy, a siteminder configuration", 2, bundleItem.getContent().getReferences().size());
+            Assert.assertEquals("The bundle should have 3 mappings. Root folder, a policy, a siteminder configuration", 3, bundleItem.getContent().getMappings().size());
+
+            //change the siteminder MO to contain a secret.
+            ((SiteMinderConfigurationMO) bundleItem.getContent().getReferences().get(0).getContent()).setSecret("secret");
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+
+            Mapping siteminderMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.SITEMINDER_CONFIGURATION.toString(), siteminderMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, siteminderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, siteminderMapping.getActionTaken());
+            Assert.assertEquals(siteminderMinimal.getId(), siteminderMapping.getSrcId());
+            Assert.assertEquals(siteminderMapping.getSrcId(), siteminderMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItemMinimal.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            // verify dependencies
+            response = getTargetEnvironment().processRequest("policies/"+policyMapping.getTargetId() + "/dependencies", "returnType", HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<DependencyListMO> policyCreatedDependencies = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            List<DependencyMO> policyDependencies = policyCreatedDependencies.getContent().getDependencies();
+
+            Assert.assertNotNull(policyDependencies);
+            Assert.assertEquals(1, policyDependencies.size());
+
+            assertNotNull(getDependency(policyDependencies, siteminderMinimal.getId()));
+
+            validate(mappings);
+        }finally{
+            response = getSourceEnvironment().processRequest("siteMinderConfigurations/" + siteminderMinimal.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getSourceEnvironment().processRequest("policies/" + policyItemMinimal.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
     }
 }
