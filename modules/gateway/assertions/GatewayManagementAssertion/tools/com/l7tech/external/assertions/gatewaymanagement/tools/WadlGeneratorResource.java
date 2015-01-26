@@ -55,6 +55,10 @@ public class WadlGeneratorResource {
             for (final Resources resources : application.getResources()) {
                 for (final Iterator<Resource> resourceIterator = resources.getResource().iterator(); resourceIterator.hasNext(); ) {
                     final Resource resource = resourceIterator.next();
+
+                    //filter out parameters depending on the version
+                    filterResourceParams(currentVersion, resource);
+
                     if (!supportsVersion(currentVersion, resource.getDoc())) {
                         resourceIterator.remove();
                     } else {
@@ -101,6 +105,30 @@ public class WadlGeneratorResource {
             return Response.ok(new ByteArrayInputStream(wadlXmlRepresentation)).build();
         } catch (Exception e) {
             throw new ProcessingException("Error generating /application.wadl.", e);
+        }
+    }
+
+    /**
+     * This will remove Template parameters from resources in version 1.0.1 and greats. The template params are moved to the method requests instead. SSG-10082
+     *
+     * @param currentVersion The current version being processed.
+     * @param resource The resource to filter.
+     */
+    private void filterResourceParams(RestManVersion currentVersion, Resource resource) {
+        if(RestManVersion.VERSION_1_0_1.compareTo(currentVersion) <= 0) {
+            //need to remove path params from resources, they are in the requests. Only for version above 1.0.1
+            for(final Iterator<Param> paramIterator = resource.getParam().iterator(); paramIterator.hasNext(); ) {
+                final Param param = paramIterator.next();
+                if(ParamStyle.TEMPLATE.equals(param.getStyle())) {
+                    paramIterator.remove();
+                }
+            }
+            //remove from any sub-resources
+            for (final Object methodOrResource : resource.getMethodOrResource()) {
+                if (methodOrResource instanceof Resource) {
+                    filterResourceParams(currentVersion, (Resource) methodOrResource);
+                }
+            }
         }
     }
 

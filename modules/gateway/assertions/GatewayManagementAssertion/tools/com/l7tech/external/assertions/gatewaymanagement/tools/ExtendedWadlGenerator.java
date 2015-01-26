@@ -233,6 +233,14 @@ public class ExtendedWadlGenerator implements org.glassfish.jersey.server.wadl.W
 
                 request.getRepresentation().add(representation);
             }
+
+            if(wadlRequestVersionAtLeast(RestManVersion.VERSION_1_0_1)) {
+                //add path parameters to the request. These are removed by the wadlBuilder. See SSG-10082
+                if (Parameter.Source.PATH.equals(p.getSource())) {
+                    Param param = createParam(r, m, p);
+                    request.getParam().add(param);
+                }
+            }
         }
 
         return request;
