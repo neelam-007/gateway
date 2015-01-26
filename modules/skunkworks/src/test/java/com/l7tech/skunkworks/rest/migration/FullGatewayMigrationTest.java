@@ -27,6 +27,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +39,14 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
     private static final Logger logger = Logger.getLogger(FullGatewayMigrationTest.class.getName());
 
     private Item<IdentityProviderMO> internalIDProviderItem;
+    private String EmptyServiceXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:AuditDetailAssertion>\n" +
+            "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
+            "        </L7p:AuditDetailAssertion>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
 
     @Before
     public void before() throws Exception {
@@ -454,7 +463,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
     public void testFullGatewayExportImportOneService() throws Exception {
         Item<ServiceMO> serviceItem = null;
         try {
-            serviceItem = createService(getSourceEnvironment());
+            serviceItem = createService(getSourceEnvironment(), EmptyServiceXML);
             RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
             logger.log(Level.INFO, response.toString());
             assertOkResponse(response);
@@ -652,6 +661,139 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         }
     }
 
+    /**
+     * Test that export bundle with mappings does not show duplicated missing mappings
+     */
+    @BugId("SSG-10468")
+    @Test
+    public void testExportMissingDependencies() throws Exception {
+        Goid securePasswordGoid = newRandomID();
+        Item<ServiceMO> authenticateRadiusAssertionService = null;
+        Item<ServiceMO> routeviaFTPAssertionService = null;
+        Item<ServiceMO> missingPasswordReferenceAssertionService = null;
+        Item<ServiceMO> missingPasswordReferenceAssertionService2 = null;
+        Item<ServiceMO> missingPasswordReference2AssertionService1 = null;
+        Item<ServiceMO> missingPasswordReference2AssertionService2 = null;
+
+        try {
+            authenticateRadiusAssertionService = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:RadiusAuthenticate>\n" +
+                    "            <L7p:AcctPort stringValue=\"1813\"/>\n" +
+                    "            <L7p:AuthPort stringValue=\"1812\"/>\n" +
+                    "            <L7p:Authenticator stringValue=\"pap\"/>\n" +
+                    "            <L7p:Host stringValue=\"test\"/>\n" +
+                    "            <L7p:Prefix stringValue=\"radius\"/>\n" +
+                    "            <L7p:SecretGoid goidValue=\""+securePasswordGoid+"\"/>\n" +
+                    "            <L7p:Timeout stringValue=\"5\"/>\n" +
+                    "        </L7p:RadiusAuthenticate>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+            routeviaFTPAssertionService = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:FtpRoutingAssertion>\n" +
+                    "            <L7p:Arguments stringValue=\"test\"/>\n" +
+                    "            <L7p:CredentialsSource credentialsSource=\"specified\"/>\n" +
+                    "            <L7p:Directory stringValue=\"\"/>\n" +
+                    "            <L7p:HostName stringValue=\"test\"/>\n" +
+                    "            <L7p:PasswordGoid goidValue=\""+securePasswordGoid+"\"/>\n" +
+                    "            <L7p:ResponseTarget MessageTarget=\"included\">\n" +
+                    "                <L7p:Target target=\"RESPONSE\"/>\n" +
+                    "            </L7p:ResponseTarget>\n" +
+                    "            <L7p:Security security=\"ftp\"/>\n" +
+                    "            <L7p:UserName stringValue=\"test\"/>\n" +
+                    "        </L7p:FtpRoutingAssertion>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+            missingPasswordReferenceAssertionService = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:HardcodedResponse>\n" +
+                    "            <L7p:Base64ResponseBody stringValue=\"JHtzZWNwYXNzLm1pc3NpbmdwYXNzd29yZC5wbGFpbnRleHR9\"/>\n" +
+                    "        </L7p:HardcodedResponse>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+            missingPasswordReferenceAssertionService2 = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:HardcodedResponse>\n" +
+                    "            <L7p:Base64ResponseBody stringValue=\"JHtzZWNwYXNzLm1pc3NpbmdwYXNzd29yZC5wbGFpbnRleHR9\"/>\n" +
+                    "        </L7p:HardcodedResponse>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+            missingPasswordReference2AssertionService1 = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:HardcodedResponse>\n" +
+                    "            <L7p:Base64ResponseBody stringValue=\"JHtzZWNwYXNzLm15cGFzcy5wbGFpbnRleHR9\"/>\n" +
+                    "        </L7p:HardcodedResponse>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+            missingPasswordReference2AssertionService2 = createService(getSourceEnvironment(), "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:HardcodedResponse>\n" +
+                    "            <L7p:Base64ResponseBody stringValue=\"JHtzZWNwYXNzLm15cGFzcy5wbGFpbnRleHR9\"/>\n" +
+                    "        </L7p:HardcodedResponse>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+
+            RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true&includeDependencies=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertNotNull(bundleItem.getContent().getDependencyGraph());
+            //there should only be 3 missing dependencies. 2 password. one with an id, two with a name.
+            Assert.assertEquals(3, bundleItem.getContent().getDependencyGraph().getMissingDependencies().size());
+
+            DependencyMO dependency = getDependency(bundleItem.getContent().getDependencyGraph().getMissingDependencies(), securePasswordGoid.toString());
+            Assert.assertNotNull(dependency);
+
+            dependency = getDependencyByName(bundleItem.getContent().getDependencyGraph().getMissingDependencies(), "missingpassword");
+            Assert.assertNotNull(dependency);
+
+            dependency = getDependencyByName(bundleItem.getContent().getDependencyGraph().getMissingDependencies(), "mypass");
+            Assert.assertNotNull(dependency);
+
+        } finally {
+            if (authenticateRadiusAssertionService != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + authenticateRadiusAssertionService.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (routeviaFTPAssertionService != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + routeviaFTPAssertionService.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (missingPasswordReferenceAssertionService != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + missingPasswordReferenceAssertionService.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (missingPasswordReferenceAssertionService2 != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + missingPasswordReferenceAssertionService2.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (missingPasswordReference2AssertionService1 != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + missingPasswordReference2AssertionService1.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+            if (missingPasswordReference2AssertionService2 != null) {
+                RestResponse response = getSourceEnvironment().processRequest("services/" + missingPasswordReference2AssertionService2.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+            }
+        }
+    }
+
+    private Goid newRandomID() {
+        Random random = new Random();
+        long hi = random.nextLong();
+        long low = random.nextLong();
+        return new Goid(hi, low);
+    }
+
     private Item<HttpConfigurationMO> createHttpConfiguration(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
         HttpConfigurationMO httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
         httpConfiguration.setUsername("userNew");
@@ -672,18 +814,8 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
 
     }
 
-    private Item<ServiceMO> createService(JVMDatabaseBasedRestManagementEnvironment environment) throws Exception {
+    private Item<ServiceMO> createService(JVMDatabaseBasedRestManagementEnvironment environment, String assXml) throws Exception {
         //create service
-        final String assXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                        "    <wsp:All wsp:Usage=\"Required\">\n" +
-                        "        <L7p:AuditDetailAssertion>\n" +
-                        "            <L7p:Detail stringValue=\"HI 2\"/>\n" +
-                        "        </L7p:AuditDetailAssertion>\n" +
-                        "    </wsp:All>\n" +
-                        "</wsp:Policy>";
-
         ServiceMO serviceMO = ManagedObjectFactory.createService();
         ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
         serviceMO.setServiceDetail(serviceDetail);

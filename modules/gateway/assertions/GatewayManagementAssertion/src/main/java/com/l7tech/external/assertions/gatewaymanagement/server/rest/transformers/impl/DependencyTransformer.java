@@ -59,22 +59,17 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
 
     @NotNull
-    public DependencyListMO convertToMO(@NotNull List<DependencySearchResults> dependencySearchResultsList) {
-        DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
+    public DependencyListMO convertToMO(@NotNull final List<DependencySearchResults> dependencySearchResultsList) {
+        final DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         if(dependencySearchResultsList.isEmpty()){
             return dependencyAnalysisMO;
         }
-//        dependencyAnalysisMO.setOptions(dependencySearchResults.getSearchOptions());
-//        dependencyAnalysisMO.setSearchObjectItem(toDependencyManagedObject(dependencySearchResultsList.get(0).getDependent(), dependencySearchResultsList.get(0).getDependencies()));
-        List<Dependency> dependencyList = new ArrayList<>();
-        for (DependencySearchResults results : dependencySearchResultsList){
-            if(results != null) {
-                dependencyList.addAll(DependencySearchResultsUtils.flattenDependencySearchResults(results, false));
-            }
-        }
+
+        final List<Dependency> dependencyList = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResultsList, false);
+
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());
-        for(Dependency dependency: dependencyList){
+        for(final Dependency dependency: dependencyList){
             if(dependency instanceof BrokenDependency){
                 dependencyAnalysisMO.getMissingDependencies().add(toManagedObject(dependency));
             }else{

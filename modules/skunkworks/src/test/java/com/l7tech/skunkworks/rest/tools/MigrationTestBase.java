@@ -170,6 +170,16 @@ public abstract class MigrationTestBase {
         return dependencyMO;
     }
 
+    protected DependencyMO getDependencyByName(List<DependencyMO> dependencies, final String name){
+        final DependencyMO dependencyMO = Functions.grepFirst(dependencies, new Functions.Unary<Boolean, DependencyMO>() {
+            @Override
+            public Boolean call(DependencyMO dependency) {
+                return name.equals(dependency.getName());
+            }
+        });
+        return dependencyMO;
+    }
+
     protected DependencyMO getDependency(List<DependencyMO> dependencies, final EntityType type){
         return (DependencyMO)CollectionUtils.find(dependencies, new Predicate() {
             @Override
