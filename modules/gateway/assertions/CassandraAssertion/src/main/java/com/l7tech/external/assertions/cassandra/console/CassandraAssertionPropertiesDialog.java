@@ -306,10 +306,10 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         pack();
     }
 
-    private void setSpinnerValue(JSpinner spinner, int value, String clusterPropName, int spinnerDefault) {
+    private void setSpinnerValue(JSpinner spinner, int value, String clusterPropName, int spinnerDefault, int spinnerMax) {
         String propValue = getClusterPropertyValue(clusterPropName);
         int defaultValues = getIntOrDefault(propValue, spinnerDefault);
-        if(value > 0 && value <= defaultValues) {
+        if(value > 0 && value <= spinnerMax) {
             spinner.setValue(value);
         }
         else {
@@ -451,8 +451,8 @@ public class CassandraAssertionPropertiesDialog extends AssertionPropertiesEdito
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
         generateXMLResultCheckBox.setSelected(assertion.isGenerateXmlResult());
         variablePrefixPanel.setVariable(assertion.getPrefix());
-        setSpinnerValue(maxRecordsSpinner, assertion.getMaxRecords(), "cassandra.maxRecords", CassandraQueryAssertion.DEFAULT_MAX_RECORDS);
-        setSpinnerValue(fetchSizeSpinner, assertion.getFetchSize(), "cassandra.fetchSize", CassandraQueryAssertion.DEFAULT_FETCH_SIZE);
+        setSpinnerValue(maxRecordsSpinner, assertion.getMaxRecords(), "cassandra.maxRecords", CassandraQueryAssertion.DEFAULT_MAX_RECORDS, CassandraConnectionManagerAdmin.UPPER_BOUND_MAX_RECORDS);
+        setSpinnerValue(fetchSizeSpinner, assertion.getFetchSize(), "cassandra.fetchSize", CassandraQueryAssertion.DEFAULT_FETCH_SIZE, Integer.MAX_VALUE);
         variableNamingMap.clear();
         variableNamingMap.putAll(assertion.getNamingMap());
         variableNamingTableModel.setRows(getNamedMappingList());
