@@ -244,6 +244,25 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                                         user == null ? "<none>" : user.getLogin(),
                                         user == null ? "<none>" : user.getId(),
                                         event.getClientAddr());
+        } else if (genericEvent instanceof ServerModuleFileAdminEvent) {
+            final ServerModuleFileAdminEvent event = (ServerModuleFileAdminEvent)genericEvent;
+            final AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
+            if (info == null) {
+                return null;
+            }
+            return new AdminAuditRecord(
+                    level(event),
+                    nodeId,
+                    event.getModuleGoid(),
+                    event.getEntityClassName(),
+                    event.getModuleName(),
+                    event.getAction(),
+                    event.getNote(),
+                    info.identityProviderOid,
+                    info.login,
+                    info.id,
+                    info.ip
+            );
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
             AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());

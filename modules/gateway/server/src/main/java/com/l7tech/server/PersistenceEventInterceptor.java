@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.module.ServerModuleFileData;
 import com.l7tech.gateway.common.module.ServerModuleFileState;
 import com.l7tech.gateway.common.security.rbac.*;
@@ -107,10 +108,19 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     }
 
     private AdminEvent setsys(Object entity, AdminEvent event) {
-        if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
+        if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName()) || isServerModuleFileCreateOrDelete(entity, event)) {
             event.setAuditIgnore(true);
         }
         return event;
+    }
+
+    /**
+     * Handle {@link ServerModuleFile} special case.<br/>
+     * For persistence events, such as {@link Created} and {@link Deleted}, set audit ignore flag to {@code true},
+     * as those events are already handled by {@link ServerModuleFileAdminEvent}.
+     */
+    private boolean isServerModuleFileCreateOrDelete(final Object entity, final AdminEvent event) {
+        return (entity instanceof ServerModuleFile && (event instanceof Created || event instanceof Deleted));
     }
 
     /**
