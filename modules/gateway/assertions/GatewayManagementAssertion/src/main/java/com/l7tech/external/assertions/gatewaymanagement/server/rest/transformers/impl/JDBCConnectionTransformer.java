@@ -44,7 +44,7 @@ public class JDBCConnectionTransformer extends APIResourceWsmanBaseTransformer<J
     @Override
     public EntityContainer<JdbcConnection> convertFromMO(@NotNull JDBCConnectionMO jdbcConnectionMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
         //if the password is set and it is in an encrypted form  decrypt it.
-        if(jdbcConnectionMO.getProperties() !=null && jdbcConnectionMO.getConnectionProperties().get("password") != null){
+        if (jdbcConnectionMO.getConnectionProperties() != null && jdbcConnectionMO.getConnectionProperties().get("password") != null) {
             final Object passwordObject = jdbcConnectionMO.getConnectionProperties().get("password");
             if(passwordObject instanceof AttributeExtensibleType.AttributeExtensibleString){
                 final AttributeExtensibleType.AttributeExtensibleString password = (AttributeExtensibleType.AttributeExtensibleString) passwordObject;
