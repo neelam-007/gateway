@@ -144,19 +144,16 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         set.add(new VariableMetadata(getTargetVariablePrefix() + ".type", true, false, null, false));
         set.add(new VariableMetadata(getTargetVariablePrefix() + ".header", true, false, null, false));
         set.add(new VariableMetadata(getTargetVariablePrefix() + ".header.names", true, true, null, false));
-        if (JsonWebTokenConstants.VALIDATION_USING_SECRET.equals(validationType)) {
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".payload", true, false, null, false));
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".signature", true, false, null, false));
-        } else {
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".encrypted_key", true, false, null, false));
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".initialization_vector", true, false, null, false));
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".cipher_text", true, false, null, false));
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".authentication_tag", true, false, null, false));
-            set.add(new VariableMetadata(getTargetVariablePrefix() + ".payload", true, false, null, false));
-            if(!JsonWebTokenConstants.VALIDATION_NONE.equals(validationType)){
-                set.add(new VariableMetadata(getTargetVariablePrefix() + ".plaintext", true, false, null, false));
-            }
-        }
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".payload", true, false, null, false));
+        //jws
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".signature", true, false, null, false));
+        //jwe
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".encrypted_key", true, false, null, false));
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".initialization_vector", true, false, null, false));
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".cipher_text", true, false, null, false));
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".authentication_tag", true, false, null, false));
+        set.add(new VariableMetadata(getTargetVariablePrefix() + ".plaintext", true, false, null, false));
+
         if(!JsonWebTokenConstants.VALIDATION_NONE.equals(validationType)){
             set.add(new VariableMetadata(getTargetVariablePrefix() + ".valid", true, false, null, false));
         }
