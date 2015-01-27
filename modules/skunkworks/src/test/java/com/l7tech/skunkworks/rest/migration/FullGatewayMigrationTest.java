@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.AddAssignmentsContext;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -30,6 +31,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * This will test migration using the rest api from one gateway to another.
@@ -534,6 +538,67 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
     }
 
     /**
+     * Test migrating a full gateway with one created email listener.
+     */
+    @Test
+    public void testFullGatewayExportImportOneEmailListener() throws Exception {
+        Item<EmailListenerMO> emailListenerItem = null;
+        try {
+            EmailListenerMO emailListenerMO = ManagedObjectFactory.createEmailListener();
+            emailListenerMO.setName("Test Email listener");
+            emailListenerMO.setActive(true);
+            emailListenerMO.setHostname("remoteHost");
+            emailListenerMO.setPort(123);
+            emailListenerMO.setServerType(EmailListenerMO.EmailServerType.POP3);
+            emailListenerMO.setDeleteOnReceive(false);
+            emailListenerMO.setUsername("AUser");
+            emailListenerMO.setPassword("UserPass");
+            emailListenerMO.setFolder("MyFolder");
+            emailListenerMO.setPollInterval(5000);
+            emailListenerMO.setUseSsl(false);
+            emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder()
+                    .put(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString())
+                    .map());
+            RestResponse response = getSourceEnvironment().processRequest("emailListeners", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(emailListenerMO)));
+
+            assertOkCreatedResponse(response);
+
+            emailListenerItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            emailListenerItem.setContent(emailListenerMO);
+
+            response = getSourceEnvironment().processRequest("bundle", "all=true&encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            // check for email secrets
+            Item<EmailListenerMO> bundleEmailMO = Functions.grepFirst(bundleItem.getContent().getReferences(), new Functions.Unary<Boolean, Item>() {
+                @Override
+                public Boolean call(Item item) {
+                    return item.getType().equals("EMAIL_LISTENER");
+                }
+            });
+            assertNotNull(bundleEmailMO);
+            assertNotNull(bundleEmailMO.getContent().getPassword());
+            assertNotNull(bundleEmailMO.getContent().getPasswordBundleKey());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+        } finally {
+            if (emailListenerItem != null) {
+                RestResponse response = getSourceEnvironment().processRequest("emailListeners/" + emailListenerItem.getId(), HttpMethod.DELETE, null, "");
+                assertOkEmptyResponse(response);
+                getTargetEnvironment().processRequest("emailListeners/" + emailListenerItem.getId(), HttpMethod.DELETE, null, "");
+            }
+        }
+    }
+
+    /**
      * Test migrating a full gateway with one created service. Test that auto generated roles get created correctly.
      */
     @Test
@@ -685,7 +750,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
                     "            <L7p:Authenticator stringValue=\"pap\"/>\n" +
                     "            <L7p:Host stringValue=\"test\"/>\n" +
                     "            <L7p:Prefix stringValue=\"radius\"/>\n" +
-                    "            <L7p:SecretGoid goidValue=\""+securePasswordGoid+"\"/>\n" +
+                    "            <L7p:SecretGoid goidValue=\"" + securePasswordGoid + "\"/>\n" +
                     "            <L7p:Timeout stringValue=\"5\"/>\n" +
                     "        </L7p:RadiusAuthenticate>\n" +
                     "    </wsp:All>\n" +
@@ -698,7 +763,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
                     "            <L7p:CredentialsSource credentialsSource=\"specified\"/>\n" +
                     "            <L7p:Directory stringValue=\"\"/>\n" +
                     "            <L7p:HostName stringValue=\"test\"/>\n" +
-                    "            <L7p:PasswordGoid goidValue=\""+securePasswordGoid+"\"/>\n" +
+                    "            <L7p:PasswordGoid goidValue=\"" + securePasswordGoid + "\"/>\n" +
                     "            <L7p:ResponseTarget MessageTarget=\"included\">\n" +
                     "                <L7p:Target target=\"RESPONSE\"/>\n" +
                     "            </L7p:ResponseTarget>\n" +

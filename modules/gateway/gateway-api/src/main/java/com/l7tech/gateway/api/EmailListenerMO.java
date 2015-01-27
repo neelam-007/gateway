@@ -1,11 +1,13 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.*;
+import com.l7tech.util.CollectionUtils;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.namespace.QName;
 import java.util.Map;
 
 /**
@@ -21,6 +23,23 @@ import java.util.Map;
 public class EmailListenerMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
+
+    //- PRIVATE
+    private AttributeExtensibleString name;
+    private AttributeExtensibleString hostname;
+    private AttributeExtensibleInteger port;
+    private AttributeExtensibleEmailServerType serverType;
+    private AttributeExtensibleBoolean useSsl;
+    private AttributeExtensibleBoolean deleteOnReceive;
+    private AttributeExtensibleString username;
+    private AttributeExtensibleString password;
+    private AttributeExtensibleString folder;
+    private AttributeExtensibleInteger pollInterval;
+    private AttributeExtensibleBoolean active;
+    private Map<String, String> properties;
+
+    EmailListenerMO() {
+    }
 
     /**
      * Get the name for the email listener (case insensitive, required)
@@ -150,6 +169,8 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
         this.username = set(this.username,username);
     }
 
+    //- PROTECTED
+
     /**
      * Gets the email account password for accessing the email server. Maybe a secured password reference.  Required for on create.
      *
@@ -168,6 +189,19 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
         this.password = set(this.password,password);
     }
 
+    public void setPassword(final String password, final String bundleKey){
+        this.password = new AttributeExtensibleType.AttributeExtensibleString();
+        this.password.setValue(password);
+        this.password.setAttributeExtensions(CollectionUtils.<QName,Object>mapBuilder().put(new QName("bundleKey"),bundleKey).map());
+    }
+
+    public String getPasswordBundleKey(){
+        if(this.password.getAttributeExtensions() != null){
+            return (String)this.password.getAttributeExtensions().get(new QName("bundleKey"));
+        }
+        return null;
+    }
+
     /**
      * Get if email messages are deleted on receive
      *
@@ -175,6 +209,15 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
      */
     public boolean getDeleteOnReceive() {
         return get(deleteOnReceive);
+    }
+
+    /**
+     * Sets the delete on receive flag of the email listener.
+     *
+     * @param deleteOnReceive True for deletes on receive.
+     */
+    public void setDeleteOnReceive(boolean deleteOnReceive) {
+        this.deleteOnReceive = set(this.deleteOnReceive,deleteOnReceive);
     }
 
     /**
@@ -194,16 +237,6 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
     public void setUseSsl(boolean useSsl) {
         this.useSsl = set(this.useSsl,useSsl);
     }
-
-    /**
-     * Sets the delete on receive flag of the email listener.
-     *
-     * @param deleteOnReceive True for deletes on receive.
-     */
-    public void setDeleteOnReceive(boolean deleteOnReceive) {
-        this.deleteOnReceive = set(this.deleteOnReceive,deleteOnReceive);
-    }
-
 
     /**
      * Gets the polling interval for the email listener (required, seconds)
@@ -249,26 +282,6 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
     public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
-
-    /**
-     * Type for email server
-     */
-    @XmlEnum(String.class)
-    @XmlType(name="EmailServerType")
-    public enum EmailServerType {
-        /**
-         * POP3 Server type
-         */
-        @XmlEnumValue("POP3") POP3,
-
-        /**
-         * IMAP Server type
-         */
-        @XmlEnumValue("IMAP") IMAP,
-
-    }
-
-    //- PROTECTED
 
     @XmlElement(name="Name", required=true)
     protected AttributeExtensibleString getNameValue() {
@@ -324,6 +337,8 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
         this.username = username;
     }
 
+    //- PACKAGE
+
     @XmlElement(name="Password")
     public AttributeExtensibleString getPasswordValue() {
         return password;
@@ -372,6 +387,23 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
     protected void setServerTypeValue( final AttributeExtensibleEmailServerType serverType ) {
         this.serverType = serverType;
     }
+    /**
+     * Type for email server
+     */
+    @XmlEnum(String.class)
+    @XmlType(name="EmailServerType")
+    public enum EmailServerType {
+        /**
+         * POP3 Server type
+         */
+        @XmlEnumValue("POP3") POP3,
+
+        /**
+         * IMAP Server type
+         */
+        @XmlEnumValue("IMAP") IMAP,
+
+    }
 
     @XmlType(name="EmailServerTypePropertyType")
     protected static class AttributeExtensibleEmailServerType extends AttributeExtensible<EmailServerType> {
@@ -388,24 +420,5 @@ public class EmailListenerMO extends ElementExtendableAccessibleObject {
             this.value = value;
         }
     }
-
-    //- PACKAGE
-
-    EmailListenerMO() {
-    }
-
-    //- PRIVATE
-    private AttributeExtensibleString name;
-    private AttributeExtensibleString hostname;
-    private AttributeExtensibleInteger port;
-    private AttributeExtensibleEmailServerType serverType;
-    private AttributeExtensibleBoolean useSsl;
-    private AttributeExtensibleBoolean deleteOnReceive;
-    private AttributeExtensibleString username;
-    private AttributeExtensibleString password;
-    private AttributeExtensibleString folder;
-    private AttributeExtensibleInteger pollInterval;
-    private AttributeExtensibleBoolean active;
-    private Map<String, String> properties;
 
 }
