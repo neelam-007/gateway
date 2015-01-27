@@ -884,7 +884,7 @@ public class MimeBodyTest {
             MimeBody mm = makeMessage( "\r" + MESS_NO_PREAMBLE, MESS_CONTENT_TYPE, 0 );
             mm.getEntireMessageBodyLength();
 
-            fail( "Expected excption not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble by default.)" );
+            fail( "Expected exception not thrown.  (Change this test if MimeBody is enhanced to properly support this form of preamble by default.)" );
         } catch ( IOException e ) {
             assertTrue( e.getMessage().contains( "Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part." ) );
         }
@@ -967,6 +967,23 @@ public class MimeBodyTest {
         mm.getEntireMessageBodyLength();
         assertEquals( "First part recognized, if work-around enabled",
                 3, mm.getNumPartsKnown() );
+    }
+
+    @Test
+    @BugId( "SSG-7703" )
+    public void testInitialBoundaryLacksLF_noStart_splitDashes_WithWorkAround() throws Exception {
+        laxMultipart();
+
+        try {
+            // Exercise bug found in first version of work-around state machine:  non-dash character
+            // between first and second dash did not properly reset state
+            MimeBody mm = makeMessage( "\r-x" + MESS_NO_PREAMBLE.substring( 1 ), MESS_CONTENT_TYPE, 0 );
+            mm.getEntireMessageBodyLength();
+
+            fail( "Expected exception not thrown.  Invalid opening boundary of -x-FOO should not have been recognized, even with bare CR work-around enabled" );
+        } catch ( IOException e ) {
+            assertTrue( e.getMessage().contains( "Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part." ) );
+        }
     }
 
     @Test
