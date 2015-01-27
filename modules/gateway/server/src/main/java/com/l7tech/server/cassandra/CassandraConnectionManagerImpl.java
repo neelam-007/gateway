@@ -124,6 +124,11 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
                     auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_DISABLED, name);
                 }
             }
+
+            if(connectionHolder != null) {
+                connectionHolder.getLastAccessTime().set(System.currentTimeMillis());//update last accessed time
+            }
+
             return connectionHolder;
         }finally {
             lock.unlock();
@@ -132,11 +137,16 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
 
     @Override
     public void closeAllConnections() {
-        Iterator<CassandraConnectionHolder> iter = cassandraConnections.values().iterator();
-        while(iter.hasNext()) {
-            final CassandraConnectionHolder connectionHolder = iter.next();
-            closeConnection(connectionHolder);
-            iter.remove();
+        lock.lock();
+        try {
+            Iterator<CassandraConnectionHolder> iter = cassandraConnections.values().iterator();
+            while (iter.hasNext()) {
+                final CassandraConnectionHolder connectionHolder = iter.next();
+                closeConnection(connectionHolder);
+                iter.remove();
+            }
+        }finally {
+            lock.unlock();
         }
 
     }
@@ -339,17 +349,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             hd = defaultHD;
         }
 
-
-
-        int defaultCoreConnectionPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_CORE_CONNECTIONS_PER_HOST, (hd == HostDistance.LOCAL? CORE_CONNECTION_PER_HOST_LOCAL_DEF: CORE_CONNECTION_PER_HOST_DEF));
-        int coreConnectionPerHost = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(CORE_CONNECTION_PER_HOST), defaultCoreConnectionPerHost) : defaultCoreConnectionPerHost ;
-
-        int defaultMaxConnectionPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTIONS_PER_HOST, (hd == HostDistance.LOCAL? MAX_CONNECTION_PER_HOST_LOCAL_DEF: MAX_CONNECTION_PER_HOST_DEF));
-        int maxConnectionPerHost = connectionProperties != null? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_CONNECTION_PER_HOST), defaultMaxConnectionPerHost) : defaultMaxConnectionPerHost;
-
-        poolingOptions.setMaxConnectionsPerHost(hd, maxConnectionPerHost);
-        poolingOptions.setCoreConnectionsPerHost(hd, coreConnectionPerHost);
-
         int defaultMaxSimultaneousReqPerHost = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST, (hd == HostDistance.LOCAL? MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF: MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF));
         int maxSimultaneousReqPerHost = connectionProperties != null ? CassandraUtil.getIntOrDefault(connectionProperties.get(MAX_SIMUL_REQ_PER_HOST), defaultMaxSimultaneousReqPerHost) : defaultMaxSimultaneousReqPerHost;
 
@@ -505,7 +504,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         }
     }
 
-    public synchronized boolean closeConnection(CassandraConnectionHolder connection) {
+    protected boolean closeConnection(CassandraConnectionHolder connection) {
         if(connection != null) {
             Session session = connection.getSession();
             if(session != null )  {

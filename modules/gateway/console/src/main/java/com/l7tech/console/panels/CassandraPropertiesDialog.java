@@ -22,8 +22,6 @@ public class CassandraPropertiesDialog extends JDialog {
     private static final String[] hostDistance = {"LOCAL", "REMOTE", "IGNORED"};
     // Connection pooling options
     public static final String HOST_DISTANCE = "hostDistance";
-    private static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
-    private static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
     private static final String MAX_SIMUL_REQ_PER_HOST_THRESHOLD = "maxSimultaneousRequestsPerHostThreshold";
     // Socket options
     private static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
@@ -74,10 +72,6 @@ public class CassandraPropertiesDialog extends JDialog {
                 String propName = (String) propNameComboBox.getSelectedItem();
                 String propValue = propValueTextField.getText();
                 switch(propName) {
-                    case CORE_CONNECTION_PER_HOST:
-                        return getNumberValidationErrorString(propName, propValue, 1, Integer.MAX_VALUE);
-                    case MAX_CONNECTION_PER_HOST:
-                        return getNumberValidationErrorString(propName, propValue, 2, Integer.MAX_VALUE);
                     case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
                         return getNumberValidationErrorString(propName, propValue, 1, 32768);
                     case CONNECTION_TIMEOUT_MILLIS:
@@ -153,10 +147,6 @@ public class CassandraPropertiesDialog extends JDialog {
         switch (propName) {
             case HOST_DISTANCE:
                 return "LOCAL";
-            case CORE_CONNECTION_PER_HOST:
-                return "1";
-            case MAX_CONNECTION_PER_HOST:
-                return "2";
             case MAX_SIMUL_REQ_PER_HOST_THRESHOLD:
                 return "8192";
             case CONNECTION_TIMEOUT_MILLIS:
@@ -213,7 +203,7 @@ public class CassandraPropertiesDialog extends JDialog {
     @SuppressWarnings("unchecked")
     private void populatePropNameComboBox() {
         propNameComboBox.setModel(new DefaultComboBoxModel(new String[]{
-                HOST_DISTANCE, CORE_CONNECTION_PER_HOST, MAX_CONNECTION_PER_HOST,
+                HOST_DISTANCE,
                 MAX_SIMUL_REQ_PER_HOST_THRESHOLD, CONNECTION_TIMEOUT_MILLIS, READ_TIMEOUT_MILLIS,
                 KEEP_ALIVE, RECEIVE_BUFFER_SIZE, REUSE_ADDRESS, SEND_BUFFER_SIZE, SO_LINGER, TCP_NO_DELAY
         }));
