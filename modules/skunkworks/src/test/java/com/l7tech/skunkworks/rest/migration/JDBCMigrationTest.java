@@ -1713,4 +1713,109 @@ public class JDBCMigrationTest extends com.l7tech.skunkworks.rest.tools.Migratio
         response = getTargetEnvironment().processRequest("jdbcConnections/"+jdbcConnectionCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
+
+    @Test
+    public void testImportNewEncryptSecrets() throws Exception {
+        Item<JDBCConnectionMO> jdbcConnectionItem2 = null;
+        Item<PolicyMO> policyItem2 = null;
+
+        RestResponse response;
+        try {
+            //create jdbc connection;
+            JDBCConnectionMO jdbcConnectionMO = ManagedObjectFactory.createJDBCConnection();
+            jdbcConnectionMO.setName("MyJDBCConnection2");
+            jdbcConnectionMO.setEnabled(false);
+            jdbcConnectionMO.setDriverClass("com.l7tech.jdbc.mysql.MySQLDriver");
+            jdbcConnectionMO.setJdbcUrl("jdbcUrl");
+            jdbcConnectionMO.setConnectionProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("password", "password")
+                    .put("user", "jdbcUserName")
+                    .map());
+            response = getSourceEnvironment().processRequest("jdbcConnections", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(jdbcConnectionMO)));
+
+            assertOkCreatedResponse(response);
+
+            jdbcConnectionItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            jdbcConnectionItem2.setContent(jdbcConnectionMO);
+
+            //create policy;
+            PolicyMO policyMO = ManagedObjectFactory.createPolicy();
+            PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
+            policyMO.setPolicyDetail(policyDetail);
+            policyDetail.setName("MyPolicy2");
+            policyDetail.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+            policyDetail.setPolicyType(PolicyDetail.PolicyType.INCLUDE);
+            policyDetail.setProperties(CollectionUtils.MapBuilder.<String, Object>builder()
+                    .put("soap", false)
+                    .map());
+            ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+            policyMO.setResourceSets(Arrays.asList(resourceSet));
+            resourceSet.setTag("policy");
+            Resource resource = ManagedObjectFactory.createResource();
+            resourceSet.setResources(Arrays.asList(resource));
+            resource.setType("policy");
+            resource.setContent("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                    "    <wsp:All wsp:Usage=\"Required\">\n" +
+                    "        <L7p:JdbcQuery>\n" +
+                    "            <L7p:ConnectionName stringValue=\"MyJDBCConnection2\"/>\n" +
+                    "            <L7p:ConvertVariablesToStrings booleanValue=\"false\"/>\n" +
+                    "            <L7p:SqlQuery stringValue=\"select * from test;\"/>\n" +
+                    "        </L7p:JdbcQuery>\n" +
+                    "    </wsp:All>\n" +
+                    "</wsp:Policy>\n");
+
+            response = getSourceEnvironment().processRequest("policies", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                    XmlUtil.nodeToString(ManagedObjectFactory.write(policyMO)));
+
+            assertOkCreatedResponse(response);
+
+            policyItem2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            policyItem2.setContent(policyMO);
+
+
+            response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem2.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+            logger.log(Level.INFO, response.toString());
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+            Assert.assertEquals("The bundle should have 2 items. A policy, jdbcConnection", 2, bundleItem.getContent().getReferences().size());
+
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                    objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+
+            Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            mappingsToClean = mappings;
+
+            //verify the mappings
+            Assert.assertEquals("There should be 3 mappings after the import", 3, mappings.getContent().getMappings().size());
+
+            Mapping jdbcMapping = mappings.getContent().getMappings().get(0);
+            Assert.assertEquals(EntityType.JDBC_CONNECTION.toString(), jdbcMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, jdbcMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, jdbcMapping.getActionTaken());
+            Assert.assertEquals(jdbcConnectionItem2.getId(), jdbcMapping.getSrcId());
+            Assert.assertEquals(jdbcMapping.getSrcId(), jdbcMapping.getTargetId());
+
+            Mapping policyMapping = mappings.getContent().getMappings().get(2);
+            Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+            Assert.assertEquals(policyItem2.getId(), policyMapping.getSrcId());
+            Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+            validate(mappings);
+        } finally {
+            response = getSourceEnvironment().processRequest("jdbcConnections/" + jdbcConnectionItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getSourceEnvironment().processRequest("policies/" + policyItem2.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+
+    }
 }
