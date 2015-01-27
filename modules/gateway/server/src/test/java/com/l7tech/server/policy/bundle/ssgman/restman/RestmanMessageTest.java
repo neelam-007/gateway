@@ -5,9 +5,11 @@ import com.l7tech.server.bundling.EntityMappingInstructions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import org.junit.Test;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 import static org.hamcrest.Matchers.startsWith;
@@ -170,5 +172,30 @@ public class RestmanMessageTest {
         requestXml = XmlUtil.nodeToString(requestMessage.document);
         assertFalse("The value of the previous attribute targetId is changed.", requestXml.contains("targetId=\"2d41aa636524442706fd09ad724f78fa\""));
         assertTrue("The new value of the attribute targetId is correct.", requestXml.contains("targetId=\"7bf91daabff1558dd35b12b9f1f3ab7b\""));
+    }
+
+    @Test
+    public void testLoadMappings() throws IOException, SAXException {
+        // Test this method used by getting mapping from a restman request message.
+        List<Element> mappings = requestMessage.getMappings();
+        assertNotNull(mappings);
+        assertEquals("There are 10 mappings in the request message", 10, mappings.size());
+
+        Element firstElement = mappings.get(0);
+        assertEquals("action matched", "NewOrUpdate", firstElement.getAttribute("action"));
+        assertEquals("srcId matched", "f1649a0664f1ebb6235ac238a6f71b0c", firstElement.getAttribute("srcId"));
+        assertEquals("type matched", "FOLDER", firstElement.getAttribute("type"));
+
+        // Test this method used by getting mapping from a restman result message.
+        final RestmanMessage responseMessage = new RestmanMessage(errorMappingResponseXml);
+        mappings = responseMessage.getMappings();
+        assertNotNull(mappings);
+        assertEquals("There are 10 mappings in the response message", 10, mappings.size());
+
+        final Element lastElement = mappings.get(9);
+        assertEquals("action matched", "NewOrUpdate", lastElement.getAttribute("action"));
+        assertEquals("errorType matched", "UniqueKeyConflict", lastElement.getAttribute("errorType"));
+        assertEquals("srcId matched", "f1649a0664f1ebb6235ac238a6f71b4c", lastElement.getAttribute("srcId"));
+        assertEquals("type matched", "POLICY", lastElement.getAttribute("type"));
     }
 }
