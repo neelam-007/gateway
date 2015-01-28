@@ -508,11 +508,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         if(connection != null) {
             Session session = connection.getSession();
             if(session != null )  {
-                boolean querying = false;
                 for(Host host : session.getState().getConnectedHosts()) {
-                    querying |= session.getState().getInFlightQueries(host) > 0;
+                    if(session.getState().getInFlightQueries(host) > 0)
+                        return  false;
                 }
-                if(querying) return false;
 
                 session.close();
             }
