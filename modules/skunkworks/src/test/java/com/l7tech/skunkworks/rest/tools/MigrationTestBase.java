@@ -140,11 +140,15 @@ public abstract class MigrationTestBase {
 
     protected void validate(Item<Mappings> mappings) throws Exception {
         for (Mapping mapping : mappings.getContent().getMappings()) {
-            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore){
+            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore && mapping.getActionTaken() != Mapping.ActionTaken.Ignored){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
-                assertOkResponse(response);
+                if(mapping.getActionTaken() == Mapping.ActionTaken.Deleted){
+                    assertNotFoundResponse(response);
+                } else {
+                    assertOkResponse(response);
+                }
             }
         }
     }

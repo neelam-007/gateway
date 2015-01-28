@@ -11,6 +11,7 @@ import com.l7tech.skunkworks.rest.tools.MigrationTestBase;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
+import com.l7tech.util.CollectionUtils;
 import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
@@ -149,5 +150,76 @@ public class GeneralMigrationTest extends MigrationTestBase {
 
         response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
+    }
+
+    @Test
+    public void ignoreAndFailOnNewTest() throws Exception {
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Ignore);
+        mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("FailOnNew", true).map());
+        mapping.setTargetId(Goid.DEFAULT_GOID.toString());
+        mapping.setType("FOLDER");
+
+        bundle.setMappings(Arrays.asList(mapping));
+        bundle.setReferences(Collections.<Item>emptyList());
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        RestResponse response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 1 mapping after the import", 1, mappings.getContent().getMappings().size());
+        Mapping folderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.Ignore, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, folderMapping.getActionTaken());
+    }
+
+    @Test
+    public void ignoreAndFailOnExistingTest() throws Exception {
+        FolderMO folderMO = ManagedObjectFactory.createFolder();
+        folderMO.setFolderId(Folder.ROOT_FOLDER_ID.toString());
+        folderMO.setName("New Target Folder");
+        RestResponse response = getTargetEnvironment().processRequest("folders", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(folderMO)));
+        assertOkCreatedResponse(response);
+        Item<FolderMO> folderCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        folderMO.setId(folderCreated.getId());
+        folderCreated.setContent(folderMO);
+
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Ignore);
+        mapping.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put("FailOnExisting", true).map());
+        mapping.setTargetId(folderCreated.getId());
+        mapping.setType(folderCreated.getType());
+
+        bundle.setMappings(Arrays.asList(mapping));
+        bundle.setReferences(Collections.<Item>emptyList());
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 1 mapping after the import", 1, mappings.getContent().getMappings().size());
+        Mapping folderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.Ignore, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, folderMapping.getActionTaken());
+
+        response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.DELETE, null, "");
+        assertOkEmptyResponse(response);
     }
 }

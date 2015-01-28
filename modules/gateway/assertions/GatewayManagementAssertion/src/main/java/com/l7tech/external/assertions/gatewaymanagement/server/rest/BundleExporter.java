@@ -68,7 +68,7 @@ public class BundleExporter {
         EntityBundle entityBundle = entityBundleExporter.exportBundle(bundleExportOptions == null ? new Properties() : bundleExportOptions, headers);
         Bundle bundle = bundleTransformer.convertToMO(entityBundle, secretsEncryptor);
         if (includeDependencies) {
-            final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults());
+            final DependencyListMO dependencyMOs = dependencyTransformer.convertToMO(entityBundle.getDependencySearchResults(), true);
             bundle.setDependencyGraph(dependencyMOs);
         }
         ResourceUtils.closeQuietly(secretsEncryptor);

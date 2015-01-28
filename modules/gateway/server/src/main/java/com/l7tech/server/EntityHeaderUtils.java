@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -122,6 +123,13 @@ public final class EntityHeaderUtils {
             final SsgKeyHeader ssgKeyHeader = new SsgKeyHeader(ssgKeyEntry.getId(), ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias(), ssgKeyEntry.getName());
             ssgKeyHeader.setSecurityZoneId(ssgKeyEntry.getSecurityZone() == null ? null : ssgKeyEntry.getSecurityZone().getGoid());
             return ssgKeyHeader;
+        } else if (e instanceof InterfaceTag) {
+            InterfaceTag interfaceTag = (InterfaceTag) e;
+            return new EntityHeader(InterfaceTag.getSyntheticId((InterfaceTag) e),
+                    EntityTypeRegistry.getEntityType(e.getClass()),
+                    interfaceTag.getName(),
+                    null,
+                    null);
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             EntityHeader entityHeader = new EntityHeader(entity.getGoid(),

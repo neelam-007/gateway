@@ -825,8 +825,8 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
             Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
             Mapping idProviderMapping = mappings.getContent().getMappings().get(0);
             Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG.toString(), idProviderMapping.getType());
-            Assert.assertEquals(Mapping.Action.NewOrUpdate, idProviderMapping.getAction());
-            Assert.assertEquals(Mapping.ActionTaken.UpdatedExisting, idProviderMapping.getActionTaken());
+            Assert.assertEquals(Mapping.Action.NewOrExisting, idProviderMapping.getAction());
+            Assert.assertEquals(Mapping.ActionTaken.UsedExisting, idProviderMapping.getActionTaken());
             Assert.assertEquals(idProviderItem.getId(), idProviderMapping.getSrcId());
             Assert.assertEquals(idProviderMapping.getSrcId(), idProviderMapping.getTargetId());
 

@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -68,6 +69,8 @@ public class EntityBundleImporterImplTest {
     private ServiceAliasManager serviceAliasManager;
     @Mock
     private PolicyAliasManager policyAliasManager;
+    @Mock
+    private ClusterPropertyManager clusterPropertyManager;
 
     @Before
     public void steup() {
@@ -86,6 +89,7 @@ public class EntityBundleImporterImplTest {
                 .put("ssgKeyStoreManager", ssgKeyStoreManager)
                 .put("serviceAliasManager", serviceAliasManager)
                 .put("policyAliasManager", policyAliasManager)
+                .put("clusterPropertyManager", clusterPropertyManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }

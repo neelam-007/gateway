@@ -102,6 +102,7 @@ public enum EntityType implements Comparable<EntityType> {
     LICENSE_DOCUMENT("License Document", false, false),
     POLICY_BACKED_SERVICE("Policy Backed Service", true, true),
     SERVER_MODULE_FILE("Server Module File", "Server Module Files", true, false),
+    INTERFACE_TAG("Interface Tag", "Interface Tags", false, false),
     ;
 
     private final String name;

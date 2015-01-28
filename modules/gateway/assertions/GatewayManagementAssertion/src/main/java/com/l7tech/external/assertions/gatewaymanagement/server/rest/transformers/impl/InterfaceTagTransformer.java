@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.bundling.InterfaceTagContainer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -59,7 +60,7 @@ public class InterfaceTagTransformer implements EntityAPITransformer<InterfaceTa
     @NotNull
     @Override
     public EntityContainer<InterfaceTag> convertFromMO(@NotNull InterfaceTagMO m, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
-        return new EntityContainer<>(factory.internalFromResource(m).left);
+        return new InterfaceTagContainer(factory.internalFromResource(m).left);
     }
 
     @NotNull

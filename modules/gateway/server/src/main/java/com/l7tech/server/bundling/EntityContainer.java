@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,8 +26,18 @@ public class EntityContainer<E extends Entity> {
      * @param entity The entity to create the container for
      */
     public EntityContainer(@NotNull final E entity) {
+        this(entity.getId(), entity);
+    }
+
+    /**
+     * Creates a new entity container with a given entity id for the given entity. (Only used by interface tags)
+     *
+     * @param id     The id to use for the entity container
+     * @param entity The entity to create the container for
+     */
+    protected EntityContainer(@Nullable final String id, @NotNull final E entity) {
         this.entity = entity;
-        entityContainerId = new Pair<>(entity.getId(), EntityType.findTypeByEntity(entity.getClass()));
+        entityContainerId = new Pair<>(id, EntityType.findTypeByEntity(entity.getClass()));
     }
 
     /**

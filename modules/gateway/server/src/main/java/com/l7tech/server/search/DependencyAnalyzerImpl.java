@@ -39,10 +39,13 @@ import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.server.search.objects.DependentObject;
 import com.l7tech.server.search.processors.DependencyFinder;
 import com.l7tech.server.search.processors.DependencyProcessorStore;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -103,7 +106,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SecurityZone.class,
             PublishedServiceAlias.class,
             SsgFirewallRule.class,
-            SampleMessage.class
+            SampleMessage.class,
+            InterfaceTag.class
     );
 
     /**
@@ -265,6 +269,20 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                 entityHeaders = new EntityHeaderSet<>();
                 for(final IdentityProvider identityProvider : federatedIdentityProviders){
                     entityHeaders.addAll(identityProvider.getGroupManager().findAllHeaders());
+                }
+            } else if (InterfaceTag.class.equals(entityClass)) {
+                final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
+                Set<InterfaceTag> tags;
+                try {
+                    tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
+                } catch (ParseException e) {
+                    throw new FindException("Could not load InterfaceTags: " + ExceptionUtils.getMessageWithCause(e), e);
+                }
+                entityHeaders = new EntityHeaderSet<>();
+                if (tags != null) {
+                    for (final InterfaceTag tag : tags) {
+                        entityHeaders.add(EntityHeaderUtils.fromEntity(tag));
+                    }
                 }
             } else {
                 entityHeaders = entityCrud.findAll(entityClass);

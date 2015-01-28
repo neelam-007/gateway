@@ -2,6 +2,7 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -11,6 +12,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
@@ -31,6 +33,7 @@ import com.l7tech.server.bundling.exceptions.BundleImportException;
 import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.bundling.exceptions.TargetExistsException;
 import com.l7tech.server.bundling.exceptions.TargetNotFoundException;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
@@ -62,6 +65,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
 import java.security.KeyStoreException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -103,6 +107,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private ServiceAliasManager serviceAliasManager;
     @Inject
     private PolicyAliasManager policyAliasManager;
+    @Inject
+    private ClusterPropertyManager clusterPropertyManager;
 
 
     /**
@@ -180,7 +186,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
                             //Use the existing entity
-                            if (mapping.shouldFailOnExisting()) {
+                            if ( mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())){
                                 mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
@@ -222,7 +228,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 }
                             }
                         } else {
-                            if (mapping.shouldFailOnNew()) {
+                            if (mapping.shouldFailOnNew() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                                 mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
@@ -326,6 +332,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         }
                     } catch (DeleteException e) {
                         return Either.left(e);
+                    }
+                } else if (entity instanceof InterfaceTag) {
+                    try {
+                        final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
+
+                        final Set<InterfaceTag> interfaceTags = new HashSet<>();
+                        if (interfaceTagsClusterProperty != null) {
+                            interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
+
+                            //remove the existing interface tag from the list (returns all but the existing)
+                            Set<InterfaceTag> interfaceTagsWithoutExisting = new HashSet<>(Functions.grep(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
+                                @Override
+                                public Boolean call(InterfaceTag interfaceTagExisting) {
+                                    return !(((InterfaceTag) entity).getName()).equals(interfaceTagExisting.getName());
+                                }
+                            }));
+                            //resaves the interface tags with the existing removed.
+                            clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTagsWithoutExisting));
+                        }
+                    } catch (ObjectModelException | ParseException e) {
+                        return Either.left(new DeleteException("Cannot find interface tag: " + ((InterfaceTag) entity).getName() + ". Error message: " + ExceptionUtils.getMessage(e), e));
                     }
                 } else {
                     try {
@@ -748,7 +775,36 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             // make sure internal identity provider is admin enabled
                             ((IdentityProviderConfig)entityContainer.getEntity()).setAdminEnabled(true);
                             saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
-                        }else {
+                        } else if (entityContainer.getEntity() instanceof InterfaceTag) {
+                            final InterfaceTag interfaceTag = (InterfaceTag) entityContainer.getEntity();
+                            //get the interfaceTags
+                            final ClusterProperty interfaceTagsClusterProperty = clusterPropertyManager.findByUniqueName(InterfaceTag.PROPERTY_NAME);
+                            final Set<InterfaceTag> interfaceTags = new HashSet<>();
+                            if (interfaceTagsClusterProperty != null) {
+                                interfaceTags.addAll(InterfaceTag.parseMultiple(interfaceTagsClusterProperty.getValue()));
+                                //find the interface tag to update, or an existing one with the same name
+                                InterfaceTag interfaceTagExisting = Functions.grepFirst(interfaceTags, new Functions.Unary<Boolean, InterfaceTag>() {
+                                    @Override
+                                    public Boolean call(InterfaceTag interfaceTagExisting) {
+                                        return (id != null ? id : interfaceTag.getName()).equals(interfaceTagExisting.getName());
+                                    }
+                                });
+                                if (interfaceTagExisting != null) {
+                                    if (existingEntity == null) {
+                                        //In this case were were expecting to create a new interface tag but this is not possible since one with the same name already exists.
+                                        throw new DuplicateObjectException("Attempting to save a new interface tag but one with the same name already exists. Interface tag name: " + interfaceTag.getName());
+                                    }
+                                    //update the ip patterns
+                                    interfaceTagExisting.setIpPatterns(interfaceTag.getIpPatterns());
+                                } else {
+                                    interfaceTags.add(interfaceTag);
+                                }
+                            } else {
+                                //creates a new interface tag collection (will create a new cluster property)
+                                interfaceTags.add(interfaceTag);
+                            }
+                            clusterPropertyManager.putProperty(InterfaceTag.PROPERTY_NAME, InterfaceTag.toString(interfaceTags));
+                        } else {
                             saveOrUpdateEntity(entityContainer.getEntity(), id == null ? null : Goid.parseGoid(id), existingEntity);
                         }
                     } catch (ObjectModelException e) {

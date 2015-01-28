@@ -60,12 +60,17 @@ public class DependencyTransformer implements APITransformer<DependencyListMO, D
 
     @NotNull
     public DependencyListMO convertToMO(@NotNull final List<DependencySearchResults> dependencySearchResultsList) {
+        return convertToMO(dependencySearchResultsList, false);
+    }
+
+    @NotNull
+    public DependencyListMO convertToMO(@NotNull final List<DependencySearchResults> dependencySearchResultsList, boolean includeRootNode) {
         final DependencyListMO dependencyAnalysisMO = ManagedObjectFactory.createDependencyListMO();
         if(dependencySearchResultsList.isEmpty()){
             return dependencyAnalysisMO;
         }
 
-        final List<Dependency> dependencyList = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResultsList, false);
+        final List<Dependency> dependencyList = DependencySearchResultsUtils.flattenDependencySearchResults(dependencySearchResultsList, includeRootNode);
 
         dependencyAnalysisMO.setDependencies(new ArrayList<DependencyMO>());
         dependencyAnalysisMO.setMissingDependencies(new ArrayList<DependencyMO>());

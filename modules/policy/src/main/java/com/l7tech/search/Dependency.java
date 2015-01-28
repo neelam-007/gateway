@@ -71,7 +71,8 @@ public @interface Dependency {
         SAMPLE_MESSAGE(EntityType.SAMPLE_MESSAGE),
         CASSANDRA_CONNECTION(EntityType.CASSANDRA_CONFIGURATION),
         HTTP_CONFIGURATION(EntityType.HTTP_CONFIGURATION),
-        ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS);
+        ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
+        INTERFACE_TAG(EntityType.INTERFACE_TAG);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

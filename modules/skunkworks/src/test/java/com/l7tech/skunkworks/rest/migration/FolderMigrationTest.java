@@ -1205,7 +1205,7 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
         Assert.assertEquals("The bundle should have 6 item. A policy, a policy alias, 4 folders", 5, bundleItem.getContent().getReferences().size());
         Assert.assertEquals("The bundle should have 6 mappings.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getMappings().size());
-        Assert.assertEquals("The dependencies list should have 6 dependencies.  A policy, a policy alias, 4 folders", 5, bundleItem.getContent().getDependencyGraph().getDependencies().size());
+        Assert.assertEquals("The dependencies list should have 6 dependencies.  A policy, a policy alias, 4 folders", 6, bundleItem.getContent().getDependencyGraph().getDependencies().size());
 
     }
 

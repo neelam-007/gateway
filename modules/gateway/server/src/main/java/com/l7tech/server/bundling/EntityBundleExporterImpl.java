@@ -5,10 +5,13 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Identity;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.VirtualGroup;
@@ -162,6 +165,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             entityContainers.add(new JmsContainer(endpoint, (JmsConnection) connection));
         } else if (entity instanceof SsgKeyEntry && (!bundleExportProperties.containsKey("EncryptSecrets") || !Boolean.valueOf(bundleExportProperties.getProperty("EncryptSecrets")))) {
             // not include private key entity info in bundle unless EncryptSecrets is true
+        } else if (entity instanceof InterfaceTag) {
+            entityContainers.add(new InterfaceTagContainer((InterfaceTag) entity));
         } else {
             entityContainers.add(new EntityContainer<>(entity));
         }
@@ -220,6 +225,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         true,
                         false);
             }
+        }else if (entity instanceof IdentityProviderConfig && IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.equals(((IdentityProviderConfig) entity).getGoid())){
+            // only map only for non internal and non federated identity
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    null,
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
+                    false);
         }else if (entity instanceof Identity && !(entity instanceof InternalGroup || entity instanceof FederatedUser || entity instanceof FederatedGroup || entity instanceof VirtualGroup)){
             // only map only for non internal and non federated identity
                 mapping = new EntityMappingInstructions(

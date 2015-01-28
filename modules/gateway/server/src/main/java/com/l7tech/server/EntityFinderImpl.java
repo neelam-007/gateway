@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -24,9 +25,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.*;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -44,10 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.security.KeyStoreException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.text.ParseException;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -186,7 +183,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
 
     @Override
     @Transactional(readOnly=true)
-    public Entity find(@NotNull EntityHeader header) throws FindException {
+    public Entity find(@NotNull final EntityHeader header) throws FindException {
         if (header instanceof IdentityHeader) {
             IdentityHeader identityHeader = (IdentityHeader)header;
             IdentityProvider provider = identityProviderFactory.getProvider(identityHeader.getProviderGoid());
@@ -245,6 +242,24 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else {
                 return customKeyValueStoreManager.findByPrimaryKey(header.getGoid());
             }
+        } else if (EntityType.INTERFACE_TAG.equals(header.getType())) {
+            final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
+            Set<InterfaceTag> tags;
+            try {
+                tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
+            } catch (ParseException e) {
+                throw new FindException("Could not load InterfaceTags: " + ExceptionUtils.getMessageWithCause(e), e);
+            }
+            InterfaceTag tag = null;
+            if (tags != null) {
+                tag = Functions.grepFirst(tags, new Functions.Unary<Boolean, InterfaceTag>() {
+                    @Override
+                    public Boolean call(InterfaceTag interfaceTag) {
+                        return header.getStrId().equals(InterfaceTag.getSyntheticId(interfaceTag));
+                    }
+                });
+            }
+            return tag;
         } else {
             return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
@@ -253,7 +268,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @SuppressWarnings({ "unchecked" })
     @Override
     @Transactional(readOnly=true)
-    public <ET extends Entity> ET find(final Class<ET> clazz, Serializable pk) throws FindException {
+    public <ET extends Entity> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
         try {
             EntityType type = EntityTypeRegistry.getEntityType(clazz);
             Serializable tempPk;
@@ -285,6 +300,25 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                     logger.fine("Primary key "+pk+" is not a valid key; using String value instead");
                     tempPk = pk;
                 }
+            } else if (EntityType.INTERFACE_TAG.equals(type)) {
+                final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
+                Set<InterfaceTag> tags;
+                try {
+                    tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
+                } catch (ParseException e) {
+                    logger.fine("Could not load InterfaceTags: " + ExceptionUtils.getMessageWithCause(e));
+                    return null;
+                }
+                InterfaceTag tag = null;
+                if (tags != null) {
+                    tag = Functions.grepFirst(tags, new Functions.Unary<Boolean, InterfaceTag>() {
+                        @Override
+                        public Boolean call(InterfaceTag interfaceTag) {
+                            return pk.equals(InterfaceTag.getSyntheticId(interfaceTag));
+                        }
+                    });
+                }
+                return tag == null ? null : (ET) tag;
             } else {
                 tempPk = pk;
             }
