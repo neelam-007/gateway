@@ -88,28 +88,28 @@ public abstract class MigrationTestBase {
 
     protected void assertOkCreatedResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(201, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 201, response.getStatus());
         Assert.assertNotNull(response.getBody());
     }
 
     protected void assertOkResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 200, response.getStatus());
     }
 
     protected void assertNotFoundResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(404, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 404, response.getStatus());
     }
 
     protected void assertOkEmptyResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(204, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 204, response.getStatus());
     }
 
     protected void assertConflictResponse(RestResponse response) {
         Assert.assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
-        Assert.assertEquals(409, response.getStatus());
+        Assert.assertEquals("Unexpected Response:\n" + response.getBody(), 409, response.getStatus());
     }
 
     protected void cleanupAll(Item<Mappings> mappings) throws Exception {
