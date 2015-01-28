@@ -299,6 +299,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
             try {
                 licenseXml = clusterPropertyManager.getProperty(LICENSE_PROPERTY_NAME);
             } catch (FindException e) {
+                logger.log( Level.FINE, "Database error reading license file: " + ExceptionUtils.getMessage( e ), e );
                 // We'll let this slide and keep the current license, if any, unless it was loaded more than 1 day ago
                 if (current.get() != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
                     fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null, "Retrying");
@@ -323,6 +324,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
                 validateAndInstallLicense(licenseXml);
                 this.licenseLastError = null;
             } catch (InvalidLicenseException e) {
+                logger.log( Level.FINE, "Invalid license: " + ExceptionUtils.getMessage( e ), e );
                 this.licenseLastError = e;
                 fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage(), "Invalid");
                 setLicense(null);
