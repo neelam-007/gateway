@@ -1064,7 +1064,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
             menu.add(getManageEncapsulatedAssertionsAction());
-            menu.add(getManagePolicyBackedServicesAction());
             menu.add(getSiteMinderConfigurationAction());
             menu.add(getManageServerModuleFilesAction());
 
@@ -2212,6 +2211,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         //
         menuActions.addAll(this.getCustomAssertionActions());
 
+        // Expose policy backed services if enabled
+        if ( haveAnyPolicyBackedServices() ) {
+            menuActions.add( getManagePolicyBackedServicesAction() );
+        }
+
         // sort actions before sticking them into Additional Actions menu
         // so they'll appear in the same order
         Collections.sort(menuActions, new ActionComparator());
@@ -2222,6 +2226,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         menu.setEnabled(added);
+    }
+
+    private boolean haveAnyPolicyBackedServices() {
+        try {
+            if ( Registry.getDefault().isAdminContextPresent() ) {
+                Collection<String> templates = Registry.getDefault().getPolicyBackedServiceAdmin().findAllTemplateInterfaceNames();
+                //noinspection ConstantConditions
+                return templates != null && !templates.isEmpty();
+            }
+        } catch ( Exception e ) {
+            log.log( Level.INFO, "Unable to check for policy backed services: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+        return false;
     }
 
     private List<Action> getCustomAssertionActions() {
@@ -2744,7 +2761,6 @@ public class MainWindow extends JFrame implements SheetHolder {
                 manageMenu.add(getManageHttpConfigurationAction());
                 manageMenu.add(getManageServiceResolutionMenuItem());
                 manageMenu.add(getManageEncapsulatedAssertionsAction());
-                manageMenu.add(getManagePolicyBackedServicesAction());
                 manageMenu.add(getSiteMinderConfigurationAction());
                 manageMenu.add(getManageServerModuleFilesAction());
 
