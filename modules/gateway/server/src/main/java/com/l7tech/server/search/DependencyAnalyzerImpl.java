@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.SampleMessage;
@@ -33,6 +34,7 @@ import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.fed.FederatedIdentityProvider;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
@@ -69,6 +71,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
     @Inject
     private DependencyProcessorStore processorStore;
+
+    @Inject
+    private PolicyManager policyManager;
 
     private static final List<Class<? extends Entity>> entityClasses = Arrays.asList(
             //Omit policy version for now.
@@ -153,7 +158,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
 
         final List<List<EntityHeader>> headerLists;
         if (entityHeaders.isEmpty()) {
-            headerLists = loadAllGatewayEntities();
+            headerLists = loadAllGatewayEntities(searchOptions);
         } else {
             headerLists = new ArrayList<>();
             headerLists.add(entityHeaders);
@@ -214,7 +219,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      * @return The list of all entity headers.
      * @throws FindException
      */
-    private List<List<EntityHeader>> loadAllGatewayEntities() throws FindException {
+    private List<List<EntityHeader>> loadAllGatewayEntities(@NotNull final Map<String, Object> searchOptions) throws FindException {
         final List<List<EntityHeader>> headerLists = new ArrayList<>();
         for (final Class<? extends Entity> entityClass : entityClasses) {
             final EntityHeaderSet<EntityHeader> entityHeaders;
@@ -282,6 +287,25 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                 if (tags != null) {
                     for (final InterfaceTag tag : tags) {
                         entityHeaders.add(EntityHeaderUtils.fromEntity(tag));
+                    }
+                }
+            } else if (Role.class.equals(entityClass)){
+                //should not include roles for ignored entities in the full gateway bundle.
+                //Note that roles will still be included for these entities if they are directly referenced from elsewhere
+                final List ignoreIds = PropertiesUtil.getOption(DependencyAnalyzer.IgnoreSearchOptionKey, List.class, (List) Collections.emptyList(), searchOptions);
+
+                final EntityHeaderSet<EntityHeader> roleHeaders = entityCrud.findAll(entityClass);
+                entityHeaders = new EntityHeaderSet<>();
+                for(final EntityHeader header : roleHeaders){
+                    if(header instanceof RoleEntityHeader){
+                        final RoleEntityHeader roleHeader = (RoleEntityHeader)header;
+                        if(roleHeader.getEntityGoid() != null && ignoreIds.contains(roleHeader.getEntityGoid().toString())){
+                            //this is the role for an ignored entity so don't include the role
+                            continue;
+                        }
+                        entityHeaders.add(roleHeader);
+                    } else {
+                        throw new FindException("Unexpected header type for role: " + header.getClass());
                     }
                 }
             } else {
