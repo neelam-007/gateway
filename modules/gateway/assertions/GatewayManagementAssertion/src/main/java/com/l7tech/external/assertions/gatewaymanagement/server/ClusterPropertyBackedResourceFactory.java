@@ -126,7 +126,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
         } catch (ObjectModelException e) {
             handleObjectModelException(e);
         } catch (ResourceNotFoundException e) {
-            throw new ResourceAccessException(ExceptionUtils.getMessage(e), e);
+            //if the cluster property for the cluster property backed resource cannot be found just return the empty list.
         }
 
         return Collections.emptyList();
