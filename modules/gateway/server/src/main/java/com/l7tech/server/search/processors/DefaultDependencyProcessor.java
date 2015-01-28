@@ -706,7 +706,7 @@ public class DefaultDependencyProcessor<O> implements InternalDependencyProcesso
                 provider = null;
             }
             if (provider == null) {
-                throw new FindException("Error looking up identity. Cannot find Identity provider with id: " + idProvider);
+                return null;
             }
 
             if (EntityType.USER.equals(entityHeader.getType())) {

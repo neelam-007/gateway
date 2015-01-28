@@ -8,8 +8,6 @@ import org.jetbrains.annotations.NotNull;
  *
  */
 public class BrokenDependentEntity extends DependentEntity {
-    @NotNull
-    private final EntityHeader entityHeader;
 
     /**
      * Creates a new DependentEntity.
@@ -18,6 +16,5 @@ public class BrokenDependentEntity extends DependentEntity {
      */
     public BrokenDependentEntity(@NotNull final EntityHeader entityHeader) {
         super(entityHeader.getStrId(), entityHeader);
-        this.entityHeader = entityHeader;
     }
 }
