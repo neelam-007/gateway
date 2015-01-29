@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.URL
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.APITransformer;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.bundling.EntityBundle;
@@ -78,7 +79,13 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                     throw new IllegalStateException("Cannot locate a transformer for entity type: " + entityMappingInstruction.getSourceEntityHeader().getType());
                 }
                 //get the MO from the entity
-                final Object mo = transformer.convertToMO(entityResource.getEntity(), secretsEncryptor);
+                final Object mo;
+                //include certificates for users
+                if(entityResource.getEntity() instanceof User) {
+                    mo = ((UserTransformer)transformer).convertToMO((User) entityResource.getEntity(), secretsEncryptor, true);
+                } else {
+                    mo = transformer.convertToMO(entityResource.getEntity(), secretsEncryptor);
+                }
                 //remove the permissions from system created roles in the bundle (makes the bundle easier to read as these permissions are not required.)
                 if(mo instanceof RbacRoleMO && !((RbacRoleMO)mo).isUserCreated()){
                     ((RbacRoleMO)mo).setPermissions(null);

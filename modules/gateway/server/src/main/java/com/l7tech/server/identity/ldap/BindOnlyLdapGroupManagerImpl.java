@@ -56,6 +56,11 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
+    public String save(Goid id, LdapGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void update(LdapGroup group, Set<IdentityHeader> userHeaders) throws UpdateException, FindException {
         throw new UnsupportedOperationException();
     }

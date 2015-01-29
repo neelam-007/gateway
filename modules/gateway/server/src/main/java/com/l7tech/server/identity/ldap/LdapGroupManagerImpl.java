@@ -234,6 +234,11 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public String save(Goid id, LdapGroup group, Set userHeaders) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * throws an UnsupportedOperationException
      */

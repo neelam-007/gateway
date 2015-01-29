@@ -3,16 +3,15 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.UserRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.bundling.UserContainer;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -20,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 
 @Component
@@ -29,7 +29,13 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
     private IdentityProviderFactory identityProviderFactory;
 
     @Inject
+    private UserRestResourceFactory userRestResourceFactory;
+
+    @Inject
     private PasswordHasher passwordHasher;
+
+    @Inject
+    private CertificateTransformer certTransformer;
 
     @NotNull
     @Override
@@ -51,6 +57,11 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
     @NotNull
     @Override
     public UserMO convertToMO(@NotNull User user,  SecretsEncryptor secretsEncryptor) {
+        return convertToMO(user, secretsEncryptor, false);
+    }
+
+    @NotNull
+    public UserMO convertToMO(@NotNull User user,  SecretsEncryptor secretsEncryptor, final boolean includeUserCert) {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setId(user.getId());
         userMO.setLogin(user.getLogin());
@@ -70,6 +81,19 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
             formattedPassword.setPassword(secretsEncryptor.encryptSecret(((InternalUser) user).getHashedPassword().getBytes(Charsets.UTF8)));
             userMO.setPassword(formattedPassword);
         }
+
+        if(includeUserCert) {
+            X509Certificate x509Certificate = null;
+            try {
+                x509Certificate = userRestResourceFactory.getCertificate(user.getProviderId().toString(), user.getId());
+            } catch (ResourceFactory.ResourceNotFoundException | ResourceFactory.InvalidResourceException | ObjectModelException e) {
+                //let it fall through, the certificate won't be included.
+            }
+            if(x509Certificate != null) {
+                userMO.setCertificateData(certTransformer.getCertData(x509Certificate));
+            }
+        }
+
         return userMO;
     }
 
@@ -135,7 +159,8 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
             }
         }
 
-        return new EntityContainer<User>(user);
+        final CertificateData certificateData = userMO.getCertificateData();
+        return new UserContainer(user, certificateData != null ? certTransformer.getX509Certificate(certificateData) : null);
     }
 
     @NotNull

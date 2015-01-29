@@ -1,12 +1,15 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.*;
+import java.util.Arrays;
 import java.util.List;
 
 @XmlRootElement(name = "User")
-@XmlType(name = "UserType", propOrder = {"login", "password", "firstName","lastName","email","department","subjectDn","extensions"})
+@XmlType(name = "UserType", propOrder = {"login", "password", "firstName","lastName","email","department","subjectDn","extension","extensions"})
 @AccessorSupport.AccessibleResource(name = "users")
 public class UserMO extends AccessibleObject {
 
@@ -166,10 +169,36 @@ public class UserMO extends AccessibleObject {
 
     //- PACKAGE
 
+    @XmlElement(name="Extension")
+    @Override
+    protected Extension getExtension() {
+        return super.getExtension();
+    }
+
+    protected void setExtension( final Extension extension ) {
+        super.setExtension(extension);
+    }
+
     @XmlAnyElement(lax=true)
     @Override
     protected List<Object> getExtensions() {
         return super.getExtensions();
+    }
+
+    @XmlTransient
+    public CertificateData getCertificateData() {
+        return getExtension() == null || getExtension().getExtensions() == null ? null : (CertificateData) Functions.grepFirst(getExtension().getExtensions(), new Functions.Unary<Boolean, Object>() {
+            @Override
+            public Boolean call(Object o) {
+                return o instanceof CertificateData;
+            }
+        });
+    }
+
+    public void setCertificateData( final CertificateData certificateData ) {
+        Extension extension = new Extension();
+        extension.setExtensions(Arrays.<Object>asList(certificateData));
+        setExtension(extension);
     }
 
     UserMO() {

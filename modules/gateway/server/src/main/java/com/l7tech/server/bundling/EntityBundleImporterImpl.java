@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -65,6 +66,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.groups.Default;
 import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -109,6 +111,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private PolicyAliasManager policyAliasManager;
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
+    @Inject
+    private ClientCertManager clientCertManager;
 
 
     /**
@@ -756,15 +760,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 final UserManager userManager = identityProvider.getUserManager();
                                 if(existingEntity == null) {
                                     final User user = userManager.reify((UserBean) entityContainer.getEntity());
-                                    final String id = userManager.save(user, null);
-                                    ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(id);
+                                    final String userId = userManager.save(id == null ? null : Goid.parseGoid(id), user, null);
+                                    ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(userId);
                                 } else {
                                     final UserBean userBean = (UserBean) entityContainer.getEntity();
                                     userBean.setUniqueIdentifier(existingEntity.getId());
 
                                     final User user = userManager.reify(userBean);
-                                    if(user instanceof InternalUser){
-                                        ((InternalUser)user).setPasswordChangesHistory(((InternalUser)existingEntity).getPasswordChangesHistory());
+                                    if(user instanceof InternalUser && existingEntity instanceof InternalUser){
+                                        if(existingEntity instanceof InternalUser) {
+                                            ((InternalUser)user).setPasswordChangesHistory(((InternalUser)existingEntity).getPasswordChangesHistory());
+                                            //need to set the version to the existing user version so it can update properly
+                                            ((InternalUser) user).setVersion(((InternalUser) existingEntity).getVersion());
+                                        }
                                     }
                                     userManager.update(user);
                                 }
@@ -1020,6 +1028,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 serviceDocument.setServiceId(((PublishedServiceContainer) entityContainer).getPublishedService().getGoid());
                 entityCrud.save(serviceDocument);
             }
+        } else if (entityContainer instanceof UserContainer && ((UserContainer) entityContainer).getCertificate() != null) {
+            //set the certificate on the user.
+            final X509Certificate x509Certificate = ((UserContainer) entityContainer).getCertificate();
+            clientCertManager.recordNewUserCert(((UserContainer) entityContainer).getEntity(), x509Certificate , false);
         }
     }
 

@@ -49,6 +49,11 @@ public interface UserManager<UT extends User> {
      */
     String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException;
 
+    /**
+     * Saves a new user and replaces its group memberships based on a {@link Set} of {@link IdentityHeader}s pointing to {@link Group}s.
+     */
+    String save(Goid id, UT user, Set<IdentityHeader> groupHeaders) throws SaveException;
+
     UT reify(UserBean bean);
 
     /**

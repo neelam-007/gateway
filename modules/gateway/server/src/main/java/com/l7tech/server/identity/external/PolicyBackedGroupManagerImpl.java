@@ -56,6 +56,11 @@ public class PolicyBackedGroupManagerImpl implements PolicyBackedGroupManager {
     }
 
     @Override
+    public String save(Goid id, VirtualPolicyGroup group, Set<IdentityHeader> userHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void update(VirtualPolicyGroup group, Set<IdentityHeader> userHeaders) throws UpdateException, FindException {
         throw new UnsupportedOperationException();
     }

@@ -196,6 +196,11 @@ public class InternalIdentityProviderImplTest {
         }
 
         @Override
+        public String save(Goid id, InternalUser user, Set<IdentityHeader> groupHeaders) throws SaveException {
+            return null;
+        }
+
+        @Override
         public InternalUser reify(UserBean bean) {
             return null;
         }

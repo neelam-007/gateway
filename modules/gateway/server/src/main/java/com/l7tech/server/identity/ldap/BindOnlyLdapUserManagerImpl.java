@@ -69,6 +69,11 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     @Override
+    public String save(Goid id, BindOnlyLdapUser user, Set<IdentityHeader> groupHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BindOnlyLdapUser reify(UserBean bean) {
         if (!bean.getProviderId().equals(identityProviderConfig.getGoid()))
             throw new IllegalArgumentException("User bean does not belong to this provider");

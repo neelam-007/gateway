@@ -7,13 +7,16 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.GoidUpgradeMapper;
-import org.hibernate.*;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 
@@ -290,6 +293,11 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     @Override
     public String save(GT group, Set<IdentityHeader> userHeaders) throws SaveException {
+        return save(null, group, userHeaders);
+    }
+
+    @Override
+    public String save(@Nullable Goid id, GT group, Set<IdentityHeader> userHeaders) throws SaveException {
         try {
             // check that no existing group have same name
             Group existingGrp;
@@ -297,6 +305,13 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 existingGrp = findByUniqueName(group.getName());
             } catch (FindException e) {
                 existingGrp = null;
+            }
+            if(existingGrp == null && id != null){
+                try {
+                    existingGrp = findByPrimaryKey(id);
+                } catch (FindException e) {
+                    existingGrp = null;
+                }
             }
             if (existingGrp != null) {
                 throw new DuplicateObjectException("This group cannot be saved because an existing group " +
@@ -306,11 +321,24 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             GT imp = cast(group);
             imp.setProviderId(identityProvider.getConfig().getGoid());
             preSave(imp);
-            String oid = getHibernateTemplate().save(imp).toString();
+            //tell the entity to preserve its id
+            if(id != null) {
+                final boolean preserveId = PersistentEntityUtil.preserveId(imp);
+                if (!preserveId) {
+                    throw new SaveException("Cannot save an entity with a specific ID. Was unable to preserve the entity ID for entity: " + imp.getClass().getSimpleName());
+                }
+                //set the entity id
+                imp.setGoid(id);
+            }
+            String savedID = getHibernateTemplate().save(imp).toString();
+            //validate that the ID returned by the above save call equals the one given
+            if (id != null && !id.toString().equals(savedID)) {
+                throw new SaveException("Error saving entity with a specific ID. The save method saved with a different id. Expected: " + id + " used " + savedID + ". Entity: " + imp.getClass().getSimpleName());
+            }
 
             if (userHeaders != null) {
                 try {
-                    setUserHeaders(oid, userHeaders);
+                    setUserHeaders(savedID, userHeaders);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, e.getMessage());
                     throw new SaveException(e.getMessage(), e);
@@ -320,7 +348,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 }
             }
 
-            return oid;
+            return savedID;
         } catch (DataAccessException se) {
             throw new SaveException(se.toString(), se);
         }

@@ -2,6 +2,7 @@ package com.l7tech.server.bundling;
 
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
@@ -71,6 +72,8 @@ public class EntityBundleImporterImplTest {
     private PolicyAliasManager policyAliasManager;
     @Mock
     private ClusterPropertyManager clusterPropertyManager;
+    @Mock
+    private ClientCertManager clientCertManager;
 
     @Before
     public void steup() {
@@ -90,6 +93,7 @@ public class EntityBundleImporterImplTest {
                 .put("serviceAliasManager", serviceAliasManager)
                 .put("policyAliasManager", policyAliasManager)
                 .put("clusterPropertyManager", clusterPropertyManager)
+                .put("clientCertManager", clientCertManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }

@@ -27,7 +27,7 @@ public class ExtensionSupport {
         return extension;
     }
 
-    protected final void setExtension( final Extension extension ) {
+    protected void setExtension( final Extension extension ) {
         this.extension = extension;
     }
 
