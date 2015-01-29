@@ -15,10 +15,9 @@ import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import java.io.ByteArrayInputStream;
-import java.util.TreeMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 
 /**
@@ -60,7 +59,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
-    @Size(min = 1, max = 255)
+    @Size(min = 0, max = 255)
     @Column(name = "keyspace_name", nullable = false)
     public String getKeyspaceName() {
         return keyspaceName;
@@ -104,7 +103,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
     }
 
     @RbacAttribute
-    @Size(min = 1, max = 255)
+    @Size(min = 0, max = 255)
     @Column(name = "username", nullable = false)
     public String getUsername() {
         return username;
@@ -164,7 +163,7 @@ public class CassandraConnection extends ZoneableNamedEntityImp implements Compa
 
     public void setProperties(Map<String, String> properties) {
         this.propertiesXml = null;
-        this.properties = properties;
+        this.properties = properties != null ? properties : new TreeMap<String, String>();
     }
 
     @RbacAttribute

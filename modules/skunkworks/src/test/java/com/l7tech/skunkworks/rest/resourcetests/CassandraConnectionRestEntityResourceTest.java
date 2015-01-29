@@ -102,6 +102,19 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
 
         cassandraConnectionMOs.add(cassandraConnectionMO);
 
+        //this is a minimal cassandra connection
+        cassandraConnectionMO = ManagedObjectFactory.createCassandraConnectionMO();
+        cassandraConnectionMO.setId(getGoid().toString());
+        cassandraConnectionMO.setName("Test Cassandra connection created minimal");
+        cassandraConnectionMO.setKeyspace("");
+        cassandraConnectionMO.setContactPoint("localhost");
+        cassandraConnectionMO.setPort("9042");
+        cassandraConnectionMO.setUsername("");
+        cassandraConnectionMO.setCompression("ProtocolOptions.Compression.NONE");
+        cassandraConnectionMO.setEnabled(true);
+
+        cassandraConnectionMOs.add(cassandraConnectionMO);
+
         return cassandraConnectionMOs;
     }
 
@@ -273,7 +286,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
             Assert.assertEquals(entity.getContactPoints(), managedObject.getContactPoint());
             Assert.assertEquals(entity.getPort(), managedObject.getPort());
             Assert.assertEquals(entity.getUsername(), managedObject.getUsername());
-            Assert.assertEquals(entity.getPasswordGoid().toString(), managedObject.getPasswordId());
+            Assert.assertEquals(entity.getPasswordGoid() == null ? null : entity.getPasswordGoid().toString(), managedObject.getPasswordId());
             Assert.assertEquals(entity.getCompression(), managedObject.getCompression());
             Assert.assertEquals(entity.isSsl(), managedObject.isSsl());
             Assert.assertEquals(entity.isEnabled(), managedObject.isEnabled());
