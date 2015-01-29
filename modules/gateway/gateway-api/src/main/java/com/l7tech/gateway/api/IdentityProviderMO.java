@@ -656,7 +656,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         }
 
         public String getBindPasswordBundleKey(){
-            if(this.bindPassword.getAttributeExtensions() != null){
+            if(this.bindPassword!=null && this.bindPassword.getAttributeExtensions() != null){
                 return (String)this.bindPassword.getAttributeExtensions().get(new QName("bundleKey"));
             }
             return null;
