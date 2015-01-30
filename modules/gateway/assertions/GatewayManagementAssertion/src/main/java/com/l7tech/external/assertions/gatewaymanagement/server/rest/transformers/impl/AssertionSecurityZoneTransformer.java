@@ -24,7 +24,7 @@ public class AssertionSecurityZoneTransformer extends APIResourceWsmanBaseTransf
     @NotNull
     @Override
     public Item<AssertionSecurityZoneMO> convertToItem(@NotNull AssertionSecurityZoneMO m) {
-        return new ItemBuilder<AssertionSecurityZoneMO>(m.getName(), m.getName(), factory.getType().name())
+        return new ItemBuilder<AssertionSecurityZoneMO>(m.getName(), m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }

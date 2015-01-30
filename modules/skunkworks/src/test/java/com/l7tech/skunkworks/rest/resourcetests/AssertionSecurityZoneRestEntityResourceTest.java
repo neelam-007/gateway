@@ -6,8 +6,10 @@ import com.l7tech.external.assertions.gatewaymanagement.RESTGatewayManagementAss
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.external.assertions.whichmodule.WhichModuleAssertion;
 import com.l7tech.gateway.api.AssertionSecurityZoneMO;
+import com.l7tech.gateway.api.Item;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.AssertionRegistry;
@@ -27,6 +29,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
@@ -275,6 +279,29 @@ public class AssertionSecurityZoneRestEntityResourceTest extends RestEntityTests
                 Assert.assertNull(managedObject.getSecurityZoneId());
             }
         }
+    }
+
+    @Override
+    protected void verifyMOResponse(String entityId, RestResponse response) throws Exception {
+        Assert.assertEquals("Expected successful assertion status", AssertionStatus.NONE, response.getAssertionStatus());
+        Assert.assertEquals("Expected successful response", 200, response.getStatus());
+        Assert.assertNotNull("Expected not null response body", response.getBody());
+
+        final StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item item = MarshallingUtils.unmarshal(Item.class, source);
+
+        Assert.assertEquals("Id's don't match", entityId, item.getName());
+        Assert.assertEquals("Type is incorrect", getType(), item.getType());
+        Assert.assertEquals("Title is incorrect", getExpectedTitle(entityId), item.getName());
+        Assert.assertNotNull("TimeStamp must always be present", item.getDate());
+
+        Assert.assertTrue("Need at least one link", item.getLinks() != null && item.getLinks().size() > 0);
+        Link self = findLink("self", item.getLinks());
+        Assert.assertNotNull("self link must be present", self);
+        Assert.assertEquals("self link is incorrect", getDatabaseBasedRestManagementEnvironment().getUriStart() + getResourceUri() + "/" + entityId, self.getUri());
+
+        verifyLinks(entityId, item.getLinks());
+        verifyEntity(entityId, (AssertionSecurityZoneMO)item.getContent());
     }
 
     @Override

@@ -140,11 +140,11 @@ public abstract class MigrationTestBase {
 
     protected void validate(Item<Mappings> mappings) throws Exception {
         for (Mapping mapping : mappings.getContent().getMappings()) {
-            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore && mapping.getActionTaken() != Mapping.ActionTaken.Ignored){
+            if(mapping.getErrorType() == null && mapping.getAction()!= Mapping.Action.Ignore && mapping.getActionTaken() != Mapping.ActionTaken.Ignored && !("INTERFACE_TAG".equals(mapping.getType()) && "742a7604-699c-368a-a19a-0ddd73085575".equals(mapping.getSrcId()))){
                 Assert.assertNotNull("The target uri cannot be null", mapping.getTargetUri());
                 String uri = getUri(mapping.getTargetUri());
                 RestResponse response = targetEnvironment.processRequest(uri, HttpMethod.GET, null, "");
-                if(mapping.getActionTaken() == Mapping.ActionTaken.Deleted){
+                if(mapping.getActionTaken() == Mapping.ActionTaken.Deleted && !"ASSERTION_ACCESS".equals(mapping.getType())){
                     assertNotFoundResponse(response);
                 } else {
                     assertOkResponse(response);

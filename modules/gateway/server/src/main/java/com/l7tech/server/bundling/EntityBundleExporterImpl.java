@@ -20,6 +20,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.policy.AssertionAccess;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.search.DependencyAnalyzer;
@@ -285,8 +286,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     EntityMappingInstructions.MappingAction.valueOf(bundleExportProperties.getProperty(DefaultMappingActionOption, DefaultMappingAction.toString())),
                     true,
                     false);
-        } else if(entity instanceof ClusterProperty) {
-            //make cluster properties map by name by default
+        } else if(entity instanceof ClusterProperty || entity instanceof AssertionAccess) {
+            //make cluster properties and assertion access map by name by default
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME),
