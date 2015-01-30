@@ -5,11 +5,9 @@ import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.cassandra.CassandraConnectionEntityManager;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.skunkworks.rest.tools.RestEntityTests;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
 import com.l7tech.test.conditional.ConditionalIgnore;
@@ -26,11 +24,14 @@ import java.util.*;
 @ConditionalIgnore(condition = IgnoreOnDaily.class)
 public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<CassandraConnection, CassandraConnectionMO> {
     private CassandraConnectionEntityManager cassandraConnectionEntityManager;
+    private SecurityZoneManager securityZoneManager;
     private List<CassandraConnection> cassandraConnections = new ArrayList<>();
+    private SecurityZone securityZone;
 
     @Before
     public void before() throws Exception {
         cassandraConnectionEntityManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("cassandraEntityManager", CassandraConnectionEntityManager.class);
+        securityZoneManager = getDatabaseBasedRestManagementEnvironment().getApplicationContext().getBean("securityZoneManager", SecurityZoneManager.class);
 
         //Create new connections
         CassandraConnection cc1 = new CassandraConnection();
@@ -48,6 +49,11 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cassandraConnections.add(cc1);
         cassandraConnectionEntityManager.save(cc1);
 
+        securityZone = new SecurityZone();
+        securityZone.setName("Zone1");
+        securityZone.setPermittedEntityTypes(CollectionUtils.set(EntityType.ANY));
+        securityZone.setGoid(securityZoneManager.save(securityZone));
+
         CassandraConnection cc2 = new CassandraConnection();
         cc2.setId(getGoid().toString());
         cc2.setName("Test Cassandra connection 2");
@@ -60,6 +66,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         cc2.setSsl(true);
         cc2.setTlsEnabledCipherSuites("SOME_RSA_CIPHER,SOME_EC_CIPHER");
         cc2.setEnabled(true);
+        cc2.setSecurityZone(securityZone);
         cassandraConnections.add(cc2);
         cassandraConnectionEntityManager.save(cc2);
     }
@@ -70,6 +77,8 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
         for (CassandraConnection cassandraConnection : all) {
             cassandraConnectionEntityManager.delete(cassandraConnection.getGoid());
         }
+
+        securityZoneManager.delete(securityZone);
     }
 
     @Override
@@ -327,6 +336,7 @@ public class CassandraConnectionRestEntityResourceTest extends RestEntityTests<C
                 .put("port=" + URLEncoder.encode(cassandraConnections.get(0).getPort()), Arrays.asList(cassandraConnections.get(0).getId()))
                 .put("username=" + URLEncoder.encode(cassandraConnections.get(0).getUsername()), Arrays.asList(cassandraConnections.get(0).getId()))
                 .put("compression=" + URLEncoder.encode(cassandraConnections.get(0).getCompression()), Arrays.asList(cassandraConnections.get(0).getId()))
+                .put("securityZone.id=" + securityZone.getId(), Arrays.asList(cassandraConnections.get(1).getId()))
                 .map();
     }
 }
