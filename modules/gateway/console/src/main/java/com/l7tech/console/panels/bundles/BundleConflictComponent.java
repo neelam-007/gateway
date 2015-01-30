@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.InvalidResource;
 import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.TargetNotFound;
+import static com.l7tech.console.panels.bundles.ConflictDisplayerDialog.ErrorType.UniqueKeyConflict;
 import static com.l7tech.objectmodel.EntityType.JDBC_CONNECTION;
 
 /**
@@ -182,8 +183,22 @@ public class BundleConflictComponent extends JPanel {
                             deletedEntityPanel.add(targetDetail.getContentPane());
                             break;
                         default:
-                            resolutionErrorPanel.add(new JLabel(migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() +
-                                    ", srcId=" + migrationErrorMapping.getSrcId() + ", " + migrationErrorMapping.getErrorMessage()));
+                            String displayLabel;
+                            if (errorType == UniqueKeyConflict) {
+                                displayLabel = migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() + ", name=" + migrationErrorMapping.getName() + ", already exists";
+                            } else if (errorType == InvalidResource) {
+                                String errorMessage = "Cannot add or update a child row: a foreign key constraint fails";
+                                if (migrationErrorMapping.getErrorMessage().startsWith(errorMessage)) {
+                                    errorMessage += " in database";
+                                } else {
+                                    errorMessage = migrationErrorMapping.getErrorMessage();
+                                }
+                                displayLabel = migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() + ", name=" + migrationErrorMapping.getName() + ", srcId=" + migrationErrorMapping.getSrcId() + ", " + errorMessage;
+                            } else {
+                                displayLabel = migrationErrorMapping.getErrorTypeStr() + ": type=" + migrationErrorMapping.getEntityTypeStr() + ", name=" + migrationErrorMapping.getName() + ", srcId=" + migrationErrorMapping.getSrcId() + ", " + migrationErrorMapping.getErrorMessage();
+                            }
+
+                            resolutionErrorPanel.add(new JLabel(displayLabel));
                             break;
                     }
                 }

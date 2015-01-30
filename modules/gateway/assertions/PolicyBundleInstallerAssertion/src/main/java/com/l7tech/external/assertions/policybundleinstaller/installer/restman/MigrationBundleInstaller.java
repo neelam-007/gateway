@@ -194,23 +194,18 @@ public class MigrationBundleInstaller extends BaseInstaller {
 
         final Element errorMessageElement = XmlUtil.findFirstDescendantElement(mappingError, MGMT_VERSION_NAMESPACE, "StringValue");
         String errorMessage = "";
-        String name = null;
         if (errorMessageElement != null) {
             errorMessage = errorMessageElement.getFirstChild().getNodeValue();
-            int nameStartIdx = errorMessage.indexOf("Name=");
-
-            if (nameStartIdx >= 0){
-                int nameEndIdx = errorMessage.indexOf(", ", nameStartIdx);
-                name = errorMessage.substring(nameStartIdx + 5, nameEndIdx);
-                if (name != null && "null".equals(name)) {
-                    name = "N/A";
-                }
-            }
         }
 
-        final String policyResourceXml = getPolicyXmlForErrorMapping(errorTypeStr, EntityType.valueOf(entityTypeStr), srcId, restmanMessage);
-
-        return new MigrationDryRunResult(errorTypeStr, entityTypeStr, srcId, errorMessage, name, policyResourceXml);
+        return new MigrationDryRunResult(
+            errorTypeStr,
+            entityTypeStr,
+            srcId,
+            errorMessage,
+            restmanMessage.getEntityName(srcId),
+            getPolicyXmlForErrorMapping(errorTypeStr, EntityType.valueOf(entityTypeStr), srcId, restmanMessage)
+        );
     }
 
     /**
