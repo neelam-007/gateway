@@ -559,7 +559,7 @@ public abstract class RestEntityTests<E, M extends ManagedObject> extends RestEn
                 }
             }else{
                 for(Item<M> ref: references){
-                    Assert.assertTrue("Error for search Query: " + query + "Message:" + "Item not expected:" + ref.getId(), expectedIds.contains(ref.getId()));
+                    Assert.assertTrue("Error for search Query: " + query + "Message:" + "Item not expected:" + ref.getId(), expectedIds.contains(getId(ref.getContent())));
                 }
             }
         }

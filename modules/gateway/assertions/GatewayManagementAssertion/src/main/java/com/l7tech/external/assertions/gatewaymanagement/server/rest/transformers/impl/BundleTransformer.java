@@ -71,7 +71,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final ArrayList<Mapping> mappings = new ArrayList<>();
 
         for (final EntityMappingInstructions entityMappingInstruction : entityBundle.getMappingInstructions()) {
-            final EntityContainer entityResource = entityBundle.getEntity(entityMappingInstruction.getSourceEntityHeader().getStrId(), entityMappingInstruction.getSourceEntityHeader().getType());
+            final EntityContainer entityResource = getEntityContainerFromBundle(entityMappingInstruction, entityBundle);
             if (entityResource != null) {
                 //Get the transformer for the entity so that it can be converted.
                 final EntityAPITransformer transformer = apiUtilityLocator.findTransformerByResourceType(entityMappingInstruction.getSourceEntityHeader().getType().toString());
@@ -104,6 +104,25 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         bundle.setReferences(items);
         bundle.setMappings(mappings);
         return bundle;
+    }
+
+    /**
+     * Returns an entity container form the entity bundle using the given mapping
+     *
+     * @param mapping The mapping to find the entity container for
+     * @param bundle  The bundle to find the entity container in
+     * @return The entity container for this mapping. Or null if there isn't one in the bundle.
+     */
+    //TODO: This is shared with EntityBundleImporterImpl need to make it common
+    @Nullable
+    private EntityContainer getEntityContainerFromBundle(@NotNull final EntityMappingInstructions mapping, @NotNull final EntityBundle bundle) {
+        final String id;
+        if (EntityType.ASSERTION_ACCESS.equals(mapping.getSourceEntityHeader().getType())) {
+            id = mapping.getSourceEntityHeader().getName();
+        } else {
+            id = mapping.getSourceEntityHeader().getStrId();
+        }
+        return id == null ? null : bundle.getEntity(id, mapping.getSourceEntityHeader().getType());
     }
 
     /**
@@ -200,7 +219,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final List<Mapping> updatedMappings = new ArrayList<>();
         for (final EntityMappingResult entityMappingResult : mappingsPerformed) {
             //get the mappings for this EntityMappingResult
-            final Mapping mapping = mappingsMap.get(new Pair<>(entityMappingResult.getSourceEntityHeader().getStrId(), entityMappingResult.getSourceEntityHeader().getType()));
+            final Mapping mapping = mappingsMap.get(new Pair<>(EntityType.ASSERTION_ACCESS.equals(entityMappingResult.getSourceEntityHeader().getType()) ? entityMappingResult.getSourceEntityHeader().getName() : entityMappingResult.getSourceEntityHeader().getStrId(), entityMappingResult.getSourceEntityHeader().getType()));
             //get the updated mapping
             final Mapping mappingUpdated = convertMappingAndEntityMappingResultToMapping(mapping, entityMappingResult);
             //set the target url
@@ -225,7 +244,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setType(entityMappingInstructions.getSourceEntityHeader().getType().toString());
         if(!Goid.DEFAULT_GOID.toString().equals((entityMappingInstructions.getSourceEntityHeader().getStrId()))) {
-            mapping.setSrcId(entityMappingInstructions.getSourceEntityHeader().getStrId());
+            mapping.setSrcId(EntityType.ASSERTION_ACCESS.equals(entityMappingInstructions.getSourceEntityHeader().getType()) ? entityMappingInstructions.getSourceEntityHeader().getName() : entityMappingInstructions.getSourceEntityHeader().getStrId());
             final URLAccessible urlAccessible = urlAccessibleLocator.findByEntityType(mapping.getType());
             mapping.setSrcUri(urlAccessible.getUrl(entityMappingInstructions.getSourceEntityHeader()));
         }
@@ -278,7 +297,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 mapping.setActionTaken(convertActionTaken(entityMappingResult.getMappingAction()));
             }
             if (entityMappingResult.getTargetEntityHeader() != null) {
-                mapping.setTargetId(entityMappingResult.getTargetEntityHeader().getStrId());
+                mapping.setTargetId(EntityType.ASSERTION_ACCESS.equals(entityMappingResult.getTargetEntityHeader().getType()) ? entityMappingResult.getTargetEntityHeader().getName() : entityMappingResult.getTargetEntityHeader().getStrId());
             }
         } else {
             if (entityMappingResult.getException() != null) {
@@ -323,7 +342,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final EntityHeader sourceHeader;
         if (entityContainer == null) {
             // reference mappings have no referenced entity
-            sourceHeader = new EntityHeader(mapping.getSrcId(), EntityType.valueOf(mapping.getType()), null, null);
+            if(EntityType.ASSERTION_ACCESS.name().equals(mapping.getType())) {
+                sourceHeader = new EntityHeader((String)null, EntityType.valueOf(mapping.getType()), mapping.getSrcId(), null);
+            } else {
+                sourceHeader = new EntityHeader(mapping.getSrcId(), EntityType.valueOf(mapping.getType()), null, null);
+            }
         } else {
             sourceHeader = EntityHeaderUtils.fromEntity(entityContainer.getEntity());
         }

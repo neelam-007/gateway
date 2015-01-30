@@ -1064,7 +1064,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
 
         Item<AssertionSecurityZoneMO> assertionSecurityZoneItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
-        response = environment.processRequest("assertionSecurityZones/" + assertionSecurityZoneItem.getName(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        response = environment.processRequest("assertionSecurityZones/" + assertionSecurityZoneItem.getId(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
 
         return MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
     }

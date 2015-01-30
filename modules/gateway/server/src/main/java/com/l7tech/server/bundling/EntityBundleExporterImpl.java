@@ -168,6 +168,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             // not include private key entity info in bundle unless EncryptSecrets is true
         } else if (entity instanceof InterfaceTag) {
             entityContainers.add(new InterfaceTagContainer((InterfaceTag) entity));
+        } else if (entity instanceof AssertionAccess) {
+            entityContainers.add(new AssertionAccessContainer((AssertionAccess) entity));
         } else {
             entityContainers.add(new EntityContainer<>(entity));
         }

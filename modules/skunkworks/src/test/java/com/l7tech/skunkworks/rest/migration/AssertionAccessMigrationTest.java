@@ -55,7 +55,7 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
         assZones = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(response.getBody())));
         if (assZones.getContent() != null) {
             for (Item<AssertionSecurityZoneMO> assZone : assZones.getContent()) {
-                if (!Goid.DEFAULT_GOID.toString().equals(assZone.getContent().getSecurityZoneId())) {
+                if (assZone.getContent().getSecurityZoneId() != null && !Goid.DEFAULT_GOID.toString().equals(assZone.getContent().getSecurityZoneId())) {
                     updateAssZone(getTargetEnvironment(), assZone.getName(), null);
                 }
             }
@@ -97,7 +97,7 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //validate the the assertion accesses are exported
-        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getId());
+        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getName());
         Assert.assertNotNull(assertionZoneMapping);
 
         //import the bundle
@@ -111,9 +111,16 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
         Assert.assertNotNull(assertionZoneMapping);
         Assert.assertEquals(EntityType.ASSERTION_ACCESS.toString(), assertionZoneMapping.getType());
         Assert.assertEquals(Mapping.Action.NewOrExisting, assertionZoneMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, assertionZoneMapping.getActionTaken());
+        //depending on the order tests are run this could be either one.
+        Assert.assertTrue(Mapping.ActionTaken.CreatedNew.equals(assertionZoneMapping.getActionTaken()) || Mapping.ActionTaken.UsedExisting.equals(assertionZoneMapping.getActionTaken()));
         Assert.assertEquals(gmaAccessZone.getId(), assertionZoneMapping.getSrcId());
         Assert.assertEquals(assertionZoneMapping.getSrcId(), assertionZoneMapping.getTargetId());
+
+        //validate that the security zone is correct
+        response = getTargetEnvironment().processRequest("assertionSecurityZones/" + gmaAccessZone.getName(), HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        assertOkResponse(response);
+        Item<AssertionSecurityZoneMO> updatedAssZone = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        Assert.assertEquals(sourceSecurityZone.getId(), updatedAssZone.getContent().getSecurityZoneId());
 
         validate(mappings);
     }
@@ -132,7 +139,7 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //validate the the assertion accesses are exported
-        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getId());
+        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getName());
         Assert.assertNotNull(assertionZoneMapping);
         assertionZoneMapping.setAction(Mapping.Action.NewOrUpdate);
 
@@ -174,7 +181,7 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //validate the the assertion accesses are exported
-        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getId());
+        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getName());
         Assert.assertNotNull(assertionZoneMapping);
 
         //import the bundle
@@ -211,13 +218,15 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
 
         Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setAction(Mapping.Action.Delete);
-        mapping.setSrcId(gmaAccessZoneTrgt.getId());
+        mapping.setSrcId(gmaAccessZoneTrgt.getName());
         mapping.setType(gmaAccessZoneTrgt.getType());
+        mapping.setProperties(CollectionUtils.<String, Object>mapBuilder().put("MapBy", "name").map());
 
         Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
         mappingNotExisting.setAction(Mapping.Action.Delete);
-        mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
+        mappingNotExisting.setSrcId("bad.assertion.name");
         mappingNotExisting.setType(gmaAccessZoneTrgt.getType());
+        mappingNotExisting.setProperties(CollectionUtils.<String, Object>mapBuilder().put("MapBy", "name").map());
 
         bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
 

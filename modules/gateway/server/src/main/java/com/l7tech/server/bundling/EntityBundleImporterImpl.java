@@ -21,10 +21,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.policy.GenericEntity;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyVersion;
+import com.l7tech.policy.*;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.audit.AuditContextFactory;
@@ -181,7 +178,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //loop through each mapping instruction to perform the action.
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     //Get the entity that this mapping is for from the bundle
-                    final EntityContainer entity = mapping.getSourceEntityHeader().getStrId() == null ? null : bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
+                    final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
                     try {
                         //Find an existing entity to map it to.
                         @Nullable
@@ -190,7 +187,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
                             //Use the existing entity
-                            if ( mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())){
+                            if (mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                                 mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
                                 //rollback the transaction
                                 transactionStatus.setRollbackOnly();
@@ -268,7 +265,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
 
                 // Do not attempt these post bundle import tasks if the bundle import fail. It will create misleading error messages in the bundle results.
-                if(!containsErrors(mappingsRtn)) {
+                if (!containsErrors(mappingsRtn)) {
                     //need to process generic entities at the end so that cyclical dependencies can be properly replaced
                     replaceGenericEntityDependencies(mappingsRtn, resourceMapping);
 
@@ -285,6 +282,25 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return mappingsRtn;
             }
         });
+    }
+
+    /**
+     * Returns an entity container form the entity bundle using the given mapping
+     *
+     * @param mapping The mapping to find the entity container for
+     * @param bundle  The bundle to find the entity container in
+     * @return The entity container for this mapping. Or null if there isn't one in the bundle.
+     */
+    //TODO: This is shared with BundleTransformer need to make it common
+    @Nullable
+    private EntityContainer getEntityContainerFromBundle(@NotNull final EntityMappingInstructions mapping, @NotNull final EntityBundle bundle) {
+        final String id;
+        if (EntityType.ASSERTION_ACCESS.equals(mapping.getSourceEntityHeader().getType())) {
+            id = mapping.getSourceEntityHeader().getName();
+        } else {
+            id = mapping.getSourceEntityHeader().getStrId();
+        }
+        return id == null ? null : bundle.getEntity(id, mapping.getSourceEntityHeader().getType());
     }
 
     /**
