@@ -3,16 +3,15 @@ package com.l7tech.kerberos;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.*;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import sun.security.jgss.krb5.Krb5Util;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
-import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KeyTab;
@@ -48,14 +47,15 @@ public class KerberosClientTest {
     @BeforeClass
     public static void init() throws IOException, KerberosException {
         tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
-
+        MockKrb5LoginModule.setKeyTabBytes(KerberosConfigTest.MULTIPLE_PRINCIPAL_KEYTAB);
         KerberosTestSetup.init(tmpDir);
     }
 
-/*    @AfterClass
+    @AfterClass
     public static void dispose() {
-        FileUtils.deleteDir(tmpDir);
-    }*/
+        //FileUtils.deleteDir(tmpDir);
+        MockKrb5LoginModule.setKeyTabBytes(null);
+    }
 
     /**
      * Setup the Kerberos Client.

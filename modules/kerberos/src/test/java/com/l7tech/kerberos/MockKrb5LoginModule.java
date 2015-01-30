@@ -1,22 +1,26 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.ResourceUtils;
 import org.apache.commons.codec.binary.Base64;
-import sun.security.jgss.krb5.Krb5Util;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.Principal;
+import java.io.OutputStream;
+import java.util.Calendar;
 import java.util.Map;
 
 public class MockKrb5LoginModule implements LoginModule {
+    private static long lastModified = Calendar.getInstance().getTime().getTime();
 
     private Subject subject;
 
@@ -34,6 +38,14 @@ public class MockKrb5LoginModule implements LoginModule {
     private static final int KEY_TYPE = 23;
     private static final int VERSION_NUMBER = 4;
     private String servicePrincipalName = null;
+
+    private static String keyTabBytes;
+
+    public static void setKeyTabBytes(String keyTabValue) {
+        keyTabBytes = keyTabValue;
+    }
+
+
 
 
     @Override
@@ -58,11 +70,11 @@ public class MockKrb5LoginModule implements LoginModule {
             KerberosPrincipal kerberosPrincipal = new KerberosPrincipal(servicePrincipalName);
             subject.getPrincipals().add(kerberosPrincipal);
             subject.getPrivateCredentials().add(KerberosClientTest.decode(KERBEROS_TICKET));
-            KerberosKey key = new KerberosKey((KerberosPrincipal) KerberosClientTest.decode(KERBEROS_PRINCIPAL), Base64.decodeBase64(KEY_BYTES), KEY_TYPE, VERSION_NUMBER);
-            // TODO JDK8: KeysFromKeyTab class no longer exists.  Will try using keys directly
-//            Krb5Util.KeysFromKeyTab keysFromKeyTab = new Krb5Util.KeysFromKeyTab(key);
-//            subject.getPrivateCredentials().add(keysFromKeyTab);
-            subject.getPrivateCredentials().add( key );
+            //In JDK8 KerberosKeys are no longer added to the private credentials directly.
+            //Instead they clients should use keytab containing proper encryption keys
+            File keytabFile = writeKeyTab(keyTabBytes, true);
+            KeyTab keytab = KeyTab.getInstance(kerberosPrincipal, keytabFile);
+            subject.getPrivateCredentials().add( keytab );
             return true;
         } catch (Exception e) {
             throw new LoginException(e.getMessage());
@@ -82,6 +94,29 @@ public class MockKrb5LoginModule implements LoginModule {
     @Override
     public boolean logout() throws LoginException {
         return true;
+    }
+
+    public File writeKeyTab(String keyTabData, boolean checkConfig) throws IOException, KerberosException {
+        File file = KerberosTestSetup.getKeyTab();
+        if (file.exists()) {
+            file.delete();
+        }
+
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(file);
+            out.write(Base64.decodeBase64(keyTabData));
+        } catch (IOException ioe) {
+            throw new KerberosException("Error writing Kerberos keytab.", ioe);
+        } finally {
+            ResourceUtils.closeQuietly(out);
+        }
+        lastModified = lastModified + 1000;
+        file.setLastModified(lastModified);
+        if (checkConfig) {
+            KerberosConfig.checkConfig(null, null, false, false);
+        }
+        return file;
     }
 
 }
