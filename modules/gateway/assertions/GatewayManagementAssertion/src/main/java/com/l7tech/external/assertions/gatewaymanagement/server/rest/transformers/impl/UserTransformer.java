@@ -71,6 +71,7 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
         userMO.setEmail(user.getEmail());
         userMO.setDepartment(user.getDepartment());
         userMO.setSubjectDn(user.getSubjectDn());
+        userMO.setName(user.getName());
 
         //set the encrypted password
         if (secretsEncryptor != null && user instanceof InternalUser && ((InternalUser) user).getHashedPassword() != null) {
@@ -109,7 +110,7 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
         UserBean user = new UserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());
-        user.setName(userMO.getLogin());
+        user.setName(userMO.getName());
 
         Goid identityProviderGoid = Goid.parseGoid(userMO.getProviderId());
         try {
@@ -149,7 +150,8 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
                 } catch (ParseException e) {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "The user encrypted password in not valid. Message: " + ExceptionUtils.getMessage(e));
                 }
-                if (passwordHasher.isVerifierRecognized(hashedPassword)) {
+                //An empty hashed password is valid for a user
+                if (hashedPassword.isEmpty() || passwordHasher.isVerifierRecognized(hashedPassword)) {
                     user.setHashedPassword(hashedPassword);
                 } else {
                     throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "The user hashed password is not recognizable.");

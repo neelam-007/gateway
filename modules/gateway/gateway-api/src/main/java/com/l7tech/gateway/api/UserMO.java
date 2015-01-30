@@ -2,10 +2,13 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.PropertiesMapType;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.*;
-import java.util.Arrays;
+import javax.xml.namespace.QName;
 import java.util.List;
 
 @XmlRootElement(name = "User")
@@ -185,9 +188,42 @@ public class UserMO extends AccessibleObject {
         return super.getExtensions();
     }
 
+    /**
+     * The name for the user
+     *
+     * @return The name (may be null)
+     */
+    @XmlTransient
+    public String getName() {
+        PropertiesMapType.StringValue stringValue = getUniqueExtension(new Functions.Unary<Boolean, Object>() {
+            @Override
+            public Boolean call(Object o) {
+                return o instanceof PropertiesMapType.StringValue && ((PropertiesMapType.StringValue) o).getAttributeExtensions() != null && "name".equals(((PropertiesMapType.StringValue) o).getAttributeExtensions().get(new QName("property")));
+            }
+        });
+        return stringValue == null ? null : stringValue.getValue();
+    }
+
+    /**
+     * Set the name for the user.
+     *
+     * @param name The name to use.
+     */
+    public void setName(@Nullable String name) {
+        setUniqueExtension(name == null ? null : new PropertiesMapType.StringValue(name, CollectionUtils.<QName, Object>mapBuilder().put(new QName("property"), "name").map()),
+                new Functions.Unary<Boolean, Object>() {
+                    @Override
+                    public Boolean call(Object o) {
+                        return o instanceof PropertiesMapType.StringValue &&
+                                ((PropertiesMapType.StringValue) o).getAttributeExtensions() != null &&
+                                "name".equals(((PropertiesMapType.StringValue) o).getAttributeExtensions().get(new QName("property")));
+                    }
+                });
+    }
+
     @XmlTransient
     public CertificateData getCertificateData() {
-        return getExtension() == null || getExtension().getExtensions() == null ? null : (CertificateData) Functions.grepFirst(getExtension().getExtensions(), new Functions.Unary<Boolean, Object>() {
+        return getUniqueExtension(new Functions.Unary<Boolean, Object>() {
             @Override
             public Boolean call(Object o) {
                 return o instanceof CertificateData;
@@ -196,9 +232,12 @@ public class UserMO extends AccessibleObject {
     }
 
     public void setCertificateData( final CertificateData certificateData ) {
-        Extension extension = new Extension();
-        extension.setExtensions(Arrays.<Object>asList(certificateData));
-        setExtension(extension);
+        setUniqueExtension(certificateData, new Functions.Unary<Boolean, Object>() {
+            @Override
+            public Boolean call(Object o) {
+                return o instanceof CertificateData;
+            }
+        });
     }
 
     UserMO() {

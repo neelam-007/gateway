@@ -324,6 +324,11 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             //Handle database exceptions with a nicer message
             org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause().getCause();
             return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
+        }else if (exception instanceof DataIntegrityViolationException && exception.getCause() != null
+                && exception.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+            //Handle database exceptions with a nicer message
+            org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause();
+            return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
         } else {
             return ExceptionUtils.getMessageWithCause(exception);
         }
@@ -385,7 +390,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             return Mapping.ErrorType.ImproperMapping;
         } else if (exception instanceof DuplicateObjectException) {
             return Mapping.ErrorType.UniqueKeyConflict;
-        } else if (exception instanceof ConstraintViolationException || exception instanceof ObjectModelException) {
+        } else if (exception instanceof ConstraintViolationException || exception instanceof ObjectModelException || exception instanceof DataIntegrityViolationException) {
             return Mapping.ErrorType.InvalidResource;
         }
         return Mapping.ErrorType.Unknown;

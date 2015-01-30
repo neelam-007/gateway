@@ -1000,6 +1000,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(identityProviderId);
         userMO.setLogin(login);
+        userMO.setName(login);
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
         password.setPassword("123#@!qwER");

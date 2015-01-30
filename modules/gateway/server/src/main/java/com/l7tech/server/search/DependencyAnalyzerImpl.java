@@ -311,6 +311,17 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                             //this is the role for an ignored entity so don't include the role
                             continue;
                         }
+                        //filter out roles for private service policies
+                        if(EntityType.POLICY.equals(roleHeader.getEntityType()) && roleHeader.getEntityGoid() != null){
+                            try {
+                                final Policy policy = policyManager.findByPrimaryKey(roleHeader.getEntityGoid());
+                                if(policy != null && PolicyType.PRIVATE_SERVICE.equals(policy.getType())){
+                                    continue;
+                                }
+                            } catch(FindException e) {
+                                //do nothing let it fall through
+                            }
+                        }
                         entityHeaders.add(roleHeader);
                     } else {
                         throw new FindException("Unexpected header type for role: " + header.getClass());

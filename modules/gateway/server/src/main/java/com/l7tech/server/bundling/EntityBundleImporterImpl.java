@@ -171,18 +171,22 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return tt.execute(new TransactionCallback<List<EntityMappingResult>>() {
             @Override
             public List<EntityMappingResult> doInTransaction(final TransactionStatus transactionStatus) {
+                logger.log(Level.FINEST, "Importing Bundle. # Mappings: " + bundle.getMappingInstructions().size());
                 //This is the list of mappings to return.
                 final List<EntityMappingResult> mappingsRtn = new ArrayList<>(bundle.getMappingInstructions().size());
                 //This is a map of entities in the entity bundle to entities that are updated or created on the gateway.
                 final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 //loop through each mapping instruction to perform the action.
+                int progressCounter = 1;
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
+                    logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " +mapping.getSourceEntityHeader().toStringVerbose());
+
                     //Get the entity that this mapping is for from the bundle
                     final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
                     try {
-                        //Find an existing entity to map it to.
+                        //Find an existing entity to map it to only if we are not ignoring this mapping.
                         @Nullable
-                        final Entity existingEntity = locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), resourceMapping);
+                        final Entity existingEntity = EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction()) ? null : locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), resourceMapping);
                         @NotNull
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
@@ -770,6 +774,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
                                     groupBean.setUniqueIdentifier(existingEntity.getId());
                                     final Group group = groupManager.reify(groupBean);
+                                    if (group instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
+                                        //need to set the version to the existing user version so it can update properly
+                                        ((PersistentEntity) group).setVersion(((PersistentEntity) existingEntity).getVersion());
+                                    }
                                     groupManager.update(group);
                                 }
                             } else if (entityContainer.getEntity() instanceof UserBean) {
@@ -784,11 +792,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
                                     final User user = userManager.reify(userBean);
                                     if(user instanceof InternalUser && existingEntity instanceof InternalUser){
-                                        if(existingEntity instanceof InternalUser) {
-                                            ((InternalUser)user).setPasswordChangesHistory(((InternalUser)existingEntity).getPasswordChangesHistory());
-                                            //need to set the version to the existing user version so it can update properly
-                                            ((InternalUser) user).setVersion(((InternalUser) existingEntity).getVersion());
-                                        }
+                                        ((InternalUser) user).setPasswordChangesHistory(((InternalUser) existingEntity).getPasswordChangesHistory());
+                                    }
+                                    if (user instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
+                                        //need to set the version to the existing user version so it can update properly
+                                        ((PersistentEntity) user).setVersion(((PersistentEntity) existingEntity).getVersion());
                                     }
                                     userManager.update(user);
                                 }
@@ -833,9 +841,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         }
                     } catch (ObjectModelException e) {
                         return Option.some(e);
+                    } finally {
+                        //flush the newly created object so that it can be found by the entity managers later.
+                        transactionStatus.flush();
                     }
-                    //flush the newly created object so that it can be found by the entity managers later.
-                    transactionStatus.flush();
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
                     return Option.some(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + ". Message: " + ExceptionUtils.getMessage(e), e));
@@ -919,6 +928,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //need to update the existing jms connection
                 final JmsEndpoint existingEndpoint = (JmsEndpoint) existingEntity;
                 jmsContainer.getJmsConnection().setGoid(existingEndpoint.getConnectionGoid());
+                final JmsConnection existingConnection = entityCrud.find(JmsConnection.class, existingEndpoint.getConnectionGoid());
+                if(existingConnection != null) {
+                    jmsContainer.getJmsConnection().setVersion(existingConnection.getVersion());
+                }
                 entityCrud.update(jmsContainer.getJmsConnection());
                 jmsContainer.getJmsEndpoint().setConnectionGoid(existingEndpoint.getConnectionGoid());
             } else {
@@ -1014,6 +1027,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 throw new IllegalStateException("A GuidEntity entity was mapped to an entity that is not GuidEntity: " + existingEntity.getClass());
             }
         }
+        //if this is a user and the existing entity exists then preserve the existing entity login
+        if(entityContainer.getEntity() instanceof UserBean && existingEntity != null ) {
+            if(existingEntity instanceof User){
+                ((UserBean) entityContainer.getEntity()).setLogin(((User) existingEntity).getLogin());
+                if(existingEntity instanceof InternalUser) {
+                    //for internal users the name and login should match
+                    ((UserBean) entityContainer.getEntity()).setName(((User) existingEntity).getName());
+                }
+            } else {
+                //this should never happen
+                throw new IllegalStateException("A User entity was mapped to an entity that is not User: " + existingEntity.getClass());
+            }
+        }
     }
 
     /**
@@ -1045,6 +1071,30 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 entityCrud.save(serviceDocument);
             }
         } else if (entityContainer instanceof UserContainer && ((UserContainer) entityContainer).getCertificate() != null) {
+            //remove the old user cert if any. This needs to be done in a different transaction so that it can be flushed before the new cert is added. If it is not a stale update exception is thrown
+            final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+            tt.setReadOnly(false);
+            final Option<ObjectModelException> possibleException = tt.execute(new TransactionCallback<Option<ObjectModelException>>() {
+                @Override
+                public Option<ObjectModelException> doInTransaction(final TransactionStatus transactionStatus) {
+                    try {
+                        //remove the old cert if any
+                        try {
+                            clientCertManager.revokeUserCert(((UserContainer) entityContainer).getEntity());
+                        } catch (ObjectModelException e) {
+                            return Option.optional(e);
+                        }
+                        return Option.none();
+                    } finally {
+                        transactionStatus.flush();
+                    }
+                }
+            });
+            //throw the exception if there was one attempting to remove the old cert.
+            if(possibleException.isSome()){
+                throw possibleException.some();
+            }
+
             //set the certificate on the user.
             final X509Certificate x509Certificate = ((UserContainer) entityContainer).getCertificate();
             clientCertManager.recordNewUserCert(((UserContainer) entityContainer).getEntity(), x509Certificate , false);
@@ -1326,7 +1376,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 targetMapTo = mapping.getSourceEntityHeader().getStrId();
             } else {
                 //cannot find a target id.
-                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to.");
+                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to");
             }
         }
         return targetMapTo;

@@ -147,7 +147,7 @@ public class PropertiesMapType {
         }
 
         @XmlAnyAttribute
-        protected Map<QName, Object> getAttributeExtensions() {
+        public Map<QName, Object> getAttributeExtensions() {
             return attributeExtensions;
         }
 
@@ -186,6 +186,11 @@ public class PropertiesMapType {
 
         public StringValue( final String value ) {
             super( value );
+        }
+
+        public StringValue( final String value, final Map<QName, Object> attributeExtensions) {
+            super( value );
+            setAttributeExtensions(attributeExtensions);
         }
 
         @XmlValue

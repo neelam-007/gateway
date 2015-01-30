@@ -222,6 +222,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
+        userMO.setName("login");
         userMO.setLogin("login");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
@@ -246,7 +247,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         User user = internalUserManager.findByPrimaryKey(userId);
 
         assertNotNull(user);
-        assertEquals("User Name:", userMO.getLogin(), user.getName());
+        assertEquals("User Name:", userMO.getName(), user.getName());
         assertEquals("User Login:", userMO.getLogin(), user.getLogin());
         assertEquals("User First name:", userMO.getFirstName(), user.getFirstName());
         assertEquals("User last name:", userMO.getLastName(), user.getLastName());
@@ -265,6 +266,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(federatedIPId);
+        userMO.setName("login");
         userMO.setLogin("login");
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
@@ -315,6 +317,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
 
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
+        userMO.setName("login");
         userMO.setLogin("login");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("sha512crypt");
@@ -382,6 +385,7 @@ public class GroupUserRestEntityResourceTest extends RestEntityTestBase{
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setId(usersToCleanup.get(0));
         userMO.setProviderId(internalProviderId);
+        userMO.setName("login");
         userMO.setLogin("login");
         userMO.setFirstName("first name");
         userMO.setLastName("last name");

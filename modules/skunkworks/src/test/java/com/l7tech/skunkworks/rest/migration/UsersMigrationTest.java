@@ -1082,6 +1082,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
     public void testImportNewUserWithCertificateFIP() throws Exception {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(federatedIdentityProvider.getId());
+        userMO.setName("UserWithCertificate");
         userMO.setLogin("UserWithCertificate");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
@@ -1166,6 +1167,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
     public void testImportUpdateUserWithCertificateFIP() throws Exception {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(federatedIdentityProvider.getId());
+        userMO.setName("UserWithCertificate");
         userMO.setLogin("UserWithCertificate");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
@@ -1194,6 +1196,7 @@ public class UsersMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrati
         userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(federatedIdentityProvider.getId());
         userMO.setLogin("UserWithCertificateTarget");
+        userMO.setName("UserWithCertificateTarget");
         password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
         password.setPassword("123#@!qwER");
