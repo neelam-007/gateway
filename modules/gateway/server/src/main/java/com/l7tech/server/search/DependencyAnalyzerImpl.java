@@ -18,10 +18,12 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
@@ -59,22 +61,6 @@ import java.util.logging.Logger;
  */
 public class DependencyAnalyzerImpl implements DependencyAnalyzer {
     private static final Logger logger = Logger.getLogger(DependencyAnalyzerImpl.class.getName());
-
-    @Inject
-    private EntityCrud entityCrud;
-
-    @Inject
-    private IdentityProviderFactory identityProviderFactory;
-
-    @Inject
-    private FolderManager folderManager;
-
-    @Inject
-    private DependencyProcessorStore processorStore;
-
-    @Inject
-    private PolicyManager policyManager;
-
     private static final List<Class<? extends Entity>> entityClasses = Arrays.asList(
             //Omit policy version for now.
             //folders need to be done first to ensure folder order.
@@ -114,6 +100,16 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SampleMessage.class,
             InterfaceTag.class
     );
+    @Inject
+    private EntityCrud entityCrud;
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
+    @Inject
+    private FolderManager folderManager;
+    @Inject
+    private DependencyProcessorStore processorStore;
+    @Inject
+    private PolicyManager policyManager;
 
     /**
      * {@inheritDoc}
@@ -273,7 +269,19 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                 });
                 entityHeaders = new EntityHeaderSet<>();
                 for(final IdentityProvider identityProvider : federatedIdentityProviders){
-                    entityHeaders.addAll(identityProvider.getGroupManager().findAllHeaders());
+                    // filter out virtual groups
+                    final List<Group> fedGroups = Functions.grep(identityProvider.getGroupManager().findAll(), new Functions.Unary<Boolean, Group>() {
+                        @Override
+                        public Boolean call(final Group group) {
+                            return ! (group instanceof VirtualGroup);
+                        }
+                    });
+                    entityHeaders.addAll(Functions.map(fedGroups,new Functions.Unary<EntityHeader, Group>() {
+                        @Override
+                        public EntityHeader call(Group group) {
+                            return EntityHeaderUtils.fromEntity(group);
+                        }
+                    }));
                 }
             } else if (InterfaceTag.class.equals(entityClass)) {
                 final String stringForm = ConfigFactory.getUncachedConfig().getProperty(InterfaceTag.PROPERTY_NAME);
