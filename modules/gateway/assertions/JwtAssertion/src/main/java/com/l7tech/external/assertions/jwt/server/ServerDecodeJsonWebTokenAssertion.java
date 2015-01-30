@@ -199,6 +199,10 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         } catch (JoseException e) {
             logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Could not validate JWT payload: " + e.getMessage());
             return AssertionStatus.FAILED;
+        } catch(NullPointerException e){
+            //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
+            logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
+            return AssertionStatus.FAILED;
         }
         return AssertionStatus.NONE;
     }

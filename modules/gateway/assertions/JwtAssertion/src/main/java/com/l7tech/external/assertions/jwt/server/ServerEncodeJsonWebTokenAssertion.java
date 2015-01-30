@@ -129,6 +129,10 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
             } catch (JoseException e) {
                 logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
                 return AssertionStatus.FAILED;
+            } catch(NullPointerException e){
+                //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
+                logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
+                return AssertionStatus.FAILED;
             }
         }
         //create unsecure
@@ -146,6 +150,10 @@ public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<E
                 context.setVariable(assertion.getTargetVariable() + ".compact", str.getCompactSerialization());
             } catch (JoseException e) {
                 logAndAudit(AssertionMessages.JWT_JOSE_ERROR, e.getMessage());
+                return AssertionStatus.FAILED;
+            } catch(NullPointerException e){
+                //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
+                logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
                 return AssertionStatus.FAILED;
             }
         }

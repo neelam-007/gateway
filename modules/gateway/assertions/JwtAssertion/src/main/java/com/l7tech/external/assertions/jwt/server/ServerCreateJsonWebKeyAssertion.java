@@ -48,10 +48,16 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
                 }
             }
         }
-        final String s = new JsonWebKeySet(jwks).toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
-        ObjectMapper mapper = new ObjectMapper();
-        Object ob = mapper.readValue(s, Object.class);
-        context.setVariable(assertion.getTargetVariable(), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ob));
+        try {
+            final String s = new JsonWebKeySet(jwks).toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
+            ObjectMapper mapper = new ObjectMapper();
+            Object ob = mapper.readValue(s, Object.class);
+            context.setVariable(assertion.getTargetVariable(), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ob));
+        } catch (NullPointerException e) {
+            //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
+            logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
+            return AssertionStatus.FAILED;
+        }
         return AssertionStatus.NONE;
     }
 
@@ -78,6 +84,9 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
             logAndAudit(AssertionMessages.JWT_JWK_ERROR, e.getMessage());
         } catch (IOException e) {
             logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
+        } catch(NullPointerException e){
+            //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
+            logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
         }
         return null;
     }
