@@ -1,11 +1,13 @@
 package com.l7tech.external.assertions.cassandra.server;
 
 import com.ca.datasources.cassandra.CassandraQueryManager;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.Session;
 import com.l7tech.gateway.common.jdbc.JdbcUtil;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cassandra.CassandraConnectionHolder;
 import com.l7tech.server.cassandra.CassandraConnectionManager;
-import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.l7tech.external.assertions.cassandra.CassandraQueryAssertion;
 
@@ -25,6 +27,8 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.logging.Logger;
@@ -172,7 +176,11 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             if (   clazz.isAssignableFrom(String.class)
                 || clazz.isAssignableFrom(Integer.class)
                 || clazz.isAssignableFrom(Long.class)
-                || clazz.isAssignableFrom(Date.class) )
+                || clazz.isAssignableFrom(Date.class)
+                || clazz.isAssignableFrom(Boolean.class)
+                || clazz.isAssignableFrom(BigDecimal.class)
+                || clazz.isAssignableFrom(Double.class)
+                || clazz.isAssignableFrom(BigInteger.class))
             {
                 continue;
             } else {

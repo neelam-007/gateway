@@ -5,6 +5,7 @@ import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Row;
 import com.l7tech.util.Functions;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -34,6 +35,12 @@ public class CassandraUtil {
         }
         else if(clazz.isAssignableFrom(UUID.class)){
             return UUID.fromString(value.toString());
+        }
+        else if(clazz.isAssignableFrom(Double.class)) {
+            return  getDouble(value);
+        }
+        else if(clazz.isAssignableFrom(BigDecimal.class)) {
+            return getBigDecimal(value);
         }
         else {
             return value;
@@ -160,16 +167,55 @@ public class CassandraUtil {
     public static BigInteger getBigInteger(Object value) {
         if(value == null) return null;
         try {
-            return getNumber(value, new Functions.Unary<BigInteger, Object>() {
+            if(value instanceof Number) {
+                if(value instanceof BigDecimal) {
+                    return  ((BigDecimal)value).unscaledValue();
+                }
+                else {
+                    return (BigInteger) value;
+                }
+            }
+            else {
+                return new BigInteger((String) value);
+            }
+        } catch(Exception ne) {
+            return null;
+        }
+    }
+
+    public static BigDecimal getBigDecimal(Object value) {
+        if(value == null) return null;
+        try {
+            return getNumber(value, new Functions.Unary<BigDecimal, Object>() {
                         @Override
-                        public BigInteger call(Object o) {
-                            return o instanceof Number ? (BigInteger) o : null;
+                        public BigDecimal call(Object o) {
+                            return o instanceof Number ? (BigDecimal) o : null;
                         }
                     },
-                    new Functions.Unary<BigInteger, Object>() {
+                    new Functions.Unary<BigDecimal, Object>() {
                         @Override
-                        public BigInteger call(Object o) {
-                            return new BigInteger((String) o);
+                        public BigDecimal call(Object o) {
+                            return new BigDecimal((String) o);
+                        }
+                    });
+        } catch(Exception ne) {
+            return null;
+        }
+    }
+
+    public static Double getDouble(Object value) {
+        if(value == null) return null;
+        try {
+            return getNumber(value, new Functions.Unary<Double, Object>() {
+                        @Override
+                        public Double call(Object o) {
+                            return o instanceof Number ? (Double) o : null;
+                        }
+                    },
+                    new Functions.Unary<Double, Object>() {
+                        @Override
+                        public Double call(Object o) {
+                            return Double.parseDouble((String) o);
                         }
                     });
         } catch(Exception ne) {

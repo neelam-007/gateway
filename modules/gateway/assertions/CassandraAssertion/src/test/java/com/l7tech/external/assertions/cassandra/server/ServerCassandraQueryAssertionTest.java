@@ -150,5 +150,46 @@ public class ServerCassandraQueryAssertionTest {
         verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".otk_token_id", new Object[]{"bbc3cf8d-63d0-4a21-b57e-2ae9e0646b9e"});
     }
 
+    @Test
+    public void testPreparedStatementQueryExecutionWithBindVariablesDifferentTypes() throws Exception {
+        CassandraQueryAssertion cassandraAssertion = new CassandraQueryAssertion();
+        cassandraAssertion.setConnectionName("testConnection");
+        cassandraAssertion.setPrefix(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX);
+        String query = "Select * from table where name = ${myVarString} and flag = ${myVarBool}";
+        cassandraAssertion.setQueryDocument(query);
+        Map<String, Object> varMap = new HashMap();
+        varMap.put("myvarstring", "blah");
+        varMap.put("myvarbool", Boolean.TRUE);
+        when(mockPolicyEnforcementContext.getVariableMap(eq(new String[]{"myVarString", "myVarBool"}), any(Audit.class))).thenReturn(varMap);
+        when(mockSession.executeAsync(mockBoundStatement)).thenReturn(mockResultSetFuture);
+        when(mockSession.prepare("Select * from table where name = ? and flag = ?")).thenReturn(mockPreparedStatement);
+        PreparedId mockPreparedId = new MockPreparedId(null, mockColumnDefinitions, mockColumnDefinitions, new int[0] , ProtocolVersion.V3);
+        when(mockPreparedStatement.getPreparedId()).thenReturn(mockPreparedId);
+        when(mockPreparedStatement.getConsistencyLevel()).thenReturn(ConsistencyLevel.LOCAL_QUORUM);
+        when(mockPreparedStatement.getSerialConsistencyLevel()).thenReturn(ConsistencyLevel.LOCAL_SERIAL);
+        when(mockPreparedStatement.isTracing()).thenReturn(false);
+
+        when(mockPreparedStatement.getVariables()).thenReturn(mockColumnDefinitions);
+        when(mockColumnDefinitions.size()).thenReturn(1);
+        when(mockColumnDefinitions.getType(1)).thenReturn(DataType.varchar());
+        when(mockResultSet.iterator()).thenReturn(mockResultSetIterator);
+        when(mockResultSetIterator.hasNext()).thenReturn(true,false);
+        when(mockResultSetIterator.next()).thenReturn(mockRow);
+        when(mockRow.getColumnDefinitions()).thenReturn(mockColumnDefinitions);
+        when(mockColumnDefinitions.iterator()).thenReturn(mockColumnDefinitionsIterator);
+        when(mockColumnDefinitionsIterator.hasNext()).thenReturn(true,false);
+        when(mockColumnDefinitionsIterator.next()).thenReturn(
+                new MockDefinition("oauth", "table", "name", DataType.text()));
+        when(mockRow.getString("name")).thenReturn("blah");
+        when(mockRow.getBool("flag")).thenReturn(Boolean.TRUE);
+
+
+        fixture = new ServerCassandraQueryAssertion(cassandraAssertion, applicationContext);
+        AssertionStatus status = fixture.checkRequest(mockPolicyEnforcementContext);
+
+        assertEquals(AssertionStatus.NONE, status);
+        verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".queryresult.count", 1);
+        verify(mockPolicyEnforcementContext, times(1)).setVariable(CassandraQueryAssertion.DEFAULT_QUERY_PREFIX + ".name", new Object[]{"blah"});
+    }
 
 }
