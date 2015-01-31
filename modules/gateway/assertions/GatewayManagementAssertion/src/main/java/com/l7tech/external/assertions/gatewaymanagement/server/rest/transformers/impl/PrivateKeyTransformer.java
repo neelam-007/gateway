@@ -9,8 +9,12 @@ import com.l7tech.gateway.api.ItemBuilder;
 import com.l7tech.gateway.api.PrivateKeyMO;
 import com.l7tech.gateway.api.impl.AttributeExtensibleType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.server.bundling.EntityContainer;
+import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.codec.binary.Base64;
@@ -32,6 +36,8 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
 
     @Inject
     protected PrivateKeyResourceFactory factory;
+    @Inject
+    protected SecurityZoneManager securityZoneManager;
 
     @NotNull
     @Override
@@ -121,6 +127,22 @@ public class PrivateKeyTransformer implements EntityAPITransformer<PrivateKeyMO,
             } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
                 throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid private key data: " + ExceptionUtils.getMessage(e));
             }
+        }
+
+        // set security zone
+        try {
+            SecurityZone securityZone =  null;
+            if(m.getSecurityZoneId()!=null){
+                securityZone =  securityZoneManager.findByPrimaryKey(Goid.parseGoid(m.getSecurityZoneId()));
+                if(securityZone == null){
+                    securityZone = new SecurityZone();
+                    securityZone.setGoid(Goid.parseGoid(m.getSecurityZoneId()));
+                    securityZone.setName(m.getSecurityZone());
+                }
+                ssgKeyEntry.setSecurityZone(securityZone);
+            }
+        } catch (FindException e) {
+            throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid security zone: " + ExceptionUtils.getMessage(e));
         }
 
         return new EntityContainer<>(ssgKeyEntry);

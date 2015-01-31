@@ -747,6 +747,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
                                 //should use the alias of the existing mapped key
                                 ssgKeyEntry.setAlias(existingSsgKeyEntry.getAlias());
+                                // reset the metadata
+                                if(ssgKeyEntry.getKeyMetadata()!=null) {
+                                    ssgKeyEntry.getKeyMetadata().setAlias(existingSsgKeyEntry.getAlias());
+                                }
                                 final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, true);
                                 if (!futureSuccess.get()){
                                     throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
