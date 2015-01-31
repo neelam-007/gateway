@@ -76,6 +76,22 @@ public interface SsgKeyStore extends SsgKeyFinder {
     Future<Boolean> storePrivateKeyEntry(Runnable transactionCallback, SsgKeyEntry entry, boolean overwriteExisting) throws KeyStoreException;
 
     /**
+     * @see SsgKeyStore#storePrivateKeyEntry(Runnable , SsgKeyEntry , boolean)
+     *
+     * @param useCurrentThread  Do this operation in the current thread.
+     * @param transactionCallback Optional callback to invoke inside the transaction, or null.
+     *                            Can be used for more detailed auditing.
+     * @param entry             The entry to store.  Required.  Must contain the private key.
+     *                          Must also contain a non-null alias; if overwriteExisting is false, this must not match
+     *                          the alias of any existing entry.  Must also contain the private key.
+     * @param overwriteExisting if true, any existing entry with this alias will be overwritten.
+     * @return immediately returns a Future which returns Boolean.TRUE when successful.
+     * @throws KeyStoreException  if there is a problem storing this entry
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    Future<Boolean> storePrivateKeyEntry(boolean useCurrentThread,Runnable transactionCallback, SsgKeyEntry entry, boolean overwriteExisting) throws KeyStoreException;
+
+    /**
      * Delete an entry from this key store.
      *
      * @param transactionCallback Optional callback to invoke inside the transaction, or null.
@@ -86,6 +102,19 @@ public interface SsgKeyStore extends SsgKeyFinder {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, String keyAlias) throws KeyStoreException;
+
+    /**
+     * @see SsgKeyStore#deletePrivateKeyEntry(Runnable , String)
+     *
+     * @param useCurrentThread  Do this operation in the current thread.
+     * @param transactionCallback Optional callback to invoke inside the transaction, or null.
+     *                            Can be used for more detailed auditing.
+     * @param keyAlias   the alias of the entry to delete.  Required.
+     * @return immediately returns a Future which returns Boolean.TRUE when successful.
+     * @throws KeyStoreException  if there is a problem deleting this entry
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    Future<Boolean> deletePrivateKeyEntry(boolean useCurrentThread,Runnable transactionCallback, String keyAlias) throws KeyStoreException;
 
     /**
      * Update metadata for a key entry (identified by its alias) in the specified keystore.

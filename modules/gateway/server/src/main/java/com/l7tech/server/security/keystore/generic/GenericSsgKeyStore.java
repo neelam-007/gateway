@@ -27,17 +27,12 @@ import java.util.logging.Logger;
  * A keystore that can work with any kind of already-configured Java KeyStore instance.
  */
 public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
-    private static Logger logger = Logger.getLogger(GenericSsgKeyStore.class.getName());
-
     public static final String PROP_KEYSTORE_TYPE = "com.l7tech.keystore.type";
     public static final String DEFAULT_KEYSTORE_TYPE = "PKCS11";
-
     public static final String PROP_LOAD_PATH = "com.l7tech.keystore.path";
     public static final String DEFAULT_LOAD_PATH = "NONE"; // possible values:  NONE, EMPTY, NULL, or a path.  (NONE or EMPTY use an empty inputstream; null uses null; path reads that file)
-
     public static final String PROP_STORE_PATH = "com.l7tech.keystore.savePath";
     public static final String DEFAULT_STORE_PATH = "DEFAULT"; // possible values:  DEFAULT, NONE, EMPTY, NULL, or a path.  (DEFAULT is same as load path; NONE or EMPTY use a NullOutputStream; null uses null; path reads that file)
-
     /**
      * possible values:  NULL, EMPTY, DEFAULT, or a (possibly-empty) password.
      *   NULL uses null;
@@ -47,7 +42,6 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
      */
     public static final String PROP_KEYSTORE_PASSWORD = "com.l7tech.keystore.password";
     public static final String DEFAULT_KEYSTORE_PASSWORD = "DEFAULT";
-
     /**
      * possible values:  NULL, EMPTY, DEFAULT, or a (possibly-empty) password.
      *   NULL uses null;
@@ -57,20 +51,16 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
      */
     public static final String PROP_ENTRY_PASSWORD = "com.l7tech.keystore.entryPass";
     public static final String DEFAULT_ENTRY_PASSWORD = "DEFAULT";
-
     public static final String PROP_READ_ONLY = "com.l7tech.keystore.readOnly";
     public static final boolean DEFAULT_READ_ONLY = false;
-
     public static final String PROP_STORE_AFTER_CHANGE = "com.l7tech.keystore.storeAfterChange";
     public static final boolean DEFAULT_STORE_AFTER_CHANGE = true;
-
     /** Use FileUtils.saveFileSafely() and loadFileSafely() (for keystores with actual pathnames). */
     public static final String PROP_SAVE_FILE_SAFELY = "com.l7tech.keystore.saveFileSafely";
     public static final boolean DEFAULT_SAVE_FILE_SAFELY = true;
-
     public static final String PROP_RELOAD_AFTER_STORE = "com.l7tech.keystore.reloadAfterStore";
     public static final boolean DEFAULT_RELOAD_AFTER_STORE = false;
-
+    private static Logger logger = Logger.getLogger(GenericSsgKeyStore.class.getName());
     private final Goid goid;
     private final SsgKeyStoreType type;
     private final String name;
@@ -103,22 +93,6 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
         this.storeAfterChange = ConfigFactory.getBooleanProperty( PROP_STORE_AFTER_CHANGE, DEFAULT_STORE_AFTER_CHANGE );
         this.reloadAfterStore = ConfigFactory.getBooleanProperty( PROP_RELOAD_AFTER_STORE, DEFAULT_RELOAD_AFTER_STORE );
         logger.info("Using generic keystore type: " + keystoreType + " with path " + loadPath);
-    }
-
-    @Override
-    protected KeyStore keyStore() throws KeyStoreException {
-        KeyStore ks = keystore.get();
-
-        if (ks == null) {
-            synchronized (keystore) {
-                if (keystore.get() == null) {
-                    ks = loadKeyStore(keystoreType, saveFileSafely, loadPath, keystorePassword);
-                    keystore.set(ks);
-                }
-            }
-        }
-
-        return ks;
     }
 
     private static KeyStore loadKeyStore(String keystoreType, boolean loadFileSafely, String loadPath, final char[] keystorePassword) throws KeyStoreException {
@@ -236,6 +210,22 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     }
 
     @Override
+    protected KeyStore keyStore() throws KeyStoreException {
+        KeyStore ks = keystore.get();
+
+        if (ks == null) {
+            synchronized (keystore) {
+                if (keystore.get() == null) {
+                    ks = loadKeyStore(keystoreType, saveFileSafely, loadPath, keystorePassword);
+                    keystore.set(ks);
+                }
+            }
+        }
+
+        return ks;
+    }
+
+    @Override
     protected String getFormat() {
         return "generic";
     }
@@ -290,7 +280,7 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
     }
 
     @Override
-    protected <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException {
+    protected <OUT> Future<OUT> mutateKeystore(final boolean useCurrentThread, Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException {
         synchronized (keystore) {
             if (readOnly)
                 throw new KeyStoreException("This keystore is read-only.");

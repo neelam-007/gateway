@@ -186,8 +186,8 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     }
 
     @Override
-    protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
-        return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
+    protected <OUT> Future<OUT> mutateKeystore(final boolean useCurrentThread,final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
+        return submitMutation(useCurrentThread,AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
             @Override
             public OUT call() throws Exception {
                 final Object[] out = new Object[] { null };

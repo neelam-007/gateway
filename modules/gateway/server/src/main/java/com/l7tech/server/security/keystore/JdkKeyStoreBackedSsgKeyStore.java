@@ -36,31 +36,15 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final Logger logger = Logger.getLogger(JdkKeyStoreBackedSsgKeyStore.class.getName());
 
     private static final boolean FORCE_CASE_INSENSITIVE_ALIAS_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.server.security.keystore.jdkbacked.checkForCaseInsensitiveAliasMatch", true );
-
+    private static final AtomicBoolean startedRef = new AtomicBoolean(false);
     private static BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
     private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
-    private static final AtomicBoolean startedRef = new AtomicBoolean(false);
-
     protected final KeyAccessFilter keyAccessFilter;
     private final SsgKeyMetadataManager metadataManager;
 
     protected JdkKeyStoreBackedSsgKeyStore(@NotNull KeyAccessFilter keyAccessFilter, @NotNull SsgKeyMetadataManager metadataManager) {
         this.keyAccessFilter = keyAccessFilter;
         this.metadataManager = metadataManager;
-    }
-
-    public static final class StartupListener implements ApplicationListener {
-        @Override
-        public void onApplicationEvent(ApplicationEvent event) {
-            if ( event instanceof Started) {
-                logger.info("Switching to executor for keystore mutation.");
-                startedRef.set(true);
-            } else if ( event instanceof Stopped) {
-                logger.info("Shutting down keystore mutation executor.");
-                startedRef.set(false);
-                mutationExecutor.shutdown();
-            }
-        }
     }
 
     /**
@@ -216,6 +200,11 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     @Override
     public synchronized Future<Boolean> storePrivateKeyEntry(Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+        return storePrivateKeyEntry(false,transactionCallback,entry,overwriteExisting);
+    }
+
+    @Override
+    public synchronized Future<Boolean> storePrivateKeyEntry(boolean useCurrentThread, Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
         if (entry == null) throw new NullPointerException("entry must not be null");
         if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
         if (entry.getAlias().length() < 1) throw new IllegalArgumentException("entry's alias must not be empty");
@@ -227,7 +216,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             throw new IllegalArgumentException("entry's private key must be present", e);
         }
 
-        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+        return mutateKeystore(useCurrentThread, transactionCallback, new Callable<Boolean>() {
             @Override
             public Boolean call() throws KeyStoreException {
                 storePrivateKeyEntryImpl(entry, overwriteExisting);
@@ -242,8 +231,13 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     @Override
-    public synchronized Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
-        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+    public synchronized Future<Boolean> deletePrivateKeyEntry( Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
+        return deletePrivateKeyEntry(false, transactionCallback, keyAlias);
+    }
+
+    @Override
+    public synchronized Future<Boolean> deletePrivateKeyEntry(boolean useCurrentThread, Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
+        return mutateKeystore(useCurrentThread, transactionCallback, new Callable<Boolean>() {
             @Override
             public Boolean call() throws KeyStoreException {
                 keyStore().deleteEntry(keyAlias);
@@ -272,7 +266,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 KeyPair keyPair = new ParamsKeyGenerator(keyGenParams).generateKeyPair();
                 X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(certGenParams, keyPair);
 
-                keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
+                keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[]{cert});
                 try {
                     metadataManager.updateMetadataForKey(getGoid(), alias, metadata);
                 } catch (final ObjectModelException e) {
@@ -353,9 +347,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      * @return The future.
      * @throws KeyStoreException if an error occurs.
      */
-    protected <OUT> Future<OUT> submitMutation( final Callable<OUT> mutator ) throws KeyStoreException {
-        if ( !startedRef.get() ) {
-            logger.info("Using current thread for keystore mutation (server not started).");
+    protected <OUT> Future<OUT> submitMutation(boolean useCurrentThread, final Callable<OUT> mutator) throws KeyStoreException {
+        if ( !startedRef.get() || useCurrentThread) {
+            logger.info("Using current thread for keystore mutation"+ (startedRef.get()?" (server not started).":"."));
             try {
                 return new NotFuture<OUT>(mutator.call());
             } catch ( Exception e ) {
@@ -379,6 +373,24 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      *                           the process
      * @return the value returned by the mutator
      */
-    protected abstract <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException;
+    protected <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException{
+        return mutateKeystore(false,transactionCallback,mutator);
+    }
+
+    protected abstract <OUT> Future<OUT> mutateKeystore(boolean useCurrentThread,Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException;
+
+    public static final class StartupListener implements ApplicationListener {
+        @Override
+        public void onApplicationEvent(ApplicationEvent event) {
+            if ( event instanceof Started) {
+                logger.info("Switching to executor for keystore mutation.");
+                startedRef.set(true);
+            } else if ( event instanceof Stopped) {
+                logger.info("Shutting down keystore mutation executor.");
+                startedRef.set(false);
+                mutationExecutor.shutdown();
+            }
+        }
+    }
 
 }

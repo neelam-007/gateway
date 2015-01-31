@@ -179,7 +179,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //loop through each mapping instruction to perform the action.
                 int progressCounter = 1;
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
-                    logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " +mapping.getSourceEntityHeader().toStringVerbose());
+                    logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
 
                     //Get the entity that this mapping is for from the bundle
                     final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
@@ -333,7 +333,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     final String keyAlias = entity.getId().substring(sepIndex + 1);
                     try {
                         keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
-                        keyStore.getKeyStore().deletePrivateKeyEntry(null, keyAlias);
+                        keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
                     } catch (FindException e) {
                         return Either.left(new DeleteException("Cannot find keystore with id: " + keyStoreId + ". Error message: " + ExceptionUtils.getMessage(e), e));
                     } catch (KeyStoreException e) {
@@ -737,7 +737,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             if(existingEntity == null) {
                                 final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeyEntry.getKeystoreId());
                                 final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
-                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(null, ssgKeyEntry, false);
+                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, false);
                                 if (!futureSuccess.get()){
                                     throw new ObjectModelException("Error attempting to save a private key: " + ssgKeyEntry.getId());
                                 }
@@ -747,7 +747,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
                                 //should use the alias of the existing mapped key
                                 ssgKeyEntry.setAlias(existingSsgKeyEntry.getAlias());
-                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(null, ssgKeyEntry, true);
+                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, true);
                                 if (!futureSuccess.get()){
                                     throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
                                 }

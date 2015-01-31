@@ -100,6 +100,11 @@ public class SsgKeyFinderStub implements SsgKeyStore {
 
     @Override
     public Future<Boolean> deletePrivateKeyEntry( final Runnable transactionCallback, final String keyAlias ) throws KeyStoreException {
+        return deletePrivateKeyEntry(false,transactionCallback,keyAlias);
+    }
+
+    @Override
+    public Future<Boolean> deletePrivateKeyEntry(boolean useCurrentThread, Runnable transactionCallback, String keyAlias) throws KeyStoreException {
         boolean removed = entries.remove(keyAlias)!=null;
         if (transactionCallback != null)
             transactionCallback.run();
@@ -124,4 +129,10 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     public Future<Boolean> storePrivateKeyEntry( final Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting ) throws KeyStoreException {
         throw new KeyStoreException("not implemented");
     }
+
+    @Override
+    public Future<Boolean> storePrivateKeyEntry(boolean useCurrentThread, Runnable transactionCallback, SsgKeyEntry entry, boolean overwriteExisting) throws KeyStoreException {
+        throw new KeyStoreException("not implemented");
+    }
+
 }
