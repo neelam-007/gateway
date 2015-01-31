@@ -170,6 +170,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
             entityContainers.add(new InterfaceTagContainer((InterfaceTag) entity));
         } else if (entity instanceof AssertionAccess) {
             entityContainers.add(new AssertionAccessContainer((AssertionAccess) entity));
+        } else if (entity instanceof VirtualGroup) {
+            // not include Federated Virtual Groups
         } else {
             entityContainers.add(new EntityContainer<>(entity));
         }
@@ -246,7 +248,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                         false);
         }else if((entity instanceof Folder && ((Folder)entity).getGoid().equals(Folder.ROOT_FOLDER_ID)) ||
                 //private keys and secure passwords should only be map only if EncryptSecrets is not specified.
-                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && !secretsEncrypted)) {
+                ((entity instanceof SsgKeyEntry || entity instanceof SecurePassword) && !secretsEncrypted) ||
+                entity instanceof VirtualGroup) {
             // Make these entities map only. Set fail on new true and Mapping action NewOrExisting
             mapping = new EntityMappingInstructions(
                     dependentObject.getEntityHeader(),
