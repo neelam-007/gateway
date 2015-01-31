@@ -78,6 +78,33 @@ public class RandomUtil {
     }
 
     /**
+     * Fill the provided character array with random characters evenly distributed from
+     * low to high (inclusive).
+     * <p/>
+     * This can be used for generating random passwords, or random character strings for testing
+     * or other purposes.
+     *
+     * @param out output array to be filled.  Required.
+     * @param low lowest character value, eg. '!'.
+     * @param high highest character value, eg. '~'.
+     * @throws java.lang.IllegalArgumentException if low <= high
+     */
+    public static void nextChars( @NotNull final char[] out, final char low, final char high ) {
+        if ( high <= low )
+            throw new IllegalArgumentException( "high must be higher than low" );
+
+        int range = high - low + 1;
+        SecureRandom sr = getSecureRandom();
+        try {
+            for ( int i = 0; i < out.length; i++ ) {
+                out[i] = (char)( sr.nextInt( range ) + low );
+            }
+        } finally {
+            returnSecureRandom( sr );
+        }
+    }
+
+    /**
      * Get a default SecureRandom instance, creating a new one if necessary.
      *
      * @return a SecureRandom instance.  Never null.
