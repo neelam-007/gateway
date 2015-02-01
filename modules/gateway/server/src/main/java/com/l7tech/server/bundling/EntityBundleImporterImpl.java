@@ -136,7 +136,21 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         List<EntityMappingResult> results =  AuditContextUtils.doWithAuditsCollector(collector, new Functions.Nullary<List<EntityMappingResult>>() {
             @Override
             public List<EntityMappingResult> call(){
-                return doImportBundle(bundle, test, activate, versionComment);
+                List<EntityMappingResult> results =  doImportBundle(bundle, test, activate, versionComment);
+
+                // refresh the keystores if bundle has been rollbacked
+                try {
+                    for( SsgKeyFinder keyFinder: ssgKeyStoreManager.findAll()) {
+                        if(keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)) {
+                            keyFinder.getKeyStore().reload();
+                        }
+                    }
+                } catch (FindException | KeyStoreException e) {
+                    // do nothing
+                    logger.log(Level.INFO, "Error refreshing private keys.");
+                }
+
+                return results;
             }
         });
 

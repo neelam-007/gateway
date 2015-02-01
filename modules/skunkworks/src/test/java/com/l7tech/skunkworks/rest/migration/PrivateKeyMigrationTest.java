@@ -631,7 +631,6 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
     }
 
-    @Ignore
     @Test
     public void testImportCreateEncryptSecretTest() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");

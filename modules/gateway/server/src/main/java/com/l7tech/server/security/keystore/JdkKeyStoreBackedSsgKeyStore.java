@@ -337,6 +337,16 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         metadataManager.updateMetadataForKey(keystoreGoid, alias, metadata);
     }
 
+    @Override
+    public void reload() throws KeyStoreException {
+        mutateKeystore(true, null, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws KeyStoreException {
+                return true;
+            }
+        });
+    }
+
     /**
      * Get the future that arises from processing of the given mutator.
      *
