@@ -3,15 +3,15 @@ package com.l7tech.gateway.common.module;
 import com.l7tech.objectmodel.imp.NamedEntityWithPropertiesImp;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,7 +129,6 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
      * Note that accessing this property if OK, it will return the proxy object,
      * however accessing {@link ServerModuleFileData} properties will lead to fetching the whole object, including the bytes, from the DB.
      */
-    @NotNull
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true, optional = false)
     @JoinColumn(name = "data_goid", nullable = false)
     @Fetch(FetchMode.SELECT)
@@ -139,6 +138,16 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
     }
     public void setData(final ServerModuleFileData data) {
         this.data = data;
+    }
+
+    /**
+     * Convenient method for setting module data-bytes and calculating their checksum.
+     *
+     * @param dataBytes    new module bytes.  Required.
+     * @see #createData(byte[], String)
+     */
+    public void createData(@NotNull final byte[] dataBytes) {
+        createData(dataBytes, calcBytesChecksum(dataBytes));
     }
 
     /**
@@ -193,6 +202,24 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
         this.data.setDataBytes(data.getDataBytes());
     }
 
+    /**
+     * Gets the {@link ServerModuleFileState state} for the specified {@code nodeId}
+     *
+     * @param nodeId    the cluster node identifier.  Required and cannot be {@code null}
+     * @return The module {@link ServerModuleFileState state} for the specified {@code nodeId} or {@code null} if there
+     * is no state registered for the node.
+     */
+    @Nullable
+    public ServerModuleFileState getStateForNode(@NotNull final String nodeId) {
+        if (states != null) {
+            for (final ServerModuleFileState state : states) {
+                if (nodeId.equals(state.getNodeId())) {
+                    return state;
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * Sets the module {@link ServerModuleFileState state} for the specified {@code nodeId}.<br/>
@@ -276,11 +303,10 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
         setGoid(otherModule.getGoid());
         setVersion(otherModule.getVersion());
         setName(otherModule.getName());
-        setXmlProperties(otherModule.getXmlProperties());
         setModuleType(otherModule.getModuleType());
-        setModuleSha256(otherModule.getModuleSha256());
 
         if (includeFileMetadata) {
+            setModuleSha256(otherModule.getModuleSha256());
             setProperty(PROP_SIZE, otherModule.getProperty(PROP_SIZE));
             setProperty(PROP_FILE_NAME, otherModule.getProperty(PROP_FILE_NAME));
             setProperty(PROP_ASSERTIONS, otherModule.getProperty(PROP_ASSERTIONS));
@@ -333,6 +359,18 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
         return String.format("%.1f %cB", bytes / Math.pow(unit, exp), "KMGTPE".charAt(exp - 1));
     }
 
+    /**
+     * Utility function for calculating data-bytes checksum.<br/>
+     * Currently the function returns the hex dump of the bytes sha265.
+     *
+     * @param bytes    the bytes array for which to calculate checksum.  Required.
+     * @return A String representation of the specified bytes checksum.  Never {@code null}.
+     */
+    @NotNull
+    public static String calcBytesChecksum(@NotNull final byte[] bytes) {
+        return HexUtils.hexDump(HexUtils.getSha256Digest(bytes));
+    }
+
     @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(final Object o) {
@@ -343,6 +381,8 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
         final ServerModuleFile that = (ServerModuleFile) o;
 
         if (moduleType != null ? !moduleType.equals(that.moduleType) : that.moduleType != null) return false;
+        if (moduleSha256 != null ? !moduleSha256.equals(that.moduleSha256) : that.moduleSha256 != null) return false;
+        // states are ignored
         return true;
     }
 
@@ -350,6 +390,7 @@ public class ServerModuleFile extends NamedEntityWithPropertiesImp implements Se
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (moduleType != null ? moduleType.hashCode() : 0);
+        result = 31 * result + (moduleSha256 != null ? moduleSha256.hashCode() : 0);
         return result;
     }
 }

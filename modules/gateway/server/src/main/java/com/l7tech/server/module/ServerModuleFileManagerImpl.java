@@ -116,15 +116,7 @@ public class ServerModuleFileManagerImpl extends HibernateEntityManager<ServerMo
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public ServerModuleFileState findStateForCurrentNode(@NotNull final ServerModuleFile moduleFile) {
-        final Collection<ServerModuleFileState> states = moduleFile.getStates();
-        if (states != null) {
-            for (final ServerModuleFileState state : states) {
-                if (clusterNodeId.equals(state.getNodeId())) {
-                    return state;
-                }
-            }
-        }
-        return null;
+        return moduleFile.getStateForNode(clusterNodeId);
     }
 
     @Override

@@ -256,7 +256,7 @@ public class ServerModuleFileManagerWindow extends JDialog {
                 final ServerModuleFilePropertiesDialog dlg = new ServerModuleFilePropertiesDialog(
                         ServerModuleFileManagerWindow.this,
                         newMod,
-                        getStateMessageForCurrentNode(newMod),
+                        getStateMessageForSelectedNode(newMod),
                         readOnly
                 );
                 dlg.pack();
@@ -685,8 +685,8 @@ public class ServerModuleFileManagerWindow extends JDialog {
     }
 
     /**
-     * Utility method for extracting the specified {@link ServerModuleFileState module state} for the currently
-     * selected Cluster node {@link #getSelectedClusterNode()}.<br/>
+     * Utility method for extracting the {@link ServerModuleFileState module state} for the currently selected
+     * Cluster node {@link #getSelectedClusterNode()}.<br/>
      * If state error message is set, then the method will return the error message, otherwise the state itself will be return.
      * <p/>
      * If there is no state object for the specified module, then {@link ModuleState#UPLOADED} is returned.
@@ -695,24 +695,23 @@ public class ServerModuleFileManagerWindow extends JDialog {
      * @see #getSelectedClusterNode()
      */
     @NotNull
-    private String getStateMessageForCurrentNode(@Nullable final ServerModuleFile moduleFile) {
+    private String getStateMessageForSelectedNode(@Nullable final ServerModuleFile moduleFile) {
         if (moduleFile != null) {
             final ClusterNodeInfo selectedClusterNode = getSelectedClusterNode();
             if (selectedClusterNode != null) {
                 final String selectedClusterNodeId = selectedClusterNode.getNodeIdentifier();
-                final Collection<ServerModuleFileState> moduleStates = moduleFile.getStates();
-                if (moduleStates != null && StringUtils.isNotBlank(selectedClusterNodeId)) {
-                    for (final ServerModuleFileState moduleState : moduleStates) {
-                        if (selectedClusterNodeId.equals(moduleState.getNodeId())) {
-                            if (StringUtils.isNotBlank(moduleState.getErrorMessage())) {
-                                return moduleState.getErrorMessage();
-                            } else {
-                                return moduleState.getState().toString();
-                            }
+                if (StringUtils.isNotBlank(selectedClusterNodeId)) {
+                    final ServerModuleFileState moduleState = moduleFile.getStateForNode(selectedClusterNodeId);
+                    if (moduleState != null) {
+                        if (StringUtils.isNotBlank(moduleState.getErrorMessage())) {
+                            return moduleState.getErrorMessage();
+                        } else {
+                            return moduleState.getState().toString();
                         }
+                    } else {
+                        // no state for this node, return UPLOADED, as module is in the database
+                        return ModuleState.UPLOADED.toString();
                     }
-                    // no state for this node, return UPLOADED, as module is in the database
-                    return ModuleState.UPLOADED.toString();
                 }
             }
         }
@@ -720,8 +719,8 @@ public class ServerModuleFileManagerWindow extends JDialog {
     }
 
     /**
-     * Utility method for extracting the specified {@link ServerModuleFileState module state} for the currently
-     * selected Cluster node {@link #getSelectedClusterNode()}.
+     * Utility method for extracting the {@link ServerModuleFileState module state} for the currently selected
+     * Cluster node {@link #getSelectedClusterNode()}.
      * <p/>
      * If there is no state object for the specified module, then {@link ModuleState#UPLOADED} is returned.
      *
@@ -734,15 +733,14 @@ public class ServerModuleFileManagerWindow extends JDialog {
             final ClusterNodeInfo selectedClusterNode = getSelectedClusterNode();
             if (selectedClusterNode != null) {
                 final String selectedClusterNodeId = selectedClusterNode.getNodeIdentifier();
-                final Collection<ServerModuleFileState> moduleStates = moduleFile.getStates();
-                if (moduleStates != null && StringUtils.isNotBlank(selectedClusterNodeId)) {
-                    for (final ServerModuleFileState moduleState : moduleStates) {
-                        if (selectedClusterNodeId.equals(moduleState.getNodeId())) {
-                            return moduleState.getState().toString();
-                        }
+                if (StringUtils.isNotBlank(selectedClusterNodeId)) {
+                    final ServerModuleFileState moduleState = moduleFile.getStateForNode(selectedClusterNodeId);
+                    if (moduleState != null) {
+                        return moduleState.getState().toString();
+                    } else {
+                        // no state for this node, return UPLOADED, as module is in the database
+                        return ModuleState.UPLOADED.toString();
                     }
-                    // no state for this node, return UPLOADED, as module is in the database
-                    return ModuleState.UPLOADED.toString();
                 }
             }
         }

@@ -371,7 +371,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
      */
     @NotNull
     private byte[] getModuleDataBytes(@NotNull final ServerModuleFile serverModuleFile) throws ModuleMissingBytesException {
-        final byte[] bytes = serverModuleFile.getData().getDataBytes();
+        final byte[] bytes = serverModuleFile.getData() != null ? serverModuleFile.getData().getDataBytes() : null;
         if (bytes == null || !(bytes.length > 0)) {
             throw new ModuleMissingBytesException();
         }

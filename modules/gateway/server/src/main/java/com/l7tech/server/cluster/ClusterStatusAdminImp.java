@@ -636,6 +636,9 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             if (dataBytes == null) {
                 throw new SaveException( "data-bytes must be provided when uploading a new module file" );
             }
+            if (moduleFile.getModuleType() == null) {
+                throw new SaveException( "module type must be provided when uploading a new module file" );
+            }
 
             // Save new module
             moduleFile.setModuleSha256(HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes)));
@@ -647,6 +650,9 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             final ServerModuleFile oldMod = serverModuleFileManager.findByPrimaryKey(id);
             if (oldMod == null) {
                 throw new UpdateException( "No existing module with ID \"" + id + "\".  New module must use default ID and must include databytes" );
+            }
+            if (moduleFile.getModuleType() == null) {
+                throw new UpdateException( "module type must be provided when updating existing module file" );
             }
             // Update existing module
             if (dataBytes == null) {
@@ -660,7 +666,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
 
                 final boolean dataReallyChanged = !byteSha256.equals(oldMod.getModuleSha256());
                 // TODO should we be copying the version from the new version here?
-                oldMod.copyFrom(moduleFile, dataReallyChanged, true, false);
+                oldMod.copyFrom(moduleFile, dataReallyChanged, dataReallyChanged, false);
                 if (dataReallyChanged) {
                     oldMod.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
                 }
@@ -744,6 +750,9 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
 
     @Inject
     @Named( "serverModuleFileManager" )
+    final void setServerModuleFileManager(final ServerModuleFileManager serverModuleFileManager) {
+        this.serverModuleFileManager = serverModuleFileManager;
+    }
     private ServerModuleFileManager serverModuleFileManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());

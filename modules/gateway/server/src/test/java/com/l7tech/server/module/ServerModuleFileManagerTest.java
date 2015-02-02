@@ -11,6 +11,7 @@ import com.l7tech.server.EntityManagerTest;
 import com.l7tech.util.Charsets;
 import junit.framework.Assert;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.LazyInitializationException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.aop.framework.Advised;
@@ -308,7 +309,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         Assert.assertEquals(ModuleState.STAGED, entityState.getState());
         Assert.assertTrue(StringUtils.isBlank(entityState.getErrorMessage()));
 
-
         serverModuleFileManager.updateState(entityGoid, ModuleState.REJECTED);
         flushSession();
 
@@ -483,8 +483,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         ServerModuleFile entity;
 
         // update name only, set same name
-        System.out.println();
-        System.out.println("update name only, set same name");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("module_1", entity.getName());
@@ -493,17 +491,15 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         flushSession();
 
         // update name only, set existing name
-        System.out.println();
-        System.out.println("update name only, set existing name");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("module_1", entity.getName());
         entity.setName("module_2");
         try {
             serverModuleFileManager.update(entity);
+            Assert.fail("update name only, set existing name should have failed with DuplicateObjectException");
         } catch (UpdateException e) {
-            Assert.assertTrue(e .getCause() instanceof DuplicateObjectException);
-            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getCause() instanceof DuplicateObjectException);
             // for some reason session.clear() didn't work
             // therefore evict this entity from hibernate cache so that it will be fetched from db next time
             session.evict(entity);
@@ -516,8 +512,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         session.clear();
 
         // update sha only, set same sha
-        System.out.println();
-        System.out.println("update sha only, set same sha");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("sha_1", entity.getModuleSha256());
@@ -526,17 +520,15 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         flushSession();
 
         // update sha only, set existing sha
-        System.out.println();
-        System.out.println("update sha only, set existing sha");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("sha_1", entity.getModuleSha256());
         entity.setModuleSha256("sha_2");
         try {
             serverModuleFileManager.update(entity);
+            Assert.fail("update sha only, set existing sha should have failed with DuplicateObjectException");
         } catch (UpdateException e) {
-            Assert.assertTrue(e .getCause() instanceof DuplicateObjectException);
-            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getCause() instanceof DuplicateObjectException);
             session.evict(entity);
         }
         flushSession();
@@ -547,8 +539,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         session.clear();
 
         // update name and sha, set same name and same sha
-        System.out.println();
-        System.out.println("update name and sha, set same name and same sha");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("module_1", entity.getName());
@@ -559,8 +549,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         flushSession();
 
         // update name and sha, set existing name and same sha
-        System.out.println();
-        System.out.println("update name and sha, set existing name and same sha");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("module_1", entity.getName());
@@ -569,9 +557,9 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setModuleSha256("sha_1");
         try {
             serverModuleFileManager.update(entity);
+            Assert.fail("update name and sha, set existing name and same sha should have failed with DuplicateObjectException");
         } catch (UpdateException e) {
-            Assert.assertTrue(e .getCause() instanceof DuplicateObjectException);
-            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getCause() instanceof DuplicateObjectException);
             session.evict(entity);
         }
         flushSession();
@@ -583,8 +571,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         session.clear();
 
         // update name and sha, set same name and existing sha
-        System.out.println();
-        System.out.println("update name and sha, set same name and existing sha");
         entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
         Assert.assertNotNull(entity);
         Assert.assertEquals("module_1", entity.getName());
@@ -593,9 +579,9 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setModuleSha256("sha_2");
         try {
             serverModuleFileManager.update(entity);
+            Assert.fail("update name and sha, set same name and existing sha should have failed with DuplicateObjectException");
         } catch (UpdateException e) {
-            Assert.assertTrue(e .getCause() instanceof DuplicateObjectException);
-            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getCause() instanceof DuplicateObjectException);
             session.evict(entity);
         }
         flushSession();
@@ -608,8 +594,6 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
 
 
         // name exist, sha does not exist
-        System.out.println();
-        System.out.println("name exist, sha does not exist");
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -617,16 +601,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
         try {
             serverModuleFileManager.save(entity);
-            Assert.fail("should have failed with DuplicateObjectException");
+            Assert.fail("name exist, sha does not exist should have failed with DuplicateObjectException");
         } catch (DuplicateObjectException e) {
-            System.out.println(e.getMessage());
             session.evict(entity);
         }
         flushSession();
 
         // name exist sha exists (diff entities)
-        System.out.println();
-        System.out.println("name exist sha exists (diff entities)");
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -634,16 +615,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
         try {
             serverModuleFileManager.save(entity);
-            Assert.fail("should have failed with DuplicateObjectException");
+            Assert.fail("name exist sha exists (diff entities) should have failed with DuplicateObjectException");
         } catch (DuplicateObjectException e) {
-            System.out.println(e.getMessage());
             session.evict(entity);
         }
         flushSession();
 
         // name exist sha exists (same entity)
-        System.out.println();
-        System.out.println("name exist sha exists (same entity)");
         entity = new ServerModuleFile();
         entity.setName("module_1");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -651,16 +629,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
         try {
             serverModuleFileManager.save(entity);
-            Assert.fail("should have failed with DuplicateObjectException");
+            Assert.fail("name exist sha exists (same entity) should have failed with DuplicateObjectException");
         } catch (DuplicateObjectException e) {
-            System.out.println(e.getMessage());
             session.evict(entity);
         }
         flushSession();
 
         // name does not exist, sha exist
-        System.out.println();
-        System.out.println("name does not exist, sha exist");
         entity = new ServerModuleFile();
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -668,16 +643,13 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
         try {
             serverModuleFileManager.save(entity);
-            Assert.fail("should have failed with DuplicateObjectException");
+            Assert.fail("name does not exist, sha exist should have failed with DuplicateObjectException");
         } catch (DuplicateObjectException e) {
-            System.out.println(e.getMessage());
             session.evict(entity);
         }
         flushSession();
 
         // name does not exist sha does not exist
-        System.out.println();
-        System.out.println("name does not exist sha does not exist");
         entity = new ServerModuleFile();
         entity.setName("non_existent_name");
         entity.setModuleType(ModuleType.CUSTOM_ASSERTION);
@@ -685,5 +657,42 @@ public class ServerModuleFileManagerTest extends EntityManagerTest {
         entity.setStateForNode(clusterNodeId, ModuleState.STAGED);
         Assert.assertNotNull(serverModuleFileManager.save(entity));
         flushSession();
+    }
+
+    @Test(expected = LazyInitializationException.class)
+    public void test_lazy_fetching_data() throws Exception {
+        insertSampleModules();
+
+        final ServerModuleFile entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
+        Assert.assertNotNull(entity);
+        session.evict(entity); // remove from cache
+        Assert.assertNotNull(entity.getData());
+        //noinspection UnusedDeclaration
+        int n = entity.getData().getDataBytes().length;
+
+        Assert.fail("getDataBytes should have failed with LazyInitializationException");
+    }
+
+    @Test
+    public void test_lazy_initializing_data() throws Exception {
+        insertSampleModules();
+
+        final ServerModuleFile entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
+        Assert.assertNotNull(entity);
+        Assert.assertNotNull(entity.getData());
+        Assert.assertTrue(entity.getData().getDataBytes().length > 0); // initialize
+        session.evict(entity); // remove from cache
+        Assert.assertTrue(entity.getData().getDataBytes().length > 0);
+    }
+
+    @Test
+    public void test_eagerly_fetching_states() throws Exception {
+        insertSampleModules();
+
+        final ServerModuleFile entity = serverModuleFileManager.findByPrimaryKey(new Goid(GOID_HI_START, 1));
+        Assert.assertNotNull(entity);
+        session.evict(entity); // remove from cache
+        Assert.assertNotNull(entity.getStates());
+        Assert.assertFalse(entity.getStates().isEmpty());
     }
 }

@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.module.*;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -169,9 +168,7 @@ public class ServerModuleFileChooser {
                 throw new IOException(MessageFormat.format(resources.getString("error.cannot.determine.module.type"), file.getAbsolutePath()));
             }
 
-            final byte[] dataBytes = IOUtils.slurpFile(file);
-            final String dataBytesHash = HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes));
-            serverModuleFile.createData(dataBytes, dataBytesHash);
+            serverModuleFile.createData(IOUtils.slurpFile(file));
             serverModuleFile.setProperty(ServerModuleFile.PROP_FILE_NAME, file.getName());
             serverModuleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(fileLength));
         }
