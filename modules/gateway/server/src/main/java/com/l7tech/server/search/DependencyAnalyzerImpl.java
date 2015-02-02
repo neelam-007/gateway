@@ -315,12 +315,17 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                         if(EntityType.POLICY.equals(roleHeader.getEntityType()) && roleHeader.getEntityGoid() != null){
                             try {
                                 final Policy policy = policyManager.findByPrimaryKey(roleHeader.getEntityGoid());
-                                if(policy != null && PolicyType.PRIVATE_SERVICE.equals(policy.getType())){
+                                //ignore the role if the policy is not found, or if it is a private service policy
+                                if(policy == null || PolicyType.PRIVATE_SERVICE.equals(policy.getType())){
                                     continue;
                                 }
                             } catch(FindException e) {
                                 //do nothing let it fall through
                             }
+                        } else if (EntityType.LOG_SINK.equals(roleHeader.getEntityType()) && !Goid.equals(new Goid(0, -810), roleHeader.getEntityGoid())){
+                            //ignore the non default log sink configuration roles
+                            //TODO: need to remove this when adding support for log sink config.
+                            continue;
                         }
                         entityHeaders.add(roleHeader);
                     } else {

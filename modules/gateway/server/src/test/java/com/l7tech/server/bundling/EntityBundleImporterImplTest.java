@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -9,6 +10,7 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.policy.PolicyAliasManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
@@ -24,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -74,6 +77,8 @@ public class EntityBundleImporterImplTest {
     private ClusterPropertyManager clusterPropertyManager;
     @Mock
     private ClientCertManager clientCertManager;
+    @Spy
+    private PasswordHasher passwordHasher = new TestPasswordHasher();
 
     @Before
     public void steup() {
@@ -94,6 +99,7 @@ public class EntityBundleImporterImplTest {
                 .put("policyAliasManager", policyAliasManager)
                 .put("clusterPropertyManager", clusterPropertyManager)
                 .put("clientCertManager", clientCertManager)
+                .put("passwordHasher", passwordHasher)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }
