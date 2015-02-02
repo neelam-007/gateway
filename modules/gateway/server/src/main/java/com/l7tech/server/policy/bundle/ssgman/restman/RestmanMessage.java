@@ -117,30 +117,52 @@ public class RestmanMessage {
     /**
      * Get more user-friendly Restman mapping error messages.
      */
-    public String getMappingErrorDetails(Functions.Unary<String, String> getEntityName) throws IOException {
+    public String getAllMappingErrorsDetail(Functions.Unary<String, String> getEntityName) throws IOException {
         if (mappingErrors == null) {
             loadMappingErrors();
         }
+
         final StringBuilder sb = new StringBuilder();
-
         for (Element mappingError : mappingErrors) {
-            String errorType = mappingError.getAttribute("errorType");
-            sb.append(errorType);
-            sb.append(": type=");
-            sb.append(mappingError.getAttribute("type"));
-            sb.append(", name=");
-            sb.append(getEntityName.call(mappingError.getAttribute("srcId")));
-            sb.append(", ");
-            if ("UniqueKeyConflict".equals(errorType)) {
-                sb.append("already exists.");
-
-            } else {
-                for (Element mapping: XpathUtil.findElements(mappingError, "l7:Properties/l7:Property/l7:StringValue", getNamespaceMap())) {
-                    sb.append(DomUtils.getTextValue(mapping));
-                }
-            }
-            sb.append(System.getProperty("line.separator"));
+            sb.append(getSingleMappingErrorDetail(mappingError, getEntityName.call(mappingError.getAttribute("srcId"))));
         }
+
+        return sb.toString();
+    }
+
+    public static String getSingleMappingErrorDetail(Element mappingError, String entityName) {
+        final StringBuilder sb = new StringBuilder();
+        String errorType = mappingError.getAttribute("errorType");
+        String srcId = mappingError.getAttribute("srcId");
+
+        sb.append(errorType);
+        sb.append(": type=").append(mappingError.getAttribute("type"));
+        sb.append(", name=").append(entityName);
+        sb.append(", ");
+        if ("UniqueKeyConflict".equals(errorType)) {
+            sb.append("already exists");
+        } else {
+            sb.append("srcId=").append(srcId);
+            sb.append(", ");
+
+            StringBuilder errorMessage = new StringBuilder();
+            for (Element mapping: XpathUtil.findElements(mappingError, "l7:Properties/l7:Property/l7:StringValue", getNamespaceMap())) {
+                if (errorMessage.length() > 0) errorMessage.append(" ");
+                errorMessage.append(DomUtils.getTextValue(mapping));
+            }
+
+            if ("InvalidResource".equals(errorType)) {
+                String particularErrorMessage = "Cannot add or update a child row: a foreign key constraint fails";
+                if (errorMessage.toString().startsWith(particularErrorMessage)) {
+                    sb.append(particularErrorMessage).append(" in database");
+                } else {
+                    sb.append(errorMessage.toString());
+                }
+            } else {
+                sb.append(errorMessage.toString());
+            }
+        }
+        sb.append(System.getProperty("line.separator"));
 
         return sb.toString();
     }

@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.policybundleinstaller.installer.restman;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.policybundleinstaller.installer.BaseInstaller;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -192,18 +191,14 @@ public class MigrationBundleInstaller extends BaseInstaller {
             throw new UnexpectedManagementResponse("Unexpected mapping format: srcId attribute missing.");
         }
 
-        final Element errorMessageElement = XmlUtil.findFirstDescendantElement(mappingError, MGMT_VERSION_NAMESPACE, "StringValue");
-        String errorMessage = "";
-        if (errorMessageElement != null) {
-            errorMessage = errorMessageElement.getFirstChild().getNodeValue();
-        }
+        final String entityName = restmanMessage.getEntityName(srcId);
 
         return new MigrationDryRunResult(
             errorTypeStr,
             entityTypeStr,
             srcId,
-            errorMessage,
-            restmanMessage.getEntityName(srcId),
+            RestmanMessage.getSingleMappingErrorDetail(mappingError, entityName),
+            entityName,
             getPolicyXmlForErrorMapping(errorTypeStr, EntityType.valueOf(entityTypeStr), srcId, restmanMessage)
         );
     }
@@ -398,7 +393,7 @@ public class MigrationBundleInstaller extends BaseInstaller {
             // check for errors
             if (installMessage.hasMappingError()) {
                 try {
-                    throw new RuntimeException("Installation failed. " + System.getProperty("line.separator") + installMessage.getMappingErrorDetails(new Functions.Unary<String, String>() {
+                    throw new RuntimeException("Installation failed. " + System.getProperty("line.separator") + installMessage.getAllMappingErrorsDetail(new Functions.Unary<String, String>() {
                         @Override
                         public String call(String srcId) {
                             return requestMessage.getEntityName(srcId);

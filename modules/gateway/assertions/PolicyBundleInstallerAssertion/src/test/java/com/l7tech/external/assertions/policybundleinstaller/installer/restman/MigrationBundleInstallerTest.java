@@ -84,7 +84,7 @@ public class MigrationBundleInstallerTest extends PolicyBundleInstallerTestBase 
         assertEquals("errorTypeStr matched", "TargetExists", migrationDryRunResult.getErrorTypeStr());
         assertEquals("entityTypeStr matched", "SERVICE", migrationDryRunResult.getEntityTypeStr());
         assertEquals("srcId matched", "7bf91daabff1558dd35b12b9f1f3ab7b", migrationDryRunResult.getSrcId());
-        assertEquals("errorMessage matched", SAMPLE_ERROR_MESSAGE, migrationDryRunResult.getErrorMessage());
+        assertEquals("errorMessage matched", SAMPLE_ERROR_MESSAGE, migrationDryRunResult.getErrorMessage().trim());
         assertEquals("name matched", "t1", migrationDryRunResult.getName());
         assertEquals("policyResourceXml matched", SAMPLE_POLICY_XML, migrationDryRunResult.getPolicyResourceXml());
     }
@@ -120,5 +120,5 @@ public class MigrationBundleInstallerTest extends PolicyBundleInstallerTestBase 
         "                                <wsp:All wsp:Usage=\"Required\"/>\n" +
         "                                </wsp:Policy>";
 
-    private static final String SAMPLE_ERROR_MESSAGE = "Target entity exists but was not expected: Fail on existing specified and target exists.. Source Entity: EntityHeader. Name=t1, id=7bf91daabff1558dd35b12b9f1f3ab7b, description=t1, type = SERVICE";
+    private static final String SAMPLE_ERROR_MESSAGE = "TargetExists: type=SERVICE, name=t1, srcId=7bf91daabff1558dd35b12b9f1f3ab7b, Target entity exists but was not expected: Fail on existing specified and target exists.. Source Entity: EntityHeader. Name=t1, id=7bf91daabff1558dd35b12b9f1f3ab7b, description=t1, type = SERVICE";
 }
