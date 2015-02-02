@@ -1,6 +1,5 @@
 package com.l7tech.util;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -15,7 +14,6 @@ public class RandomUtilTest {
     private static final boolean PRINT_HISTOGRAMS = SyspropUtil.getBoolean( "com.l7tech.test.printHistograms", false );
     private static final int MAX_HISTOGRAM_LINES = SyspropUtil.getInteger( "com.l7tech.test.maxHistogramLines", 300 );
     private static final int HISTOGRAM_AVG_COLS = SyspropUtil.getInteger( "com.l7tech.test.histogramAvgColumns", 70 );
-
 
     @Test
     public void testNextChars() {
@@ -76,32 +74,6 @@ public class RandomUtilTest {
         assertTrue( chars[0] >= 'A' && chars[0] <= 'Z' );
     }
 
-    @Test
-    @Ignore( "developer test - for tuning computeAcceptableMinimumCount() so it doesn't produce too many spurious failures" )
-    public void testVarianceThreshold() {
-        // Current values:
-        //      1/100000 failures  for 1024,'0','9'
-        //    260/100000 failures  for  256,'0','9'
-        //   3600/100000 failures  for  128,'0','9'
-        int numFails = 0;
-        int total = 100000;
-
-        int count = 1024;
-        char lo = '0';
-        char hi = '9';
-        for ( int i = 0; i < total; ++i ) {
-            char[] chars = generateRandomCharacters( count, lo, hi );
-            int[] hist = histogram( chars, hi );
-            try {
-                assertHistogramIsFlat( hist, count, lo, hi );
-            } catch ( AssertionError e ) {
-                numFails++;
-            }
-        }
-
-        System.out.println( "FAILURES: " + numFails + "/" + total );
-    }
-
     private static void testDistribution( int count, char lo, char hi ) {
         char[] chars = generateRandomCharacters( count, lo, hi );
         int[] hist = histogram( chars, hi );
@@ -112,7 +84,10 @@ public class RandomUtilTest {
 
     private static void assertHistogramIsFlat( int[] hist, int totalSamples, char lo, char hi ) {
         // What we would see if distro was totally flat
-        int minimum = computeAcceptableMinimumCount( totalSamples, lo, hi );
+        int even = computeFairDivision( totalSamples, lo, hi );
+        int deviation = computeMaximumAcceptableDeviation( totalSamples, lo, hi );
+        int minimum = even - deviation;
+        int maximum = even + deviation;
 
         int totalCount = 0;
         for ( int i = 0; i < hist.length; i++ ) {
@@ -121,6 +96,8 @@ public class RandomUtilTest {
             if ( i >= lo && i <= hi ) {
                 assertTrue( "Saw too few of character " + i + ": expected to see at least " + minimum + ", only saw " + count,
                         count >= minimum );
+                assertTrue( "Saw too many of character " + i + ": expected to see no more than " + maximum + ", but saw " + count,
+                        count <= maximum );
             }
         }
 
@@ -131,32 +108,21 @@ public class RandomUtilTest {
         return totalSamples / ( hi - lo + 1 );
     }
 
-    private static int computeAcceptableMinimumCount( int totalSamples, char lo, char hi ) {
-        // TODO: find a proper statistical test that is less than (say) 1 in a 100,000 likely to occur by chance
-        //       if the distribution is truly flat.  For now I will use this hacky thing that seems to work ok
-        int fair = computeFairDivision( totalSamples, lo, hi );
-        int acceptableVariation =  (int)( Math.cbrt( fair ) * fair / ( Math.sqrt( fair ) ) );
-        int min = fair - acceptableVariation;
-
-        // Hack off edges of my curve that start to produce nonsensical results
-        if ( min > ( fair / 2 ) && min > 1 )
-            min = 1;
-        if ( fair < 40 )
-            min = 2;
-        if ( fair < 20 )
-            min = 1;
-        if ( fair < 10 )
-            min = 0;
-
-        return min;
+    private static int computeMaximumAcceptableDeviation( int n, char lo, char hi ) {
+        int range = hi - lo + 1; // Number of possible outcomes per trial
+        double p = 1d / range;   // Probability of selecting one outcome
+        double nsigma = 7; // 7 sigma = basically impossible to happen by chance
+        return (int)( nsigma * Math.sqrt( n * p * ( 1 - p ) ) );
     }
 
     private static void printHistogram( int[] hist, int totalSamples, char lo, char hi ) {
         int even = computeFairDivision( totalSamples, lo, hi );
-        int minimum = computeAcceptableMinimumCount( totalSamples, lo, hi );
+        int deviation = computeMaximumAcceptableDeviation( totalSamples, lo, hi );
+        int minimum = even - deviation;
+        int maximum = even + deviation;
 
         System.out.println( "\nHistogram:" );
-        System.out.println( " Even=" + even + "  Min=" + minimum );
+        System.out.println( " Even=" + even + "  Min=" + minimum + "  Max=" + maximum );
         for ( int j = lo; j <= hi; j++ ) {
             int count = hist[j];
             String bar = repeat( '*', ( count * HISTOGRAM_AVG_COLS ) / even );
