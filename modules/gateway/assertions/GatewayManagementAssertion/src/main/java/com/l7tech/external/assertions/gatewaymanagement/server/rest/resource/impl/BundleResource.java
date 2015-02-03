@@ -228,6 +228,7 @@ public class BundleResource {
                                  @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
                                  final Bundle bundle) throws Exception {
         rbacAccessService.validateFullAdministrator();
+        ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("test", "activate", "versionComment"));
 
         List<Mapping> mappings =
                 bundleImporter.importBundle(bundle, test, activate, versionComment, encodedKeyPassphrase);

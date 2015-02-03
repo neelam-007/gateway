@@ -653,7 +653,7 @@ public class FullGatewayMigrationTest extends com.l7tech.skunkworks.rest.tools.M
             final Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
             //import the bundle
-            response = getTargetEnvironment().processRequest("bundle", "encryptPassword=true", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
                     objectToString(bundleItem.getContent()));
             assertOkResponse(response);
 

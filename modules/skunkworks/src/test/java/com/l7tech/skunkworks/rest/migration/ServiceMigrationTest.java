@@ -795,32 +795,48 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
 
     @Test
     public void deleteMappingTest() throws Exception {
-        ServiceMO serviceMO = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
-        serviceMO.setId(null);
-        serviceMO.getServiceDetail().setName("Target Service");
+        ServiceMO serviceMO1 = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
+        serviceMO1.setId(null);
+        serviceMO1.getServiceDetail().setName("Target Service");
         RestResponse response = getTargetEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
-                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO)));
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO1)));
         logger.log(Level.INFO, response.toString());
         assertOkCreatedResponse(response);
-        Item<ServiceMO> serviceCreated = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
-        serviceMO.setId(serviceCreated.getId());
-        serviceCreated.setContent(serviceMO);
+        Item<ServiceMO> serviceCreated1 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceMO1.setId(serviceCreated1.getId());
+        serviceCreated1.setContent(serviceMO1);
+
+        ServiceMO serviceMO2 = ManagedObjectFactory.read(ManagedObjectFactory.write(serviceItem.getContent()),ServiceMO.class);
+        serviceMO2.setId(null);
+        serviceMO2.getServiceDetail().setName("Target Service By Name");
+        response = getTargetEnvironment().processRequest("services", HttpMethod.POST, ContentType.APPLICATION_XML.toString(),
+                XmlUtil.nodeToString(ManagedObjectFactory.write(serviceMO2)));
+        logger.log(Level.INFO, response.toString());
+        assertOkCreatedResponse(response);
+        Item<ServiceMO> serviceCreated2 = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        serviceMO2.setId(serviceCreated2.getId());
+        serviceCreated2.setContent(serviceMO2);
 
         Bundle bundle = ManagedObjectFactory.createBundle();
 
         Mapping mapping = ManagedObjectFactory.createMapping();
         mapping.setAction(Mapping.Action.Delete);
-        mapping.setTargetId(serviceCreated.getId());
-        mapping.setSrcId(Goid.DEFAULT_GOID.toString());
-        mapping.setType(serviceCreated.getType());
+        mapping.setTargetId(serviceCreated1.getId());
+        mapping.setType(serviceCreated1.getType());
 
         Mapping mappingNotExisting = ManagedObjectFactory.createMapping();
         mappingNotExisting.setAction(Mapping.Action.Delete);
         mappingNotExisting.setSrcId(Goid.DEFAULT_GOID.toString());
-        mappingNotExisting.setType(serviceCreated.getType());
+        mappingNotExisting.setType(serviceCreated1.getType());
 
-        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting));
-        bundle.setReferences(Arrays.<Item>asList(serviceCreated));
+        Mapping mappingByName = ManagedObjectFactory.createMapping();
+        mappingByName.setAction(Mapping.Action.Delete);
+        mappingByName.setProperties(CollectionUtils.MapBuilder.<String,Object>builder()
+                .put("MapBy", "name")
+                .put("MapTo", serviceCreated2.getName()).map());
+        mappingByName.setType(serviceCreated2.getType());
+
+        bundle.setMappings(Arrays.asList(mapping, mappingNotExisting, mappingByName));
 
         //import the bundle
         logger.log(Level.INFO, objectToString(bundle));
@@ -832,20 +848,29 @@ public class ServiceMigrationTest extends com.l7tech.skunkworks.rest.tools.Migra
         mappingsToClean = mappings;
 
         //verify the mappings
-        Assert.assertEquals("There should be 2 mapping after the import", 2, mappings.getContent().getMappings().size());
-        Mapping activeConnectorMapping = mappings.getContent().getMappings().get(0);
-        Assert.assertEquals(EntityType.SERVICE.toString(), activeConnectorMapping.getType());
-        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMapping.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.Deleted, activeConnectorMapping.getActionTaken());
-        Assert.assertEquals(serviceCreated.getId(), activeConnectorMapping.getTargetId());
+        Assert.assertEquals("There should be 3 mapping after the import", 3, mappings.getContent().getMappings().size());
+        Mapping serviceMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, serviceMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, serviceMapping.getActionTaken());
+        Assert.assertEquals(serviceCreated1.getId(), serviceMapping.getTargetId());
 
-        Mapping activeConnectorMappingNotExisting = mappings.getContent().getMappings().get(1);
-        Assert.assertEquals(EntityType.SERVICE.toString(), activeConnectorMappingNotExisting.getType());
-        Assert.assertEquals(Mapping.Action.Delete, activeConnectorMappingNotExisting.getAction());
-        Assert.assertEquals(Mapping.ActionTaken.Ignored, activeConnectorMappingNotExisting.getActionTaken());
-        Assert.assertEquals(null, activeConnectorMappingNotExisting.getTargetId());
+        Mapping serviceMappingNotExisting = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SERVICE.toString(), serviceMappingNotExisting.getType());
+        Assert.assertEquals(Mapping.Action.Delete, serviceMappingNotExisting.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Ignored, serviceMappingNotExisting.getActionTaken());
+        Assert.assertEquals(null, serviceMappingNotExisting.getTargetId());
 
-        response = getTargetEnvironment().processRequest("services/"+serviceCreated.getId(), HttpMethod.GET, null, "");
+        Mapping mappingByNameResult = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.SERVICE.toString(), mappingByNameResult.getType());
+        Assert.assertEquals(Mapping.Action.Delete, mappingByNameResult.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.Deleted, mappingByNameResult.getActionTaken());
+        Assert.assertEquals(serviceCreated2.getId(), mappingByNameResult.getTargetId());
+
+        response = getTargetEnvironment().processRequest("services/"+serviceCreated1.getId(), HttpMethod.GET, null, "");
+        assertNotFoundResponse(response);
+
+        response = getTargetEnvironment().processRequest("services/"+serviceCreated2.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
 }

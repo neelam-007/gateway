@@ -1,6 +1,7 @@
 <div>
     <h1>Migration</h1>
-    <p>The migration APIs allow you to move folders, services and policies from one Gateway to another, including all dependent resources.</p>
+    <p>Use the <a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/gmu.html">Gateway Migration Utility</a> to help facilitate migration.</p>
+    <p>The migration APIs allow you to move entities, including folders, services and policies from one Gateway to another.</p>
     <p>The following is an overview of the migration workflow:</p>
     <ol>
         <li>Export a bundle from the source Gateway.</li>
@@ -17,7 +18,7 @@
         </tr>
         <tr>
             <td>Uri</td>
-            <td><div class="code">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?[folder|service|policy]={id}</div></td>
+            <td><div class="code">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?[[folder|service|policy]={id} | all=true]</div></td>
         </tr>
         <tr><td>Http Method</td>
             <td>GET</td>
@@ -59,10 +60,12 @@
         </tr>
         </tbody>
     </table>
-    <p>The request URI contains query parameters of the folders, services or policies to export, specified by their ids.</p>
+    <p>The request URI contains query parameters of the folders, services or policies to export, specified by their ids. You can also specify all=true to export all the entities on the gateway.</p>
     <p>For example:</p>
     <p class="code indent">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=97cd0afb295cd2d823d0fdd43e720bbc&service=08890dfa5e893770ac234e5d5a43000b&service=0ef0d5dd06fe67ab15b6a1b16517e0f5</p>
     <p>The above URI will bundle folder with ID 97cd0afb295cd2d823d0fdd43e720bbc, and services with ID 08890dfa5e893770ac234e5d5a43000b and 0ef0d5dd06fe67ab15b6a1b16517e0f5.</p>
+    <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?all=true">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?all=true</a></p>
+    <p>The above URI will bundle all the entities in the gateway.</p>
     <h3>Importing a Bundle</h3>
     <p>To import a bundle send a PUT request with the same bundle XML to $#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle</p>
     <table cellpadding="0" cellspacing="0" class="api-example"> 
@@ -146,6 +149,7 @@
                     <tr><td>NewOrExisting</td><td>If an existing entity is found on the target Gateway, map to this existing entity (no update occurs). If an existing entity is not found, then create a new one on the target Gateway.</td></tr>
                     <tr><td>NewOrUpdate</td><td>If an existing entity is found on the target Gateway, map to this existing entity and update it using information from the bundle. If an existing entity is not found, then create a new one on the target Gateway.</td></tr>
                     <tr><td>AlwaysCreateNew</td><td>If an existing entity is found on the target Gateway, then create a new one with a different ID. If an existing entity is not found, then create a new one with the source ID.</td></tr>
+                    <tr><td>Delete</td><td>If an existing entity is found on the target Gateway it will be removed. If an existing entity is not found, then nothing will happen and bundle import will continue (this will not fail bundle import)</td></tr>
                     <tr><td>Ignore</td><td>Ignore this entity and do not import it.</td></tr>
                 </table>
             </td>
@@ -156,7 +160,8 @@
                     <tr><td>UsedExisting</td><td>The entity was mapped to an existing entity on the target Gateway. The target entity was not updated.</td></tr>
                     <tr><td>UpdatedExisting</td><td>The entity was mapped to an existing entity on the target Gateway and the target entity was updated.</td></tr>
                     <tr><td>CreatedNew</td><td>A new entity was created on the target Gateway.</td></tr>
-                    <tr><td>Ignored</td><td>The entity was ignored and not imported.</td></tr>
+                    <tr><td>Deleted</td><td>The entity was deleted on the target gateway.</td></tr>
+                    <tr><td>Ignored</td><td>The entity was ignored and not imported. If the action was Delete and the action taken was Ignored that means that a target entity could not be found to be deleted.</td></tr>
                 </table>
             </td>
         </tr>
@@ -223,7 +228,8 @@
         &lt;l7:Properties&gt;
             &lt;l7:Property key="ErrorMessage"&gt;
                 &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
-        &lt;/l7:Property&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
@@ -277,7 +283,8 @@
         &lt;l7:Properties&gt;
             &lt;l7:Property key="ErrorMessage"&gt;
                 &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
-        &lt;/l7:Property&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
@@ -331,8 +338,45 @@
         &lt;l7:Properties&gt;
             &lt;l7:Property key="ErrorMessage"&gt;
                 &lt;l7:StringValue&gt;(name)  must be unique&lt;/l7:StringValue&gt;
-        &lt;/l7:Property&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
 &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h5>Delete</h5>
+    <p>This will delete an  entity:</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;POLICY&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;Delete&quot; /&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <p>An entity with the same ID exists on the target Gateway, resulting in the entity being deleted on the target Gateway.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;POLICY&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;Delete&quot;
+    actionTaken=&quot;Deleted&quot;
+    targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
+        </pre>
+    </div>
+    <p>An entity with the same ID does NOT exist on the target Gateway, resulting in no entity being deleted.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+    type=&quot;POLICY&quot;
+    srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    action=&quot;Delete&quot;
+    actionTaken=&quot;Ignored&quot; /&gt;
         </pre>
     </div>
     <h5>Ignore</h5>
@@ -378,7 +422,7 @@
     errorType=&quot;TargetNotFound&quot; /&gt;
             </pre></div>
         </td></tr>
-        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name'. If this is not specified mapping is done by the ID.</td></tr>
+        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name' or 'guid'. If this is not specified mapping is done by the ID. There is also a special mapping, 'mapByRoleEntity', this is used to map a auto created role to an auto created role on the target gateway. This mapping is automatically set when doing a full gateway export.</td></tr>
         <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapBy property.</td></tr>
     </table>
     <h4>Complex Mapping Examples</h4>
@@ -391,7 +435,9 @@
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrUpdate&quot; &gt;
-    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -407,7 +453,9 @@
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
-    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -422,7 +470,9 @@
     actionTaken=&quot;UpdatedExisting&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
-    &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;mapBy&quot; value=&quot;name&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -456,8 +506,10 @@
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -473,8 +525,10 @@
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -489,8 +543,10 @@
     actionTaken=&quot;UsedExisting&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -505,11 +561,13 @@
     errorType=&quot;UniqueKeyConflict&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
-    &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
-        &lt;l7:StringValue&gt;Other entity exists with the given id: 7d428d5529fece370bc3cb5b44027ba0&lt;/l7:StringValue&gt;
-    &lt;/l7:Property&gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+            &lt;l7:StringValue&gt;Other entity exists with the given id: 7d428d5529fece370bc3cb5b44027ba0&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -522,7 +580,9 @@
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
      srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;NewOrExisting&quot; &gt;
-    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -536,7 +596,9 @@
     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     action=&quot;NewOrExisting&quot;
     errorType=&quot;TargetNotFound&quot; &gt;
-    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;l7:Properties&gt;
+       &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -551,7 +613,9 @@
     actionTaken=&quot;UsedExisting&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
-    &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -561,12 +625,14 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-     type=&quot;POLICY&quot;
+     type=&quot;SERVICE&quot;
      srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-     srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+     srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
      action=&quot;AlwaysCreateNew&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -575,14 +641,16 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;POLICY&quot;
+    type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -590,14 +658,16 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;POLICY&quot;
+    type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     errorType=&quot;UniqueKeyConflict&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;/l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
@@ -605,17 +675,70 @@
     <div class="code">
         <pre>
 &lt;l7:mapping
-    type=&quot;POLICY&quot;
+    type=&quot;SERVICE&quot;
     srcId=&quot;97cd0afb295cd2d823d0fdd43e720bbc&quot;
-    srcUri=&quot;https://ssgsource/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot;
+    srcUri=&quot;https://ssgsource/restman/1.0/services/97cd0afb295cd2d823d0fdd43e720bbc&quot;
     actionTaken=&quot;CreatedNew&quot;
     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
-    targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
-    &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
-    &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot; /&gt;
+    &lt;l7:Properties&gt;
 &lt;/l7:mapping&gt;
         </pre>
     </div>
+    <h5>Delete by Name a Specific Entity Fail if Entity Does Not Exist</h5>
+    <p>Delete a service on the target gateway with the name 'MyTargetService'. If the service does not exist fail the bundle import.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     action=&quot;Delete&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot;
+        &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <p>If an entity with the same Name exists on the target Gateway this will delete the entity.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     action=&quot;Delete&quot;
+     actionTaken=&quot;Deleted&quot;
+     targetId=&quot;8756846868e6eb676bf4ed8a9bfba04b&quot;
+     targetUri=&quot;https://ssgtarget/restman/1.0/services/8756846868e6eb676bf4ed8a9bfba04b&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot;
+        &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will fail.</p>
+    <div class="code">
+        <pre>
+&lt;l7:mapping
+     type=&quot;SERVICE&quot;
+     action=&quot;Delete&quot; &gt;
+    &lt;l7:Properties&gt;
+        &lt;l7:Property key=&quot;ErrorMessage&quot;&gt;
+            &lt;l7:StringValue&gt;Could not locate entity: Fail on new specified and could not locate existing target. Source Entity: EntityHeader. Name=MyTargetService, id=null, description=null, type = SERVICE&lt;/l7:StringValue&gt;
+        &lt;/l7:Property&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
+        &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot;
+        &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
+    &lt;/l7:Properties&gt;
+&lt;/l7:mapping&gt;
+        </pre>
+    </div>
+    <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
     <h3>Supporting Large Migrations</h3>
     <p>In order to support large migrations you may need to increase the maximum message size that the target Gateway can accept. In order to do that either:</p>
     <ul>

@@ -1,8 +1,31 @@
 <div>
     <h1>Authentication</h1>
     <p>In order to access the Management API, you must be authenticated as a user with sufficient permissions to manage Gateway resources.</p>
-    <p>Authentication is handled by the REST Management API policy. By default, HTTP Basic authentication is used.</p>
-    <p>The Gateway will respond as follows:</p>
+    <p>Authentication is handled by the REST Management API service. There are two ways to authenticate, HTTP Basic authentication or Client Certificate mutual authentication. We recommend that you implement client certificate mutual authentication for the strongest security. Follow these steps to implement client certificate mutual authentication:</p>
+    <h4>Generate the client certificate and private key</h4>
+    <ol>
+        <li>In Policy Manager, go to <strong>Tasks, Manage Private Keys</strong>.</li>
+        <li>Click <strong>Create</strong>.</li>
+        <li>Enter an alias and click <strong>Create</strong>. For Internal Identity Providers, the alias must match the login for the migration Administrator.</li>
+        <li>Double-click the certificate in the list, and determine an export method:
+            <ol>
+                <li>To export the certificate and key, click <strong>Export Key</strong>, optionally specify a password, and save to a location.</li>
+                <li>To export with the private keys, click <strong>View Certificate</strong>, click <strong>Export</strong>, and save to a location.</li>
+            </ol>
+        </li>
+        <li>(Optional). You can delete the private key that was used to create the certificate. Policy Manager does not need it.</li>
+    </ol>
+    <h4>Associate the client certificate with the Administrator</h4>
+    <ol>
+        <li>In Policy Manager, click the <strong>Identity Providers</strong> tab.</li>
+        <li>Under Identity Providers, right-click <strong>Internal Identity Provider</strong> and select <strong>Search Identity Provider</strong>.</li>
+        <li>Double-click the migration Administrator.</li>
+        <li>Select the <strong>Certificate</strong> tab, click <strong>Import</strong>.</li>
+        <li>In the Add Certificate Wizard, select <strong>Import from a File</strong>.</li>
+        <li>Click <strong>Browse</strong> to find your certificate and complete the wizard.</li>
+    </ol>
+    <h2>Authentication Requirements and Behaviours</h2>
+    <p>When authenticated the Gateway will respond as follows:</p>
     <ul>
         <li>When attempting to access resources, you will receive a "401 Permission Denied" response if you have not been granted access.</li>
         <li>When listing resources, only the resources to which you have access will be returned. This may result in an empty list or only a partial list of the actual resources available on the Gateway.</li>
