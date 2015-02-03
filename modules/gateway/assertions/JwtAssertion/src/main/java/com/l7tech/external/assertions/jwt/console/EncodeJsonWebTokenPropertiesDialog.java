@@ -431,12 +431,20 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
             jweSecretWarningLabel.setVisible(jweUseSecret.isSelected() && km.toString().startsWith("Direct use"));
 
             jweUseVariable.setSelected(!km.toString().startsWith("Direct use"));
+            encryptionKeyTextField.setEnabled(jweUseVariable.isSelected());
+            encryptionKeyType.setEnabled(jweUseVariable.isSelected());
+
 
             final java.util.List<String> values = Lists.newArrayList(JsonWebTokenConstants.ENCRYPTION_KEY_TYPES);
             if(km.toString().startsWith("Direct use")){
                 values.remove("Certificate");
             }
             encryptionKeyType.setModel(new DefaultComboBoxModel(values.toArray(new String[values.size()])));
+
+            if(!encryptionKeyId.getText().isEmpty()){
+                encryptionKeyType.setSelectedItem(JsonWebTokenConstants.KEY_TYPE_JWKS);
+            }
+            encryptionKeyId.setEnabled(jweUseVariable.isSelected() && encryptionKeyType.getSelectedItem().equals(JsonWebTokenConstants.KEY_TYPE_JWKS));
 
             encryptionKeyWarningLabel.setVisible("RSAES-PKCS1-V1_5".equals(km));
             if ("RSAES-PKCS1-V1_5".equals(km)) {
