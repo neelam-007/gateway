@@ -3,14 +3,13 @@ package com.l7tech.skunkworks.rest.migration;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
-import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
+import com.l7tech.gateway.api.impl.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.skunkworks.rest.tools.RestResponse;
+import com.l7tech.test.BugId;
 import com.l7tech.test.conditional.ConditionalIgnore;
 import com.l7tech.test.conditional.IgnoreOnDaily;
 import com.l7tech.util.CollectionUtils;
@@ -21,6 +20,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -631,6 +631,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
 
     }
 
+    @BugId("SSG-10583")
     @Test
     public void testImportCreateEncryptSecretTest() throws Exception {
         RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");

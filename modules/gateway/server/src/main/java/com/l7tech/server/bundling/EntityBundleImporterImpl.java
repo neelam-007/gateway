@@ -66,6 +66,7 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -137,19 +138,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             @Override
             public List<EntityMappingResult> call(){
                 List<EntityMappingResult> results =  doImportBundle(bundle, test, activate, versionComment);
-
-                // refresh the keystores if bundle has been rollbacked
-                try {
-                    for( SsgKeyFinder keyFinder: ssgKeyStoreManager.findAll()) {
-                        if(keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)) {
-                            keyFinder.getKeyStore().reload();
-                        }
-                    }
-                } catch (FindException | KeyStoreException e) {
-                    // do nothing
-                    logger.log(Level.INFO, "Error refreshing private keys.");
-                }
-
                 return results;
             }
         });
@@ -191,6 +179,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //This is a map of entities in the entity bundle to entities that are updated or created on the gateway.
                 final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
                 //loop through each mapping instruction to perform the action.
+                final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
                 int progressCounter = 1;
                 for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
                     logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
@@ -224,14 +213,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     case NewOrUpdate: {
                                         //update the existing entity
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.UpdatedExisting);
                                         break;
                                     }
                                     case AlwaysCreateNew: {
                                         //SSG-9047 This is always create new so in the case that there is an existing entity and the GUID's match we need to generate a new GUID for the newly imported entity.
                                         final boolean resetGuid = entity != null && entity.getEntity() instanceof GuidEntity && ((GuidEntity) entity.getEntity()).getGuid() != null && ((GuidEntity) entity.getEntity()).getGuid().equals(((GuidEntity) existingEntity).getGuid());
-                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment, resetGuid);
+                                        final EntityHeader targetEntityHeader = createOrUpdateResource(entity, null, mapping, resourceMapping, null, activate, versionComment, resetGuid, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -239,7 +228,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), EntityMappingResult.MappingAction.Ignored);
                                         break;
                                     case Delete:
-                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity);
+                                        final EntityHeader targetEntityHeader = deleteEntity(existingEntity, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
                                         break;
                                     default:
@@ -260,7 +249,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
                                                 //use the target id if specified, otherwise use the source id
                                                 mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType()) && mapping.getTargetMapping().getTargetID() != null ? mapping.getTargetMapping().getTargetID() : mapping.getSourceEntityHeader().getStrId(),
-                                                mapping, resourceMapping, null, activate, versionComment, false);
+                                                mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
                                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                         break;
                                     }
@@ -293,6 +282,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     // replace dependencies in policy xml after all entities are created ( can replace circular dependencies)
                     replacePolicyDependencies(mappingsRtn, resourceMapping);
                 }
+
+                // if no test/errors do private key operations
+                if(!test && !containsErrors(mappingsRtn)){
+                    for(final EntityHeader header : cachedPrivateKeyOperations.keySet()){
+                        try{
+                            cachedPrivateKeyOperations.get(header).call();
+                        } catch (Throwable e) {
+                            // update mapping
+                            EntityMappingResult mapping = Functions.grepFirst(mappingsRtn, new Functions.Unary<Boolean, EntityMappingResult>() {
+                                @Override
+                                public Boolean call(EntityMappingResult entityMappingResult) {
+                                    return entityMappingResult.getSourceEntityHeader().equals(header);
+                                }
+                            });
+                            if(mapping != null){
+                                mapping.makeExceptional(e);
+                            }
+                        }
+                    }
+                }
+
 
                 if (test || containsErrors(mappingsRtn)) {
                     transactionStatus.setRollbackOnly();
@@ -328,7 +338,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @return The entity header of the deleted entity
      * @throws DeleteException This is thrown if there was an error attempting to delete the entity
      */
-    private EntityHeader deleteEntity(@NotNull final Entity entity) throws DeleteException {
+    private EntityHeader deleteEntity(@NotNull final Entity entity,
+                                      @NotNull final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations) throws DeleteException {
         // Create the manage entity within a transaction so that it can be flushed after it is created.
         // Flushing allows it to be found later by the entity managers. It will not be committed to the database until the surrounding parent transaction gets committed
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
@@ -337,22 +348,38 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             @Override
             public Either<DeleteException, EntityHeader> doInTransaction(final TransactionStatus transactionStatus) {
                 if (EntityType.SSG_KEY_ENTRY == EntityType.findTypeByEntity(entity.getClass())) {
-                    //need to specially handle deletion of ssg key entries
-                    final SsgKeyFinder keyStore;
+                    // check entity exists
                     final int sepIndex = entity.getId().indexOf(":");
                     if (sepIndex < 0) {
                         return Either.left(new DeleteException("Cannot delete private key. Invalid key id: " + entity.getId() + ". Expected id with format: <keystoreId>:<alias>"));
                     }
                     final String keyStoreId = entity.getId().substring(0, sepIndex);
                     final String keyAlias = entity.getId().substring(sepIndex + 1);
+                    final SsgKeyFinder keyStore;
                     try {
                         keyStore = keyStoreManager.findByPrimaryKey(GoidUpgradeMapper.mapId(EntityType.SSG_KEYSTORE, keyStoreId));
-                        keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
-                    } catch (FindException e) {
+                        if(!keyStore.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE))
+                            Either.left(new DeleteException("Cannot delete from hardware keystore via migration: " + keyStore.getType() + "."));
+                        if(!keyStore.getKeyStore().getAliases().contains(keyAlias)){
+                            Either.left(new DeleteException("Cannot find alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + "."));
+                        }
+                    }catch (FindException | KeyStoreException  e) {
                         return Either.left(new DeleteException("Cannot find keystore with id: " + keyStoreId + ". Error message: " + ExceptionUtils.getMessage(e), e));
-                    } catch (KeyStoreException e) {
-                        return Either.left(new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + ". Error message: " + ExceptionUtils.getMessage(e), e));
                     }
+
+                    cachedPrivateKeyOperations.put(EntityHeaderUtils.fromEntity(entity), new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            //need to specially handle deletion of ssg key entries
+                            try {
+                                keyStore.getKeyStore().deletePrivateKeyEntry(true, null, keyAlias);
+                                return null;
+                            } catch (KeyStoreException e) {
+                                throw new DeleteException("Cannot find delete alias from keystore with id: " + keyStoreId + ". Alias: " + keyAlias + ". Error message: " + ExceptionUtils.getMessage(e), e);
+                            }
+                        }
+                    });
+
                 } else if (entity instanceof Identity) {
                     //need to specially handle deletion of identity entities
                     final Goid providerId = ((Identity) entity).getProviderId();
@@ -632,7 +659,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                                 @Nullable final Entity existingEntity,
                                                 final boolean activate,
                                                 @Nullable final String versionComment,
-                                                final boolean resetGuid) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
+                                                final boolean resetGuid,
+                                                @NotNull final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
         if (entityContainer == null) {
             throw new IncorrectMappingInstructionsException(mapping, "Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
         }
@@ -750,25 +778,47 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             final SsgKeyEntry ssgKeyEntry = (SsgKeyEntry) entityContainer.getEntity();
                             if(existingEntity == null) {
                                 final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeyEntry.getKeystoreId());
-                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
-                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, false);
-                                if (!futureSuccess.get()){
-                                    throw new ObjectModelException("Error attempting to save a private key: " + ssgKeyEntry.getId());
+                                if(!keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)){
+                                    throw new ObjectModelException("Cannot update hardware keystore via migration: " + keyFinder.getType());
                                 }
+
+                                final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+                                cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
+                                    @Override
+                                    public String call() throws Exception {
+                                        final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, false);
+                                        if (!futureSuccess.get()) {
+                                            throw new ObjectModelException("Error attempting to save a private key: " + ssgKeyEntry.getId());
+                                        }
+                                        return null;
+                                    }
+                                });
+
                             } else {
                                 final SsgKeyEntry existingSsgKeyEntry = (SsgKeyEntry) existingEntity;
                                 final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(existingSsgKeyEntry.getKeystoreId());
+                                if(!keyFinder.getType().equals(SsgKeyFinder.SsgKeyStoreType.PKCS12_SOFTWARE)){
+                                    throw new ObjectModelException("Cannot update hardware keystore via migration: " + keyFinder.getType());
+                                }
                                 final SsgKeyStore ssgKeyStore = keyFinder.getKeyStore();
+
                                 //should use the alias of the existing mapped key
                                 ssgKeyEntry.setAlias(existingSsgKeyEntry.getAlias());
                                 // reset the metadata
                                 if(ssgKeyEntry.getKeyMetadata()!=null) {
                                     ssgKeyEntry.getKeyMetadata().setAlias(existingSsgKeyEntry.getAlias());
                                 }
-                                final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, true);
-                                if (!futureSuccess.get()){
-                                    throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
-                                }
+
+                                cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
+                                    @Override
+                                    public String call() throws Exception  {
+                                        final Future<Boolean> futureSuccess = ssgKeyStore.storePrivateKeyEntry(true, null, ssgKeyEntry, true);
+                                        if (!futureSuccess.get()) {
+                                            throw new ObjectModelException("Error attempting to update a private key: " + ssgKeyEntry.getId());
+                                        }
+                                        return null;
+                                    }
+                                });
                             }
                         } else if (entityContainer.getEntity() instanceof Identity) {
                             //need to specially handle deletion of identity entities

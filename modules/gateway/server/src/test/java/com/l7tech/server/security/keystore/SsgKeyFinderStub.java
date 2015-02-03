@@ -89,10 +89,6 @@ public class SsgKeyFinderStub implements SsgKeyStore {
     }
 
     @Override
-    public void reload() throws KeyStoreException {
-    }
-
-    @Override
     public String getName() {
         return "Stub KeyFinder";
     }

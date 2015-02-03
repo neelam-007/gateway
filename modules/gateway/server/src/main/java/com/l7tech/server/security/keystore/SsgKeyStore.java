@@ -129,11 +129,4 @@ public interface SsgKeyStore extends SsgKeyFinder {
      */
     @Transactional(propagation = Propagation.REQUIRED)
     void updateKeyMetadata(Goid keystoreGoid, @NotNull String alias, @Nullable SsgKeyMetadata metadata) throws UpdateException, FindException, SaveException;
-
-    /**
-     * Reloads the keystore
-     *
-     * @throws KeyStoreException  if there is a problem reading this keystore
-     */
-    void reload() throws KeyStoreException;
 }
