@@ -88,16 +88,40 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
 
     @Test
     public void testImportNewOrExisting() throws Exception {
+        //delete any assertion security zone already on the target
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setSrcId(GatewayManagementAssertion.class.getName());
+        mapping.setType(EntityType.ASSERTION_ACCESS.toString());
+        mapping.setProperties(CollectionUtils.<String, Object>mapBuilder().put("MapBy", "name").map());
+
+        bundle.setMappings(Arrays.asList(mapping));
+
+        //import the bundle
+        RestResponse response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertOkResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Mapping assertionZoneMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertNotNull(assertionZoneMapping);
+        Assert.assertEquals(EntityType.ASSERTION_ACCESS.toString(), assertionZoneMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, assertionZoneMapping.getAction());
+        Assert.assertNull(assertionZoneMapping.getErrorType());
+
         Item<SecurityZoneMO> sourceSecurityZone = createSecurityZone(getSourceEnvironment(), "MyZone");
         Item<AssertionSecurityZoneMO> gmaAccessZone = updateAssZone(getSourceEnvironment(), GatewayManagementAssertion.class.getName(), sourceSecurityZone.getId());
 
-        RestResponse response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
+        response = getSourceEnvironment().processRequest("bundle", "all=true", HttpMethod.GET, null, "");
         assertOkResponse(response);
 
         Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         //validate the the assertion accesses are exported
-        Mapping assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getName());
+        assertionZoneMapping = getMapping(bundleItem.getContent().getMappings(), gmaAccessZone.getName());
         Assert.assertNotNull(assertionZoneMapping);
 
         //import the bundle
@@ -105,7 +129,7 @@ public class AssertionAccessMigrationTest extends com.l7tech.skunkworks.rest.too
                 objectToString(bundleItem.getContent()));
         assertOkResponse(response);
 
-        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
 
         assertionZoneMapping = getMapping(mappings.getContent().getMappings(), gmaAccessZone.getId());
         Assert.assertNotNull(assertionZoneMapping);

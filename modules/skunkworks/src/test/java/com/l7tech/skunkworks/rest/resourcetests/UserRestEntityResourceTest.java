@@ -56,15 +56,18 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         //Create the users
 
         InternalUser user = new InternalUser("User1");
+        user.setName("User1");
         user.setFirstName("First1");
         user.setLastName("Last1");
         user.setHashedPassword(passwordHasher.hashPassword("password".getBytes(Charsets.UTF8)));
         user.setEnabled(true);
+        user.setExpiration(System.currentTimeMillis());
 
         internalUserManager.save(user,null);
         users.add(user);
 
         user = new InternalUser("User2");
+        user.setName("User2");
         user.setFirstName("First2");
         user.setLastName("Last2");
         user.setHashedPassword(passwordHasher.hashPassword("password".getBytes(Charsets.UTF8)));
@@ -74,6 +77,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         users.add(user);
 
         user = new InternalUser("User3");
+        user.setName("User3");
         user.setFirstName("First3");
         user.setLastName("Last3");
         user.setEmail("me@here.test");
@@ -112,12 +116,27 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
         userMO.setLogin("login");
+        userMO.setName("login");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
         password.setPassword(strongPassword);
         userMO.setPassword(password);
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
+        users.add(userMO);
+
+        userMO = ManagedObjectFactory.createUserMO();
+        userMO.setProviderId(internalProviderId);
+        userMO.setLogin("login2");
+        userMO.setLogin("login2");
+        password = ManagedObjectFactory.createPasswordFormatted();
+        password.setFormat("plain");
+        password.setPassword(strongPassword);
+        userMO.setPassword(password);
+        userMO.setFirstName("first name");
+        userMO.setLastName("last name");
+        userMO.setProperty("enabled", true);
+        userMO.setProperty("accountExpiration", 123L);
         users.add(userMO);
 
         return users;
@@ -156,6 +175,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         UserMO userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
         userMO.setLogin("login");
+        userMO.setName("login");
         userMO.setFirstName("first name");
         userMO.setLastName("last name");
         builder.put(userMO, new Functions.BinaryVoid<UserMO, RestResponse>() {
@@ -172,6 +192,7 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
         userMO = ManagedObjectFactory.createUserMO();
         userMO.setProviderId(internalProviderId);
         userMO.setLogin("login");
+        userMO.setName("login");
         PasswordFormatted password = ManagedObjectFactory.createPasswordFormatted();
         password.setFormat("plain");
         password.setPassword("x");
@@ -299,6 +320,15 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
             Assert.assertEquals(entity.getFirstName(), managedObject.getFirstName());
             Assert.assertEquals(entity.getLastName(), managedObject.getLastName());
             Assert.assertEquals(entity.getEmail(), managedObject.getEmail());
+            Assert.assertEquals(entity.getName(), managedObject.getName());
+            if(entity instanceof InternalUser) {
+                if (managedObject.getProperty("enabled") != null) {
+                    Assert.assertEquals(((InternalUser) entity).isEnabled(), managedObject.getProperty("enabled"));
+                }
+                if (managedObject.getProperty("accountExpiration") != null) {
+                    Assert.assertEquals(((InternalUser) entity).getExpiration(), managedObject.getProperty("accountExpiration"));
+                }
+            }
         }
     }
 

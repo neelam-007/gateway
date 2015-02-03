@@ -283,6 +283,8 @@ public class UserRestResourceFactory {
                 originalInternalUser.setLastName(newInternalUser.getLastName());
                 originalInternalUser.setEmail(newInternalUser.getEmail());
                 originalInternalUser.setDepartment(newInternalUser.getDepartment());
+                originalInternalUser.setEnabled(newInternalUser.isEnabled());
+                originalInternalUser.setExpiration(newInternalUser.getExpiration());
 
                 userManager.update(originalInternalUser, null);
             }else if (userManager instanceof FederatedUserManager){

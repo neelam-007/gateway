@@ -6,8 +6,8 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncry
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.UserRestResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.identity.InternalUserBean;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.bundling.EntityContainer;
@@ -95,6 +95,11 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
             }
         }
 
+        if(user instanceof InternalUser) {
+            userMO.setProperty("enabled", ((InternalUser) user).isEnabled());
+            userMO.setProperty("accountExpiration", ((InternalUser) user).getExpiration());
+        }
+
         return userMO;
     }
 
@@ -107,7 +112,7 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
     @NotNull
     @Override
     public EntityContainer<User> convertFromMO(@NotNull UserMO userMO, boolean strict, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
-        UserBean user = new UserBean();
+        InternalUserBean user = new InternalUserBean();
         user.setUniqueIdentifier(userMO.getId());
         user.setLogin(userMO.getLogin());
         user.setName(userMO.getName());
@@ -126,6 +131,8 @@ public class UserTransformer implements EntityAPITransformer<UserMO, User> {
         user.setEmail(userMO.getEmail());
         user.setDepartment(userMO.getDepartment());
         user.setSubjectDn(userMO.getSubjectDn());
+        user.setEnabled(userMO.<Boolean>getProperty("enabled"));
+        user.setExpiration(userMO.<Long>getProperty("accountExpiration"));
 
         //if a password is set on the user need to set it on the user bean
         if (userMO.getPassword() != null) {

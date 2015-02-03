@@ -51,7 +51,6 @@ public class PublishedServiceTransformer extends APIResourceWsmanBaseTransformer
         }
 
         final Policy policy = service.getPolicy();
-        service.setInternal(false);
 
         if (policy != null) {
             if (policy.getGuid() == null) {
