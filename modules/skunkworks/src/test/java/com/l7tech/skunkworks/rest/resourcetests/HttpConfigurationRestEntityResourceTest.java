@@ -113,6 +113,19 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
         httpConfigurationManager.save(httpConfiguration);
         httpConfigurations.add(httpConfiguration);
 
+        httpConfiguration = new HttpConfiguration();
+        httpConfiguration.setHost("myHost4");
+        httpConfiguration.setPort(5553);
+        httpConfiguration.setConnectTimeout(1003);
+        httpConfiguration.setFollowRedirects(false);
+        httpConfiguration.setReadTimeout(2003);
+        httpConfiguration.setTlsKeyUse(HttpConfiguration.Option.NONE);
+        httpConfiguration.setProxyUse(HttpConfiguration.Option.NONE);
+        httpConfiguration.setTlsKeystoreGoid(new Goid(0, 0));
+
+        httpConfigurationManager.save(httpConfiguration);
+        httpConfigurations.add(httpConfiguration);
+
     }
 
     @After
@@ -156,6 +169,14 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
         httpConfiguration.setHost("newHost2");
         httpConfiguration.setProtocol(HttpConfigurationMO.Protocol.HTTP);
         httpConfiguration.setPath("path");
+        httpConfiguration.setTlsKeyUse(HttpConfigurationMO.Option.DEFAULT);
+        httpConfigurations.add(httpConfiguration);
+
+        httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
+        httpConfiguration.setId(getGoid().toString());
+        httpConfiguration.setPort(333);
+        httpConfiguration.setHost("newHost3");
+        httpConfiguration.setProtocol(HttpConfigurationMO.Protocol.HTTP);
         httpConfiguration.setTlsKeyUse(HttpConfigurationMO.Option.DEFAULT);
         httpConfigurations.add(httpConfiguration);
 
@@ -272,7 +293,6 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
 
         HttpConfigurationMO httpConfiguration = ManagedObjectFactory.createHttpConfiguration();
         httpConfiguration.setId(httpConfigurations.get(0).getId());
-        httpConfiguration.setHost(httpConfigurations.get(1).getHost());
 
         builder.put(httpConfiguration, new Functions.BinaryVoid<HttpConfigurationMO, RestResponse>() {
             @Override
@@ -350,7 +370,7 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
             Assert.assertEquals(entity.getNtlmDomain(), managedObject.getNtlmDomain());
             Assert.assertEquals(entity.getNtlmHost(), managedObject.getNtlmHost());
             Assert.assertEquals(entity.getPath(), managedObject.getPath());
-            Assert.assertEquals(entity.getProtocol().toString(), managedObject.getProtocol().toString());
+            Assert.assertEquals(entity.getProtocol() == null ? null : entity.getProtocol().toString(), managedObject.getProtocol() == null ? null : managedObject.getProtocol().toString());
             Assert.assertEquals(entity.getReadTimeout(), managedObject.getReadTimeout());
             Assert.assertEquals(entity.getTlsCipherSuites(), managedObject.getTlsCipherSuites());
             Assert.assertEquals(entity.getTlsKeystoreAlias(), managedObject.getTlsKeystoreAlias());

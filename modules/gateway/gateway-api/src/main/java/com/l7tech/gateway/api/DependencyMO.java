@@ -21,7 +21,7 @@ public class DependencyMO {
 
     DependencyMO(){}
 
-    @XmlElement(name = "Name", required = true)
+    @XmlElement(name = "Name")
     public String getName() {
         return name;
     }
