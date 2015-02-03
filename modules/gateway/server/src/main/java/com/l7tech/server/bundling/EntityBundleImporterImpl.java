@@ -836,8 +836,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 final GroupManager groupManager = identityProvider.getGroupManager();
                                 if(existingEntity == null) {
                                     final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
-                                    final String id = groupManager.save(group, null);
-                                    ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(id);
+                                    final String groupId = groupManager.save(id == null ? null : Goid.parseGoid(id), group, null);
+                                    ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(groupId);
                                 } else {
                                     final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
                                     groupBean.setUniqueIdentifier(existingEntity.getId());
