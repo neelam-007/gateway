@@ -61,6 +61,10 @@
     padding: 2px 3px;
 }
 
+.api-call .request .params-table tr td:first-child {
+    white-space: nowrap;
+}
+
 #rest-api-docs .api-call .request .params-table caption {
     text-align: left;
     font-weight: bold;
