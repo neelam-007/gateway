@@ -75,7 +75,7 @@ if [ -z "${ANT_PERFORMANCE}" ] || [ "yes" = "${ANT_PERFORMANCE}" ] || [ "true" =
 fi
 
 test -d build || mkdir build
-"${JAVA_HOME}/bin/java" -Xmx1024m -XX:MaxPermSize=256m -Djava.net.preferIPv4Stack=true  ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS} | tee build/build.log
+"${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS} | tee build/build.log
 RESULT=${?}
 if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
   if [ ${RESULT} -eq 0 ] ; then
