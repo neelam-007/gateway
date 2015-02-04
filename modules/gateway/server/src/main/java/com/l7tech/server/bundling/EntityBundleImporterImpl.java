@@ -20,6 +20,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.*;
 import com.l7tech.server.EntityCrud;
@@ -419,6 +420,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     } catch (ObjectModelException | ParseException e) {
                         return Either.left(new DeleteException("Cannot find interface tag: " + ((InterfaceTag) entity).getName() + ". Error message: " + ExceptionUtils.getMessage(e), e));
                     }
+                } else if (entity instanceof Role && !((Role) entity).isUserCreated()) {
+                    return Either.left(new DeleteException("Cannot delete system role '" + ((Role) entity).getName() + "' with Id " + entity.getId()));
+                } else if (entity instanceof Folder && Goid.equals(Folder.ROOT_FOLDER_ID, ((Folder) entity).getGoid())) {
+                    return Either.left(new DeleteException("Cannot delete the root folder"));
                 } else {
                     try {
                         entityCrud.delete(entity);

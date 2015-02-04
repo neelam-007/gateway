@@ -1263,4 +1263,32 @@ public class FolderMigrationTest extends com.l7tech.skunkworks.rest.tools.Migrat
         response = getTargetEnvironment().processRequest("folders/"+folderCreated.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
+
+    @Test
+    public void deleteRootFolderTest() throws Exception {
+        Bundle bundle = ManagedObjectFactory.createBundle();
+
+        Mapping mapping = ManagedObjectFactory.createMapping();
+        mapping.setAction(Mapping.Action.Delete);
+        mapping.setTargetId(Folder.ROOT_FOLDER_ID.toString());
+        mapping.setType(EntityType.FOLDER.name());
+
+        bundle.setMappings(Arrays.asList(mapping));
+
+        //import the bundle
+        logger.log(Level.INFO, objectToString(bundle));
+        RestResponse response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundle));
+        assertConflictResponse(response);
+
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        //verify the mappings
+        Assert.assertEquals("There should be 1 mapping after the import", 1, mappings.getContent().getMappings().size());
+        Mapping rootFolderMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.FOLDER.toString(), rootFolderMapping.getType());
+        Assert.assertEquals(Mapping.Action.Delete, rootFolderMapping.getAction());
+        Assert.assertEquals(Mapping.ErrorType.InvalidResource, rootFolderMapping.getErrorType());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), rootFolderMapping.getTargetId());
+    }
 }
