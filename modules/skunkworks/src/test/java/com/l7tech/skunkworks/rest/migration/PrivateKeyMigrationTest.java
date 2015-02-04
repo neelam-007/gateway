@@ -3,7 +3,9 @@ package com.l7tech.skunkworks.rest.migration;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.api.impl.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
+import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
@@ -17,10 +19,8 @@ import junit.framework.Assert;
 import org.apache.http.entity.ContentType;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -51,7 +51,7 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
     private Item<ActiveConnectorMO> mqNativeItem;
     private Item<Mappings> mappingsToClean;
 
-    private String password = "";
+    private String password = "password";
 
     private Item<PrivateKeyMO> targetPrivateKeyItem;
 
