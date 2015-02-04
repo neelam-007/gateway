@@ -76,12 +76,8 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
             }
 
             //extract parameters from the query only the first time it should be used afterwords until someone changes the assertion
-            final Pair<String, List<Object>> pair;
-            if (context instanceof AuditLookupPolicyEnforcementContext || context instanceof AuditSinkPolicyEnforcementContext) {
-                pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, Collections.EMPTY_LIST, getAudit());
-            } else {
-                pair = getQueryStatementWithoutContextVariables(assertion.getQueryDocument(), context, variablesUsed, false, getAudit());
-            }
+            final Pair<String, List<Object>> pair = getQueryStatementWithoutContextVariables(
+                    assertion.getQueryDocument(), context, variablesUsed, false, Collections.EMPTY_LIST, getAudit());
 
             final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
             final String queryTimeoutString = StringUtils.isNotBlank(assertion.getQueryTimeout()) ? assertion.getQueryTimeout() : "0";
