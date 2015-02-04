@@ -460,6 +460,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         @Override
         public void run() {
             headersTextField.setEnabled(!headerActionComboBox.getSelectedItem().equals(JsonWebTokenConstants.HEADERS_USE_DEFAULT));
+            updateOkButtonState();
         }
     });
 
