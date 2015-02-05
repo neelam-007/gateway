@@ -394,7 +394,7 @@
 
     <bean id="cassandraAdmin" class="com.l7tech.server.cassandra.CassandraConnectionManagerAdminImpl">
         <constructor-arg ref="cassandraEntityManager"/>
-        <constructor-arg ref="securePasswordManager"/>
+        <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="cassandraConnectionManager"/>
         <constructor-arg ref="cassandraQueryManager"/>
     </bean>

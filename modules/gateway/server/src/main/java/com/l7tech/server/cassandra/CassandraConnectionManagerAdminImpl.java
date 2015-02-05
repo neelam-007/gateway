@@ -7,10 +7,13 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cassandra.CassandraConnectionManagerAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
-import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,16 +37,16 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     private LicenseManager licenseManager;
 
     private final CassandraConnectionEntityManager cassandraEntityManager;
-    private final SecurePasswordManager securePasswordManager;
     private final CassandraConnectionManager cassandraConnectionManager;
     private final CassandraQueryManager cassandraQueryManager;
+    private final RbacServices rbacServices;
 
     public CassandraConnectionManagerAdminImpl(CassandraConnectionEntityManager cassandraEntityManager,
-                                               SecurePasswordManager securePasswordManager,
+                                               RbacServices rbacServices,
                                                CassandraConnectionManager cassandraConnectionManager,
                                                CassandraQueryManager cassandraQueryManager) {
         this.cassandraEntityManager = cassandraEntityManager;
-        this.securePasswordManager = securePasswordManager;
+        this.rbacServices = rbacServices;
         this.cassandraConnectionManager = cassandraConnectionManager;
         this.cassandraQueryManager = cassandraQueryManager;
     }
@@ -66,11 +69,18 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
     @Override
     public List<String> getAllCassandraConnectionNames() throws FindException {
         checkLicense();
+        User user = getCurrentUser();
         List<String> names = new ArrayList<>();
         for (CassandraConnection entity : getAllCassandraConnections()) {
-            names.add(entity.getName());
+            if (rbacServices.isPermittedForEntity(user, entity, OperationType.READ, null)) {
+                names.add(entity.getName());
+            }
         }
         return names;
+    }
+
+    protected User getCurrentUser() {
+        return JaasUtils.getCurrentUser();
     }
 
     @Override
@@ -157,7 +167,7 @@ public class CassandraConnectionManagerAdminImpl extends AsyncAdminMethodsImpl i
         return registerJob(queryTask, String.class);
     }
 
-    private void checkLicense() {
+    protected void checkLicense() {
         try {
             licenseManager.requireFeature(GatewayFeatureSets.SERVICE_CASSANDRA);
         } catch ( LicenseException e) {
