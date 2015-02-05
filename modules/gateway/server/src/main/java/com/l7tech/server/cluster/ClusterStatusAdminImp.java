@@ -641,7 +641,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
             }
 
             // Save new module
-            moduleFile.setModuleSha256(HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes)));
+            moduleFile.setModuleSha256(ServerModuleFile.calcBytesChecksum(dataBytes));
             moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
             moduleFile.setStateForNode(clusterInfoManager.thisNodeId(), ModuleState.UPLOADED);
             id = serverModuleFileManager.save(moduleFile);
@@ -660,7 +660,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
                 oldMod.copyFrom(moduleFile, false, false, false);
             } else {
                 // New data-bytes included, ensure size and hash are up to date
-                final String byteSha256 = HexUtils.hexDump(HexUtils.getSha256Digest(dataBytes));
+                final String byteSha256 = ServerModuleFile.calcBytesChecksum(dataBytes);
                 moduleFile.setModuleSha256(byteSha256);
                 moduleFile.setProperty(ServerModuleFile.PROP_SIZE, String.valueOf(dataBytes.length));
 

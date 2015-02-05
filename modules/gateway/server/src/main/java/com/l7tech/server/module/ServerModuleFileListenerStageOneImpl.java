@@ -47,7 +47,7 @@ public class ServerModuleFileListenerStageOneImpl extends ServerModuleFileListen
     public ServerModuleFileListenerStageOneImpl(
             @NotNull final ApplicationEventProxy eventProxy,
             @NotNull final ServerModuleFileManager serverModuleFileManager,
-            final PlatformTransactionManager transactionManager,
+            @Nullable final PlatformTransactionManager transactionManager,
             @NotNull final Config config,
             @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
             @NotNull final CustomAssertionsRegistrar customAssertionRegistrar

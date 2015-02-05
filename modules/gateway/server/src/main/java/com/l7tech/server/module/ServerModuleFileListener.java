@@ -20,6 +20,7 @@ import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -76,7 +77,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
     public ServerModuleFileListener(
             @NotNull final ApplicationEventProxy eventProxy,
             @NotNull final ServerModuleFileManager serverModuleFileManager,
-            final PlatformTransactionManager transactionManager,
+            @Nullable final PlatformTransactionManager transactionManager,
             @NotNull final Config config,
             @NotNull final ServerAssertionRegistry modularAssertionRegistrar,
             @NotNull final CustomAssertionsRegistrar customAssertionRegistrar
@@ -125,7 +126,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      *
      * @param event    the {@link ApplicationEvent event} that occurred.
      */
-    private void handleEvent(@NotNull final ApplicationEvent event) {
+    protected void handleEvent(@NotNull final ApplicationEvent event) {
         try {
             // once the Gateway is up and running, create staging folders for custom and modular modules.
             if (event instanceof Started) {
@@ -252,7 +253,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      * @param moduleName    the module file-name.  Required and cannot be {@link null}
      * @param moduleType    the module type. Required and cannot be {@link null}
      */
-    private void processLoadedModule(
+    protected void processLoadedModule(
             @NotNull final String moduleName,
             @NotNull final ModuleType moduleType
     ) {
@@ -282,7 +283,6 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
 
             // audit module loaded
             logAndAudit(ServerModuleFileSystemEvent.createLoadedSystemEvent(this, moduleType, moduleName));
-
         }
     }
 
@@ -364,7 +364,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      * {@link #knownModuleFiles known module cache}.<br/>
      * Note that this method is executed into a transaction.
      */
-    private void initModules() {
+    protected void initModules() {
 
         // for debug purposes
         if (logger.isLoggable(Level.FINE)) {
@@ -411,7 +411,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      * @return Specified {@code module} current cluster node {@link ModuleState state}, if any, or {@link ModuleState#UPLOADED} otherwise.
      */
     @NotNull
-    private ModuleState getModuleState(@NotNull final ServerModuleFile moduleFile) {
+    protected final ModuleState getModuleState(@NotNull final ServerModuleFile moduleFile) {
         final ServerModuleFileState state = serverModuleFileManager.findStateForCurrentNode(moduleFile);
         return (state != null) ? state.getState() : ModuleState.UPLOADED;
     }
@@ -423,7 +423,7 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
      * @param moduleGoid      the module GOID.  Required and cannot be {@code null}
      * @param errorMessage    error message to set.  Required and cannot be {@code null}
      */
-    private void updateModuleState(
+    protected void updateModuleState(
             @NotNull final Goid moduleGoid,
             @NotNull final String errorMessage
     ) {
@@ -512,12 +512,21 @@ public abstract class ServerModuleFileListener implements ApplicationContextAwar
         this.applicationContext = context;
     }
 
-    protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent event) {
+    /**
+     * Publish the specified audit event.
+     */
+    private void logAndAudit(@NotNull final ServerModuleFileSystemEvent event) {
         if (applicationContext != null) {
             applicationContext.publishEvent(event);
         }
     }
 
+    /**
+     * Convenient method for creating audit event for the specified {@code action} and {@code moduleFile}
+     *
+     * @param action        the module file action to audit.
+     * @param moduleFile    the module file.
+     */
     protected void logAndAudit(@NotNull final ServerModuleFileSystemEvent.Action action, @NotNull final ServerModuleFile moduleFile) {
         logAndAudit(ServerModuleFileSystemEvent.createSystemEvent(this, action, moduleFile));
     }
