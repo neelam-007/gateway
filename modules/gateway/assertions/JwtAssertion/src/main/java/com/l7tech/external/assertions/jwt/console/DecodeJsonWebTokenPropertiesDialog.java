@@ -159,6 +159,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         @Override
         public void run() {
             keyIdTextField.setEnabled(JsonWebTokenConstants.KEY_TYPE_JWKS.equals(keyType.getSelectedItem()));
+            updateOkButtonState();
         }
     });
 
