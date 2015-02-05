@@ -959,4 +959,170 @@ public class PrivateKeyMigrationTest extends com.l7tech.skunkworks.rest.tools.Mi
         response = getTargetEnvironment().processRequest("privateKeys/"+targetPrivateKeyItem2.getId(), HttpMethod.GET, null, "");
         assertNotFoundResponse(response);
     }
+
+    @Test
+    public void testImportCreateNewMapByIdDifferentAlias() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 item. A policy, active connector, private key", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. A policy, a folder, active connector and private key", 4, bundleItem.getContent().getMappings().size());
+
+        // update mapping
+        String targetAlias = "CreateNewMapById";
+        bundleItem.getContent().getMappings().get(0).setTargetId(targetPrivateKeyItem.getContent().getKeystoreId() + ":" + targetAlias);
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+
+        // import success
+        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        assertOkResponse(response);
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping privateKeyMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+        Assert.assertEquals(privateKeyItem.getContent().getKeystoreId() + ":" + targetAlias, privateKeyMapping.getTargetId());
+
+        Mapping mqMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
+        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+        Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
+
+        Mapping folderMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), folderMapping.getSrcId());
+        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        mappingsToClean = mappings;
+
+        validate(mappings);
+
+        //validate that the alias was changed correctly
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem.getContent().getKeystoreId() + ":" + targetAlias, HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        assertOkResponse(response);
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        Assert.assertEquals(targetAlias, item.getContent().getAlias());
+
+
+        // validate the the private key data is the same as the target
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        privateKeyExportContext.setPassword(password);
+
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem.getContent().getKeystoreId() + ":" + targetAlias + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
+        assertOkResponse(response);
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyExportResult> itemPrivateKeyExportResult = MarshallingUtils.unmarshal(Item.class, source);
+        KeyStore inks = KeyStore.getInstance("PKCS12");
+        inks.load(new ByteArrayInputStream(itemPrivateKeyExportResult.getContent().getPkcs12Data()), password.toCharArray());
+        Key key = inks.getKey(targetAlias, password.toCharArray());
+
+        assertArrayEquals(privateKeyItemKey.getEncoded(), key.getEncoded());
+
+    }
+
+    @Test
+    public void testImportCreateNewMapByNameDifferentAlias() throws Exception {
+        RestResponse response = getSourceEnvironment().processRequest("bundle/policy/" + policyItem.getId(), "encryptSecrets=true&encryptUsingClusterPassphrase=true", HttpMethod.GET, null, "");
+        logger.log(Level.INFO, response.toString());
+        assertOkResponse(response);
+
+        Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+
+        Assert.assertEquals("The bundle should have 3 item. A policy, active connector, private key", 3, bundleItem.getContent().getReferences().size());
+        Assert.assertEquals("The bundle should have 4 mappings. A policy, a folder, active connector and private key", 4, bundleItem.getContent().getMappings().size());
+
+        // update mapping
+        String targetAlias = "CreateNewMapById";
+        bundleItem.getContent().getMappings().get(0).setProperties(CollectionUtils.MapBuilder.<String,Object>builder().put("MapBy", "name").put("MapTo", targetAlias).map());
+
+        //import the bundle
+        response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(),
+                objectToString(bundleItem.getContent()));
+
+        // import success
+        assertEquals(AssertionStatus.NONE, response.getAssertionStatus());
+        assertOkResponse(response);
+        Item<Mappings> mappings = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        //verify the mappings
+        Assert.assertEquals("There should be 4 mappings after the import", 4, mappings.getContent().getMappings().size());
+        Mapping privateKeyMapping = mappings.getContent().getMappings().get(0);
+        Assert.assertEquals(EntityType.SSG_KEY_ENTRY.toString(), privateKeyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, privateKeyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, privateKeyMapping.getActionTaken());
+        Assert.assertEquals(privateKeyItem.getId(), privateKeyMapping.getSrcId());
+        Assert.assertEquals(targetPrivateKeyItem.getContent().getKeystoreId() + ":" + targetAlias, privateKeyMapping.getTargetId());
+
+        Mapping mqMapping = mappings.getContent().getMappings().get(1);
+        Assert.assertEquals(EntityType.SSG_ACTIVE_CONNECTOR.toString(), mqMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, mqMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, mqMapping.getActionTaken());
+        Assert.assertEquals(mqNativeItem.getId(), mqMapping.getSrcId());
+        Assert.assertEquals(mqMapping.getSrcId(), mqMapping.getTargetId());
+
+        Mapping folderMapping = mappings.getContent().getMappings().get(2);
+        Assert.assertEquals(EntityType.FOLDER.toString(), folderMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, folderMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.UsedExisting, folderMapping.getActionTaken());
+        Assert.assertEquals(Folder.ROOT_FOLDER_ID.toString(), folderMapping.getSrcId());
+        Assert.assertEquals(folderMapping.getSrcId(), folderMapping.getTargetId());
+
+        Mapping policyMapping = mappings.getContent().getMappings().get(3);
+        Assert.assertEquals(EntityType.POLICY.toString(), policyMapping.getType());
+        Assert.assertEquals(Mapping.Action.NewOrExisting, policyMapping.getAction());
+        Assert.assertEquals(Mapping.ActionTaken.CreatedNew, policyMapping.getActionTaken());
+        Assert.assertEquals(policyItem.getId(), policyMapping.getSrcId());
+        Assert.assertEquals(policyMapping.getSrcId(), policyMapping.getTargetId());
+
+        mappingsToClean = mappings;
+
+        validate(mappings);
+
+        //validate that the alias was changed correctly
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem.getContent().getKeystoreId() + ":" + targetAlias, HttpMethod.GET, ContentType.APPLICATION_XML.toString(), "");
+        assertOkResponse(response);
+
+        StreamSource source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyMO> item = MarshallingUtils.unmarshal(Item.class, source);
+        Assert.assertEquals(targetAlias, item.getContent().getAlias());
+
+
+        // validate the the private key data is the same as the target
+        PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        privateKeyExportContext.setPassword(password);
+
+        response = getTargetEnvironment().processRequest("privateKeys/" + privateKeyItem.getContent().getKeystoreId() + ":" + targetAlias + "/export", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(privateKeyExportContext));
+        assertOkResponse(response);
+
+        source = new StreamSource(new StringReader(response.getBody()));
+        Item<PrivateKeyExportResult> itemPrivateKeyExportResult = MarshallingUtils.unmarshal(Item.class, source);
+        KeyStore inks = KeyStore.getInstance("PKCS12");
+        inks.load(new ByteArrayInputStream(itemPrivateKeyExportResult.getContent().getPkcs12Data()), password.toCharArray());
+        Key key = inks.getKey(targetAlias, password.toCharArray());
+
+        assertArrayEquals(privateKeyItemKey.getEncoded(), key.getEncoded());
+
+    }
 }

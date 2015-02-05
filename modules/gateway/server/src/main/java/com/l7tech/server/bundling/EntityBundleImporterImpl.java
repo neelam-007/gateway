@@ -287,22 +287,38 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
                 // if no test/errors do private key operations
                 if(!test && !containsErrors(mappingsRtn)){
-                    for(final EntityHeader header : cachedPrivateKeyOperations.keySet()){
-                        try{
-                            cachedPrivateKeyOperations.get(header).call();
-                        } catch (Throwable e) {
-                            // update mapping
-                            EntityMappingResult mapping = Functions.grepFirst(mappingsRtn, new Functions.Unary<Boolean, EntityMappingResult>() {
-                                @Override
-                                public Boolean call(EntityMappingResult entityMappingResult) {
-                                    return entityMappingResult.getSourceEntityHeader().equals(header);
+                    final TransactionTemplate tt = new TransactionTemplate(transactionManager);
+                    tt.setReadOnly(false);
+                    tt.execute(new TransactionCallback<Void>() {
+                        @Override
+                        public Void doInTransaction(final TransactionStatus transactionStatus) {
+                                for(final EntityHeader header : cachedPrivateKeyOperations.keySet()){
+                                    // update mapping
+                                    EntityMappingResult mapping = Functions.grepFirst(mappingsRtn, new Functions.Unary<Boolean, EntityMappingResult>() {
+                                        @Override
+                                        public Boolean call(EntityMappingResult entityMappingResult) {
+                                            return entityMappingResult.getSourceEntityHeader().equals(header);
+                                        }
+                                    });
+                                    if(mapping == null) {
+                                        //this shouldn't really happen.
+                                        throw new IllegalStateException("Could not find mapping result for " + header.toStringVerbose());
+                                    }
+                                    try {
+                                        try{
+                                            cachedPrivateKeyOperations.get(header).call();
+                                        } finally {
+                                            //flush the transaction so that any error get thrown now.
+                                            transactionStatus.flush();
+                                        }
+                                    } catch (Throwable e) {
+                                        mapping.makeExceptional(e);
+                                        transactionStatus.setRollbackOnly();
+                                    }
                                 }
-                            });
-                            if(mapping != null){
-                                mapping.makeExceptional(e);
-                            }
+                            return null;
                         }
-                    }
+                    });
                 }
 
 
@@ -368,7 +384,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 return Either.left(Either.<DeleteException, IncorrectMappingInstructionsException>left(new DeleteException("Cannot find keystore with id: " + keyStoreId, e)));
                             }
 
-                            cachedPrivateKeyOperations.put(EntityHeaderUtils.fromEntity(entity), new Callable<String>() {
+                            cachedPrivateKeyOperations.put(mapping.getSourceEntityHeader(), new Callable<String>() {
                                 @Override
                                 public String call() throws Exception {
                                     //need to specially handle deletion of ssg key entries
@@ -722,7 +738,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         }
 
         //create/save dependent entities
-        beforeCreateOrUpdateEntities(entityContainer, existingEntity, resourceMapping);
+        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(mapping.getTargetMapping().getType())) ? id : null, resourceMapping);
 
         //validate the entity. This should check the entity annotations and see if it contains valid data.
         validate(entityContainer);
@@ -1000,7 +1016,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param replacementMap  The replacement map is a map of EntityHeaders to replace.
      * @throws ObjectModelException
      */
-    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
+    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @Nullable final String targetId, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
         if (entityContainer instanceof JmsContainer) {
             final JmsContainer jmsContainer = ((JmsContainer) entityContainer);
             //need to replace jms connection dependencies
@@ -1084,6 +1100,15 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             if (checkAlias != null) {
                 throw new DuplicateObjectException("Cannot create alias in the same folder as an alias for the same aliased policy or service");
             }
+        } else if (entityContainer.getEntity() instanceof SsgKeyEntry && targetId != null) {
+            //need to replace the alias and keystore id if a target id is specified
+            final SsgKeyEntry ssgKeyEntry = ((SsgKeyEntry) entityContainer.getEntity());
+            final String[] keyParts = targetId.split(":");
+            if(keyParts.length != 2 || keyParts[1] == null || keyParts[1].isEmpty() || keyParts[0] == null) {
+                throw new IllegalStateException("An id for a private key is not valid: " + targetId);
+            }
+            ssgKeyEntry.setAlias(keyParts[1]);
+            ssgKeyEntry.setKeystoreId(Goid.parseGoid(keyParts[0]));
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
         if(entityContainer.getEntity() instanceof HasFolder && existingEntity != null) {
@@ -1331,6 +1356,16 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 resource = findExistingRole((Role)entity, resourceMapping);
                             } catch (Exception e) {
                                 return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error finding auto generated role to map to: " + ExceptionUtils.getMessage(e)));
+                            }
+                        }
+                    } else if (EntityType.SSG_KEY_ENTRY.equals(mapping.getSourceEntityHeader().getType()) && mapping.getTargetMapping() != null && EntityMappingInstructions.TargetMapping.Type.NAME.equals(mapping.getTargetMapping().getType())) {
+                        if(entity == null) {
+                            return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Attempting to map a private key by it's name but the private key is not in the bundle"));
+                        } else {
+                            try {
+                                resource = keyStoreManager.lookupKeyByKeyAlias(mappingTarget, ((SsgKeyEntry)entity).getKeystoreId());
+                            } catch (KeyStoreException e) {
+                                return Either.<BundleImportException, Option<Entity>>left(new TargetNotFoundException(mapping, "Error looking up private key. Message: " + ExceptionUtils.getMessageWithCause(e)));
                             }
                         }
                     } else {
