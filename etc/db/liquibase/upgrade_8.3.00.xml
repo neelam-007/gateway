@@ -138,6 +138,11 @@
             <column name="name"/>
         </createIndex>
     </changeSet>
+    <changeSet id="add-fk-cassandra-connection-security-zone" author="gateway">
+        <addForeignKeyConstraint baseTableName="cassandra_connection" baseColumnNames="security_zone_goid"
+                                 constraintName="cassandra_connection_security_zone" referencedTableName="security_zone"
+                                 referencedColumnNames="goid" onDelete="SET NULL" onUpdate="NO ACTION"/>
+    </changeSet>
 	<changeSet id="create-manage-cassandra-connection-role" author="gateway">
         <comment>Manage Cassandra Configuration</comment>
         <insert tableName="rbac_role">
